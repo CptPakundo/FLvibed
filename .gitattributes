@@ -1,0 +1,11 @@
+* text=auto
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.dll binary
+
+# left out of the published export (git archive; the owner, 26 Oct 2026): the AI session maps and the session handoff
+# stay in the private development history only
+CLAUDE.md export-ignore
+HANDOFF.txt export-ignore
+HANDOFF_history.txt export-ignore

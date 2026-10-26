@@ -1,0 +1,194 @@
+leg	cp	n	r1	r2	r3	r1_seg	r2_seg	r3_seg	par	par_seg	golden	runner_best_seg	runner_worst_seg	how	segment
+M01a	M01a.control	1	94.5	95.3	93.8	94.5	95.3	93.8	93.8	93.8	run3	93.8	95.3	auto / auto / auto	Manhattan base (Juni, restock), launch + the M01 space scene (77 s)
+M01a	M01a.wing	2	99	100	99.1	4.5	4.7	5.3	99.1	5.3	run3	4.5	5.3	auto / auto / auto	the Order wing appears
+M01a	M01a.wingdown	3	182	183	177.1	83	83	78	177.1	78	run3	78	83	auto / auto / auto	Order wing fight (runners 57-61 s, nearest first)
+M01a	M01a.lane1	4	200	200	194.1	18	17	17	194.1	17	run3	17	18	auto / auto / auto	waypoint cruise (runners 17-18 s straight)
+M01a	M01a.brandt	5	226	226	220.1	26	26	26	220.1	26	run3	26	26	auto / auto / auto	TL146 lane ride
+M01a	M01a.ambush	6	304	304	298.1	78	78	78	298.1	78	run3	78	78	auto / auto / auto	formation with Brandt, lanes to the Rogue ambush
+M01a	M01a.reform	7	357	368	354.1	53	64	56	354.1	56	run3	53	64	auto / hand / auto	Rogue lane ambush fight
+M01a	M01a.lane2	8	386	395	380.1	29	27	26	380.1	26	run3	26	29	auto / auto / auto	re-form with Brandt, to the last lane
+M01a	M01a.end	9	417	423	408.6	31	28	28.5	408.6	28.5	run3	28	31	auto / auto / auto	last lane + Pittsburgh ring (scripted ring wait 16-24 s)
+M01b	M01b.control	1	36.5	33.3	25.3	36.5	33.3	25.3	36.5	36.5	run1	25.3	36.5	auto / auto / auto	Pittsburgh base: King, restock, launch
+M01b	M01b.xt19	2	121	118	109.5	84.5	84.7	84.2	121	84.5	run1	84.2	84.7	auto / auto / auto	formation with Epsilon 1 to station XT-19
+M01b	M01b.wp1	3	221	228	212.5	100	110	103	221	100	run1	100	110	auto / auto / auto	defend XT-19 (fighter wave 1)
+M01b	M01b.wave2	4	244	251	234.5	23	23	22	244	23	run1	22	23	auto / auto / auto	waypoint leg 1 (Beta-4 comm)
+M01b	M01b.wp2	5	308	317	298.5	64	66	64	308	64	run1	64	66	auto / auto / auto	fighter wave 2
+M01b	M01b.wave3	6	347	357	337.5	39	40	39	347	39	run1	39	40	auto / auto / auto	waypoint leg 2
+M01b	M01b.wp3	7	372	381	362.5	25	24	25	372	25	run1	24	25	auto / auto / auto	fighter wave 3
+M01b	M01b.platforms	8	403			31			403	31	run1	31	31	auto / missing / missing	waypoint leg 3 -> the Rogue base appears (turn ~120 deg left at the Beta-4 comm)
+M01b	M01b.end	9	457	476	471.8	54			457	54	run1	54	54	auto / auto / auto	the two weapon platforms only, base explosion scene, GAME SAVED (our leg flies on to land on Pittsburgh: not timed)
+M02	M02.control	1	84.5	68.6	76.8	84.5	68.6	76.8	84.5	84.5	run1	68.6	84.5	auto / auto / auto	Manhattan base, launch + the M02 space-enter scene (55 s)
+M02	M02.lane1	2	90.5	75.5	85.2	6	6.9	8.4	90.5	6	run1	6	8.4	auto / auto / auto	to the first lane with King
+M02	M02.colorado	3	193.5	175.5	185.2	103	100	100	193.5	103	run1	100	103	auto / auto / auto	lanes + the Colorado gate (King must follow)
+M02	M02.scan	4	222.5	205.5	214.2	29	30	29	222.5	29	run1	29	30	auto / auto / auto	to the scan area
+M02	M02.cosmo	5	248.5	230.5	244.2	26	25	30	248.5	26	run1	25	30	auto / auto / auto	scan at once (Cosmo acts on the scan)
+M02	M02.cosmodone	6	280.5	266.5	274.2	32	36	30	280.5	32	run1	30	36	auto / auto / auto	disable Cosmo's engines (~3 shots, no kill) + Cosmo scene
+M02	M02.lane2	7	308.5		303.2	28		29	308.5	28	run1	28	29	auto / missing / auto	to the lane at GAME SAVED
+M02	M02.pueblo	8	343.5	330.5		35			343.5	35	run1	35	35	auto / auto / missing	lanes to Pueblo
+M02	M02.marked	9	417.5		422.2	74			417.5	74	run1	74	74	auto / missing / auto	Pueblo defence
+M02	M02.rogues	10	483.5	509.5	484.2	66		62	483.5	66	run1	62	66	auto / auto / auto	fly to the marked ship (go to the fight at cruise)
+M02	M02.ashcroft	11	529.5	562.5	544.2	46	53	60	529.5	46	run1	46	60	auto / auto / auto	Rogues fight
+M02	M02.pod	12	551.5	591.5	562.2	22	29	18	551.5	22	run1	18	29	auto / auto / auto	Ashcroft: cruise chase + engine kill to fire, he ejects in 6-10 s
+M02	M02.nygate	13	578.5	618.5		27	27		578.5	27	run1	27	27	auto / auto / missing	tractor the pod
+M02	M02.nygatein	14	703.5	736.5	714.2	125	118		703.5	125	run1	118	125	auto / auto / auto	the 30 km open cruise to the NY gate
+M02	M02.missouri	15		914.5	882.2		178	168	862.5	159	run1	168	178	missing / auto / auto	NY gate, lanes, Fort Bush Rogues (attack while neutral), lanes
+M02	M02.end	16	875.5	928.5	896.5		14	14.3	875.5	13	run1	14	14.3	auto / auto / auto	to Battleship Missouri, dock
+M03	M03.control	1	23	9.7	22	23	9.7	22	22	22	run3	9.7	23	auto / auto / auto	CA Minor base: launch
+M03	M03.lane	2	33.5	20.5	33.8	10.5	10.8	11.8	33.8	11.8	run3	10.5	11.8	auto / auto / auto	meet Juni, to the lane
+M03	M03.convoy	3	89.5	76.5	88.8	56	56	55	88.8	55	run3	55	56	auto / auto / auto	lanes to the Magellan side
+M03	M03.buoy1	4	135.5	130.5	143.8	46	54	55	143.8	55	run3	46	55	auto / auto / auto	to the convoy
+M03	M03.outcasts	5	206.5	196.5		71	66		216.9	73.1	run3	66	71	auto / auto / missing	escort past the buoys
+M03	M03.buoy4	6	265.5			59			282.5	65.6	run3	59	59	auto / missing / missing	Outcast attack (transport 2's pods = artifacts; transport 1 destroyed = fail)
+M03	M03.willard	7	300.5			35			321.4	38.9	run3	35	35	auto / missing / missing	escort to the fourth buoy
+M03	M03.willardland	8	375	380	404.3	74.5			404.3	82.9	run3	74.5	74.5	hand / hand / hand	escort to Willard, dock
+M03	M03.willardout	9	392	412	422	17	32	17.7	422	17.7	run3	17	32	hand / hand / hand	Willard base stop
+M03	M03.valkyries	10	440.5	431	470.8	48.5	19	48.8	470.8	48.8	run3	19	48.8	auto / hand (auto 456) / auto	to CA Minor until the Valkyries
+M03	M03.valkdown	11	459.5	483.5	500.8	19	52.5	30	500.8	30	run3	19	52.5	auto / auto / auto	Valkyries fight
+M03	M03.caminor	12	502	524.5	545.3	42.5	41	44.5	545.3	44.5	run3	41	44.5	hand / hand / hand	to CA Minor: shed Juni (hold cruise / engine kill 3-4.5 km out), dock first
+M03	M03.walker	13	518	550.5	560	16	26	14.7	560	14.7	run3	14.7	26	hand / hand / hand	CA Minor base stop, launch
+M03	M03.towillard	14	597.5		640.8	79.5		80.8	640.8	80.8	run3	79.5	80.8	auto / missing / auto	meet Walker
+M03	M03.pirates	15	667.5	700.5	710.8	70		70	710.8	70	run3	70	70	auto / auto / auto	to Willard with Walker
+M03	M03.end	16	779.5	766.5	762.9	112	66	52.1	762.9	52.1	run3	52.1	112	auto / auto / auto	Rheinland pirates at Willard (keep one alive until the bombers spawn), Juni pays
+M04	M04.control	1	64.8	32.9	23.9	64.8	32.9	23.9	32.9	32.9	run2	23.9	64.8	auto / auto / auto	Manhattan base: launch
+M04	M04.lane1	2	65	32.9	23.9	0.2	0	0	32.9	0	run2	0	0.2	auto / auto / auto	meet Juni and King, to the West Point lane
+M04	M04.unity	3	121	89.5		56	56.6		89.5	56.6	run2	56	56.6	auto / auto / missing	the Navy turns at West Point
+M04	M04.lane2	4	188	158.5	146.7	67	69		158.5	69	run2	67	69	auto / auto / auto	fight / escape the Unity
+M04	M04.lane3	5	205	185.5	185.7	17	27	39	185.5	27	run2	17	39	auto / auto / auto	lane
+M04	M04.ithaca	6	280	245.5	245.7	75	60	60	245.5	60	run2	60	75	auto / auto / auto	lanes to Ithaca
+M04	M04.benford	7	295	257.5	258.7	15	12	13	257.5	12	run2	12	15	auto / auto / auto	waypoints to Benford
+M04	M04.benfordland	8	303.5	270	267.7	8.5	12.5	9	270	12.5	run2	8.5	12.5	hand / hand / hand	dock at Benford
+M04	M04.magellan	9	440	406.5	402.7	136.5	136.5	135	406.5	136.5	run2	135	136.5	auto / auto / auto	Benford room scene (runners watch ~200 s; Esc on HDE), launch, station attack
+M04	M04.gate	10	472		441.7	32		39	443.7	37.2	run2	32	39	auto / missing / auto	to the Magellan gate: shed Juni (engine kill at ~3 km / hold cruise)
+M04	M04.fp4	11	505	478.5	474.7	33		33	478.5	34.8	run2	33	33	auto / auto / auto	through the gate
+M04	M04.hunters	12	574	551.5	544.7	69	73	70	551.5	73	run2	69	73	auto / auto / auto	runners head for Mactan (the hunters meet them there)
+M04	M04.mactan	13	603.5	573	581.7	29.5	21.5	37	573	21.5	run2	21.5	37	hand / hand / hand	bounty hunters (open while neutral), dock Mactan
+M04	M04.wing	14	670	656.5	650.7	66.5	83.5	69	656.5	83.5	run2	66.5	83.5	auto / auto / auto	Mactan base stop, launch
+M04	M04.hole	15	711	693.5	691.7	41	37	41	693.5	37	run2	37	41	auto / auto / auto	Rheinland assault wing
+M04	M04.leeds	16	745	724.5	727.7	34	31	36	724.5	31	run2	31	36	auto / auto / auto	to the Leeds hole alone, through
+M04	M04.end	17	836	812.5	817	91	88	89.3	812.5	88	run2	88	91	auto / auto / auto	Leeds hole -> Leeds (lanes, ring)
+M05	M05.control	1	48.3	9.8	9.4	48.3	9.8	9.4	9.4	9.4	run3	9.4	48.3	auto / auto / auto	Cambridge base: launch
+M05	M05.lane1	2	52.5	13.5	13.2	4.2	3.7	3.8	13.2	3.8	run3	3.7	4.2	auto / auto / auto	meet Juni, to the lane
+M05	M05.lane2	3	115.5	75.5	76.2	63	62	63	76.2	63	run3	62	63	auto / auto / auto	lanes
+M05	M05.gate	4	144.5	106.5	105.2	29	31	29	105.2	29	run3	29	31	auto / auto / auto	to the Omega-3 gate
+M05	M05.o3lane	5	172.5	134.5	134.2	28	28	29	134.2	29	run3	28	29	auto / auto / auto	Omega-3 gate (busy: 12-13 s queue in all runs)
+M05	M05.sprague	6	235.5	198.5	196.2	63	64	62	196.2	62	run3	62	64	auto / auto / auto	Freeport 1 lanes
+M05	M05.spraguefight	7	271.5	233.5	232.2	36	35	36	232.2	36	run3	35	36	auto / auto / auto	to Sprague
+M05	M05.spragueland	8	322	283.5	289.2	50.5	50	57	289.2	57	run3	50	57	hand / hand / hand	Sprague fight, dock
+M05	M05.baxter	9	390.5	399.5	358.2	68.5	116	69	358.2	69	run3	68.5	116	auto / auto / auto	Sprague room scenes (Esc on HDE), flee, to the waypoint coordinates
+M05	M05.baxterland	10	403	414	369.2	12.5	14.5	11	369.2	11	run3	11	14.5	hand / hand / hand	to Baxter, dock
+M05	M05.baxterfight	11	420.5	433	386	17.5	19	16.8	386	16.8	run3	16.8	19	auto / hand / hand	Baxter stop, launch into the Rheinland wing
+M05	M05.cambhole	12		517.5	484.2		84.5	98.2	484.2	98.2	run3	84.5	98.2	missing / auto / auto	post-Baxter fight: fighters first, gunboat last at point blank, leave on the kill
+M05	M05.cambholein	13	548.5	562.5	521.2		45	37	521.2	37	run3	37	45	auto / auto / auto	to the Cambridge hole
+M05	M05.follow	14	654.5	670.5	628.2	106	108	107	628.2	107	run3	106	108	auto / auto / auto	Cambridge: lanes
+M05	M05.torpwait	15	710.5	728.5	687.2	56	58	59	687.2	59	run3	56	59	auto / auto / auto	follow the Rheinlanders (chase scene)
+M05	M05.torpfight	16	776.5	792.5	750.2	66	64	63	750.2	63	run3	63	66	auto / auto / auto	torpedo-run scene
+M05	M05.leedshole	17	836.5	839.5	822.2	60	47	72	822.2	72	run3	47	72	auto / auto / auto	fight
+M05	M05.end	18	958.5	971.5	952	122	132	129.8	952	129.8	run3	122	132	auto / auto / auto	Leeds hole -> Leeds (only the marked lane ring works)
+M06	M06.control	1	88.2	82.5	81.3	88.2	82.5	81.3	81.3	81.3	run3	81.3	88.2	auto / auto / auto	Hood base (Hovis), launch + the race intro scenes (75 s)
+M06	M06.racego	2	88.5	82.5	82.2	0.3	0	0.9	82.2	0.9	run3	0	0.9	auto / auto / auto	GO (the race banner)
+M06	M06.racedone	3	158	155.5	150	69.5	73	67.8	150	67.8	run3	67.8	73	hand / hand / hand	the ring race (runners 68-70 s at cruise from GO)
+M06	M06.hood	4	202	196	196	44	40.5	46	196	46	run3	40.5	46	hand / hand / hand	to the Hood
+M06	M06.hoodout	5	228	214	212	26	18	16	212	16	run3	16	26	hand / hand / hand	dock the Hood, base stop, launch
+M06	M06.glorious	6	270.5	254.5	252.2	42.5	40.5	40.2	252.2	40.2	run3	40.2	42.5	auto / auto / auto	to Station Glorious
+M06	M06.gloriousland	7	324	334.5	298.7	53.5	80	46.5	298.7	46.5	run3	46.5	80	hand / hand / hand	Glorious defence (torpedoes at the station), dock on the banner
+M06	M06.gunboat	8	378	394	353	54	59.5	54.3	353	54.3	run3	54	59.5	hand / hand / hand	Glorious stop, Quintaine, to the gunboat
+M06	M06.hole	9	422	418		44	24		379.4	26.4	run3	24	44	hand / hand / missing	the gunboat at 0-60 m
+M06	M06.hostiles	10	452	446	403	30	28		403	23.6	run3	28	30	hand / hand / hand	to the Leeds hole
+M06	M06.holein	11	478	472	427	26	26	24	427	24	run3	24	26	hand / hand / hand	hostiles at the hole
+M06	M06.end	12	543.5	533.5	489	65.5	61.5	62	489	62	run3	61.5	65.5	auto / auto / auto	Leeds hole -> Leeds
+M07	M07.control	1	58.3	65.9	59.1	58.3	65.9	59.1	59.1	59.1	run3	58.3	65.9	auto / auto / auto	Leeds base (the M07 offer, Esc), launch + the intro scenes
+M07	M07.agents	2	58.5	65.9	59.1	0.2	0	0	59.1	0	run3	0	0.2	auto / auto / auto	to the agents
+M07	M07.lane1	3	85.5	86.5	82.7	27	20.6	23.6	82.7	23.6	run3	20.6	27	auto / auto / auto	kill one Agent
+M07	M07.fighters	4	131.5	134.5	131.7	46	48	49	131.7	49	run3	46	49	auto / auto / auto	lanes
+M07	M07.lane2	5	155.5	158.5	155.7	24	24	24	155.7	24	run3	24	24	auto / auto / auto	Stokes fighters
+M07	M07.blockade	6	189.5	201.5		34	43		216.7	61	run3	34	43	auto / auto / missing	lanes to the Tau-31 gate
+M07	M07.gate	7			277.7				277.7	61	run3			missing / missing / auto	the blockade (the cruiser from 150-450 m: no hull loss)
+M07	M07.tau31	8	308.5	322.5	315.7			38	315.7	38	run3	38	38	auto / auto / auto	the Tau-31 gate
+M07	M07.sinclair	9							406.9	91.2	run3			missing / missing / missing	Tau-31 lanes
+M07	M07.tau29	10	524.5	535.5					498	91.2	run3			auto / auto / missing	Sinclair defence in the field
+M07	M07.shinkaku	11	587	597	589.2	62.5	61.5		589.2	91.2	run3	61.5	62.5	hand / hand / hand	Tau-29 hole (shared scripted wait), to Shinkaku, dock
+M07	M07.shinout	12	620	626	622	33	29	32.8	622	32.8	run3	29	33	hand / hand / hand	Shinkaku stop, launch
+M07	M07.fleetdone	13	879.5		881.7	259.5		259.7	881.7	259.7	run3	259.5	259.7	auto / missing / auto	fleet scenes (68 s) + the Schiller fleet fight (fighters in the battleship's lee)
+M07	M07.tau23	14	958.5	970.5	969.7	79		88	969.7	88	run3	79	88	auto / auto / auto	to the Tau-23 hole
+M07	M07.cali	15	1029	1028.5	1026.7	70.5	58	57	1026.7	57	run3	57	70.5	hand / hand / hand	Tau-23 hole, to Kress' base, dock
+M07	M07.kyushuhole	16	1113.5	1118.5	1105.7	84.5	90	79	1105.7	79	run3	79	90	auto / auto / auto	Cali stop, launch, to the Kyushu hole
+M07	M07.end	17	1262.5	1265.5	1250.5	149	147	144.8	1250.5	144.8	run3	144.8	149	auto / auto / auto	Kyushu hole -> Kyushu
+M08	M08.control	1	13.7	13.9	12.3	13.7	13.9	12.3	13.9	13.9	run2	12.3	13.9	auto / auto / auto	Shinagawa base: launch
+M08	M08.lane	2	19	18.5	17.4	5.3	4.6	5.1	18.5	4.6	run2	4.6	5.3	auto / auto / auto	meet Juni and Ozu, to the lane
+M08	M08.waypoint	3	59	59.5	62.4	40	41	45	59.5	41	run2	40	45	auto / auto / auto	lanes
+M08	M08.honshu	4	103	103.5	102.4	44	44	40	103.5	44	run2	40	44	auto / auto / auto	fly at the Honshu hole (Ozu within 9 km of it = the trigger)
+M08	M08.transport	5	136	135.5	140.4	33	32	38	135.5	32	run2	32	38	auto / auto / auto	through the hole
+M08	M08.platforms	6	210	211.5	210.4	74	76	70	211.5	76	run2	70	76	auto / auto / auto	to the transport
+M08	M08.formation	7	283	273.5	275.4	73	62	65	273.5	62	run2	62	73	auto / auto / auto	platforms at 0-20 m (CMs on) + Kusari forces
+M08	M08.enemies	8	452	440.5	443.4	169	167	168	440.5	167	run2	167	169	auto / auto / auto	formation with the transport (scripted pace)
+M08	M08.escort	9	464	448.5	462.4	12	8	19	448.5	8	run2	8	19	auto / auto / auto	enemy ships
+M08	M08.kyoto	10		574.5	590.4		126	128	574.5	126	run2	126	128	missing / auto / auto	escort through the Chugoku hole
+M08	M08.end	11	601	582.5	599.7		8	9.3	582.5	8	run2	8	9.3	auto / auto / auto	Chugoku -> Kyoto, dock
+M09	M09.control	1	14.4	14.5	15.2	14.4	14.5	15.2	14.4	14.4	run1	14.4	15.2	auto / auto / auto	Kyoto base: launch
+M09	M09.tohokugo	2	30.5	30.5	31.7	16.1	16	16.5	30.5	16.1	run1	16	16.5	auto / auto / auto	meet Ozu
+M09	M09.tohoku	3	73.5		74.7	43		43	73.5	43	run1	43	43	auto / missing / auto	to the Tohoku hole
+M09	M09.arch	4	152.5	152.5	153.7	79		79	152.5	79	run1	79	79	auto / auto / auto	Tohoku: to the Blood Dragon hideout
+M09	M09.patrol	5							174.5	22	run1			missing / missing / missing	to the arch, the patrol appears
+M09	M09.patroldown	6	196.5	203.5	182.7				196.5	22	run1			auto / auto / auto	the Tekagi patrol (a kill race against Ozu's dialogue nag)
+M09	M09.gens	7	227.5	241.5	216.7	31	38	34	227.5	31	run1	31	38	auto / auto / auto	to the arch
+M09	M09.tekagi	8	280	296.5	272.7	52.5	55	56	280	52.5	run1	52.5	56	hand / hand / hand	4 generators by hold-and-salvo (runners 36-40 s), dock at Tekagi's base
+M09	M09.forces	9	321.5	347.5	330.7	41.5	51	58	321.5	41.5	run1	41.5	58	auto / auto / auto	Tekagi room scenes (Esc on HDE), launch, to Juni
+M09	M09.chugoku	10	450.5	489.5	547.7	129	142	217	450.5	129	run1	129	217	auto / auto / auto	Rheinland forces, to the Chugoku hole
+M09	M09.kyotogo	11	458.5	493.5		8	4		458.5	8	run1	4	8	auto / auto / missing	Chugoku hole
+M09	M09.end	12	529.5	569.5	631.5	71	76		529.5	71	run1	71	76	auto / auto / auto	Chugoku -> Kyoto
+M10	M10.control	1	21.8	15.4	13.6	21.8	15.4	13.6	21.8	21.8	run1	13.6	21.8	auto / auto / auto	Kyoto base: launch
+M10	M10.sigma	2	59.5	55.5	68.2	37.7	40.1	54.6	59.5	37.7	run1	37.7	54.6	auto / hand / auto	meet Hakkera, to the Sigma-13 hole
+M10	M10.fighters	3	99.5	85	94.2	40	29.5	26	99.5	40	run1	26	40	auto / hand / auto	Sigma-13 hole, to the waypoint
+M10	M10.breakoff	4	155.5	145.5		56	60.5		155.5	56	run1	56	60.5	auto / hand / missing	8 heavy fighters (nearest first, leave on the last kill)
+M10	M10.nbhole	5	218.5	240.5	258.2	63	95		218.5	63	run1	63	95	auto / auto / auto	to the New Berlin hole (wrecks on the way)
+M10	M10.newberlin	6	290.5	318	296.7	72	77.5	38.5	290.5	72	run1	38.5	77.5	hand / hand / hand	New Berlin lanes, dock
+M10	M10.nbout	7	311.5	339.5	318.2	21	21.5	21.5	311.5	21	run1	21	21.5	auto / auto / auto	New Berlin stop, launch
+M10	M10.frankfurt	8	347.5	373.5	353.2	36	34	35	347.5	36	run1	34	36	auto / hand / auto	lanes to the Frankfurt gate
+M10	M10.holstein	9	483	512.5	496.7	135.5	139	143.5	483	135.5	run1	135.5	143.5	hand / hand / hand	Frankfurt lanes (Fischer shed by the lanes), dock Holstein first
+M10	M10.bruchsalgo	10	483	520	507	0	7.5	10.3	483	0	run1	0	10.3	hand / hand / hand	Holstein room scene (Esc on HDE), launch
+M10	M10.wing	11	543.5	578.5	565.2	60.5	58.5	58.2	543.5	60.5	run1	58.2	60.5	auto / auto / auto	to Bruchsal
+M10	M10.bruchsal	12	611.5	672	643.2	68	93.5	78	611.5	68	run1	68	93.5	hand / hand / hand	assault wing, dock Bruchsal
+M10	M10.expdone	13	841	924	894	229.5	252	250.8	841	229.5	run1	229.5	252	hand / hand / hand	escape scene, one experimental ship from inside its hull, wait for Botzler
+M10	M10.hamburg	14	868.5	939.5	924.2	27.5	15.5	30.2	868.5	27.5	run1	15.5	30.2	auto / auto / auto	to the Hamburg hole within 6 km of Von Claussen
+M10	M10.order	15	895.5	966.5	955.2	27	27	31	895.5	27	run1	27	31	auto / auto / auto	Hamburg hole, Order forces
+M10	M10.end	16	914.5	981.5	972.5	19	15	17.3	914.5	19	run1	15	19	auto / auto / auto	dock the Osiris (only once its waypoint exists)
+M11	M11.control	1	59.9	57.2	78.8	59.9	57.2	78.8	59.9	59.9	run1	57.2	78.8	auto / auto / auto	Osiris base: launch
+M11	M11.nyhole	2	130.5	128.5	150.2	70.6	71.3	71.4	130.5	70.6	run1	70.6	71.4	auto / auto / auto	to the New York hole
+M11	M11.enemies	3	136.5	135.5	157.2	6	7	7	136.5	6	run1	6	7	auto / auto / auto	New York hole
+M11	M11.buffalo	4	164.5	170.5		28	35		164.5	28	run1	28	35	auto / auto / missing	enemy ships
+M11	M11.buffaloland	5	219.5	223.5	240.7	55	53		219.5	55	run1	53	55	hand / hand / hand	to Buffalo, dock
+M11	M11.isholego	6	249.5	254.5	272.2	30	31	31.5	249.5	30	run1	30	31.5	auto / auto / auto	Buffalo stop, launch
+M11	M11.ishole	7	263.5	269.5	293.2	14	15	21	263.5	14	run1	14	21	auto / auto / auto	to the in-system hole
+M11	M11.satellite	8	312.5	318.5	334.2	49	49	41	312.5	49	run1	41	49	auto / auto / auto	in-system hole, to the satellite
+M11	M11.rendezvous	9	390	406	416	77.5	87.5	81.8	390	77.5	run1	77.5	87.5	hand / hand / hand	the Navy satellite (torpedo + missile salvo at 0 m)
+M11	M11.zone21	10	464	470	481	74	64	65	464	74	run1	64	74	hand / hand / hand	to Walker
+M11	M11.z21fight	11	513.5	531.5	549.2	49.5	61.5	68.2	513.5	49.5	run1	49.5	68.2	auto / auto / auto	follow Walker into Zone 21 (mine field: hull damage = FAIL)
+M11	M11.ordership	12	569.5	585.5	624.2	56	54	75	569.5	56	run1	54	75	auto / auto / auto	enemy ships
+M11	M11.alaska	13	616.5	632.5	671.2	47	47	47	616.5	47	run1	47	47	auto / auto / auto	defend the Order ships
+M11	M11.prison	14	647.5	672.5	700.2	31	40	29	647.5	31	run1	29	40	auto / auto / auto	Alaska gate
+M11	M11.mitchell	15	731.5	747	774.7	84	74.5	74.5	731.5	84	run1	74.5	84	hand / hand / hand	follow Walker to Mitchell, shed the companions, dock
+M11	M11.order2	16	787.5	803.5	849.2	56	56.5	74.5	787.5	56	run1	56	74.5	auto / auto / auto	prison room scene (Esc on HDE), launch, Walker's death scene
+M11	M11.nygate	17			999.2			150	878.5	91	run1	150	150	missing / missing / auto	defend the Order ships
+M11	M11.osiris	18	969.5						969.5	91	run1			auto / missing / missing	NY gate, Omaha / Buffalo, the Osiris uncloaks
+M11	M11.end	19	978.5	1049.5	1094.5	9			978.5	9	run1	9	9	auto / auto / auto	dock the Osiris
+M12	M12.control	1	72.5	61.7	68.2	72.5	61.7	68.2	68.2	68.2	run3	61.7	72.5	auto / auto / auto	Osiris base, launch + the M12_Osiris scene (41 s)
+M12	M12.banner	2		130	138		68.3	69.8	138	69.8	run3	68.3	69.8	missing / hand / hand	meet Juni and King, formation cruise to the lair, at generator 1 before the banner
+M12	M12.gen1	3	151.5		151.9			13.9	151.9	13.9	run3	13.9	13.9	hand / missing / hand	generator 1 (hold and salvo from the banner)
+M12	M12.gen2	4	183.5			32			182.5	30.6	run3	32	32	hand / missing / missing	cruise hop (charge on the kill), generator 2
+M12	M12.gen3	5	211.5	198.5	209.3	28			209.3	26.8	run3	28	28	hand / hand / hand	cruise hop, generator 3
+M12	M12.core	6	234.5	223.5	222.7	23	25	13.4	222.7	13.4	run3	13.4	25	auto / auto / hand	afterburner to the core entrance, charge before the airlock
+M12	M12.cell	7	243.5	232.5	229.1	9	9	6.4	229.1	6.4	run3	6.4	9	auto / auto / hand	across the core (wheel gap, plate hole), tractor the cell in passing
+M12	M12.exit	8	247.5	235.5	231.4	4	3	2.3	231.4	2.3	run3	2.3	4	auto / auto / hand (auto 242)	to the exit, out of the airlock
+M12	M12.hole	9	296.5	285.5	285.2	49	50	53.8	285.2	53.8	run3	49	53.8	auto / auto / auto	exit -> Omicron Minor hole (the 600 s collapse clock)
+M12	M12.end	10	362.5	349.5	348.5	66	64	63.3	348.5	63.3	run3	63.3	66	auto / auto / auto	Omicron Minor -> Toledo (ignore the Nomads: the 8 km trigger), dock
+M13	M13.control	1	28.1	0.9	12.6	28.1	0.9	12.6	12.6	12.6	run3	0.9	28.1	auto / auto / auto	Toledo base: launch
+M13	M13.battleship	2	77.5	74.5		49.4	73.6		68.8	56.2	run3	49.4	73.6	auto / auto / missing	Nomad interceptors, to the Nomad battleship
+M13	M13.bsdown	3		133.5	113.8		59		113.8	45	run3	59	59	missing / auto / auto	the battleship at 0 m (battery bursts)
+M13	M13.sinclair	4	164	157.5	147		24	33.2	147	33.2	run3	24	33.2	hand / hand / hand	Toledo docking order, dock, relaunch
+M13	M13.osiris	5	299.5		250.8	135.5		103.8	250.8	103.8	run3	103.8	135.5	auto / missing / auto	escort Sinclair to the Osiris
+M13	M13.orillion	6	332	297.5	280	32.5		29.2	280	29.2	run3	29.2	32.5	hand / hand / hand	Osiris stop (refill), launch
+M13	M13.gatefight	7	410.5	374.5	357.8	78.5	77	77.8	357.8	77.8	run3	77	78.5	auto / auto / auto	follow Orillion
+M13	M13.barrier	8	521.5	457.5		111	83		447	89.2	run3	83	111	auto / auto / missing	fight at the Nomad gate, through it
+M13	M13.gens	9	569.5	505.5	491.8	48	48		491.8	44.8	run3	48	48	auto / auto / auto	to the barrier
+M13	M13.sphere	10	627.5	581.5	556.8	58	76	65	556.8	65	run3	58	76	auto / auto / auto	4 barrier generators (hold, slide, battery bursts)
+M13	M13.end	11	751.7	701.7	685.8	124.2	120.2	129	685.8	129	run3	120.2	129	auto / auto / auto	into the sphere, the city generators, the final cutscene

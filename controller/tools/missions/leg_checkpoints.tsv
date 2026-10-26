@@ -1,0 +1,194 @@
+leg	cp	n	ours	par	par_seg	pb	gold	seg_limit	cum_limit	segment
+M01a	M01a.control	1	control	93.8	93.8	104.7	104.7	191	150	Manhattan base (Juni, restock), launch + the M01 space scene (77 s)
+M01a	M01a.wing	2	obj:21830	99.1	5.3	105.7	0.9	50	152	the Order wing appears
+M01a	M01a.wingdown	3	obj:21840	177.1	78	206.3	94.5	166	267	Order wing fight (runners 57-61 s, nearest first)
+M01a	M01a.lane1	4	obj:21875	194.1	17	236.1	29.8	65	302	waypoint cruise (runners 17-18 s straight)
+M01a	M01a.brandt	5	obj:21845	220.1	26	267.9	29.9	71	338	TL146 lane ride
+M01a	M01a.ambush	6	obj:21860	298.1	78	346.6	77.8	156	429	formation with Brandt, lanes to the Rogue ambush
+M01a	M01a.reform	7	obj:21890	354.1	56	416.5	69.8	128	509	Rogue lane ambush fight
+M01a	M01a.lane2	8	obj:21855	380.1	26	443.8	27.3	74	540	re-form with Brandt, to the last lane
+M01a	M01a.end	9	success	408.6	28.5	514.7	61	112	622	last lane + Pittsburgh ring (scripted ring wait 16-24 s)
+M01b	M01b.control	1	control	36.5	36.5	32.1	31.6	82	67	Pittsburgh base: King, restock, launch
+M01b	M01b.xt19	2	obj:22020	121	84.5	116.8	84.6	169	164	formation with Epsilon 1 to station XT-19
+M01b	M01b.wp1	3	obj:22025	221	100	218.4	101.6	220	281	defend XT-19 (fighter wave 1)
+M01b	M01b.wave2	4	obj:22045	244	23	272.6	52.4	99	343	waypoint leg 1 (Beta-4 comm)
+M01b	M01b.wp2	5	obj:22040	308	64	351.8	66	132	435	fighter wave 2
+M01b	M01b.wave3	6	obj:22080	347	39	391.4	39.6	85	480	waypoint leg 2
+M01b	M01b.wp3	7	obj:22085	372	25	415.5	24.1	70	508	fighter wave 3
+M01b	M01b.platforms	8	obj:22050	403	31	455.9	40.4	81	554	waypoint leg 3 -> the Rogue base appears (turn ~120 deg left at the Beta-4 comm)
+M01b	M01b.end	9	obj:22055	457	54	567	106.5	180	682	the two weapon platforms only, base explosion scene, GAME SAVED (our leg flies on to land on Pittsburgh: not timed)
+M02	M02.control	1	control	84.5	84.5	82.1	81.7	169	124	Manhattan base, launch + the M02 space-enter scene (55 s)
+M02	M02.lane1	2	obj:22225	90.5	6	88.5	6.3	53	132	to the first lane with King
+M02	M02.colorado	3	obj:22235	193.5	103	226.2	117	206	290	lanes + the Colorado gate (King must follow)
+M02	M02.scan	4	obj:22240	222.5	29	264.6	37.4	76	334	to the scan area
+M02	M02.cosmo	5	obj:22245	248.5	26	336.6	71.7	128	417	scan at once (Cosmo acts on the scan)
+M02	M02.cosmodone	6	obj:22250	280.5	32	351.2	9.6	81	434	disable Cosmo's engines (~3 shots, no kill) + Cosmo scene
+M02	M02.lane2	7	obj:22255	308.5	28	402.8	51.6	97	493	to the lane at GAME SAVED
+M02	M02.pueblo	8	obj:22256	343.5	35	454.1	49.8	95	552	lanes to Pueblo
+M02	M02.marked	9	obj:22260	417.5	74	544.5	90.4	156	656	Pueblo defence
+M02	M02.rogues	10	obj:22269	483.5	66	649.6	97.8	167	777	fly to the marked ship (go to the fight at cruise)
+M02	M02.ashcroft	11	obj:22262	529.5	46	679.4	28.2	120	811	Rogues fight
+M02	M02.pod	12	obj:22265	551.5	22	799.4	114.8	192	949	Ashcroft: cruise chase + engine kill to fire, he ejects in 6-10 s
+M02	M02.nygate	13	obj:22267	578.5	27	821.5	21.7	72	975	tractor the pod
+M02	M02.nygatein	14	obj:22268	703.5	125	923.9	84	250	1092	the 30 km open cruise to the NY gate
+M02	M02.missouri	15	obj:22270	862.5	159	1109.7	178.9	356	1306	NY gate, lanes, Fort Bush Rogues (attack while neutral), lanes
+M02	M02.end	16	land	875.5	13	1133.8	23.5	59	1334	to Battleship Missouri, dock
+M03	M03.control	1	control	22	22	21.1	20.2	68	54	CA Minor base: launch
+M03	M03.lane	2	obj:22430	33.8	11.8	31.9	10.9	57	67	meet Juni, to the lane
+M03	M03.convoy	3	obj:22435	88.8	55	94.6	62.6	114	139	lanes to the Magellan side
+M03	M03.buoy1	4	obj:22445	143.8	55	153.1	58.3	110	206	to the convoy
+M03	M03.outcasts	5	obj:22455	216.9	73.1	225.5	72.3	142	289	escort past the buoys
+M03	M03.buoy4	6	obj:22510	282.5	65.6	281.5	51.9	118	354	Outcast attack (transport 2's pods = artifacts; transport 1 destroyed = fail)
+M03	M03.willard	7	obj:22465	321.4	38.9	317.1	35.7	80	395	escort to the fourth buoy
+M03	M03.willardland	8	land	404.3	82.9	413.2	95.4	163	505	escort to Willard, dock
+M03	M03.willardout	9	obj:22475	422	17.7	446.9	29.1	77	544	Willard base stop
+M03	M03.valkyries	10	obj:22520	470.8	48.8	500.4	52.6	99	605	to CA Minor until the Valkyries
+M03	M03.valkdown	11	obj:22525	500.8	30	531.5	26.9	105	641	Valkyries fight
+M03	M03.caminor	12	land	545.3	44.5	584.5	53	100	702	to CA Minor: shed Juni (hold cruise / engine kill 3-4.5 km out), dock first
+M03	M03.walker	13	obj:22485	560	14.7	609.3	24.7	71	731	CA Minor base stop, launch
+M03	M03.towillard	14	obj:22490	640.8	80.8	687.2	77.9	162	820	meet Walker
+M03	M03.pirates	15	obj:22495	710.8	70	760.3	73.1	140	904	to Willard with Walker
+M03	M03.end	16	success	762.9	52.1	886	125.7	224	1049	Rheinland pirates at Willard (keep one alive until the bombers spawn), Juni pays
+M04	M04.control	1	control	32.9	32.9	41	40.4	130	77	Manhattan base: launch
+M04	M04.lane1	2	obj:22610	32.9	0	41	0	45	77	meet Juni and King, to the West Point lane
+M04	M04.unity	3	obj:22615	89.5	56.6	97.6	56.5	113	142	the Navy turns at West Point
+M04	M04.lane2	4	obj:22620	158.5	69	169.7	69.1	138	225	fight / escape the Unity
+M04	M04.lane3	5	obj:22625	185.5	27	211.9	32.4	84	274	lane
+M04	M04.ithaca	6	obj:22630	245.5	60	277.9	66	150	350	lanes to Ithaca
+M04	M04.benford	7	obj:22645	257.5	12	306.6	28.7	63	383	waypoints to Benford
+M04	M04.benfordland	8	land	270	12.5	330	11.8	58	409	dock at Benford
+M04	M04.magellan	9	obj:22655	406.5	136.5	449.5	118.2	273	547	Benford room scene (runners watch ~200 s; Esc on HDE), launch, station attack
+M04	M04.gate	10	obj:22660	443.7	37.2	498.2	47.9	92	603	to the Magellan gate: shed Juni (engine kill at ~3 km / hold cruise)
+M04	M04.fp4	11	obj:22665	478.5	34.8	538.9	40	80	650	through the gate
+M04	M04.hunters	12	obj:22670	551.5	73	569.4	25.6	146	685	runners head for Mactan (the hunters meet them there)
+M04	M04.mactan	13	land	573	21.5	702.5	125.8	209	838	bounty hunters (open while neutral), dock Mactan
+M04	M04.wing	14	obj:22685	656.5	83.5	775.5	72.5	167	922	Mactan base stop, launch
+M04	M04.hole	15	obj:22690	693.5	37	821.1	43.4	86	974	Rheinland assault wing
+M04	M04.leeds	16	obj:22700	724.5	31	874.8	51.8	98	1036	to the Leeds hole alone, through
+M04	M04.end	17	land	812.5	88	970.3	92.8	182	1146	Leeds hole -> Leeds (lanes, ring)
+M05	M05.control	1	control	9.4	9.4	29.3	27.4	97	64	Cambridge base: launch
+M05	M05.lane1	2	obj:22810	13.2	3.8	33.6	4.2	49	69	meet Juni, to the lane
+M05	M05.lane2	3	obj:22815	76.2	63	99.5	65.8	126	144	lanes
+M05	M05.gate	4	obj:22820	105.2	29	142.6	43.1	85	194	to the Omega-3 gate
+M05	M05.o3lane	5	obj:22825	134.2	29	178.1	35.4	74	235	Omega-3 gate (busy: 12-13 s queue in all runs)
+M05	M05.sprague	6	obj:22830	196.2	62	244.8	64.9	128	312	Freeport 1 lanes
+M05	M05.spraguefight	7	obj:22835	232.2	36	319.4	73.4	130	397	to Sprague
+M05	M05.spragueland	8	land	289.2	57	396.8	63.2	115	486	Sprague fight, dock
+M05	M05.baxter	9	obj:22855	358.2	69	472.2	75.3	232	573	Sprague room scenes (Esc on HDE), flee, to the waypoint coordinates
+M05	M05.baxterland	10	land	369.2	11	505.9	31.2	67	612	to Baxter, dock
+M05	M05.baxterfight	11	obj:22860	386	16.8	521.5	15.5	64	630	Baxter stop, launch into the Rheinland wing
+M05	M05.cambhole	12	obj:22865	484.2	98.2	637.3	111.3	196	763	post-Baxter fight: fighters first, gunboat last at point blank, leave on the kill
+M05	M05.cambholein	13	obj:22867	521.2	37	680.4	41.5	90	812	to the Cambridge hole
+M05	M05.follow	14	obj:22875	628.2	107	822.2	140.6	231	976	Cambridge: lanes
+M05	M05.torpwait	15	obj:22910	687.2	59	889.1	67	120	1052	follow the Rheinlanders (chase scene)
+M05	M05.torpfight	16	obj:22880	750.2	63	957.6	68.2	132	1131	torpedo-run scene
+M05	M05.leedshole	17	obj:22885	822.2	72	1025.2	62.2	144	1209	fight
+M05	M05.end	18	land	952	129.8	1202.7	165.3	268	1413	Leeds hole -> Leeds (only the marked lane ring works)
+M06	M06.control	1	control	81.3	81.3	92.9	92.1	176	137	Hood base (Hovis), launch + the race intro scenes (75 s)
+M06	M06.racego	2	obj:23015	82.2	0.9	92.9	0	46	137	GO (the race banner)
+M06	M06.racedone	3	obj:23025	150	67.8	162.4	69.5	146	217	the ring race (runners 68-70 s at cruise from GO)
+M06	M06.hood	4	obj:23146	196	46	207.4	45	92	269	to the Hood
+M06	M06.hoodout	5	obj:23040	212	16	236.5	24.9	71	302	dock the Hood, base stop, launch
+M06	M06.glorious	6	obj:23045	252.2	40.2	288.8	52.3	98	362	to Station Glorious
+M06	M06.gloriousland	7	land	298.7	46.5	360.5	71.7	160	445	Glorious defence (torpedoes at the station), dock on the banner
+M06	M06.gunboat	8	obj:23125	353	54.3	425.7	60.3	119	520	Glorious stop, Quintaine, to the gunboat
+M06	M06.hole	9	obj:23055	379.4	26.4	493.8	68.1	122	598	the gunboat at 0-60 m
+M06	M06.hostiles	10	obj:23070	403	23.6	531.5	37	76	641	to the Leeds hole
+M06	M06.holein	11	obj:23065	427	24	571.5	40.1	80	687	hostiles at the hole
+M06	M06.end	12	success	489	62	682.1	104.9	177	814	Leeds hole -> Leeds
+M07	M07.control	1	control	59.1	59.1	64.9	64.7	132	105	Leeds base (the M07 offer, Esc), launch + the intro scenes
+M07	M07.agents	2	obj:23220	59.1	0	64.9	0	45	105	to the agents
+M07	M07.lane1	3	obj:23225	82.7	23.6	93.2	24.8	72	137	kill one Agent
+M07	M07.fighters	4	obj:23230	131.7	49	147	51.5	98	199	lanes
+M07	M07.lane2	5	obj:23349	155.7	24	192.3	40.5	81	251	Stokes fighters
+M07	M07.blockade	6	obj:23240	216.7	61	248.3	53.4	100	316	lanes to the Tau-31 gate
+M07	M07.gate	7	obj:23245	277.7	61	360.9	99.2	169	445	the blockade (the cruiser from 150-450 m: no hull loss)
+M07	M07.tau31	8	obj:23250	315.7	38	413.1	46.8	90	505	the Tau-31 gate
+M07	M07.sinclair	9	obj:23270	406.9	91.2	600.2	187.1	301	720	Tau-31 lanes
+M07	M07.tau29	10	obj:23280	498	91.2	715.7	110.3	185	853	Sinclair defence in the field
+M07	M07.shinkaku	11	land	589.2	91.2	839.4	114	191	995	Tau-29 hole (shared scripted wait), to Shinkaku, dock
+M07	M07.shinout	12	obj:23295	622	32.8	875.2	35.8	78	1036	Shinkaku stop, launch
+M07	M07.fleetdone	13	obj:23305	881.7	259.7	1193	317.9	519	1402	fleet scenes (68 s) + the Schiller fleet fight (fighters in the battleship's lee)
+M07	M07.tau23	14	obj:23315	969.7	88	1297.7	98.7	176	1522	to the Tau-23 hole
+M07	M07.cali	15	land	1026.7	57	1401.2	103.6	175	1641	Tau-23 hole, to Kress' base, dock
+M07	M07.kyushuhole	16	obj:23340	1105.7	79	1485.1	83.9	180	1738	Cali stop, launch, to the Kyushu hole
+M07	M07.end	17	land	1250.5	144.8	1669.3	184	298	1950	Kyushu hole -> Kyushu
+M08	M08.control	1	control	13.9	13.9	22.2	21.7	59	56	Shinagawa base: launch
+M08	M08.lane	2	obj:22225	18.5	4.6	27.4	5.2	50	62	meet Juni and Ozu, to the lane
+M08	M08.waypoint	3	obj:23420	59.5	41	72.4	44.5	90	113	lanes
+M08	M08.honshu	4	obj:23425	103.5	44	132.2	55.1	103	182	fly at the Honshu hole (Ozu within 9 km of it = the trigger)
+M08	M08.transport	5	obj:23430	135.5	32	173.2	41	83	229	through the hole
+M08	M08.platforms	6	obj:23433	211.5	76	247.9	74.3	152	315	to the transport
+M08	M08.formation	7	obj:23437	273.5	62	348.9	101	172	431	platforms at 0-20 m (CMs on) + Kusari forces
+M08	M08.enemies	8	obj:24030	440.5	167	465.3	108.7	338	565	formation with the transport (scripted pace)
+M08	M08.escort	9	obj:23440	448.5	8	500.4	30.7	66	605	enemy ships
+M08	M08.kyoto	10	obj:23445	574.5	126	665.2	160.1	260	795	escort through the Chugoku hole
+M08	M08.end	11	success	582.5	8	676.6	9.1	54	808	Chugoku -> Kyoto, dock
+M09	M09.control	1	control	14.4	14.4	32.8	31.8	68	68	Kyoto base: launch
+M09	M09.tohokugo	2	obj:23620	30.5	16.1	49	16.2	62	86	meet Ozu
+M09	M09.tohoku	3	obj:23625	73.5	43	108.3	59.3	109	155	to the Tohoku hole
+M09	M09.arch	4	obj:23635	152.5	79	203.9	93	160	264	Tohoku: to the Blood Dragon hideout
+M09	M09.patrol	5	obj:23690	174.5	22	228.3	23.2	67	293	to the arch, the patrol appears
+M09	M09.patroldown	6	obj:23695	196.5	22	302.2	57.6	106	378	the Tekagi patrol (a kill race against Ozu's dialogue nag)
+M09	M09.gens	7	obj:23640	227.5	31	340.1	28.4	83	421	to the arch
+M09	M09.tekagi	8	land	280	52.5	436.7	94	161	532	4 generators by hold-and-salvo (runners 36-40 s), dock at Tekagi's base
+M09	M09.forces	9	obj:23680	321.5	41.5	488.7	51.8	116	592	Tekagi room scenes (Esc on HDE), launch, to Juni
+M09	M09.chugoku	10	obj:23650	450.5	129	616.8	122.1	434	739	Rheinland forces, to the Chugoku hole
+M09	M09.kyotogo	11	obj:23655	458.5	8	635.1	18.3	53	760	Chugoku hole
+M09	M09.end	12	success	529.5	71	724.2	88.5	153	863	Chugoku -> Kyoto
+M10	M10.control	1	control	21.8	21.8	32	31.5	67	67	Kyoto base: launch
+M10	M10.sigma	2	obj:23825	59.5	37.7	71	38.9	109	112	meet Hakkera, to the Sigma-13 hole
+M10	M10.fighters	3	obj:23832	99.5	40	113.8	39.6	85	161	Sigma-13 hole, to the waypoint
+M10	M10.breakoff	4	obj:23833	155.5	56	174.3	57.8	121	230	8 heavy fighters (nearest first, leave on the last kill)
+M10	M10.nbhole	5	obj:23835	218.5	63	242.2	67.7	190	309	to the New Berlin hole (wrecks on the way)
+M10	M10.newberlin	6	land	290.5	72	306.8	61.4	155	383	New Berlin lanes, dock
+M10	M10.nbout	7	obj:23860	311.5	21	340.2	28.6	66	421	New Berlin stop, launch
+M10	M10.frankfurt	8	obj:23865	347.5	36	383.4	42.7	84	471	lanes to the Frankfurt gate
+M10	M10.holstein	9	land	483	135.5	546.2	162.8	287	658	Frankfurt lanes (Fischer shed by the lanes), dock Holstein first
+M10	M10.bruchsalgo	10	obj:23880	483	0	546.2	0	55	658	Holstein room scene (Esc on HDE), launch
+M10	M10.wing	11	obj:23885	543.5	60.5	612.3	64.9	121	734	to Bruchsal
+M10	M10.bruchsal	12	land	611.5	68	702.6	72.6	187	838	assault wing, dock Bruchsal
+M10	M10.expdone	13	obj:23915	841	229.5	992.1	289.5	504	1171	escape scene, one experimental ship from inside its hull, wait for Botzler
+M10	M10.hamburg	14	obj:23918	868.5	27.5	1055.5	59.8	110	1244	to the Hamburg hole within 6 km of Von Claussen
+M10	M10.order	15	obj:23925	895.5	27	1092.7	35.7	76	1287	Hamburg hole, Order forces
+M10	M10.end	16	land	914.5	19	1124.3	28.1	64	1323	dock the Osiris (only once its waypoint exists)
+M11	M11.control	1	control	59.9	59.9	24.7	24.5	158	58	Osiris base: launch
+M11	M11.nyhole	2	obj:24025	130.5	70.6	84.9	60.2	143	128	to the New York hole
+M11	M11.enemies	3	obj:24030	136.5	6	119	32.1	68	167	New York hole
+M11	M11.buffalo	4	obj:24035	164.5	28	182.9	47.5	91	240	enemy ships
+M11	M11.buffaloland	5	land	219.5	55	248.1	65.2	118	315	to Buffalo, dock
+M11	M11.isholego	6	obj:24045	249.5	30	294.3	46.1	89	368	Buffalo stop, launch
+M11	M11.ishole	7	obj:24125	263.5	14	328.8	34.1	71	408	to the in-system hole
+M11	M11.satellite	8	obj:24055	312.5	49	391.6	62.6	114	480	in-system hole, to the satellite
+M11	M11.rendezvous	9	obj:24060	390	77.5	480.1	78.5	175	582	the Navy satellite (torpedo + missile salvo at 0 m)
+M11	M11.zone21	10	obj:24065	464	74	540.8	60.6	148	652	to Walker
+M11	M11.z21fight	11	obj:24070	513.5	49.5	604.8	64	136	726	follow Walker into Zone 21 (mine field: hull damage = FAIL)
+M11	M11.ordership	12	obj:24075	569.5	56	672.6	66	150	803	enemy ships
+M11	M11.alaska	13	obj:24080	616.5	47	719.4	46.8	94	857	defend the Order ships
+M11	M11.prison	14	obj:24085	647.5	31	755.4	36	85	899	Alaska gate
+M11	M11.mitchell	15	land	731.5	84	829.2	73.8	168	984	follow Walker to Mitchell, shed the companions, dock
+M11	M11.order2	16	obj:24107	787.5	56	886.5	57.3	149	1049	prison room scene (Esc on HDE), launch, Walker's death scene
+M11	M11.nygate	17	obj:24110	878.5	91	1019.9	133.2	300	1203	defend the Order ships
+M11	M11.osiris	18	obj:24120	969.5	91	1155.8	131.6	217	1359	NY gate, Omaha / Buffalo, the Osiris uncloaks
+M11	M11.end	19	success	978.5	9	1169.2	12.1	54	1375	dock the Osiris
+M12	M12.control	1	control	68.2	68.2	58.7	58.1	145	98	Osiris base, launch + the M12_Osiris scene (41 s)
+M12	M12.banner	2	obj:24223	138	69.8	129.9	69.8	140	179	meet Juni and King, formation cruise to the lair, at generator 1 before the banner
+M12	M12.gen1	3	kill:1	151.9	13.9	142.6	11.9	59	194	generator 1 (hold and salvo from the banner)
+M12	M12.gen2	4	kill:2	182.5	30.6	172.8	28.9	77	229	cruise hop (charge on the kill), generator 2
+M12	M12.gen3	5	kill:3	209.3	26.8	204.6	24.8	73	265	cruise hop, generator 3
+M12	M12.core	6	obj:24230	222.7	13.4	221.8	14.3	70	285	afterburner to the core entrance, charge before the airlock
+M12	M12.cell	7	obj:24240	229.1	6.4	233.4	11.2	54	298	across the core (wheel gap, plate hole), tractor the cell in passing
+M12	M12.exit	8	obj:24245	231.4	2.3	235.8	1.8	49	301	to the exit, out of the airlock
+M12	M12.hole	9	obj:24260	285.2	53.8	290.3	54.2	108	364	exit -> Omicron Minor hole (the 600 s collapse clock)
+M12	M12.end	10	success	348.5	63.3	354.4	63.6	132	438	Omicron Minor -> Toledo (ignore the Nomads: the 8 km trigger), dock
+M13	M13.control	1	control	12.6	12.6	18.5	17.4	73	51	Toledo base: launch
+M13	M13.battleship	2	obj:24425	68.8	56.2	67.9	49.3	147	108	Nomad interceptors, to the Nomad battleship
+M13	M13.bsdown	3	obj:24420	113.8	45	213.8	87.6	151	276	the battleship at 0 m (battery bursts)
+M13	M13.sinclair	4	obj:24440	147	33.2	271.5	41.1	82	342	Toledo docking order, dock, relaunch
+M13	M13.osiris	5	obj:24445	250.8	103.8	403.2	131.7	271	494	escort Sinclair to the Osiris
+M13	M13.orillion	6	obj:24455	280	29.2	437.4	34.2	78	533	Osiris stop (refill), launch
+M13	M13.gatefight	7	obj:24460	357.8	77.8	515.8	78.4	157	623	follow Orillion
+M13	M13.barrier	8	obj:24470	447	89.2	589	73.2	222	707	fight at the Nomad gate, through it
+M13	M13.gens	9	obj:24485	491.8	44.8	636.5	47.2	96	762	to the barrier
+M13	M13.sphere	10	obj:24475	556.8	65	781.4	112.6	189	929	4 barrier generators (hold, slide, battery bursts)
+M13	M13.end	11	land	685.8	129	1192.3	242.6	384	1401	into the sphere, the city generators, the final cutscene

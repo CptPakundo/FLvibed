@@ -1,0 +1,112 @@
+# How the game builds NPC radio chatter from voice pieces: one row per builder function in Content.dll
+# (HDE, static reading of the disassembly; templates session 1, triggers session 2, nothing traced in game).
+# The pieces are appended in this order and played back to back by the comm system. Tokens:
+#   regex          one of the speaker's own lines whose id matches (case-insensitive); "_\d+" = the random
+#                  variant (_01, _02, ...) the game picks among the ones the voice has; "_[ps]" = plural
+#                  ("we": the speaker's formation has more than one ship) or singular ("I"); "a|b" = the
+#                  game picks one by situation (the trigger column says how)
+#   @full          a ship's full name: faction short name + formation designation + number + dash + number
+#                  ("Liberty Navy Alpha 1-2"); @full: without the faction (the speaker naming itself)
+#   @short         faction short name + formation designation + number ending the sentence ("Alpha 1")
+#                  Faction piece = the ship's faction_prop.ini msg_id_prefix + "_short"; a ship whose group
+#                  has no faction_prop entry (the player) gets gcs_refer_faction_player_short.
+#   @mbid          a hailed ship by type: gcs_dhail_mbid_trader(s)/patrol(lers)_leg/_ill
+#   ^base-         a base's name ending the sentence; ^dest- the ship's job target: a base, or for a jump
+#                  gate/jump hole the system it leads to
+#   ^good          a commodity name; ^ship a ship type name; ^number / ^number- a number (- ends it);
+#                  numbers above 20 are said digit by digit (gcs_misc_number_2 + gcs_misc_number_1)
+# Who speaks: the NPC whose voice says the pieces; names in @/^ slots are said by the same voice.
+# builder = the function's real entry point (session 1 listed some jump tables / inner labels instead).
+# trigger: chatter event kind (k1..k25) and the conditions, read from the code; see
+#   FREELANCER_RE.md (this folder) "Chatter triggers" for the event sources, cooldowns and gates
+#   that apply to every row. "role" = the voices_*.ini [mVoiceProp] supports_roles entry the speaker's voice must
+#   have, else the line and the rest of its conversation are dropped. "NPC" = a non-player ship in
+#   Content's ship list (the player's ship never speaks chatter); "ambient" = owned by the global
+#   population controller (inferred: not a mission-scripted ship). (?) = not certain, needs a trace.
+# Subtitle joining rule (the game shows no text; the subtitle runtime must do this, user's rule session 2):
+#   pieces the game joins with others (rows here with more than one piece, the GCS base-speech pairs,
+#   names and numbers) carry no sentence-ending "." ("?", "!", "..." and the joining comma of "Welcome to
+#   Harris," stay); a generic line played on its own (a one-piece comm, a taunt, a bar line, Trent's
+#   reply) is a whole sentence and keeps its end mark. The runtime joins a comm's pieces
+#   with single spaces, writes "<number> dash <number>" as "1-2", capitalizes the first letter of each
+#   sentence, and ends a sentence with "." unless it already ends with ? ! ... A sentence ends after the
+#   last piece and after a "-" piece that a new sentence follows (not one a ^name completes: "...headed
+#   to" + Fuchu Prison). Story/mission (dx_) lines and the Neural Net voice are whole subtitles as stored.
+builder	template	situation	trigger
+06ED6DD0	gcs_misc_thisis\+ @full gcs_misc_to ^base- gcs_dockrequest_request_\d+\+ gcs_dockrequest_(todock|tomoor|toland)-	an NPC ship asks a base for docking ("This is Liberty Navy Alpha 1-2 to Planet Manhattan. I'm requesting to dock.")	k2 docking (12 s cooldown per 10 km): an ambient NPC requests to dock at a station, planet or capital ship (not a gate or lane); said before the base's answer; never for the player. Role dockrequest_docker. Dock piece by docking point type: berth = todock, small/medium/large moor = tomoor, docking ring (planets) = toland, type 2 = no piece.
+06ED72E0	gcs_dockrequest_responsehostile_\d+-	a base answers a hostile ship's docking request	k2 base answer with response code 0 (hostile docker, as decided by 0x06F6D820 (?)); also to the player. Role dockrequest_dock.
+06ED74D0	gcs_misc_ack_\d+- gcs_dockrequest_yourrequest\+ gcs_dockrequest_(todock|tomoor|toland) gcs_dockrequest_granted_\d+- gcs_dockrequest_proceed_\d+\+ gcs_dockrequest_(todock|tomoor|toland)_number ^number-	a base grants docking with a docking ring / berth number	k2 base answer, response 4 (proceed to dock; the code then calls pub::SpaceObj::Dock) and docking point type is not 6; number = the docking point's index (1-20 one piece, above 20 digit by digit); also answers the player. Role dockrequest_dock.
+06ED74D0	gcs_misc_ack_\d+- gcs_dockrequest_yourrequest\+ gcs_dockrequest_toland gcs_dockrequest_granted_\d+- gcs_dockrequest_proceed_\d+\+ gcs_dockrequest_toland-	a planet grants landing (no number)	k2 base answer, response 4 and docking point type 6 (a planet's docking ring): no number. Role dockrequest_dock.
+06ED7DC0	gcs_misc_ack_\d+- gcs_dockrequest_standby_\d+- gcs_dockrequest_delayedreason_\d+- gcs_dockrequest_willbecleared_\d+-	a base delays a docking request	k2 base answer, response 3 (docking point in use: the ship is queued). Role dockrequest_dock.
+06ED80D0	gcs_misc_ack_\d+- gcs_dockrequest_yourrequest\+ gcs_dockrequest_(todock|tomoor|toland) gcs_dockrequest_denied_\d+- gcs_dockrequest_nofit_\d+-	a base denies a docking request (nofit: the ship is too big)	k2 base answer, response 2 (dock denied, the ship does not fit). Role dockrequest_dock.
+06ED8450	@full gcs_dockrequest_nowcleared_\d+\+ gcs_dockrequest_(todock|tomoor|toland)-	a base clears a waiting ship	k2 posted by the docking queue (0x06F6E9D0) when a queued ship's request now gets response 4: this line instead of the full grant; also to the player. Role dockrequest_dock.
+06ED8810	gcs_dockrequest_jumpgateopen_\d+- gcs_dockrequest_goingto_\d+\+ ^dest-	a convoy leader at an open jump gate	k2 with a jump gate or jump hole as target, response 4: an ambient NPC formation leader with at least one wingman; ^dest- = the system the gate leads to. Role dockrequest_docker.
+06ED8AC0	gcs_dockrequest_jumpgatedelayed_\d+- ^dest-	a convoy leader waiting at a busy jump gate	k2 jump gate/hole, response other than 4 (gate busy): same speaker as jumpgateopen. Role dockrequest_docker.
+06ED8D20	gcs_dockrequest_jumpgateopenafterdelay_\d+-	the jump gate opens after the wait	k2 jump gate/hole, response 4 from the docking queue (the leader had waited): said first, then the jumpgateopen line. Role dockrequest_docker.
+06ED8F10	gcs_dockrequest_tradelanestart_\d+-	a convoy leader entering a trade lane	k2 posted by the trade lane request handler (0x06F6FCB0, response 4) for a trade lane ring: an ambient NPC formation leader with at least one wingman enters a lane. Role dockrequest_docker.
+06ED9100	gcs_dockrequest_thisourstop_\d+- gcs_dockrequest_thankshelp_\d+-	a convoy leader arriving at its destination	k2 normal docking: an ambient NPC formation leader with at least one wingman, said before its own docking request (the code does not check that the base is the job's destination (?)). Role dockrequest_docker.
+06ED9330	@full gcs_misc_thisis\+ ^base- gcs_docklaunch_clear_(berth|moor|ring)_\d+- gcs_misc_wellwish_\d+-	a base clears a launching ship ("Alpha 1-2, this is Manhattan. Docking ring clear. Good luck.")	k3 launch (15 s cooldown per 10 km): any ship launches from a base, the player too; piece by docking point type: 1 berth, 3-5 moor, 6 ring (planets), 2 none. An NPC launcher then answers with gcs_misc_ack. Role dockrequest_dock.
+06ED97E0	gcs_dockhail_dock_incoming\+ ^ship @mbid gcs_misc_thisis\+ ^base- gcs_dockhail_dock_hailmethod_\d+- gcs_dockhail_dock_idreq_\d+-	a base hails an approaching ship	k1 dock hail (15 s cooldown per 10 km): an ambient NPC that is not a formation follower comes near a base (engine message 0x2D, then a 30 s timer (?)); the base's attitude to it is above -0.6; 50 % this variant. Never for the player. Role hail_dock.
+06ED97E0	gcs_misc_thisis\+ ^base- gcs_misc_to ^ship @mbid gcs_dockhail_dock_idreq_\d+-	a base asks an approaching ship to identify	k1 as above, the other 50 %. Role hail_dock.
+06ED97E0	gcs_dockhail_dock_incoming\+ ^ship @mbid gcs_dhail_nopermission_\d+-	a base refuses an approaching ship	k1 as above but the base's attitude to the ship is -0.6 or lower (hostile). Role hail_dock.
+06ED9F70	gcs_dockhail_dock_transreceived_\d+\+ @short gcs_dockhail_dock_whereheaded_\d+\+	a base acknowledges an identification and asks where the ship is headed	k1 non-hostile, after the ship's datasubmit line. Role hail_dock.
+06EDA290	gcs_misc_thisis\+ @short gcs_dockhail_hailee_datasubmit_\d+-	a hailed ship sends its data	k1 non-hostile: the hailed ship answers the base's hail. Role hail_hailee.
+06EDA5A0	gcs_dhail_angry_response_\d+-	a hailed ship answers angrily	k1 hostile (attitude -0.6 or lower): the ship answers the base's refusal. Role hail_hailee.
+06EDA790	gcs_misc_goingto_[ps]_\d+\+ ^dest-	a ship says where it is going	k1 (after transreceived) and k5 (after the hail answer): job 3 or 4 (patrol) after its idhome line (k5 job 4: idhome only); job 2 (trader) only when the carrying/wanttoget line could not be built. Role hail_hailee.
+06EDAB00	gcs_patrol_idhome_[ps]_\d+\+ ^base-	a patrol says where it is based	k1 / k5 for a ship whose job is 3 or 4 (patrol): first line after the exchange. Role hail_hailee.
+06EDAE70	gcs_patrol_finished_[ps]_\d+-	a patrol reports it has finished its waypoints	k1 / k5, job 3 (waypoint patrol), after goingto: no waypoints left. Role hail_hailee.
+06EDAE70	gcs_patrol_(ihaveonly|ihave|wehaveonly|wehave)\+ ^number gcs_patrol_morewps?togo-	a patrol reports how many waypoints remain	k1 / k5, job 3, N waypoints left (N > 0): I/we by formation size; "only" and "morewptogo" when N = 1, "morewpstogo" otherwise. Role hail_hailee.
+06EDB260	gcs_trade_carrying_[ps]_\d+\+ ^good gcs_misc_to ^base-	a trader says what it carries and where to	k1 / k5, job 2 (trader), after trade idhome: the job has a cargo good; ^base- = its destination. Role hail_hailee.
+06EDB260	gcs_trade_wanttoget_[ps]_\d+\+ ^good gcs_misc_from ^base-	a trader says what it wants to get and where from	k1 / k5, job 2, no cargo good but a wanted good. Role hail_hailee.
+06EDB720	gcs_trade_idhome_[ps]_\d+\+ ^base-	a trader says where its convoy is from	k1 / k5, job 2 (trader): first line after the exchange. Role hail_hailee.
+06EDBA90	gcs_combat_deathsympathy_\d+-	a wingman died	k7 ship destroyed (40 %, no cooldown): the victim's formation leader speaks (50 %, when the killer brag did not happen and the leader is not the victim). Role combat_lev_1 (or _3).
+06EDBC80	gcs_misc_thisis\+ @full: gcs_combat_takinglead_\d+-	a ship takes the formation lead	k16 (3 s cooldown): the formation leader is gone and the AI picks a new leader (0x06F5E680); the new leader speaks. Role combat_lev_2 (or _3).
+06EDBF60	gcs_combat_scream_\d+-	a pilot's ship is destroyed	k7 ship destroyed (40 %): the victim, 50 % when the killer did not brag, or always when it leads its own formation. Role combat_lev_1 (or _3) for ships, combat_dock for a base.
+06EDC180	gcs_combat_brag_\d+-	a pilot destroyed its target	k7: the killer, 50 % when both killer and victim are NPCs, always when only the killer is (kill message 0x39: only when the killer disliked the victim, feelings below -0.2). Role combat_lev_1 (or _3).
+06EDC370	gcs_combat_taking_damage(_worst)?_\d+-	a pilot takes (heavy) damage	k6 hit (5 % chance, 6 s cooldown): the damaged ship (hull below 100 %, cause types 2-5 or 7): 50 % when the attacker is a ship, always when it is a base or other object; _worst when its hull is below 49 %. Role combat_lev_1 (or _3).
+06EDC5D0	gcs_combat_inflicting_damage(_worst)?_\d+-	a pilot damages (badly) its target	k6 hit: the attacking ship, 50 % (both ships); _worst when the target's hull is below 33 %. Role combat_lev_1 (or _3).
+06EDC800	gcs_combat_insights_\d+-	an enemy has the pilot in its sights	k8 ship_in_sights (6 s cooldown): the ship being aimed at; 50 % when both are NPCs, always when the aimer is not one. Role combat_lev_1 (or _3).
+06EDC9F0	gcs_combat_hasinsights_\d+-	the pilot has an enemy in its sights	k8: the aiming ship; 50 % when both are NPCs, always when the target is not one (the player). Role combat_lev_1 (or _3).
+06EDCBE0	gcs_combat_rejoiningform_\d+-	a pilot rejoins formation	k10 combat over (3 s cooldown), notification type 3: a formation follower whose leader's ship id is not a multiple of 5. Role combat_lev_1 (or _3).
+06EDCDD0	gcs_combat_order_disengage_\d+- gcs_combat_announce_allclear_\d+-	a leader calls off the fight	k10: an ambient formation leader with wingmen whose ship id is a multiple of 5; then resume_trade/resume_patrol by job and 50 % every non-player wingman acks. Role combat_lev_1 (or _3).
+06EDD000	gcs_combat_announce_allclear_\d+-	the area is clear	k10 in every other case: a ship without wingmen, a follower (type 4) whose leader's id is not a multiple of 5, or a leader that is not ambient or whose id is not a multiple of 5. Role combat_lev_1 (or _3).
+06EDD1F0	gcs_combat_resume_trade_\d+\+ gcs_misc_to ^base-	a trader resumes its route after a fight	k10 after order_disengage, job 2 (trader). Role combat_lev_3 only.
+06EDD500	gcs_combat_resume_patrol_\d+-	a patrol resumes after a fight	k10 after order_disengage, job 3 or 4 (patrol). Role combat_lev_2 (or _3).
+06EDD6F0	gcs_combat_engaging_\d+\+ @short	a pilot engages a target, naming it ("I'm taking on Rogue Alpha 1")	k9 combat starts (3 s cooldown), ship with at least one wingman: a follower whose leader's id is not a multiple of 5, or a leader whose own id is not a multiple of 5; @short = the target. Solo ships say nothing. Role combat_lev_2 (or _3).
+06EDDA20	gcs_combat_noengaging_\d+\+ gcs_combat_noengagereason_(tootough|toofar)_01-	a pilot declines to engage, with a reason	k11 won't engage (3 s cooldown), same speakers as engaging (after its enemysighted line); notification type 2 = tootough, 1 = toofar. Role combat_lev_2 (or _3).
+06EDDC10	gcs_combat_askengage_\d+-	a pilot asks to engage	k9 / k11 when the leader's id is a multiple of 5: 50 %, the first non-player wingman (else the leader says enemysighted). Role combat_lev_2 (or _3).
+06EDDE00	gcs_combat_order_engage_\d+-	a leader orders the attack	k9, leader whose id is a multiple of 5, after askengage or enemysighted; then 50 % every non-player wingman acks. Role combat_lev_1 (or _3).
+06EDDFF0	gcs_combat_order_noengage_\d+- gcs_combat_noengagereason_(tootough|toofar)_01-	a leader forbids the attack, with a reason	k11, leader whose id is a multiple of 5, after askengage or enemysighted; reason as noengaging; then 50 % wingman acks. Role combat_lev_2 (or _3).
+06EDE1E0	gcs_combat_announce_enemysighted_\d+-	a pilot sights enemies	k9 / k11: the leader (id multiple of 5) when askengage was not picked or no wingman can ask; k11 also before every noengaging line. Role combat_lev_1 (or _3).
+06EDE3D0	@short gcs_combat_askforhelp_\d+-	a pilot asks a named ship for help	k12 help (15 s cooldown): an NPC within 5 km decides to join a fight on another NPC's side (0x06F70580); 50 %: the helped ship calls the helper by name, then the helper's comingin. Role combat_lev_2 (or _3).
+06EDE6C0	gcs_misc_ack_\d+- gcs_combat_comingin_[ps]_\d+-	a ship answers a call for help	k12 after askforhelp: the helper (not a formation follower). Role combat_lev_2 (or _3).
+06EDE9B0	gcs_misc_thisis\+ @short gcs_misc_to @short gcs_combat_offerhelp_\d+-	a ship offers help to a named ship	k12 the other 50 %: the helper names itself and the helped ship. Role combat_lev_2 (or _3).
+06EDEDD0	gcs_misc_attentionallwingmen_\d+\+ gcs_combat_order_retreattowards_\d+\+ ^dest- gcs_combat_fleereason_(other|noweapons|damaged|tough)_\d+-	a leader orders a retreat to a place	k14 flee (3 s cooldown): an ambient formation leader with wingmen whose id is a multiple of 5; flee reason 0 = tough, 2 = damaged, 3 = noweapons, other = other; then 50 % wingman acks. Role combat_lev_3 only.
+06EDF160	gcs_combat_announce_flee_\d+- gcs_combat_fleereason_(other|noweapons|damaged|tough)_\d+-	a pilot flees, with the reason	k14 every other fleeing NPC: solo ships, followers (when their leader is not already handling it (?)), leaders that are not ambient or whose id is not a multiple of 5; reason as above. Role combat_lev_2 (or _3).
+06EDF3C0	gcs_combat_announce_ff_\d+-	friendly fire	k15 (3 s cooldown): a friendly NPC hit by the player (first stage of the friendly-fire handler 0x06F6FF90 (?)); the hit ship speaks. Role combat_lev_1 (or _3).
+06EDF5B0	gcs_combat_announce_combatdrift_\d+-	the fight drifts too far from the route	k13 combat_drift_event (3 s cooldown): the drifting ship. Role combat_lev_1 (or _3).
+06EDF7A0	gcs_misc_ack_\d+-	acknowledgement	a non-player wingman after its leader's order (k9, k10, k11, k14: 50 %, all wingmen in turn); an NPC after the base cleared its launch (k3). Role misc_chatter.
+06EDF950	gcs_fidget_traderumor_\d+-	idle trader talk (rumor)	k25 fidget (see FREELANCER_RE.md): job 2 (trader), topic roll below 1/30. Role fidget.
+06EDFB40	gcs_fidget_trade_ihear_\d+\+ ^good gcs_fidget_talkcargo_\d+-	idle trader talk about its cargo ("I hope our cargo hold full of" Gold "fetches a good price")	k25 job 2, topic roll 0.2 or above, the job has a cargo good: 50 % this line, else trade_simple. Role fidget.
+06EDFDE0	gcs_fidget_trade_simple_\d+-	idle trader talk	k25 job 2: topic roll 0.2 or above without the cargo line, or a status topic (1/30 to 0.2) for a ship without wingmen. Role fidget.
+06EDFFD0	gcs_misc_attentionallwingmen_\d+\+ gcs_misc_thisis\+ @full gcs_fidget_whatstatus_\d+-	a leader asks the wingmen for status	k25 status topic (roll 1/30 to 0.2) for a leader with wingmen: jobs 2 and 4 always, job 3 50 % (else the waypoint question). Every wingman then answers saystatus. Role fidget.
+06EE0390	gcs_misc_thisis\+ @full: gcs_fidget_saystatus_damage(large|medium|small|none)_\d+-	a wingman reports its damage	k25 after whatstatus, each wingman: hull below 30 % large, below 75 % medium, below 100 % small, else none. Role fidget.
+06EE06D0	gcs_fidget_patrolrumor_\d+-	idle patrol talk (rumor)	k25 job 3 or 4 (patrol), topic roll below 1/30. Role fidget.
+06EE08C0	gcs_fidget_patrolsimple_\d+-	idle patrol talk	k25 job 3 or 4: topic roll 0.2 or above, or a status topic for a ship without wingmen. Role fidget.
+06EE0AB0	gcs_misc_thisis\+ @full gcs_fidget_patrol_wpremainquery_\d+-	a patrol member asks how many waypoints remain	k25 job 3, status topic, leader with wingmen, the other 50 %; the leader answers next. Role fidget.
+06EE0E10	gcs_patrol_finished_[ps]_\d+-	the leader says the patrol is finished	k25 after wpremainquery: no waypoints left. Role fidget.
+06EE0E10	gcs_patrol_(wehaveonly|wehave)\+ ^number gcs_patrol_morewps?togo-	the leader answers with the waypoints left	k25 after wpremainquery, N > 0 waypoints left: "only" and "morewptogo" when N = 1. Role fidget.
+06EE11C0	gcs_phail_blowoff_\d+-	an NPC brushes off the player's hail	k5 player hail (no cooldown): the same player hailed this NPC less than 15 s ago. Only ambient NPCs whose attitude to the player is not below -0.6 answer at all. Role hail_hailee.
+06EE13B0	gcs_phail_combatblowoff_\d+-	an NPC in combat brushes off the player's hail	k5: the NPC's state check (vt[2], in combat (?)) is true. Role hail_hailee.
+06EE15A0	gcs_misc_thisis\+ @short	an NPC answers the player's hail with its name	k5 otherwise: the answer, then idhome / goingto / waypoint or cargo lines by job as for k1. Role hail_hailee.
+06EE1830	gcs_combat_attentionallunits_\d+- gcs_misc_thisis\+ ^base- gcs_combat_announce_allclear_\d+-	a base announces the all clear	k10 combat over where the combatant is not an NPC ship (a station or other solar with a voice). Role combat_dock.
+06EE1B50	gcs_combat_attentionallunits_\d+- gcs_misc_thisis\+ ^base- gcs_combat_announce_engage_\d+-	a base announces an attack	k9 combat starts for a station or other solar: 50 %. Role combat_dock.
+06EE1B50	gcs_combat_manturrets_\d+-	a base mans its turrets	k9 for a station or other solar: the other 50 %. Role combat_dock.
+06EE5C20	gcs_misc_thisis\+ @short gcs_misc_to @full gcs_scan_announce_\d+-	a police/pirate ship announces a cargo scan of a named ship	k17 (no cooldown): an NPC starts a cargo scan and its faction has scan_announce = true (faction_prop.ini; scan_chance = 0.3 there). Role scan.
+06EE6090	gcs_scan_nothingfound_\d+-	the scan found nothing	k18: scan finished without any scan_for_cargo good, only with scan_announce = true. Role scan.
+06EE6280	gcs_scan_orderdrop_\d+-	the scanner orders the cargo dropped	k19: the scan found a scan_for_cargo good (unless that entry is flagged to skip the order (?)); NPC or player target. Role scan.
+06EE6470	gcs_scan_refuse_\d+-	the scanned ship refuses	k21: an NPC target's AI scan response (get_scan_response) is 1 or 2; nothing for a player target. Role scan.
+06EE6660	gcs_scan_comply_\d+-	the scanned ship complies	k20: an NPC target dropped the cargo; the scanner's happy line follows. Role scan.
+06EE6850	gcs_scan_angry_\d+-	the scanner is angry	k22: scan state 12 (the target did not drop the cargo (?)). Role scan.
+06EE6A40	gcs_scan_happy_\d+-	the scanner is satisfied	k20: after the target's comply line, or alone when the player dropped the cargo. Role scan.
+06EE6C30	gcs_scan_lootdestroyed_\d+-	the loot was destroyed	k24: the dropped cargo was destroyed (0x06F0DA00). Role scan.

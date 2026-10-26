@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="FLvibed">
+  <title>FLvibed</title>
+  <rect width="1280" height="640" fill="#0b0c14"/>
+  <rect x="0" y="606" width="1280" height="6" fill="#ffe846" opacity="0.9"/>
+  <path d="M420.97 340.55 A71.75 71.75 0 0 1 420.97 209.45" fill="none" stroke="#5aa8ff" stroke-width="14.00" stroke-linecap="round"/>
+  <path d="M479.33 209.45 A71.75 71.75 0 0 1 479.33 340.55" fill="none" stroke="#e8ecfa" stroke-width="14.00" stroke-linecap="round"/>
+  <circle cx="450.15" cy="275.00" r="15.75" fill="none" stroke="#ffe846" stroke-width="6.12"/>
+  <circle cx="450.15" cy="275.00" r="4.55" fill="#ffe846"/>
+  <g transform="translate(601.1 228.0)"><path d="M37.60 6.11 L6.11 6.11 L6.11 94.00" fill="none" stroke="#e8ecfa" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M6.11 47.00 L30.83 47.00" fill="none" stroke="#e8ecfa" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M57.81 0.00 L57.81 87.89 L87.42 87.89" fill="none" stroke="#e8ecfa" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M101.52 0.00 L114.35 0.00 L123.14 68.34 L131.93 0.00 L144.76 0.00 L130.72 94.00 L115.56 94.00 Z" fill="#8fd0ff"/>
+  <path d="M164.97 0.00 L164.97 94.00" fill="none" stroke="#8fd0ff" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M191.29 6.11 L207.27 6.11 L217.61 16.45 L217.61 40.80 L211.41 47.00 L191.29 47.00" fill="none" stroke="#8fd0ff" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M191.29 47.00 L210.09 47.00 L220.43 57.34 L220.43 77.55 L210.09 87.89 L191.29 87.89 L191.29 0.00" fill="none" stroke="#8fd0ff" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M276.36 6.11 L246.75 6.11 L246.75 87.89 L276.36 87.89" fill="none" stroke="#8fd0ff" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M246.75 47.00 L270.64 47.00" fill="none" stroke="#8fd0ff" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M296.57 6.11 L313.11 6.11 L327.59 20.59 L327.59 73.41 L313.11 87.89 L296.57 87.89 L296.57 0.00" fill="none" stroke="#8fd0ff" stroke-width="12.22" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/></g>
+  <text x="640" y="488" text-anchor="middle" font-family="Bahnschrift, 'Bahnschrift SemiCondensed', 'Arial Narrow', sans-serif" font-stretch="semi-condensed" font-size="44" letter-spacing="2" fill="#9aa3c7">Controller play, subtitles and better movies for Freelancer</text>
+  <text x="640" y="548" text-anchor="middle" font-family="Bahnschrift, 'Arial Narrow', sans-serif" font-size="30" letter-spacing="3" fill="#5f6a94">FREELANCER (2003) · FREELANCER: HD EDITION</text>
+</svg>

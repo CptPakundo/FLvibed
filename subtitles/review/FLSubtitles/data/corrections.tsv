@@ -1,0 +1,1270 @@
+# User-verified subtitle text (listened in game / to the clip). Highest priority in the merge.
+# id is matched case-insensitively; voice "*" = every copy of the line (some lines exist as a bank entry and a story sound).
+id	voice	text	source	note
+$BGCS_Base_Run_By	rvp003	a Bretonia Armed Forces Battleship	user picked: Draft (matches other characters)	
+$BGCS_Trent_D02cP02_2	trent_voice	I thought I'd take another look around.	user picked: Speech to text	
+$BGCS_Trent_D02eP02_1	trent_voice	Mm-hmm. I'm Trent.	user picked: Speech to text	
+$BGCS_Trent_F02aP03_2	trent_voice	All right. I'm listening.	user picked: Draft (merged)	
+$BGCS_Trent_F02aP04_3	trent_voice	All right. Go on.	user picked: Draft (merged)	
+$BGCS_Trent_F04gP01_3	trent_voice	Is it dangerous?	user picked: Speech to text	
+$BGCS_Trent_F09bP02_5	trent_voice	Could be useful later. Thank you.	user picked: Speech to text	
+$BGCS_Trent_W04aP01_6	trent_voice	wondering if we could do a little business	user picked: Draft (your earlier pick)	
+$BGCS_Trent_W04aP02_4	trent_voice	I'm looking to see what you have to offer.	user picked: Speech to text	
+$BGCS_Trent_W04cP01_6	trent_voice	Have anything to offer?	user picked: Speech to text	
+$BGCS_Trent_W04cP02_3	trent_voice	Have anything for me?	user picked: Speech to text	
+0x81B27441	pilot_f_ill_m02_vanilla	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+0x81B27441	pilot_f_ill_m02a_vanilla	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+0x81B27441	pilot_f_ill_m02b_vanilla	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+0x8259D24A	pilot_f_leg_m01_vanilla	No time to explain, we're uploading coordinates. Professor, you and the freighter have to fly there as quickly as you can – we'll try to hold off the Rheinland fleet.	user typed	
+0x83BC254A	pilot_f_leg_m01_vanilla	Ageira	user picked: Draft (speech to text)	
+0x8570D9CD	pilot_f_ill_m02_vanilla	Target in range. Locking in on enemy.	user picked: Take pilot_f_ill_m02b	
+0x8570D9CD	pilot_f_ill_m02a_vanilla	Target in range. Locking in on enemy.	user picked: Take pilot_f_ill_m02b	
+0x8570D9CD	pilot_f_ill_m02b_vanilla	Target in range. Locking in on enemy.	user picked: Take pilot_f_ill_m02b	
+0x8570D9CD	pilot_f_leg_m01_vanilla	Homing in on bandit.	user typed	
+0x8574D9C7	pilot_f_ill_m02_vanilla	I've got a visual on the enemy. Target is prime, and I'm ready	user typed	
+0x8574D9C7	pilot_f_ill_m02a_vanilla	I've got a visual on the enemy. Target is prime, and I'm ready	user typed	
+0x8574D9C7	pilot_f_ill_m02b_vanilla	I've got a visual on the enemy. Target is prime, and I'm ready	user typed	
+0x85963A07	pilot_f_leg_m01_vanilla	Bandit is firing on me	user picked: Draft (speech to text)	
+0x85B42FC8	pilot_f_ill_m02_vanilla	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+0x85B42FC8	pilot_f_ill_m02a_vanilla	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+0x85B42FC8	pilot_f_ill_m02b_vanilla	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+0x8639C44D	pilot_f_ill_m02_vanilla	Lighting him up.	user typed	
+0x8639C44D	pilot_f_ill_m02a_vanilla	Lighting him up.	user typed	
+0x8639C44D	pilot_f_ill_m02b_vanilla	Lighting him up.	user typed	
+0x863DE202	pilot_f_leg_m01_vanilla	I see 'em.	user typed	
+0x86A9C40D	pilot_f_leg_m01_vanilla	Bandit is starting to cave	user picked: Draft (speech to text)	
+0x8752594A	pilot_f_leg_m01_vanilla	I've picked up a bandit.	user picked: Take pilot_f_leg_m01b	
+0x88A3CF8B	pilot_f_ill_m02_vanilla	You've just signed your own death warrant.	user picked: Take pilot_f_ill_m02a	
+0x88A3CF8B	pilot_f_ill_m02a_vanilla	You've just signed your own death warrant.	user picked: Take pilot_f_ill_m02a	
+0x88A3CF8B	pilot_f_ill_m02b_vanilla	You've just signed your own death warrant.	user picked: Take pilot_f_ill_m02a	
+0x8DED31C8	pilot_f_ill_m02_vanilla	I'm requesting	user typed	trailing "to" removed: the game adds "to dock" (user, in chat)
+0x8DED31C8	pilot_f_ill_m02a_vanilla	I'm requesting	user typed	trailing "to" removed: the game adds "to dock" (user, in chat)
+0x8DED31C8	pilot_f_ill_m02b_vanilla	I'm requesting	user typed	trailing "to" removed: the game adds "to dock" (user, in chat)
+0x9128944B	pilot_f_leg_m01_vanilla	You're not carrying anything I'm looking for.	user picked: Take pilot_f_leg_m01b	
+0x92629404	pilot_f_ill_m02_vanilla	A bay full of	user picked: Draft (Claude's guess)	
+0x92629404	pilot_f_ill_m02a_vanilla	A bay full of	user picked: Draft (Claude's guess)	
+0x92629404	pilot_f_ill_m02b_vanilla	A bay full of	user picked: Draft (Claude's guess)	
+0x92629404	pilot_f_leg_m01_vanilla	I hope our cargo hold full of	user typed	
+0x93821E40	pilot_f_leg_m01_vanilla	You want to take me on? You had fair warning. I'm ex-military. Got it?	user picked: Speech to text	
+0x93EE1E4A	pilot_f_leg_m01_vanilla	You're just another bandit to me. Come on, take your best shot!	user typed	
+0x9617FE4C	pilot_f_ill_m02_vanilla	Area is clear. No enemy movement.	user picked: Draft (majority of takes)	
+0x9617FE4C	pilot_f_ill_m02a_vanilla	Area is clear. No enemy movement.	user picked: Draft (majority of takes)	
+0x9617FE4C	pilot_f_ill_m02b_vanilla	Area is clear. No enemy movement.	user picked: Draft (majority of takes)	
+0x967BFE46	pilot_f_leg_m01_vanilla	Scanner shows no bandits.	user picked: Draft (speech to text)	
+0x9683FE06	pilot_f_ill_m02_vanilla	Area secure. Repeat, secure.	user picked: Draft (majority of takes)	
+0x9683FE06	pilot_f_ill_m02a_vanilla	Area secure. Repeat, secure.	user picked: Draft (majority of takes)	
+0x9683FE06	pilot_f_ill_m02b_vanilla	Area secure. Repeat, secure.	user picked: Draft (majority of takes)	
+0x98211E4C	pilot_f_ill_m02_vanilla	Yukawa Shipyard	user picked: Draft (speech to text)	
+0x98211E4C	pilot_f_ill_m02a_vanilla	Yukawa Shipyard	user picked: Draft (speech to text)	
+0x98211E4C	pilot_f_ill_m02b_vanilla	Yukawa Shipyard	user picked: Draft (speech to text)	
+0x9919DF4E	pilot_f_leg_m01_vanilla	No! They got one of mine.	user typed	
+0x9C17B945	pilot_f_leg_m01_vanilla	Retreat at once and meet up at	user typed	
+0x9CFC3D8B	pilot_f_ill_m02_vanilla	it'll bring in a ripe payday	user picked: Conventions applied	same decision for every take (fixed save)
+0x9CFC3D8B	pilot_f_ill_m02a_vanilla	it'll bring in a ripe payday	user picked: Conventions applied	same decision for every take (fixed save)
+0x9CFC3D8B	pilot_f_ill_m02b_vanilla	it'll bring in a ripe payday	user picked: Conventions applied	same decision for every take (fixed save)
+0x9DA98941	pilot_f_leg_m01_vanilla	We're on a patrol mission from	user typed	
+0x9DE9C187	pilot_f_leg_m01_vanilla	Looks like we are not the only ones headed to	user typed	
+0x9E79C748	pilot_f_leg_m01_vanilla	I know who you're after. Forget it. You're all mine!	user typed	
+0xA393EE46	pilot_f_leg_m01_vanilla	How about backing me up?	user picked: Draft (speech to text)	
+0xA711FA06	pilot_f_leg_m01_vanilla	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+0xA85FCB02	pilot_f_leg_m01_vanilla	Damn it! Lieutenant Ozu, make your run!	user typed	
+0xA8C50C4F	pilot_f_ill_m02_vanilla	Mess with the Viper and you'll get the fangs.	user picked: Draft (Claude's guess)	
+0xA8C50C4F	pilot_f_ill_m02a_vanilla	Mess with the Viper and you'll get the fangs.	user picked: Draft (Claude's guess)	
+0xA8C50C4F	pilot_f_ill_m02b_vanilla	Mess with the Viper and you'll get the fangs.	user picked: Draft (Claude's guess)	
+0xA96AF40D	nnvoice_vanilla	SHIP PURCHASE COMPLETE	user picked: Draft (judged: recording)	
+0xAA9A474D	pilot_f_ill_m02_vanilla	All systems have failed! Losing power!	user typed	
+0xAA9A474D	pilot_f_ill_m02a_vanilla	All systems have failed! Losing power!	user typed	
+0xAA9A474D	pilot_f_ill_m02b_vanilla	All systems have failed! Losing power!	user typed	
+0xAA9E4747	pilot_f_leg_m01_vanilla	I'm losing hull integrity!	user typed	
+0xAAF64747	pilot_f_leg_m01_vanilla	Can't hold it. She's breaking up!	user typed	
+0xAB3FD006	pilot_f_leg_m01_vanilla	They'd mop the floor with me right now.	user picked: Take pilot_f_leg_m01b	
+0xAD2BDA8C	pilot_f_leg_m01_vanilla	Engage!	user picked: Draft (merged)	
+0xADBBDACC	pilot_f_ill_m02_vanilla	Engage!	user picked: Draft (merged)	
+0xADBBDACC	pilot_f_ill_m02a_vanilla	Engage!	user picked: Draft (merged)	
+0xADBBDACC	pilot_f_ill_m02b_vanilla	Engage!	user picked: Draft (merged)	
+0xADE64746	pilot_f_leg_m01_vanilla	Ugh, this had better be worth it.	user typed	
+0xAF4FB407	pilot_f_ill_m02_vanilla	Basic Alloys	user picked: Take pilot_f_ill_m02a	
+0xAF4FB407	pilot_f_ill_m02a_vanilla	Basic Alloys	user picked: Draft (speech to text)	
+0xAF4FB407	pilot_f_ill_m02b_vanilla	Basic Alloys	user picked: Draft (speech to text)	
+0xAF5EA44E	pilot_f_leg_m01_vanilla	We should be safe now, but we need to keep moving. The Jump Hole to Tau-23 is near.	user picked: Draft (recording wording)	
+0xAFC0830A	pilot_f_leg_m01_vanilla	What else do you want to know?	user picked: Take pilot_f_leg_m01b	
+0xB04FC2CC	pilot_f_ill_m02_vanilla	Mactan	user typed	
+0xB04FC2CC	pilot_f_ill_m02a_vanilla	Mactan	user typed	
+0xB04FC2CC	pilot_f_ill_m02b_vanilla	Mactan	user typed	
+0xB04FC2CC	pilot_f_leg_m01_vanilla	Mactan	user typed	
+0xB0A39E0E	pilot_f_leg_m01_vanilla	Break off your attack before I decide to finish you!	user typed	
+0xB365818C	pilot_f_leg_m01_vanilla	Taking on	user typed	
+0xB5699CCE	pilot_f_leg_m01_vanilla	We're moving	user typed	
+0xB6F104C5	pilot_f_ill_m02_vanilla	No! Not the loot!	user picked: Draft (Claude's guess)	
+0xB6F104C5	pilot_f_ill_m02a_vanilla	No! Not the loot!	user picked: Draft (Claude's guess)	
+0xB6F104C5	pilot_f_ill_m02b_vanilla	No! Not the loot!	user picked: Draft (Claude's guess)	
+0xB6F104C5	pilot_f_leg_m01_vanilla	The goods, they're gone!	user typed	
+0xB6F504CF	pilot_f_ill_m02_vanilla	Oh no! I lost the loot.	user picked: Draft (Claude's guess)	
+0xB6F504CF	pilot_f_ill_m02a_vanilla	Oh no! I lost the loot.	user picked: Draft (Claude's guess)	
+0xB6F504CF	pilot_f_ill_m02b_vanilla	Oh no! I lost the loot.	user picked: Draft (Claude's guess)	
+0xBC858700	pilot_f_leg_m01_vanilla	Bandit is taking hits	user picked: Draft (speech to text)	
+0xBCED8700	pilot_f_leg_m01_vanilla	Bandit is taking damage	user picked: Draft (speech to text)	
+0xBE8B2F07	pilot_f_ill_m02_vanilla	Keep it icy, man. I don't want to end up a corpse before my time 'cause you were daydreaming.	user typed	
+0xBE8B2F07	pilot_f_ill_m02a_vanilla	Keep it icy, man. I don't want to end up a corpse before my time 'cause you were daydreaming.	user typed	
+0xBE8B2F07	pilot_f_ill_m02b_vanilla	Keep it icy, man. I don't want to end up a corpse before my time 'cause you were daydreaming.	user typed	
+0xBFAA8A04	pilot_f_leg_m01_vanilla	We're on a trade mission from	user typed	
+all_systems_normal	nnvoice	SHIP STATUS: ALL SYSTEMS NOMINAL	user picked: Draft (merged) = FLSubs	
+amsn_accepted	nnvoice	DESTINATION LOADED INTO NAV MAP	user picked: Draft (merged) = FLSubs	
+bar	nnvoice	BAR	user picked: Draft (judged: recording) = FLSubs	
+bc_enter_dist_follow_01	hakkera	You're now in range, Trent.	user picked: Speech to text	
+bc_enter_dist_follow_01	king	You're now in range, Trent.	user typed	
+bc_enter_dist_follow_01	orillion	Good. You have entered range.	user picked: Draft	
+bc_enter_dist_follow_01	ozu	Good. You have entered range.	user picked: Draft	
+bc_enter_dist_follow_01	sinclair	You're now in range.	user picked: Speech to text	
+bc_enter_dist_follow_01	tobias	Good. You have entered range.	user picked: Speech to text	
+bc_enter_dist_follow_01	vonclaussn	You are now in range, Trent.	user picked: Draft (speech to text) = Speech to text	
+bc_enter_dist_follow_02	hakkera	Good. You've entered range.	user typed	
+bc_enter_dist_follow_02	vonclaussn	Good. You've entered range.	user picked: FLSubs	
+bc_enter_far_teth_01	botzler	Good. You're entering range.	user picked: Speech to text	
+bc_enter_far_teth_01	hakkera	Good, you're entering range.	user picked: Speech to text	
+bc_enter_far_teth_01	king	Good, you're entering range.	user picked: Draft	
+bc_enter_far_teth_01	quintaine	You entered range.	user picked: Draft (speech to text) = Speech to text	
+bc_enter_far_teth_01	sinclair	Good. You're entering range.	user picked: Speech to text	
+bc_enter_far_teth_02	juni	You've entered range.	user typed	
+bc_enter_near_teth_02	vonclaussn	That is a good position, Trent! I'm switching to full speed.	user picked: FLSubs	
+bc_exit_far_teth_01	orillion	You're falling too far behind. Try to catch up.	user picked: Speech to text	
+bc_exit_far_teth_01	ozu	You're falling too far behind. Try to catch up.	user picked: Speech to text	
+bc_exit_far_teth_01	tobias	You're falling too far behind. Try to catch up.	user picked: Draft	
+bc_exit_far_teth_01	vonclaussn	Trent, you are falling too far behind. Try to catch up.	user picked: Draft	
+bc_exit_far_teth_02	razor_1	Trent, you have to stay closer. I'm reducing the speed. Come on.	user picked: Draft (speech to text) = Speech to text	
+bc_exit_far_teth_02	vonclaussn	Trent, you have to stay closer. I am reducing speed. Come on.	user picked: Draft	
+bc_follow_flat_01	sinclair	You're lagging behind. I'll be in your position in a few moments.	user picked: Speech to text	
+bc_follow_flat_02	hakkera	Trent, you're not getting anywhere. Hold on, I'm coming back.	user picked: Speech to text	
+bc_follow_flat_02	juni	You're not making any progress. Hold on, I'm coming back.	user picked: Draft	
+bc_follow_flat_02	orillion	You're not making any progress. Hold on, I'm coming back.	user picked: Speech to text	
+bc_follow_neg_01	botzler	Where are you going? I am heading to our destination. Come on.	user picked: Draft	
+bc_follow_neg_01	king	Where are you going? I'm heading to our destination. Come on.	user picked: Draft (matches other characters) = Speech to text	
+bc_follow_neg_01	razor_1	Where you going? I'm headed to our destination. Come on!	user typed	
+bc_follow_neg_01	vonclaussn	Where are you going? I am heading to our destination. Come on!	user picked: Draft	
+bc_follow_neg_02	vonclaussn	Trent, I can't wait for you here. I am heading on.	user picked: Draft	
+bc_follow_pos_app_off_01	vonclaussn	Trent, your heading is slightly off. Follow me.	user typed	
+bc_follow_pos_app_off_02	ozu	You look like you're slightly off course. Follow me.	user picked: Speech to text	
+bc_follow_pos_app_off_02	tobias	You look like you're slightly off course. Follow me.	user picked: Draft	
+bc_follow_pos_app_on_01	quintaine	Everything's looking good. You're right on course.	user picked: Speech to text	
+bc_follow_pos_app_on_01	vonclaussn	Everything is looking good. You are right on course.	user picked: Draft	
+bc_follow_pos_app_on_02	botzler	Trent, we're directly on course.	user picked: Speech to text	
+bc_follow_pos_app_on_02	hakkera	Trent, we're directly on course.	user picked: Speech to text	
+bc_follow_pos_app_on_02	juni	You're directly on course.	user picked: Draft	
+bc_follow_pos_app_on_02	sinclair	We're directly on course.	user picked: Speech to text	
+bc_follow_pos_app_on_02	walker	Trent, we're directly on course.	user picked: Speech to text	
+bc_giving_up_01	sinclair	I've done all I can. It's time to cut you loose. See you later.	user picked: Draft (speech to text) = Speech to text	
+bc_giving_up_02	juni	It's regrettable, but we're not gonna make it.	user typed	
+bc_giving_up_02	king	Trent, I'm tired of this. This mission is over. See ya later.	user picked: Draft	
+bc_giving_up_02	quintaine	It is regrettable, but we're not gonna make it.	user picked: Speech to text	
+bc_giving_up_02	walker	It is regrettable but this assignment is over.	user picked: Conventions applied = Draft	
+bc_goto_flat_01	sinclair	We have to go faster!	user picked: Draft (merged) = FLSubs	
+bc_goto_neg_03	orillion	Trent, you're heading away from our destination. Turn around.	user picked: Speech to text	
+bc_goto_neg_03	ozu	Mr. Trent, you're heading away from our destination. Turn around.	user picked: Speech to text	
+bc_goto_neg_03	tobias	Trent, you're heading away from our destination. Turn around.	user picked: Draft	
+bc_goto_neg_03	walker	Trent, you're heading away from our destination. Turn around.	user picked: Speech to text	
+bc_goto_neg_04	orillion	You're heading away from our destination, Mr. Trent. Turn around.	user picked: Speech to text	
+bc_goto_pos_01	vonclaussn	You are doing well, Trent. Take the lead.	user typed	
+bc_goto_pos_04	orillion	We're right on course.	user picked: Draft (matches other characters) = Speech to text	
+bc_goto_pos_04	ozu	We're right on course.	user picked: Draft (matches other characters) = Speech to text	
+bc_goto_pos_04	quintaine	We're right on course.	user picked: Draft (matches other characters) = Speech to text	
+bc_goto_pos_04	walker	We're right on course.	user picked: Draft (matches other characters) = Speech to text	
+cancelled	nnvoice	CANCELLED	user picked: Draft (merged)	
+cannot_dock	nnvoice	DOCK DENIED	user picked: Draft (merged) = FLSubs	
+cargo_jettisoned	nnvoice	CARGO JETTISONED	user picked: Draft (judged: recording)	
+deck	nnvoice	DECK	user picked: Draft (judged: recording) = FLSubs	
+dmsn_accepted	nnvoice	ACCEPTED – TARGET ZONE LOADED INTO NAV MAP	user picked: Draft (judged: recording)	
+dock	nnvoice	DOCK	user picked: Draft (judged: recording) = FLSubs	
+DX_M01_0000_FREEPORT_7_BRIDGE	*	Roger that, all systems show green – SA-14 you're cleared for departure.	user picked: Draft (script)	
+DX_M01_0005_SAMURA_SA_14	*	Acknowledged, Freeport 7. We'll see you in about two weeks.	user picked: FLSubs	
+DX_M01_0010_FREEPORT_7_BRIDGE	*	Sa-14, we're picking up unknown contacts on long-range sensors. We're dispatching a fighter wing to escort you out of the system. Godspeed.	user picked: Speech to text	
+DX_M01_0015_FREEPORT_7_OTHER	*	Navy Command, this is Freeport 7. We're picking up some strange readings on the long-range sensors.	user picked: Speech to text	
+DX_M01_0025_FREEPORT_7_BRIDGE	*	Alert! Unknown ships have breached the defense perimeter. Man all stations!	user picked: Draft (judged: script)	
+DX_M01_0030_FREEPORT_7_BRIDGE	*	Incoming! Brace for impact!	user picked: FLSubs	
+DX_M01_0035_FREEPORT_7_BRIDGE	*	[unintelligible screams]	user picked: FLSubs	
+DX_M01_0100_KING	*	You must be Trent. I'm King, the CO of this mission. I contacted the lead transport of the convoy. They've completed pre-launch checks and are ready to go. Should be an easy run from here to Fort Bush and then on to Pittsburgh. Ready?	user picked: Draft (script)	
+DX_M01_0130_DONAU	*	Newark Station, this is RNC Donau. Requesting clearance to dock with your station. Over.	user typed	
+DX_M01_0200_ORDERSHIP	*	Newark, do not interfere! We're here to protect the President. Schultzky is a traitor!	user picked: Draft (judged: script)	
+DX_M01_0261_ESCORT_1	*	No!	user typed	
+DX_M01_0270_KING	*	Damn it! They blew up the Donau! Newark, this is LSF Patrol Gamma 6! Engaging enemy!	user typed	
+DX_M01_0290_ESCORT_1	*	The Order will pay for this. Escort wing: Fire at will.	user picked: Draft (judged: script)	
+DX_M01_0320_STATION_NEWARK	*	LPU Patrol Beta 2! Cleared for alarm start!	user picked: Draft (script)	
+DX_M01_0340_LPU_BETA_LEADER	*	That was the last one, Newark.	user picked: FLSubs	
+DX_M01_0384_KING	*	Hey Trent. Having trouble with your controls? Your HUD is showing the location of the waypoint in several places. A diamond-shaped icon is showing you the direction of the waypoint. You could also check the contact list: it's marked there as Mission Waypoint. Selecting either one will show you direction and distance to the waypoint.	user picked: FLSubs	
+DX_M01_0385_KING	*	Still having trouble? The easiest way to find where you have to go is by selecting the waypoint. After you select it, you'll either be facing the waypoint or you won't. If you see a bigger diamond, you're still flying in the wrong direction and you have to turn your ship around. If you're facing the correct way, you see the target as a diamond shape with a distance indicator. All you have to do is fly toward that point in space.	user picked: Speech to text	
+DX_M01_0470_KING	*	Looked like The Order was determined to keep Schultzky from meeting the President. Hard to believe that this could happen. [sigh] We better get going.	user picked: Draft (your earlier pick)	
+DX_M01_0485_KING	*	Hey, Trent, are you having trouble? You have to select the transport and then use the FORMATION maneuver in your Neural Net. Your navigation computer will automatically get you into a good formation position.	user picked: Draft (recording wording)	
+DX_M01_0540_KING	*	Damn it! Trent, get your weapons ready. This could get rough.	user picked: Speech to text	
+DX_M01_0610_KING	*	Damn it, Trent. Re-enter formation. We can't wait for you.	user picked: Draft (your earlier pick)	
+DX_M01_0630_KING	*	We're outta here! Trent, use the Trade Lane to Pittsburgh. Good luck.	user typed	
+DX_M01_0640_KING	*	We made it! Everybody in one piece?	user picked: Draft (script)	
+DX_M01_0640B_KING	*	We made it. Can't believe those damned Rogues got the other transport. Transport leader, you guys still with us?	user typed	
+DX_M01_0640C_KING	*	Can't believe they got the other transport. Transport leader, you guys still with us?	user picked: Speech to text	
+DX_M01_0680_TRANSPORT1	*	Now it's your turn to reel 'em in, King. We're gonna unload our cargo. Remember our bargain.	user typed	
+DX_M01_0690_KING	*	What the hell were you doing? Are you crazy? Those Rogues can be dangerous! Anyway, I'm glad you made it. Land on Pittsburgh. I'll meet you on the surface.	user picked: Draft (judged: script)	
+DX_M01_0700_KING	*	Damn it, Trent! The lead transport is down. That's it. We failed.	user picked: Speech to text	
+dx_m01_1027_king	*	Damn it, more pirates! Trent, defend the prison ship at all costs.	user picked: Draft (recording wording)	
+dx_m01_1042_king	*	There you are! Four LSF wings from Fort Bush are searching the debris field for the Rogue base. They've already taken prisoners. I'm uploading the coordinates for our search pattern. We'll rendezvous with another wing of fighters for our patrol. Hold on, there they are.	user picked: Draft (recording wording)	
+dx_m01_1044_lsfpatrol	*	Gamma 6, Delta patrol reports no hostile contacts.	user picked: Draft (script)	
+dx_m01_1047B_king	*	What are you doing, Trent? We've got to get going. Select one of the Epsilon ships and use the formation maneuver.	user typed	
+dx_m01_1052b_king	*	After the attack on our transport, the LSF has dispatched four wings to help us track down where these Rogues are coming from. They gotta have a secret base around here and this time... we'll find it.	user typed	
+dx_m01_1082_prisonship	*	Mayday! Mayday! This is Prison Ship XT-19, we're under attack. To all Liberty patrols, please respond!	user picked: Draft (judged: script)	
+dx_m01_1120_king	*	There she is... she's hurt bad... Everyone, break formation and engage.	user picked: Draft (script)	
+dx_m01_1205_king	*	The Rogue base must be around here. They'd never attack something as big as a prison ship too far away from their hideout.	user picked: Draft (your earlier pick)	
+dx_m01_1210_lsfbeta4	*	Mayday! This is LSF Beta 4. I'm under attack and need assistance!	user picked: FLSubs	
+dx_m01_1235_lsfbeta4	*	I'm near the edge of the debris field. I– [static]	user picked: FLSubs	
+dx_m01_1245_lsfbeta4	*	I have several Rogue ships on my tail– [static] I can't shake 'em! My shields are failing!	user typed	
+dx_m01_1293_lsfbeta4	*	My systems are fried and I have a coolant leak. I'm headed back to Pittsburgh.	user picked: Draft (recording wording)	
+dx_m01_1305_king	*	Let's go. Head to the coordinates.	user picked: Speech to text	
+dx_m01_1306_king	*	Trent, I think this is it. I'm gonna call in for some backup.	user picked: FLSubs	
+dx_m01_1376_king	*	Incoming Rogue fighters! Get ready!	user picked: Draft (judged: script)	
+dx_m01_1404_king	*	They're fleeing into the field.	user typed	
+dx_m01_1408_king	*	The Rogue base must be in the cloud ahead. Trent, take the lead.	user picked: Draft (recording wording)	
+dx_m01_1410_king	*	There! The Rogue Base! To all units, this is Gamma 6. We've confirmed the location of the Rogue base. I'm transmitting new coordinates.	user picked: Draft (your earlier pick)	
+dx_m01_1515_king	*	Engage the remaining fighters, Trent! We can't let them get away!	user picked: Draft (merged) = FLSubs	
+DX_M01_1516_KING	*	Good work, Trent. Let's get clear. I'm uploading coordinates for Pittsburgh to your Neural Net. Let's go.	user picked: Draft (your earlier pick)	
+dx_m01_1525_king	*	Great work back there, Trent. Not bad for a rookie!	user listened	script and FLSubs say "Good work"; recording says "Great"
+dx_m01_1528_king	*	What we did here today will hopefully put a dent in the growing crime problem we've been having in this system. Maybe now we can focus our full attention on The Order and anyone who supports them. Schultzky's assassination can't go unpunished.	user typed	
+dx_m01_1585_juni	*	President Jacobi's ordered a full investigation to determine what can be done about The Order. It'll likely mean more work for us soon. Meanwhile, why don't you spread your wings a bit - familiarize yourself with the New York system, maybe see what work you can pick up. I'll be in touch. Juni out!	user typed	kept exactly as typed
+DX_M02_0101_TRENT	*	Yeah! I'm fine.	user picked: Draft (script)	
+DX_M02_0107_TRENT	*	I thought he'd lost it, but then these two guys appeared and shot him. Maybe he wasn't just paranoid. Ah, I'm never getting paid. Goodbye, million credits.	user picked: Speech to text	
+DX_M02_0112_KING	*	We've lost enough time here. We've got a job to do and a schedule to keep. Take the Trade Lane.	user picked: Draft (judged: script)	
+DX_M02_0113_KING	*	That's it. I'll be sure and tell Juni you weren't serious about bringing in Ashcroft. See ya.	user typed	
+DX_M02_0260_JUNI	*	This is Juni. Ashcroft has been sighted in the Kepler System. We don't know which way he's going, but it looks like he's coming straight at you. Keep your eyes open. Over.	user picked: Draft (recording wording)	
+DX_M02_0291_KING	*	Hey Trent, we have to get into position. Fly to the waypoint near the Trade Lane.	user typed	
+DX_M02_0330_KING	*	Got him! I'm going in! Follow me.	user picked: Draft (recording wording)	
+DX_M02_0570_PUEBLO	*	Mayday! Mayday! This is Pueblo Station. We're under attack! Repeat: we're under attack!	user picked: FLSubs	
+DX_M02_0576_KING	*	Yeah! Last one! Pueblo, what's your status?	user picked: Draft (recording wording)	
+DX_M02_0710_KING	*	This is LSF Gamma 6. We found Ashcroft! Need immediate backup. Lock onto my signal. Over.	user typed	
+DX_M02_0772_KING	*	Damn it! Ashcroft's making a run for it. He activated his cruise engines!	user typed	
+DX_M02_0780_KING	*	I'm picking up a disturbance – could be a Jump Hole. We have to hurry or he's gonna get away!	user picked: Draft (script)	
+DX_M02_0800_KING	*	Roger that! I'm seeing the same thing. Everybody, get ready!	user picked: Draft (judged: script)	
+DX_M02_0840_COSMO	*	I'm not Ashcroft, you jar-head. I'm really gonna have your butt.	user typed	
+DX_M02_0860_COSMO	*	The name is Cosmo Van Nostrom. Remember it! I'm about to be your worst nightmare, flatfoot. This is wrongful arrest, harassment and wanton destruction of my property.	user picked: Draft (script)	
+DX_M02_0920_COSMO	*	This is outrageous! You haven't heard the last of this! I– [coughs]	user picked: FLSubs	
+DX_M02_0942_KING	*	Don't you know how to use a tractor beam? Select Ashcroft's life pod and use the tractor beam in the target window on the left side of your HUD. Come on, we have to get this thug to Juni.	user picked: Draft (judged: recording)	
+DX_M02_0950_KING	*	Zeta 1, we're taking Ashcroft back to New York for interrogation. Thanks for your help.	user typed	kept exactly as typed
+DX_M02_0952_KING	*	Good job, Trent. Ashcroft's on ice and Juni's waiting for us in New York. I'm uploading a waypoint to the gate. Let's get going.	user picked: Draft (recording wording)	
+DX_M02_1060_KING	*	I hope Ashcroft's interrogation will shed some light on the illegal artifact trade here in Liberty. Pressure from high up has been mounting in the last few weeks.	user picked: Draft (recording wording)	
+DX_M02_1070_JUNI	*	This is Juni. King, are you and Trent all right? What is your status? Over.	user picked: FLSubs	
+DX_M02_1080_KING	*	We're fine. Mission accomplished. We broke up Ashcroft's little party. He was getting ready to move those artifacts onto the black market when we took him down.	user picked: Draft (script)	
+DX_M02_1110_JUNI	*	He'll get what he deserves, but not until he's told us all we need to know. I'll make preparations for your arrival.	user picked: Draft (script)	
+DX_M02_1112_KING	*	Come on, Trent. We've lost enough time already. Take the Jump Gate and use your DOCK maneuver.	user picked: Draft (judged: script)	
+DX_M02_1130_KING	*	This is Patrol Gamma 6 on special assignment. We have a prisoner for the LSF. Requesting permission to proceed. Over.	user picked: Draft (recording wording)	
+DX_M02_1140_BATTLESHIPUNITY	*	Acknowledged, Gamma 6. You've received priority clearance. Over.	user picked: Draft (recording wording)	
+DX_M02_1150_KING	*	Thank you, Unity. Out! Juni must have arranged that for us. Let's go.	user picked: FLSubs	
+DX_M02_1170_JUNI	*	This is Juni. Change of plans. You and Trent are to proceed directly to the Battleship Missouri near Zone 21. I'll take charge of Ashcroft there. Juni out.	user picked: Draft (your earlier pick)	
+DX_M02_1200_KING	*	Damn it! Intel was right. More Rogues! Trent, we have to fight them off. Fort Bush, this is LSF Gamma 6! We're under attack and need assistance. Over.	user picked: Draft (recording wording)	
+DX_M02_1230_KING	*	For the Rogues to attack us so close to Fort Bush... Ashcroft must really know something important.	user picked: Draft (script)	
+DX_M03_0100_JUNI	*	Trent, I'm sorry I couldn't meet you as planned. I'm on assignment in California.	user picked: Draft (script)	
+DX_M03_0120_JUNI	*	I can't tell you specifics right now. Let's just say Ashcroft provided us with the information we hoped for. Meet me on California Minor as soon as you can.	user picked: Draft (script)	
+DX_M03_0130_TRENT	*	I'm already committed!	user typed	
+DX_M03_0203_FP7_SURVIVOR	*	Mr. Trent! We need to talk.	user picked: Conventions applied	
+DX_M03_0222_FP7_SURVIVOR	*	Aaaaaaaahhh!	user picked: Conventions applied = Draft	
+DX_M03_0269_JUNI	*	We've lost enough time here. The convoy is not gonna wait for us, Trent. We've gotta go.	user picked: Speech to text	
+DX_M03_0270_JUNI	*	That's it. You should have just told me that you're not interested in this mission. See ya!	user listened (in chat)	"See ya!" as the script has it
+DX_M03_0440_JUNI	*	Got it! Thank you, San Diego. Trent, we've got to hurry. Let's go.	user picked: Draft (judged: script)	
+DX_M03_0669_TRANSPORT_LEADER	*	Damn it! Transport 2 is down. We've got to get out of here!	user picked: Draft (your earlier pick)	
+DX_M03_0671_TRANSPORT_LEADER	*	Coolant leak! Our engine core is damaged. Get these guys off us!	user picked: Draft (judged: script)	
+DX_M03_0672_JUNI	*	Damn it, Trent! The lead transport is down. That's it. We failed.	user picked: Draft (recording wording)	
+DX_M03_0881_JUNI	*	Oh, I recommend you land and repair your ship. We'll meet back in space in a few minutes.	user picked: Draft (script)	
+DX_M03_0910_JUNI	*	Switching to a secure channel... Something's terribly wrong. I wanted to brief my CO on what happened with the convoy, but he's been ordered to Manhattan. My contacts tell me that he's actually been placed under arrest – for treason! I tried to find out more, but all my friends at LSF Headquarters seemed to have disappeared. The only person I was able to contact was King, who's still on Pittsburgh.	user typed	
+DX_M03_1034_JUNI	*	They're opening fire! Engage!	user picked: Draft (script)	
+DX_M03_1060_JUNI	*	Do you think this had anything to do with the artifacts? I just don't get it... Rheinland? Even if there's a traitor in the Liberty Military, what do Rheinlanders have to do with anything?	user typed	kept exactly as typed
+DX_M03_1220_KING	*	After you called me from Willard, I started to ask around a bit. I confirmed that your CO is in prison. There's been a major shake-up in the higher ranks of the LSF.	user picked: FLSubs	
+DX_M03_1280_KING	*	What?! Rheinlanders?	user picked: Conventions applied = Draft	
+DX_M03_1300_KING	*	Okay, I'll try to find out what's going on. Talk to you soon.	user picked: Draft (script)	
+DX_M03_1460_WALKER	*	All fighter wings – engage the enemy. Cruisers! Break formation and protect Willard Station.	user picked: Draft (script)	
+DX_M03_1680_JUNI	*	Got 'em!	user picked: Draft (judged: script)	
+DX_M04_0000_JUNI	*	Trent, this is Juni. Something's going on. I need your help. Meet me on Manhattan.	user picked: Speech to text	
+DX_M04_0110_JUNI	*	First to Fort Bush and then from there to the Badlands. If they find the bodies on the landing pad, the Navy will lock down all Trade Lanes. We have to hurry!	user picked: Draft (recording wording)	
+DX_M04_0120_ROGUE_LEADER	*	This is the Liberty Navy! Cut your engines and prepare to be taken into custody.	user picked: FLSubs	
+DX_M04_0165_JUNI	*	The Unity is blocking the entrance! We're surrounded!	user picked: Draft (judged: script)	
+DX_M04_0200_WALKER	*	Walker here! We'll take care of the battleship.	user picked: Draft (recording wording)	
+DX_M04_0215_UNITY	*	Code red! I repeat: Code red! This is the Battleship Unity! We are under attack and taking heavy casualties. In need of immediate assistance, all available units please approach sector Manhattan01_01, I repeat, please approach sector... [static]	user typed	
+DX_M04_0340_KING	*	Liberty Cruisers on an intercept course. Range: 10000m and closing. Projected intercept: 30 seconds.	user picked: Draft (judged: script)	
+DX_M04_0354_JUNI	*	We made it! The Badlands will shield us from their scanners. I don't think the Navy will follow us in here.	user picked: Draft (recording wording)	
+DX_M04_0360_KING	*	Damn it! That was close. I think we managed to shake 'em.	user typed	
+DX_M04_0705_L_NAVY_FI_1	*	Negative, Benford! Target renegade ships, on my signal!	user picked: Draft (merged) = FLSubs	
+DX_M04_0714_VANPELT	*	I'm picking up more incoming ships. Oh my – three cruisers are closing fast!	user typed	
+DX_M04_0715_JUNI	*	Doctor, you've got to come with us. We're coming in to pick you up.	user picked: Draft (judged: script)	
+DX_M04_0820_VANPELT	*	Juni! [static] out of here! There's [static] –thing you can do. Save yourselves! I will– [static]	user picked: FLSubs	
+DX_M04_0850_JUNI	*	No! They'll pay for this.	user picked: Speech to text	
+DX_M04_0960_JUNI	*	Goodbye, Liberty... thanks old man...	user picked: Draft (script)	
+DX_M04_1030_JUNI	*	Trent, there's a bounty on our head. They'll never let us out of here alive. We have to fight.	user picked: Speech to text	
+DX_M04_1120_LANEHACKER_1	*	We've got to get out of here. EVERYBODY is looking for you. Uploading a waypoint to your Neural Net. Come with us!	user typed	
+DX_M04_1350_JUNI	*	It's best if we split up. With that price on our heads, every bounty hunter in the colonies is gonna be after us. I'll go to Cambridge to find Professor Quintaine. Trent, find your friend on Leeds and stay out of sight. I'm uploading the coordinates of the Leeds Jump Hole.	user typed	
+DX_M04_1380_JUNI	*	Trent! This is Juni. I've made it to Cambridge. No luck so far finding the Professor. I'll contact you when I hear anything. Until then, keep a low profile. Every bounty hunter in the colonies is probably looking for us.	user picked: Draft (script)	
+DX_M05_0100_JUNI	*	Took you long enough! We don't have any time to waste. Let's go.	user picked: Draft (script)	
+DX_M05_0170_FREEPORT_1	*	Incoming ships! Be advised: Rheinland forces have set up blockades in Omega-7. No ships are allowed access to Rheinland space. All merchant vessels are to remain at Freeport 1 until the crisis is over.	user picked: FLSubs	
+DX_M05_0190_FREEPORT_1	*	Negative! But Sprague lies beyond our patrol routes – if you are attacked, we won't be able to send help.	user picked: Draft (script)	
+DX_M05_0200_JUNI	*	Understood. Thanks for the warning.	user picked: Speech to text	
+DX_M05_0230_JUNI	*	Vance gave me the frequency of the dig site beacon. I'm not picking up a signal yet... we probably have to get closer.	user picked: Draft (script)	
+DX_M05_0270_JUNI	*	Break and attack!	user picked: Script (by line id) = FLSubs	
+DX_M05_0310_JUNI	*	Those ships came out of nowhere! Looked like some kind of cloaking technology. Not even the Liberty Navy's ever managed to get these to work.	user typed	
+DX_M05_0400_TRENT	*	Never mind that! We're outnumbered! We've got to get out of here!	user picked: Draft (recording wording)	
+DX_M05_0550_SINCLAIR	*	Baxter Research Station. It's been abandoned for over a decade, but life support should still be functioning.	user picked: Speech to text	
+DX_M05_0600_JUNI	*	Radar is clear. Nice fighting, but I'm sure there'll be more. We have to get to Trent's friend in Leeds. I'm sure the Jump Gate's being watched. Sinclair, what's your status? Any ideas how to get out of here?	user picked: Draft (your earlier pick)	
+DX_M05_0610_SINCLAIR	*	I'm okay. There's a Jump Hole to Cambridge nearby. That's our best shot. From there, it should be easy to get to Leeds.	user picked: Draft (script)	
+DX_M05_0640_JUNI	*	Doctor, ever since Trent came in possession of the artifact, we've been hunted. First by the Liberty Navy, then bounty hunters, now Rheinlanders. Everybody seems to be after it, and we don't even know what it is. A friend told us that Professor Quintaine might be able to shed some light on this.	user typed	
+DX_M05_0670_JUNI	*	We need to know what's going on with this artifact. Why everyone's after it.	user typed	
+DX_M05_0690_JUNI	*	Damn, I guess the best thing we can do is fly to Leeds and regroup.	user picked: Speech to text	
+DX_M05_0720_SINCLAIR	*	We have to head to New London and from there to Leeds. I doubt the Rheinlanders will look for us here, but we need to stay sharp.	user picked: Draft (script)	
+DX_M05_0730_JUNI	*	Damn it! They found us. Trent, engage.	user picked: Speech to text	
+DX_M05_0740_TRAITOR_1	*	STOP! Do not open fire! We mean you no harm. We're here to warn you.	user typed	
+DX_M05_0840_TRAITOR_1	*	Our wing was outfitted with cloaking devices – strange looking things, they're part of a secret Rheinland weapons program. We'll cloak ourselves before we reach the Jump Hole. They will think that you're an easy target, but we'll give them a little surprise.	user picked: Draft (recording wording)	
+DX_M05_0860_JUNI	*	Damn it. The Jump Hole is blocked by a battleship! What are we gonna do?	user picked: Draft (recording wording)	
+DX_M05_0900_RH_BATTLESHIP	*	Have it your way! All fighter wings, engage. Target their engines–	user picked: FLSubs	
+DX_M05_0920_RH_BATTLESHIP	*	We're hit! All hands, abandon ship. Repeat–	user picked: FLSubs	
+DX_M05_0930_RH_BATTLESHIP	*	Ahhhhhhhhh!	user picked: Script (by line id) = FLSubs	
+DX_M05_0980_JUNI	*	The Trade Lane to Leeds is near. We should go.	user picked: Draft (script)	
+DX_M06_0130_DEXTER	*	I like your attitude, Bretonian. It'll be a shame to see you burn. But hey, that's the price of sportsmanship.	user picked: Draft (judged: script)	
+DX_M06_0140_DEXTER	*	That's it, kid! Deal's off!	user picked: Draft (recording wording)	
+DX_M06_0170_DEXTER	*	'course, I don't; you hunk o' junk. I built this damn thing, but its memory banks are busted. Simple rules, Bretonian: one round, no shootin' or bumpin' – and if you stink it up or chicken out on the course, you'll make me angry! And you don't want that! You ready?	user picked: Draft (your earlier pick)	
+DX_M06_0180_DEXTER	*	YEE HAW!	user picked: Your saved text (keep exactly) = Script	kept exactly as typed
+DX_M06_0206_ANNOUNCER	*	Two!	user picked: Draft (script)	
+DX_M06_0222_ANNOUNCER	*	Hovis is your leader after the first corner of the course!	user picked: Draft (merged)	
+DX_M06_0222B_ANNOUNCER	*	Hovis has taken the early lead.	user picked: Draft (speech to text) = Speech to text	
+DX_M06_0223B_ANNOUNCER	*	The newcomer is making an early bid for payback in this race.	user picked: Draft (speech to text) = Speech to text	
+DX_M06_0224B_ANNOUNCER	*	It's Hovis with the lead at the halfway point!	user typed	
+DX_M06_0225_ANNOUNCER	*	The newcomer is leading at the halfway mark!	user typed	
+DX_M06_0226_ANNOUNCER	*	Final stretch! Hovis is in the lead!	user typed	
+DX_M06_0227B_ANNOUNCER	*	We may have an upset. Trent has a lead going into the final stretch.	user picked: Speech to text	
+DX_M06_0228_ANNOUNCER	*	Hovis did it again! The challenger never had a chance!	user picked: Draft (judged: script)	
+DX_M06_0230_DEXTER	*	Damn! Give him something to think about, boys!	user picked: Draft (judged: script)	
+DX_M06_0240_DEXTER	*	Ha ha! My grandma is faster than you, Bretonian!	user picked: Script (by line id)	
+DX_M06_0270_DEXTER	*	Okay, I'll tell you want you want to know – but not over the comm channel. Meet me on the deck of the Hood.	user picked: FLSubs	
+DX_M06_0331_RHEINLANDER	*	This is your last warning. Surrender Quintaine or you will be destroyed.	user picked: Draft (script)	
+DX_M06_0333_GLORIOUS	*	Jarvis, Foshko: take out the gunship. Sanchez, Barrera: engage the fighters.	user picked: FLSubs	
+DX_M06_0341_GLORIOUS	*	We got the gunship.	user picked: Speech to text	
+DX_M06_0350_QUINTAINE	*	Mr. Trent, Quintaine here. I am flying this armored transport. I know it's slow, but it contains all the equipment I need for my work.	user picked: Draft (script)	
+DX_M06_0360_QUINTAINE	*	So Sinclair wants to meet on Leeds? That blight on our culture? All right.	user picked: Draft (recording wording)	
+DX_M06_0381_ALBERTSON	*	Perez and Wallace, protect Quintaine. Mr. Trent, let's take down the gunship.	user picked: Draft (merged)	
+DX_M06_0430_QUINTAINE	*	I actually haven't seen Dr. Sinclair in years. She sent me a message a while back that she had made a discovery on Pygar. Finally, a Dom'Kavash artifact that's still active...	user picked: Draft (judged: script)	
+DX_M06_0580_DEXTERB	*	Trent, no hard feelings!	user picked: Draft (judged: script)	
+DX_M06_0700_D-SPECTATOR	*	Heheh, kiss your credits goodbye! Hovis hasn't lost in over a year.	user typed	
+DX_M06_0730_C-SPECTATOR	*	He's gonna crush 'em!	user typed	
+DX_M06_0740_D-SPECTATOR	*	All right, Hovis! Kick some ass!	user picked: Draft (merged)	
+DX_M06_0840_A-SPECTATOR	*	I can't believe this!	user picked: Draft (merged)	
+DX_M06_0890_A-SPECTATOR	*	I can't believe it!	user picked: Draft (speech to text) = Speech to text	
+DX_M06_0900_B-SPECTATOR	*	Beginner's luck!	user picked: Draft (merged)	
+DX_M06_0970_B-SPECTATOR	*	Another five thousand on Hovis!	user picked: Draft (merged)	
+DX_M06_0980_D-SPECTATOR	*	Ten thousand on the newbie!	user picked: Draft (merged) = FLSubs	
+DX_M06_1020_A-SPECTATOR	*	I think the newcomer has a chance!	user picked: Draft (merged) = FLSubs	
+DX_M06_1070_A-SPECTATOR	*	Come on Hovis, gun it!	user picked: Draft (merged)	
+DX_M06_1110_C-SPECTATOR	*	Hah! This kid's got some skills. I like it, I like it!	user typed	
+DX_M06_1200_D-SPECTATOR	*	I won! Look at all them there credits!	user typed	
+DX_M06_1230_D-SPECTATOR	*	Another win for Hovis!	user picked: Draft (merged) = FLSubs	
+DX_M06_1491_ALBERTSON	*	Mr. Trent, you have the coordinates to Leeds. Take point.	user picked: Draft (recording wording)	
+DX_M06_2000_ALBERTSON	*	Wallace is down. It's looking grim.	user picked: Speech to text	
+DX_M06_2040_ALBERTSON	*	Quintaine's ship can't take much more damage! Cover the transport!	user typed	
+DX_M07_0190_SINCLAIR	*	Damn it, he cloaked! We've got to get away from here.	user picked: Draft (recording wording)	
+DX_M07_0250_JUNI	*	We're coming up on Stokes. Stay sharp.	user picked: Speech to text	
+DX_M07_0400_JUNI	*	Trent, Sinclair and Quintaine need enough time to get through the Gate. No matter what awaits us there – we have to buy them as much time as we can and then jump to Tau-31.	user picked: Draft (your earlier pick)	
+DX_M07_0430_GLASGOW	*	...emergency generators. This is Outpost Glasgow. To all Bretonian ships, we're under attack by a Rheinland strike force and have sustained heavy damage!	user picked: FLSubs	
+DX_M07_0470_GLASGOW	*	This is Outpost Glasgow to all Bretonian ships! We're under attack! Repeat: we are under attack!	user typed	
+DX_M07_0510_TOBIAS	*	Trent, a fleet of Rheinland ships is only minutes behind us. We have little time.	user picked: Draft (judged: script)	
+DX_M07_0510B_TOBIAS	*	Destroy the fighters and let's get out of here!	user picked: Draft (script)	
+DX_M07_0630_TOBIAS	*	We're coming up on Holman. Keep your eyes open. If there are Rheinlanders, we won't have the element of surprise this time.	user picked: Draft (judged: script)	
+DX_M07_0650_TOBIAS	*	The next Trade Lane takes us to the Tau-29 gate. From there, it's just a short flight to Shinkaku.	user picked: Draft (your earlier pick)	
+DX_M07_0680_TOBIAS	*	It's a trap! We only have one chance – quick, let's get out of here!	user picked: Draft (recording wording)	
+DX_M07_0800_TOBIAS	*	Hmm. The Tau-23 gate is not functional yet. Our best option is Planet Harris, but it's pretty far from here.	user picked: FLSubs	
+DX_M07_0840_TOBIAS	*	We cannot make it to Planet Harris from here... but there's an intermittent Jump Hole nearby. It might not work, but it's our only option. I'm uploading the coordinates!	user picked: Draft (judged: script)	
+DX_M07_0900_TOBIAS	*	Ha ha ha ha! We're not such easy prey after all, eh!	user picked: Draft (recording wording)	
+DX_M07_0950_TOBIAS	*	No! We have to leave the system. What's the status of the Jump Hole?	user picked: Draft (merged)	
+DX_M07_1030_TOBIAS	*	We're almost at Shinkaku.	user picked: Draft (judged: script)	
+DX_M07_1080_QUINTAINE	*	Apparently, the Kress base is not far – it's in a secret location on the far side of this system. The bartender gave me a set of coordinates. I'm uploading them now.	user picked: Draft (script)	
+DX_M07_1120_JUNI	*	All right everybody, let's get moving.	user picked: Draft (script)	
+DX_M07_1150_SINCLAIR	*	What did the bartender say about Kress?	user picked: Draft (judged: script)	
+DX_M07_1320_CRUISER	*	Red Alert! The Schiller is hit! Man all turrets! All other fighters: engage enemy ships!	user picked: FLSubs	
+DX_M07_1330_RHEINLAND_BATTLESHIP	*	Our reactor is hit! We're losing containment! Ahhhhhhh!	user picked: Draft (judged: script)	
+DX_M07_1340_RAZOR_1	*	Bullseye! All units engage! Hit 'em fast and hit 'em hard!	user typed	
+DX_M07_1420_RAZOR_1	*	No time to explain, we're uploading coordinates. Professor, you and the freighter have to fly there as quickly as you can – we'll try to hold off the Rheinland fleet.	user typed	
+DX_M07_1480_RAZOR_1	*	We have them on the run!	user picked: Draft (judged: script)	
+DX_M07_1520_RAZOR_1	*	The bartender on Shinkaku contacted us. Kress immediately sent us to find you.	user picked: Draft (judged: script)	
+DX_M07_1550_RAZOR_1	*	We should be safe now, but we need to keep moving. The Jump Hole to Tau-23 is near.	user picked: Draft (recording wording)	
+DX_M07_1690_QUINTAINE	*	This is Quintaine. Kress managed to contact his agent, Lord Hakkera. He is waiting for you on planet Kyushu. Please contact me when you have the Proteus Tome. In the meantime, Sinclair and I will continue to study the artifact. Good luck.	user picked: Draft (recording wording)	
+DX_M07_1740_JUNI	*	It's funny – I used to fly around this asteroid field when I was younger. My grandmother lives on Tsushima station above Aso. I haven't been back here in over a decade.	user picked: FLSubs	
+DX_M08_0000_JUNI	*	Trent! It took a while, but I finally found what we're looking for. Meet me in the New Tokyo system. It's urgent.	user picked: Draft (recording wording)	
+DX_M08_0260_DRAGON	*	The transport is still docking with Yukawa, Ozu-sensei, but it looked like they were about to leave. I counted multiple heavy weapon platforms and strong fighter protection. It won't be easy.	user picked: Draft (judged: script)	
+DX_M08_0340_OZU	*	There is the shipyard. Is everybody ready?	user picked: Draft (script)	
+DX_M08_0410_OZU	*	The second platform is down! Ozu to strike team: Operation is a go! All ships, take out the escort fighters.	user typed	
+DX_M08_0470_OZU	*	Another escort fighter destroyed! Hold on... I have a report from the strike team. They caught Tekagi's men off guard and have them pinned down.	user typed	
+DX_M08_0490_OZU	*	To all ships! The strike team has successfully taken over the transport. Disengage and protect the transport.	user picked: Draft (script)	
+DX_M08_0610_OZU	*	This is Lieutenant Ozu. Stand down, patrol. We have captured Tekagi's transport and are escorting it back to Kyoto as ordered.	user picked: Draft (script)	
+DX_M08_0665_OZU	*	The honor is ours.	user picked: Draft (script)	
+DX_M09_0100_OZU	*	Mr. Trent, my informants report that Tekagi is preparing to leave his fortress. We have a little time. Tekagi's arch is only one system away from here, in Tohoku. The Blood Dragons discovered a Jump Hole to there over twenty years ago. I'm uploading the coordinates.	user picked: Draft (merged)	
+DX_M09_0160_OZU	*	We have decided to attack Tekagi's base with full force. We will find the Tome... and kill Tekagi. Wish us luck! Ozu out!	user picked: Draft (recording wording)	
+DX_M09_0240_OZU	*	We have to destroy those ships. Engage!	user picked: Draft (merged) = FLSubs	
+DX_M09_0280_OZU	*	Mr. Trent, this is the Tohoku planetary arch. Once one of the wonders of Kusari ingenuity, now it is a fortress of deceit and evil. Dragons! Proceed to the target!	user picked: Draft (recording wording)	
+DX_M09_0380_OZU	*	Outpost Ryuku, this is Lieutenant Ozu.	user picked: Draft (merged)	
+DX_M09_0410_OZU	*	If Tekagi escapes, we'll forever miss our opportunity to retrieve the Tome and end that demon's life. We have to hurry.	user picked: Draft (recording wording)	
+DX_M09_0510_dragon_2	*	Damn it! Lieutenant Ozu, make your run!	user typed	
+DX_M09_0650_JUNI	*	Got 'em! That should set them back for a while. We have to get the hell out of here, come on!	user picked: FLSubs	
+DX_M09_0715_HAKKERA	*	It appears that they are mostly targeting high-ranking government and military officials. Tekagi was one of these people. Up until today, no one had ever seen a Nomad and lived to talk about it.	user picked: Draft (script)	
+DX_M09_0750_HAKKERA	*	We are approaching Kyoto. This is Lord Hakkera. We are on approach.	user picked: Draft (recording wording)	
+DX_M09_JUNI_TEMP3	juni	All escorts engage!	user picked: Draft (merged) = FLSubs	
+dx_m10_0190_bundbase	*	...under attack! This is Bundschuh station Bruchsal. All friendly units, please respond!	user picked: Script (by line id)	
+dx_m10_0237_vonclaussen	*	It's over.	user picked: Draft (judged: recording) = Script = FLSubs	
+dx_m10_0241b_vonclaussen	*	Trent, according to my sources, the Rheinland Military is amassing a fleet at a secret installation not far from here. We must strike this installation in order to slow the growing Rheinland war machine. If we are successful, this strike will greatly delay the Rheinland war plans.	user typed	
+dx_m10_0250_vonclaussen	*	An informant recently supplied me with construction blueprints for a new type of vessel being built by the Rheinland Military. It is unlike any other ship, Mr. Trent. The design is alien.	user picked: Draft (recording wording)	
+dx_m10_0260_vonclaussen	*	I have contacted a friend of mine who leads a rebel group that opposes the new Rheinland regime. Their base is not far from here.	user picked: Draft (script)	
+DX_M10_0310B_VONCLAUSSN	*	This operation is vital to the survival of both Rheinland and Kusari. If this war is allowed to progress, none shall survive. Stay alert and await my orders once we reach the end of the passage.	user picked: Draft (recording wording)	
+dx_m10_0361b_vonclaussen	*	Sensors show the passage is opening up into a huge open area. We are also picking up a massive installation. That will be our target.	user picked: FLSubs	
+dx_m10_0381b_vonclaussen	*	Sensors indicate that those are battleship-class Nomads moored with the station. If we take out the station, those vessels will be destroyed as well.	user picked: Draft (judged: script)	
+DX_M10_0382B_BUNDSCHUH_D	*	Herr Botzler, the Rheinland battleships are keeping us away from the installation. We can't get a good shot.	user picked: Draft (judged: script)	
+DX_M10_0400B_BUNDSCHUH_D	*	Can't stay on target–	user picked: FLSubs	
+DX_M10_0410B_BUNDSCHUH_E	*	Too many fighters, can't shake–	user picked: FLSubs	
+dx_m10_0420_scout	*	Stand by for security scan.	user picked: Draft (script)	
+dx_m10_0480b_vonclaussen	*	Trent, we've got to go now. We can't let Botzler's sacrifice be in vain.	user picked: Draft (judged: script)	
+dx_m10_0500_scout	*	We have hostiles in Sector C8!	user picked: FLSubs	
+dx_m10_0810_vonclaussen	*	You're welcome. Trent, go ahead and dock. I will follow.	user picked: Draft (recording wording)	
+dx_m10_0820_vonclaussen	*	What are you doing? Dock with the Jump Hole!	user picked: Draft (judged: script)	
+dx_m10_1060_hakkera	*	Trent, I will follow you through.	user picked: Draft (script)	
+dx_m10_1090_hakkera	*	We have to be careful. According to our informants, a large Rheinland fleet is amassing in this area. Mr. Trent, take the lead.	user picked: Conventions applied	
+dx_m10_1110_hakkera	*	The reports were accurate. Rheinland seems to be moving their entire Northern Fleet into Sigma.	user picked: Draft (judged: script)	
+dx_m10_1190_hakkera	*	What you see here are the remains of the decisive battle in the 80-Year War between Rheinland and the GMG. The Jump Hole is directly ahead of us.	user picked: Draft (judged: script)	
+dx_m10_1200_cobo	*	This Jump Hole will take you to New Berlin. This is as far as Lord Hakkera and I can go. Kusari citizens in Rheinland are being arrested on sight – or worse.	user typed	
+dx_m10_1240_hakkera	*	Trent, Hakkera here. We hear that Von Claussen's safehouse has been penetrated. He's on the run. You have to find him quickly!	user typed	
+dx_m10_1250_hakkera	*	This is Hakkera, Trent. You have greatly disappointed me.	user typed	
+dx_m10_1300_fischer	*	Freya, this is Daumann Freighter DHC-3417. We're transporting supplies to Planet Holstein.	user picked: Draft (judged: recording)	
+dx_m10_1330_fischer	*	We're approaching the Trade Lane. Take the lead.	user picked: Draft (recording wording)	
+dx_m10_1370_fischer	*	Here we are. I've got a rendezvous with a Bundschuh agent on the south-western continent. Give my regards to Herr Von Claussen. Good luck, Trent.	user picked: Draft (merged)	
+DX_M11_0110_Orillion	*	Colonel Zane, I am hoping you can bring Jacobi back alive. You know how important she will be for The Order in the days ahead.	user picked: Draft (your earlier pick)	
+DX_M11_0406_WALKER	*	Thank you, Jun'ko. A lot has happened since you left Liberty. The democracy we once served is now a bloodthirsty military dictatorship. My crew and I were forced to leave the central systems. We've been prowling the Independent Worlds, destroying Rheinland supply depots. A strange life for a career Navy officer.	user picked: Draft (script)	
+DX_M11_0650_KING	*	I don't like this. The docking ports are live, but there's no other activity. It's almost as if all the guards are asleep.	user picked: Draft (judged: script)	
+DX_M11_0810_PHOENIX	*	We're hit!	user picked: Draft (script)	
+DX_M11_0817_KING	*	They keep bringing in more ships!	user picked: Draft (script)	
+DX_M11_0832_JUNI	*	NOOOO!	user picked: Script (by line id)	
+DX_M11_1463_JUNI	*	My scanner is picking up the satellite. I'm not detecting any ships... could be a trap.	user picked: FLSubs	
+DX_M11_1470_KING	*	Juni, I'm reading multiple weapons platforms directly next to the satellite.	user picked: Draft (judged: script)	
+DX_M11_1471_JUNI	*	Confirmed! Let's take this thing out quickly.	user picked: Draft (judged: script)	
+DX_M11_1713_JUNI	*	There's a Jump Hole nearby that'll get us very close to our target.	user picked: Draft (your earlier pick)	
+dx_m12_0150_juni	*	Trent, you take point. King and I will take flanking positions.	user picked: Draft (judged: script)	
+dx_m12_0215_KING	*	The shield went down! Trent, head for the port on the northern hemisphere of the structure. I'm sending coordinates!	user picked: Draft (merged) = FLSubs	
+dx_m12_0216_juni	*	King and I will draw their fire, Trent! Head for the core and get that power cell.	user picked: Draft (script)	
+dx_m12_0240_king	*	Containment leak, hull buckling!	user picked: FLSubs	
+dx_m12_0260_juni	*	They just keep coming! You gotta hurry, Trent!	user typed	
+dx_m12_0350_king	*	We're pulling up at your four and eight, Trent! Let's get out of here!	user typed	
+dx_m12_0370_orillion	*	Jun'ko, your signal is breaking up...	user picked: Draft (your earlier pick)	
+dx_m12_0380_juni	*	Orillion, come in! Do you copy? Over. Damn it! Something's jamming our frequencies!	user typed	
+dx_m12_0420_king	*	Damn it! I don't think we're getting out of this one.	user picked: Draft (recording wording)	
+dx_m12_0430_juni	*	King! Trent! Inbound at twelve o'clock high!	user picked: Draft (recording wording)	
+dx_m12_0520_vonclaussen	*	The Nomads are now freely roaming throughout the colonies. They have begun their attack on Bretonia – nothing can stop them now.	user typed	
+dx_m12_0580_timer	*	Seven minutes remaining to Jump Hole collapse.	user picked: Draft (script)	
+DX_M13_0130_ALPHA_LEADER	*	This is Alpha Leader, Colonel Zane. Alpha and Beta have been holding ground but we're taking steady losses.	user picked: Draft (script)	
+DX_M13_0150_JUNI	*	Trent, that's a personnel transport. We need to help them first. Let's go.	user picked: Draft (script)	
+DX_M13_0160_TRANSPORT	*	Our hull is buckling. AHHHHHHHH!	user picked: Draft (script)	
+DX_M13_0300_JUNI	*	They've taken out Beta 1!	user picked: Script (by line id) = FLSubs	
+DX_M13_0340_JUNI	*	Beta 5 is in trouble! Damn it! Beta 5 is down!	user picked: Draft (your earlier pick)	
+DX_M13_0370_JUNI	*	Gamma 3 has been destroyed!	user typed	
+DX_M13_0380_JUNI	*	A Nomad has locked onto you, Gamma 4. Get out of there!	user picked: Draft (judged: script)	
+DX_M13_0390_JUNI	*	Damn it! The Nomads have destroyed Gamma 5!	user picked: Draft (your earlier pick)	
+DX_M13_0440_JUNI	*	We did it! All wings – take out the remaining fighters!	user picked: Draft (script)	
+DX_M13_0540_JUNI	*	Damn it! Trent, we have to protect the transport at all costs. Quintaine, keep heading toward the Osiris.	user picked: Draft (recording wording)	
+DX_M13_0580_JUNI	*	Roger that. What's the situation?	user picked: Draft (script)	
+DX_M13_0590_DELTA_LEADER	*	We took heavy losses during the evacuation. Only four transports and about two dozen fighters made it back to the Osiris.	user picked: Draft (script)	
+DX_M13_0680_ORILLION	*	The Osiris will create a diversion on the other side of the system. Hopefully, the Nomads will fall for it. Our strategy is to head directly into the Nomad gate. We believe the alien homeworld lies directly on the other side. Out best chance is a frontal assault with everything we have.	user typed	kept exactly as typed
+DX_M13_0760_ORILLION	*	Looks like a giant barrier of some sort. We must find a way to break through it.	user picked: Draft (script)	
+DX_M13_0810_JUNI	*	I've found an entrance through the barrier, but it looks heavily shielded. Looks like several power generators are supplying the shield with enough power that I can't penetrate it.	user picked: Draft (judged: script)	
+DX_M13_0870_ORILLION	*	All units: proceed through the opening. Trent, you and your wing go first.	user picked: Draft (judged: script)	
+DX_M13_0920_KING	*	Whatever it is, it's massive! Uploading coordinates.	user picked: Draft (recording wording)	
+DX_M13_0970_JUNI	*	All right, it's up to us.	user picked: Conventions applied	
+DX_M13_1040_KING	*	Good shot, Trent! Damn it, no effect yet. Take out another one!	user picked: Draft (recording wording)	
+DX_M13_1060_ORILLION	*	Trent! I'm picking up an energy surge from your ship! Seven hundred rels and rising!	user picked: Draft (judged: script)	
+dx_s003x_0501_Trent	*	Oh, why's that?	user picked: Script (by line id)	
+dx_s003x_0801_Trent	*	Ugh!	user picked: Draft (merged)	
+dx_s004x_0203_Li_diplomt	*	Some in the government feel that we need to increase our patrols in these areas–	user typed	spelling/punctuation conventions (data/style_rules.tsv)
+dx_s004x_03a01_Trent	trent	Ahem...	user picked: Script (by line id)	
+dx_s005a_0401_juni	*	Well, I found this ship for you. It's very basic and you won't have jump access yet, but this should be good enough for now.	user picked: Speech to text	
+dx_s005a_0402_juni	*	This assignment will be easy. All you have to do is babysit a convoy of food and medical supplies.	user picked: Speech to text	
+dx_s006x_0501_King	*	We've suspected for some time now that The Order has had ties to organized crime in Liberty.	user picked: Draft (your earlier pick)	
+dx_s006x_0503_King	*	We could really use you out there, Trent.	user picked: Draft (script)	
+dx_s006x_0601_Trent	*	All right, but this had better be worth it.	user picked: Speech to text	
+dx_s006x_0803_King	*	Try the Equipment Dealer over there, he always has good deals.	user picked: Draft (script)	
+dx_s009b_0403_King	*	but the LSF is about to ban them altogether under orders of the President.	user picked: Draft (your earlier pick)	
+dx_s009b_1202_King	*	I'll see you in space.	user picked: Draft (judged: recording) = Script = FLSubs	
+dx_s009d_0101_Trent	*	I want in.	user picked: Draft (script)	
+dx_s009d_0201_King	*	Yes!	user picked: Draft (script)	
+dx_s011x_0302_juni	*	They're both being uploaded to your Neural Net now. You'll also find an extra bonus.	user picked: Draft (judged: script)	
+dx_s011x_0601_Trent	*	What's gonna happen to Ashcroft?	user picked: Draft (judged: recording)	
+dx_s011x_0702_juni	*	Meanwhile, with your new security status I suspect you'll be able to occupy your time while I'm gone.	user picked: Draft (script)	
+dx_s012x_0303_Lonnigan	*	Freeport 7? Zone 21?	user picked: Script (by line id) = FLSubs	
+dx_s012x_0704a_Trent	*	What the...?	user picked: FLSubs	
+dx_s012x_1301_Trent	*	No, thanks, I'd better get going.	user picked: FLSubs	
+dx_s014b_0601_Trent	*	Shh!	user picked: Draft (merged)	
+dx_s014b_0801_li_news	*	In addition, Liberty officials have also just released his real name...	user picked: Draft (recording wording)	
+dx_s014b_0901_Trent	*	Sam Lonnigan.	user picked: Speech to text	
+dx_s014b_1001_li_news	*	Sam Lonnigan.	user picked: Speech to text	
+dx_s014b_1401_Trent	*	It wasn't before. It was during. He almost died. Doesn't make sense.	user picked: Speech to text	
+dx_s014b_1701_juni	*	Well, whoever he was, he's dead now. C'mon, Trent, we've got another scumbag to ferret out.	user picked: Draft (judged: script)	
+dx_s019a_1001_juni	*	I... I don't know! But there's more...	user picked: Draft (script)	
+dx_s020x_0101_VanPelt	*	Juni! Oh, I'm glad you made it. The secure channel is buzzing with reports about you.	user typed	
+dx_s020x_1301_li_news	*	They're armed and extremely dangerous. End transmission.	user picked: Draft (recording wording)	
+dx_s020x_1401_VanPelt	*	Juni, what is this all about?	user picked: Draft (judged: script)	
+dx_s020x_1501_Trent	*	I think it has something to do with this.	user picked: Draft (script)	
+dx_s020x_2501_Trent	*	We can't get rid of it now. There's a reason all this is happening, and we're in the middle of it.	user picked: Speech to text	
+dx_s020x_2503_Trent	*	If we find him.	user picked: FLSubs	
+dx_s020x_2901_benford_cv	*	Liberty ships approaching.	user picked: Speech to text	
+dx_s020x_3402_VanPelt	*	No one has used it since the disaster, but it still works.	user picked: Draft (script)	
+dx_s020x_3501_juni	*	What about you?	user picked: Draft (script)	
+dx_s021x_0402_Trent	*	[sigh]	user picked: FLSubs	
+dx_s021x_0702_Tobias	*	Now look at you. That your hunk of junk on the landing pad?	user picked: FLSubs	
+dx_s021x_1301_Tobias	*	I see. Well, the first thing to do is get rid of your ship. There's likely to be a description out on it.	user picked: Speech to text	
+dx_s021x_1304_Tobias	*	I want you to go and see the ship dealer in New London. I'll tell him you're coming.	user picked: Speech to text	
+dx_s021x_1501_Tobias	*	For once, just do what I tell you, boy.	user picked: Draft (recording wording)	
+dx_s026b_0402_juni	*	I don't want a repeat performance of Manhattan.	user picked: Draft (judged: script)	
+dx_s026b_0801_Vance	*	When you said in your message that you and Dr. Trent were from the Hammer Research Institute in Liberty,	user picked: Draft (recording wording)	
+dx_s026b_1202_Vance	*	I'm sorry. Usually I can find him, but not today.	user picked: Draft (script)	
+dx_s026b_2101_Vance	*	Sprague in Tau-29. I'm afraid I can't get her a message, though. It's too far out.	user typed	
+dx_s026b_2301_juni	*	You've been very helpful, Mr. Vance. Thank you.	user picked: Draft (merged) = Speech to text	
+dx_s026c_0201_juni	*	Trent, do you have any idea how difficult it's been trying to find this guy?	user picked: Speech to text	
+dx_s026c_0301_Trent	*	I just need some more time before I commit.	user picked: Speech to text	
+dx_s026c_0501_Trent	*	Okay, see you later.	user picked: Draft (script)	
+dx_s029x_1601_juni	*	Like it or not, Trent. If we're gonna get some answers, I think we're gonna HAVE to find Quintaine.	user typed	
+dx_s029x_1802_juni	*	Sinclair will do everything she can with her work, and I'll dig around for any leads on Quintaine.	user picked: Speech to text	
+dx_s032a_0301_dexter	*	I'm Hovis.	user picked: FLSubs	
+dx_s032a_0502_dexter	*	You know, I'd love to spend all day jawing with you, Bretonian, but I really only talk to racers.	user picked: FLSubs	
+dx_s032a_0702_dexter	*	In that case, I'll talk to you all day – providing, of course, you live.	user picked: FLSubs	
+dx_s032c_0201_dexter	*	Well, I don't do information less'n you win. And you can't win less'n you race.	user typed	
+dx_s034x_0602_Quintaine	quintaine	You do understand that with the appearance of our Rheinland friends, I'm hesitant to take too many chances.	user listened	script typo "too make"
+dx_s034x_0901_Trent	*	Wait! Wait! I have the Dom'Kavash artifact.	user picked: Speech to text	
+dx_s034x_1101_Trent	*	I have your artifact. The one Sinclair lost on Pygar, I found it. That's why I came.	user picked: Draft (recording wording)	
+dx_s034x_1201_Quintaine	*	[sigh] I don't suspect you have it with you, no, that would be too easy.	user picked: FLSubs	
+dx_s034x_1202_Quintaine	*	So where is it then?	user typed	
+dx_s034x_1301_Trent	*	Sinclair is working on it back on Leeds, in hiding. But she can't decipher it on her own. She needs your help.	user picked: FLSubs	
+dx_s034x_1801_or_pi_01	*	You fought well out there. Come on, someone wants to have a look at you.	user picked: Speech to text	
+dx_s034x_1901_Trent	*	Whoa, easy with that!	user typed	
+dx_s037a_0901_Trent	*	Uh-huh. And let me tell you, he's a tough old bird. He nearly pushed me out of an airlock.	user picked: Conventions applied	
+dx_s037a_1101_sinclair	*	Damn it! I am mad as hell at you. What happened? Where have you been?	user picked: Draft (recording wording)	
+dx_s037a_1202_Quintaine	*	Not long after you made your discovery, things... began to happen.	user picked: Draft (recording wording)	
+dx_s037a_1801_Trent	*	Look, I hate to rush this reunion along...	user picked: Draft (script)	
+dx_s037a_2402_Tobias	*	I've already told you the man you're looking for isn't here. So unless you'd like an education in foreign policy	user picked: Draft (your earlier pick)	
+dx_s037c_0301_Tobias	*	Trent, you can't stay here.	user picked: Draft (judged: script)	
+dx_s038x_0501_Quintaine	*	Quiet! We just need to find Kress.	user picked: Draft (recording wording)	
+dx_s038x_0901_Quintaine	*	He'll see me.	user picked: Draft (script)	
+dx_s038x_1001_Big_Man_01	*	He sees no one.	user picked: Draft (script)	
+dx_s038x_1301_Trent	*	Now that I've got your attention, take us to see the Colonel.	user picked: Speech to text	
+dx_s038x_2301_Kress	*	And so now that you are finally here, Doctor, let me offer you the sanctuary of my base.	user picked: Speech to text	
+dx_s038x_3201_Kress	*	The Order.	user picked: Speech to text	
+dx_s038x_3402_Kress	*	Despite what you may have heard, we are only interested in freedom and peace.	user picked: Draft (script)	
+dx_s038x_3501_juni	*	If that's so, then why all of the attacks?	user picked: Draft (recording wording)	
+dx_s038x_3701_Kress	*	For now, please accept my hospitality in the spirit in which it is offered.	user picked: Draft (judged: script)	
+dx_s038x_3801_Quintaine	*	Well, if I'm right, there's something we've overlooked. We need the Proteus Tome.	user picked: Draft (judged: script)	
+dx_s038x_4001_sinclair	*	It's a piece of parchment that rests in the Natural History Museum in Kusari. You see, the Artifact and the Panels have given us a lot of	user picked: Draft (recording wording)	
+dx_s045a_0301_juni	*	I just had to dig a little deeper than I thought.	user picked: Draft (script)	
+dx_s045a_0302_juni	*	Trent, I heard from Lord Hakkera. He says that the Proteus Tome and	user picked: Draft (your earlier pick)	
+dx_s045a_0304_juni	*	Hakkera can't help us.	user picked: Draft (judged: script)	
+dx_s045a_0502_juni	*	His position gives him power, but it also limits him. There's only so much he can do before he violates his station.	user typed	
+dx_s045d_0501_juni	*	So you're saying you're ready to trust me now?	user picked: Speech to text	
+dx_s046x_0702_juni	*	Ozu is living proof of that. My father knew this.	user picked: Draft (script)	
+dx_s046x_1003_Ozu	*	He was not on the transport as we were led to believe. Something has changed.	user picked: Speech to text	
+dx_s050a_0201_Ozu	*	As we feared, Governor Tekagi is indeed alive. I am told that he has secretly left the palace	user picked: Draft (recording wording)	
+dx_s050d_0101_Ozu	*	I must say, I am surprised to see you again.	user picked: Speech to text	
+dx_s052x_0501_Akira	*	What? That we were being invaded by an alien force we didn't understand?	user picked: Draft (recording wording)	
+dx_s052x_0602_Akira	*	That's why it was so important for you and brave Ozu	user picked: Draft (script)	
+dx_s052x_0801_Akira	*	There... Now you know.	user typed	
+dx_s055b_0101_Trent	*	I owe you one, Hakkera.	user picked: Draft (script)	
+dx_s055b_0201_Akira	*	Fine.	user picked: Draft (script)	
+dx_s055b_0601_Akira	*	New Berlin. You're perfect for the job because Bretonia is still neutral.	user picked: Draft (script)	
+dx_s055b_0801_Akira	*	And besides, I'm sending her back with the Proteus Tome to Dr. Quintaine.	user picked: Draft (your earlier pick)	
+dx_s055b_1001_Akira	*	Jun'ko! Come on!	user picked: Draft (script)	
+dx_s059x_0101_Blix.wav	*	[cacophony]	user picked: FLSubs	
+dx_s059x_0101_Jonner	*	My good sir! May we interest you in a reading for what the future may hold for you?	user picked: Draft (recording wording)	
+dx_s059x_1202_Jonner	*	You are to meet Herr Von Claussen on the old terraforming platform on the planet Holstein.	user picked: Draft (judged: script)	
+dx_s062x_0101_vonclaussn	*	Are you Mr. Trent?	user picked: Draft (merged) = Speech to text	
+dx_s062x_0501_vonclaussn	*	Good. I can't say how pleased I am to see you. Jonner and Blix told me you were coming.	user picked: Draft (judged: script)	
+dx_s062x_0702_vonclaussn	*	Blix took the liberty of reading your thoughts while you were on New Berlin.	user picked: Draft (judged: script)	
+dx_s062x_0703_vonclaussn	*	I'm sorry for the intrusion. I had to be sure that whoever Hakkera sent had not been tampered with.	user picked: Draft (judged: script)	
+dx_s062x_0801_Trent	*	I understand. Now let's get you out of here while we still can.	user picked: Speech to text	
+dx_s063x_0301_botzler	*	Herr Von Claussen, I'm glad to see you made it. And this must be your "way out".	user picked: Draft (script)	
+dx_s063x_0501_botzler	*	Very badly, I'm afraid. The Rheinland regulars have been hitting us with everything they've got recently.	user picked: Draft (script)	
+dx_s064x_0101_juni	*	Impressive, isn't it?	user picked: Draft (script)	
+dx_s064x_0902_vonclaussn	*	He is a fine addition to your group. Thank you again.	user picked: Speech to text	
+dx_s064x_1001_juni	*	Come on. It's time I reacquainted you with an old friend.	user picked: Draft (recording wording)	
+dx_s064x_2101_Orillion	*	That's right. They've been taking over human beings for some time now; controlling them.	user picked: Draft (judged: recording)	
+dx_s067b_0202_Orillion	*	and have been monitoring the President since her abduction. She's being held in the Alaska System.	user picked: Draft (recording wording)	
+dx_s067b_0701_juni	*	What's her status?	user picked: Draft (script)	
+dx_s068x_0601_juni	*	C'mon, let's get to work.	user typed	
+dx_s070x_0001_OrderExtra_01	*	It was a routine scouting mission through Zone 21. We round Perseus 7, and a blast came from the right, a blast came from the left – we had no idea what to do.	user picked: Draft (your earlier pick)	
+dx_s070x_0101_Orillion	*	Report, Colonel Zane.	user picked: Speech to text	
+dx_s070x_0201_juni	*	Sir, we have Jacobi. The Chancellor is dead – so are several of his Liberty hosts.	user picked: FLSubs	
+dx_s070x_2601_Trent	*	You're welcome, Madam President.	user picked: Speech to text	
+dx_s070x_2801_Orillion	*	The information your team brought back has shown a clear spread of the contamination. All of the colonies have now been affected.	user picked: Draft (judged: script)	
+dx_s070x_2802_Orillion	*	If not the leaders, then key military units in the field... they're getting stronger.	user picked: Draft (script)	
+dx_s071a_0301_juni	*	C'mon you two. We have work to do!	user picked: Draft (judged: script)	
+dx_s071b_0102_Trent	*	skewered alive by giant alien shape shifters, have to dive out windows or fight off spindly Nomad incubi...	user picked: Draft (your earlier pick)	
+dx_s071d_0101_juni	*	Trent, we still got a job to do. Are you with me?	user picked: Speech to text	
+dx_s074x_0001_Trent	*	Looks like the base has taken a pounding.	user picked: FLSubs	
+dx_s075x_02b01_or_pilot_01	extras	Uh-huh!	user picked: Script (by line id) = FLSubs	
+dx_s075x_0304_Orillion	*	We'll enter the Jump Gate and fly into what we think is the Nomad homeworld. Once there, we'll have to improvise.	user picked: Draft (your earlier pick)	
+dx_s075x_03a03_or_pilot_03	extras	See you in space.	user picked: Speech to text	
+dx_s075x_0507_vonclaussn	*	I'm going with you because I owe them something.	user picked: Draft (judged: script)	
+dx_s076x_0201_juni	*	I never told you – I asked the bartender about you the day we met...	user picked: Draft (recording wording)	
+dx_s076x_0903_Orillion	*	For now, it's better I stay less well known. I just wanted to see if you would consider a proposition.	user picked: Speech to text	
+dx_s076x_1302_Orillion	*	Enjoy your vacation, Freelancer.	user picked: Draft (script)	
+dx_s076x_1401_Trent	*	Be seeing you, Casper.	user typed	
+dx_s076x_1701_Trent	*	Uh, call me Trent. Pleased to meet you.	user picked: Speech to text	
+gcs_combat_announce_allclear_02-	king	Trent, I read no more hostiles	user picked: Draft (matches other characters)	
+gcs_combat_announce_allclear_02-	pilot_c_ill_m02	Scanner shows no more enemy targets.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_02-	pilot_c_ill_m02a	Scanner shows no more enemy targets.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_02-	pilot_c_ill_m02b	Scanner shows no more enemy targets.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_02-	pilot_f_mil_m01	Scanner shows no more bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_02-	pilot_f_mil_m01a	Scanner shows no more bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_02-	pilot_f_mil_m01b	Scanner shows no more bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_03-	pilot_f_ill_m02	Area secure. Repeat, secure.	user picked: Draft (majority of takes)	
+gcs_combat_announce_allclear_03-	pilot_f_ill_m02a	Area secure. Repeat, secure.	user picked: Draft (majority of takes)	
+gcs_combat_announce_allclear_03-	pilot_f_ill_m02b	Area secure. Repeat, secure.	user picked: Draft (majority of takes)	
+gcs_combat_announce_allclear_03-	pilot_f_leg_m01	Area clear. No bandits in sight.	user picked: Draft (Claude's guess)	
+gcs_combat_announce_allclear_03-	pilot_f_leg_m01b	Area clear. No bandits in sight.	user picked: Draft (Claude's guess)	
+gcs_combat_announce_allclear_04-	pilot_f_mil_m01	I'm showing no bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_04-	pilot_f_mil_m01a	I'm showing no bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_04-	pilot_f_mil_m01b	I'm showing no bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_04-	pilot_f_mil_m02	I'm showing no bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_04-	pilot_f_mil_m02a	I'm showing no bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_04-	pilot_f_mil_m02b	I'm showing no bogeys.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_05-	pilot_c_ill_m02	Area is secure. No more enemy targets.	user picked: Draft (majority of takes)	
+gcs_combat_announce_allclear_05-	pilot_c_ill_m02a	Area is secure. No more enemy targets.	user picked: Draft (majority of takes)	
+gcs_combat_announce_allclear_05-	pilot_c_ill_m02b	Area is secure. No more enemy targets.	user picked: Draft (majority of takes)	
+gcs_combat_announce_allclear_05-	pilot_f_leg_m01	Scanner shows no bandits.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_05-	pilot_f_leg_m01b	Scanner shows no bandits.	user picked: Draft (speech to text)	
+gcs_combat_announce_allclear_06-	pilot_f_ill_m02	Area is clear. No enemy movement.	user picked: Draft (majority of takes)	
+gcs_combat_announce_allclear_06-	pilot_f_ill_m02a	Area is clear. No enemy movement.	user picked: Draft (majority of takes)	
+gcs_combat_announce_allclear_06-	pilot_f_ill_m02b	Area is clear. No enemy movement.	user picked: Draft (majority of takes)	
+gcs_combat_announce_combatdrift_01-	hakkera	Disengage. Trent, we have to stay together.	user picked: Draft (merged) = FLSubs	
+gcs_combat_announce_combatdrift_02-	pilot_c_ill_f01	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	pilot_c_ill_f01a	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	pilot_c_ill_f01b	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	pilot_c_ill_m02	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Take pilot_c_ill_m02a	
+gcs_combat_announce_combatdrift_02-	pilot_c_ill_m02a	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Take pilot_c_ill_m02a	
+gcs_combat_announce_combatdrift_02-	pilot_c_ill_m02b	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Take pilot_c_ill_m02a	
+gcs_combat_announce_combatdrift_02-	pilot_c_leg_m01	It's not worth it. We're too exposed out here.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	pilot_c_leg_m01a	It's not worth it. We're too exposed out here.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	pilot_c_leg_m01b	It's not worth it. We're too exposed out here.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	pilot_f_ill_m01	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	pilot_f_ill_m01a	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	pilot_f_ill_m01b	This'll cost us if we're not careful. It's not smart to drift so far.	user picked: Draft (speech to text)	
+gcs_combat_announce_combatdrift_02-	quintaine	Can't leave me here alone, Mr. Trent.	user picked: Speech to text	
+gcs_combat_announce_enemysighted_01-	pilot_c_leg_m01	I see him.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_01-	pilot_c_leg_m01a	I see him.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_01-	pilot_c_leg_m01b	I see him.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_01-	pilot_f_leg_f01	I see him.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_01-	pilot_f_leg_f01a	I see him.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_01-	pilot_f_leg_f01b	I see him.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_01-	pilot_f_leg_m01	I see 'em.	user typed	
+gcs_combat_announce_enemysighted_01-	pilot_f_leg_m01b	I see 'em.	user typed	
+gcs_combat_announce_enemysighted_02-	pilot_c_ill_f01	Scanner showing new enemy.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_02-	pilot_c_ill_f01a	Scanner showing new enemy.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_02-	pilot_c_ill_f01b	Scanner showing new enemy.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_02-	pilot_f_ill_m01	Scanner showing new enemy.	user picked: Take pilot_f_ill_m01a	
+gcs_combat_announce_enemysighted_02-	pilot_f_ill_m01a	Scanner showing new enemy.	user picked: Take pilot_f_ill_m01a	
+gcs_combat_announce_enemysighted_02-	pilot_f_ill_m01b	Scanner showing new enemy.	user picked: Take pilot_f_ill_m01a	
+gcs_combat_announce_enemysighted_03-	pilot_c_leg_m01	I'm showing a new bandit on the scope.	user picked: Draft (majority of takes)	
+gcs_combat_announce_enemysighted_03-	pilot_c_leg_m01a	I'm showing a new bandit on the scope.	user picked: Draft (majority of takes)	
+gcs_combat_announce_enemysighted_03-	pilot_c_leg_m01b	I'm showing a new bandit on the scope.	user picked: Draft (majority of takes)	
+gcs_combat_announce_enemysighted_04-	pilot_f_mil_m01	Scanner is hot. Bogeys inbound.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_04-	pilot_f_mil_m01a	Scanner is hot. Bogeys inbound.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_04-	pilot_f_mil_m01b	Scanner is hot. Bogeys inbound.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_04-	pilot_f_mil_m02	Scanner is live. I have bogeys inbound.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_04-	pilot_f_mil_m02a	Scanner is live. I have bogeys inbound.	user picked: Draft (speech to text)	
+gcs_combat_announce_enemysighted_04-	pilot_f_mil_m02b	Scanner is live. I have bogeys inbound.	user picked: Draft (speech to text)	
+gcs_combat_announce_engage_03-	atc_leg_f01	We read bogeys inbound. Stow what you can and take up a defensive perimeter.	user picked: Draft (speech to text)	
+gcs_combat_announce_engage_03-	atc_leg_f01a	We read bogeys inbound. Stow what you can and take up a defensive perimeter.	user picked: Draft (speech to text)	
+gcs_combat_announce_ff_02-	pilot_f_mil_m01	Curb your fire, freelancer!	user typed	
+gcs_combat_announce_ff_02-	pilot_f_mil_m01a	Curb your fire, freelancer!	user typed	
+gcs_combat_announce_ff_02-	pilot_f_mil_m01b	Curb your fire, freelancer!	user typed	
+gcs_combat_announce_ff_03-	pilot_f_ill_m01	Check your target, jerk!	user typed	
+gcs_combat_announce_ff_03-	pilot_f_ill_m01a	Check your target, jerk!	user typed	
+gcs_combat_announce_ff_03-	pilot_f_ill_m01b	Check your target, jerk!	user typed	
+gcs_combat_announce_flee_01-	pilot_f_mil_m02	Retreating.	user picked: Draft (Claude's guess)	
+gcs_combat_announce_flee_01-	pilot_f_mil_m02a	Retreating.	user picked: Draft (Claude's guess)	
+gcs_combat_announce_flee_01-	pilot_f_mil_m02b	Retreating.	user picked: Draft (Claude's guess)	
+gcs_combat_announce_flee_02-	pilot_c_ill_m02	Breaking off attack.	user picked: Take pilot_c_ill_m02a	
+gcs_combat_announce_flee_02-	pilot_c_ill_m02a	Breaking off attack.	user picked: Take pilot_c_ill_m02a	
+gcs_combat_announce_flee_02-	pilot_c_ill_m02b	Breaking off attack.	user picked: Take pilot_c_ill_m02a	
+gcs_combat_announce_flee_03-	pilot_c_ill_f01	I'm bugging out.	user picked: Draft (speech to text)	
+gcs_combat_announce_flee_03-	pilot_c_ill_f01a	I'm bugging out.	user picked: Draft (speech to text)	
+gcs_combat_announce_flee_03-	pilot_c_ill_f01b	I'm bugging out.	user picked: Draft (speech to text)	
+gcs_combat_askengage_01-	pilot_c_leg_m01	Standing by, lemme at 'em.	user typed	takes made consistent (user, in chat)
+gcs_combat_askengage_01-	pilot_c_leg_m01a	Standing by, lemme at 'em.	user typed	takes made consistent (user, in chat)
+gcs_combat_askengage_01-	pilot_c_leg_m01b	Standing by, lemme at 'em.	user typed	takes made consistent (user, in chat)
+gcs_combat_askforhelp_05-	pilot_f_leg_m01	How about backing me up?	user picked: Draft (speech to text)	
+gcs_combat_askforhelp_05-	pilot_f_leg_m01b	How about backing me up?	user picked: Draft (speech to text)	
+gcs_combat_brag_01-	quintaine	Hostile target destroyed.	user picked: Draft (matches other characters)	
+gcs_combat_brag_02-	pilot_f_leg_f01	Bandit destroyed.	user picked: Draft (speech to text)	
+gcs_combat_brag_02-	pilot_f_leg_f01a	Bandit destroyed.	user picked: Draft (speech to text)	
+gcs_combat_brag_02-	pilot_f_leg_f01b	Bandit destroyed.	user picked: Draft (speech to text)	
+gcs_combat_brag_02-	pilot_f_leg_m01	Bandit destroyed.	user picked: Draft (speech to text)	
+gcs_combat_brag_02-	pilot_f_leg_m01b	Bandit destroyed.	user picked: Draft (speech to text)	
+gcs_combat_brag_04-	hakkera	Hostile target down!	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_brag_04-	vonclaussn	Hostile target down!	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_brag_05-	pilot_f_ill_m01	Enemy target vaped.	user picked: Draft (Claude's guess)	
+gcs_combat_brag_05-	pilot_f_ill_m01a	Enemy target vaped.	user picked: Draft (Claude's guess)	
+gcs_combat_brag_05-	pilot_f_ill_m01b	Enemy target vaped.	user picked: Draft (Claude's guess)	
+gcs_combat_brag_05-	pilot_f_ill_m02	Enemy target vaped.	user picked: Draft (Claude's guess)	
+gcs_combat_brag_05-	pilot_f_ill_m02a	Enemy target vaped.	user picked: Draft (Claude's guess)	
+gcs_combat_brag_05-	pilot_f_ill_m02b	Enemy target vaped.	user picked: Draft (Claude's guess)	
+gcs_combat_brag_06-	pilot_f_leg_f01	Bandit down.	user picked: Draft	
+gcs_combat_brag_06-	pilot_f_leg_f01a	Bandit down.	user picked: Draft	
+gcs_combat_brag_06-	pilot_f_leg_f01b	Bandit down.	user picked: Draft	
+gcs_combat_deathsympathy_02-	hakkera	A proud Dragon pilot has died.	user picked: Draft (merged) = FLSubs	
+gcs_combat_deathsympathy_04-	pilot_f_leg_m01	No! They got one of mine.	user typed	
+gcs_combat_deathsympathy_04-	pilot_f_leg_m01b	No! They got one of mine.	user typed	
+gcs_combat_engaging_02+	pilot_f_leg_m01	Taking on	user typed	
+gcs_combat_engaging_02+	pilot_f_leg_m01b	Taking on	user typed	
+gcs_combat_fleereason_damaged_02-	pilot_f_ill_m02	I've been stomped on pretty hard.	user picked: Draft (Claude's guess)	
+gcs_combat_fleereason_damaged_02-	pilot_f_ill_m02a	I've been stomped on pretty hard.	user picked: Draft (Claude's guess)	
+gcs_combat_fleereason_damaged_02-	pilot_f_ill_m02b	I've been stomped on pretty hard.	user picked: Draft (Claude's guess)	
+gcs_combat_fleereason_noweapons_03-	pilot_f_mil_m02	Weaps depleted.	user typed	
+gcs_combat_fleereason_noweapons_03-	pilot_f_mil_m02b	Weaps depleted.	user typed	
+gcs_combat_fleereason_other_03-	pilot_f_ill_m02	I'd rather live to fight another day.	user picked: Draft (Claude's guess)	
+gcs_combat_fleereason_other_03-	pilot_f_ill_m02a	I'd rather live to fight another day.	user picked: Draft (Claude's guess)	
+gcs_combat_fleereason_other_03-	pilot_f_ill_m02b	I'd rather live to fight another day.	user picked: Draft (Claude's guess)	
+gcs_combat_fleereason_tough_02-	pilot_f_leg_m01	They'd mop the floor with me right now.	user picked: Take pilot_f_leg_m01b	
+gcs_combat_fleereason_tough_02-	pilot_f_leg_m01b	They'd mop the floor with me right now.	user picked: Take pilot_f_leg_m01b	
+gcs_combat_hasinsights_01-	tobias	I have a visual.	user picked: Draft (matches other characters)	
+gcs_combat_hasinsights_04-	hakkera	Hostile is in my sights.	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_hasinsights_04-	king	Hostile is in my sights.	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_hasinsights_04-	pilot_c_ill_m02	I've got a visual on the enemy. Target is prime, and I am ready.	user typed	
+gcs_combat_hasinsights_04-	pilot_c_ill_m02a	I've got a visual on the enemy. Target is prime, and I am ready.	user typed	
+gcs_combat_hasinsights_04-	pilot_c_ill_m02b	I've got a visual on the enemy. Target is prime, and I am ready.	user typed	
+gcs_combat_hasinsights_04-	pilot_f_ill_m02	I've got a visual on the enemy. Target is prime, and I'm ready.	user typed	
+gcs_combat_hasinsights_04-	pilot_f_ill_m02a	I've got a visual on the enemy. Target is prime, and I'm ready.	user typed	
+gcs_combat_hasinsights_04-	pilot_f_ill_m02b	I've got a visual on the enemy. Target is prime, and I'm ready.	user typed	
+gcs_combat_hasinsights_05-	pilot_c_ill_f01	Target in range. Locking in on enemy.	user picked: Draft (your earlier pick)	
+gcs_combat_hasinsights_05-	pilot_c_ill_f01a	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_c_ill_f01b	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_c_ill_m01	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_c_ill_m01a	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_c_ill_m01b	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_c_ill_m02	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_c_ill_m02a	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_c_ill_m02b	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_c_leg_m01	Homing in on bandit.	user picked: Conventions applied	same decision for every take (fixed save)
+gcs_combat_hasinsights_05-	pilot_c_leg_m01a	Homing in on bandit.	user picked: Conventions applied	same decision for every take (fixed save)
+gcs_combat_hasinsights_05-	pilot_c_leg_m01b	Homing in on bandit.	user picked: Conventions applied	same decision for every take (fixed save)
+gcs_combat_hasinsights_05-	pilot_f_ill_m01	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_f_ill_m01a	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_f_ill_m01b	Target in range. Locking in on enemy.	user picked: Draft (speech to text)	
+gcs_combat_hasinsights_05-	pilot_f_ill_m02	Target in range. Locking in on enemy.	user picked: Take pilot_f_ill_m02b	
+gcs_combat_hasinsights_05-	pilot_f_ill_m02a	Target in range. Locking in on enemy.	user picked: Take pilot_f_ill_m02b	
+gcs_combat_hasinsights_05-	pilot_f_ill_m02b	Target in range. Locking in on enemy.	user picked: Take pilot_f_ill_m02b	
+gcs_combat_hasinsights_05-	pilot_f_leg_m01	Homing in on bandit.	user typed	
+gcs_combat_hasinsights_05-	pilot_f_leg_m01b	Homing in on bandit.	user typed	
+gcs_combat_inflicting_damage_01-	pilot_c_leg_m01	Bandit is taking hits.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_01-	pilot_c_leg_m01a	Bandit is taking hits.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_01-	pilot_c_leg_m01b	Bandit is taking hits.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_01-	pilot_f_leg_m01	Bandit is taking hits.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_01-	pilot_f_leg_m01b	Bandit is taking hits.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_01-	pilot_f_mil_m01	Direct hit!	user typed	
+gcs_combat_inflicting_damage_01-	pilot_f_mil_m01a	Direct hit!	user typed	
+gcs_combat_inflicting_damage_01-	pilot_f_mil_m01b	Direct hit!	user typed	
+gcs_combat_inflicting_damage_02-	pilot_f_leg_f01	Bandit is under fire.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_02-	pilot_f_leg_f01a	Bandit is under fire.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_02-	pilot_f_leg_f01b	Bandit is under fire.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_03-	pilot_f_leg_f01	Bandit is taking damage.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_03-	pilot_f_leg_f01a	Bandit is taking damage.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_03-	pilot_f_leg_f01b	Bandit is taking damage.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_03-	pilot_f_leg_m01	Bandit is taking damage.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_03-	pilot_f_leg_m01b	Bandit is taking damage.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_04-	pilot_c_leg_m01	Hitting bandit hard.	user picked: Draft (Claude's guess)	
+gcs_combat_inflicting_damage_04-	pilot_c_leg_m01a	Hitting bandit hard.	user picked: Draft (Claude's guess)	
+gcs_combat_inflicting_damage_04-	pilot_c_leg_m01b	Hitting bandit hard.	user picked: Draft (Claude's guess)	
+gcs_combat_inflicting_damage_worst_01-	king	Hostile is taking heavy damage.	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_inflicting_damage_worst_01-	orillion	Target is caught on fire!	user picked: Draft (merged)	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_f01	Lighting him up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_f01a	Lighting him up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_f01b	Lighting him up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_m01	Lighting them up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_m01a	Lighting them up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_m01b	Lighting them up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_m02	Lighting him up.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_m02a	Lighting him up.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_inflicting_damage_worst_01-	pilot_c_ill_m02b	Lighting him up.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_inflicting_damage_worst_01-	pilot_f_ill_m02	Lighting him up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	pilot_f_ill_m02a	Lighting him up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	pilot_f_ill_m02b	Lighting him up.	user typed	
+gcs_combat_inflicting_damage_worst_01-	vonclaussn	Hostile is taking heavy damage.	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_inflicting_damage_worst_03-	king	Trent, one of them is about to die.	user picked: Draft (merged) = FLSubs	
+gcs_combat_inflicting_damage_worst_05-	pilot_f_leg_m01	Bandit is starting to cave.	user picked: Draft (speech to text)	
+gcs_combat_inflicting_damage_worst_05-	pilot_f_leg_m01b	Bandit is starting to cave.	user picked: Draft (speech to text)	
+gcs_combat_insights_01-	botzler	One is right behind to me. Mr. Trent, I need help!	user typed	
+gcs_combat_insights_01-	ozu	A hostile has locked on.	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_insights_01-	sinclair	Hostile has locked on. I can't shake him.	user picked: Speech to text	
+gcs_combat_insights_01-	vonclaussn	Hostile is locked on! I can't shake him!	user typed	
+gcs_combat_insights_02-	ozu	An enemy has locked on to me.	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_insights_02-	sinclair	One is right behind me. I need help!	user picked: Draft (merged) = FLSubs	
+gcs_combat_insights_03-	hakkera	One is right behind me. Trent, I need help!	user picked: Draft (merged) = FLSubs	
+gcs_combat_insights_03-	vonclaussn	One is right behind me, Mr. Trent. I need help!	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_insights_06-	pilot_f_leg_m01	I've picked up a bandit.	user picked: Take pilot_f_leg_m01b	
+gcs_combat_insights_06-	pilot_f_leg_m01b	I've picked up a bandit.	user picked: Take pilot_f_leg_m01b	
+gcs_combat_offerhelp_03-	pilot_f_leg_m01	Need some cover, friend?	user picked: Draft (Claude's guess)	
+gcs_combat_offerhelp_03-	pilot_f_leg_m01b	Need some cover, friend?	user picked: Draft (Claude's guess)	
+gcs_combat_order_disengage_01-	vonclaussn	To all remaining pilots: disengage!	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_order_disengage_01-	walker	All ships: stand down!	user picked: Draft (merged) = FLSubs	
+gcs_combat_order_disengage_03-	vonclaussn	To all units: fall back and break off your attack!	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_order_disengage_05-	pilot_f_mil_m01	Cease fire, pilots	user picked: Draft (speech to text)	
+gcs_combat_order_disengage_05-	pilot_f_mil_m01a	Cease fire, pilots	user picked: Draft (speech to text)	
+gcs_combat_order_disengage_05-	pilot_f_mil_m01b	Cease fire, pilots	user picked: Draft (speech to text)	
+gcs_combat_order_engage_01-	botzler	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	hakkera	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	juni	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	king	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	orillion	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	ozu	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	pilot_c_leg_m01	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	pilot_c_leg_m01a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	pilot_c_leg_m01b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	pilot_f_leg_f01	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	pilot_f_leg_f01a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	pilot_f_leg_f01b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	pilot_f_leg_m01	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	pilot_f_leg_m01b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	quintaine	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	tobias	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	vonclaussn	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_01-	walker	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_f01	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_f01a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_f01b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_m01	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_m01a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_m01b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_m02	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_m02a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_c_ill_m02b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_ill_m01	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_ill_m01a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_ill_m01b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_ill_m02	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_ill_m02a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_ill_m02b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_mil_m01	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_mil_m01a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_mil_m01b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_mil_m02	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_mil_m02a	Engage!	user picked: Draft (merged)	
+gcs_combat_order_engage_05-	pilot_f_mil_m02b	Engage!	user picked: Draft (merged)	
+gcs_combat_order_retreattowards_02+	pilot_f_ill_m02	Bug out! Regroup at	user picked: Draft (Claude's guess)	
+gcs_combat_order_retreattowards_02+	pilot_f_ill_m02a	Bug out! Regroup at	user picked: Draft (Claude's guess)	
+gcs_combat_order_retreattowards_02+	pilot_f_ill_m02b	Bug out! Regroup at	user picked: Draft (Claude's guess)	
+gcs_combat_order_retreattowards_02+	pilot_f_leg_m01	Bug out and get to	user picked: Draft (Claude's guess)	
+gcs_combat_order_retreattowards_02+	pilot_f_leg_m01b	Bug out and get to	user picked: Draft (Claude's guess)	
+gcs_combat_order_retreattowards_05+	pilot_f_leg_m01	Retreat at once and meet up at	user typed	
+gcs_combat_order_retreattowards_05+	pilot_f_leg_m01b	Retreat at once and meet up at	user typed	
+gcs_combat_order_retreattowards_06+	pilot_c_ill_m02	That's enough. Break it off and rendezvous at	user picked: Draft (Claude's guess)	
+gcs_combat_order_retreattowards_06+	pilot_c_ill_m02a	That's enough. Break it off and rendezvous at	user picked: Draft (Claude's guess)	
+gcs_combat_order_retreattowards_06+	pilot_c_ill_m02b	That's enough. Break it off and rendezvous at	user picked: Draft (Claude's guess)	
+gcs_combat_rejoiningform_01-	juni	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	orillion	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	ozu	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_c_leg_m01	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_c_leg_m01a	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_c_leg_m01b	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_f_leg_m01	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_f_leg_m01b	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_f_mil_m01	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_f_mil_m01a	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_f_mil_m01b	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_f_mil_m02	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_f_mil_m02a	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	pilot_f_mil_m02b	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	quintaine	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	tobias	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_rejoiningform_01-	walker	Breaking off and rejoining formation.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_f01	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_f01a	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_f01b	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_m01	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_m01a	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_m01b	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_m02	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_m02a	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_c_ill_m02b	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_ill_m01	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_ill_m01a	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_ill_m01b	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_ill_m02	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_ill_m02a	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_ill_m02b	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_mil_m01	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_mil_m01a	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_02-	pilot_f_mil_m01b	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_04-	pilot_f_ill_m02	Back to the patrol.	user picked: Draft (Claude's guess)	
+gcs_combat_resume_patrol_04-	pilot_f_ill_m02a	Back to the patrol.	user picked: Draft (Claude's guess)	
+gcs_combat_resume_patrol_04-	pilot_f_ill_m02b	Back to the patrol.	user picked: Draft (Claude's guess)	
+gcs_combat_resume_patrol_04-	pilot_f_mil_m02	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_04-	pilot_f_mil_m02a	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_resume_patrol_04-	pilot_f_mil_m02b	Resuming patrol.	user picked: Draft (speech to text) = Speech to text	
+gcs_combat_taking_damage_02-	walker	My armor is weakening.	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_taking_damage_03-	pilot_f_leg_f01	Bandit has me in his sights. He's hitting me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_03-	pilot_f_leg_f01a	Bandit has me in his sights. He's hitting me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_03-	pilot_f_leg_f01b	Bandit has me in his sights. He's hitting me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_04-	pilot_f_leg_m01	Bandit is firing on me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_04-	pilot_f_leg_m01b	Bandit is firing on me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_05-	pilot_c_leg_m01	Bandit is firing on me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_05-	pilot_c_leg_m01a	Bandit is firing on me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_05-	pilot_c_leg_m01b	Bandit is firing on me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_05-	pilot_f_leg_m01	I'm hit! Bandit is hitting me!	user typed	
+gcs_combat_taking_damage_05-	pilot_f_leg_m01b	I'm hit! Bandit is hitting me!	user typed	
+gcs_combat_taking_damage_06-	pilot_c_leg_m01	I'm hit. Bandit is hitting me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_06-	pilot_c_leg_m01a	I'm hit. Bandit is hitting me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_06-	pilot_c_leg_m01b	I'm hit. Bandit is hitting me.	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_worst_01-	pilot_f_ill_m02	I can't hold her!	user typed	
+gcs_combat_taking_damage_worst_01-	pilot_f_ill_m02a	I can't hold her!	user typed	
+gcs_combat_taking_damage_worst_01-	pilot_f_ill_m02b	I can't hold her!	user typed	
+gcs_combat_taking_damage_worst_01-	pilot_f_leg_m01	Can't hold it. She's breaking up!	user typed	
+gcs_combat_taking_damage_worst_01-	pilot_f_leg_m01b	Can't hold it. She's breaking up!	user typed	
+gcs_combat_taking_damage_worst_01-	walker	31 dead. Hull is critical!	user typed	
+gcs_combat_taking_damage_worst_02-	botzler	I cannot take more of this!	user picked: Draft (merged)	
+gcs_combat_taking_damage_worst_02-	orillion	Critical failure in secondary!	user picked: Draft (matches other characters) = FLSubs	
+gcs_combat_taking_damage_worst_02-	pilot_f_ill_m02	All systems have failed! Losing power!	user typed	
+gcs_combat_taking_damage_worst_02-	pilot_f_ill_m02a	All systems have failed! Losing power!	user typed	
+gcs_combat_taking_damage_worst_02-	pilot_f_ill_m02b	All systems have failed! Losing power!	user typed	
+gcs_combat_taking_damage_worst_03-	pilot_f_leg_m01	I'm losing hull integrity!	user typed	
+gcs_combat_taking_damage_worst_03-	pilot_f_leg_m01b	I'm losing hull integrity!	user typed	
+gcs_combat_taking_damage_worst_05-	pilot_f_leg_m01	Reactor leak!	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_worst_05-	pilot_f_leg_m01b	Reactor leak!	user picked: Draft (speech to text)	
+gcs_combat_taking_damage_worst_07-	pilot_c_ill_m01	Lost maneuvering. Lost life support. Lost–	user picked: Conventions applied	
+gcs_combat_taking_damage_worst_07-	pilot_c_ill_m01a	Lost maneuvering. Lost life support. Lost–	user picked: Conventions applied	
+gcs_combat_taking_damage_worst_07-	pilot_c_ill_m01b	Lost maneuvering. Lost life support. Lost–	user picked: Conventions applied	
+gcs_combat_taking_damage_worst_07-	pilot_f_ill_m01	Lost maneuvering. Lost life support. Lost–	user picked: Conventions applied	
+gcs_combat_taking_damage_worst_07-	pilot_f_ill_m01a	Lost maneuvering. Lost life support. Lost–	user picked: Conventions applied	
+gcs_combat_taking_damage_worst_07-	pilot_f_ill_m01b	Lost maneuvering. Lost life support. Lost–	user picked: Conventions applied	
+gcs_combat_taking_dmg_worst_04-	atc_leg_f01	This is control. We show a reactor leak! All hands in the area and repair crews – Evacuate!	user typed	spelling/punctuation conventions (data/style_rules.tsv)
+gcs_combat_taking_dmg_worst_04-	atc_leg_f01a	This is control. We show a reactor leak! All hands in the area and repair crews – Evacuate!	user typed	spelling/punctuation conventions (data/style_rules.tsv)
+gcs_combat_taking_dmg_worst_04-	atc_leg_m01	This is control. We show a reactor leak! All hands in the area and repair crews – Evacuate!	user typed	spelling/punctuation conventions (data/style_rules.tsv)
+gcs_combat_taking_dmg_worst_05-	atc_leg_f01	Hull breach on five decks. Areas are sealed, but not holding.	user typed	
+gcs_combat_taking_dmg_worst_05-	atc_leg_f01a	Hull breach on five decks. Areas are sealed, but not holding.	user typed	
+gcs_combat_taking_dmg_worst_05-	atc_leg_m01	Hull breach on five decks. Areas are sealed, but not holding.	user typed	
+gcs_dhail_mbid_patrol_ill	atc_leg_f01	raider	user picked: Conventions applied	same decision for every take (fixed save)
+gcs_dhail_mbid_patrol_ill	atc_leg_f01a	raider	user picked: Conventions applied	same decision for every take (fixed save)
+gcs_dockhail_dock_hailmethod_02-	atc_leg_f01	You've entered our radar range.	user picked: Draft (speech to text)	
+gcs_dockhail_dock_hailmethod_02-	atc_leg_f01a	You've entered our radar range.	user picked: Draft (speech to text)	
+gcs_dockhail_dock_hailmethod_05-	atc_leg_f01	You are now in range.	user picked: Draft (speech to text)	
+gcs_dockhail_dock_hailmethod_05-	atc_leg_f01a	You are now in range.	user picked: Draft (speech to text)	
+gcs_docklaunch_clear_moor_01-	atc_leg_f01	Mooring link disengaged.	user picked: Draft (speech to text)	
+gcs_docklaunch_clear_moor_01-	atc_leg_f01a	Mooring link disengaged.	user picked: Draft (speech to text)	
+gcs_dockrequest_jumpgatedelayed_01-	pilot_f_leg_m01	Looks like we are not the only ones headed to	user typed	
+gcs_dockrequest_jumpgatedelayed_01-	pilot_f_leg_m01b	Looks like we are not the only ones headed to	user typed	
+gcs_dockrequest_request_02+	pilot_f_ill_m02	I'm requesting	user typed	trailing "to" removed: the game adds "to dock" (user, in chat)
+gcs_dockrequest_request_02+	pilot_f_ill_m02a	I'm requesting	user typed	trailing "to" removed: the game adds "to dock" (user, in chat)
+gcs_dockrequest_request_02+	pilot_f_ill_m02b	I'm requesting	user typed	trailing "to" removed: the game adds "to dock" (user, in chat)
+gcs_fidget_patrolsimple_01-	pilot_f_ill_m02	Keep it icy, man. I don't want to end up a corpse before my time 'cause you were daydreaming.	user typed	
+gcs_fidget_patrolsimple_01-	pilot_f_ill_m02a	Keep it icy, man. I don't want to end up a corpse before my time 'cause you were daydreaming.	user typed	
+gcs_fidget_patrolsimple_01-	pilot_f_ill_m02b	Keep it icy, man. I don't want to end up a corpse before my time 'cause you were daydreaming.	user typed	
+gcs_fidget_saystatus_damagenone_01-	pilot_f_ill_m01	Ship's fine.	user picked: Draft (Claude's guess)	
+gcs_fidget_saystatus_damagenone_01-	pilot_f_ill_m01a	Ship's fine.	user picked: Draft (Claude's guess)	
+gcs_fidget_saystatus_damagenone_01-	pilot_f_ill_m01b	Ship's fine.	user picked: Draft (Claude's guess)	
+gcs_fidget_talkcargo_01-	pilot_f_ill_m01	should bring in a ripe payday.	user picked: Draft (your earlier pick)	
+gcs_fidget_talkcargo_01-	pilot_f_ill_m01a	should bring in a ripe payday.	user picked: Draft (your earlier pick)	
+gcs_fidget_talkcargo_01-	pilot_f_ill_m01b	should bring in a ripe payday.	user picked: Draft (your earlier pick)	
+gcs_fidget_talkcargo_01-	pilot_f_ill_m02	it'll bring in a ripe payday	user picked: Conventions applied	same decision for every take (fixed save)
+gcs_fidget_talkcargo_01-	pilot_f_ill_m02a	it'll bring in a ripe payday	user picked: Conventions applied	same decision for every take (fixed save)
+gcs_fidget_talkcargo_01-	pilot_f_ill_m02b	it'll bring in a ripe payday	user picked: Conventions applied	same decision for every take (fixed save)
+gcs_fidget_talkcargo_01-	pilot_f_leg_f01	lands a good price	user picked: Conventions applied	
+gcs_fidget_talkcargo_01-	pilot_f_leg_f01a	lands a good price	user picked: Conventions applied	
+gcs_fidget_talkcargo_01-	pilot_f_leg_f01b	lands a good price	user picked: Conventions applied	
+gcs_fidget_trade_ihear_01+	pilot_f_ill_m01	A bay full of	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_ihear_01+	pilot_f_ill_m01a	A bay full of	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_ihear_01+	pilot_f_ill_m01b	A bay full of	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_ihear_01+	pilot_f_ill_m02	A bay full of	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_ihear_01+	pilot_f_ill_m02a	A bay full of	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_ihear_01+	pilot_f_ill_m02b	A bay full of	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_ihear_01+	pilot_f_leg_m01	I hope our cargo hold full of	user typed	
+gcs_fidget_trade_ihear_01+	pilot_f_leg_m01b	I hope our cargo hold full of	user typed	
+gcs_fidget_trade_simple_01-	pilot_f_leg_m01	Ugh, this had better be worth it.	user typed	
+gcs_fidget_trade_simple_01-	pilot_f_leg_m01b	Ugh, this had better be worth it.	user typed	
+gcs_fidget_trade_simple_02-	pilot_f_ill_m01	This beats the straight and narrow. Hypocrites. The so-called authorities are more corrupt than we are.	user typed	
+gcs_fidget_trade_simple_02-	pilot_f_ill_m01a	This beats the straight and narrow. Hypocrites. The so-called authorities are more corrupt than we are.	user typed	
+gcs_fidget_trade_simple_02-	pilot_f_ill_m01b	This beats the straight and narrow. Hypocrites. The so-called authorities are more corrupt than we are.	user typed	
+gcs_fidget_trade_simple_02-	pilot_f_mil_m01	The military's fine, but I'm starting to want a piece of the action.	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_simple_02-	pilot_f_mil_m01a	The military's fine, but I'm starting to want a piece of the action.	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_simple_02-	pilot_f_mil_m01b	The military's fine, but I'm starting to want a piece of the action.	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_simple_03-	pilot_f_mil_m02	My CO's not the man he used to be. Something's happened. Must be the stress.	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_simple_03-	pilot_f_mil_m02a	My CO's not the man he used to be. Something's happened. Must be the stress.	user picked: Draft (Claude's guess)	
+gcs_fidget_trade_simple_03-	pilot_f_mil_m02b	My CO's not the man he used to be. Something's happened. Must be the stress.	user picked: Draft (Claude's guess)	
+GCS_FM_A02aG03	rvp516	I'm afraid I have nothing. Please come back later.	user picked: Speech to text	
+GCS_FM_A02cG03	rvp516	I like you, Trent, but you are way too much trouble.	user picked: Speech to text	
+GCS_FM_A04aG01	rvp546	want anyone else knowing you've eluded them thus far	user picked: Draft (merged)	
+GCS_FM_A04aG02	rvp516	like to be made to look foolish	user picked: Draft (merged)	
+GCS_FM_A04aG02	rvp541	believe that you're of the right stock	user picked: Draft (merged)	
+GCS_FM_A04aG03	rvp541	have your sense of humor	user picked: Draft (merged)	
+GCS_FM_D01aN04	rvp516	I don't remember you. You new?	user typed	
+GCS_FM_D01bG01	rvp541	You know I'm mad at you, Trent. You really cocked things up last time.	user picked: Speech to text	
+GCS_FM_D01fG01	rvp516	Mr. Trent! Welcome!	user picked: Draft (merged) = FLSubs	
+GCS_FM_D03aN01	rvp511	Of course. It is very nice to see you.	user picked: Draft (merged) = FLSubs	
+GCS_FM_D03aN02	rvp541	Ah, of course. Good to see you again, Mr. Trent.	user picked: Draft (merged) = FLSubs	
+GCS_FM_D06aG00	rvp516	Ah well, I work	user picked: Draft (matches other characters)	
+GCS_FM_D07bG01	rvp516	We have a presence on this base thanks to our strategic alliance with its owners.	user picked: Speech to text	
+GCS_FM_D07bG01	rvp541	We like to keep our hand in things happening on this base. That's why I'm here.	user picked: Speech to text	
+GCS_FM_F04fG02	rvp516	You appear to be employed by another party. Look me up again later, after you're done.	user typed	
+GCS_FM_F05cG01	rvp501	Um, yeah. It's a tough one.	user picked: Draft (merged)	
+GCS_FM_F05cG01	rvp541	Perhaps, it does have its dangers.	user picked: Draft (merged) = FLSubs	
+GCS_FM_F08dR01	rvp546	I would work with you on this, but you don't have nearly enough credits. Come back later.	user picked: Speech to text	
+GCS_FM_W01cG03	rvp511	Hello. what you need?	user picked: Draft (merged)	
+gcs_gen_commodity_basicalloys	pilot_f_ill_m02	Basic Alloys	user picked: Take pilot_f_ill_m02a	
+gcs_gen_commodity_basicalloys	pilot_f_ill_m02a	Basic Alloys	user picked: Draft (speech to text)	
+gcs_gen_commodity_basicalloys	pilot_f_ill_m02b	Basic Alloys	user picked: Draft (speech to text)	
+gcs_misc_ack_02-	atc_leg_m01	Roger that	user picked: Draft (speech to text)	
+gcs_misc_ack_03-	atc_leg_f01	Roger that	user picked: Draft (speech to text)	
+gcs_misc_ack_03-	atc_leg_f01a	Roger that	user picked: Draft (speech to text)	
+gcs_misc_ack_03-	atc_leg_m01	Check	user picked: Conventions applied	
+gcs_misc_ack_03-	pilot_f_mil_m01	Roger that	user picked: Draft (speech to text)	
+gcs_misc_ack_03-	pilot_f_mil_m01a	Roger that	user picked: Draft (speech to text)	
+gcs_misc_ack_03-	pilot_f_mil_m01b	Roger that	user picked: Draft (speech to text)	
+gcs_misc_wellwish_02-	atc_leg_m01	Good journey.	user picked: Speech to text	
+GCS_ML_A01aG01	rvp121	Mark?	user picked: Draft (merged) = FLSubs	
+GCS_ML_A01aG01	rvp126	ID?	user picked: FLSubs	
+GCS_ML_A02aG01	rvp106	It's pretty lame around here now. Check back later.	user picked: Speech to text	
+GCS_ML_A02aG01	rvp111	Something happening right now. Check back later.	user picked: Speech to text	
+GCS_ML_A02cG03	rvp106	Ever get the feeling you're standing on plastic?	user picked: Speech to text	
+GCS_ML_A02cG04	rvp121	I can't help you. It would put me in danger.	user picked: Draft (speech to text) = Speech to text	
+GCS_ML_A02dG01	rvp126	All right. You will do.	user picked: Draft (merged)	
+GCS_ML_A02eB01	rvp140	But uh, at the minute there isn't much going on.	user picked: Speech to text	
+GCS_ML_A02eB02	rvp111	I'll try and keep my ear to the ground, but, it's quiet right now.	user typed	
+GCS_ML_A02eB02	rvp126	There's nothing afoot of any substance. I'm sorry.	user picked: Speech to text	
+GCS_ML_A04aG03	rvp106	take guff from anyone, pal	user picked: Draft (merged)	
+GCS_ML_A04aG03	rvp121	appreciate your treachery	user picked: Draft (merged)	
+GCS_ML_A04aG04	rvp106	accept apologies	user picked: Draft (merged)	
+GCS_ML_A04aG04	rvp121	forgive easily	user picked: Draft (merged)	
+GCS_ML_A04aG04	rvp140	put up with guff	user typed	
+GCS_ML_D01aN02	rvp003	New here, are you?	user typed	
+GCS_ML_D01aN05	rvp111	Never seen you here before. New guy?	user typed	
+GCS_ML_D01aN06	rvp106	You some kind of newbie?	user typed	
+GCS_ML_D01aN06	rvp151	You a stranger?	user typed	
+GCS_ML_D01cG02	rvp126	Trent, very fine work on our last mission. Good to see you.	user picked: Speech to text	
+GCS_ML_D01cG04	rvp121	Ah, Trent. My profits are up. Good to see you again.	user picked: Draft (merged) = FLSubs	
+GCS_ML_D01cG04	rvp131	Ah, Mr. Trent. A man I can depend on. Nice to see you again.	user picked: Draft (merged) = FLSubs	
+GCS_ML_D01dG01	rvp126	Why, you! You have mission work to do.	user picked: Draft (judged: recording)	
+GCS_ML_D01eV01	rvp003	Mr. Trent, you have returned.	user picked: Speech to text	
+GCS_ML_D01eV02	rvp146	It's odd to see you again so soon.	user picked: Draft (matches other characters) = FLSubs	
+GCS_ML_D01eV03	rvp140	Never let it be said you wear out a welcome.	user picked: Speech to text	
+GCS_ML_D01fG01	rvp151	Trent! You're back!	user picked: Draft (merged) = FLSubs	
+GCS_ML_D01fG03	rvp140	Any problems, guv?	user typed	
+GCS_ML_D01fG06	rvp003	You were just here, sir.	user picked: Draft (judged: recording) = FLSubs	
+GCS_ML_D01hG02	rvp151	We've met, correct?	user picked: Draft (merged) = FLSubs	
+GCS_ML_D01hG03	rvp003	I have served you a previous time.	user picked: Speech to text	
+GCS_ML_D01hG03	rvp151	We have spoken before, ya?	user picked: Draft (merged)	
+GCS_ML_D01kG01	rvp003	Welcome, it is nice to see you again, sir.	user picked: Draft (merged) = FLSubs	
+GCS_ML_D01kG02	rvp106	Sure is good to see you again, Trent.	user picked: FLSubs	
+GCS_ML_D03aN01	rvp111	Of course. It's very, very nice to see you.	user picked: Draft (merged) = FLSubs	
+GCS_ML_D04aG01	rvp121	Well that depends a lot on you, gaijin. Got a name?	user picked: Draft (merged)	
+GCS_ML_D04bB02	rvp003	I service the bar area, but can also access other information. Name?	user typed	
+GCS_ML_D04cE01	rvp126	Perhaps it is good that you are here, if you require equipment, or repairs. Your name...?	user typed	
+GCS_ML_D04cE02	rvp131	Well, if you want good equipment and fast repairs, I'm the guy to come to, Mister...?	user typed	
+GCS_ML_D04dT01	rvp146	Government's only as strong as its commerce – that's where I come in, Mister...?	user typed	spelling/punctuation conventions (data/style_rules.tsv)
+GCS_ML_D04eS01	rvp140	Well, if you need something faster that can carry cargo, I can help you, Mister...?	user typed	
+GCS_ML_D04eS02	rvp106	If you need a ship in a hurry, no questions, I can help. Mister...?	user typed	
+GCS_ML_D06aG00	rvp106	Well, I'm a fixer	user picked: Draft (merged)	
+GCS_ML_D06aG00	rvp111	I see, I work	user picked: Draft (merged)	
+GCS_ML_D06aG00	rvp126	Oh, well I work	user typed	
+GCS_ML_D06aG00	rvp131	Well, man, I work	user picked: Draft (merged)	
+GCS_ML_D06aG00	rvp151	Oh, well I work	user picked: Draft (matches other characters)	
+GCS_ML_D06aG_br_m_grp	rvp111	for Bretonia Mining and Minerals	user typed	fragment form (no end punctuation, lowercase start unless a name)
+GCS_ML_D07bG01	rvp131	It's a sweet deal with the guys who own this base. Pure profit for us.	user picked: Speech to text	
+GCS_ML_D07bG01	rvp151	We don't really run this place, just break a few arms if we need to.	user typed	
+GCS_ML_F01aB01	rvp003	Organics freely converse around mechanoids, so I do have a rumor to pass along.	user typed	
+GCS_ML_F01aB01	rvp126	I do remember a rumor. I just heard one recently. Interested?	user picked: Draft (merged)	
+GCS_ML_F01aB01	rvp140	If you think it'll be useful, I could pass along some wild talk. You want it?	user picked: Speech to text	
+GCS_ML_F01bB02	rvp140	I'm thinking I might have a juicy bit of interesting information, guv'nor.	user typed	chunk: no sentence-ending period (the game sentence adds it), case from its place
+GCS_ML_F01bB02	rvp151	I'll tell you. I do know something that you may want to hear about.	user picked: Speech to text	
+GCS_ML_F01fG01	rvp003	Your reputation is damaged, so I can discreetly repair it as a service.	user typed	
+GCS_ML_F03bR01	rvp003	Information status is little known.	user picked: Speech to text	
+GCS_ML_F03dR03	rvp151	It's important to someone. Enough to kill us for it.	user picked: Draft (merged) = FLSubs	
+GCS_ML_F04dG01	rvp101	But you're gonna need more cargo space for this mission. You should get rid of some of that junk, or get a bigger ship and get back to me.	user typed	
+GCS_ML_F04fG01	rvp106	Looks like you're already on a mission, and I only like to work with free agents.	user picked: Speech to text	
+GCS_ML_F04fG02	rvp111	But it appears you're already on an assignment. Why don't you finish that one up and then come back?	user picked: Speech to text	
+GCS_ML_F05cG01	rvp106	Yeah, you'll be scrappin' some.	user typed	
+GCS_ML_F08dR01	rvp106	Geez, do I look like I'm running a charity? Where's the juice? See you later.	user picked: Draft (merged) = Speech to text	
+GCS_ML_F08dR03	rvp121	Fool. You can't even count properly. Bring enough credits next time we meet.	user picked: Draft (merged)	
+GCS_ML_F08dR04	rvp121	If I thought you were wasting my time, I'd have your head. Next time, bring credits.	user picked: Speech to text	
+GCS_ML_F10aR01	rvp140	You chose well. Good luck.	user picked: Speech to text	
+GCS_ML_F10aR03	rvp003	My masters will be pleased.	user picked: Draft (judged: recording) = Speech to text	
+GCS_ML_F10bR02	rvp003	Goodbye then, Mr. Trent.	user picked: Speech to text	
+GCS_ML_F10bR04	rvp151	Well, maybe next time, man. If you live.	user picked: Speech to text	
+GCS_ML_V01aV01	rvp111	Take a look around. Let me know how I can help you.	user typed	
+GCS_ML_V05bV01	rvp131	Find what you were looking for?	user picked: Draft (merged)	
+GCS_ML_V05bV02	rvp003	Mr. Trent, action complete?	user picked: Draft (merged) = FLSubs	
+GCS_ML_W01aV01	rvp106	S'up, man?	user typed	
+GCS_ML_W01aV02	rvp140	All right, chappie.	user picked: Speech to text	
+GCS_ML_W01bB01	rvp106	What's going on there, friend?	user picked: Speech to text	
+GCS_ML_W01bB01	rvp121	What's going on, gaijin?	user picked: Draft (merged)	
+GCS_ML_W01bB03	rvp151	Some day, ah?	user picked: Draft (merged)	
+GCS_ML_W01bB04	rvp111	Hi, Freelancer.	user picked: Draft (merged) = FLSubs	
+GCS_ML_W01bB04	rvp126	Hello, Freelancer.	user picked: Draft (merged) = FLSubs	
+GCS_ML_W01bB04	rvp140	Oi Freelancer.	user typed	
+GCS_ML_W01cG03	rvp111	Hello. What do you need?	user picked: Speech to text	
+GCS_ML_W01cG08	rvp121	Kid, there's something you want?	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp003	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp101	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp106	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp111	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp121	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp126	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp131	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp140	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp146	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF02	rvp151	run by ALG Waste Disposal	user picked: Draft (merged)	
+GCS_ML_W02bF08	rvp003	a Bretonia Armed Forces Battleship	user picked: Draft (matches other characters)	
+GCS_ML_W02bF21	rvp146	a Hogosha Base	user picked: Draft (matches other characters)	
+GCS_ML_W02bF28	rvp003	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp101	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp106	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp111	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp121	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp126	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp131	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp140	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp146	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF28	rvp151	a Kusari Navy Battleship	user picked: Draft (merged)	
+GCS_ML_W02bF30	rvp003	a Kusari Planet	user typed	
+GCS_ML_W02bF32	rvp003	a Liberty Navy Base	user typed	fragment form (no end punctuation, lowercase start unless a name)
+GCS_ML_W02bF32	rvp111	a Liberty Navy Base	user picked: Conventions applied	
+GCS_ML_W02bF35	rvp003	a Liberty Planet.	user picked: Draft (your earlier pick)	
+GCS_ML_W02bF37	rvp151	run by the LWB	user picked: Draft (speech to text)	
+GCS_ML_W03aF01	rvp003	Do you want to see something?	user picked: Speech to text	
+GCS_ML_W03bB03	rvp106	Huh? Can I get you?	user picked: Draft (speech to text) = Speech to text	
+GCS_ML_W03bB04	rvp146	Fine Pilsener?	user picked: Draft (merged) = FLSubs	
+gcs_patrol_idhome_p_01+	pilot_f_ill_m01	We're out of	user typed	
+gcs_patrol_idhome_p_01+	pilot_f_ill_m01a	We're out of	user typed	
+gcs_patrol_idhome_p_01+	pilot_f_ill_m01b	We're out of	user typed	
+gcs_patrol_idhome_p_01+	pilot_f_leg_f01a	We're en route from	user typed	
+gcs_patrol_idhome_p_02+	pilot_f_leg_m01	We're on a patrol mission from	user typed	
+gcs_patrol_idhome_p_02+	pilot_f_leg_m01b	We're on a patrol mission from	user typed	
+gcs_phail_blowoff_01-	pilot_f_leg_m01	What else do you want to know?	user picked: Take pilot_f_leg_m01b	
+gcs_phail_blowoff_01-	pilot_f_leg_m01b	What else do you want to know?	user picked: Take pilot_f_leg_m01b	
+gcs_phail_combatblowoff_01-	pilot_f_mil_m02	Cut the noise. CNC only.	user picked: Speech to text	
+gcs_phail_combatblowoff_01-	pilot_f_mil_m02a	Cut the noise. CNC only.	user picked: Speech to text	
+gcs_phail_combatblowoff_01-	pilot_f_mil_m02b	Cut the noise. CNC only.	user picked: Speech to text	
+gcs_refer_base_Iw03_02_base-	atc_leg_f01	Mactan	user picked: Your saved text (keep exactly)	kept exactly as typed
+gcs_refer_base_Iw03_02_base-	atc_leg_f01a	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	atc_leg_m01	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_ill_m01	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_ill_m01a	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_ill_m01b	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_ill_m02	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_ill_m02a	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_ill_m02b	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_leg_f01	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_leg_f01a	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_leg_f01b	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_leg_m01	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_leg_m01b	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_mil_m01	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_mil_m01a	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_mil_m01b	Mactan	user typed	
+gcs_refer_base_Iw03_02_base-	pilot_f_mil_m02	Mactan	user picked: Take pilot_f_mil_m02	
+gcs_refer_base_Iw03_02_base-	pilot_f_mil_m02a	Mactan	user picked: Take pilot_f_mil_m02	
+gcs_refer_base_Iw03_02_base-	pilot_f_mil_m02b	Mactan	user picked: Take pilot_f_mil_m02	
+gcs_refer_base_Ku04_03_base-	pilot_f_ill_m02	Yukawa Shipyard	user picked: Draft (speech to text)	
+gcs_refer_base_Ku04_03_base-	pilot_f_ill_m02a	Yukawa Shipyard	user picked: Draft (speech to text)	
+gcs_refer_base_Ku04_03_base-	pilot_f_ill_m02b	Yukawa Shipyard	user picked: Draft (speech to text)	
+gcs_refer_faction_co_vr_short	pilot_f_leg_m01	Ageira	user picked: Draft (speech to text)	
+gcs_refer_faction_co_vr_short	pilot_f_leg_m01b	Ageira	user picked: Draft (speech to text)	
+gcs_scan_angry_01-	pilot_f_ill_m02	You've just signed your own death warrant.	user picked: Take pilot_f_ill_m02a	
+gcs_scan_angry_01-	pilot_f_ill_m02a	You've just signed your own death warrant.	user picked: Take pilot_f_ill_m02a	
+gcs_scan_angry_01-	pilot_f_ill_m02b	You've just signed your own death warrant.	user picked: Take pilot_f_ill_m02a	
+gcs_scan_lootdestroyed_02-	pilot_f_ill_m01	No! Not the loot!	user picked: Draft (Claude's guess)	
+gcs_scan_lootdestroyed_02-	pilot_f_ill_m01a	No! Not the loot!	user picked: Draft (Claude's guess)	
+gcs_scan_lootdestroyed_02-	pilot_f_ill_m01b	No! Not the loot!	user picked: Draft (Claude's guess)	
+gcs_scan_lootdestroyed_02-	pilot_f_ill_m02	No! Not the loot!	user picked: Draft (Claude's guess)	
+gcs_scan_lootdestroyed_02-	pilot_f_ill_m02a	No! Not the loot!	user picked: Draft (Claude's guess)	
+gcs_scan_lootdestroyed_02-	pilot_f_ill_m02b	No! Not the loot!	user picked: Draft (Claude's guess)	
+gcs_scan_lootdestroyed_02-	pilot_f_leg_m01	The goods, they're gone!	user typed	
+gcs_scan_lootdestroyed_02-	pilot_f_leg_m01b	The goods, they're gone!	user typed	
+gcs_scan_lootdestroyed_03-	pilot_f_ill_m02	Oh no! I lost the loot.	user picked: Draft (Claude's guess)	
+gcs_scan_lootdestroyed_03-	pilot_f_ill_m02a	Oh no! I lost the loot.	user picked: Draft (Claude's guess)	
+gcs_scan_lootdestroyed_03-	pilot_f_ill_m02b	Oh no! I lost the loot.	user picked: Draft (Claude's guess)	
+gcs_scan_nothingfound_03-	pilot_f_leg_m01	You're not carrying anything I'm looking for.	user picked: Take pilot_f_leg_m01b	
+gcs_scan_nothingfound_03-	pilot_f_leg_m01b	You're not carrying anything I'm looking for.	user picked: Take pilot_f_leg_m01b	
+gcs_scan_orderdrop_03-	pilot_f_ill_m01	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+gcs_scan_orderdrop_03-	pilot_f_ill_m01a	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+gcs_scan_orderdrop_03-	pilot_f_ill_m01b	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+gcs_scan_orderdrop_03-	pilot_f_ill_m02	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+gcs_scan_orderdrop_03-	pilot_f_ill_m02a	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+gcs_scan_orderdrop_03-	pilot_f_ill_m02b	Well, look what I found. If you know what's good for you, you'll spill your bay right now.	user picked: Draft (speech to text) = Speech to text	
+gcs_trade_carrying_p_01+	pilot_f_leg_m01	We're moving	user typed	
+gcs_trade_carrying_p_01+	pilot_f_leg_m01b	We're moving	user typed	
+gcs_trade_idhome_p_02+	pilot_f_leg_m01	We're on a trade mission from	user typed	
+gcs_trade_idhome_p_02+	pilot_f_leg_m01b	We're on a trade mission from	user typed	
+GCS_Trent_D02cP020	trent_voice	I thought I'd take another look around.	user picked: Speech to text	
+GCS_Trent_D02eP020	trent_voice	Mm-hmm. I'm Trent.	user picked: Speech to text	
+GCS_Trent_D05aP012	trent_voice	Mr. Trent.	user picked: Draft (merged) = Speech to text	
+GCS_Trent_D05bP022	trent_voice	Good to be back. So tell me what you got.	user picked: Speech to text	
+GCS_Trent_F02aP012	trent_voice	All right. Let's talk.	user picked: Draft (merged)	
+GCS_Trent_F02aP030	trent_voice	All right. I'm listening.	user picked: Draft (merged)	
+GCS_Trent_F02aP031	trent_voice	Well, yes. I'm interested.	user picked: Draft (merged)	
+GCS_Trent_F02aP040	trent_voice	All right. Go on.	user picked: Draft (merged)	
+GCS_Trent_F04gP010	trent_voice	Is it dangerous?	user picked: Speech to text	
+GCS_Trent_F04gP022	trent_voice	Unpleasant?	user picked: Draft (merged) = FLSubs	
+GCS_Trent_F07bP034	trent_voice	This some sort of scam? Not going for it.	user typed	
+GCS_Trent_F09bP020	trent_voice	Could be useful later. Thank you.	user picked: Speech to text	
+GCS_Trent_W04aP010	trent_voice	wondering if we could do a little business	user picked: Draft (your earlier pick)	
+GCS_Trent_W04aP020	trent_voice	I'm looking to see what you have to offer.	user picked: Speech to text	
+GCS_Trent_W04cP010	trent_voice	Have anything to offer?	user picked: Speech to text	
+GCS_Trent_W04cP020	trent_voice	Have anything for me?	user picked: Speech to text	
+hull_breach_imminent	nnvoice	HULL BREACH IMMINENT	user picked: Draft (judged: recording)	
+increased_drag_detected	nnvoice	INCREASED DRAG DETECTED	user picked: Draft (judged: recording)	
+info_sol_destroyed	nnvoice	MISSION CRITICAL STRUCTURE DESTROYED	user picked: Draft (judged: recording)	
+look_at_news	nnvoice	LOOK AT THE NEWS	user picked: Draft (judged: recording)	
+mine_dropper_destroyed	nnvoice	MINE DROPPER LOST	user picked: Draft (judged: recording) = FLSubs	
+nag_dst_base_01-	ozu	Maybe that was not clear. You are supposed to dock with the base.	user picked: Draft (matches other characters) = FLSubs	
+nag_dst_ship_04-	juni	Trent, you have to get back in the battle!	user picked: Draft (matches other characters) = FLSubs	
+nag_dst_tl_02-	razor_1	Trent, you are endangering the mission. Use the Trade Lane so we can move on.	user picked: Draft (speech to text)	
+nag_greet_combat_01-	juni	I'm glad you're here, Trent. I need help.	user picked: Speech to text	
+nag_greet_normal_01-	hakkera	There you are, Trent!	user picked: Draft (merged) = FLSubs	
+nag_greet_normal_02-	king	Trent, you're here. Let's get going.	user typed	
+nag_pos_01-	sinclair	We have to go faster!	user picked: Draft (merged) = FLSubs	
+not_enough_money	nnvoice	INSUFFICIENT FUNDS	user picked: Draft (judged: recording)	
+object_waypoint	nnvoice	WAYPOINT	user picked: Draft (judged: recording)	
+rmb_cronierunning_02-	mc_leg_m01	They're rabbiting. We've worked out their vector and are making an intercept point. Check your Nav Map.	user picked: Draft (merged)	
+rmb_fail_combatrange_02-	mc_leg_m01	Your failure to re-engage has broken our agreement. Your cowardice has been noted. Mission commission out.	user picked: Speech to text	
+rmb_posstargetatwaypoint_02-	mc_leg_m01	Excellent. Your target should be at the waypoint we're uploading to your Nav Map.	user typed	
+rmb_success_solar_02-	mc_leg_m01	We show objective completely destroyed. Now clear out of there before reinforcements arrive. Mission commission out.	user picked: Speech to text	
+rms_bigshiptaunt_01-	pilot_c_ill_f01	You want to take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_c_ill_f01a	You want to take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_c_ill_f01b	You want to take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_c_ill_m02	You want to take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_c_ill_m02a	You want to take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_c_ill_m02b	You want to take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_c_leg_m01	You wanna take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_c_leg_m01a	You wanna take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_c_leg_m01b	You wanna take me on? You've had fair warning. I'm ex-military. Got it?	user typed	
+rms_bigshiptaunt_01-	pilot_f_leg_m01	You want to take me on? You had fair warning. I'm ex-military. Got it?	user picked: Speech to text	
+rms_bigshiptaunt_01-	pilot_f_leg_m01b	You want to take me on? You had fair warning. I'm ex-military. Got it?	user picked: Speech to text	
+rms_bigshiptaunt_02-	pilot_f_leg_m01	You're just another bandit to me. Come on, take your best shot!	user typed	
+rms_bigshiptaunt_02-	pilot_f_leg_m01b	You're just another bandit to me. Come on, take your best shot!	user typed	
+rms_defendleader_02-	pilot_f_leg_m01b	If you want my boss, you're gonna have to come through me.	user (in chat): the clip's own words	this bank reuses the defendleader_02 recording as _03
+rms_defendleader_03-	pilot_f_leg_m01	I know who you're after. Forget it. You're all mine!	user typed	
+rms_defendleader_03-	pilot_f_leg_m01b	If you want my boss, you're gonna have to come through me.	user (in chat): the clip's own words	this bank reuses the defendleader_02 recording as _03
+rms_defendsolar_02-	pilot_f_mil_m01	You are dead. You will not be getting to our base.	user picked: Speech to text = FLSubs = Take pilot_f_mil_m01b	
+rms_defendsolar_02-	pilot_f_mil_m01a	You are dead. You will not be getting to our base.	user picked: Speech to text = FLSubs = Take pilot_f_mil_m01b	
+rms_defendsolar_02-	pilot_f_mil_m01b	You are dead. You will not be getting to our base.	user picked: Speech to text = FLSubs = Take pilot_f_mil_m01b	
+rms_defendsolar_03-	pilot_f_mil_m01	I'm calling joy on the installation, bogey. You're going down.	user picked: FLSubs	
+rms_defendsolar_03-	pilot_f_mil_m01a	I'm calling joy on the installation, bogey. You're going down.	user picked: FLSubs	
+rms_defendsolar_03-	pilot_f_mil_m01b	I'm calling joy on the installation, bogey. You're going down.	user picked: FLSubs	
+rms_friendlyarrival_01-	pilot_c_leg_m01	Looks like you can use a hand.	user picked: Speech to text	
+rms_friendlyarrival_01-	pilot_c_leg_m01a	Looks like you can use a hand.	user picked: Speech to text	
+rms_friendlyarrival_01-	pilot_c_leg_m01b	Looks like you can use a hand.	user picked: Speech to text	
+rms_friendlywelcome_01-	pilot_c_leg_m01	Glad you could make it. Could use your help.	user picked: Speech to text	
+rms_friendlywelcome_01-	pilot_c_leg_m01a	Glad you could make it. Could use your help.	user picked: Speech to text	
+rms_friendlywelcome_01-	pilot_c_leg_m01b	Glad you could make it. Could use your help.	user picked: Speech to text	
+rms_friendlywelcome_02-	pilot_c_leg_m01	Welcome. Could use the assist.	user picked: Draft (matches other characters) = FLSubs	
+rms_friendlywelcome_02-	pilot_c_leg_m01a	Welcome. Could use the assist.	user picked: Draft (matches other characters) = FLSubs	
+rms_friendlywelcome_02-	pilot_c_leg_m01b	Welcome. Could use the assist.	user picked: Draft (matches other characters) = FLSubs	
+rms_friendlywelcome_03-	pilot_f_ill_m01	Good. Take up the slack.	user picked: Draft (matches other characters) = FLSubs	
+rms_friendlywelcome_03-	pilot_f_ill_m01a	Good. Take up the slack.	user picked: Draft (matches other characters) = FLSubs	
+rms_friendlywelcome_03-	pilot_f_ill_m01b	Good. Take up the slack.	user picked: Draft (matches other characters) = FLSubs	
+rms_smallshiptaunt_03-	pilot_f_ill_m01	Mess with the Viper and you'll get the fangs.	user picked: Draft (merged)	
+rms_smallshiptaunt_03-	pilot_f_ill_m01a	Mess with the Viper and you'll get the fangs.	user picked: Draft (merged)	
+rms_smallshiptaunt_03-	pilot_f_ill_m01b	Mess with the Viper and you'll get the fangs.	user picked: Draft (merged)	
+rms_smallshiptaunt_03-	pilot_f_ill_m02	Mess with the Viper and you'll get the fangs.	user picked: Draft (Claude's guess)	
+rms_smallshiptaunt_03-	pilot_f_ill_m02a	Mess with the Viper and you'll get the fangs.	user picked: Draft (Claude's guess)	
+rms_smallshiptaunt_03-	pilot_f_ill_m02b	Mess with the Viper and you'll get the fangs.	user picked: Draft (Claude's guess)	
+rms_targetrunning_03-	pilot_f_ill_m01	You don't wanna dance with me. Trust me.	user picked: Speech to text	
+rms_targetrunning_03-	pilot_f_ill_m01a	You don't wanna dance with me. Trust me.	user picked: Speech to text	
+rms_targetrunning_03-	pilot_f_ill_m01b	You don't wanna dance with me. Trust me.	user picked: Speech to text	
+rms_targetrunning_03-	pilot_f_leg_m01	Break off your attack before I decide to finish you!	user typed	
+rms_targetrunning_03-	pilot_f_leg_m01b	Break off your attack before I decide to finish you!	user typed	
+ship_purchase_complete	nnvoice	SHIP PURCHASE COMPLETE	user picked: Draft (judged: recording)	
+waiting_to_dock	nnvoice	DOCK IN USE – ENTERING QUEUE	user picked: Draft (judged: recording)	

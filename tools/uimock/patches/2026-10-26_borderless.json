@@ -1,0 +1,10 @@
+{
+ "_about": "Borderless windowed when nothing else provides it (the owner, 26 Oct 2026: \"I wouldn't mind if FLvibed could add borderless windowed support if no currently detected mod does it by itself\"). One row in the controller's SYSTEM section after fluf_windows; read at the game's start (controller\\src\\host\\winmode.cpp, docs\\kb\\display.md 'Window mode path').",
+ "add_rows": {
+  "controller/SYSTEM": {"after": "fluf_windows", "rows": [
+   {"key": "borderless", "label": "Borderless window", "kind": "picker", "options": ["OFF", "AUTO", "ALWAYS"], "def": "AUTO",
+    "help": "The game as a window without frame that covers its monitor at the monitor's resolution - never exclusive fullscreen, so Alt+Tab is instant. Auto (default): only when nothing else provides it (HD Edition does: the row says BY THE GAME (HDE)); Always: also then; Off: the game's own window mode. The row says who provides it now. With FLUF, Alt+Enter switches between it and a bordered window. Takes effect at the next start.",
+    "tier": "player", "needs": "restart"}
+  ]}
+ }
+}

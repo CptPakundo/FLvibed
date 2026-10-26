@@ -1,0 +1,31 @@
+# Global spelling rules, applied by merge.py to every final subtitle (corrections included) and by the
+# review tool when it fits typed text. pattern = Python regex, case-insensitive; replacement = exact text.
+# Keep this list short and decided by the user.
+pattern	replacement	note
+\bDoyle\b	Sam	Sam Lonnigan in game; the script's "Doyle" changed at recording (user, session 1)
+\bD(?:aa|o)m[\s'’-]*K['’]?a?v[ao]sh\b	Dom'Kavash	the alien species is spelled Dom'Kavash (user, session 1); script wrote Daam K'Vosh / Daam-K'Vosh
+\bVan Claussen\b	Von Claussen	the script misspells Von Claussen once (speech to text and FLSubs: "von")
+\bQuintiane\b	Quintaine	script typo for Dr. Quintaine (speech to text and FLSubs: Quintaine)
+\bMss(?=\s+[A-Z])	Miss	script typo "Mss Zane" (FLSubs: Miss)
+\bthe Nomad's (?=progress)	the Nomads' 	plural possessive: the Nomads' progress (speech to text: Nomads')
+\btrade[\s-]*lane(s?)\b	Trade Lane\1	game term, capitalized as the game writes it; also "tradelane" (user, session 1)
+\bjump[\s-]*hole(s?)\b	Jump Hole\1	game term; also "jumphole" (user, session 1)
+\bjump[\s-]*gate(s?)\b	Jump Gate\1	game term; also "jumpgate" (user, session 1)
+\bneural[\s-]+net(s?)\b	Neural Net\1	game term (user, session 1)
+\bnav[\s-]*map(s?)\b	Nav Map\1	game term (user, session 1)
+\bdocking[\s-]+ring(s?)\b	Docking Ring\1	game term (user, session 1)
+\bTakagi\b	Tekagi	game spelling (53 of 54 in game text; game names win, user)
+\bborder\s*world\s+exports\b	Border World Exports	faction name as the game writes it (game names win, user)
+\bfreeport\s+one\b	Freeport 1	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+two\b	Freeport 2	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+three\b	Freeport 3	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+four\b	Freeport 4	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+five\b	Freeport 5	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+six\b	Freeport 6	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+seven\b	Freeport 7	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+eight\b	Freeport 8	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+nine\b	Freeport 9	base name as the game writes it (digits; game names win, user)
+\bfreeport\s+ten\b	Freeport 10	base name as the game writes it (digits; game names win, user)
+\bborder\s+exports\b	Border World Exports	faction name as the game writes it (game names win, user)
+\bindependent\s+(?:miners?|mining)(?:\s+guild)?\b	Independent Miners Guild	faction name as the game writes it (game names win, user)
+\balverson\b	Albertson	the M06 escort pilot (line ids DX_M06_*_ALBERTSON; game text "Albertson")

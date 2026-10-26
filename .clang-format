@@ -1,0 +1,39 @@
+# FLvibed C++ style (24 Oct 2026): the style the code already uses, written down so clang-format can hold it.
+# Allman braces, 4 spaces, 120 columns, left-aligned pointers, no include sorting (the wrapper build relies on include
+# order), comments left as written (no reflow: they carry provenance and are edited by hand).
+# Apply: tools\format.ps1 (clang-format from the Visual Studio LLVM toolset, x64).
+BasedOnStyle: Microsoft
+Language: Cpp
+Standard: c++17
+ColumnLimit: 120
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+BreakBeforeBraces: Allman
+NamespaceIndentation: None
+IndentCaseLabels: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortLambdasOnASingleLine: All
+AlignTrailingComments: true
+AlignAfterOpenBracket: Align
+AlignOperands: Align
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+ReflowComments: false
+SortIncludes: Never
+SortUsingDeclarations: false
+FixNamespaceComments: true
+SpaceAfterCStyleCast: false
+SpacesInParentheses: false
+SpaceBeforeParens: ControlStatements
+Cpp11BracedListStyle: true
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false

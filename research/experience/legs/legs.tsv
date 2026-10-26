@@ -1,0 +1,760 @@
+date	label	save	outcome	secs	boot	fps	commit	instance	detail
+2026-10-22 04:36	probe-M08	Save3a48.fl	FAIL	87	13	149	139957d+dirty	3	FAILED (Cannot find type [byte[]]: verify that the assembly containing this type is loaded.) total 87 s; mode=docked; room: hotspots 6 ready; dialogs: none; offers: talk_bribe; last story event: 3 82426218 objective count=1 title=23400 "MISSION 8" text=23405 "OBJECTIVE: Attack a transport in the nea
+2026-10-22 04:36	probe-M06	Save33fa.fl	FAIL	93	13	146	139957d+dirty	1	FAILED (The script failed due to call depth overflow.) total 93 s; mode=docked; room: hotspots 7 ready; dialogs: none; offers: talk_bribe; last story event: 3 82426125 objective count=1 title=23000 "MISSION 6" text=23005 "OBJECTIVE: Defeat Hovis in a one-lap contest of speed. Then find Quintaine and
+2026-10-22 04:36	probe-M07	Save766f.fl	FAIL	93	13	150	139957d+dirty	2	FAILED (The script failed due to call depth overflow.) total 93 s; mode=docked; room: hotspots 9 ready; dialogs: none; offers: talk_equip_dealer; last story event: 3 82426078 objective count=1 title=23200 "MISSION 7" text=23205 "OBJECTIVE: You have to hide from the Rheinland agents. Fly with Juni, S
+2026-10-22 04:43	probe-M06	Save33fa.fl	FAIL	190	12	117	024cf8e	1	FAILED (FAILED: 107 82945187 mission-message type=FAILURE text=23165 "Mission Failed. You crossed Hovis. Now you’ll never find Quintaine.") total 190 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 109 82945187 objective count=0 title=23000 "MISSI
+2026-10-22 04:52	probe-M08	Save3a48.fl	PASS	691	11	128	024cf8e	3	SUCCESS total 691 s
+2026-10-22 04:55	M06-race1	Save33fa.fl	FAIL	190	11	125	024cf8e+dirty	1	FAILED (FAILED: 103 83610156 mission-message type=FAILURE text=23165 "Mission Failed. You crossed Hovis. Now you’ll never find Quintaine.") total 190 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 105 83610156 objective count=0 title=23000 "MISSI
+2026-10-22 04:59	M09	Save4686.fl	FAIL	382	11	118	024cf8e+dirty	3	FAILED (FAILED: 392 83879093 mission-message type=FAILURE text=23765 "Mission Failed. You failed to fly to Tekagi’s Arch.") total 382 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 394 83879093 objective count=0 title=23600 "MISSION 9" text=23605
+2026-10-22 05:00	M06-race3	Save33fa.fl	FAIL	108	11	142	024cf8e+dirty	1	FAILED (FAILED: 85 83944968 mission-message type=FAILURE text=23165 "Mission Failed. You crossed Hovis. Now you’ll never find Quintaine.") total 108 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 87 83944968 objective count=0 title=23000 "MISSION
+2026-10-22 05:04	probe-M07	Save766f.fl	FAIL	1404	12	134	024cf8e	2	FAILED (FAILED: 1497 84159015 mission-message type=FAILURE text=23372 "Mission Failed. You failed to fly to Kress’ Base.") total 1404 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1499 84159015 objective count=0 title=23200 "MISSION 7" text=2320
+2026-10-22 05:11	M09	Save4686.fl	FAIL	420	11	138	024cf8e+dirty	3	FAILED (FAILED: 647 84612703 mission-message type=FAILURE text=23770 "Mission Failed. You failed to dock with Tekagi’s Base.") total 420 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 649 84612703 objective count=0 title=23600 "MISSION 9" text=23
+2026-10-22 05:12	M06-race5	Save33fa.fl	FAIL	288	11	136	024cf8e+dirty	1	FAILED (FAILED: 297 84635078 mission-message type=FAILURE text=23165 "Mission Failed. You crossed Hovis. Now you’ll never find Quintaine.") total 288 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 299 84635078 objective count=0 title=23000 "MISSI
+2026-10-22 05:17	M06-race6	Save33fa.fl	FAIL	289	11	155	024cf8e+dirty	1	FAILED (FAILED: 363 84944531 mission-message type=FAILURE text=23165 "Mission Failed. You crossed Hovis. Now you’ll never find Quintaine.") total 289 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 365 84944531 objective count=0 title=23000 "MISSI
+2026-10-22 05:23	M07-from-schiller	M07_ck_schiller.fl	FAIL	837	11	157	024cf8e+dirty	2	FAILED (FAILED: 2035 85319171 mission-message type=FAILURE text=23380 "Mission Failed. You failed to fly to Planet Kyushu.") total 837 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1148 85194734 autopilot objective decide reason=objective text=2
+2026-10-22 05:34	M06-race7	Save33fa.fl	FAIL	484	11	125	024cf8e+dirty	1	FAILED (FAILED: 647 85980781 mission-message type=FAILURE text=21950 "Mission Failed. You failed to fly to the waypoint.") total 484 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 649 85980781 objective count=0 title=23000 "MISSION 6" text=23006 
+2026-10-22 05:35	M09-from-arch	M09_ck_arch.fl	FAIL	176	11	99	024cf8e+dirty	3	FAILED (FAILED: 252 86033296 mission-message type=FAILURE text=23765 "Mission Failed. You failed to fly to Tekagi’s Arch.") total 176 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 255 86033359 autopilot objective decide reason=objective text=0 v
+2026-10-22 05:41	M07-from-schiller	M07_ck_schiller.fl	FAIL	739	11	110	024cf8e+dirty	2	FAILED (FAILED: 1576 86413140 mission-message type=FAILURE text=23380 "Mission Failed. You failed to fly to Planet Kyushu.") total 739 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1053 86310796 objective-step 4 type=9 obj=23345 "Fly to Planet K
+2026-10-22 05:41	M01b	Save5f61.fl	PASS	648	11	108	024cf8e+dirty	4	SUCCESS total 648 s
+2026-10-22 05:41	M06-from-glorious	M06_ck_glorious.fl	PASS	330	11	112	024cf8e+dirty	1	SUCCESS total 330 s
+2026-10-22 05:46	M09-from-arch	M09_ck_arch.fl	FAIL	295	22	125	3f06367+dirty	3	FAILED (FAILED: 709 86674812 mission-message type=FAILURE text=23770 "Mission Failed. You failed to dock with Tekagi’s Base.") total 295 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 713 86674906 autopilot objective decide reason=objective text=
+2026-10-22 05:46	M10	Save7b39.fl	FAIL	596	11	117	3f06367+dirty	5	FAILED (FAILED: 686 86718390 player-death) total 596 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 686 86718390 player-death
+2026-10-22 05:46	M07-from-ku03	M07_ck_ku03.fl	FAIL	171	14	102	3f06367+dirty	2	FAILED (FAILED: 899 86727781 mission-message type=FAILURE text=23380 "Mission Failed. You failed to fly to Planet Kyushu.") total 171 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 382 86633562 objective-step 1 type=9 obj=23345 "Fly to Planet Kyu
+2026-10-22 05:53	M12	Save5e67.fl	FAIL	560	12	128	3f06367+dirty	4	FAILED (FAILED: 1130 87120234 player-death) total 560 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 613 86920921 autopilot objective decide reason=ended text=24224 verb=0 ref=0 target=0 nav=1
+2026-10-22 05:54	M09-from-arch	M09_ck_arch.fl	FAIL	183	11	149	479a474+dirty	3	FAILED (FAILED: 244 87159796 mission-message type=FAILURE text=23765 "Mission Failed. You failed to fly to Tekagi’s Arch.") total 183 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 246 87159796 objective count=0 title=23600 "MISSION 9" text=23605
+2026-10-22 05:55	M07-from-ku03	M07_ck_ku03.fl	FAIL	151	19	158	479a474+dirty	2	FAILED (FAILED: 913 87259578 mission-message type=FAILURE text=23380 "Mission Failed. You failed to fly to Planet Kyushu.") total 151 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 391 87183234 objective-step 4 type=9 obj=23345 "Fly to Planet Kyu
+2026-10-22 06:04	M12-from-launch	M12_ck_launch.fl	FAIL	345	13	108	479a474+dirty	4	FAILED (FAILED: 581 87776062 player-death) total 345 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 581 87776062 player-death
+2026-10-22 06:04	M11	Save08f9.fl	FAIL	1237	11	132	3f06367+dirty	1	FAILED (FAILED: 1744 87797328 player-death) total 1237 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1015 87333437 autopilot objective decide reason=objective text=24080 verb=0 ref=2293678337 target=2293678337 nav=1
+2026-10-22 06:07	M09-from-arch	M09_ck_arch.fl	FAIL	602	13	129	479a474+dirty	3	FAILED (FAILED: 1394 87949671 player-death) total 602 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 711 87669078 autopilot objective decide reason=objective text=23645 verb=1 ref=2762159055 target=2762159055 nav=1
+2026-10-22 06:08	M10-from-holstein	M10_ck_holstein.fl	FAIL	788	14	138	479a474+dirty	5	FAILED (FAILED: 1519 88004078 player-death) total 788 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1195 87847187 objective count=1 title=23802 "ASSAULT THE EXPERIMENTAL SHIPYARD" text=23806 "OBJECTIVE: Herr Von Claussen’s contacts have located a secr
+2026-10-22 06:10	M07-from-ku03	M07_ck_ku03.fl	PASS	163	11	175	2255208+dirty	2	SUCCESS total 163 s
+2026-10-22 06:16	M12-from-launch	M12_ck_launch.fl	FAIL	628	11	172	2255208+dirty	4	FAILED (FAILED: 881 88510593 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 628 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 698 88368656 objective count=1 title=24200 "MISSION 12" te
+2026-10-22 06:26	M13	Save3989.fl	FAIL	140	13	132	dde712d+dirty	1	FAILED (FAILED: 350 89068437 player-death) total 140 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 350 89068437 player-death
+2026-10-22 06:28	M11-from-buffalo	M11_ck_buffalo.fl	PASS	101	11	93	770a3f5	4	SUCCESS total 101 s
+2026-10-22 06:39	M09-from-arch	M09_ck_arch.fl	FAIL	814	12	105	dde712d+dirty	3	FAILED (FAILED: 1474 89861968 player-death) total 814 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 718 89368562 objective count=1 title=23600 "MISSION 9" text=23605 "OBJECTIVE: Attack Tekagi’s fortified base in the Tohoku System. You have to enter hi
+2026-10-22 06:39	M10-from-holstein	M10_ck_holstein.fl	PASS	814	12	105	dde712d+dirty	5	SUCCESS total 814 s
+2026-10-22 06:41	M07	Save766f.fl	PASS	1816	11	142	d638602+dirty	2	SUCCESS total 1816 s
+2026-10-22 06:41	M13	Save3989.fl	FAIL	45	10	141	e2c7809+dirty	1	FAILED (FAILED: 65 89982531 player-death) total 45 s; mode=menu; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: LoadSavegameButton; offers: none; last story event: none
+2026-10-22 06:45	M13-probe	Save3989.fl	FAIL	121	10	178	e2c7809+dirty	1	FAILED (FAILED: 294 90232359 player-death) total 121 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 294 90232359 player-death
+2026-10-22 06:51	M12-from-launch	M12_ck_launch.fl	FAIL	628	11	183	e2c7809+dirty	4	FAILED (FAILED: 849 90575078 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 628 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 717 90471453 objective count=1 title=24200 "MISSION 12" te
+2026-10-22 06:59	M13	Save3989.fl	FAIL	120	11	96	e2c7809+dirty	1	FAILED (FAILED: 312 91094437 player-death) total 120 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 312 91094437 player-death
+2026-10-22 07:05	M12-from-launch	M12_ck_launch.fl	FAIL	449	11	105	e2c7809+dirty	4	FAILED (FAILED: 841 91423468 player-death) total 449 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 441 91289765 autopilot objective decide reason=ended text=24224 verb=0 ref=0 target=0 nav=1
+2026-10-22 07:12	M13	Save3989.fl	FAIL	383	11	89	e2c7809+dirty	1	FAILED (FAILED: 826 91835437 mission-message type=FAILURE text=23198 "Mission Failed. You failed to fly to the waypoint.") total 383 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 828 91835437 objective count=0 title=24400 "MISSION 13" text=24405
+2026-10-22 07:14	M10	Save7b39.fl	FAIL	974	12	98	e2c7809+dirty	2	FAILED (FAILED: 1465 91958546 player-death) total 974 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1465 91958546 player-death
+2026-10-22 07:15	M12-from-launch	M12_ck_launch.fl	FAIL	513	12	92	e2c7809+dirty	4	FAILED (FAILED: 912 92057078 player-death) total 513 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 443 91891296 autopilot objective decide reason=ended text=24224 verb=0 ref=0 target=0 nav=1
+2026-10-22 07:18	M11	Save08f9.fl	FAIL	1208	11	105	e2c7809+dirty	5	FAILED (FAILED: 1696 92191687 player-death) total 1208 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1024 91848312 autopilot objective decide reason=objective text=24100 verb=1 ref=2757616335 target=2757616335 nav=1
+2026-10-22 07:24	M09-from-arch	M09_ck_arch.fl	PASS	767	11	118	e8caa1f+dirty	3	SUCCESS total 767 s
+2026-10-22 07:28	M13	Save3989.fl	FAIL	409	11	84	636f9ef+dirty	1	FAILED (FAILED: 871 92814125 mission-message type=FAILURE text=23198 "Mission Failed. You failed to fly to the waypoint.") total 409 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 873 92814125 objective count=0 title=24400 "MISSION 13" text=24405
+2026-10-22 07:39	M12-from-launch	M12_ck_launch.fl	FAIL	628	13	85	64c13c9	4	FAILED (FAILED: 1107 93458609 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 628 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 738 93290750 objective count=1 title=24200 "MISSION 12" t
+2026-10-22 07:39	M10-from-holstein	M10_ck_holstein.fl	PASS	970	13	85	636f9ef+dirty	2	SUCCESS total 970 s
+2026-10-22 07:39	M09	Save4686.fl	PASS	899	13	87	7d2e437+dirty	3	SUCCESS total 899 s
+2026-10-22 07:43	M11	Save08f9.fl	PASS	1196	12	94	636f9ef+dirty	5	SUCCESS total 1196 s
+2026-10-22 07:47	M13-from-toledo	M13_ck_toledo.fl	FAIL	967	12	88	ab062b6	1	FAILED (FAILED: 1810 93975218 player-death) total 967 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 918 93639328 autopilot objective decide reason=ended text=24475 verb=0 ref=2164979343 target=2164979343 nav=1
+2026-10-22 07:53	M12-from-launch	M12_ck_launch.fl	FAIL	629	13	72	a3059ca+dirty	4	FAILED (FAILED: 825 94306031 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 629 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 669 94183859 objective count=1 title=24200 "MISSION 12" te
+2026-10-22 07:54	M08	Save3a48.fl	PASS	685	13	76	a3059ca+dirty	3	SUCCESS total 685 s
+2026-10-22 07:59	M10	Save7b39.fl	FAIL	1018	13	74	a3059ca+dirty	2	FAILED (FAILED: 1567 94694968 player-death) total 1018 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1567 94694968 player-death
+2026-10-22 08:01	M12-from-lair	M12_ck_lair.fl	FAIL	363	11	71	a38d30d+dirty	4	FAILED (FAILED: 456 94779890 player-death) total 363 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 456 94779890 player-death
+2026-10-22 08:01	M13-from-st03	M13_ck_st03.fl	FAIL	525	11	87	3f7ae07+dirty	1	FAILED (FAILED: 1243 94806843 player-death) total 525 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 810 94638859 autopilot objective decide reason=fight over text=24475 verb=0 ref=2164979343 target=2164979343 nav=1
+2026-10-22 08:03	M06	Save33fa.fl	PASS	1193	11	102	3c528af+dirty	5	SUCCESS total 1193 s
+2026-10-22 08:03	M01a	Save7e1c.fl	PASS	517	12	94	a38d30d+dirty	3	SUCCESS total 517 s
+2026-10-22 08:11	M12-from-lair	M12_ck_lair.fl	FAIL	363	12	68	a38d30d+dirty	4	FAILED (FAILED: 497 95369625 player-death) total 363 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 497 95369625 player-death
+2026-10-22 08:14	M13-from-st03	M13_ck_st03.fl	FAIL	565	12	70	a38d30d+dirty	1	FAILED (FAILED: 1381 95571375 mission-message type=FAILURE text=24550 "Mission Failed. You failed to fly into the Dyson Sphere.") total 565 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 586 95289343 autopilot objective decide reason=ended text=2
+2026-10-22 08:15	M12-from-lair	M12_ck_lair.fl	FAIL	134	12	97	ede6397+dirty	4	FAILED (FAILED: 333 95614265 player-death) total 134 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 333 95614265 player-death
+2026-10-22 08:18	M10-from-holstein	M10_ck_holstein.fl	PASS	821	12	71	a38d30d+dirty	2	SUCCESS total 821 s
+2026-10-22 08:18	M13-from-st03	M13_ck_st03.fl	FAIL	243	13	75	c136b1e	1	FAILED (FAILED: 601 95841796 player-death) total 243 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 601 95841796 player-death
+2026-10-22 08:19	M12-from-lair	M12_ck_lair.fl	FAIL	144	12	95	c608521	4	FAILED (FAILED: 350 95900625 player-death) total 144 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 350 95900625 player-death
+2026-10-22 08:20	M03	Save1e7d.fl	PASS	919	12	75	4daf565+dirty	5	SUCCESS total 919 s
+2026-10-22 08:32	M12-from-lair	M12_ck_lair.fl	PASS	464	12	69	c608521+dirty	4	SUCCESS total 464 s
+2026-10-22 08:42	M04	Save6380.fl	PASS	1043	12	73	7221218+dirty	5	SUCCESS total 1043 s
+2026-10-22 08:44	M10	Save7b39.fl	PASS	1498	12	91	c608521+dirty	2	SUCCESS total 1498 s
+2026-10-22 08:45	M12-from-launch	M12_ck_launch.fl	PASS	718	11	86	7221218+dirty	4	SUCCESS total 718 s
+2026-10-22 08:54	M02	Save05c7.fl	PASS	1134	12	100	1133a16+dirty	3	SUCCESS total 1134 s
+2026-10-22 08:55	M12	Save5e67.fl	FAIL	618	11	85	9c00ca7+dirty	2	FAILED (FAILED: 617 98031531 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 618 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 619 98031531 objective count=0 title=24200 "MISSION 12" te
+2026-10-22 09:02	chain	newgame	FAIL	396	77	169	1761bb1	3	FAILED (FAILED: 269 98487343 mission-message type=FAILURE text=21980 "Mission Failed. You never entered formation.") total 396 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 271 98487343 objective count=0 title=21800 "MISSION 1" text=21805 "OBJEC
+2026-10-22 09:05	M05	Save1d87.fl	PASS	1346	12	104	9c00ca7+dirty	5	SUCCESS total 1346 s
+2026-10-22 09:11	M12	Save5e67.fl	FAIL	364	12	85	571d192+dirty	2	FAILED (FAILED: 619 99017828 player-death) total 364 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 619 99017828 player-death
+2026-10-22 09:18	M12	Save5e67.fl	FAIL	256	12	125	7088df5+dirty	2	FAILED (FAILED: 426 99437109 player-death) total 256 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 426 99437109 player-death
+2026-10-22 09:27	M12	Save5e67.fl	FAIL	396	12	101	6a752e7+dirty	2	FAILED (FAILED: 707 99960203 player-death) total 396 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 707 99960203 player-death
+2026-10-22 09:29	M13-from-city	M13_ck_city.fl	PASS	355	11	130	0af1c22+dirty	5	SUCCESS total 355 s
+2026-10-22 09:40	M13	Save3989.fl	FAIL	533	11	110	e5dac24	4	FAILED (FAILED: 1428 100737437 player-death) total 533 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 727 100452906 objective count=1 title=24400 "MISSION 13" text=24405 "OBJECTIVE: Fly into the Nomad home system and activate the Hyper Gate system.  DI
+2026-10-22 09:41	M12	Save5e67.fl	FAIL	618	12	84	ce34e91	2	FAILED (FAILED: 725 100778921 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 618 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 707 100594078 autopilot objective decide reason=not there
+2026-10-22 09:46	M13	Save3989.fl	FAIL	182	12	140	7e78f0a	4	FAILED (FAILED: 620 101070484 player-death) total 182 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 620 101070484 player-death
+2026-10-22 09:54	M13	Save3989.fl	FAIL	336	11	123	66eff50	4	FAILED (FAILED: 981 101584015 player-death) total 336 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 946 101570406 autopilot objective decide reason=objective text=24440 verb=2 ref=69 target=3217613577 nav=1
+2026-10-22 09:56	M12	Save5e67.fl	FAIL	618	12	109	1a2c1ed	2	FAILED (FAILED: 1050 101701625 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 618 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 695 101518625 autopilot objective decide reason=ended te
+2026-10-22 10:02	M13-from-st03	M13_ck_st03.fl	FAIL	251	11	108	a82ffd1	1	FAILED (FAILED: 514 102053828 player-death) total 251 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 514 102053828 player-death
+2026-10-22 10:05	M13-from-city	M13_ck_city.fl	PASS	338	11	134	f7e9f7a	5	SUCCESS total 338 s
+2026-10-22 10:10	M12	Save5e67.fl	FAIL	619	13	100	a82ffd1	2	FAILED (FAILED: 679 102517828 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 619 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 681 102517828 objective count=0 title=24200 "MISSION 12" 
+2026-10-22 11:13	M13-from-st03	M13_ck_st03.fl	FAIL	2400	11	168	b9f4689+dirty	5	FAILED (leg M13-from-st03 space not reached after 2399.9099114 s. Game state: mode=space; room: hotspots 0 busy: scene; dialogs: none; offers: none; last story event: 762 104254640 autopilot objective decide reason=objective text=22235 verb=0 ref=3108005701 target=3108005701 nav=1) total 2400 s; mod
+2026-10-22 11:35	M13	Save3989.fl	PASS	1194	11	175	ce50649+dirty	4	SUCCESS total 1194 s
+2026-10-22 11:46	M12	Save5e67.fl	STOPPED	0	0	0	661a511	2	stopped by the user (session 3 out of context; at "Destroy all the Shield Generators", no result)
+2026-10-22 11:46	M13-from-st03	M13_ck_st03.fl	STOPPED	0	0	0	661a511	5	stopped by the user (session 3 out of context; M13 "Fly to the Waypoint", no result)
+2026-10-22 12:30	M13-lbprobe	M13_ck_st03.fl	PASS	585	15	187	f00aa71+dirty	5	SUCCESS total 585 s
+2026-10-22 12:36	M13-airlock	M13_ck_st03.fl	FAIL	178	11	174	f00aa71+dirty	5	FAILED (FAILED: 440 1938265 player-death) total 178 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 440 1938265 player-death
+2026-10-22 12:38	M12-airlock	M12_ck_launch.fl	FAIL	260	12	179	f00aa71+dirty	2	FAILED (FAILED: 424 2035968 player-death) total 260 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 424 2035968 player-death
+2026-10-22 12:43	M13-airlock	M13_ck_st03.fl	FAIL	306	10	182	f00aa71+dirty	5	FAILED (FAILED: 713 2327687 player-death) total 306 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 713 2327687 player-death
+2026-10-22 12:44	M12-airlock	M12_ck_launch.fl	FAIL	190	10	183	f00aa71+dirty	2	FAILED (FAILED: 291 2410500 player-death) total 190 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 291 2410500 player-death
+2026-10-22 12:59	M12-airlock	M12_ck_launch.fl	FAIL	615	10	173	714064f+dirty	2	FAILED (FAILED: 969 3307703 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 615 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 588 3016328 autopilot objective navmarker on a dockable obj
+2026-10-22 13:09	M13-airlock	M13_ck_st03.fl	FAIL	234	11	160	01106f1+dirty	5	FAILED (FAILED: 526 3920171 player-death) total 234 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 526 3920171 player-death
+2026-10-22 13:12	M12-from-lair	M12_ck_lair.fl	PASS	411	11	173	01106f1+dirty	2	SUCCESS total 411 s
+2026-10-22 13:31	M09	Save4686.fl	PASS	1006	13	111	4beba19+dirty	3	SUCCESS total 1006 s
+2026-10-22 13:35	M11	Save08f9.fl	PASS	1214	13	112	4beba19+dirty	1	SUCCESS total 1214 s
+2026-10-22 13:45	M13-from-city	M13_ck_city.fl	FAIL	296	11	118	23855e0+dirty	5	FAILED (FAILED: 702 6059703 player-death) total 296 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 702 6059703 player-death
+2026-10-22 13:47	M09	Save4686.fl	PASS	852	12	126	5fa8cd6+dirty	3	SUCCESS total 852 s
+2026-10-22 13:51	M10-from-holstein	M10_ck_holstein.fl	PASS	806	11	138	0bc887d+dirty	4	SUCCESS total 806 s
+2026-10-22 13:53	M13-from-city	M13_ck_city.fl	PASS	255	11	147	5a81268+dirty	5	SUCCESS total 255 s
+2026-10-22 13:57	M13-from-st03	M13_ck_st03.fl	FAIL	241	11	107	0c97a8f+dirty	5	FAILED (FAILED: 564 6784171 player-death) total 241 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 564 6784171 player-death
+2026-10-22 13:59	M12	Save5e67.fl	PASS	627	11	126	5a81268+dirty	3	SUCCESS total 627 s
+2026-10-22 14:03	M08	Save3a48.fl	PASS	676	11	138	3f5991e+dirty	1	SUCCESS total 676 s
+2026-10-22 14:07	M13	Save3989.fl	FAIL	928	10	139	3f5991e+dirty	4	FAILED (FAILED: 1949 7384906 player-death) total 928 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1598 7222562 objective count=1 title=24400 "MISSION 13" text=24405 "OBJECTIVE: Fly into the Nomad home system and activate the Hyper Gate system.  DIFFI
+2026-10-22 14:14	M12-from-launch	M12_ck_launch.fl	FAIL	615	11	157	f001197+dirty	1	FAILED (FAILED: 1313 7798812 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 615 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 616 7497609 autopilot objective decide reason=ended text=2
+2026-10-22 14:17	M13-from-st03	M13_ck_st03.fl	PASS	767	11	164	f001197+dirty	5	SUCCESS total 767 s
+2026-10-22 18:11	M13-from-city-hold	M13_ck_city.fl	FAIL	103	18	121	c772206+dirty	4	FAILED (FAILED: 138 2860593 player-death) total 103 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 138 2860593 player-death
+2026-10-22 18:15	M12-from-lair-hold	M12_ck_lair.fl	PASS	322	18	115	c772206+dirty	2	SUCCESS total 322 s
+2026-10-22 18:20	M09-from-arch-hold	M09_ck_arch.fl	PASS	611	19	116	c772206+dirty	3	SUCCESS total 611 s
+2026-10-22 18:20	M13-from-st03-hold	M13_ck_st03.fl	FAIL	623	18	116	c772206+dirty	1	FAILED (FAILED: 1909 3380750 player-death) total 623 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 752 3004468 objective count=1 title=24400 "MISSION 13" text=24405 "OBJECTIVE: Fly into the Nomad home system and activate the Hyper Gate system.  DIFFIC
+2026-10-22 18:22	M13-from-st03-hold2	M13_ck_st03.fl	PASS	470	11	126	c772206+dirty	4	SUCCESS total 470 s
+2026-10-22 18:26	M12-hold	Save5e67.fl	FAIL	618	12	132	c772206+dirty	2	FAILED (FAILED: 973 3751828 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 618 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 514 3398828 autopilot objective granted airlock 2949249546 
+2026-10-22 18:27	M13-from-st03-hold3	M13_ck_st03.fl	FAIL	184	12	121	c772206+dirty	1	FAILED (FAILED: 484 3774125 player-death) total 184 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 484 3774125 player-death
+2026-10-22 18:35	M08-hold3	Save3a48.fl	PASS	679	12	125	c772206+dirty	4	SUCCESS total 679 s
+2026-10-22 18:38	M09-hold3	Save4686.fl	PASS	834	12	130	c772206+dirty	3	SUCCESS total 834 s
+2026-10-22 18:38	M13-from-st03-hold4	M13_ck_st03.fl	PASS	500	12	122	c772206+dirty	1	SUCCESS total 500 s
+2026-10-22 18:42	M12-hold4	Save5e67.fl	PASS	722	12	138	c772206+dirty	2	SUCCESS total 722 s
+2026-10-22 18:52	M09-from-arch-hold5	M09_ck_arch.fl	PASS	597	11	160	8df84fb+dirty	3	SUCCESS total 597 s
+2026-10-22 23:46	M13-from-st03-4c7d	M13_ck_st03.fl	FAIL	38	17	131	4154613+dirty	1	FAILED (FAILED: 99 22923046 player-death) total 38 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 99 22923046 player-death
+2026-10-22 23:50	M08-4c7d	Save3a48.fl	FAIL	310	16	143	4154613+dirty	4	FAILED (FAILED: 295 23195125 mission-message type=FAILURE text=23550 "Mission Failed. Unfortunately, Tekagi’s transport got destroyed.") total 310 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 308 23195203 autopilot objective decide reason=objec
+2026-10-22 23:56	M12-4c7d	Save5e67.fl	FAIL	618	17	153	4154613+dirty	2	FAILED (FAILED: 720 23502906 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 618 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 535 23373906 objective count=1 title=24200 "MISSION 12" te
+2026-10-22 23:57	M09-from-arch-4c7d	M09_ck_arch.fl	PASS	696	17	150	4154613+dirty	3	SUCCESS total 696 s
+2026-10-23 00:06	M13-from-st03-ownhull	M13_ck_st03.fl	FAIL	413	12	135	4154613+dirty	1	FAILED (FAILED: 1264 24135046 player-death) total 413 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 164 23787359 autopilot objective decide reason=objective text=24485 verb=3 ref=0 target=0 nav=0
+2026-10-23 00:06	M08-reachfix	Save3a48.fl	PASS	696	12	144	4154613+dirty	4	SUCCESS total 696 s
+2026-10-23 00:10	M12-ownhull	Save5e67.fl	PASS	667	12	154	4154613+dirty	2	SUCCESS total 667 s
+2026-10-23 00:22	M13-from-st03-airlock	M13_ck_st03.fl	PASS	422	12	112	c7f51cf+dirty	3	SUCCESS total 422 s
+2026-10-23 00:24	M13-from-city-recheck	M13_ck_city.fl	PASS	174	11	134	c7f51cf+dirty	1	SUCCESS total 174 s
+2026-10-23 00:25	M12-toledo-trace	Save5e67.fl	PASS	629	12	121	c7f51cf+dirty	2	SUCCESS total 629 s
+2026-10-23 00:26	M08-trace	Save3a48.fl	PASS	702	11	133	c7f51cf+dirty	4	SUCCESS total 702 s
+2026-10-23 00:28	M13-from-city-goals	M13_ck_city.fl	PASS	171	12	184	c7f51cf+dirty	1	SUCCESS total 171 s
+2026-10-23 00:30	M13-from-city-placeholder	M13_ck_city.fl	FAIL	72	11	179	c7f51cf+dirty	1	FAILED (FAILED: 244 25573984 player-death) total 72 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 244 25573984 player-death
+2026-10-23 02:13	M12-s7-baseline	M12_ck_launch.fl	FAIL	218	10	191	103d0fe+dirty	1	FAILED (STALL no progress 60 s (5|57742|2974382404|fight)) total 218 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 143 31650484 autopilot objective decide reason=objective text=24223 verb=3 ref=0 target=0 nav=0
+2026-10-23 02:25	M12-s7-prestage	M12_ck_launch.fl	FAIL	350	10	190	103d0fe+dirty	1	FAILED (STALL no progress 60 s (0|0|0|navmarker)) total 350 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 501 32422859 autopilot objective fly-through setnnobj_tractor_in_the_powercell: within 700 m of the marker ends the step
+2026-10-23 02:38	M12-s7-airlock-core	M12_ck_launch.fl	FAIL	463	10	190	103d0fe+dirty	1	FAILED (FAILED: 1007 33271500 player-death) total 463 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 551 33101921 autopilot objective decide reason=ended text=24224 verb=0 ref=0 target=0 nav=1
+2026-10-23 02:47	M12-s7-hop	M12_ck_launch.fl	FAIL	396	10	189	103d0fe+dirty	1	FAILED (FAILED: 926 33775656 player-death) total 396 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 517 33628296 autopilot objective decide reason=ended text=24224 verb=0 ref=0 target=0 nav=1
+2026-10-23 02:59	M12-s7-paths	M12_ck_launch.fl	FAIL	450	10	188	103d0fe+dirty	1	FAILED (FAILED: 1134 34487062 player-death) total 450 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 621 34337093 autopilot objective granted airlock 2281279501 at 1081 m: through it
+2026-10-23 03:08	M12-s7-lateral	M12_ck_launch.fl	FAIL	386	10	188	103d0fe+dirty	1	FAILED (FAILED: 864 35058406 player-death) total 386 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 584 34949640 autopilot objective decide reason=ended text=24224 verb=0 ref=0 target=0 nav=1
+2026-10-23 03:29	M12-s7-toledo	M12_ck_launch.fl	FAIL	366	10	189	7627bb9+dirty	1	FAILED (FAILED: 873 36287625 player-death) total 366 s; mode=menu; room: hotspots 0 busy: scene; dialogs: none; offers: none; last story event: 640 36224234 autopilot objective granted airlock 2281279501 at 1195 m: through it
+2026-10-23 03:40	M12-s7-holewait	M12_ck_launch.fl	PASS	480	10	189	005a7bb+dirty	1	SUCCESS total 480 s
+2026-10-23 04:07	M12-s7-airlock2	M12_ck_launch.fl	PASS	518	10	188	fb48759+dirty	1	SUCCESS total 518 s
+2026-10-23 04:14	M12-s7-3d	M12_ck_launch.fl	FAIL	228	10	192	9f8331f+dirty	1	FAILED (STALL no progress 60 s (1|50000|2437481796|fight)) total 228 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 117 38895765 autopilot objective decide reason=objective text=24223 verb=3 ref=0 target=0 nav=0
+2026-10-23 04:22	M12-s7-3d-b	M12_ck_launch.fl	FAIL	310	10	188	f17af93+dirty	1	FAILED (STALL no progress 60 s (0|0|0|navmarker)) total 310 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 480 39404546 autopilot objective fly-through setnnobj_goto_the_airlock: within 500 m ends the step - aim the condition's near side (-1041,375,-1
+2026-10-23 04:34	M12-s7-3d-c	M12_ck_launch.fl	PASS	554	10	188	2459f3f+dirty	1	SUCCESS total 554 s
+2026-10-23 04:41	M12-s7-3d-d	M12_ck_launch.fl	FAIL	223	10	190	5a9cb7e+dirty	1	FAILED (STALL no progress 60 s (1|50000|2437481796|fight)) total 223 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 114 40510953 autopilot objective decide reason=objective text=24223 verb=3 ref=0 target=0 nav=0
+2026-10-23 04:51	M12-s7-e	M12_ck_launch.fl	FAIL	426	10	189	85cad5a+dirty	1	FAILED (STALL no progress 60 s (0|0|2765357449|dock)) total 426 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 740 41162968 autopilot objective pre-stage dead_gen_3 -> mlog_above_the_airlock: next step's setnnobj_goto_the_airlock, within 500 m, 1632 m
+2026-10-23 05:01	M12-s7-x3-c	M12_ck_launch.fl	FAIL	315	11	141	10bff5c+dirty	3	FAILED (STALL no progress 60 s (0|0|2765357449|dock)) total 315 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 454 41794343 autopilot objective navmarker on a dockable object 2765357449: through it
+2026-10-23 05:02	M12-s7-x3-b	M12_ck_launch.fl	FAIL	325	11	143	10bff5c+dirty	2	FAILED (STALL no progress 60 s (0|0|2765357449|dock)) total 325 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 500 41804343 autopilot objective navmarker on a dockable object 2765357449: through it
+2026-10-23 05:05	M12-s7-x3-a	M12_ck_launch.fl	PASS	521	11	160	10bff5c+dirty	1	SUCCESS total 521 s
+2026-10-23 05:22	M12-s7-y3-b	M12_ck_launch.fl	FAIL	309	12	144	f718e4a+dirty	2	FAILED (STALL no progress 60 s (0|0|2765357449|dock)) total 309 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 423 43038875 autopilot objective navmarker on a dockable object 2765357449: through it
+2026-10-23 05:25	M12-s7-y3-a	M12_ck_launch.fl	PASS	494	12	155	f718e4a+dirty	1	SUCCESS total 494 s
+2026-10-23 05:27	M12-s7-y3-c	M12_ck_launch.fl	FAIL	620	11	163	f718e4a+dirty	3	FAILED (FAILED: 940 43414812 mission-message type=FAILURE text=24375 "Mission Failed. The Omicron Minor Jump Hole has collapsed.") total 620 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 636 43138187 autopilot objective fly-through setnnobj_trac
+2026-10-23 05:39	M12-s7-z3-a	M12_ck_launch.fl	PASS	463	12	140	75a2d8f+dirty	1	SUCCESS total 463 s
+2026-10-23 05:39	M12-s7-z3-c	M12_ck_launch.fl	PASS	485	11	140	75a2d8f+dirty	3	SUCCESS total 485 s
+2026-10-23 05:52	M12-s7-r3-c	M12_ck_launch.fl	PASS	477	12	138	84bd318+dirty	3	SUCCESS total 477 s
+2026-10-23 05:52	M12-s7-r3-b	M12_ck_launch.fl	PASS	482	12	139	84bd318+dirty	2	SUCCESS total 482 s
+2026-10-23 05:52	M12-s7-r3-a	M12_ck_launch.fl	PASS	499	12	142	84bd318+dirty	1	SUCCESS total 499 s
+2026-10-23 06:26	M12-s8-base-b	Save5e67.fl	PASS	454	11	139	0cafa8f	2	SUCCESS total 454 s
+2026-10-23 06:26	M12-s8-base-a	Save5e67.fl	PASS	498	11	143	0cafa8f	1	SUCCESS total 498 s
+2026-10-23 06:27	M12-s8-base-c	Save5e67.fl	PASS	516	11	145	0cafa8f	3	SUCCESS total 516 s
+2026-10-23 06:36	M12-s8-f1-b	Save5e67.fl	PASS	407	11	139	a061c04+dirty	2	SUCCESS total 407 s
+2026-10-23 06:36	M12-s8-f1-a	Save5e67.fl	PASS	451	11	143	a061c04+dirty	1	SUCCESS total 451 s
+2026-10-23 06:37	M12-s8-f1-c	Save5e67.fl	PASS	429	11	141	f223531+dirty	3	SUCCESS total 429 s
+2026-10-23 06:46	M12-s8-f5-b	Save5e67.fl	FAIL	340	11	140	52e6d90	2	FAILED (FAILED: 782 48106406 player-death) total 340 s; mode=menu; room: hotspots 0 busy: scene; dialogs: none; offers: none; last story event: 686 48067781 objective-state id=11 state=0
+2026-10-23 06:46	M12-s8-f5-a	Save5e67.fl	PASS	404	11	144	52e6d90	1	SUCCESS total 404 s
+2026-10-23 06:47	M12-s8-f5-c	Save5e67.fl	PASS	421	11	147	52e6d90	3	SUCCESS total 421 s
+2026-10-23 06:56	M12-s8-f6-a	Save5e67.fl	PASS	407	11	143	504d7b0	1	SUCCESS total 407 s
+2026-10-23 06:56	M12-s8-f6-b	Save5e67.fl	PASS	430	11	143	fe3b317	2	SUCCESS total 430 s
+2026-10-23 06:56	M12-s8-f6-c	Save5e67.fl	PASS	411	11	141	fe3b317	3	SUCCESS total 411 s
+2026-10-23 07:07	M12-s8-f8-a	Save5e67.fl	PASS	429	11	141	a144c01	1	SUCCESS total 429 s
+2026-10-23 07:07	M12-s8-f8-b	Save5e67.fl	PASS	415	11	139	a144c01	2	SUCCESS total 415 s
+2026-10-23 07:07	M12-s8-f8-c	Save5e67.fl	PASS	394	11	138	a144c01	3	SUCCESS total 394 s
+2026-10-23 07:18	M12-s8-f9-a	Save5e67.fl	PASS	402	15	141	278acc9	1	SUCCESS total 402 s
+2026-10-23 07:18	M12-s8-f9-b	Save5e67.fl	PASS	402	12	140	e5268b8	2	SUCCESS total 402 s
+2026-10-23 07:19	M12-s8-f9-c	Save5e67.fl	PASS	423	13	144	e5268b8	3	SUCCESS total 423 s
+2026-10-23 07:27	M12-s8-f10-a	Save5e67.fl	PASS	393	11	141	250c218	1	SUCCESS total 393 s
+2026-10-23 07:27	M12-s8-f10-c	Save5e67.fl	PASS	404	11	140	250c218+dirty	3	SUCCESS total 404 s
+2026-10-23 07:29	M12-s8-f10-b	Save5e67.fl	PASS	491	11	148	250c218	2	SUCCESS total 491 s
+2026-10-23 07:36	M12-s8-f11-c	Save5e67.fl	FAIL	313	11	138	7df5eff	3	FAILED (FAILED: 660 51133468 player-death) total 313 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 608 51100953 autopilot objective trip kept: already on the way to 2460445762
+2026-10-23 07:37	M12-s8-f11-a	Save5e67.fl	PASS	417	11	146	b06d0f7	1	SUCCESS total 417 s
+2026-10-23 07:37	M12-s8-f11-b	Save5e67.fl	PASS	407	11	144	7df5eff	2	SUCCESS total 407 s
+2026-10-23 07:51	M10-gate-s8	Save7b39.fl	FAIL	656	11	148	b88ff41	2	FAILED (FAILED: 1501 52025031 mission-message type=FAILURE text=23950 "Mission Failed. You fled the battle.") total 656 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1503 52025031 objective count=0 title=23800 "MISSION 10" text=23805 "OBJECTIVE:
+2026-10-23 07:52	M06-gate-s8	Save33fa.fl	PASS	719	11	149	b88ff41	3	SUCCESS total 719 s
+2026-10-23 08:04	M11-gate-s8	Save08f9.fl	FAIL	675	10	144	b88ff41+dirty	3	FAILED (FAILED: 974 52793484 player-death) total 675 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 974 52793484 player-death
+2026-10-23 08:09	M02-gate-s8	Save05c7.fl	FAIL	290	11	148	b88ff41+dirty	3	FAILED (STALL no progress 60 s (0|0|0|rest)) total 290 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 222 53054328 autopilot objective decide reason=ended text=22240 verb=0 ref=0 target=0 nav=1
+2026-10-23 08:11	M07-gate-s8	Save766f.fl	PASS	1721	11	144	b88ff41	1	SUCCESS total 1721 s
+2026-10-23 08:13	M09-gate-s8	Save4686.fl	FAIL	228	10	137	b88ff41+dirty	3	FAILED (FAILED: 343 53337750 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 228 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 348 53337796 autopilot objective script-destroy last_g
+2026-10-23 08:19	M04-gate-s8	Save6380.fl	PASS	1153	12	143	b88ff41+dirty	2	SUCCESS total 1153 s
+2026-10-23 08:22	M05-gate-s8	Save1d87.fl	FAIL	649	11	144	b88ff41+dirty	1	FAILED (FAILED: 700 53893531 mission-message type=FAILURE text=22997 "Mission Failed. You failed to destroy the Rheinland ships.") total 649 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 702 53893531 objective count=0 title=22800 "MISSION 5" tex
+2026-10-23 08:24	M01b-gate-s8	Save5f61.fl	PASS	687	11	147	b88ff41+dirty	3	SUCCESS total 687 s
+2026-10-23 08:31	M08-gate-s8	Save3a48.fl	PASS	685	11	162	b88ff41+dirty	2	SUCCESS total 685 s
+2026-10-23 08:37	M03-gate-s8	Save1e7d.fl	PASS	901	11	168	b88ff41+dirty	1	SUCCESS total 901 s
+2026-10-23 08:39	M12-gate-s8	Save5e67.fl	PASS	434	10	172	b88ff41+dirty	2	SUCCESS total 434 s
+2026-10-23 08:46	M01a-gate-s8	Save7e1c.fl	PASS	537	11	188	b88ff41+dirty	1	SUCCESS total 537 s
+2026-10-23 08:50	M13-gate-s8b	Save3989.fl	FAIL	115	11	143	57f855c	2	FAILED (FAILED: 379 55577765 player-death) total 115 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 379 55577765 player-death
+2026-10-23 08:54	M09-gate-s8b	Save4686.fl	FAIL	226	11	145	57f855c+dirty	2	FAILED (FAILED: 346 55817765 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 226 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 348 55817765 objective count=0 title=23600 "MISSION 9"
+2026-10-23 08:59	M10-gate-s8b	Save7b39.fl	FAIL	661	11	158	57f855c	1	FAILED (FAILED: 851 56103046 mission-message type=FAILURE text=23950 "Mission Failed. You fled the battle.") total 661 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 853 56103046 objective count=0 title=23800 "MISSION 10" text=23805 "OBJECTIVE: L
+2026-10-23 09:09	M05-gate-s8b	Save1d87.fl	PASS	1249	11	167	57f855c	3	SUCCESS total 1249 s
+2026-10-23 09:12	M02-gate-s8b	Save05c7.fl	FAIL	751	10	175	d295587+dirty	1	FAILED (FAILED: 562 56866750 mission-message type=FAILURE text=13093 "Mission Result:  Failure – You ran from the battle.") total 751 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 568 56866765 autopilot objective trip kept: the new destination l
+2026-10-23 09:15	M09-dwell0	Save4686.fl	FAIL	226	11	172	d295587+dirty	2	FAILED (FAILED: 321 57088515 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 226 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 323 57088515 objective count=0 title=23600 "MISSION 9"
+2026-10-23 09:21	M09-bisect-84bd318	Save4686.fl	FAIL	224	11	174	0a94207+dirty	2	FAILED (FAILED: 397 57440140 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 224 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 399 57440140 objective count=0 title=23600 "MISSION 9"
+2026-10-23 09:28	M09-bisect-9e10904	Save4686.fl	FAIL	303	11	150	0a94207+dirty	1	FAILED (FAILED: 538 57831234 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 303 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 543 57831359 autopilot objective script-destroy last_g
+2026-10-23 09:28	M09-bisect-9f8331f	Save4686.fl	FAIL	238	11	141	0a94207+dirty	2	FAILED (FAILED: 375 57832796 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 238 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 377 57832796 objective count=0 title=23600 "MISSION 9"
+2026-10-23 09:29	M11-gate-s8b	Save08f9.fl	FAIL	1151	10	170	d295587+dirty	3	FAILED (FAILED: 1886 57893812 player-death) total 1151 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1024 57448718 autopilot objective decide reason=objective text=24075 verb=2 ref=0 target=66 nav=0
+2026-10-23 09:39	M09-bisect-7466b45	Save4686.fl	FAIL	225	11	153	0a94207+dirty	1	FAILED (FAILED: 365 58494156 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 225 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 367 58494156 objective count=0 title=23600 "MISSION 9"
+2026-10-23 09:43	M10-gate-s8c	Save7b39.fl	FAIL	677	11	153	0a94207+dirty	3	FAILED (FAILED: 994 58732250 mission-message type=FAILURE text=23950 "Mission Failed. You fled the battle.") total 677 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 996 58732250 objective count=0 title=23800 "MISSION 10" text=23805 "OBJECTIVE: L
+2026-10-23 09:47	M12-s8-f12-b	Save5e67.fl	PASS	402	11	137	38f49e2	2	SUCCESS total 402 s
+2026-10-23 09:47	M12-s8-f12-a	Save5e67.fl	PASS	436	11	139	0a94207+dirty	1	SUCCESS total 436 s
+2026-10-23 09:55	M12-s8-f12-c	Save5e67.fl	PASS	399	11	138	c03dc12+dirty	2	SUCCESS total 399 s
+2026-10-23 10:03	M10-gate-s8d	Save7b39.fl	FAIL	877	11	160	3e0e010+dirty	1	FAILED (FAILED: 1285 59938906 mission-message type=FAILURE text=23950 "Mission Failed. You fled the battle.") total 877 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1287 59938906 objective count=0 title=23802 "ASSAULT THE EXPERIMENTAL SHIPYARD"
+2026-10-23 10:03	M02-gate-s8c	Save05c7.fl	PASS	1199	11	160	38f49e2+dirty	3	SUCCESS total 1199 s
+2026-10-23 10:13	M12-s8-f13-a	Save5e67.fl	PASS	423	11	140	38f66d5	2	SUCCESS total 423 s
+2026-10-23 10:13	M12-s8-f13-b	Save5e67.fl	PASS	403	11	136	38f66d5	3	SUCCESS total 403 s
+2026-10-23 10:24	M10-gate-s8e	Save7b39.fl	FAIL	1108	11	171	38f66d5	1	FAILED (FAILED: 2553 61188781 mission-message type=FAILURE text=23950 "Mission Failed. You fled the battle.") total 1108 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1716 61032312 autopilot objective decide reason=threat text=1 verb=0 ref=0 tar
+2026-10-23 10:33	M12-s8-f14-a	Save5e67.fl	FAIL	417	11	137	875c17c	2	FAILED (FAILED: 1058 61745109 player-death) total 417 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 603 61596781 autopilot objective granted airlock 2281279501 at 1267 m: through it
+2026-10-23 10:38	M13-gate-s8f	Save3989.fl	FAIL	689	10	144	875c17c	3	FAILED (FAILED: 1472 62035843 player-death) total 689 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1201 61955109 autopilot objective leash St03_dyson_airlock_1 18000 m: object (inside: kept)
+2026-10-23 10:38	M10-gate-s8f	Save7b39.fl	FAIL	765	11	151	54ecc2b	1	FAILED (STALL no progress 60 s (0|0|3207979332|dock)) total 765 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1175 61993453 autopilot objective decide reason=objective text=23890 verb=1 ref=3207979332 target=3207979332 nav=1
+2026-10-23 10:42	M12-s8-f15-a	Save5e67.fl	PASS	409	11	152	17fd2b2+dirty	2	SUCCESS total 409 s
+2026-10-23 10:45	M12-s8-f15-b	Save5e67.fl	PASS	423	11	166	17fd2b2+dirty	3	SUCCESS total 423 s
+2026-10-23 10:50	M13-gate-s8g	Save3989.fl	FAIL	198	10	137	8bd7d84+dirty	3	FAILED (FAILED: 568 62767812 player-death) total 198 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 568 62767812 player-death
+2026-10-23 10:53	M12-s8-f15-c	Save5e67.fl	PASS	393	11	152	8bd7d84+dirty	2	SUCCESS total 393 s
+2026-10-23 10:55	M13-gate-s8h	Save3989.fl	FAIL	112	10	174	afa1754+dirty	3	FAILED (FAILED: 393 63088156 player-death) total 112 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 393 63088156 player-death
+2026-10-23 10:56	M10-gate-s8g	Save7b39.fl	FAIL	880	12	166	8bd7d84+dirty	1	FAILED (FAILED: 1253 63142234 mission-message type=FAILURE text=23950 "Mission Failed. You fled the battle.") total 880 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1255 63142234 objective count=0 title=23802 "ASSAULT THE EXPERIMENTAL SHIPYARD"
+2026-10-23 11:06	M12-s8-f16-a	Save5e67.fl	PASS	401	11	138	2ebf0bd+dirty	3	SUCCESS total 401 s
+2026-10-23 11:14	M12-s8-f16-b	Save5e67.fl	PASS	433	11	137	2ebf0bd+dirty	3	SUCCESS total 433 s
+2026-10-23 11:18	M04-gate-s8i	Save6380.fl	PASS	1129	11	147	2ebf0bd+dirty	2	SUCCESS total 1129 s
+2026-10-23 11:22	M10-gate-s8i	Save7b39.fl	FAIL	1432	11	147	c801108+dirty	1	FAILED (FAILED: 2746 64712140 mission-message type=FAILURE text=23980 "Mission Failed. You failed to dock with the Hamburg Jump Hole.") total 1432 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1597 64255671 autopilot objective leash Von_Claussen
+2026-10-23 11:22	M12-s8-f17-a	Save5e67.fl	FAIL	216	12	142	0246ba0+dirty	2	FAILED (FAILED: 433 64718031 player-death) total 216 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 433 64718031 player-death
+2026-10-23 11:47	M10-gate-s8k	Save7b39.fl	FAIL	1270	11	171	cd7de03+dirty	1	FAILED (FAILED: 2550 66201406 mission-message type=FAILURE text=23980 "Mission Failed. You failed to dock with the Hamburg Jump Hole.") total 1270 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1418 65860531 autopilot objective leash Von_Claussen
+2026-10-23 11:51	M10-gate-s8l	Save7b39.fl	FAIL	1227	11	173	1be483e+dirty	3	FAILED (FAILED: 3529 66428968 mission-message type=FAILURE text=23980 "Mission Failed. You failed to dock with the Hamburg Jump Hole.") total 1227 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 2539 66119750 autopilot objective leash Von_Claussen
+2026-10-23 12:17	M10-gate-s8m	Save7b39.fl	FAIL	1336	11	187	5c3b388+dirty	3	FAILED (FAILED: 2618 68015125 mission-message type=FAILURE text=23980 "Mission Failed. You failed to dock with the Hamburg Jump Hole.") total 1336 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1336 67586406 autopilot objective leash Von_Claussen
+2026-10-23 12:56	M10-gate-s8n	Save7b39.fl	FAIL	1239	11	187	84d297a	3	FAILED (FAILED: 2435 70311625 player-death) total 1239 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1395 70013656 autopilot objective leash Von_Claussen 6000 m: ship (named) (kept)
+2026-10-23 13:09	M12-gate-s8p	Save5e67.fl	PASS	394	11	138	0d9e9e5	2	SUCCESS total 394 s
+2026-10-23 13:09	M12-gate-s8p	Save5e67.fl	PASS	411	11	140	0d9e9e5	1	SUCCESS total 411 s
+2026-10-23 13:24	M10-gate-s8o	Save7b39.fl	PASS	1379	11	174	909a9fd	3	SUCCESS total 1379 s
+2026-10-23 13:32	M12-gate-s8q	Save5e67.fl	PASS	392	11	157	ff430f5+dirty	1	SUCCESS total 392 s
+2026-10-23 13:33	M12-gate-s8q	Save5e67.fl	PASS	405	11	156	ff430f5+dirty	3	SUCCESS total 405 s
+2026-10-23 13:35	M12-gate-s8q	Save5e67.fl	FAIL	376	11	163	0d983bc+dirty	2	FAILED (FAILED: 984 72700468 player-death) total 376 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 610 72587109 objective count=1 title=24200 "MISSION 12" text=24205 "OBJECTIVE: Extract a Nomad power cell from an unknown Alien structure in this system
+2026-10-23 13:45	M12-gate-s8r	Save5e67.fl	PASS	401	11	142	ece2973+dirty	1	SUCCESS total 401 s
+2026-10-23 13:46	M12-gate-s8r	Save5e67.fl	PASS	401	11	141	ece2973+dirty	2	SUCCESS total 401 s
+2026-10-23 13:46	M12-gate-s8r	Save5e67.fl	PASS	414	11	142	ece2973+dirty	3	SUCCESS total 414 s
+2026-10-23 13:56	M12-gate-s8s	Save5e67.fl	PASS	409	11	141	a5caabb+dirty	1	SUCCESS total 409 s
+2026-10-23 13:57	M12-gate-s8s	Save5e67.fl	PASS	418	11	140	a5caabb+dirty	2	SUCCESS total 418 s
+2026-10-23 14:02	M12-gate-s8s	Save5e67.fl	FAIL	724	11	161	a5caabb+dirty	3	FAILED (STALL no progress 60 s (9|27472|0|survive)) total 724 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 604 73853015 objective count=1 title=24200 "MISSION 12" text=24205 "OBJECTIVE: Extract a Nomad power cell from an unknown Alien structure in t
+2026-10-23 14:11	M12-gate-s8t	Save5e67.fl	PASS	409	11	138	73e8732+dirty	2	SUCCESS total 409 s
+2026-10-23 14:11	M12-gate-s8t	Save5e67.fl	PASS	430	11	139	73e8732+dirty	1	SUCCESS total 430 s
+2026-10-23 14:12	M12-gate-s8t	Save5e67.fl	PASS	433	11	140	73e8732+dirty	3	SUCCESS total 433 s
+2026-10-23 14:22	M12-gate-s8u	Save5e67.fl	PASS	393	11	141	30b8fb1+dirty	1	SUCCESS total 393 s
+2026-10-23 14:22	M12-gate-s8u	Save5e67.fl	PASS	403	11	141	30b8fb1+dirty	2	SUCCESS total 403 s
+2026-10-23 14:23	M12-gate-s8u	Save5e67.fl	PASS	389	11	140	30b8fb1+dirty	3	SUCCESS total 389 s
+2026-10-23 14:37	M06-gate-s8v	Save33fa.fl	PASS	714	11	144	b2fe700	3	SUCCESS total 714 s
+2026-10-23 14:46	M10-gate-s8v	Save7b39.fl	FAIL	1238	11	143	b2fe700	2	FAILED (FAILED: 2861 76903125 mission-message type=FAILURE text=23980 "Mission Failed. You failed to dock with the Hamburg Jump Hole.") total 1238 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1641 76623703 autopilot objective leash Von_Claussen
+2026-10-23 14:52	M07-gate-s8v	Save766f.fl	PASS	1669	11	146	b2fe700	1	SUCCESS total 1669 s
+2026-10-23 14:57	M11-gate-s8v	Save08f9.fl	PASS	1169	10	142	b2fe700+dirty	3	SUCCESS total 1169 s
+2026-10-23 14:57	M13-gate-s8v	Save3989.fl	FAIL	704	10	140	b2fe700+dirty	2	FAILED (FAILED: 1503 77619609 player-death) total 704 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1246 77531515 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-23 14:59	M04-gate-s8v	Save6380.fl	FAIL	64	11	157	91328ff+dirty	2	FAILED (FAILED: 101 77696953 mission-message type=FAILURE text=22750 "Mission Failed. You fled the battle.") total 64 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 103 77696953 objective count=0 title=22602 "ESCAPE FROM LIBERTY" text=22606 "OBJE
+2026-10-23 15:02	M05-gate-s8v	Save1d87.fl	FAIL	576	11	145	2b94663+dirty	1	FAILED (FAILED: 501 77903218 mission-message type=FAILURE text=22975 "Mission Failed. You failed to dock with Baxter Research Station.") total 576 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 503 77903218 objective count=0 title=22800 "MISSION 
+2026-10-23 15:11	M08-gate-s8v	Save3a48.fl	PASS	704	10	144	91328ff+dirty	2	SUCCESS total 704 s
+2026-10-23 15:16	M02-gate-s8v	Save05c7.fl	PASS	1146	10	145	91328ff+dirty	3	SUCCESS total 1146 s
+2026-10-23 15:18	M03-gate-s8v	Save1e7d.fl	PASS	919	12	144	0d2bfff+dirty	1	SUCCESS total 919 s
+2026-10-23 15:18	M12-gate-s8v	Save5e67.fl	PASS	441	10	138	7d3275a+dirty	2	SUCCESS total 441 s
+2026-10-23 15:20	M09-gate-s8v	Save4686.fl	FAIL	227	10	159	7d3275a+dirty	3	FAILED (FAILED: 378 78977859 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 227 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 380 78977859 objective count=0 title=23600 "MISSION 9"
+2026-10-23 15:27	M01a-gate-s8v	Save7e1c.fl	PASS	515	10	175	7d3275a+dirty	1	SUCCESS total 515 s
+2026-10-23 15:27	M01b-gate-s8v	Save5f61.fl	FAIL	425	10	180	7d3275a+dirty	3	FAILED (FAILED: 478 79415125 mission-message type=FAILURE text=22170 "Mission Failed. You never flew to the waypoint.") total 425 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 480 79415125 objective count=0 title=22000 "MISSION 1" text=22005 "OB
+2026-10-23 15:32	M04-gate-s8w	Save6380.fl	FAIL	65	11	138	2da9a04+dirty	1	FAILED (FAILED: 107 79700937 mission-message type=FAILURE text=22750 "Mission Failed. You fled the battle.") total 65 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 109 79700937 objective count=0 title=22602 "ESCAPE FROM LIBERTY" text=22606 "OBJE
+2026-10-23 15:51	M05-gate-s8w	Save1d87.fl	PASS	1236	11	174	2da9a04+dirty	2	SUCCESS total 1236 s
+2026-10-23 15:51	M10-gate-s8w	Save7b39.fl	FAIL	1238	11	170	2da9a04+dirty	3	FAILED (FAILED: 2634 80846921 mission-message type=FAILURE text=23980 "Mission Failed. You failed to dock with the Hamburg Jump Hole.") total 1238 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 1700 80550046 autopilot objective leash Von_Claussen
+2026-10-23 16:01	M12-gate-s8x	Save5e67.fl	PASS	400	11	138	b6331d5+dirty	3	SUCCESS total 400 s
+2026-10-23 16:09	M12-gate-s8x	Save5e67.fl	PASS	405	11	137	b6331d5+dirty	3	SUCCESS total 405 s
+2026-10-23 16:10	M04-gate-s8x	Save6380.fl	PASS	993	10	149	b6331d5+dirty	1	SUCCESS total 993 s
+2026-10-23 16:16	M10-gate-s8x	Save7b39.fl	FAIL	1341	11	145	b6331d5+dirty	2	FAILED (FAILED: 3487 82333531 mission-message type=FAILURE text=23980 "Mission Failed. You failed to dock with the Hamburg Jump Hole.") total 1341 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 2300 81941625 autopilot objective leash Von_Claussen
+2026-10-23 16:17	M12-gate-s8x	Save5e67.fl	PASS	406	12	146	b6331d5+dirty	3	SUCCESS total 406 s
+2026-10-23 16:21	M01b-gate-s8x	Save5f61.fl	PASS	679	10	166	b6331d5+dirty	1	SUCCESS total 679 s
+2026-10-23 16:29	M12-gate-s8y	Save5e67.fl	PASS	394	12	142	c136611+dirty	1	SUCCESS total 394 s
+2026-10-23 16:30	M12-gate-s8y	Save5e67.fl	PASS	447	11	145	c136611+dirty	3	SUCCESS total 447 s
+2026-10-23 16:46	M10-gate-s8y	Save7b39.fl	PASS	1391	11	174	c136611+dirty	2	SUCCESS total 1391 s
+2026-10-23 16:53	M12-gate-s8z	Save5e67.fl	FAIL	405	11	142	b34853d+dirty	1	FAILED (FAILED: 1073 84577187 player-death) total 405 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 643 84449312 objective count=1 title=24200 "MISSION 12" text=24205 "OBJECTIVE: Extract a Nomad power cell from an unknown Alien structure in this syste
+2026-10-23 16:54	M12-gate-s8z	Save5e67.fl	PASS	426	12	143	b34853d+dirty	3	SUCCESS total 426 s
+2026-10-23 17:07	M10-gate-s8z	Save7b39.fl	PASS	1171	11	172	b34853d+dirty	2	SUCCESS total 1171 s
+2026-10-23 17:14	M12-gate-s9a	Save5e67.fl	FAIL	369	11	136	936c479+dirty	3	FAILED (FAILED: 913 85824281 player-death) total 369 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 600 85720703 objective count=1 title=24200 "MISSION 12" text=24205 "OBJECTIVE: Extract a Nomad power cell from an unknown Alien structure in this system
+2026-10-23 17:14	M12-gate-s9a	Save5e67.fl	PASS	422	11	141	936c479+dirty	1	SUCCESS total 422 s
+2026-10-23 17:14	M12-gate-s9a	Save5e67.fl	PASS	405	11	139	936c479+dirty	2	SUCCESS total 405 s
+2026-10-23 17:26	M12-gate-s9b	Save5e67.fl	PASS	401	12	139	1ef7ea1+dirty	2	SUCCESS total 401 s
+2026-10-23 17:26	M12-gate-s9b	Save5e67.fl	PASS	425	11	143	1ef7ea1+dirty	1	SUCCESS total 425 s
+2026-10-23 17:27	M12-gate-s9b	Save5e67.fl	PASS	420	12	141	1ef7ea1+dirty	3	SUCCESS total 420 s
+2026-10-23 17:33	M12-gate-s9c	Save5e67.fl	FAIL	253	11	133	a52ecae+dirty	3	FAILED (FAILED: 530 86956953 player-death) total 253 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 530 86956953 player-death
+2026-10-23 17:35	M12-gate-s9c	Save5e67.fl	PASS	423	11	146	a52ecae+dirty	1	SUCCESS total 423 s
+2026-10-23 17:36	M12-gate-s9c	Save5e67.fl	PASS	426	11	146	a52ecae+dirty	2	SUCCESS total 426 s
+2026-10-23 17:49	M12-gate-s9d	Save5e67.fl	PASS	421	15	137	6ad18fa+dirty	1	SUCCESS total 421 s
+2026-10-23 17:50	M12-gate-s9d	Save5e67.fl	PASS	440	13	139	6ad18fa+dirty	2	SUCCESS total 440 s
+2026-10-23 17:50	M12-gate-s9d	Save5e67.fl	FAIL	425	13	137	6ad18fa+dirty	3	FAILED (FAILED: 1044 87952578 player-death) total 425 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 621 87784906 autopilot objective navmarker on a dockable object 2460445762: through it
+2026-10-23 18:02	M12-gate-s9e	Save5e67.fl	PASS	388	13	150	ac62572+dirty	2	SUCCESS total 388 s
+2026-10-23 18:02	M12-gate-s9e	Save5e67.fl	PASS	419	11	153	ac62572+dirty	1	SUCCESS total 419 s
+2026-10-23 18:03	M12-gate-s9e	Save5e67.fl	PASS	418	11	152	ac62572+dirty	3	SUCCESS total 418 s
+2026-10-23 18:12	M12-gate-s9f	Save5e67.fl	PASS	375	11	140	f7bfc52+dirty	3	SUCCESS total 375 s
+2026-10-23 18:12	M12-gate-s9f	Save5e67.fl	PASS	423	11	144	f7bfc52+dirty	1	SUCCESS total 423 s
+2026-10-23 18:14	M12-gate-s9f	Save5e67.fl	PASS	524	12	154	f7bfc52+dirty	2	SUCCESS total 524 s
+2026-10-23 18:22	M12-gate-s9g	Save5e67.fl	PASS	401	11	158	266007a+dirty	1	SUCCESS total 401 s
+2026-10-23 18:23	M12-gate-s9g	Save5e67.fl	PASS	461	11	161	266007a+dirty	2	SUCCESS total 461 s
+2026-10-23 18:24	M12-gate-s9g	Save5e67.fl	PASS	470	11	164	266007a+dirty	3	SUCCESS total 470 s
+2026-10-23 18:29	M12-gate-s9h	Save5e67.fl	FAIL	200	11	149	50ce0d3	1	FAILED (FAILED: 414 90340921 player-death) total 200 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 414 90340921 player-death
+2026-10-23 18:30	M12-gate-s9h	Save5e67.fl	FAIL	210	11	147	50ce0d3	2	FAILED (FAILED: 649 90370640 player-death) total 210 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 649 90370640 player-death
+2026-10-23 18:33	M12-gate-s9h	Save5e67.fl	PASS	389	11	166	50ce0d3	3	SUCCESS total 389 s
+2026-10-23 18:41	M12-gate-s9i	Save5e67.fl	PASS	404	11	141	b7a3b4a	1	SUCCESS total 404 s
+2026-10-23 18:42	M12-gate-s9i	Save5e67.fl	PASS	427	11	142	b7a3b4a	2	SUCCESS total 427 s
+2026-10-23 18:42	M12-gate-s9i	Save5e67.fl	PASS	435	11	142	b7a3b4a	3	SUCCESS total 435 s
+2026-10-23 18:50	M12-gate-s9j	Save5e67.fl	PASS	389	11	140	2c3d9a3	1	SUCCESS total 389 s
+2026-10-23 18:50	M12-gate-s9j	Save5e67.fl	PASS	393	11	138	2c3d9a3	2	SUCCESS total 393 s
+2026-10-23 18:52	M12-gate-s9j	Save5e67.fl	PASS	489	12	149	2c3d9a3	3	SUCCESS total 489 s
+2026-10-23 19:02	M12-gate-s9k	Save5e67.fl	PASS	387	11	140	59a015d+dirty	1	SUCCESS total 387 s
+2026-10-23 19:02	M12-gate-s9k	Save5e67.fl	PASS	401	11	139	59a015d+dirty	2	SUCCESS total 401 s
+2026-10-23 19:03	M12-gate-s9k	Save5e67.fl	PASS	412	12	140	59a015d+dirty	3	SUCCESS total 412 s
+2026-10-23 19:11	M12-gate-s9l	Save5e67.fl	PASS	383	11	141	e1c7016	1	SUCCESS total 383 s
+2026-10-23 19:12	M12-gate-s9l	Save5e67.fl	PASS	392	11	140	e1c7016	2	SUCCESS total 392 s
+2026-10-23 19:12	M12-gate-s9l	Save5e67.fl	PASS	379	11	138	e1c7016	3	SUCCESS total 379 s
+2026-10-23 19:20	M12-gate-s9m	Save5e67.fl	PASS	384	11	142	b6c3bb1	1	SUCCESS total 384 s
+2026-10-23 19:21	M12-gate-s9m	Save5e67.fl	FAIL	397	11	141	b6c3bb1	2	FAILED (FAILED: 1015 93422281 player-death) total 397 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 594 93281125 autopilot objective granted airlock 2281279501 at 827 m: through it
+2026-10-23 19:21	M12-gate-s9m	Save5e67.fl	PASS	383	11	141	b6c3bb1	3	SUCCESS total 383 s
+2026-10-23 19:31	M12-gate-s9n	Save5e67.fl	PASS	406	12	136	05f6219	2	SUCCESS total 406 s
+2026-10-23 19:31	M12-gate-s9n	Save5e67.fl	PASS	436	11	141	05f6219	1	SUCCESS total 436 s
+2026-10-23 19:31	M12-gate-s9n	Save5e67.fl	PASS	417	11	138	05f6219	3	SUCCESS total 417 s
+2026-10-23 19:49	M12-gate-s9o	Save5e67.fl	PASS	405	11	140	54c6d9d	1	SUCCESS total 405 s
+2026-10-23 19:49	M12-gate-s9o	Save5e67.fl	PASS	378	12	136	54c6d9d	3	SUCCESS total 378 s
+2026-10-23 19:50	M12-gate-s9o	Save5e67.fl	PASS	431	11	141	54c6d9d	2	SUCCESS total 431 s
+2026-10-23 19:58	M12-gate-s9p	Save5e67.fl	PASS	372	11	140	f116850	2	SUCCESS total 372 s
+2026-10-23 19:58	M12-gate-s9p	Save5e67.fl	PASS	378	12	139	f116850	3	SUCCESS total 378 s
+2026-10-23 20:00	M12-gate-s9p	Save5e67.fl	PASS	388	11	155	6e92a92	1	SUCCESS total 388 s
+2026-10-23 20:58	M12-gate-s9q	Save5e67.fl	PASS	430	13	140	671a773	2	SUCCESS total 430 s
+2026-10-23 20:58	M12-gate-s9q	Save5e67.fl	PASS	448	17	141	671a773	1	SUCCESS total 448 s
+2026-10-23 20:58	M12-gate-s9q	Save5e67.fl	PASS	416	13	138	671a773	3	SUCCESS total 416 s
+2026-10-23 21:07	M12-gate-s9r	Save5e67.fl	PASS	376	11	136	60e4f90+dirty	2	SUCCESS total 376 s
+2026-10-23 21:07	M12-gate-s9r	Save5e67.fl	PASS	366	11	135	60e4f90+dirty	3	SUCCESS total 366 s
+2026-10-23 21:07	M12-gate-s9r	Save5e67.fl	PASS	417	10	141	60e4f90+dirty	1	SUCCESS total 417 s
+2026-10-23 21:15	M12-gate-s9s	Save5e67.fl	PASS	376	10	140	c3c1807	1	SUCCESS total 376 s
+2026-10-23 21:16	M12-gate-s9s	Save5e67.fl	PASS	375	11	138	c3c1807	2	SUCCESS total 375 s
+2026-10-23 21:16	M12-gate-s9s	Save5e67.fl	PASS	369	11	138	c3c1807	3	SUCCESS total 369 s
+2026-10-23 21:24	M12-gate-s9t	Save5e67.fl	FAIL	339	11	142	7a65b1c	1	FAILED (FAILED: 881 2309578 player-death) total 339 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 632 2218140 autopilot objective decide reason=objective text=24245 verb=4 ref=0 target=0 nav=1
+2026-10-23 21:25	M12-gate-s9t	Save5e67.fl	PASS	404	11	143	7a65b1c	2	SUCCESS total 404 s
+2026-10-23 21:26	M12-gate-s9t	Save5e67.fl	PASS	419	11	146	7a65b1c	3	SUCCESS total 419 s
+2026-10-23 21:37	M12-gate-s9u	Save5e67.fl	FAIL	384	11	140	d0df954	1	FAILED (FAILED: 982 3076812 player-death) total 384 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 628 2968093 autopilot objective decide reason=objective text=21660: marked loot 124 at 739 m within the beam's 1500 m - the trip goes on
+2026-10-23 21:37	M12-gate-s9u	Save5e67.fl	PASS	394	11	140	d0df954	2	SUCCESS total 394 s
+2026-10-23 21:38	M12-gate-s9u	Save5e67.fl	PASS	403	11	141	d0df954	3	SUCCESS total 403 s
+2026-10-23 21:48	M12-gate-s9v	Save5e67.fl	PASS	379	10	141	c077a03	1	SUCCESS total 379 s
+2026-10-23 21:48	M12-gate-s9v	Save5e67.fl	PASS	387	11	140	c077a03	2	SUCCESS total 387 s
+2026-10-23 21:49	M12-gate-s9v	Save5e67.fl	PASS	426	11	143	c077a03	3	SUCCESS total 426 s
+2026-10-23 21:57	M12-gate-s9w	Save5e67.fl	PASS	369	11	141	7ab64f5	1	SUCCESS total 369 s
+2026-10-23 21:57	M12-gate-s9w	Save5e67.fl	PASS	380	11	140	7ab64f5	2	SUCCESS total 380 s
+2026-10-23 21:58	M12-gate-s9w	Save5e67.fl	PASS	379	11	141	7ab64f5	3	SUCCESS total 379 s
+2026-10-23 22:06	M12-gate-s9x	Save5e67.fl	FAIL	372	10	142	6835503	1	FAILED (FAILED: 1234 4842859 player-death) total 372 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 137 4600703 autopilot objective decide reason=objective text=24223 verb=3 ref=0 target=0 nav=0
+2026-10-23 22:06	M12-gate-s9x	Save5e67.fl	PASS	368	11	139	6835503	2	SUCCESS total 368 s
+2026-10-23 22:07	M12-gate-s9x	Save5e67.fl	PASS	383	11	142	6835503	3	SUCCESS total 383 s
+2026-10-23 22:16	M12-gate-s9y	Save5e67.fl	PASS	367	10	140	13f8632	1	SUCCESS total 367 s
+2026-10-23 22:16	M12-gate-s9y	Save5e67.fl	PASS	373	11	139	13f8632	2	SUCCESS total 373 s
+2026-10-23 22:16	M12-gate-s9y	Save5e67.fl	PASS	364	11	139	13f8632	3	SUCCESS total 364 s
+2026-10-23 22:32	M06-gate-s9gate	Save33fa.fl	PASS	710	11	143	e166ed7	3	SUCCESS total 710 s
+2026-10-23 22:40	M10-gate-s9gate	Save7b39.fl	PASS	1200	11	141	e166ed7	2	SUCCESS total 1200 s
+2026-10-23 22:44	M11-gate-s9gate	Save08f9.fl	FAIL	690	10	143	ad39f6a+dirty	3	FAILED (FAILED: 954 7081625 player-death) total 690 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 954 7081625 player-death
+2026-10-23 22:47	M07-gate-s9gate	Save766f.fl	PASS	1683	11	144	e166ed7	1	SUCCESS total 1683 s
+2026-10-23 22:52	M13-gate-s9gate	Save3989.fl	FAIL	738	10	137	ad39f6a+dirty	2	FAILED (FAILED: 1624 7598640 player-death) total 738 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1148 7467484 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-23 23:03	M02-gate-s9gate	Save05c7.fl	PASS	1160	11	144	ad39f6a+dirty	3	SUCCESS total 1160 s
+2026-10-23 23:07	M09-gate-s9gate	Save4686.fl	FAIL	227	12	140	ad39f6a+dirty	3	FAILED (FAILED: 350 8496671 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 227 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 355 8496718 autopilot objective script-destroy last_gen
+2026-10-23 23:08	M05-gate-s9gate	Save1d87.fl	PASS	1240	15	145	ad39f6a+dirty	1	SUCCESS total 1240 s
+2026-10-23 23:12	M04-gate-s9gate	Save6380.fl	PASS	1155	12	144	ad39f6a+dirty	2	SUCCESS total 1155 s
+2026-10-23 23:19	M01b-gate-s9gate	Save5f61.fl	PASS	670	10	144	ad39f6a+dirty	3	SUCCESS total 670 s
+2026-10-23 23:24	M08-gate-s9gate	Save3a48.fl	PASS	708	10	145	ad39f6a+dirty	2	SUCCESS total 708 s
+2026-10-23 23:24	M03-gate-s9gate	Save1e7d.fl	PASS	919	11	144	ad39f6a+dirty	1	SUCCESS total 919 s
+2026-10-23 23:30	M12-gate-s9gate	Save5e67.fl	PASS	386	10	139	ad39f6a+dirty	2	SUCCESS total 386 s
+2026-10-23 23:33	M01a-gate-s9gate	Save7e1c.fl	PASS	526	10	156	ad39f6a+dirty	1	SUCCESS total 526 s
+2026-10-23 23:40	M12-gate-s9z	Save5e67.fl	PASS	372	11	140	4c9074f	1	SUCCESS total 372 s
+2026-10-23 23:40	M11-gate-s9m11	Save08f9.fl	PASS	1229	12	149	ad39f6a+dirty	3	SUCCESS total 1229 s
+2026-10-23 23:40	M12-gate-s9z	Save5e67.fl	PASS	395	11	140	4c9074f	2	SUCCESS total 395 s
+2026-10-23 23:46	M12-gate-s9z	Save5e67.fl	PASS	370	13	140	4c9074f+dirty	1	SUCCESS total 370 s
+2026-10-23 23:47	M12-gate-s9z	Save5e67.fl	PASS	362	11	141	4cad6dd+dirty	2	SUCCESS total 362 s
+2026-10-23 23:59	M11-gate-s9m11b	Save08f9.fl	FAIL	609	11	145	a7e12b9	2	FAILED (FAILED: 1444 11607984 player-death) total 609 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 895 11575312 autopilot objective decide reason=objective text=24065 verb=0 ref=2293678337 target=2293678337 nav=1
+2026-10-24 00:01	M11-gate-s9m11	Save08f9.fl	PASS	1242	10	151	4cad6dd+dirty	3	SUCCESS total 1242 s
+2026-10-24 00:05	M11-gate-s9m11b	Save08f9.fl	FAIL	1018	11	156	a7e12b9	1	FAILED (FAILED: 1677 11996828 player-death) total 1018 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 860 11622968 autopilot objective decide reason=objective text=24070 verb=3 ref=0 target=0 nav=0
+2026-10-24 00:07	M12-gate-s9aa	Save5e67.fl	PASS	366	12	177	4852aeb+dirty	2	SUCCESS total 366 s
+2026-10-24 01:40	M12-s10-base	Save5e67.fl	PASS	373	12	138	799eb51	2	SUCCESS total 373 s
+2026-10-24 01:40	M12-s10-base	Save5e67.fl	PASS	375	12	138	799eb51	1	SUCCESS total 375 s
+2026-10-24 01:41	M12-s10-base	Save5e67.fl	PASS	389	12	138	799eb51	3	SUCCESS total 389 s
+2026-10-24 01:47	M12-s10-base	Save5e67.fl	PASS	371	11	137	799eb51+dirty	1	SUCCESS total 371 s
+2026-10-24 01:47	M12-s10-base	Save5e67.fl	PASS	376	11	137	799eb51+dirty	2	SUCCESS total 376 s
+2026-10-24 01:47	M12-s10-base	Save5e67.fl	PASS	374	10	136	799eb51+dirty	3	SUCCESS total 374 s
+2026-10-24 01:53	M12-s10-core	Save5e67.fl	PASS	366	11	140	29fabbc+dirty	1	SUCCESS total 366 s
+2026-10-24 01:54	M12-s10-core	Save5e67.fl	PASS	372	12	139	29fabbc+dirty	2	SUCCESS total 372 s
+2026-10-24 01:54	M12-s10-core	Save5e67.fl	PASS	368	11	137	29fabbc+dirty	3	SUCCESS total 368 s
+2026-10-24 02:00	M12-s10-core	Save5e67.fl	PASS	362	11	138	29fabbc+dirty	1	SUCCESS total 362 s
+2026-10-24 02:00	M12-s10-core	Save5e67.fl	PASS	359	11	138	29fabbc+dirty	2	SUCCESS total 359 s
+2026-10-24 02:00	M12-s10-core	Save5e67.fl	PASS	355	11	137	29fabbc+dirty	3	SUCCESS total 355 s
+2026-10-24 02:04	M12-s10-lair	Save5e67.fl	FAIL	246	12	138	869ae2a+dirty	2	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 637 19126625 autopilot cruise lock off: the airlock run passed the door 265 m off its axis at 268 m/s - lining up below cruise) total 246 s; mode=space; room: hotspot
+2026-10-24 02:06	M12-s10-lair	Save5e67.fl	PASS	364	12	139	869ae2a+dirty	1	SUCCESS total 364 s
+2026-10-24 02:06	M12-s10-lair	Save5e67.fl	PASS	361	12	138	869ae2a+dirty	3	SUCCESS total 361 s
+2026-10-24 02:09	M12-s10-lair	Save5e67.fl	FAIL	257	11	139	3bba8d4+dirty	2	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 736 19400015 autopilot cruise lock off: the airlock run passed the door 128 m off its axis at 296 m/s - lining up below cruise) total 257 s; mode=space; room: hotspot
+2026-10-24 02:12	M12-s10-lair	Save5e67.fl	PASS	367	11	143	921b514+dirty	1	SUCCESS total 367 s
+2026-10-24 02:13	M12-s10-lair	Save5e67.fl	PASS	386	10	143	921b514+dirty	3	SUCCESS total 386 s
+2026-10-24 02:17	M12-s10-hop	Save5e67.fl	FAIL	246	12	138	f3647f3+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 557 19909328 autopilot cruise lock off: the airlock run passed the door 295 m off its axis at 291 m/s - lining up below cruise) total 246 s; mode=space; room: hotspot
+2026-10-24 02:18	M12-s10-hop	Save5e67.fl	FAIL	267	12	141	f3647f3+dirty	1	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 738 19921250 autopilot cruise lock off: the airlock run passed the door 212 m off its axis at 292 m/s - lining up below cruise) total 267 s; mode=space; room: hotspot
+2026-10-24 02:18	M12-s10-hop	Save5e67.fl	PASS	388	12	141	f3647f3+dirty	2	SUCCESS total 388 s
+2026-10-24 02:26	M12-s10-e	Save5e67.fl	PASS	379	12	141	fe7777b+dirty	3	SUCCESS total 379 s
+2026-10-24 02:27	M12-s10-e	Save5e67.fl	PASS	383	12	140	fe7777b+dirty	1	SUCCESS total 383 s
+2026-10-24 02:27	M12-s10-e	Save5e67.fl	PASS	388	12	141	fe7777b+dirty	2	SUCCESS total 388 s
+2026-10-24 02:36	M12-s10-f	Save5e67.fl	FAIL	265	12	145	bffafa4+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 652 21052859 autopilot cruise lock off: the airlock run passed the door 286 m off its axis at 289 m/s - lining up below cruise) total 265 s; mode=space; room: hotspot
+2026-10-24 02:42	M12-s10-g	Save5e67.fl	FAIL	290	12	114	bffafa4+dirty	1	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 720 21416796 autopilot cruise lock off: the airlock run passed the door 226 m off its axis at 290 m/s - lining up below cruise) total 290 s; mode=space; room: hotspot
+2026-10-24 02:49	M12-s10-h	Save5e67.fl	FAIL	246	12	113	0e42dcc+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 588 21805781 autopilot cruise lock off: the airlock run passed the door 235 m off its axis at 293 m/s - lining up below cruise) total 246 s; mode=space; room: hotspot
+2026-10-24 02:49	M12-s10-hugprobe	Save5e67.fl	PASS	358	12	125	bffafa4+dirty	4	SUCCESS total 358 s
+2026-10-24 02:55	M12-s10-i	Save5e67.fl	FAIL	192	12	125	331a0f5+dirty	2	FAILED (FAILED: 525 22168218 player-death) total 192 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 525 22168218 player-death
+2026-10-24 02:58	M12-s10-i	Save5e67.fl	PASS	355	12	117	331a0f5+dirty	1	SUCCESS total 355 s
+2026-10-24 02:58	M12-s10-i	Save5e67.fl	PASS	370	12	117	331a0f5+dirty	3	SUCCESS total 370 s
+2026-10-24 02:59	M12-s10-hugprobe2	Save5e67.fl	PASS	383	12	109	a3a991f+dirty	4	SUCCESS total 383 s
+2026-10-24 03:02	M12-s10-i	Save5e67.fl	PASS	384	11	119	a3a991f+dirty	2	SUCCESS total 384 s
+2026-10-24 03:04	M12-s10-i	Save5e67.fl	PASS	361	10	146	55cf4f3+dirty	3	SUCCESS total 361 s
+2026-10-24 03:04	M12-s10-i	Save5e67.fl	PASS	379	11	146	55cf4f3+dirty	1	SUCCESS total 379 s
+2026-10-24 03:39	M12-s10-narrowprobe	Save5e67.fl	PASS	378	11	190	6728886	4	SUCCESS total 378 s
+2026-10-24 03:52	M12-s10-j	Save5e67.fl	FAIL	264	12	144	6630e30	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 633 25593203 autopilot cruise lock off: the airlock run passed the door 193 m off its axis at 288 m/s - lining up below cruise) total 264 s; mode=space; room: hotspot
+2026-10-24 03:54	M12-s10-j	Save5e67.fl	PASS	364	12	143	6630e30	1	SUCCESS total 364 s
+2026-10-24 03:54	M12-s10-j	Save5e67.fl	PASS	395	12	141	6630e30	2	SUCCESS total 395 s
+2026-10-24 04:03	M12-s10-k	Save5e67.fl	PASS	372	12	143	990e167+dirty	3	SUCCESS total 372 s
+2026-10-24 04:03	M12-s10-k	Save5e67.fl	PASS	378	12	143	990e167+dirty	2	SUCCESS total 378 s
+2026-10-24 04:03	M12-s10-k	Save5e67.fl	PASS	382	12	142	990e167+dirty	1	SUCCESS total 382 s
+2026-10-24 04:10	M12-s10-k	Save5e67.fl	PASS	377	11	143	990e167+dirty	3	SUCCESS total 377 s
+2026-10-24 04:10	M12-s10-k	Save5e67.fl	PASS	381	11	143	990e167+dirty	2	SUCCESS total 381 s
+2026-10-24 04:10	M12-s10-k	Save5e67.fl	PASS	391	10	144	990e167+dirty	1	SUCCESS total 391 s
+2026-10-24 04:53	M12-s11-saves	Save5e67.fl	PASS	371	16	188	cba3ef5+dirty	1	SUCCESS total 371 s
+2026-10-24 04:56	M12-s11k-a	SaveS176.fl	PASS	79	11	161	cba3ef5+dirty	1	UNTIL total 79 s
+2026-10-24 04:57	M12-s11k-b	SaveS176.fl	PASS	93	12	147	cba3ef5+dirty	2	UNTIL total 93 s
+2026-10-24 04:57	M12-s11k-a	SaveS176.fl	PASS	77	12	142	cba3ef5+dirty	3	UNTIL total 77 s
+2026-10-24 04:58	M12-s11k-a	SaveS176.fl	PASS	87	10	142	2248fea+dirty	1	UNTIL total 87 s
+2026-10-24 04:59	M12-s11k-a	SaveS176.fl	PASS	78	10	141	2248fea+dirty	3	UNTIL total 78 s
+2026-10-24 05:00	M12-s11k-a	SaveS176.fl	PASS	80	10	144	2248fea+dirty	1	UNTIL total 80 s
+2026-10-24 05:00	M12-s11k-a	SaveS176.fl	PASS	77	10	143	2248fea+dirty	3	UNTIL total 77 s
+2026-10-24 05:01	M12-s11k-b	SaveS176.fl	PASS	236	10	140	2248fea+dirty	2	SUCCESS total 236 s
+2026-10-24 05:01	M12-s11k-b	SaveS176.fl	PASS	82	10	146	2248fea+dirty	1	UNTIL total 82 s
+2026-10-24 05:02	M12-s11k-b	SaveS176.fl	PASS	78	10	149	2248fea+dirty	3	UNTIL total 78 s
+2026-10-24 05:03	M12-s11k-b	SaveS176.fl	PASS	72	10	144	2248fea+dirty	2	UNTIL total 72 s
+2026-10-24 05:03	M12-s11k-b	SaveS176.fl	PASS	77	10	143	2248fea+dirty	1	UNTIL total 77 s
+2026-10-24 05:03	M12-s11k-b	SaveS176.fl	PASS	78	10	143	2248fea+dirty	3	UNTIL total 78 s
+2026-10-24 05:04	M12-s11k-a	SaveS176.fl	PASS	87	10	148	2248fea+dirty	2	UNTIL total 87 s
+2026-10-24 05:05	M12-s11k-b	SaveS176.fl	PASS	83	10	148	2248fea+dirty	3	UNTIL total 83 s
+2026-10-24 05:06	M12-s11k-b	SaveS176.fl	FAIL	155	10	156	2248fea+dirty	1	FAILED (FAIL STATE (CHECKPOINT M12.exit not reached: segment over 49 s, par 2.3 s - to the exit, out of the airlock)) total 155 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 451 1640250 autopilot objective granted airlock 2281279501 at 1005 m: throug
+2026-10-24 05:06	M12-s11k-a	SaveS176.fl	PASS	77	10	171	2248fea+dirty	2	UNTIL total 77 s
+2026-10-24 05:07	M12-s11k-a	SaveS176.fl	PASS	76	9	196	2248fea+dirty	2	UNTIL total 76 s
+2026-10-24 05:11	M12-s11o-a	SaveS176.fl	PASS	76	11	158	ba96130	1	UNTIL total 76 s
+2026-10-24 05:12	M12-s11o-b	SaveS176.fl	PASS	84	11	149	ba96130	2	UNTIL total 84 s
+2026-10-24 05:12	M12-s11o-c	SaveS176.fl	PASS	78	11	148	ba96130	3	UNTIL total 78 s
+2026-10-24 05:13	M12-s11o-b	SaveS176.fl	PASS	73	10	148	ba96130+dirty	1	UNTIL total 73 s
+2026-10-24 05:13	M12-s11o-c	SaveS176.fl	PASS	82	10	149	ba96130+dirty	2	UNTIL total 82 s
+2026-10-24 05:13	M12-s11o-d	SaveS176.fl	PASS	77	10	146	ba96130+dirty	3	UNTIL total 77 s
+2026-10-24 05:14	M12-s11o-c	SaveS176.fl	PASS	85	10	149	ba96130+dirty	1	UNTIL total 85 s
+2026-10-24 05:15	M12-s11o-d	SaveS176.fl	PASS	81	10	147	ba96130+dirty	2	UNTIL total 81 s
+2026-10-24 05:15	M12-s11o-a	SaveS176.fl	PASS	81	10	147	ba96130+dirty	3	UNTIL total 81 s
+2026-10-24 05:16	M12-s11o-d	SaveS176.fl	PASS	80	10	147	ba96130+dirty	1	UNTIL total 80 s
+2026-10-24 05:16	M12-s11o-b	SaveS176.fl	PASS	75	10	146	ba96130+dirty	3	UNTIL total 75 s
+2026-10-24 05:17	M12-s11o-a	SaveS176.fl	PASS	86	10	148	ba96130+dirty	2	UNTIL total 86 s
+2026-10-24 05:18	M12-s11o-a	SaveS176.fl	PASS	84	10	147	ba96130+dirty	1	UNTIL total 84 s
+2026-10-24 05:18	M12-s11o-c	SaveS176.fl	PASS	72	10	149	ba96130+dirty	3	UNTIL total 72 s
+2026-10-24 05:18	M12-s11o-b	SaveS176.fl	PASS	79	10	149	ba96130+dirty	2	UNTIL total 79 s
+2026-10-24 05:19	M12-s11o-b	SaveS176.fl	PASS	82	10	149	ba96130+dirty	1	UNTIL total 82 s
+2026-10-24 05:19	M12-s11o-d	SaveS176.fl	PASS	82	10	148	ba96130+dirty	3	UNTIL total 82 s
+2026-10-24 05:20	M12-s11o-c	SaveS176.fl	PASS	76	10	151	ba96130+dirty	2	UNTIL total 76 s
+2026-10-24 05:21	M12-s11o-c	SaveS176.fl	PASS	80	10	150	ba96130+dirty	1	UNTIL total 80 s
+2026-10-24 05:21	M12-s11o-a	SaveS176.fl	PASS	74	10	147	ba96130+dirty	3	UNTIL total 74 s
+2026-10-24 05:21	M12-s11o-d	SaveS176.fl	PASS	80	10	145	ba96130+dirty	2	UNTIL total 80 s
+2026-10-24 05:22	M12-s11o-d	SaveS176.fl	PASS	77	10	146	ba96130+dirty	1	UNTIL total 77 s
+2026-10-24 05:22	M12-s11o-b	SaveS176.fl	PASS	77	10	146	ba96130+dirty	3	UNTIL total 77 s
+2026-10-24 05:23	M12-s11o-a	SaveS176.fl	PASS	79	10	156	ba96130+dirty	2	UNTIL total 79 s
+2026-10-24 05:36	M12-s11p-a	SaveS176.fl	PASS	84	11	154	57c2701+dirty	1	UNTIL total 84 s
+2026-10-24 05:36	M12-s11p-b	SaveS176.fl	PASS	89	10	147	57c2701+dirty	2	UNTIL total 89 s
+2026-10-24 05:36	M12-s11p-a	SaveS176.fl	PASS	79	11	144	57c2701+dirty	3	UNTIL total 79 s
+2026-10-24 05:37	M12-s11p-b	SaveS176.fl	PASS	81	10	145	57c2701+dirty	1	UNTIL total 81 s
+2026-10-24 05:37	M12-s11p-a	SaveS176.fl	PASS	80	10	144	57c2701+dirty	2	UNTIL total 80 s
+2026-10-24 05:38	M12-s11p-b	SaveS176.fl	PASS	83	10	143	57c2701+dirty	3	UNTIL total 83 s
+2026-10-24 05:39	M12-s11p-a	SaveS176.fl	PASS	72	10	144	57c2701+dirty	1	UNTIL total 72 s
+2026-10-24 05:39	M12-s11p-b	SaveS176.fl	PASS	75	10	149	57c2701+dirty	2	UNTIL total 75 s
+2026-10-24 05:39	M12-s11p-a	SaveS176.fl	PASS	92	10	146	57c2701+dirty	3	UNTIL total 92 s
+2026-10-24 05:40	M12-s11p-b	SaveS176.fl	PASS	91	10	147	57c2701+dirty	1	UNTIL total 91 s
+2026-10-24 05:41	M12-s11p-b	SaveS176.fl	PASS	78	10	147	57c2701+dirty	3	UNTIL total 78 s
+2026-10-24 05:41	M12-s11p-a	SaveS176.fl	PASS	109	10	145	57c2701+dirty	2	UNTIL total 109 s
+2026-10-24 05:42	M12-s11p-a	SaveS176.fl	PASS	78	10	151	57c2701+dirty	1	UNTIL total 78 s
+2026-10-24 05:42	M12-s11p-b	SaveS176.fl	PASS	69	10	150	57c2701+dirty	2	UNTIL total 69 s
+2026-10-24 05:42	M12-s11p-a	SaveS176.fl	PASS	78	10	147	57c2701+dirty	3	UNTIL total 78 s
+2026-10-24 05:44	M12-s11p-b	SaveS176.fl	PASS	83	10	148	57c2701+dirty	1	UNTIL total 83 s
+2026-10-24 05:44	M12-s11p-a	SaveS176.fl	PASS	83	10	146	57c2701+dirty	2	UNTIL total 83 s
+2026-10-24 05:44	M12-s11p-b	SaveS176.fl	PASS	85	10	148	57c2701+dirty	3	UNTIL total 85 s
+2026-10-24 05:45	M12-s11p-a	SaveS176.fl	PASS	78	10	150	57c2701+dirty	1	UNTIL total 78 s
+2026-10-24 05:45	M12-s11p-b	SaveS176.fl	PASS	72	10	151	57c2701+dirty	2	UNTIL total 72 s
+2026-10-24 05:46	M12-s11p-a	SaveS176.fl	PASS	89	10	149	57c2701+dirty	3	UNTIL total 89 s
+2026-10-24 05:47	M12-s11p-b	SaveS176.fl	PASS	81	10	149	57c2701+dirty	1	UNTIL total 81 s
+2026-10-24 05:47	M12-s11p-a	SaveS176.fl	PASS	81	10	154	57c2701+dirty	2	UNTIL total 81 s
+2026-10-24 05:47	M12-s11p-b	SaveS176.fl	PASS	79	10	165	57c2701+dirty	3	UNTIL total 79 s
+2026-10-24 05:52	M12-s11d-a	SaveS182.fl	FAIL	132	11	158	c6fcfe0	1	FAILED (FAIL STATE (CHECKPOINT M12.end not reached: segment over 132 s, par 63.3 s - Omicron Minor -> Toledo (ignore the Nomads: the 8 km trigger), dock)) total 132 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 346 4440484 autopilot objective decide 
+2026-10-24 05:52	M12-s11d-b	SaveS182.fl	FAIL	132	10	157	c6fcfe0	2	FAILED (FAIL STATE (CHECKPOINT M12.end not reached: segment over 132 s, par 63.3 s - Omicron Minor -> Toledo (ignore the Nomads: the 8 km trigger), dock)) total 132 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 366 4462093 autopilot objective decide 
+2026-10-24 05:52	M12-s11d-c	SaveS182.fl	FAIL	132	11	153	c6fcfe0	3	FAILED (FAIL STATE (CHECKPOINT M12.end not reached: segment over 132 s, par 63.3 s - Omicron Minor -> Toledo (ignore the Nomads: the 8 km trigger), dock)) total 132 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 181 4399484 objective count=1 title=242
+2026-10-24 05:54	M12-s11e-a	SaveS179.fl	FAIL	70	10	171	370a2f7+dirty	1	FAILED (FAIL STATE (CHECKPOINT M12.core not reached: segment over 70 s, par 13.4 s - afterburner to the core entrance, charge before the airlock)) total 70 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 46 4532468 autopilot objective decide reason=obj
+2026-10-24 05:54	M12-s11e-b	SaveS179.fl	FAIL	70	10	167	370a2f7+dirty	2	FAILED (FAIL STATE (CHECKPOINT M12.core not reached: segment over 70 s, par 13.4 s - afterburner to the core entrance, charge before the airlock)) total 70 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 45 4547421 autopilot objective decide reason=obj
+2026-10-24 05:55	M12-s11e-c	SaveS179.fl	FAIL	70	11	165	370a2f7+dirty	3	FAILED (FAIL STATE (CHECKPOINT M12.core not reached: segment over 70 s, par 13.4 s - afterburner to the core entrance, charge before the airlock)) total 70 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 46 4562953 autopilot objective decide reason=obj
+2026-10-24 06:00	M12-s11f-c	Save5e67.fl	FAIL	250	11	141	370a2f7+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 553 4944281 autopilot cruise lock off: the airlock run passed the door 314 m off its axis at 272 m/s - lining up below cruise) total 250 s; mode=space; room: hotspots
+2026-10-24 06:07	M12-s11g-a	Save5e67.fl	FAIL	302	11	147	3d102cd+dirty	1	FAILED (FAIL STATE (CHECKPOINT M12.exit not reached by 302 s into the leg, par 231.4 s)) total 302 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 587 5326281 autopilot objective via point 0 (110,603,-516) before the marker
+2026-10-24 06:08	M12-s11g-b	Save5e67.fl	PASS	354	11	143	3d102cd+dirty	2	SUCCESS total 354 s
+2026-10-24 06:08	M12-s11g-c	Save5e67.fl	PASS	369	11	141	3d102cd+dirty	3	SUCCESS total 369 s
+2026-10-24 06:11	M12-s11g-b	Save5e67.fl	FAIL	256	11	145	3d102cd+dirty	1	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 621 5643453 autopilot cruise lock off: the airlock run passed the door 151 m off its axis at 296 m/s - lining up below cruise) total 256 s; mode=space; room: hotspots
+2026-10-24 06:13	M12-s11g-d	Save5e67.fl	FAIL	270	10	142	3d102cd+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 626 5752593 autopilot cruise lock off: the airlock run passed the door 248 m off its axis at 280 m/s - lining up below cruise) total 270 s; mode=space; room: hotspots
+2026-10-24 06:14	M12-s11g-c	Save5e67.fl	PASS	360	10	143	3d102cd+dirty	2	SUCCESS total 360 s
+2026-10-24 06:18	M12-s11g-c	Save5e67.fl	PASS	357	11	142	3d102cd+dirty	1	SUCCESS total 357 s
+2026-10-24 06:20	M12-s11g-a	Save5e67.fl	PASS	378	11	141	3d102cd+dirty	3	SUCCESS total 378 s
+2026-10-24 06:21	M12-s11g-d	Save5e67.fl	PASS	385	10	142	3d102cd+dirty	2	SUCCESS total 385 s
+2026-10-24 06:24	M12-s11g-d	Save5e67.fl	PASS	384	10	142	3d102cd+dirty	1	SUCCESS total 384 s
+2026-10-24 06:25	M12-s11g-b	Save5e67.fl	FAIL	265	11	142	3d102cd+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 612 6427531 autopilot cruise lock off: the airlock run passed the door 161 m off its axis at 274 m/s - lining up below cruise) total 265 s; mode=space; room: hotspots
+2026-10-24 06:27	M12-s11g-a	Save5e67.fl	PASS	361	11	143	3d102cd+dirty	2	SUCCESS total 361 s
+2026-10-24 06:31	M12-s11g-a	Save5e67.fl	PASS	371	11	144	3d102cd+dirty	1	SUCCESS total 371 s
+2026-10-24 06:31	M12-s11g-c	Save5e67.fl	PASS	369	11	142	3d102cd+dirty	3	SUCCESS total 369 s
+2026-10-24 06:33	M12-s11g-b	Save5e67.fl	PASS	361	11	142	3d102cd+dirty	2	SUCCESS total 361 s
+2026-10-24 06:37	M12-s11g-b	Save5e67.fl	PASS	366	11	141	3d102cd+dirty	1	SUCCESS total 366 s
+2026-10-24 06:37	M12-s11g-d	Save5e67.fl	PASS	358	10	139	3d102cd+dirty	3	SUCCESS total 358 s
+2026-10-24 06:40	M12-s11g-c	Save5e67.fl	PASS	371	11	141	3d102cd+dirty	2	SUCCESS total 371 s
+2026-10-24 06:41	M12-s11g-c	Save5e67.fl	FAIL	247	11	144	3d102cd+dirty	1	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 564 7445265 autopilot cruise lock off: the airlock run passed the door 139 m off its axis at 293 m/s - lining up below cruise) total 247 s; mode=space; room: hotspots
+2026-10-24 06:43	M12-s11g-a	Save5e67.fl	PASS	364	10	141	3d102cd+dirty	3	SUCCESS total 364 s
+2026-10-24 06:46	M12-s11g-d	Save5e67.fl	PASS	375	10	142	3d102cd+dirty	2	SUCCESS total 375 s
+2026-10-24 06:49	M12-s11g-d	Save5e67.fl	PASS	411	11	143	3d102cd+dirty	1	SUCCESS total 411 s
+2026-10-24 06:50	M12-s11g-b	Save5e67.fl	PASS	374	10	148	3d102cd+dirty	3	SUCCESS total 374 s
+2026-10-24 06:53	M12-s11g-a	Save5e67.fl	PASS	367	11	170	3d102cd+dirty	2	SUCCESS total 367 s
+2026-10-24 06:59	M12-s11h-a	SaveS176.fl	PASS	232	11	146	c1b1dbe+dirty	1	SUCCESS total 232 s
+2026-10-24 06:59	M12-s11h-b	SaveS176.fl	PASS	245	10	143	c1b1dbe+dirty	2	SUCCESS total 245 s
+2026-10-24 07:00	M12-s11h-c	SaveS176.fl	PASS	246	11	141	c1b1dbe+dirty	3	SUCCESS total 246 s
+2026-10-24 07:02	M12-s11h-c	SaveS176.fl	FAIL	124	10	145	8533254+dirty	2	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 510 8657875 autopilot cruise lock off: the airlock run passed the door 167 m off its axis at 292 m/s - lining up below cruise) total 124 s; mode=space; room: hotspots
+2026-10-24 07:03	M12-s11h-a	SaveS176.fl	FAIL	162	10	143	8533254+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 602 8712875 autopilot cruise lock off: the airlock run passed the door 285 m off its axis at 270 m/s - lining up below cruise) total 162 s; mode=space; room: hotspots
+2026-10-24 07:03	M12-s11h-b	SaveS176.fl	PASS	230	10	143	8533254+dirty	1	SUCCESS total 230 s
+2026-10-24 07:06	M12-s11h-a	SaveS176.fl	PASS	235	10	141	8533254+dirty	2	SUCCESS total 235 s
+2026-10-24 07:07	M12-s11h-b	SaveS176.fl	PASS	244	10	140	8533254+dirty	3	SUCCESS total 244 s
+2026-10-24 07:07	M12-s11h-c	SaveS176.fl	PASS	227	10	141	8533254+dirty	1	SUCCESS total 227 s
+2026-10-24 07:10	M12-s11h-b	SaveS176.fl	PASS	250	10	141	8533254+dirty	2	SUCCESS total 250 s
+2026-10-24 07:11	M12-s11h-c	SaveS176.fl	PASS	240	10	141	8533254+dirty	3	SUCCESS total 240 s
+2026-10-24 07:11	M12-s11h-a	SaveS176.fl	PASS	239	10	143	8533254+dirty	1	SUCCESS total 239 s
+2026-10-24 07:14	M12-s11h-c	SaveS176.fl	PASS	229	10	143	8533254+dirty	2	SUCCESS total 229 s
+2026-10-24 07:15	M12-s11h-b	SaveS176.fl	PASS	232	10	143	8533254+dirty	1	SUCCESS total 232 s
+2026-10-24 07:15	M12-s11h-a	SaveS176.fl	PASS	241	10	142	8533254+dirty	3	SUCCESS total 241 s
+2026-10-24 07:19	M12-s11h-a	SaveS176.fl	PASS	253	10	142	8533254+dirty	2	SUCCESS total 253 s
+2026-10-24 07:20	M12-s11h-c	SaveS176.fl	PASS	236	10	141	8533254+dirty	1	SUCCESS total 236 s
+2026-10-24 07:20	M12-s11h-b	SaveS176.fl	PASS	233	10	141	8533254+dirty	3	SUCCESS total 233 s
+2026-10-24 07:22	M12-s11h-a	SaveS176.fl	FAIL	113	10	146	8533254+dirty	1	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 471 9856500 autopilot cruise lock off: the airlock run passed the door 231 m off its axis at 291 m/s - lining up below cruise) total 113 s; mode=space; room: hotspots
+2026-10-24 07:23	M12-s11h-b	SaveS176.fl	PASS	259	11	143	8533254+dirty	2	SUCCESS total 259 s
+2026-10-24 07:23	M12-s11h-c	SaveS176.fl	FAIL	216	10	141	8533254+dirty	3	FAILED (FAILED: 865 9960718 player-death) total 216 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 569 9870765 autopilot objective trip kept: already on the way to 2460445762
+2026-10-24 07:24	M12-s11h-b	SaveS176.fl	FAIL	126	10	144	8533254+dirty	1	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 510 9998890 autopilot cruise lock off: the airlock run passed the door 264 m off its axis at 292 m/s - lining up below cruise) total 126 s; mode=space; room: hotspots
+2026-10-24 07:26	M12-s11h-c	SaveS176.fl	FAIL	118	11	143	8533254+dirty	1	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 458 10133531 autopilot cruise lock off: the airlock run passed the door 150 m off its axis at 293 m/s - lining up below cruise) total 118 s; mode=space; room: hotspot
+2026-10-24 07:27	M12-s11h-c	SaveS176.fl	PASS	228	10	152	8533254+dirty	2	SUCCESS total 228 s
+2026-10-24 07:28	M12-s11h-a	SaveS176.fl	FAIL	256	10	153	8533254+dirty	3	FAILED (FAILED: 918 10233437 player-death) total 256 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 576 10116671 autopilot objective navmarker on a dockable object 2460445762: through it
+2026-10-24 07:31	M12-s11h-a	SaveS176.fl	PASS	230	10	174	8533254+dirty	2	SUCCESS total 230 s
+2026-10-24 07:32	M12-s11h-b	SaveS176.fl	PASS	243	9	176	8533254+dirty	3	SUCCESS total 243 s
+2026-10-24 07:39	M12-s11i-a	SaveS176.fl	PASS	245	11	145	a5f1d74	1	SUCCESS total 245 s
+2026-10-24 07:39	M12-s11i-n	SaveS176.fl	PASS	233	10	142	a5f1d74	2	SUCCESS total 233 s
+2026-10-24 07:39	M12-s11i-x	SaveS176.fl	PASS	246	11	140	a5f1d74	3	SUCCESS total 246 s
+2026-10-24 07:42	M12-s11i-x	SaveS176.fl	FAIL	182	10	144	1f02b69+dirty	2	FAILED (FAIL STATE (CHECKPOINT M12.exit not reached: segment over 49 s, par 2.3 s - to the exit, out of the airlock)) total 182 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 532 11038750 autopilot objective granted airlock 2281279501 at 1072 m: throu
+2026-10-24 07:43	M12-s11i-n	SaveS176.fl	PASS	227	10	144	1f02b69+dirty	1	SUCCESS total 227 s
+2026-10-24 07:44	M12-s11i-j	SaveS176.fl	PASS	254	10	143	1f02b69+dirty	3	SUCCESS total 254 s
+2026-10-24 07:47	M12-s11i-j	SaveS176.fl	PASS	244	10	141	1f02b69+dirty	2	SUCCESS total 244 s
+2026-10-24 07:47	M12-s11i-x	SaveS176.fl	PASS	242	10	142	1f02b69+dirty	1	SUCCESS total 242 s
+2026-10-24 07:48	M12-s11i-a	SaveS176.fl	PASS	238	10	142	1f02b69+dirty	3	SUCCESS total 238 s
+2026-10-24 07:49	M12-s11i-a	SaveS176.fl	FAIL	121	10	146	1f02b69+dirty	2	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 468 11483140 autopilot cruise lock off: the airlock run passed the door 288 m off its axis at 271 m/s - lining up below cruise) total 121 s; mode=space; room: hotspot
+2026-10-24 07:51	M12-s11i-j	SaveS176.fl	PASS	237	10	144	1f02b69+dirty	1	SUCCESS total 237 s
+2026-10-24 07:52	M12-s11i-n	SaveS176.fl	PASS	237	10	142	1f02b69+dirty	3	SUCCESS total 237 s
+2026-10-24 07:53	M12-s11i-n	SaveS176.fl	PASS	238	10	142	1f02b69+dirty	2	SUCCESS total 238 s
+2026-10-24 07:55	M12-s11i-a	SaveS176.fl	PASS	230	10	142	1f02b69+dirty	1	SUCCESS total 230 s
+2026-10-24 07:56	M12-s11i-x	SaveS176.fl	PASS	232	10	142	1f02b69+dirty	3	SUCCESS total 232 s
+2026-10-24 07:57	M12-s11i-x	SaveS176.fl	PASS	228	10	142	1f02b69+dirty	2	SUCCESS total 228 s
+2026-10-24 07:58	M12-s11i-n	SaveS176.fl	FAIL	167	10	147	1f02b69+dirty	1	FAILED (FAIL STATE (CHECKPOINT M12.exit not reached: segment over 49 s, par 2.3 s - to the exit, out of the airlock)) total 167 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 493 12014171 autopilot objective granted airlock 2281279501 at 1238 m: throu
+2026-10-24 08:01	M12-s11i-x	SaveS176.fl	FAIL	122	10	144	1f02b69+dirty	1	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 513 12200531 autopilot cruise lock off: the airlock run passed the door 138 m off its axis at 295 m/s - lining up below cruise) total 122 s; mode=space; room: hotspot
+2026-10-24 08:01	M12-s11i-j	SaveS176.fl	PASS	267	10	143	1f02b69+dirty	3	SUCCESS total 267 s
+2026-10-24 08:01	M12-s11i-j	SaveS176.fl	PASS	231	10	142	1f02b69+dirty	2	SUCCESS total 231 s
+2026-10-24 08:04	M12-s11i-a	SaveS176.fl	FAIL	147	10	145	1f02b69+dirty	2	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 545 12385421 autopilot cruise lock off: the airlock run passed the door 161 m off its axis at 297 m/s - lining up below cruise) total 147 s; mode=space; room: hotspot
+2026-10-24 08:05	M12-s11i-j	SaveS176.fl	PASS	262	10	145	1f02b69+dirty	1	SUCCESS total 262 s
+2026-10-24 08:05	M12-s11i-a	SaveS176.fl	PASS	251	10	142	1f02b69+dirty	3	SUCCESS total 251 s
+2026-10-24 08:08	M12-s11i-n	SaveS176.fl	PASS	231	10	141	1f02b69+dirty	2	SUCCESS total 231 s
+2026-10-24 08:09	M12-s11i-a	SaveS176.fl	PASS	229	10	141	1f02b69+dirty	1	SUCCESS total 229 s
+2026-10-24 08:10	M12-s11i-n	SaveS176.fl	PASS	233	10	140	1f02b69+dirty	3	SUCCESS total 233 s
+2026-10-24 08:12	M12-s11i-x	SaveS176.fl	FAIL	201	10	141	1f02b69+dirty	2	FAILED (FAILED: 795 12848343 player-death) total 201 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 567 12769671 autopilot objective navmarker on a dockable object 2460445762: through it
+2026-10-24 08:14	M12-s11i-n	SaveS176.fl	PASS	253	10	141	1f02b69+dirty	1	SUCCESS total 253 s
+2026-10-24 08:15	M12-s11i-x	SaveS176.fl	PASS	286	10	140	1f02b69+dirty	3	SUCCESS total 286 s
+2026-10-24 08:16	M12-s11i-j	SaveS176.fl	PASS	245	10	140	1f02b69+dirty	2	SUCCESS total 245 s
+2026-10-24 08:18	M12-s11i-x	SaveS176.fl	PASS	234	11	142	1f02b69+dirty	1	SUCCESS total 234 s
+2026-10-24 08:19	M12-s11i-j	SaveS176.fl	PASS	228	10	142	1f02b69+dirty	3	SUCCESS total 228 s
+2026-10-24 08:20	M12-s11i-a	SaveS176.fl	PASS	227	10	142	1f02b69+dirty	2	SUCCESS total 227 s
+2026-10-24 08:22	M12-s11i-j	SaveS176.fl	PASS	233	10	161	1f02b69+dirty	1	SUCCESS total 233 s
+2026-10-24 08:23	M12-s11i-a	SaveS176.fl	PASS	240	10	167	1f02b69+dirty	3	SUCCESS total 240 s
+2026-10-24 08:26	M12-s11i-n	SaveS176.fl	FAIL	173	9	191	1f02b69+dirty	3	FAILED (FAIL STATE (CHECKPOINT M12.exit not reached: segment over 49 s, par 2.3 s - to the exit, out of the airlock)) total 173 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 464 13669531 autopilot objective granted airlock 2281279501 at 1027 m: throu
+2026-10-24 08:31	M12-s11r-r	SaveS176.fl	FAIL	116	10	146	e5f7913	2	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 486 14002375 autopilot cruise lock off: the airlock run passed the door 239 m off its axis at 288 m/s - lining up below cruise) total 116 s; mode=space; room: hotspot
+2026-10-24 08:36	M12-s11s-a	SaveS176.fl	FAIL	126	11	140	9ff80b3+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 492 14295453 autopilot cruise lock off: the airlock run passed the door 244 m off its axis at 290 m/s - lining up below cruise) total 126 s; mode=space; room: hotspot
+2026-10-24 08:37	M12-s11s-a	SaveS176.fl	PASS	250	11	146	9ff80b3+dirty	1	SUCCESS total 250 s
+2026-10-24 08:37	M12-s11s-r	SaveS176.fl	PASS	245	10	143	9ff80b3+dirty	2	SUCCESS total 245 s
+2026-10-24 08:40	M12-s11s-r	SaveS176.fl	PASS	240	10	143	ef7a72f+dirty	3	SUCCESS total 240 s
+2026-10-24 08:42	M12-s11s-r	SaveS176.fl	PASS	249	10	144	ef7a72f+dirty	1	SUCCESS total 249 s
+2026-10-24 08:42	M12-s11s-a	SaveS176.fl	PASS	251	10	141	ef7a72f+dirty	2	SUCCESS total 251 s
+2026-10-24 08:44	M12-s11s-a	SaveS176.fl	PASS	246	10	140	ef7a72f+dirty	3	SUCCESS total 246 s
+2026-10-24 08:46	M12-s11s-a	SaveS176.fl	PASS	244	10	142	ef7a72f+dirty	1	SUCCESS total 244 s
+2026-10-24 08:46	M12-s11s-r	SaveS176.fl	PASS	235	10	141	ef7a72f+dirty	2	SUCCESS total 235 s
+2026-10-24 08:48	M12-s11s-r	SaveS176.fl	PASS	232	10	142	ef7a72f+dirty	3	SUCCESS total 232 s
+2026-10-24 08:50	M12-s11s-r	SaveS176.fl	PASS	234	10	143	ef7a72f+dirty	1	SUCCESS total 234 s
+2026-10-24 08:50	M12-s11s-a	SaveS176.fl	PASS	236	10	141	ef7a72f+dirty	2	SUCCESS total 236 s
+2026-10-24 08:53	M12-s11s-a	SaveS176.fl	PASS	257	10	144	ef7a72f+dirty	3	SUCCESS total 257 s
+2026-10-24 08:55	M12-s11s-a	SaveS176.fl	PASS	262	10	142	ef7a72f+dirty	1	SUCCESS total 262 s
+2026-10-24 08:55	M12-s11s-r	SaveS176.fl	PASS	264	10	142	ef7a72f+dirty	2	SUCCESS total 264 s
+2026-10-24 08:58	M12-s11s-r	SaveS176.fl	PASS	276	10	140	ef7a72f+dirty	3	SUCCESS total 276 s
+2026-10-24 08:59	M12-s11s-r	SaveS176.fl	PASS	232	10	143	ef7a72f+dirty	1	SUCCESS total 232 s
+2026-10-24 08:59	M12-s11s-a	SaveS176.fl	PASS	242	10	142	ef7a72f+dirty	2	SUCCESS total 242 s
+2026-10-24 09:00	M12-s11s-a	SaveS176.fl	FAIL	119	10	145	ef7a72f+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 479 15754593 autopilot cruise lock off: the airlock run passed the door 250 m off its axis at 293 m/s - lining up below cruise) total 119 s; mode=space; room: hotspot
+2026-10-24 09:03	M12-s11s-r	SaveS176.fl	PASS	236	10	142	ef7a72f+dirty	2	SUCCESS total 236 s
+2026-10-24 09:03	M12-s11s-a	SaveS176.fl	PASS	258	10	143	ef7a72f+dirty	1	SUCCESS total 258 s
+2026-10-24 09:05	M12-s11s-r	SaveS176.fl	PASS	265	10	143	ef7a72f+dirty	3	SUCCESS total 265 s
+2026-10-24 09:06	M12-s11s-a	SaveS176.fl	FAIL	152	10	160	ef7a72f+dirty	2	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 557 16116109 autopilot cruise lock off: the airlock run passed the door 261 m off its axis at 188 m/s - lining up below cruise) total 152 s; mode=space; room: hotspot
+2026-10-24 09:07	M12-s11s-r	SaveS176.fl	PASS	228	10	169	ef7a72f+dirty	1	SUCCESS total 228 s
+2026-10-24 09:14	M12-s11t-r	Save5e67.fl	PASS	356	11	142	ef7a72f+dirty	2	SUCCESS total 356 s
+2026-10-24 09:14	M12-s11t-r	Save5e67.fl	PASS	381	11	145	ef7a72f+dirty	1	SUCCESS total 381 s
+2026-10-24 09:15	M12-s11t-r	Save5e67.fl	PASS	368	11	140	ef7a72f+dirty	3	SUCCESS total 368 s
+2026-10-24 09:21	M12-s11t-r	Save5e67.fl	PASS	367	11	141	69f574e+dirty	2	SUCCESS total 367 s
+2026-10-24 09:21	M12-s11t-r	Save5e67.fl	PASS	356	10	141	69f574e+dirty	3	SUCCESS total 356 s
+2026-10-24 09:21	M12-s11t-r	Save5e67.fl	PASS	374	10	142	69f574e+dirty	1	SUCCESS total 374 s
+2026-10-24 09:27	M12-s11t-r	Save5e67.fl	PASS	365	10	143	69f574e+dirty	2	SUCCESS total 365 s
+2026-10-24 09:27	M12-s11t-r	Save5e67.fl	PASS	359	10	141	69f574e+dirty	1	SUCCESS total 359 s
+2026-10-24 09:27	M12-s11t-r	Save5e67.fl	PASS	362	10	142	69f574e+dirty	3	SUCCESS total 362 s
+2026-10-24 09:35	M06-gate-s11gate	Save33fa.fl	FAIL	279	11	151	fc64305	3	FAILED (FAIL STATE (CHECKPOINT M06.hoodout not reached: segment over 71 s, par 16.0 s - dock the Hood, base stop, launch)) total 279 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 319 17775453 autopilot objective decide reason=objective text=23146 ver
+2026-10-24 09:44	M10-gate-s11gate	Save7b39.fl	FAIL	848	11	145	fc64305	2	FAILED (FAIL STATE (hull damage from a minefield (the user, 23 Oct 2026: a fail state)): 1642 18400343 autopilot minefield-damage hull 0.845 -> 0.828 mine 80 m at (-19138,107,-45351) system=2817982594) total 848 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story
+2026-10-24 09:55	M13-gate-s11gate	Save3989.fl	FAIL	649	10	143	c7f0993+dirty	2	FAILED (FAILED: 1361 19065375 player-death) total 649 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1361 19065375 player-death
+2026-10-24 09:56	M11-gate-s11gate	Save08f9.fl	PASS	1225	11	145	5b55761+dirty	3	SUCCESS total 1225 s
+2026-10-24 09:58	M07-gate-s11gate	Save766f.fl	PASS	1707	12	147	fc64305	1	SUCCESS total 1707 s
+2026-10-24 10:15	M02-gate-s11gate	Save05c7.fl	PASS	1150	10	172	c7f0993+dirty	3	SUCCESS total 1150 s
+2026-10-24 10:18	M05-gate-s11gate	Save1d87.fl	PASS	1203	11	178	c7f0993+dirty	1	SUCCESS total 1203 s
+2026-10-24 10:19	M09-gate-s11gate	Save4686.fl	FAIL	228	10	174	c7f0993+dirty	3	FAILED (FAILED: 347 20496718 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 228 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 352 20496750 autopilot objective script-destroy last_g
+2026-10-24 10:30	M01b-gate-s11gate	Save5f61.fl	PASS	668	10	177	c7f0993+dirty	3	SUCCESS total 668 s
+2026-10-24 10:34	M03-gate-s11gate	Save1e7d.fl	PASS	896	10	180	c7f0993+dirty	1	SUCCESS total 896 s
+2026-10-24 10:43	M01a-gate-s11gate	Save7e1c.fl	PASS	527	10	191	c7f0993+dirty	1	SUCCESS total 527 s
+2026-10-24 11:17	M12-gate-s11gate	Save5e67.fl	FAIL	261	11	137	c7f0993+dirty	3	FAILED (FAIL STATE (the cruise dropped in the core (the user's hard rule: no drop from the core entrance to the Omicron Minor hole)): 602 23967843 autopilot cruise lock off: the airlock run passed the door 201 m off its axis at 290 m/s - lining up below cruise) total 261 s; mode=space; room: hotspot
+2026-10-24 11:24	M08-gate-s11gate	Save3a48.fl	PASS	699	11	163	c7f0993+dirty	2	SUCCESS total 699 s
+2026-10-24 11:29	M04-gate-s11gate	Save6380.fl	PASS	1035	10	170	c7f0993+dirty	1	SUCCESS total 1035 s
+2026-10-24 11:35	M09-s11n-tn	Save4686.fl	FAIL	237	11	150	88ab419	1	FAILED (FAILED: 212 25085843 mission-message type=FAILURE text=23793 "Mission Failed. You fled the battle.") total 237 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 214 25085843 objective count=0 title=23600 "MISSION 9" text=23605 "OBJECTIVE: At
+2026-10-24 11:40	M09-s11n-tn	Save4686.fl	FAIL	236	11	144	88ab419+dirty	1	FAILED (FAILED: 218 25339046 mission-message type=FAILURE text=23793 "Mission Failed. You fled the battle.") total 236 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 220 25339046 objective count=0 title=23600 "MISSION 9" text=23605 "OBJECTIVE: At
+2026-10-24 11:44	M06-s11n-dr	Save33fa.fl	PASS	748	11	160	88ab419	3	SUCCESS total 748 s
+2026-10-24 11:52	M07-s11n-cl	Save766f.fl	FAIL	1225	11	166	88ab419	2	FAILED (FAILED: 5381 26087359 player-death) total 1225 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 2092 25550468 autopilot objective decide reason=objective text=23275 verb=0 ref=2553705349 target=2553705349 nav=1
+2026-10-24 11:57	M06-s11n-dr	Save33fa.fl	PASS	741	10	184	88ab419+dirty	3	SUCCESS total 741 s
+2026-10-24 12:03	M09-s11m-sd	Save4686.fl	FAIL	246	11	156	5de66f6	1	FAILED (FAILED: 363 26736484 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 246 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 365 26736484 objective count=0 title=23600 "MISSION 9"
+2026-10-24 12:03	M09-s11m-sd	Save4686.fl	FAIL	246	11	155	5de66f6	2	FAILED (FAILED: 352 26751046 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 246 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 354 26751046 objective count=0 title=23600 "MISSION 9"
+2026-10-24 12:03	M09-s11m-sd	Save4686.fl	FAIL	247	11	153	5de66f6	3	FAILED (FAILED: 388 26766953 mission-message type=FAILURE text=23760 "Mission Failed. You failed to fly to the Blood Dragon Hideout.") total 247 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 390 26766953 objective count=0 title=23600 "MISSION 9"
+2026-10-24 12:17	M09-s11o9-sd	Save4686.fl	PASS	731	11	157	7ccb022	1	SUCCESS total 731 s
+2026-10-24 12:17	M09-s11o9-sd	Save4686.fl	PASS	739	11	157	7ccb022	2	SUCCESS total 739 s
+2026-10-24 12:18	M09-s11o9-sd	Save4686.fl	PASS	760	11	156	7ccb022	3	SUCCESS total 760 s
+2026-10-24 12:25	M09-s11o9-sd	Save4686.fl	FAIL	456	10	175	7ccb022+dirty	2	FAILED (FAILED: 737 28075062 player-death) total 456 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 512 28003375 autopilot objective leash Ozu 3000 m: ship (named) (kept)
+2026-10-24 12:29	M09-s11o9-sd	Save4686.fl	PASS	724	10	178	7ccb022+dirty	1	SUCCESS total 724 s
+2026-10-24 12:39	M13-s11c-a	M13_ck_city.fl	PASS	135	11	157	7ccb022+dirty	2	SUCCESS total 135 s
+2026-10-24 12:40	M13-s11c-sd	M13_ck_city.fl	FAIL	172	11	158	7ccb022+dirty	3	FAILED (FAILED: 496 28953031 player-death) total 172 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 496 28953031 player-death
+2026-10-24 12:40	M13-s11c-sd	M13_ck_city.fl	FAIL	236	10	161	7ccb022+dirty	1	FAILED (FAILED: 453 28986109 player-death) total 236 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 453 28986109 player-death
+2026-10-24 12:44	M13-s11c2-sd	M13_ck_city.fl	PASS	148	11	163	3e73395	1	SUCCESS total 148 s
+2026-10-24 12:45	M13-s11c2-sd	M13_ck_city.fl	PASS	149	12	160	3e73395	3	SUCCESS total 149 s
+2026-10-24 12:46	M13-s11c2-sd	M13_ck_city.fl	FAIL	69	10	158	3e73395+dirty	3	FAILED (FAILED: 200 29336453 player-death) total 69 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 200 29336453 player-death
+2026-10-24 12:47	M13-s11c2-sd	M13_ck_city.fl	PASS	129	10	162	3e73395+dirty	1	SUCCESS total 129 s
+2026-10-24 12:48	M13-s11c2-sd	M13_ck_city.fl	FAIL	65	10	161	3e73395+dirty	1	FAILED (FAILED: 160 29444718 player-death) total 65 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 160 29444718 player-death
+2026-10-24 12:49	M13-s11c2-sd	M13_ck_city.fl	PASS	143	10	167	3e73395+dirty	3	SUCCESS total 143 s
+2026-10-24 12:53	M12-s11l-a	SaveS176.fl	PASS	82	11	155	3e73395+dirty	1	UNTIL total 82 s
+2026-10-24 12:53	M12-s11l-l	SaveS176.fl	PASS	74	11	152	3e73395+dirty	3	UNTIL total 74 s
+2026-10-24 12:55	M12-s11l-l	SaveS176.fl	PASS	83	10	160	6512a55+dirty	1	UNTIL total 83 s
+2026-10-24 12:55	M12-s11l-a	SaveS176.fl	PASS	88	10	159	6512a55+dirty	3	UNTIL total 88 s
+2026-10-24 12:55	M09-s11o9b-sd	Save4686.fl	PASS	775	11	164	3e73395	2	SUCCESS total 775 s
+2026-10-24 12:56	M12-s11l-a	SaveS176.fl	PASS	86	10	164	6512a55+dirty	1	UNTIL total 86 s
+2026-10-24 12:56	M12-s11l-l	SaveS176.fl	PASS	74	10	161	6512a55+dirty	3	UNTIL total 74 s
+2026-10-24 12:58	M12-s11l-a	SaveS176.fl	PASS	85	10	159	6512a55+dirty	3	UNTIL total 85 s
+2026-10-24 12:58	M12-s11l-l	SaveS176.fl	PASS	90	10	158	6512a55+dirty	1	UNTIL total 90 s
+2026-10-24 13:00	M12-s11l-l	SaveS176.fl	PASS	83	10	158	6512a55+dirty	3	UNTIL total 83 s
+2026-10-24 13:00	M12-s11l-a	SaveS176.fl	PASS	84	10	159	6512a55+dirty	1	UNTIL total 84 s
+2026-10-24 13:01	M12-s11l-l	SaveS176.fl	PASS	75	10	154	6512a55+dirty	1	UNTIL total 75 s
+2026-10-24 13:01	M12-s11l-a	SaveS176.fl	PASS	82	10	155	6512a55+dirty	3	UNTIL total 82 s
+2026-10-24 13:08	M09-s11o9b-sd	Save4686.fl	PASS	753	10	175	6512a55+dirty	2	SUCCESS total 753 s
+2026-10-24 13:22	M10-gate-s11preset	Save7b39.fl	FAIL	604	11	160	19482da	2	FAILED (STALL no progress 60 s (0|0|0|rest)) total 604 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 750 31412796 autopilot objective decide reason=ended text=23875 verb=1 ref=3186697159 target=3186697159 nav=1
+2026-10-24 13:24	M06-gate-s11preset	Save33fa.fl	PASS	682	11	159	19482da	3	SUCCESS total 682 s
+2026-10-24 13:34	M13-gate-s11preset	Save3989.fl	FAIL	733	10	154	73eb4c3+dirty	2	FAILED (FAILED: 1708 32225390 player-death) total 733 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1295 32108718 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-24 13:40	M07-gate-s11preset	Save766f.fl	PASS	1699	11	160	19482da	1	SUCCESS total 1699 s
+2026-10-24 13:41	M04-gate-s11preset	Save6380.fl	FAIL	361	10	156	e74dc4c+dirty	2	FAILED (FAIL STATE (CHECKPOINT M04.benfordland not reached: segment over 58 s, par 12.5 s - dock at Benford)) total 361 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 693 32339734 objective count=1 title=22602 "ESCAPE FROM LIBERTY" text=22606 "OBJECTI
+2026-10-24 13:44	M11-gate-s11preset	Save08f9.fl	PASS	1219	10	157	73eb4c3+dirty	3	SUCCESS total 1219 s
+2026-10-24 13:53	M08-gate-s11preset	Save3a48.fl	PASS	712	11	159	e74dc4c+dirty	2	SUCCESS total 712 s
+2026-10-24 13:59	M12-gate-s11preset	Save5e67.fl	PASS	368	10	159	a898dd1+dirty	2	SUCCESS total 368 s
+2026-10-24 14:01	M05-gate-s11preset	Save1d87.fl	PASS	1266	10	163	e74dc4c+dirty	1	SUCCESS total 1266 s
+2026-10-24 14:04	M02-gate-s11preset	Save05c7.fl	PASS	1153	10	165	e74dc4c+dirty	3	SUCCESS total 1153 s
+2026-10-24 14:08	M04-s11d4-dr	Save6380.fl	FAIL	377	11	160	a898dd1+dirty	2	FAILED (FAIL STATE (CHECKPOINT M04.benfordland not reached: segment over 58 s, par 12.5 s - dock at Benford)) total 377 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 216 33963078 objective count=1 title=22602 "ESCAPE FROM LIBERTY" text=22606 "OBJECTI
+2026-10-24 14:16	M03-gate-s11preset	Save1e7d.fl	PASS	885	10	171	a898dd1+dirty	1	SUCCESS total 885 s
+2026-10-24 14:17	M09-gate-s11preset	Save4686.fl	PASS	772	10	172	a898dd1+dirty	3	SUCCESS total 772 s
+2026-10-24 14:25	M01a-gate-s11preset	Save7e1c.fl	PASS	527	10	188	a898dd1+dirty	1	SUCCESS total 527 s
+2026-10-24 14:28	M01b-gate-s11preset	Save5f61.fl	PASS	666	10	191	a898dd1+dirty	3	SUCCESS total 666 s
+2026-10-24 14:51	M05-s11p5-p	Save1d87.fl	PASS	1205	11	160	faf29a9	3	SUCCESS total 1205 s
+2026-10-24 14:51	M05-s11p5-p	Save1d87.fl	PASS	1251	12	162	faf29a9	1	SUCCESS total 1251 s
+2026-10-24 14:51	M05-s11p5-o	Save1d87.fl	PASS	1245	11	161	faf29a9	2	SUCCESS total 1245 s
+2026-10-24 15:12	M05-s11p5-o	Save1d87.fl	PASS	1219	10	161	8aeabd6+dirty	1	SUCCESS total 1219 s
+2026-10-24 15:12	M05-s11p5-o	Save1d87.fl	PASS	1253	10	160	8aeabd6+dirty	3	SUCCESS total 1253 s
+2026-10-24 15:12	M05-s11p5-p	Save1d87.fl	PASS	1245	10	161	8aeabd6+dirty	2	SUCCESS total 1245 s
+2026-10-24 15:24	M07-s11q-cl	Save766f.fl	FAIL	596	11	157	9336e63	2	FAILED (FAILED: 591 38805703 mission-message type=FAILURE text=23350 "Mission Failed. You failed to dock with the Trade Lane.") total 596 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 593 38805703 objective count=0 title=23200 "MISSION 7" text=2
+2026-10-24 15:25	M10-s11q-lf	Save7b39.fl	FAIL	613	11	156	9336e63	3	FAILED (STALL no progress 60 s (0|0|0|rest)) total 613 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 972 38775218 autopilot objective decide reason=ended text=23875 verb=1 ref=3186697159 target=3186697159 nav=1
+2026-10-24 15:32	M04-s11q-dr	Save6380.fl	PASS	1081	11	166	9336e63	1	SUCCESS total 1081 s
+2026-10-24 15:38	M12-s11v-r	SaveS176.fl	PASS	227	11	154	44b14c8+dirty	1	SUCCESS total 227 s
+2026-10-24 15:39	M12-s11v-r	SaveS176.fl	PASS	239	13	151	44b14c8+dirty	2	SUCCESS total 239 s
+2026-10-24 15:40	M12-s11v-r	SaveS176.fl	PASS	272	11	150	44b14c8+dirty	3	SUCCESS total 272 s
+2026-10-24 15:43	M12-s11v-r	SaveS176.fl	PASS	235	10	153	622f04a+dirty	1	SUCCESS total 235 s
+2026-10-24 15:43	M12-s11v-r	SaveS176.fl	PASS	246	10	158	622f04a+dirty	2	SUCCESS total 246 s
+2026-10-24 15:44	M12-s11v-r	SaveS176.fl	PASS	233	10	163	622f04a+dirty	3	SUCCESS total 233 s
+2026-10-24 16:33	M09-s12a-fix	Save4686.fl	PASS	746	11	153	b892e7c	3	SUCCESS total 746 s
+2026-10-24 16:39	M10-s12a-fix	Save7b39.fl	PASS	1143	11	153	b892e7c	1	SUCCESS total 1143 s
+2026-10-24 16:40	M10-s12a-fix	Save7b39.fl	PASS	1190	11	152	b892e7c	2	SUCCESS total 1190 s
+2026-10-24 16:45	M09-s12a-fix	Save4686.fl	PASS	747	11	154	b892e7c+dirty	3	SUCCESS total 747 s
+2026-10-24 16:58	M10-s12a-fix	Save7b39.fl	PASS	1128	11	166	b892e7c+dirty	1	SUCCESS total 1128 s
+2026-10-24 16:59	M10-s12a-fix	Save7b39.fl	PASS	1125	11	168	84310e2+dirty	2	SUCCESS total 1125 s
+2026-10-24 17:05	M04-s12b-pa	Save6380.fl	FAIL	364	16	153	4dd39c4+dirty	1	FAILED (FAIL STATE (CHECKPOINT M04.benfordland not reached: segment over 58 s, par 12.5 s - dock at Benford)) total 364 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 171 44617546 objective count=1 title=22602 "ESCAPE FROM LIBERTY" text=22606 "OBJECTI
+2026-10-24 17:06	M04-s12b-pa	Save6380.fl	FAIL	360	12	156	4dd39c4+dirty	2	FAILED (FAIL STATE (CHECKPOINT M04.benfordland not reached: segment over 58 s, par 12.5 s - dock at Benford)) total 360 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 646 44835671 autopilot objective decide reason=objective text=22645 verb=1 ref=45 ta
+2026-10-24 17:17	M04-s12b-pa	Save6380.fl	PASS	1048	12	155	4dd39c4+dirty	3	SUCCESS total 1048 s
+2026-10-24 17:19	M04-s12b-pa	Save6380.fl	FAIL	103	10	163	be85a32+dirty	3	FAILED (FAILED: 224 45722390 player-death) total 103 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 224 45722390 player-death
+2026-10-24 17:22	M04-s12b-pa	Save6380.fl	PASS	1005	10	160	4dd39c4+dirty	1	SUCCESS total 1005 s
+2026-10-24 17:23	M04-s12b-pa	Save6380.fl	PASS	1027	11	160	4dd39c4+dirty	2	SUCCESS total 1027 s
+2026-10-24 17:42	M04-s12c-padr	Save6380.fl	PASS	1082	11	158	a0655e8	1	SUCCESS total 1082 s
+2026-10-24 17:42	M04-s12c-padr	Save6380.fl	PASS	1064	11	158	a0655e8	2	SUCCESS total 1064 s
+2026-10-24 17:43	M04-s12c-padr	Save6380.fl	PASS	1116	11	158	a0655e8	3	SUCCESS total 1116 s
+2026-10-24 17:59	M04-s12c-padr	Save6380.fl	PASS	999	10	156	5df5ef0+dirty	2	SUCCESS total 999 s
+2026-10-24 17:59	M04-s12c-padr	Save6380.fl	PASS	1010	11	157	5df5ef0+dirty	1	SUCCESS total 1010 s
+2026-10-24 18:01	M04-s12c-padr	Save6380.fl	PASS	1072	10	160	5df5ef0+dirty	3	SUCCESS total 1072 s
+2026-10-24 18:19	M04-s12d-padr2	Save6380.fl	PASS	1003	11	160	5843e65	1	SUCCESS total 1003 s
+2026-10-24 18:20	M04-s12d-padr2	Save6380.fl	PASS	1021	11	158	5843e65	3	SUCCESS total 1021 s
+2026-10-24 18:20	M04-s12d-padr2	Save6380.fl	PASS	1051	12	160	5843e65	2	SUCCESS total 1051 s
+2026-10-24 18:37	M04-s12d-padr2	Save6380.fl	PASS	1028	10	159	d457c51+dirty	1	SUCCESS total 1028 s
+2026-10-24 18:37	M04-s12d-padr2	Save6380.fl	PASS	999	10	157	d457c51+dirty	3	SUCCESS total 999 s
+2026-10-24 18:37	M04-s12d-padr2	Save6380.fl	PASS	994	10	159	d457c51+dirty	2	SUCCESS total 994 s
+2026-10-24 21:09	M12-apb563-banner	SaveS176.fl	PASS	60	11	157	563d90e	2	UNTIL total 60 s
+2026-10-24 21:10	M12-apb563-cell	SaveS181.fl	PASS	148	12	155	563d90e	1	SUCCESS total 148 s
+2026-10-24 21:10	M12-apb563-banner	SaveS176.fl	PASS	52	10	147	563d90e+dirty	2	UNTIL total 52 s
+2026-10-24 21:11	M12-apb563-banner	SaveS176.fl	PASS	46	10	134	563d90e+dirty	2	UNTIL total 46 s
+2026-10-24 21:13	M07-apb563-gate	SaveS207.fl	PASS	255	13	147	563d90e	3	UNTIL total 255 s
+2026-10-24 21:13	M12-apb563-cell	SaveS181.fl	PASS	153	10	144	563d90e+dirty	1	SUCCESS total 153 s
+2026-10-24 21:16	M12-apb563-cell	SaveS181.fl	PASS	178	10	165	563d90e+dirty	1	SUCCESS total 178 s
+2026-10-24 21:17	M07-apb563-gate	SaveS207.fl	PASS	260	11	169	563d90e+dirty	3	UNTIL total 260 s
+2026-10-24 21:22	M07-apb563-gate	SaveS207.fl	PASS	250	11	202	563d90e+dirty	3	UNTIL total 250 s
+2026-10-24 22:01	M12-aprefac-banner	SaveS176.fl	PASS	46	11	166	e3bbd96	2	UNTIL total 46 s
+2026-10-24 22:01	M12-aprefac-cell	SaveS181.fl	FAIL	119	11	162	e3bbd96	1	FAILED (FAILED: 401 62645500 player-death) total 119 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 401 62645500 player-death
+2026-10-24 22:02	M12-aprefac-banner	SaveS176.fl	PASS	50	10	154	e3bbd96+dirty	2	UNTIL total 50 s
+2026-10-24 22:03	M12-aprefac-banner	SaveS176.fl	PASS	53	10	153	e3bbd96+dirty	2	UNTIL total 53 s
+2026-10-24 22:04	M12-aprefac-cell	SaveS181.fl	PASS	150	10	162	e3bbd96+dirty	1	SUCCESS total 150 s
+2026-10-24 22:05	M07-aprefac-gate	SaveS207.fl	PASS	255	12	168	e3bbd96	3	UNTIL total 255 s
+2026-10-24 22:07	M12-aprefac-cell	SaveS181.fl	PASS	163	10	186	e3bbd96+dirty	1	SUCCESS total 163 s
+2026-10-24 22:09	M07-aprefac-gate	SaveS207.fl	PASS	253	10	193	e3bbd96+dirty	3	UNTIL total 253 s
+2026-10-24 22:13	M12-apb563b-cell	SaveS181.fl	PASS	168	11	146	563d90e+dirty	1	SUCCESS total 168 s
+2026-10-24 22:13	M12-aprefacb-cell	SaveS181.fl	PASS	178	11	138	e3bbd96+dirty	2	SUCCESS total 178 s
+2026-10-24 22:13	M07-aprefac-gate	SaveS207.fl	PASS	256	10	159	e3bbd96+dirty	3	UNTIL total 256 s
+2026-10-24 22:16	M12-apb563b-cell	SaveS181.fl	PASS	167	11	159	563d90e+dirty	1	SUCCESS total 167 s
+2026-10-24 22:16	M12-aprefacb-cell	SaveS181.fl	PASS	182	12	163	e3bbd96+dirty	2	SUCCESS total 182 s
+2026-10-24 22:17	M12-apb563b-cell	SaveS181.fl	FAIL	49	11	178	563d90e+dirty	1	FAILED (FAIL STATE (CHECKPOINT M12.exit not reached: segment over 49 s, par 2.3 s - to the exit, out of the airlock)) total 49 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 10 63515765 autopilot objective navmarker on a dockable object 2281279501: th
+2026-10-24 22:19	M12-aprefacb-cell	SaveS181.fl	PASS	166	11	188	e3bbd96+dirty	2	SUCCESS total 166 s
+2026-10-24 22:53	M04-s13a-padr	Save6380.fl	PASS	1002	11	153	f5d8d76	2	SUCCESS total 1002 s
+2026-10-24 22:53	M04-s13a-padr	Save6380.fl	PASS	1038	11	154	f5d8d76	1	SUCCESS total 1038 s
+2026-10-24 22:54	M04-s13a-padr	Save6380.fl	PASS	1057	11	152	f5d8d76	3	SUCCESS total 1057 s
+2026-10-24 23:10	M04-s13a-padr	Save6380.fl	PASS	1026	10	152	f5d8d76+dirty	1	SUCCESS total 1026 s
+2026-10-24 23:10	M04-s13a-padr	Save6380.fl	PASS	1050	10	154	f5d8d76+dirty	2	SUCCESS total 1050 s
+2026-10-24 23:11	M04-s13a-padr	Save6380.fl	PASS	1024	10	155	f5d8d76+dirty	3	SUCCESS total 1024 s
+2026-10-24 23:38	M04-s13b-padr	Save6380.fl	PASS	1028	15	151	34ba88f	1	SUCCESS total 1028 s
+2026-10-24 23:38	M04-s13b-padr	Save6380.fl	PASS	974	13	151	34ba88f	3	SUCCESS total 974 s
+2026-10-24 23:39	M04-s13b-padr	Save6380.fl	PASS	1054	12	152	34ba88f	2	SUCCESS total 1054 s
+2026-10-24 23:52	M04-s13b-padr	Save6380.fl	FAIL	784	11	152	34ba88f+dirty	2	FAILED (FAILED: 4454 69280328 mission-message type=FAILURE text=22780 "Mission Failed. You failed to fly to Mactan Base.") total 784 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: LoadSavegameButton; offers: none; last story event: 205 68594234 autopilot objective decide reason=objec
+2026-10-24 23:55	M04-s13b-padr	Save6380.fl	PASS	990	11	156	34ba88f+dirty	3	SUCCESS total 990 s
+2026-10-24 23:55	M04-s13b-padr	Save6380.fl	PASS	1026	11	159	34ba88f+dirty	1	SUCCESS total 1026 s

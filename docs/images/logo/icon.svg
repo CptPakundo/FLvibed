@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="FLvibed">
+  <title>FLvibed</title>
+  <rect x="4" y="4" width="112" height="112" rx="22" fill="#0b0c14"/>
+  <path d="M45.02 90.71 A34.16666666666667 34.16666666666667 0 0 1 45.02 29.29" fill="none" stroke="#5aa8ff" stroke-width="10.00" stroke-linecap="round"/>
+  <path d="M74.98 29.29 A34.16666666666667 34.16666666666667 0 0 1 74.98 90.71" fill="none" stroke="#e8ecfa" stroke-width="10.00" stroke-linecap="round"/>
+  <circle cx="60.00" cy="60.00" r="9.17" fill="#ffe846"/>
+</svg>

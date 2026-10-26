@@ -1,0 +1,15 @@
+leg	start_save	wr	best3	scenefree	note	run1	run2	run3
+M01a	Save7e1c.fl	417	409	409	M01 split at the Pittsburgh dock	417	423	409
+M01b	Save5f61.fl	457	457	457		457	476	472
+M02	Save05c7.fl	876	876	876		876	928	896
+M03	Save1e7d.fl	780	763	763	IL record 836	780	766	763
+M04	Save6380.fl	1036	1014	813	Benford scene ~200 s removed	1036	1014	1019
+M05	Save1d87.fl	1204	1170	952	Sprague scenes removed	1204	1170	1198
+M06	Save33fa.fl	544	489	489		544	534	489
+M07	Save766f.fl	1262	1250	1250		1262	1266	1250
+M08	Save3a48.fl	601	582	582		601	582	600
+M09	Save4686.fl	796	796	530	arch scene 250-266 s removed	796	830	882
+M10	Save7b39.fl	980	980	915	Holstein scene removed	980	1040	1026
+M11	Save08f9.fl	1158	1158	979	prison scene removed	1158	1224	1252
+M12	Save5e67.fl	362	348	348		362	350	348
+M13	Save3989.fl	752	686	686		752	702	686

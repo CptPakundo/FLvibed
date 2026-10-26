@@ -1,0 +1,10 @@
+# Picture area of the movies Freelancer plays, for fitting them to the screen (FLSubtitles): the black bars
+# encoded in the video are left outside the screen. Measured with ffmpeg cropdetect (limit 24) on 17 Oct 2026;
+# crop = x, y, width, height in video pixels; par = pixel aspect (width/height of one pixel). Movies not listed
+# are fitted whole, with their aspect ratio kept (frame size read from the file).
+movie	width	height	par	crop_x	crop_y	crop_w	crop_h
+mgs_logo_final	1280	960	1	0	0	1280	960
+da_logo_final	1440	960	1	0	60	1440	838
+fl_intro	1440	960	1	2	182	1438	594
+fl_intro_vanilla	720	480	1	2	92	718	296
+fl_intro_full	720	480	1	2	94	716	296

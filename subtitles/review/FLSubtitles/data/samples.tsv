@@ -1,0 +1,137 @@
+# Random samples of review lists (review tool). draft = the text the line had when sampled.
+list	id	voice	draft	date
+script	dx_s055b_0201_Akira	hakkera	Fine.	2026-10-16
+script	dx_s055b_0601_Akira	hakkera	New Berlin. You're perfect for the job because Bretonia is still neutral.	2026-10-16
+script	dx_s011x_0702_juni	juni	Meanwhile, with your new security status I suspect you'll be able to occupy your time while I'm gone.	2026-10-16
+script	dx_s064x_0101_juni	juni	Impressive, isn't it?	2026-10-16
+script	dx_s006x_0503_King	king	We could really use you out there, Trent.	2026-10-16
+script	dx_s006x_0803_King	king	Try the Equipment Dealer over there, he always has good deals.	2026-10-16
+script	dx_s038x_3402_Kress	kress	Despite what you may have heard, we are only interested in freedom and peace.	2026-10-16
+script	dx_s009d_0101_Trent	trent	I want in.	2026-10-16
+script	dx_s020x_1501_Trent	trent	I think it has something to do with this.	2026-10-16
+script	dx_s026c_0501_Trent	trent	Okay, see you later.	2026-10-16
+script	dx_s037a_1801_Trent	trent	Look, I hate to rush this reunion along...	2026-10-16
+script	dx_s070x_2601_Trent	trent	You're welcome, Madame President.	2026-10-16
+script	dx_s076x_1701_Trent	trent	Ah, call me Trent. Pleased to meet you.	2026-10-16
+script	dx_s020x_3402_VanPelt	vanpelt	No one has used it since the disaster, but it still works.	2026-10-16
+script	DX_M06_0206_ANNOUNCER	announcer	Two!	2026-10-16
+script	DX_M06_0341_GLORIOUS	glorious	We got the Gunship!	2026-10-16
+script	dx_m10_1250_hakkera	hakkera	This is Hakkera. Trent, you have greatly disappointed me.	2026-10-16
+script	DX_M09_0715_HAKKERA	hakkera	It appears that they are mostly targeting high-ranking government and military officials. Tekagi was one of these people. Up until today, no one had ever seen a Nomad and lived to talk about it.	2026-10-16
+script	dx_m10_1060_hakkera	hakkera	Trent, I will follow you through.	2026-10-16
+script	DX_M02_1110_JUNI	juni	He'll get what he deserves, but not until he's told us all we need to know. I'll make preparations for your arrival.	2026-10-16
+script	DX_M05_0100_JUNI	juni	Took you long enough! We don't have any time to waste. Let's go.	2026-10-16
+script	DX_M13_0970_JUNI	juni	All right, it's up to us.	2026-10-16
+script	DX_M13_0150_JUNI	juni	Trent, that's a personnel transport. We need to help them first. Let's go.	2026-10-16
+script	DX_M04_1030_JUNI	juni	Trent, there's a bounty on our head. They'll never let us out of here alive. We have to fight!	2026-10-16
+script	DX_M04_1380_JUNI	juni	Trent! This is Juni. I've made it to Cambridge. No luck so far finding the Professor. I'll contact you when I hear anything. Until then, keep a low profile. Every bounty hunter in the colonies is probably looking for us.	2026-10-16
+script	DX_M03_1034_JUNI	juni	They're opening fire! Engage!	2026-10-16
+script	DX_M07_0250_JUNI	juni	We're coming up on Stokes. Stay sharp!	2026-10-16
+script	DX_M13_0440_JUNI	juni	We did it! All wings – take out the remaining fighters!	2026-10-16
+script	DX_M02_0780_KING	king	I'm picking up a disturbance – could be a Jump Hole. We have to hurry or he's gonna get away!	2026-10-16
+script	DX_M02_1230_KING	king	For the Rogues to attack us so close to Fort Bush... Ashcroft must really know something important.	2026-10-16
+script	DX_M02_0950_KING	king	Zeta 1, we're taking Ashcroft back to New York for interrogation. Thanks for your help!	2026-10-16
+script	DX_M03_1300_KING	king	Okay, I'll try to find out what's going on. Talk to you soon.	2026-10-16
+script	DX_M03_0203_FP7_SURVIVOR	lsfpilot_voice_m03	Mr. Trent. We need to talk.	2026-10-16
+script	DX_M01_0320_STATION_NEWARK	m01a_newark	LPU Patrol Beta 2! Cleared for alarm start!	2026-10-16
+script	DX_M13_0760_ORILLION	orillion	Looks like a giant barrier of some sort. We must find a way to break through it.	2026-10-16
+script	DX_M08_0665_OZU	ozu	The honor is ours.	2026-10-16
+script	DX_M08_0340_OZU	ozu	There is the shipyard. Is everybody ready?	2026-10-16
+script	DX_M08_0610_OZU	ozu	This is Lieutenant Ozu. Stand down, patrol. We have captured Tekagi's transport and are escorting it back to Kyoto as ordered.	2026-10-16
+script	dx_m01_1044_lsfpatrol	pilot_c_leg_m01	Gamma 6, Delta patrol reports no hostile contacts.	2026-10-16
+script	DX_M13_0590_DELTA_LEADER	pilot_c_leg_m01	We took heavy losses during the evacuation. Only four transports and about two dozen fighters made it back to the Osiris.	2026-10-16
+script	DX_M04_0120_ROGUE_LEADER	pilot_f_mil_m01a	This is the Liberty Navy... cut your engines and prepare to be taken into custody.	2026-10-16
+script	DX_M13_0130_ALPHA_LEADER	pilot_f_mil_m02	This is Alpha Leader, Colonel Zane. Alpha and Beta have been holding ground but we're taking steady losses.	2026-10-16
+script	DX_M07_1080_QUINTAINE	quintaine	Apparently, the Kress base is not far – it's in a secret location on the far side of this system. The bartender gave me a set of coordinates. I'm uploading them now.	2026-10-16
+script	DX_M06_0350_QUINTAINE	quintaine	Mr. Trent, Quintaine here. I am flying this armored transport. I know it's slow, but it contains all the equipment I need for my work.	2026-10-16
+script	dx_m10_0500_scout	scout	We have hostiles in sector C-eight!	2026-10-16
+script	DX_M05_0610_SINCLAIR	sinclair	I'm okay. There's a Jump Hole to Cambridge nearby. That's our best shot. From there, it should be easy to get to Leeds.	2026-10-16
+script	DX_M07_0510B_TOBIAS	tobias	Destroy the fighters and let's get out of here!	2026-10-16
+script	dx_m10_0260_vonclaussen	vonclaussn	I have contacted a friend of mine who leads a rebel group that opposes the new Rheinland regime. Their base is not far from here.	2026-10-16
+script	DX_M11_0406_WALKER	walker	Thank you, Jun'ko. A lot has happened since you left Liberty. The democracy we once served is now a bloodthirsty military dictatorship. My crew and I were forced to leave the central systems. We've been prowling the Independent Worlds, destroying Rheinland supply depots. A strange life for a career Navy officer.	2026-10-16
+script	DX_M03_1460_WALKER	walker	All fighter wings – engage the enemy. Cruisers! Break formation and protect Willard Station.	2026-10-16
+script	dx_s052x_0602_Akira	hakkera	That's why it was so important for you and brave Ozu	2026-10-16
+script	dx_s055b_1001_Akira	hakkera	Jun'ko! Come on!	2026-10-16
+script	dx_s038x_1001_Big_Man_01	big_man_01	He sees no one.	2026-10-16
+script	dx_s063x_0501_botzler	botzler	Very badly, I'm afraid. The Rheinland regulars have been hitting us with everything they've got recently.	2026-10-16
+script	dx_s019a_1001_juni	juni	I... I don't know! But there's more...	2026-10-16
+script	dx_s020x_3501_juni	juni	What about you?	2026-10-16
+script	dx_s045a_0301_juni	juni	I just had to dig a little deeper than I thought.	2026-10-16
+script	dx_s009d_0201_King	king	Yes!	2026-10-16
+script	dx_s038x_3201_Kress	kress	"The Order".	2026-10-16
+script	dx_s004x_0203_Li_diplomt	li_diplomt	Some in the government feel that we need to increase our patrols in these areas.	2026-10-16
+script	dx_s070x_0101_Orillion	orillion	Report, Colonel Zane!	2026-10-16
+script	dx_s070x_2802_Orillion	orillion	If not the leaders, then key military units in the field... they're getting stronger.	2026-10-16
+script	dx_s076x_0903_Orillion	orillion	For now, it's better I stay less well known. I just wanted to see if you'd consider a proposition.	2026-10-16
+script	dx_s076x_1302_Orillion	orillion	Enjoy your vacation, Freelancer.	2026-10-16
+script	dx_s046x_1003_Ozu	ozu	He was not on the transport as we were lead to believe. Something has changed.	2026-10-16
+script	dx_s050d_0101_Ozu	ozu	I must say I am surprised to see you again.	2026-10-16
+script	dx_s038x_0901_Quintaine	quintaine	He'll see me.	2026-10-16
+script	dx_s021x_1301_Tobias	tobias	I see. Well, the first thing to do is get rid of your ship... There's likely to be a description out on it.	2026-10-16
+script	dx_s012x_0704a_Trent	trent	What the...	2026-10-16
+script	dx_s014b_1401_Trent	trent	It wasn't before... it was during. He almost died. It doesn't make sense.	2026-10-16
+script	dx_s037a_0901_Trent	trent	Uh-huh... and let me tell you he's a tough old bird. He nearly pushed me out of an airlock.	2026-10-16
+script	dx_s055b_0101_Trent	trent	I owe you one, Hakkera.	2026-10-16
+script	dx_s062x_0801_Trent	trent	I understand. Now, let's get you out of here while we still can.	2026-10-16
+script	DX_M02_0920_COSMO	cosmo_voice_m02	This is outrageous. You haven't heard the last of this. I...	2026-10-16
+script	DX_M05_0190_FREEPORT_1	freeport_1	Negative! But Sprague lies beyond our patrol routes – if you are attacked, we won't be able to send help.	2026-10-16
+script	DX_M03_0881_JUNI	juni	Oh, I recommend you land and repair your ship. We'll meet back in space in a few minutes.	2026-10-16
+script	DX_M03_0120_JUNI	juni	I can't tell you specifics right now. Let's just say Ashcroft provided us with the information we hoped for. Meet me on California Minor as soon as you can.	2026-10-16
+script	DX_M07_1120_JUNI	juni	All right everybody, let's get moving.	2026-10-16
+script	DX_M03_0100_JUNI	juni	Trent, I'm sorry I couldn't meet you as planned. I'm on assignment in California.	2026-10-16
+script	DX_M04_0960_JUNI	juni	Goodbye, Liberty... thanks old man...	2026-10-16
+script	DX_M05_0230_JUNI	juni	Vance gave me the frequency of the dig site beacon. I'm not picking up a signal yet... we probably have to get closer.	2026-10-16
+script	DX_M13_0580_JUNI	juni	Roger that. What's the situation?	2026-10-16
+script	DX_M05_0980_JUNI	juni	The Trade Lane to Leeds is near. We should go.	2026-10-16
+script	dx_m12_0216_juni	juni	King and I will draw their fire, Trent! Head for the core and get that power cell.	2026-10-16
+script	DX_M05_0200_JUNI	juni	Understood! Thanks for the warning.	2026-10-16
+script	DX_M01_0640_KING	king	We made it! Everybody in one piece?	2026-10-16
+script	DX_M11_0817_KING	king	They keep bringing in more ships!	2026-10-16
+script	DX_M02_1150_KING	king	Thank you, unity! Out! Juni must have arranged that for us! Let's go.	2026-10-16
+script	dx_m01_1120_king	king	There she is... she's hurt bad... Everyone, break formation and engage.	2026-10-16
+script	DX_M08_0490_OZU	ozu	To all ships! The strike team has successfully taken over the transport. Disengage and protect the transport.	2026-10-16
+script	DX_M07_1420_RAZOR_1	pilot_f_leg_m01	No time to explain... we're uploading coordinates. Professor, you and the freighter have to fly there as quickly as you can – we'll try to hold off the Rheinland fleet.	2026-10-16
+script	DX_M06_0331_RHEINLANDER	rheinlander	This is your last warning. Surrender Quintaine or you will be destroyed.	2026-10-16
+script	dx_m10_0420_scout	scout	Stand by for security scan.	2026-10-16
+script	DX_M05_0720_SINCLAIR	sinclair	We have to head to New London and from there to Leeds. I doubt the Rheinlanders will look for us here, but we need to stay sharp.	2026-10-16
+script	DX_M05_0550_SINCLAIR	sinclair	Baxter Research Station! It's been abandoned for over a decade, but life support should still be functioning.	2026-10-16
+script	dx_m12_0580_timer	timer	Seven minutes remaining to Jump Hole collapse.	2026-10-16
+script	DX_M13_0160_TRANSPORT	transport	Our hull is buckling. AHHHHHHHH!	2026-10-16
+script	DX_M02_0107_TRENT	trent_voice	I thought he'd lost it... but then these two guys appeared and shot him. Maybe he wasn't just paranoid. Ah, I'm never getting paid! Goodbye million credits.	2026-10-16
+script	DX_M02_0101_TRENT	trent_voice	Yeah! I'm fine.	2026-10-16
+script	DX_M11_0810_PHOENIX	walkerlc_m11	We're hit!	2026-10-16
+forms	bc_enter_dist_follow_01	hakkera	You're now in range, Trent.	2026-10-17
+forms	bc_enter_dist_follow_01	orillion	Good. You have entered range.	2026-10-17
+forms	bc_enter_dist_follow_01	ozu	Good. You have entered range.	2026-10-17
+forms	bc_enter_dist_follow_01	sinclair	You're now in range.	2026-10-17
+forms	bc_enter_dist_follow_01	tobias	Good. You have entered range.	2026-10-17
+forms	bc_enter_far_teth_01	botzler	Good. You're entering range.	2026-10-17
+forms	bc_enter_far_teth_01	hakkera	Good, you're entering range.	2026-10-17
+forms	bc_enter_far_teth_01	king	Good, you're entering range.	2026-10-17
+forms	bc_enter_far_teth_01	sinclair	Good. You're entering range.	2026-10-17
+forms	bc_enter_near_teth_02	vonclaussn	That is a good position, Trent. I am switching to full speed.	2026-10-17
+forms	bc_exit_far_teth_01	orillion	You're falling too far behind. Try to catch up.	2026-10-17
+forms	bc_exit_far_teth_01	ozu	You're falling too far behind. Try to catch up.	2026-10-17
+forms	bc_exit_far_teth_01	tobias	You're falling too far behind. Try to catch up.	2026-10-17
+forms	bc_exit_far_teth_01	vonclaussn	Trent, you are falling too far behind. Try to catch up.	2026-10-17
+forms	bc_exit_far_teth_02	vonclaussn	Trent, you have to stay closer. I am reducing speed. Come on.	2026-10-17
+forms	bc_follow_flat_01	sinclair	You're lagging behind. I'll be in your position in a few moments.	2026-10-17
+forms	bc_follow_flat_02	juni	You're not making any progress. Hold on, I'm coming back.	2026-10-17
+forms	bc_follow_flat_02	orillion	You're not making any progress. Hold on, I'm coming back.	2026-10-17
+forms	bc_follow_neg_01	botzler	Where are you going? I am heading to our destination. Come on.	2026-10-17
+forms	bc_follow_neg_01	vonclaussn	Where are you going? I am heading to our destination. Come on.	2026-10-17
+forms	bc_follow_neg_02	vonclaussn	Trent, I can't wait for you here. I am heading on.	2026-10-17
+forms	bc_follow_pos_app_off_02	ozu	You look like you're slightly off course. Follow me.	2026-10-17
+forms	bc_follow_pos_app_off_02	tobias	You look like you're slightly off course. Follow me.	2026-10-17
+forms	bc_follow_pos_app_on_01	vonclaussn	Everything is looking good. You are right on course.	2026-10-17
+forms	bc_follow_pos_app_on_02	botzler	Trent, we're directly on course.	2026-10-17
+forms	bc_follow_pos_app_on_02	hakkera	Trent, we're directly on course.	2026-10-17
+forms	bc_follow_pos_app_on_02	juni	You're directly on course.	2026-10-17
+forms	bc_follow_pos_app_on_02	sinclair	We're directly on course.	2026-10-17
+forms	bc_follow_pos_app_on_02	walker	Trent, we're directly on course.	2026-10-17
+forms	bc_giving_up_02	king	Trent, I'm tired of this. This mission is over. See ya later.	2026-10-17
+forms	bc_goto_neg_03	orillion	Trent, you're heading away from our destination. Turn around.	2026-10-17
+forms	bc_goto_neg_03	ozu	Mr. Trent, you're heading away from our destination. Turn around.	2026-10-17
+forms	bc_goto_neg_03	tobias	Trent, you're heading away from our destination. Turn around.	2026-10-17
+forms	bc_goto_neg_03	walker	Trent, you're heading away from our destination. Turn around.	2026-10-17
+forms	bc_goto_neg_04	orillion	You're heading away from our destination, Mr. Trent. Turn around.	2026-10-17

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 342 120" width="342" height="120" role="img" aria-label="FLvibed">
+  <title>FLvibed</title>
+  <path d="M43.32 97.46 A41.0 41.0 0 0 1 43.32 22.54" fill="none" stroke="#5aa8ff" stroke-width="8.00" stroke-linecap="round"/>
+  <path d="M76.68 22.54 A41.0 41.0 0 0 1 76.68 97.46" fill="none" stroke="#e8ecfa" stroke-width="8.00" stroke-linecap="round"/>
+  <circle cx="60.00" cy="60.00" r="9.00" fill="none" stroke="#ffe846" stroke-width="3.50"/>
+  <circle cx="60.00" cy="60.00" r="2.60" fill="#ffe846"/>
+  <path d="M167.60 36.51 L149.51 36.51 L149.51 87.00" fill="none" stroke="#e8ecfa" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M149.51 60.00 L163.71 60.00" fill="none" stroke="#e8ecfa" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M179.21 33.00 L179.21 83.49 L196.22 83.49" fill="none" stroke="#e8ecfa" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M204.32 33.00 L211.69 33.00 L216.74 72.26 L221.79 33.00 L229.16 33.00 L221.09 87.00 L212.39 87.00 Z" fill="#8fd0ff"/>
+  <path d="M240.77 33.00 L240.77 87.00" fill="none" stroke="#8fd0ff" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M255.89 36.51 L265.07 36.51 L271.01 42.45 L271.01 56.44 L267.45 60.00 L255.89 60.00" fill="none" stroke="#8fd0ff" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M255.89 60.00 L266.69 60.00 L272.63 65.94 L272.63 77.55 L266.69 83.49 L255.89 83.49 L255.89 33.00" fill="none" stroke="#8fd0ff" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M304.76 36.51 L287.75 36.51 L287.75 83.49 L304.76 83.49" fill="none" stroke="#8fd0ff" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M287.75 60.00 L301.48 60.00" fill="none" stroke="#8fd0ff" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+  <path d="M316.37 36.51 L325.87 36.51 L334.19 44.83 L334.19 75.17 L325.87 83.49 L316.37 83.49 L316.37 33.00" fill="none" stroke="#8fd0ff" stroke-width="7.02" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
+</svg>

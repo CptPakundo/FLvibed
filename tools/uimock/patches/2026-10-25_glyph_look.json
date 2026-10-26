@@ -1,0 +1,9 @@
+{
+ "_about": "glyph_look (commit c5d0191, the owner 25 Oct 2026: 'allow HUD 2 to use the colorful glyphs ... and HUD classic to use the new HUD 2 glyphs'): one choice of the button glyphs' look for both drawing kits, right after glyph_style.",
+ "add_rows": {
+  "controller/INPUT": {"after": "glyph_style", "rows": [
+   {"key": "glyph_look", "label": "Glyph look", "kind": "picker", "options": ["AUTOMATIC", "COLOURED", "HUD 2 GLYPHS"], "def": "AUTOMATIC",
+    "help": "How the button prompts look: Automatic = HUD 2 in its own colour, the classic HUD and menus in the buttons' colours; Coloured everywhere; HUD 2 style everywhere. Sizes stay as each screen has them."}
+  ]}
+ }
+}

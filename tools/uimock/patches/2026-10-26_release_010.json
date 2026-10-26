@@ -1,0 +1,14 @@
+{
+  "_about": "The 0.1.0 release (the owner, 26 Oct 2026): target ahead inside HUD 2's reticle ring, turret view toggled by X held with the reticle centred and the right stick turning the camera, HUD 2's cruise / tractor row under the ring and the LB hints in the target card's corner.",
+  "states": {
+    "hud/manual": {
+      "notes": ["Built 26 Oct 2026 (0.1.0): the right-stick click (RS) = the nearest object inside HUD 2's reticle ring (the ring is the cone, the owner), set natively; again = the next one there; nothing in the ring = the nearest / next enemy; double click = clear ([RS] x2 CLEAR on the target card). Without a target the card's corner shows [LB] TARGETS and [LB held] WHEEL, faded outside combat."]
+    },
+    "hud/turret": {
+      "notes": ["Built 26 Oct 2026 (0.1.0, supersedes 'X held' above): X held TOGGLES turret view (it stays on after the release; X held again ends it). The reticle stays at the screen centre (gimbal lock-on with aim_mode 1) and the right stick turns the camera itself through the game's look commands (USER_LOOK_ROTATE_CAMERA_*, deflection = the share of frames held). The view stays in sync when a window opens."]
+    },
+    "hud/cruise": {
+      "notes": ["Built 26 Oct 2026 (0.1.0): under HUD 2's ring always [Y] CRUISE (dim when off, CHARGING, CRUISE ON) and, while loot is in the tractor's reach, [X] TRACTOR n; the throttle arc and BOOST / KILL / REV at the ring's bottom centre."]
+    }
+  }
+}
