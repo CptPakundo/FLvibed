@@ -1,0 +1,6 @@
+{
+ "_about": "Release 0.1 (26 Oct 2026): the About row shows the version (core\\version.h), credits and licences; the help no longer says they come at publishing.",
+ "rows": {
+  "about": {"help": "Version, credits and licences."}
+ }
+}

@@ -1,0 +1,5624 @@
+{
+ "_about": "The player-facing UI as decided (artifact 4v4dXbB5GTVt1URowFtSvN, the owner's edits + the design round of 25 Oct 2026) and as BUILT (25 Oct 2026; HUD 2 approved and in build the same day, docs/UI_HUD2.md: the 'Built' notes per screen state and decision, docs/UI_BUILD.md section 5). Source for the registry UI metadata (core/ui_meta.h via tools/ui_meta.py), the bindings presets, every screen's pad layout (prompts, focus, badges, legend), the decisions. 'value' = what was left set in the mock-up, not a setting. Regenerate by reading the artifact's ui/spec document (ArtifactData get ui/spec); patch both halves with tools/uimock/specpatch.py.",
+ "bar": {
+  "enabled": true,
+  "glyph": "ring",
+  "key": "K",
+  "lit": false,
+  "slot": "after"
+ },
+ "bindings": {
+  "common": {
+   "dealers": {
+    "A": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "buy_sell"
+    },
+    "B": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "back"
+    },
+    "DD": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "DL": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "side"
+    },
+    "DR": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "side"
+    },
+    "DU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "L3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "cursor_toggle"
+    },
+    "LB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "side"
+    },
+    "LS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "LT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "qty_dec"
+    },
+    "MENU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "pause"
+    },
+    "R3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "RB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "side"
+    },
+    "RS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "scroll"
+    },
+    "RT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "qty_inc"
+    },
+    "VIEW": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "hub"
+    },
+    "X": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "filter"
+    },
+    "Y": {
+     "dbl": "none",
+     "hold": "compare",
+     "tap": "max"
+    }
+   },
+   "flight_ap": {
+    "A": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "accept"
+    },
+    "B": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "handback"
+    },
+    "DD": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "battery"
+    },
+    "DL": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "cm"
+    },
+    "DR": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "mine"
+    },
+    "DU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "nanobot"
+    },
+    "L3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "LB": {
+     "dbl": "none",
+     "hold": "action_wheel",
+     "tap": "target_picker"
+    },
+    "LS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "handback"
+    },
+    "LT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "afterburner"
+    },
+    "MENU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "pause"
+    },
+    "R3": {
+     "dbl": "clear_target",
+     "hold": "rear",
+     "tap": "target_smart"
+    },
+    "RB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "missile"
+    },
+    "RS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "handback"
+    },
+    "RT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "fire"
+    },
+    "VIEW": {
+     "dbl": "none",
+     "hold": "autopilot",
+     "tap": "hub"
+    },
+    "X": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "goal_panel"
+    },
+    "Y": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "cruise"
+    }
+   },
+   "map": {
+    "A": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_select"
+    },
+    "B": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "back"
+    },
+    "DD": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_snap"
+    },
+    "DL": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_snap"
+    },
+    "DR": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_snap"
+    },
+    "DU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_snap"
+    },
+    "L3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "LB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_scope"
+    },
+    "LS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_cursor"
+    },
+    "LT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "zoom_out"
+    },
+    "MENU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "pause"
+    },
+    "R3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "reset_view"
+    },
+    "RB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_scope"
+    },
+    "RS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "scroll"
+    },
+    "RT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "zoom_in"
+    },
+    "VIEW": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "dest_list"
+    },
+    "X": {
+     "dbl": "none",
+     "hold": "map_remove",
+     "tap": "map_remove"
+    },
+    "Y": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "map_travel"
+    }
+   },
+   "menus": {
+    "A": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "accept"
+    },
+    "B": {
+     "dbl": "none",
+     "hold": "back_all",
+     "tap": "back"
+    },
+    "DD": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "DL": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "DR": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "DU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "L3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "cursor_toggle"
+    },
+    "LB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "tab_prev"
+    },
+    "LS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "LT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "page_prev"
+    },
+    "MENU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "pause"
+    },
+    "R3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "reset_view"
+    },
+    "RB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "tab_next"
+    },
+    "RS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "scroll"
+    },
+    "RT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "page_next"
+    },
+    "VIEW": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "hub"
+    },
+    "X": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "ctx_x"
+    },
+    "Y": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "sec_y"
+    }
+   },
+   "rooms": {
+    "A": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "talk"
+    },
+    "B": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "back"
+    },
+    "DD": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "DL": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "char_prev"
+    },
+    "DR": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "char_next"
+    },
+    "DU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "repair_all"
+    },
+    "L3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "cursor_toggle"
+    },
+    "LB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "room_prev"
+    },
+    "LS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "cursor"
+    },
+    "LT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "MENU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "pause"
+    },
+    "R3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "RB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "room_next"
+    },
+    "RS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "scroll"
+    },
+    "RT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "VIEW": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "hub"
+    },
+    "X": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "news"
+    },
+    "Y": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "launch"
+    }
+   },
+   "text": {
+    "A": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "type"
+    },
+    "B": {
+     "dbl": "none",
+     "hold": "cancel_text",
+     "tap": "backspace"
+    },
+    "DD": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "DL": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "DR": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "DU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "L3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "LB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "shift"
+    },
+    "LS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "focus"
+    },
+    "LT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "caret_l"
+    },
+    "MENU": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "done"
+    },
+    "R3": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "RB": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "shift"
+    },
+    "RS": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "RT": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "caret_r"
+    },
+    "VIEW": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "none"
+    },
+    "X": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "space"
+    },
+    "Y": {
+     "dbl": "none",
+     "hold": "none",
+     "tap": "shift"
+    }
+   }
+  },
+  "preset": "FREELANCER",
+  "presets": {
+   "ACE": {
+    "flight": {
+     "A": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "fire"
+     },
+     "B": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "missile"
+     },
+     "DD": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "battery"
+     },
+     "DL": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "cruise"
+     },
+     "DR": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "mine"
+     },
+     "DU": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "nanobot"
+     },
+     "L3": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "engine_kill"
+     },
+     "LB": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "cm"
+     },
+     "LS": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "steer"
+     },
+     "LT": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "reverse"
+     },
+     "MENU": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "pause"
+     },
+     "R3": {
+      "dbl": "none",
+      "hold": "rear",
+      "tap": "next_enemy"
+     },
+     "RB": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "next_enemy"
+     },
+     "RS": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "strafe_ud"
+     },
+     "RT": {
+      "dbl": "none",
+      "hold": "afterburner",
+      "tap": "throttle"
+     },
+     "VIEW": {
+      "dbl": "none",
+      "hold": "autopilot",
+      "tap": "hub"
+     },
+     "X": {
+      "dbl": "none",
+      "hold": "goto",
+      "tap": "context"
+     },
+     "Y": {
+      "dbl": "none",
+      "hold": "target_picker",
+      "tap": "target_nearest"
+     }
+    }
+   },
+   "ASSISTED": {
+    "flight": {
+     "A": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "context"
+     },
+     "B": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "handback"
+     },
+     "DD": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "battery"
+     },
+     "DL": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "cm"
+     },
+     "DR": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "mine"
+     },
+     "DU": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "nanobot"
+     },
+     "L3": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "none"
+     },
+     "LB": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "none"
+     },
+     "LS": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "none"
+     },
+     "LT": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "target_picker"
+     },
+     "MENU": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "pause"
+     },
+     "R3": {
+      "dbl": "next_enemy",
+      "hold": "rear",
+      "tap": "target_nearest"
+     },
+     "RB": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "missile"
+     },
+     "RS": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "aim"
+     },
+     "RT": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "fire"
+     },
+     "VIEW": {
+      "dbl": "none",
+      "hold": "autopilot",
+      "tap": "hub"
+     },
+     "X": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "goal_panel"
+     },
+     "Y": {
+      "dbl": "none",
+      "hold": "action_wheel",
+      "tap": "cruise"
+     }
+    }
+   },
+   "FREELANCER": {
+    "flight": {
+     "A": {
+      "dbl": "none",
+      "hold": "formation",
+      "tap": "context"
+     },
+     "B": {
+      "dbl": "none",
+      "hold": "reverse",
+      "tap": "free_flight"
+     },
+     "DD": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "battery"
+     },
+     "DL": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "cm"
+     },
+     "DR": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "mine"
+     },
+     "DU": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "nanobot"
+     },
+     "L3": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "engine_kill"
+     },
+     "LB": {
+      "dbl": "none",
+      "hold": "action_wheel",
+      "tap": "target_picker"
+     },
+     "LS": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "throttle"
+     },
+     "LT": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "afterburner"
+     },
+     "MENU": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "pause"
+     },
+     "R3": {
+      "dbl": "clear_target",
+      "hold": "rear",
+      "tap": "target_smart"
+     },
+     "RB": {
+      "dbl": "none",
+      "hold": "torpedo",
+      "tap": "missile"
+     },
+     "RS": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "steer"
+     },
+     "RT": {
+      "dbl": "none",
+      "hold": "none",
+      "tap": "fire"
+     },
+     "VIEW": {
+      "dbl": "none",
+      "hold": "autopilot",
+      "tap": "hub"
+     },
+     "X": {
+      "dbl": "none",
+      "hold": "turret",
+      "tap": "tractor"
+     },
+     "Y": {
+      "dbl": "none",
+      "hold": "weapon_group",
+      "tap": "cruise"
+     }
+    }
+   }
+  }
+ },
+ "decisions": [
+  {
+   "answer": 0,
+   "id": "key",
+   "note": "",
+   "options": [
+    "K",
+    "F10",
+    "Another key (say which in the note)"
+   ],
+   "q": "1. The default autopilot key"
+  },
+  {
+   "answer": 1,
+   "id": "icon",
+   "note": "Built 25 Oct 2026: FLvibed's own .3db (tools\\mk3db.py: a ring and chevron, own material and texture, the bar's blue, lit = the game's yellow tint), the overlay-drawn glyph as the fallback when the file is missing.",
+   "options": [
+    "Overlay-drawn glyph first, a shipped mesh later",
+    "A shipped mesh from the start",
+    "Other (note)"
+   ],
+   "q": "2. The bar button's icon"
+  },
+  {
+   "answer": 1,
+   "id": "entry",
+   "note": "Built: FLVIBED in the free slot of both menus; its caption is drawn by FLvibed (the game never drew a native caption on that button); the pause menu's sixth button is native.",
+   "options": [
+    "A FLVIBED page button in the game's Options screen, in both menus",
+    "Also a sixth button in the F1 pause menu",
+    "Other (note)"
+   ],
+   "q": "3. Where the options live"
+  },
+  {
+   "answer": 0,
+   "id": "tabs",
+   "note": "",
+   "options": [
+    "GENERAL / CONTROLLER / AUTOPILOT / SUBTITLES / MOVIES as in the mock-up",
+    "As I changed them in the mock-up",
+    "Other (note)"
+   ],
+   "q": "4. The tabs"
+  },
+  {
+   "answer": 0,
+   "id": "semantics",
+   "note": "",
+   "options": [
+    "The game's own: instant apply, CANCEL reverts, DEFAULT per tab, leaving keeps; plus Show advanced",
+    "An explicit SAVE button too",
+    "Other (note)"
+   ],
+   "q": "5. Apply semantics"
+  },
+  {
+   "answer": 0,
+   "id": "aprows",
+   "note": "",
+   "options": [
+    "As in the mock-up (my edits included)",
+    "Needs more work (note)"
+   ],
+   "q": "6. The autopilot rows and their words"
+  },
+  {
+   "answer": 0,
+   "id": "pilot",
+   "note": "Built (advanced tier): MILITARY (HARD) = pilot_military_hard, MILITARY = pilot_military_med, PIRATE ACE = pilot_pirate_ace, CIVILIAN = pilot_company_med (the [Pilot] blocks pilots_population.ini has).",
+   "options": [
+    "Advanced tier only (as mocked)",
+    "A player row",
+    "Not at all"
+   ],
+   "q": "6b. The pilot personality row"
+  },
+  {
+   "answer": 0,
+   "id": "subs",
+   "note": "Built: the preview is a wrapped block (name row + rows) whose band grows with the size, drawn by the page from the same settings.",
+   "options": [
+    "Both",
+    "Preview only",
+    "Colours key only",
+    "Neither (note)"
+   ],
+   "q": "7. Subtitles: the new speaker-colours key and the always-visible preview line"
+  },
+  {
+   "answer": 0,
+   "id": "movies",
+   "note": "Built: the Intro row greys a missing file's word as (MISSING) and skips it; the four new keys exist.",
+   "options": [
+    "Now",
+    "Later",
+    "Not at all"
+   ],
+   "q": "8. The MOVIES tab with its four new keys"
+  },
+  {
+   "answer": 0,
+   "id": "modules",
+   "note": "",
+   "options": [
+    "Show them (after restart)",
+    "Leave them to the ini"
+   ],
+   "q": "9. Module switches on the GENERAL tab"
+  },
+  {
+   "answer": 2,
+   "id": "order",
+   "note": "",
+   "options": [
+    "The bar button first, then the page",
+    "The page first",
+    "Both in parallel"
+   ],
+   "q": "10. Build order"
+  },
+  {
+   "answer": 1,
+   "id": "c_preset",
+   "note": "FREELANCER as shaped 25 Oct: LB tap picker / hold wheel (RS picks), R3 smart target / again next / double clear / hold rear, X hold turret view, Y hold weapon-group cycle, no 'my attacker'.",
+   "options": [
+    "FREELANCER as proposed",
+    "As I changed it in the mock-up",
+    "Needs a playtest first (note what to try)"
+   ],
+   "q": "11. The default flight preset (Bindings screen)"
+  },
+  {
+   "answer": 0,
+   "id": "c_ap",
+   "note": "",
+   "options": [
+    "Hold View (half a second, ring)",
+    "L3 + R3",
+    "Hold Menu",
+    "Other (note)"
+   ],
+   "q": "12. Autopilot on the pad"
+  },
+  {
+   "answer": 0,
+   "id": "c_switch",
+   "note": "",
+   "options": [
+    "Automatic by default, one-frame swap, lock in the options (as proposed)",
+    "Manual choice by default",
+    "Other (note)"
+   ],
+   "q": "13. Device switching"
+  },
+  {
+   "answer": 0,
+   "id": "c_glyphs",
+   "note": "Built: the glyphs are drawn by FLvibed itself (GDI shapes and letters, the three families, sharp at any size, no art file); Kenney's CC0 set stays a possible art swap.",
+   "options": [
+    "Xbox / PlayStation / Switch, auto-detected by the pad's ids, overridable; confirm = bottom button with a Nintendo swap option",
+    "Xbox only for now",
+    "Other (note)"
+   ],
+   "q": "14. Glyph families"
+  },
+  {
+   "answer": 2,
+   "id": "c_cursor",
+   "note": "Built: EVERYWHERE is the default (the row's def updated to the decision); the game's arrow is hidden while the focus drives (a D-pad / bumper press) and shown again by the stick.",
+   "options": [
+    "On by default in rooms and maps, off in lists (as mocked)",
+    "Off by default everywhere",
+    "Everywhere by default"
+   ],
+   "q": "15. The pad cursor"
+  },
+  {
+   "answer": 2,
+   "id": "c_hud",
+   "note": "As mocked in v11+: nothing hidden; glyph badges on the HUD's own elements, the contextual button legend (default on), the autopilot status line under the bar (the owner, 25 Oct). | Built as decided: nothing hidden; badges, legend, status line, world prompts. | Rebuilt 25 Oct 2026 (the owner: the first badges were tiny and unnatural): glyphs sized to their element, on its frame line, in the HUD's chrome - TASK_GLYPHS_HUD.md 5. | Superseded for the pad by HUD 2 (25 Oct 2026, the owner's go: 'a modern looking and feeling HUD that has the Freelancer flavor'); the badge HUD stays as the Classic HUD - docs\\UI_HUD2.md.",
+   "options": [
+    "Hide the maneuver bar, NeuroNet buttons and contact filters; status strip + tray + world prompts (as mocked)",
+    "Keep the game's HUD, add the tray only",
+    "Other (note)"
+   ],
+   "q": "16. The pad HUD"
+  },
+  {
+   "answer": 0,
+   "id": "c_newgame",
+   "note": "Built: the mode per save in EXE\\FLvibed\\saves.ini (no game file touched), tagged on the load lists, locked per save.",
+   "options": [
+    "NORMAL / ASSISTED / SPEEDRUN as mocked, the choice locked per save",
+    "NORMAL / SPEEDRUN only",
+    "Other (note)"
+   ],
+   "q": "17. The New Game prompt"
+  },
+  {
+   "answer": 0,
+   "id": "c_livesplit",
+   "note": "Built: the TCP client (starttimer / split / reset / pausegametime / unpausegametime), the split detector over docs\\checkpoints.tsv (193 of 193 checkpoints agree with splits.py on the recorded legs), the HUD timer, the FLvibedSplits struct for autosplitters.",
+   "options": [
+    "The TCP client now (starttimer / split / reset, loadless game time)",
+    "Later",
+    "Not at all"
+   ],
+   "q": "18. LiveSplit"
+  },
+  {
+   "answer": 0,
+   "id": "c_prompts",
+   "note": "",
+   "options": [
+    "Contextual (new screens and pending decisions only)",
+    "Always on every pad screen",
+    "Off"
+   ],
+   "q": "19. Prompt bar default"
+  },
+  {
+   "answer": 0,
+   "id": "c_order",
+   "note": "",
+   "options": [
+    "Foundation (switching, glyphs, prompt bar, focus kit) → flight HUD → bases → dealers → map",
+    "Flight HUD first, foundation as needed",
+    "Other (note)"
+   ],
+   "q": "20. Order of the controller UI work"
+  }
+ ],
+ "device": "xbox",
+ "notes": "I'm mostly pleased with the mockup, and I think it's a good place to start. I may ask for some changes later, but it's much easier to make them with this expanded UI in place.",
+ "presets": {
+  "autopilot": [
+   {
+    "name": "COMPETENT",
+    "values": {
+     "auto_fire": true,
+     "avoid": true,
+     "caution": "WHEN OUTMATCHED",
+     "countermeasures": "WHEN IT MATTERS",
+     "engage": "TARGET, THEN NEAREST",
+     "fast_dock": false,
+     "knowledge": "WHAT YOU HAVE SEEN",
+     "loot": true,
+     "missiles": true,
+     "repair": "WHEN NEEDED",
+     "skip_dock_scene": true
+    }
+   },
+   {
+    "name": "SPEEDRUN",
+    "values": {
+     "auto_fire": true,
+     "avoid": true,
+     "caution": "NEVER LEAVE",
+     "countermeasures": "WHEN IT MATTERS",
+     "engage": "TARGET, THEN NEAREST",
+     "fast_dock": true,
+     "knowledge": "EVERYTHING",
+     "loot": false,
+     "missiles": true,
+     "repair": "WHEN NEEDED",
+     "skip_dock_scene": true
+    }
+   },
+   {
+    "name": "NO CONSUMABLES",
+    "values": {
+     "auto_fire": true,
+     "avoid": true,
+     "caution": "WHEN OUTMATCHED",
+     "countermeasures": "NEVER",
+     "engage": "TARGET, THEN NEAREST",
+     "fast_dock": false,
+     "knowledge": "WHAT YOU HAVE SEEN",
+     "loot": true,
+     "missiles": false,
+     "repair": "NEVER",
+     "skip_dock_scene": true
+    }
+   }
+  ],
+  "controller": [
+   {
+    "name": "FREELANCER",
+    "values": {
+     "autopilot_pad": "HOLD VIEW",
+     "holds_as_toggles": false
+    }
+   },
+   {
+    "name": "ACE",
+    "values": {
+     "autopilot_pad": "HOLD VIEW",
+     "holds_as_toggles": false
+    }
+   },
+   {
+    "name": "ASSISTED",
+    "values": {
+     "autopilot_pad": "HOLD VIEW",
+     "holds_as_toggles": true
+    }
+   }
+  ]
+ },
+ "screens": [
+  {
+   "bg": "img/screens/mainmenu.jpg",
+   "ctx": "menus",
+   "group": "Menus",
+   "id": "mainmenu",
+   "states": [
+    {
+     "extras": [
+      {
+       "focus": 0,
+       "items": [
+        "NEW GAME",
+        "LOAD GAME",
+        "MULTIPLAYER",
+        "OPTIONS",
+        "EXIT"
+       ],
+       "t": "mmbtns"
+      }
+     ],
+     "id": "default",
+     "label": "Main menu",
+     "notes": [
+      "Focus starts on NEW GAME; the D-pad or the left stick moves it; A selects, B does nothing here (the game's own buttons, driven natively).",
+      "The game draws the buttons after its menu animation; the mock-up draws them in the page-button style."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "SELECT",
+       "v": ""
+      }
+     ]
+    },
+    {
+     "extras": [
+      {
+       "dim": true,
+       "focus": 0,
+       "items": [
+        "NEW GAME",
+        "LOAD GAME",
+        "MULTIPLAYER",
+        "OPTIONS",
+        "EXIT"
+       ],
+       "t": "mmbtns"
+      },
+      {
+       "focus": 0,
+       "t": "newgame"
+      }
+     ],
+     "id": "newgame",
+     "label": "New Game prompt",
+     "notes": [
+      "One extra step after NEW GAME: a short list, the default highlighted, one description line for the highlighted entry (the convention from Steel Soul / difficulty pickers).",
+      "SPEEDRUN MODE = the autopilot's speedrun preset available, the timer and splits on the HUD, LiveSplit fed over TCP (starttimer on this click, split per story checkpoint and at the final cutscene, reset on the main menu); the choice is written into the save and shown as a tag on the save slot, and it is locked for that save so recordings stay comparable.",
+      "ASSISTED = the autopilot available from the first mission with the competent preset; NORMAL = nothing of the autopilot shows until you switch it on once.",
+      "Built: with the pad only (keyboard and mouse run the game's own New Game = NORMAL); the tag ASSISTED / SPEEDRUN is drawn over the save's row in both load lists."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "START",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "BACK",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Main menu"
+  },
+  {
+   "bg": "img/screens/menu_load.jpg",
+   "ctx": "menus",
+   "group": "Menus",
+   "id": "load",
+   "states": [
+    {
+     "focus": [
+      540,
+      225,
+      1100,
+      26,
+      "focused save"
+     ],
+     "hidden": [
+      [
+       210,
+       192,
+       480,
+       232,
+       "LOAD GAME button → A"
+      ],
+      [
+       210,
+       272,
+       480,
+       312,
+       "DELETE → hold X"
+      ]
+     ],
+     "id": "default",
+     "label": "Load",
+     "notes": [
+      "A loads the focused save at once (no double-tap, the game's list needs a double-click with the mouse).",
+      "Delete is a one-second hold with a sweep that cancels on release (destructive action).",
+      "The description box on the left fills from the focused row; RS scrolls the list a page at a time."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "LOAD",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "DELETE",
+       "v": "hold"
+      },
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "SCROLL",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "BACK",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Load game"
+  },
+  {
+   "bg": "img/screens/pause_space.jpg",
+   "ctx": "menus",
+   "group": "Menus",
+   "id": "pause_space",
+   "states": [
+    {
+     "focus": [
+      728,
+      314,
+      492,
+      100,
+      "RESUME"
+     ],
+     "id": "default",
+     "label": "Pause",
+     "notes": [
+      "The sixth button FLVIBED (decided 25 Oct) sits under QUIT TO MAIN MENU and opens the FLvibed options page.",
+      "B resumes from anywhere in the menu stack; Menu (Start) toggles the pause as F1 does.",
+      "Built: the sixth button is a native text button (the game's own class; the five boxes re-pitched to the six-slot layout inside the frame); FLVIBED opens FLvibed's page as an overlay over the pause menu."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "SELECT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "RESUME",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Pause menu (space)"
+  },
+  {
+   "bg": "img/screens/pause_docked.jpg",
+   "ctx": "menus",
+   "group": "Menus",
+   "id": "pause_docked",
+   "states": [
+    {
+     "focus": [
+      735,
+      295,
+      450,
+      90,
+      "RESUME"
+     ],
+     "id": "default",
+     "label": "Pause",
+     "notes": [
+      "Docked, the menu has SAVE GAME too (five slots + FLVIBED as the sixth)."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "SELECT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "RESUME",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Pause menu (docked)"
+  },
+  {
+   "bg": "img/screens/save_dialog.jpg",
+   "ctx": "text",
+   "group": "Menus",
+   "id": "save",
+   "states": [
+    {
+     "focus": [
+      1150,
+      232,
+      500,
+      40,
+      "description"
+     ],
+     "hidden": [
+      [
+       1398,
+       196,
+       1456,
+       254,
+       "X → B"
+      ]
+     ],
+     "id": "default",
+     "label": "Save",
+     "notes": [
+      "The description is pre-filled by FLvibed (\"<location> · <date>\"), so a save is A, A; Y opens the on-screen keyboard to change it.",
+      "The list below holds the existing saves; A on one of them overwrites after a confirm.",
+      "Built: the description reads '<location> - <date>' within the game's 30 characters (ASCII separator; 'Planet ' dropped when it does not fit), e.g. 'Manhattan - 25 Oct 04:18'; typed through the game's own text path."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "SAVE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "Y"
+       ],
+       "label": "KEYBOARD",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "DELETE",
+       "v": "hold"
+      },
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "SCROLL",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    },
+    {
+     "extras": [
+      {
+       "t": "osk"
+      }
+     ],
+     "focus": [
+      1150,
+      232,
+      500,
+      40,
+      "description"
+     ],
+     "id": "keyboard",
+     "label": "On-screen keyboard",
+     "notes": [
+      "FLvibed's own keyboard (the Windows touch keyboard must never pop up: a known Ubisoft failure). D-pad / stick moves, A types, Menu confirms; the keyboard also serves the chat and the nav-map search."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "TYPE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "SPACE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "BACKSPACE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "SHIFT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "MENU"
+       ],
+       "label": "DONE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Save game"
+  },
+  {
+   "bg": "img/screens/space_death.jpg",
+   "ctx": "menus",
+   "group": "Menus",
+   "id": "death",
+   "states": [
+    {
+     "focus": [
+      1015,
+      612,
+      185,
+      36,
+      "LOAD AUTOSAVE"
+     ],
+     "id": "default",
+     "label": "Dialog",
+     "notes": [
+      "Focus starts on LOAD AUTOSAVE; the three buttons are the game's own (native click). B does nothing here on purpose."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "SELECT",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Death / mission failed"
+  },
+  {
+   "bg": "img/screens/space_target.jpg",
+   "ctx": "flight",
+   "group": "Flight",
+   "id": "hud",
+   "states": [
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "items": [
+        [
+         "A",
+         "DOCK AT FORT BUSH"
+        ],
+        [
+         "Y",
+         "CRUISE"
+        ],
+        [
+         "LB",
+         "TARGETS"
+        ],
+        [
+         "R3",
+         "TARGET AHEAD"
+        ],
+        [
+         "VIEW",
+         "MAP"
+        ]
+       ],
+       "t": "legend"
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "DOCK",
+       "t": "wprompt",
+       "x": 1180,
+       "y": 920
+      }
+     ],
+     "id": "pad",
+     "label": "Pad HUD (target in range)",
+     "notes": [
+      "The game's HUD stays as it is, every panel readable as with the mouse (the owner, 25 Oct). What the pad adds: glyph badges on the HUD's own elements that a button acts on (the maneuver bar's four buttons and the autopilot button, the cruise box, the NeuroNet box, the contact-list expander, the repair and battery buttons, the weapon groups, next enemy), lit with the element.",
+      "The button legend (Lost Judgment style) sits in the empty right-middle of the screen and lists only what applies now: here a dockable target in range, cruise, the picker, the target under the reticle, the map. It changes with the context and never nags.",
+      "A world prompt by the target only when something unusual is possible now. A mouse move or a key removes the badges and the legend in one frame.",
+      "Built 25 Oct 2026: the badges are anchored to the HUD's controls by NAME (never by pixel) and sit half outside each control's top-right corner (the weapon-group badge above its button) so the face stays readable; the legend caps at 9 rows, HOLD = a thin bar under the glyph plus the word; a non-dockable target reads GO TO <name>, a loot target TRACTOR <name>; the AUTOPILOT row appears once the autopilot was used in this game or Autopilot hints is on. The bar's frame grows to the right by one button; the game's four buttons, the tab and the cruise box stay where they are.",
+      "Rebuilt 25 Oct 2026 after the owner's review: a badge is 0.45 of its element's height (0.022..0.036 H, times Text size), centred on the element and sitting on its panel's frame line that faces the open screen - the bar's glyphs form a row on the bar's bottom edge (B free flight, A goto / dock whichever applies, A + hold formation, View + hold autopilot), Y on the cruise box's lower edge, View under the NeuroNet box, the D-pad glyphs (the pressed arm highlighted) and Y + hold on the bottom-right header's top line over the consumables and the active weapon group, LB and R3 inside the contact-list header; the HUD's own chrome and font, the HUD base only inside each glyph's silhouette, the game's yellow when the element is lit. The legend's glyphs at the HUD font's height; a long legend shifts up to clear the bottom panels.",
+      "HUD 2 (approved 25 Oct 2026, docs\\UI_HUD2.md; the HUD row, default HUD 2 ON THE PAD): in pad flight FLvibed's own HUD replaces the game's panels - the reticle ring (shield left, hull right, power below, speed inside), the objective and maneuver top left, the target card top right with the threat list, the ship panel bottom left, the loadout with the D-pad cross bottom right, context prompts under the ship, one alert at a time; the subtitles' panel with the portrait top centre. The badges above remain the Classic HUD. Mock-ups: the HUD 2 proposal page (artifact D6XnaBvWLKHARfdvTQuj3Y).",
+      "The story / tutorial popup (NeuroNet message box, e.g. M01's Basics of Combat) on the pad: A OK (or YES), B CLOSE (or NO / LATER when the box has them) - the box's own buttons, natively; the prompt bar says so. The flight buttons stay the flight's while no box is up."
+     ],
+     "prompts": []
+    },
+    {
+     "bg": "img/screens/hud_space.jpg",
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "items": [
+        [
+         "R3",
+         "TARGET AHEAD / NEAREST"
+        ],
+        [
+         "LB",
+         "TARGETS"
+        ],
+        [
+         "Y",
+         "CRUISE"
+        ],
+        [
+         "VIEW",
+         "MAP"
+        ]
+       ],
+       "t": "legend"
+      }
+     ],
+     "id": "manual",
+     "label": "No target",
+     "notes": [
+      "Without a target the legend offers the ways to get one and the calm actions. The maneuver bar's A badge moves to whichever button applies once a target exists (GOTO for a point, DOCK for a dockable).",
+      "Built 26 Oct 2026 (0.1.0): the right-stick click (RS) = the nearest object inside HUD 2's reticle ring (the ring is the cone, the owner), set natively; again = the next one there; nothing in the ring = the nearest / next enemy; double click = clear ([RS] x2 CLEAR on the target card). Without a target the card's corner shows [LB] TARGETS and [LB held] WHEEL, faded outside combat."
+     ],
+     "prompts": []
+    },
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "on": false,
+       "t": "strip",
+       "text": "2 HOSTILES · LIBERTY ROGUES · NEAREST 1.1 KM",
+       "x": 80,
+       "y": 160
+      },
+      {
+       "items": [
+        [
+         "RT",
+         "FIRE GROUP 1"
+        ],
+        [
+         "LT",
+         "AFTERBURNER"
+        ],
+        [
+         "RB",
+         "MISSILE",
+         "",
+         "24"
+        ],
+        [
+         "R3",
+         "NEXT ENEMY"
+        ],
+        [
+         "DU",
+         "NANOBOT",
+         "",
+         "3"
+        ],
+        [
+         "DD",
+         "BATTERY",
+         "",
+         "3"
+        ],
+        [
+         "DL",
+         "COUNTERMEASURE",
+         "",
+         "12"
+        ],
+        [
+         "DR",
+         "MINE",
+         "",
+         "8"
+        ],
+        [
+         "B",
+         "REVERSE",
+         "hold"
+        ]
+       ],
+       "t": "legend",
+       "title": "COMBAT"
+      }
+     ],
+     "id": "combat",
+     "label": "Combat",
+     "notes": [
+      "In a fight the legend becomes the combat sheet: weapons, the consumables with their counts (the D-pad), reverse. Counts the HUD does not show (countermeasures, mines) live here. A line under the bar names the threat.",
+      "Built: FIRE GROUP n shows only with Weapon groups = CYCLE ON Y HOLD (else FIRE); NEXT ENEMY resolves to R3 in FREELANCER; the MINE row carries the mine count (counted by ammo)."
+     ],
+     "prompts": []
+    },
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "on": true,
+       "t": "strip",
+       "text": "AUTOPILOT · DOCK AT FORT BUSH · 1.9 KM · WAITING FOR CLEARANCE",
+       "x": 80,
+       "y": 160
+      },
+      {
+       "items": [
+        [
+         "LS",
+         "HAND BACK"
+        ],
+        [
+         "X",
+         "GOALS"
+        ],
+        [
+         "VIEW",
+         "AUTOPILOT OFF",
+         "hold"
+        ],
+        [
+         "RT",
+         "FIRE"
+        ]
+       ],
+       "t": "legend",
+       "title": "AUTOPILOT"
+      }
+     ],
+     "id": "autopilot",
+     "label": "Autopilot flying",
+     "notes": [
+      "While the autopilot flies, its one state line sits under the maneuver bar (what it does, how far, why it waits) and the bar's autopilot button is lit; the legend shows the three things that matter: hand back, the goal panel, off.",
+      "Any stick past the hand-back threshold returns the ship at once; letting go does not re-engage (in turret view the right stick aims, so only the left stick or B hands back). RT still fires.",
+      "Built: the status line is mode, target, distance and the autopilot's wait reason; it also shows CRUISE - CHARGING - <target> and TURRET VIEW."
+     ],
+     "prompts": []
+    },
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "t": "picker"
+      }
+     ],
+     "id": "picker",
+     "label": "Target picker",
+     "notes": [
+      "Tap LB: a pad-native picker over the same contacts the game lists, in categories on the bumpers (Threats, Mission, Navigation, Ships, Loot), rows sorted by relevance with distance and attitude; moving the focus previews the target (the game's own target box follows); A selects natively, B keeps the previous target. A modal has its own prompt bar, so the legend steps aside.",
+      "The quick targeting is R3: tap = what the reticle points at (the screen centre with the reticle off), else the nearest enemy; tap again = the next of that kind; double tap = clear; hold = rear view.",
+      "Built: the panel sits right-middle (the legend's place) with a header <CATEGORY> <count>, a strip of the five categories with their counts, 7 rows with scroll arrows; attackers are prefixed '!'; D-pad left / right switch categories too; the left stick never walks rows (it keeps flying); every focus change selects natively, so the game's target box follows; the prompt bar lists CATEGORY, ROW, TARGET, KEEP OLD."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "CATEGORY",
+       "v": ""
+      },
+      {
+       "keys": [
+        "DU",
+        "DD"
+       ],
+       "label": "ROW",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "TARGET",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "KEEP OLD",
+       "v": ""
+      }
+     ]
+    },
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "items": [
+        "SCAN CARGO",
+        "WEAPON GROUP",
+        "CRUISE DISRUPTOR",
+        "FORMATION",
+        "COMMS",
+        "CONTACT FILTER",
+        "AUTOPILOT GOALS",
+        "REAR VIEW"
+       ],
+       "sel": null,
+       "t": "wheel"
+      }
+     ],
+     "id": "wheel",
+     "label": "Action wheel (hold LB)",
+     "notes": [
+      "Rare and contextual actions live in one wheel: hold LB, pick with the right stick (a dead zone keeps steering noise out; the D-pad works too), release to do it. The left stick keeps flying meanwhile. Scan cargo lives here: contextual, still two motions away.",
+      "Built: nothing is pre-highlighted - the right stick (past a dead zone) or the D-pad picks, a bare hold and release does nothing; drawn as label boxes on a ring round the reticle, the pick repeated under it; with TWO GROUPS ON THE TRIGGERS an ENGINE KILL slot joins; COMMS = the game's hail (USER_RADIO); the right stick does not steer while the wheel is open."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "PICK",
+       "v": ""
+      },
+      {
+       "keys": [
+        "LB"
+       ],
+       "label": "RELEASE = DO",
+       "v": ""
+      }
+     ]
+    },
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "on": true,
+       "t": "strip",
+       "text": "AUTOPILOT · DOCK AT FORT BUSH · 1.9 KM",
+       "x": 80,
+       "y": 160
+      },
+      {
+       "t": "goals"
+      }
+     ],
+     "id": "goals",
+     "label": "Autopilot goal panel",
+     "notes": [
+      "The goal panel (AUTOPILOT_UX section 5): actions built from the target and the objective, the queue, a few settings; one column, tabs on the bumpers, every action on a face button. The sticks keep flying while it is open.",
+      "Built: A = DO NOW starts the goal and closes the panel (the autopilot runs one goal at a time); QUEUE and DO NEXT are drawn greyed until the autopilot has a goal queue; SETTINGS = the AUTOPILOT tab's seven player rows (Combat, Fire the guns, Missiles, Countermeasures, Nanobots and batteries, Loot, Caution) through the settings bus; the QUEUE tab shows the running goal, the objective step and a travel plan's steps."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "TAB",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "DO NOW",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "QUEUE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "Y"
+       ],
+       "label": "DO NEXT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    },
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "on": true,
+       "t": "strip",
+       "text": "AUTOPILOT · FLY TO TRADE LANE · 4.1 KM",
+       "x": 80,
+       "y": 160
+      },
+      {
+       "delta": "−3.1",
+       "good": true,
+       "split": "M01 · JUNI",
+       "t": "timer",
+       "time": "0:14:07.3",
+       "y": 120
+      },
+      {
+       "items": [
+        [
+         "LS",
+         "HAND BACK"
+        ],
+        [
+         "X",
+         "GOALS"
+        ],
+        [
+         "VIEW",
+         "AUTOPILOT OFF",
+         "hold"
+        ]
+       ],
+       "t": "legend",
+       "title": "AUTOPILOT"
+      }
+     ],
+     "id": "speedrun",
+     "label": "Speedrun mode",
+     "notes": [
+      "In a speedrun-mode game the timer sits top right under the NeuroNet box: run time, the current split, the delta against your best. The same numbers go to LiveSplit (TCP 16834) as starttimer / split / reset, with game time paused during loads.",
+      "The in-game timer is for practice and splits; speedrun.com Freelancer is timed in real time by hand, so the mod never calls its timer official.",
+      "Built: the timer shows for keyboard and pad alike in a speedrun-mode save; deltas and split names use ASCII '-' (the UI fonts have no middle dot); the mode, clock and checkpoint of a save live in EXE\\FLvibed\\saves.ini (no game file is touched); a loaded speedrun save resumes its clock and splits, LiveSplit's timer starts only on the New Game click."
+     ],
+     "prompts": []
+    },
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "on": false,
+       "t": "strip",
+       "text": "TURRET VIEW",
+       "x": 80,
+       "y": 160
+      },
+      {
+       "items": [
+        [
+         "RS",
+         "AIM"
+        ],
+        [
+         "RT",
+         "FIRE"
+        ],
+        [
+         "LS",
+         "THROTTLE / STRAFE"
+        ],
+        [
+         "B",
+         "EXIT"
+        ]
+       ],
+       "t": "legend",
+       "title": "TURRET VIEW"
+      }
+     ],
+     "id": "turret",
+     "label": "Turret view",
+     "notes": [
+      "Turret view (the game's H): the camera detaches, the right stick aims the view, the turrets and any gun whose arc reaches the point fire there, the ship flies straight on at its throttle. In FREELANCER it is X held (the owner, 25 Oct); in ACE a wheel toggle; B exits.",
+      "ASSISTED is built on it: the autopilot flies and fights, you aim and fire from the turret camera (the autopilot design's \"turret mode\"). A tick on the reticle shows when the autopilot is correcting.",
+      "Hand-back exception: with the autopilot on, the right stick is the aim here and does not hand the ship back; the left stick or B does.",
+      "Built: in ACE the turret view is X held too for now (the wheel toggle is not built); with the autopilot on, the right stick aims and does not hand the ship back.",
+      "Built 26 Oct 2026 (0.1.0, supersedes 'X held' above): X held TOGGLES turret view (it stays on after the release; X held again ends it). The reticle stays at the screen centre (gimbal lock-on with aim_mode 1) and the right stick turns the camera itself through the game's look commands (USER_LOOK_ROTATE_CAMERA_*, deflection = the share of frames held). The view stays in sync when a window opens."
+     ],
+     "prompts": []
+    },
+    {
+     "bg": "img/screens/space_cruise.jpg",
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "on": false,
+       "t": "strip",
+       "text": "CRUISE · FORT BUSH · 1.2 KM",
+       "x": 80,
+       "y": 160
+      },
+      {
+       "items": [
+        [
+         "B",
+         "DROP CRUISE"
+        ],
+        [
+         "A",
+         "DOCK AT FORT BUSH"
+        ],
+        [
+         "LB",
+         "TARGETS"
+        ]
+       ],
+       "t": "legend"
+      }
+     ],
+     "id": "cruise",
+     "label": "Cruise",
+     "notes": [
+      "Y toggled cruise; the cruise box's badge lights and the legend offers B to drop it (the cancel button also leaves lanes and cancels docks).",
+      "Built 26 Oct 2026 (0.1.0): under HUD 2's ring always [Y] CRUISE (dim when off, CHARGING, CRUISE ON) and, while loot is in the tractor's reach, [X] TRACTOR n; the throttle arc and BOOST / KILL / REV at the ring's bottom centre."
+     ],
+     "prompts": []
+    }
+   ],
+   "title": "Flight HUD"
+  },
+  {
+   "bg": "img/screens/space_contactlist.jpg",
+   "ctx": "flight",
+   "group": "Flight",
+   "id": "contacts",
+   "states": [
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         240,
+         128,
+         "B",
+         "FREE"
+        ],
+        [
+         464,
+         128,
+         "A",
+         "GOTO"
+        ],
+        [
+         688,
+         128,
+         "A",
+         "DOCK"
+        ],
+        [
+         912,
+         128,
+         "A",
+         "FORM",
+         "hold"
+        ],
+        [
+         1120,
+         128,
+         "VIEW",
+         "AUTOPILOT",
+         "hold"
+        ],
+        [
+         230,
+         284,
+         "Y",
+         "CRUISE"
+        ],
+        [
+         1620,
+         62,
+         "VIEW",
+         "NEURONET"
+        ],
+        [
+         330,
+         844,
+         "LB",
+         "TARGETS"
+        ],
+        [
+         71,
+         816,
+         "R3",
+         "NEXT"
+        ],
+        [
+         1618,
+         816,
+         "DU",
+         "NANO"
+        ],
+        [
+         1698,
+         816,
+         "DD",
+         "BATT"
+        ],
+        [
+         1810,
+         816,
+         "Y",
+         "GROUP 1 / 2",
+         "hold"
+        ]
+       ],
+       "t": "badges"
+      },
+      {
+       "items": [
+        [
+         "LB",
+         "TARGETS"
+        ],
+        [
+         "R3",
+         "TARGET AHEAD"
+        ],
+        [
+         "A",
+         "DOCK AT FORT BUSH"
+        ],
+        [
+         "VIEW",
+         "MAP"
+        ]
+       ],
+       "t": "legend"
+      }
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "The game's expanded contact list stays readable; its filter buttons stay and carry the picker's badge (the picker's category tabs do the same job on the bumpers). The list walk (next / previous target) is on the picker and R3, so the D-pad keeps the consumables."
+     ],
+     "prompts": []
+    }
+   ],
+   "title": "Contact list (expanded)"
+  },
+  {
+   "bg": "img/screens/space_chat.jpg",
+   "ctx": "text",
+   "group": "Flight",
+   "id": "chat",
+   "states": [
+    {
+     "extras": [
+      {
+       "t": "osk",
+       "y": 700
+      }
+     ],
+     "focus": [
+      1484,
+      648,
+      220,
+      36,
+      "chat field"
+     ],
+     "id": "default",
+     "label": "Chat open",
+     "notes": [
+      "Chat (Y in the ship wheel, or the keyboard's Enter) opens the game's own field with FLvibed's on-screen keyboard; Menu sends. Mostly for multiplayer; the console plugin reads commands here too.",
+      "Built: the keyboard sits at 0.50 H (HDE's chat field is at 0.89 H and would be covered)."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "TYPE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "SPACE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "BACKSPACE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "MENU"
+       ],
+       "label": "SEND",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Chat"
+  },
+  {
+   "bg": "img/screens/space_navmap.jpg",
+   "ctx": "map",
+   "group": "NeuroNet",
+   "id": "navmap",
+   "states": [
+    {
+     "extras": [
+      {
+       "t": "cursor",
+       "x": 905,
+       "y": 505
+      },
+      {
+       "t": "dest"
+      }
+     ],
+     "focus": [
+      648,
+      172,
+      620,
+      634,
+      "nav map"
+     ],
+     "hidden": [
+      [
+       655,
+       176,
+       980,
+       206,
+       "map icon row → bumpers / wheel"
+      ]
+     ],
+     "id": "default",
+     "label": "Map cursor",
+     "notes": [
+      "The left stick drives FLvibed's own map cursor (speed ramps, slows over objects, pulls toward them; the D-pad snaps to the nearest object). A selects the object under it, A again plots it as a waypoint (the game keeps up to 99); X removes the last, hold X clears the route; Y travels the route with the autopilot.",
+      "View toggles the destination list beside the map: systems, then bases / gates / holes known to you, with route length; A sets the route the same way.",
+      "The map's own icon row (filters, zoom, legend) moves to the bumpers and the wheel; R3 resets the view.",
+      "Built: the map's objects are drawn by the map itself (not controls), so the left stick drives the game's own cursor with magnetism over controls and there is no D-pad snap; LT / RT work only while the map shows its zoom buttons; X = the map's remove button when shown, else the last waypoint removed natively, held = clear all; View's destination list covers the current system (bases, planets, stations, gates, holes by distance), A plots the game's best path, Y travels it with the autopilot."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LS"
+       ],
+       "label": "CURSOR",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "SELECT · AGAIN = WAYPOINT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "REMOVE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "Y"
+       ],
+       "label": "TRAVEL",
+       "v": ""
+      },
+      {
+       "keys": [
+        "LT",
+        "RT"
+       ],
+       "label": "ZOOM",
+       "v": ""
+      },
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "SYSTEM / UNIVERSE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Nav map"
+  },
+  {
+   "bg": "img/screens/space_inventory.jpg",
+   "ctx": "menus",
+   "group": "NeuroNet",
+   "id": "inventory",
+   "states": [
+    {
+     "focus": [
+      566,
+      303,
+      320,
+      56,
+      "focused item"
+     ],
+     "hidden": [
+      [
+       1540,
+       170,
+       1600,
+       210,
+       "X → B"
+      ]
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "D-pad / stick walks the item rows; the infocard on the right follows the focus and RS scrolls it. Jettison is a hold with a sweep.",
+      "Weapon groups: on a focused weapon, D-pad left / right ticks its group boxes (the game's own checkboxes), so a granular loadout is set up here and fired by the Weapon groups setting's choice (one fire button, Y-hold cycling, or two groups on the triggers).",
+      "View is the hub: from here LB / RB also switch to the other NeuroNet windows (map, log, status, info).",
+      "Built: the window has no CARGO / EQUIPMENT / SHIP tabs (filter buttons only): prompts D-pad ITEM, A USE / MOUNT, RS INFO, B CLOSE; weapon groups are set on the HUD's group buttons (Y hold cycles), not in this window; JETTISON hold is not built."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "CARGO / EQUIPMENT / SHIP",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "USE / MOUNT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "JETTISON",
+       "v": "hold"
+      },
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "INFO",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Inventory"
+  },
+  {
+   "bg": "img/screens/space_missionlog.jpg",
+   "ctx": "menus",
+   "group": "NeuroNet",
+   "id": "missionlog",
+   "states": [
+    {
+     "focus": [
+      1066,
+      643,
+      190,
+      40,
+      "LOG"
+     ],
+     "hidden": [
+      [
+       1540,
+       170,
+       1600,
+       210,
+       "X → B"
+      ]
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "The two bottom tabs (MISSION / LOG) are on the bumpers; RS scrolls the text; nothing to select."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "MISSION / LOG",
+       "v": ""
+      },
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "SCROLL",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Neural Net log"
+  },
+  {
+   "bg": "img/screens/space_playerinfo.jpg",
+   "ctx": "menus",
+   "group": "NeuroNet",
+   "id": "playerinfo",
+   "states": [
+    {
+     "focus": [
+      560,
+      330,
+      340,
+      44,
+      "faction"
+     ],
+     "hidden": [
+      [
+       1540,
+       170,
+       1600,
+       210,
+       "X → B"
+      ]
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "The faction list is focusable (the bar fills by focus); stats are read-only. Pure glyph work: the game's screen works as it is.",
+      "Built: one window holds reputation and stats (no tabs exist): prompts D-pad FACTION, RS SCROLL, B CLOSE."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "REPUTATION / STATS",
+       "v": ""
+      },
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "SCROLL",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Player status"
+  },
+  {
+   "bg": "img/screens/space_help.jpg",
+   "ctx": "menus",
+   "group": "NeuroNet",
+   "id": "help",
+   "states": [
+    {
+     "hidden": [
+      [
+       1545,
+       170,
+       1605,
+       210,
+       "X → B"
+      ]
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "Read-only; B closes."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "SCROLL",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Current information"
+  },
+  {
+   "bg": "img/screens/base_cityscape.jpg",
+   "ctx": "rooms",
+   "group": "Bases",
+   "id": "cityscape",
+   "states": [
+    {
+     "extras": [
+      {
+       "t": "navlabels"
+      }
+     ],
+     "focus": [
+      1005,
+      20,
+      60,
+      60,
+      "current room"
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "The NavBar's top row (Bar, Trader, Equipment, Ship dealer, Cityscape) is a ring on the bumpers; the prompt bar names the rooms; Y launches where the story allows it (the mission-added launch button).",
+      "The Destiny-style cursor option: the left stick points at the room's clickables (the ship, the launch pad); pressing a direct button (D-pad, bumpers) returns to focus.",
+      "Everything ends in the game's own room logic (the NavBar's hotspot records), never in cursor emulation."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "ROOM",
+       "v": ""
+      },
+      {
+       "keys": [
+        "Y"
+       ],
+       "label": "LAUNCH",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "SELECT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "LS"
+       ],
+       "label": "CURSOR",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Base: rooms"
+  },
+  {
+   "bg": "img/screens/base_bar.jpg",
+   "ctx": "rooms",
+   "group": "Bases",
+   "id": "bar",
+   "states": [
+    {
+     "extras": [
+      {
+       "items": [
+        [
+         "1",
+         "RUMOUR"
+        ],
+        [
+         "2",
+         "CHAT"
+        ],
+        [
+         "3",
+         "JOB"
+        ],
+        [
+         "4",
+         "RUMOUR"
+        ],
+        [
+         "5",
+         "RUMOUR"
+        ],
+        [
+         "6",
+         "BRIBE"
+        ],
+        [
+         "7",
+         "RUMOUR"
+        ]
+       ],
+       "sel": 2,
+       "t": "charstrip"
+      }
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "Bar characters are 3D hotspots, not controls: the strip lists them with what each offers (story first, then jobs, rumours, bribes), D-pad left / right moves the focus, the game's own hover highlight follows, A talks natively.",
+      "Y = the job board, X = the news terminal (shortcuts from outside a screen, as the user's rule allows). The pad cursor option points at a character directly.",
+      "Built: the strip shows in every room with characters (the dealers' rooms too: the dealer and the patrons), A talks there as well.",
+      "Changed (the owner, 25 Oct 2026): NO character strip. D-pad left / right walks the room's characters in screen order (left to right) with the game's own hover; the offer word (JOB / RUMOUR / BRIBE / INFO, a yellow star for the story character) sits on the name card - HUD 2's card under ui_style 1, a small label on the game's own card under ui_style 0; during a conversation the room layer (card, offer, prompts) is hidden; the rumour / info window closes with A or B (A CLOSE). The 'charstrip' element above is superseded."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "DL",
+        "DR"
+       ],
+       "label": "CHARACTER",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "TALK",
+       "v": ""
+      },
+      {
+       "keys": [
+        "Y"
+       ],
+       "label": "JOB BOARD",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "NEWS",
+       "v": ""
+      },
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "ROOM",
+       "v": ""
+      }
+     ]
+    },
+    {
+     "extras": [
+      {
+       "t": "offer"
+      }
+     ],
+     "id": "offer",
+     "label": "Mission offer",
+     "notes": [
+      "A story or job offer dialog: A accepts, B declines (the game's own OfferDialog buttons, native click)."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "ACCEPT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "DECLINE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Bar"
+  },
+  {
+   "bg": "img/screens/base_jobboard.jpg",
+   "ctx": "menus",
+   "group": "Bases",
+   "id": "jobboard",
+   "states": [
+    {
+     "focus": [
+      432,
+      232,
+      760,
+      64,
+      "focused job"
+     ],
+     "hidden": [
+      [
+       1500,
+       346,
+       1600,
+       380,
+       "ACCEPT JOB → hold A"
+      ]
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "The game's list with focus; the description follows; accepting is a short hold (a commitment)."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "DU",
+        "DD"
+       ],
+       "label": "JOB",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "ACCEPT",
+       "v": "hold"
+      },
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "SCROLL",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Job board"
+  },
+  {
+   "bg": "img/screens/base_news.jpg",
+   "ctx": "menus",
+   "group": "Bases",
+   "id": "news",
+   "states": [
+    {
+     "focus": [
+      432,
+      230,
+      420,
+      36,
+      "headline"
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "Headlines are focusable rows; RS scrolls the story."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "DU",
+        "DD"
+       ],
+       "label": "STORY",
+       "v": ""
+      },
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "SCROLL",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "News"
+  },
+  {
+   "bg": "img/screens/base_commodity_dealer.jpg",
+   "ctx": "dealers",
+   "group": "Bases",
+   "id": "commodity",
+   "states": [
+    {
+     "extras": [
+      {
+       "t": "qty",
+       "text": "× 20 BORON  ·  $3,100  ·  CARGO 20 / 60",
+       "x": 760,
+       "y": 700
+      }
+     ],
+     "focus": [
+      1200,
+      370,
+      390,
+      70,
+      "focused good"
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "The game's two-list window, adapted: bumpers switch the side (your cargo / the dealer), D-pad walks the rows, triggers set the quantity (hold = fast), A buys or sells, Y = all you can afford / all you have. The transfer panel in the middle shows the running total and the profit against known prices.",
+      "Keyboard and mouse keep the game's own window.",
+      "Built: the prompt bar caps at five, so the D-pad ITEM prompt is left out (LB / RB side, LT / RT QUANTITY, A BUY / SELL, Y MAX, B CLOSE); the middle panel shows QUANTITY n / max under the game's own total (the game's price text is not readable by FLvibed), not a running total of its own."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "SIDE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "DU",
+        "DD"
+       ],
+       "label": "ITEM",
+       "v": ""
+      },
+      {
+       "keys": [
+        "LT",
+        "RT"
+       ],
+       "label": "QUANTITY",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "BUY",
+       "v": ""
+      },
+      {
+       "keys": [
+        "Y"
+       ],
+       "label": "MAX",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Commodity trader"
+  },
+  {
+   "bg": "img/screens/base_equipment_dealer.jpg",
+   "ctx": "dealers",
+   "group": "Bases",
+   "id": "equipment",
+   "states": [
+    {
+     "extras": [
+      {
+       "t": "qty",
+       "text": "LAVABLADE MK I  ·  $500  ·  VS JUSTICE MK I: +12 % DAMAGE, −8 % REFIRE",
+       "x": 760,
+       "y": 700
+      }
+     ],
+     "focus": [
+      1296,
+      290,
+      290,
+      72,
+      "focused item"
+     ],
+     "hidden": [
+      [
+       480,
+       666,
+       560,
+       700,
+       "category icons → X"
+      ]
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "Same window as the trader plus X for the category filter (the game's icon row) and a compare line (equipped vs selected) in the middle panel; A buys, or mounts an item you own.",
+      "Built: Y = MAX quantity, no COMPARE line (the game's stat text is not readable); A on one of your own rows mounts / unmounts the item through the game's own toggle box (the list re-sorts after each toggle: mounted first)."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "LB",
+        "RB"
+       ],
+       "label": "SIDE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "DU",
+        "DD"
+       ],
+       "label": "ITEM",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "FILTER",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "BUY / MOUNT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "Y"
+       ],
+       "label": "COMPARE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Equipment dealer"
+  },
+  {
+   "bg": "img/screens/base_ship_dealer.jpg",
+   "ctx": "dealers",
+   "group": "Bases",
+   "id": "shipdealer",
+   "states": [
+    {
+     "focus": [
+      1296,
+      324,
+      290,
+      36,
+      "focused ship"
+     ],
+     "id": "default",
+     "label": "Pad",
+     "notes": [
+      "Cycle the offered ships, read the stats, hold A to buy (the trade-in shown first)."
+     ],
+     "prompts": [
+      {
+       "keys": [
+        "DU",
+        "DD"
+       ],
+       "label": "SHIP",
+       "v": ""
+      },
+      {
+       "keys": [
+        "RS"
+       ],
+       "label": "STATS",
+       "v": ""
+      },
+      {
+       "keys": [
+        "A"
+       ],
+       "label": "BUY",
+       "v": "hold"
+      },
+      {
+       "keys": [
+        "B"
+       ],
+       "label": "CLOSE",
+       "v": ""
+      }
+     ]
+    }
+   ],
+   "title": "Ship dealer"
+  }
+ ],
+ "tabs": [
+  {
+   "id": "general",
+   "label": "GENERAL",
+   "sections": [
+    {
+     "label": "MODULES",
+     "rows": [
+      {
+       "def": true,
+       "help": "The subtitles and movie handling. Takes effect after the game restarts.",
+       "id": "mod_subtitles",
+       "key": "mod_subtitles",
+       "kind": "toggle",
+       "label": "Subtitles module",
+       "needs": "restart",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Native controller support, the controller UI and the Advanced Autopilot. Takes effect after the game restarts.",
+       "id": "mod_controller",
+       "key": "mod_controller",
+       "kind": "toggle",
+       "label": "Controller module",
+       "needs": "restart",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "SETTINGS",
+     "rows": [
+      {
+       "def": false,
+       "help": "Adds the developer and tuning keys to every tab, as they are named in the ini files.",
+       "id": "show_advanced",
+       "key": "show_advanced",
+       "kind": "toggle",
+       "label": "Show advanced settings",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": false
+      },
+      {
+       "btn": "RESET EVERYTHING",
+       "def": null,
+       "help": "Every FLvibed setting back to its default. The game's own options are not touched.",
+       "id": "reset_all",
+       "key": "reset_all",
+       "kind": "button",
+       "label": "Reset all FLvibed settings",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": null
+      },
+      {
+       "btn": "VERSION, CREDITS, LICENCES",
+       "def": null,
+       "help": "Version, credits and licences.",
+       "id": "about",
+       "key": "about",
+       "kind": "button",
+       "label": "About FLvibed",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "controller",
+   "label": "CONTROLLER",
+   "presetKey": "pad_preset",
+   "sections": [
+    {
+     "label": "INPUT",
+     "rows": [
+      {
+       "def": "AUTOMATIC",
+       "help": "Automatic: the last device used wins and the whole UI follows it in one frame (a stick past its dead zone, a trigger, any button; a mouse move of a few pixels, a wheel notch, any key). Lock it when a drifting stick or a second device makes it flicker.",
+       "id": "input_mode",
+       "key": "input_mode",
+       "kind": "picker",
+       "label": "Input device",
+       "needs": "live",
+       "options": [
+        "AUTOMATIC",
+        "CONTROLLER",
+        "KEYBOARD AND MOUSE"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "AUTOMATIC"
+      },
+      {
+       "def": "AUTOMATIC",
+       "help": "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro); choose one if yours is detected wrongly.",
+       "id": "glyph_style",
+       "key": "glyph_style",
+       "kind": "picker",
+       "label": "Button prompts",
+       "needs": "live",
+       "options": [
+        "AUTOMATIC",
+        "XBOX",
+        "PLAYSTATION",
+        "NINTENDO"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "AUTOMATIC"
+      },
+      {
+       "def": "AUTOMATIC",
+       "help": "How the button prompts look: Automatic = HUD 2 in its own colour, the classic HUD and menus in the buttons' colours; Coloured everywhere; HUD 2 style everywhere. Sizes stay as each screen has them.",
+       "id": "glyph_look",
+       "key": "glyph_look",
+       "kind": "picker",
+       "label": "Glyph look",
+       "needs": "live",
+       "options": [
+        "AUTOMATIC",
+        "COLOURED",
+        "HUD 2 GLYPHS"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "AUTOMATIC"
+      },
+      {
+       "def": "BOTTOM BUTTON (A / CROSS / B)",
+       "help": "Which face button accepts in menus. The bottom button is the Xbox and PlayStation habit; Nintendo players may prefer the right one.",
+       "id": "confirm_button",
+       "key": "confirm_button",
+       "kind": "picker",
+       "label": "Confirm with",
+       "needs": "live",
+       "options": [
+        "BOTTOM BUTTON (A / CROSS / B)",
+        "RIGHT BUTTON (NINTENDO)"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "BOTTOM BUTTON (A / CROSS / B)"
+      },
+      {
+       "def": true,
+       "help": "A pad that drops out mid-flight pauses the game; in menus the UI just switches to the keyboard.",
+       "id": "pause_on_disconnect",
+       "key": "pause_on_disconnect",
+       "kind": "toggle",
+       "label": "Pause when the pad disconnects in flight",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "LAYOUT",
+     "rows": [
+      {
+       "def": "FREELANCER",
+       "help": "The whole flight layout. Freelancer: targets and weapons on the fingers, consumables on the D-pad. Ace: arcade flight (left stick steers, triggers are the throttle). Assisted: the autopilot flies, you aim and decide. Custom: edited on the Bindings screen.",
+       "id": "pad_preset",
+       "key": "pad_preset",
+       "kind": "picker",
+       "label": "Preset",
+       "needs": "live",
+       "options": [
+        "FREELANCER",
+        "ACE",
+        "ASSISTED",
+        "CUSTOM"
+       ],
+       "parent": null,
+       "preset": true,
+       "tier": "player",
+       "value": "FREELANCER"
+      },
+      {
+       "btn": "EDIT BINDINGS AND SEE THE LAYOUT",
+       "def": null,
+       "help": "The controller diagram with every binding per situation (flight, autopilot, menus, bases, dealers, map, text entry).",
+       "id": "edit_bindings",
+       "key": "edit_bindings",
+       "kind": "button",
+       "label": "Bindings",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": null
+      },
+      {
+       "def": "CYCLE ON Y HOLD",
+       "help": "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one. Cycle: Y held flips to the next group (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to L3 and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set on the HUD's group buttons, as in the game.",
+       "id": "weapon_groups",
+       "key": "weapon_groups",
+       "kind": "picker",
+       "label": "Weapon groups",
+       "needs": "live",
+       "options": [
+        "SIMPLE (ONE FIRE BUTTON)",
+        "CYCLE ON Y HOLD",
+        "TWO GROUPS ON THE TRIGGERS"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "CYCLE ON Y HOLD"
+      },
+      {
+       "def": false,
+       "help": "Afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons.",
+       "id": "holds_as_toggles",
+       "key": "holds_as_toggles",
+       "kind": "toggle",
+       "label": "Holds as toggles",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": false
+      },
+      {
+       "def": "HOLD VIEW",
+       "help": "How the Advanced Autopilot is switched on and off from the pad: a half-second hold with a ring, or the only chord in the layout. Any stick input hands the ship back.",
+       "id": "autopilot_pad",
+       "key": "autopilot_pad",
+       "kind": "picker",
+       "label": "Autopilot on the pad",
+       "needs": "live",
+       "options": [
+        "HOLD VIEW",
+        "L3 + R3",
+        "HOLD MENU"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "HOLD VIEW"
+      }
+     ]
+    },
+    {
+     "label": "AIM",
+     "rows": [
+      {
+       "def": "GIMBAL",
+       "help": "Gimbal: the right stick steers and the reticle locks onto the selected hostile's lead cross. Reticle: the stick moves the reticle itself.",
+       "id": "aim_mode",
+       "key": "aim_mode",
+       "kind": "picker",
+       "label": "Aim mode",
+       "needs": "live",
+       "options": [
+        "GIMBAL",
+        "RETICLE"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "GIMBAL"
+      },
+      {
+       "def": 90,
+       "help": "Gimbal: how far from the screen centre a hostile's lead cross may be for the reticle to lock on. 90 = the whole screen.",
+       "id": "aim_cone",
+       "key": "aim_cone",
+       "kind": "slider",
+       "label": "Lock-on cone",
+       "max": 90,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 5,
+       "tier": "player",
+       "unit": "°",
+       "value": 90,
+       "words": []
+      },
+      {
+       "def": false,
+       "help": "Stick up turns the nose down.",
+       "id": "invert_y",
+       "key": "invert_y",
+       "kind": "toggle",
+       "label": "Invert Y",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": false
+      },
+      {
+       "def": 1.5,
+       "help": "How the stick's deflection maps to turning. Linear = 1:1; higher values keep small inputs gentle and the full stick fast.",
+       "id": "steer_expo",
+       "key": "steer_expo",
+       "kind": "slider",
+       "label": "Steering response",
+       "max": 4,
+       "min": 1,
+       "needs": "live",
+       "parent": null,
+       "step": 0.1,
+       "tier": "player",
+       "unit": "",
+       "value": 1.5,
+       "words": [
+        "LINEAR",
+        "SOFT",
+        "SOFTER",
+        "SOFTEST"
+       ]
+      },
+      {
+       "def": 0.77,
+       "help": "Full stick = this mouse-flight offset; 0.77 is the ship's maximum turn rate (a measured constant).",
+       "id": "steer_scale",
+       "key": "steer_scale",
+       "kind": "slider",
+       "label": "Full-stick turn rate",
+       "max": 1,
+       "min": 0.1,
+       "needs": "live",
+       "parent": null,
+       "step": 0.01,
+       "tier": "advanced",
+       "unit": "",
+       "value": 0.77,
+       "words": []
+      },
+      {
+       "def": 0.06,
+       "help": "Reticle smoothing time constant in seconds (0 = off).",
+       "id": "aim_smooth",
+       "key": "aim_smooth",
+       "kind": "slider",
+       "label": "Reticle smoothing",
+       "max": 1,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 0.01,
+       "tier": "advanced",
+       "unit": " s",
+       "value": 0.06,
+       "words": []
+      }
+     ]
+    },
+    {
+     "label": "STICKS",
+     "rows": [
+      {
+       "def": 0.24,
+       "help": "Radial deadzone of both sticks (0..0.9). The device switch ignores stick motion inside it.",
+       "id": "stick_deadzone",
+       "key": "stick_deadzone",
+       "kind": "slider",
+       "label": "Stick deadzone",
+       "max": 0.9,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 0.01,
+       "tier": "player",
+       "unit": "",
+       "value": 0.24,
+       "words": []
+      },
+      {
+       "def": 0.12,
+       "help": "How far a trigger must be pulled before it counts.",
+       "id": "trigger_threshold",
+       "key": "trigger_threshold",
+       "kind": "slider",
+       "label": "Trigger deadzone",
+       "max": 0.9,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 0.01,
+       "tier": "player",
+       "unit": "",
+       "value": 0.12,
+       "words": []
+      },
+      {
+       "def": 0.9,
+       "help": "Throttle lever change per second at full left stick.",
+       "id": "throttle_rate",
+       "key": "throttle_rate",
+       "kind": "slider",
+       "label": "Throttle rate",
+       "max": 5,
+       "min": 0.1,
+       "needs": "live",
+       "parent": null,
+       "step": 0.1,
+       "tier": "player",
+       "unit": "",
+       "value": 0.9,
+       "words": []
+      },
+      {
+       "def": 60,
+       "help": "Vibration strength: hits, the autopilot's hand-back, a confirmation request. 0 = off. Never the only cue.",
+       "id": "rumble",
+       "key": "rumble",
+       "kind": "slider",
+       "label": "Rumble",
+       "max": 100,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
+       "tier": "player",
+       "unit": "%",
+       "value": 60,
+       "words": []
+      }
+     ]
+    },
+    {
+     "label": "TARGETING",
+     "rows": [
+      {
+       "def": "OFF",
+       "help": "Off: you pick targets and a selected target is never changed. Otherwise the closest enemy is selected for you.",
+       "id": "auto_target",
+       "key": "auto_target",
+       "kind": "picker",
+       "label": "Auto-target",
+       "needs": "live",
+       "options": [
+        "OFF",
+        "CLOSEST ENEMY",
+        "CLOSEST ENEMY, KEEP MINE"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "OFF"
+      },
+      {
+       "def": true,
+       "help": "With nothing targeted, firing at a hostile or neutral ship under the reticle selects it.",
+       "id": "fire_target",
+       "key": "fire_target",
+       "kind": "toggle",
+       "label": "Firing selects the target",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "MENUS AND PROMPTS",
+     "rows": [
+      {
+       "def": "CLASSIC",
+       "help": "The look of the menus, rooms and dialogs: Classic = the game's own; HUD 2 = FLvibed's HUD 2 skin over the same screens (the game's controls stay as they are).",
+       "id": "ui_style",
+       "key": "ui_style",
+       "kind": "picker",
+       "label": "Screens",
+       "needs": "live",
+       "options": [
+        "CLASSIC",
+        "HUD 2"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "CLASSIC"
+      },
+      {
+       "def": "EVERYWHERE",
+       "help": "FLvibed's own cursor on the left stick, on every screen by default: moving the stick shows it and the game reacts as to the mouse (a bar character lights up, a button highlights, a row focuses); it slows over and pulls toward targets; a D-pad or bumper press hides it and focus navigation carries on from there. A = click either way. Off = focus navigation only.",
+       "id": "pad_cursor",
+       "key": "pad_cursor",
+       "kind": "picker",
+       "label": "Pad cursor",
+       "needs": "live",
+       "options": [
+        "OFF",
+        "ROOMS AND MAPS",
+        "EVERYWHERE"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "EVERYWHERE"
+      },
+      {
+       "def": 1.1,
+       "help": "Pad cursor speed, screen heights per second.",
+       "id": "cursor_speed",
+       "key": "cursor_speed",
+       "kind": "slider",
+       "label": "Cursor speed",
+       "max": 5,
+       "min": 0.1,
+       "needs": "live",
+       "parent": null,
+       "step": 0.1,
+       "tier": "player",
+       "unit": "",
+       "value": 1.1,
+       "words": []
+      },
+      {
+       "def": 60,
+       "help": "How strongly the pad cursor slows over and pulls toward a clickable element.",
+       "id": "cursor_magnet",
+       "key": "cursor_magnet",
+       "kind": "slider",
+       "label": "Cursor magnetism",
+       "max": 100,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
+       "tier": "player",
+       "unit": "%",
+       "value": 60,
+       "words": []
+      },
+      {
+       "def": "CONTEXTUAL",
+       "help": "The bottom-right row of button prompts on controller screens. Contextual: only where a decision is pending or the screen is new to you; Always: on every screen.",
+       "id": "prompt_bar",
+       "key": "prompt_bar",
+       "kind": "picker",
+       "label": "Prompt bar",
+       "needs": "live",
+       "options": [
+        "CONTEXTUAL",
+        "ALWAYS",
+        "OFF"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "CONTEXTUAL"
+      },
+      {
+       "def": "CONTEXTUAL",
+       "help": "A prompt by the target when something unusual is possible now (dock in range, loot in reach). Never a permanent label.",
+       "id": "world_prompts",
+       "key": "world_prompts",
+       "kind": "picker",
+       "label": "World prompts",
+       "needs": "live",
+       "options": [
+        "CONTEXTUAL",
+        "OFF"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "CONTEXTUAL"
+      },
+      {
+       "def": false,
+       "help": "Show the autopilot's prompts and status to players who have not used it yet. Off: nothing about the autopilot shows until you switch it on once.",
+       "id": "ap_hints",
+       "key": "ap_hints",
+       "kind": "toggle",
+       "label": "Autopilot hints",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": false
+      },
+      {
+       "def": 100,
+       "help": "Size of FLvibed's own UI text (prompts, panels, the status strip). The subtitles have their own size.",
+       "id": "text_size",
+       "key": "text_size",
+       "kind": "slider",
+       "label": "Text size",
+       "max": 150,
+       "min": 80,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
+       "tier": "player",
+       "unit": "%",
+       "value": 100,
+       "words": []
+      },
+      {
+       "def": 10,
+       "help": "Right stick scrolling, notches per second.",
+       "id": "wheel_rate",
+       "key": "wheel_rate",
+       "kind": "slider",
+       "label": "Scroll speed",
+       "max": 50,
+       "min": 1,
+       "needs": "live",
+       "parent": null,
+       "step": 1,
+       "tier": "player",
+       "unit": "",
+       "value": 10,
+       "words": []
+      }
+     ]
+    },
+    {
+     "label": "HUD",
+     "rows": [
+      {
+       "def": "HUD 2 ON THE PAD",
+       "help": "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's HUD (with the controller's glyphs and legend).",
+       "id": "hud_style",
+       "key": "hud_style",
+       "kind": "picker",
+       "label": "HUD",
+       "needs": "live",
+       "options": [
+        "CLASSIC",
+        "HUD 2 ON THE PAD",
+        "HUD 2 ALWAYS"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "HUD 2 ON THE PAD"
+      },
+      {
+       "def": "CALM DIMS",
+       "help": "HUD 2 in quiet flight. Calm dims: the ring and the side panels dim while nothing happens and come back the moment something changes or a fight starts. Minimal: calm flight shows almost nothing. Always full: no fading.",
+       "id": "hud_fade",
+       "key": "hud_fade",
+       "kind": "picker",
+       "label": "Fade when calm",
+       "needs": "live",
+       "options": [
+        "ALWAYS FULL",
+        "CALM DIMS",
+        "MINIMAL"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "CALM DIMS"
+      },
+      {
+       "def": 100,
+       "help": "How opaque HUD 2 is overall.",
+       "id": "hud_opacity",
+       "key": "hud_opacity",
+       "kind": "slider",
+       "label": "HUD opacity",
+       "max": 100,
+       "min": 40,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
+       "tier": "player",
+       "unit": "%",
+       "value": 100,
+       "words": []
+      },
+      {
+       "def": 100,
+       "help": "The size of HUD 2's panels, text and glyphs.",
+       "id": "hud_scale",
+       "key": "hud_scale",
+       "kind": "slider",
+       "label": "HUD size",
+       "max": 130,
+       "min": 80,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
+       "tier": "player",
+       "unit": "%",
+       "value": 100,
+       "words": []
+      },
+      {
+       "def": "WHEN LOW",
+       "help": "The shield, hull and power numbers at the ends of the ring's arcs: only when a value runs low, always, or never (the arcs alone).",
+       "id": "hud_numbers",
+       "key": "hud_numbers",
+       "kind": "picker",
+       "label": "Numbers on the ring",
+       "needs": "live",
+       "options": [
+        "WHEN LOW",
+        "ALWAYS",
+        "NEVER"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "WHEN LOW"
+      },
+      {
+       "def": true,
+       "help": "In a fight, the nearest hostiles under the target card, with the buttons that pick them.",
+       "id": "hud_threats",
+       "key": "hud_threats",
+       "kind": "toggle",
+       "label": "Threat list",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "CONTEXTUAL",
+       "help": "Under your ship, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons.",
+       "id": "hud_context",
+       "key": "hud_context",
+       "kind": "picker",
+       "label": "Context prompts",
+       "needs": "live",
+       "options": [
+        "CONTEXTUAL",
+        "OFF"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "CONTEXTUAL"
+      },
+      {
+       "def": true,
+       "help": "A short card at the top when something needs you now (shield failing, missile incoming, cruise disrupted, hold full), naming the button that helps; that slot lights up.",
+       "id": "hud_alerts",
+       "key": "hud_alerts",
+       "kind": "toggle",
+       "label": "Alerts",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers.",
+       "id": "hud_info",
+       "key": "hud_info",
+       "kind": "toggle",
+       "label": "Situation details",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "The game's wireframe pictures of your target and your ship in HUD 2's panels (else their icons).",
+       "id": "hud_wireframes",
+       "key": "hud_wireframes",
+       "kind": "toggle",
+       "label": "Wireframe views",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": 120,
+       "help": "How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse.",
+       "id": "hud_transition",
+       "key": "hud_transition",
+       "kind": "slider",
+       "label": "HUD switch fade",
+       "max": 400,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 20,
+       "tier": "advanced",
+       "unit": " ms",
+       "value": 120,
+       "words": []
+      },
+      {
+       "def": true,
+       "help": "Classic HUD: in pad mode the HUD's own buttons carry the glyph of the button that acts on them (the maneuver bar, the cruise box, the NeuroNet box, the contact filters, repair and battery, the weapon groups).",
+       "id": "hud_glyphs",
+       "key": "hud_glyphs",
+       "kind": "toggle",
+       "label": "Glyphs on the HUD",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "ON",
+       "help": "Classic HUD: a small list in the empty right-middle of the screen with the actions available right now and their buttons, changing with the context (a dockable target, a fight, the autopilot flying). HUD 2 has its context prompts instead.",
+       "id": "button_legend",
+       "key": "button_legend",
+       "kind": "picker",
+       "label": "Button legend",
+       "needs": "live",
+       "options": [
+        "ON",
+        "OFF"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "ON"
+      },
+      {
+       "def": true,
+       "help": "Classic HUD: the one line under the maneuver bar while the autopilot flies, cruise charges or turret view is on. HUD 2 shows it in its navigation block.",
+       "id": "ap_status_line",
+       "key": "ap_status_line",
+       "kind": "toggle",
+       "label": "Autopilot status line",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": false,
+       "help": "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails.",
+       "id": "shield_cue",
+       "key": "shield_cue",
+       "kind": "toggle",
+       "label": "Shield hit cue",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": false
+      },
+      {
+       "def": 0.75,
+       "help": "Strength of the shield cue.",
+       "id": "shield_cue_intensity",
+       "key": "shield_cue_intensity",
+       "kind": "slider",
+       "label": "Shield cue intensity",
+       "max": 2,
+       "min": 0,
+       "needs": "live",
+       "parent": "shield_cue",
+       "step": 0.05,
+       "tier": "player",
+       "unit": "",
+       "value": 0.75,
+       "words": []
+      },
+      {
+       "def": false,
+       "help": "With the shield cue: hull hits show your ship's own hull hit effect at the screen edge.",
+       "id": "hull_cue",
+       "key": "hull_cue",
+       "kind": "toggle",
+       "label": "Hull hit cue",
+       "needs": "live",
+       "parent": "shield_cue",
+       "tier": "player",
+       "value": false
+      },
+      {
+       "def": false,
+       "help": "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue).",
+       "id": "reticle_cue",
+       "key": "reticle_cue",
+       "kind": "toggle",
+       "label": "Reticle cue",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": false
+      }
+     ]
+    },
+    {
+     "label": "SYSTEM",
+     "rows": [
+      {
+       "def": true,
+       "help": "Ignore the controller while the game is in the background.",
+       "id": "focus_only",
+       "key": "focus_only",
+       "kind": "toggle",
+       "label": "Controller only while the game is in focus",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": false,
+       "help": "The game keeps running while its window is not in focus (Freelancer pauses otherwise).",
+       "id": "run_in_background",
+       "key": "run_in_background",
+       "kind": "toggle",
+       "label": "Keep the game running in the background",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": false
+      },
+      {
+       "def": "ALL",
+       "help": "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command's or a module's window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. While FLUF's command palette is open (typing or not) FLvibed's keys all pass to FLUF, like a chat box.",
+       "id": "fluf_windows",
+       "key": "fluf_windows",
+       "kind": "picker",
+       "label": "FLUF windows",
+       "needs": "live",
+       "options": [
+        "IGNORE",
+        "PLAYER WINDOWS",
+        "ALL"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "ALL"
+      },
+      {
+       "def": "AUTO",
+       "help": "A window without frame covering the monitor at its resolution - never exclusive fullscreen. Auto: only when nothing else provides it (HD Edition does); Always: also then; Off: the game's own mode. With FLUF, Alt+Enter switches to a bordered window. Next start.",
+       "id": "borderless",
+       "key": "borderless",
+       "kind": "picker",
+       "label": "Borderless window",
+       "needs": "restart",
+       "options": [
+        "OFF",
+        "AUTO",
+        "ALWAYS"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "AUTO"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "autopilot",
+   "label": "AUTOPILOT",
+   "presetKey": "preset",
+   "sections": [
+    {
+     "label": "",
+     "rows": [
+      {
+       "def": "COMPETENT",
+       "help": "A bundle of the rows below. Competent: plays with what you have seen. Speedrun: knows everything the game data tells. Changing a row below makes it Custom.",
+       "id": "preset",
+       "key": "preset",
+       "kind": "picker",
+       "label": "Preset",
+       "needs": "live",
+       "options": [
+        "COMPETENT",
+        "SPEEDRUN",
+        "NO CONSUMABLES",
+        "CUSTOM"
+       ],
+       "parent": null,
+       "preset": true,
+       "tier": "player",
+       "value": "COMPETENT"
+      },
+      {
+       "def": "WHAT YOU HAVE SEEN",
+       "help": "What the autopilot may know: only what you have seen in this game (bases, routes, enemies), or everything the game data tells.",
+       "id": "knowledge",
+       "key": "knowledge",
+       "kind": "picker",
+       "label": "Knowledge",
+       "needs": "live",
+       "options": [
+        "WHAT YOU HAVE SEEN",
+        "EVERYTHING"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "WHAT YOU HAVE SEEN"
+      },
+      {
+       "def": "TARGET, THEN NEAREST",
+       "help": "Fight only the chosen target, or then the closest enemy until none is left.",
+       "id": "engage",
+       "key": "engage",
+       "kind": "picker",
+       "label": "Combat",
+       "needs": "live",
+       "options": [
+        "THE TARGET ONLY",
+        "TARGET, THEN NEAREST"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "TARGET, THEN NEAREST"
+      },
+      {
+       "def": true,
+       "help": "The autopilot fires the guns (gimbal aim).",
+       "id": "auto_fire",
+       "key": "auto_fire",
+       "kind": "toggle",
+       "label": "Fire the guns",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Launch missiles when the shot is worth it.",
+       "id": "missiles",
+       "key": "missiles",
+       "kind": "toggle",
+       "label": "Missiles",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "WHEN IT MATTERS",
+       "help": "Never; cruise disruptors outside a fight and missiles whose damage matters; or every missile homing on you.",
+       "id": "countermeasures",
+       "key": "countermeasures",
+       "kind": "picker",
+       "label": "Countermeasures",
+       "needs": "live",
+       "options": [
+        "NEVER",
+        "WHEN IT MATTERS",
+        "EVERY MISSILE"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "WHEN IT MATTERS"
+      },
+      {
+       "def": "WHEN NEEDED",
+       "help": "Never; only when needed (the player's way); or at the pilot personality's thresholds.",
+       "id": "repair",
+       "key": "repair",
+       "kind": "picker",
+       "label": "Nanobots and batteries",
+       "needs": "live",
+       "options": [
+        "NEVER",
+        "WHEN NEEDED",
+        "AS THE PILOT WOULD"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "WHEN NEEDED"
+      },
+      {
+       "def": true,
+       "help": "Collect the loot near the fight once no enemy is left, the most valuable first.",
+       "id": "loot",
+       "key": "loot",
+       "kind": "toggle",
+       "label": "Loot after a fight",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "WHEN OUTMATCHED",
+       "help": "Never leave a fight early; leave when clearly outmatched below 60 % hull; or leave sooner.",
+       "id": "caution",
+       "key": "caution",
+       "kind": "picker",
+       "label": "Caution",
+       "needs": "live",
+       "options": [
+        "NEVER LEAVE",
+        "WHEN OUTMATCHED",
+        "EARLY"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "WHEN OUTMATCHED"
+      },
+      {
+       "def": true,
+       "help": "The autopilot's own obstacle and hazard avoidance on its runs (minefields, radiation, structures).",
+       "id": "avoid",
+       "key": "avoid",
+       "kind": "toggle",
+       "label": "Avoid hazards",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": false,
+       "help": "Player-style docks: full speed to the bay's approach point, the request just before it.",
+       "id": "fast_dock",
+       "key": "fast_dock",
+       "kind": "toggle",
+       "label": "Fast docking",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": false
+      },
+      {
+       "def": true,
+       "help": "The autopilot's own dock skips its docking / landing cutscene, as your Escape does.",
+       "id": "skip_dock_scene",
+       "key": "skip_dock_scene",
+       "kind": "toggle",
+       "label": "Skip docking cutscenes",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": 35,
+       "help": "Stick deflection that hands the ship back to you. 0 = never (only the button, the key or the pad hold stop it). Letting go does not re-engage it.",
+       "id": "autopilot_cancel",
+       "key": "autopilot_cancel",
+       "kind": "slider",
+       "label": "Hand back on stick input",
+       "max": 100,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 5,
+       "tier": "player",
+       "unit": "%",
+       "value": 35,
+       "words": []
+      },
+      {
+       "def": "K",
+       "help": "Toggles the autopilot from the keyboard. A key the game binds is refused.",
+       "id": "autopilot_key",
+       "key": "autopilot_key",
+       "kind": "key",
+       "label": "Autopilot key",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": "K"
+      },
+      {
+       "id": "start_smart",
+       "key": "start_smart",
+       "label": "Autopilot start",
+       "kind": "picker",
+       "help": "What the autopilot key, the bar button and View held start. Objective first (default): the mission's objective if there is one, else your waypoints (across systems), else the target. The target only: fight, escort, dock or fly to the selected target.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "options": [
+        "THE TARGET ONLY",
+        "OBJECTIVE FIRST"
+       ],
+       "def": "OBJECTIVE FIRST",
+       "value": "OBJECTIVE FIRST"
+      },
+      {
+       "def": true,
+       "help": "The fifth button on the maneuver bar (keyboard and mouse HUD).",
+       "id": "maneuver_button",
+       "key": "maneuver_button",
+       "kind": "toggle",
+       "label": "Autopilot button on the maneuver bar",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "MILITARY (HARD)",
+       "help": "The game's own [Pilot] block the autopilot flies by: evasion habits, trail distances, burst patterns (DATA\\MISSIONS\\pilots_*.ini).",
+       "id": "pilot",
+       "key": "pilot",
+       "kind": "picker",
+       "label": "Pilot personality",
+       "needs": "live",
+       "options": [
+        "MILITARY (HARD)",
+        "MILITARY",
+        "PIRATE ACE",
+        "CIVILIAN"
+       ],
+       "parent": null,
+       "tier": "advanced",
+       "value": "MILITARY (HARD)"
+      },
+      {
+       "def": 3000,
+       "help": "Pick hostiles within this distance (m).",
+       "id": "engage_radius",
+       "key": "engage_radius",
+       "kind": "slider",
+       "label": "Engage radius",
+       "max": 6000,
+       "min": 500,
+       "needs": "live",
+       "parent": null,
+       "step": 100,
+       "tier": "advanced",
+       "unit": " m",
+       "value": 3000,
+       "words": []
+      },
+      {
+       "def": 1500,
+       "help": "Follow / escort: the game's follow max distance (m).",
+       "id": "follow_distance",
+       "key": "follow_distance",
+       "kind": "slider",
+       "label": "Follow distance",
+       "max": 4000,
+       "min": 200,
+       "needs": "live",
+       "parent": null,
+       "step": 50,
+       "tier": "advanced",
+       "unit": " m",
+       "value": 1500,
+       "words": []
+      }
+     ]
+    },
+    {
+     "label": "SPEEDRUN MODE",
+     "rows": [
+      {
+       "def": true,
+       "help": "In a speedrun-mode game: the run time, the current split and the delta against your best; on HUD 2 under the target card, on the classic HUD under the NeuroNet box.",
+       "id": "speedrun_timer",
+       "key": "speedrun_timer",
+       "kind": "toggle",
+       "label": "Timer on the HUD",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "LIVESPLIT SERVER (TCP)",
+       "help": "Send the timer and the splits to LiveSplit on this computer (Control > Start TCP Server in LiveSplit 1.8.29 or newer). Starts on New Game, splits at every story checkpoint and the final cutscene, resets on the main menu.",
+       "id": "livesplit",
+       "key": "livesplit",
+       "kind": "picker",
+       "label": "LiveSplit",
+       "needs": "live",
+       "options": [
+        "OFF",
+        "LIVESPLIT SERVER (TCP)"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "LIVESPLIT SERVER (TCP)"
+      },
+      {
+       "def": 16834,
+       "help": "LiveSplit Server's port (default 16834).",
+       "id": "livesplit_port",
+       "key": "livesplit_port",
+       "kind": "slider",
+       "label": "LiveSplit port",
+       "max": 65535,
+       "min": 1024,
+       "needs": "live",
+       "parent": null,
+       "step": 1,
+       "tier": "player",
+       "unit": "",
+       "value": 16834,
+       "words": []
+      },
+      {
+       "def": true,
+       "help": "Pause LiveSplit's game time during loads, so a loadless comparison exists without a script. Real time keeps running (speedrun.com Freelancer is timed in real time).",
+       "id": "livesplit_gametime",
+       "key": "livesplit_gametime",
+       "kind": "toggle",
+       "label": "Loadless game time",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "subtitles",
+   "label": "SUBTITLES",
+   "sections": [
+    {
+     "label": "TEXT",
+     "rows": [
+      {
+       "def": true,
+       "help": "Subtitles on. Every other row here depends on it.",
+       "id": "enabled",
+       "key": "enabled",
+       "kind": "toggle",
+       "label": "Subtitles",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "MEDIUM",
+       "help": "Text size: 3.0 % to 7.2 % of the screen height.",
+       "id": "size",
+       "key": "size",
+       "kind": "picker",
+       "label": "Text size",
+       "needs": "live",
+       "options": [
+        "SMALL",
+        "MEDIUM",
+        "LARGE",
+        "EXTRA LARGE",
+        "HUGE"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "MEDIUM"
+      },
+      {
+       "def": "GAME",
+       "help": "The game's own fonts, or Segoe UI.",
+       "id": "font",
+       "key": "font",
+       "kind": "picker",
+       "label": "Font",
+       "needs": "live",
+       "options": [
+        "GAME",
+        "SEGOE UI"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "GAME"
+      },
+      {
+       "def": "WHITE",
+       "help": "White or yellow text.",
+       "id": "text_color",
+       "key": "text_color",
+       "kind": "picker",
+       "label": "Text colour",
+       "needs": "live",
+       "options": [
+        "WHITE",
+        "YELLOW"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "WHITE"
+      },
+      {
+       "def": true,
+       "help": "A text shadow for readability.",
+       "id": "shadow",
+       "key": "shadow",
+       "kind": "toggle",
+       "label": "Shadow",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "BACKGROUND",
+     "rows": [
+      {
+       "def": "HUD PANEL",
+       "help": "In flight: the space HUD's panel look, or the soft navy panel used everywhere else.",
+       "id": "background_style",
+       "key": "background_style",
+       "kind": "picker",
+       "label": "Background",
+       "needs": "live",
+       "options": [
+        "HUD PANEL",
+        "PLAIN"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "HUD PANEL"
+      },
+      {
+       "def": 60,
+       "help": "Backing opacity in percent.",
+       "id": "background_opacity",
+       "key": "background_opacity",
+       "kind": "slider",
+       "label": "Background opacity",
+       "max": 100,
+       "min": 0,
+       "needs": "live",
+       "parent": "enabled",
+       "step": 5,
+       "tier": "player",
+       "unit": "%",
+       "value": 60,
+       "words": []
+      }
+     ]
+    },
+    {
+     "label": "SPEAKERS",
+     "rows": [
+      {
+       "def": "OWN ROW",
+       "help": "The name on its own row, inline as \"Name: text\", or off.",
+       "id": "speaker_names",
+       "key": "speaker_names",
+       "kind": "picker",
+       "label": "Speaker names",
+       "needs": "live",
+       "options": [
+        "OWN ROW",
+        "INLINE",
+        "OFF"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "OWN ROW"
+      },
+      {
+       "def": true,
+       "help": "Story speakers' names in their own colours (new key).",
+       "id": "speaker_colors",
+       "key": "speaker_colors",
+       "kind": "toggle",
+       "label": "Speaker colours",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": false,
+       "help": "A hostile speaker gets the HUD's red triangle before the name.",
+       "id": "hostile_marker",
+       "key": "hostile_marker",
+       "kind": "toggle",
+       "label": "Hostile marker",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": false
+      }
+     ]
+    },
+    {
+     "label": "CHANNELS",
+     "rows": [
+      {
+       "def": true,
+       "help": "Story cutscene lines.",
+       "id": "story",
+       "key": "story",
+       "kind": "toggle",
+       "label": "Story",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Mission comms.",
+       "id": "comms",
+       "key": "comms",
+       "kind": "toggle",
+       "label": "Comms",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Bar and base conversations.",
+       "id": "bar",
+       "key": "bar",
+       "kind": "toggle",
+       "label": "Bar",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Neural Net lines.",
+       "id": "neural_net",
+       "key": "neural_net",
+       "kind": "toggle",
+       "label": "Neural Net",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "CHAT WINDOW",
+       "help": "NPC lines that do not open their comm portrait - generic radio chatter between others, broadcasts, announcements: to the chat window (default; every line kept in its log, under HUD 2 also in its comm feed), as subtitles (only while the dialogue leaves room - never over a story line), or off. Story lines and anyone speaking to you with their portrait are always the subtitles.",
+       "id": "chatter",
+       "key": "chatter",
+       "kind": "picker",
+       "label": "Radio chatter",
+       "needs": "live",
+       "options": [
+        "CHAT WINDOW",
+        "SUBTITLES",
+        "OFF"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "CHAT WINDOW"
+      },
+      {
+       "def": false,
+       "help": "Also copy every story, mission and Neural Net line into the chat window, so its log holds every spoken line - a rolling history to scroll back through. The subtitles stay as they are.",
+       "id": "chat_all_dialogue",
+       "key": "chat_all_dialogue",
+       "kind": "toggle",
+       "label": "Dialogue also in the chat window",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": false
+      }
+     ]
+    },
+    {
+     "label": "PLACEMENT",
+     "rows": [
+      {
+       "def": "TOP PANEL",
+       "help": "A HUD panel at the top centre (the maneuver bar moves left), the top third, or between the bottom panels. The bar moves at the next load.",
+       "id": "space_position",
+       "key": "space_position",
+       "kind": "picker",
+       "label": "In flight",
+       "needs": "load",
+       "options": [
+        "TOP PANEL",
+        "TOP THIRD",
+        "BOTTOM"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "TOP PANEL"
+      },
+      {
+       "def": true,
+       "help": "In flight the game's comm window sits in a slot inside the subtitle panel.",
+       "id": "comm_portrait",
+       "key": "comm_portrait",
+       "kind": "toggle",
+       "label": "Comm portrait in the panel",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "The off-screen target arrows are kept clear of the HUD panels and the subtitles.",
+       "id": "hud_arrows",
+       "key": "hud_arrows",
+       "kind": "toggle",
+       "label": "Keep the HUD arrows clear",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "IN THE BLACK BAR",
+       "help": "Letterboxed scenes: inside the lower bar (inline name, no backing), or on the bar's top edge in the picture.",
+       "id": "letterbox_mode",
+       "key": "letterbox_mode",
+       "kind": "picker",
+       "label": "Cutscenes",
+       "needs": "live",
+       "options": [
+        "IN THE BLACK BAR",
+        "ON THE PICTURE"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "IN THE BLACK BAR"
+      },
+      {
+       "def": true,
+       "help": "Letterboxed scenes show one speaker at a time.",
+       "id": "cinematic_single_speaker",
+       "key": "cinematic_single_speaker",
+       "kind": "toggle",
+       "label": "One speaker at a time in cutscenes",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "MOTION",
+     "rows": [
+      {
+       "def": true,
+       "help": "Lines fade in and out and the stack glides; off = instant.",
+       "id": "motion",
+       "key": "motion",
+       "kind": "toggle",
+       "label": "Motion",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "The word being spoken grows slightly (lines with word timings).",
+       "id": "word_pop",
+       "key": "word_pop",
+       "kind": "toggle",
+       "label": "Spoken-word pop",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Neural Net lines coded by severity (colour, brightness pulses).",
+       "id": "neural_net_severity",
+       "key": "neural_net_severity",
+       "kind": "toggle",
+       "label": "Neural Net severity colours",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": 1,
+       "help": "Seconds a line stays after its audio.",
+       "id": "linger",
+       "key": "linger",
+       "kind": "slider",
+       "label": "Linger",
+       "max": 5,
+       "min": 0,
+       "needs": "live",
+       "parent": "enabled",
+       "step": 0.25,
+       "tier": "advanced",
+       "unit": " s",
+       "value": 1,
+       "words": []
+      },
+      {
+       "def": 1.25,
+       "help": "Seconds a line pushed out by a newer speaker stays.",
+       "id": "retire_delay",
+       "key": "retire_delay",
+       "kind": "slider",
+       "label": "Retire delay",
+       "max": 5,
+       "min": 0,
+       "needs": "live",
+       "parent": "enabled",
+       "step": 0.25,
+       "tier": "advanced",
+       "unit": " s",
+       "value": 1.25,
+       "words": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "movies",
+   "label": "MOVIES",
+   "sections": [
+    {
+     "label": "",
+     "rows": [
+      {
+       "def": true,
+       "help": "Movies keep their aspect ratio and the encoded black bars are zoomed out of view (new key).",
+       "id": "movie_fit",
+       "key": "movie_fit",
+       "kind": "toggle",
+       "label": "Fit movies to the screen",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "PLAY",
+       "help": "Play or skip the startup movies (new key; the native skip exists).",
+       "id": "movie_skip",
+       "key": "movie_skip",
+       "kind": "picker",
+       "label": "Startup movies",
+       "needs": "live",
+       "options": [
+        "PLAY",
+        "SKIP"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "PLAY"
+      },
+      {
+       "def": "AS INSTALLED",
+       "help": "Which intro plays. Only the files present are offered (new key).",
+       "id": "movie_intro",
+       "key": "movie_intro",
+       "kind": "picker",
+       "label": "Intro",
+       "needs": "live",
+       "options": [
+        "AS INSTALLED",
+        "HD",
+        "ORIGINAL 2003",
+        "FULL (BONUS DVD)"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "AS INSTALLED"
+      },
+      {
+       "def": true,
+       "help": "Subtitles over the intros and startup movies (new key).",
+       "id": "movie_subtitles",
+       "key": "movie_subtitles",
+       "kind": "toggle",
+       "label": "Movie subtitles",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "v": 2
+}

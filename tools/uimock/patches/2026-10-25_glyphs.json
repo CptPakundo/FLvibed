@@ -1,0 +1,9 @@
+{
+ "_about": "The owner rejected the first pad HUD badges (25 Oct 2026: 'tiny and not placed in a way that looks natural to the HUD'); the rebuilt rules (controller\\docs\\TASK_GLYPHS_HUD.md section 5) noted on the HUD states and decision 16.",
+ "states": {
+  "hud/pad": {"notes": ["Rebuilt 25 Oct 2026 after the owner's review: a badge is 0.45 of its element's height (0.022..0.036 H, times Text size), centred on the element and sitting on its panel's frame line that faces the open screen - the bar's glyphs form a row on the bar's bottom edge (B free flight, A goto / dock whichever applies, A + hold formation, View + hold autopilot), Y on the cruise box's lower edge, View under the NeuroNet box, the D-pad glyphs (the pressed arm highlighted) and Y + hold on the bottom-right header's top line over the consumables and the active weapon group, LB and R3 inside the contact-list header; the HUD's own chrome and font, the HUD base only inside each glyph's silhouette, the game's yellow when the element is lit. The legend's glyphs at the HUD font's height; a long legend shifts up to clear the bottom panels."]}
+ },
+ "decisions": {
+  "c_hud": {"note": "Rebuilt 25 Oct 2026 (the owner: the first badges were tiny and unnatural): glyphs sized to their element, on its frame line, in the HUD's chrome - TASK_GLYPHS_HUD.md 5."}
+ }
+}

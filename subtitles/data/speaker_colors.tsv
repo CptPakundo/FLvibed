@@ -1,0 +1,121 @@
+# FLvibed speaker name colours (owned here; design: subtitles\docs\DISPLAY_PLAN.md "Speaker colours", 21 Oct 2026).
+# tier: main = the main cast, each its own authored colour (the character's look / faction / role); side = named people
+# with small parts, each its own colour in the family's hue range; story = the story's other speakers (stations,
+# ships, wings, crowds): the family's light tint, or a hostile red. stance: friendly / neutral / hostile, then
+# per-mission exceptions (m04:hostile); a hostile stance adds the red triangle before the name, and a story speaker
+# hostile only in that mission falls back to the hostile red. Speakers not listed (open-world chatter): the HUD's
+# relation colours. Trent is the player's amber in code. Side / story colours are fitted by
+# subtitles\tools\speaker_colors.py (run it after changing a row); debug `colors` checks the table in game.
+speaker	tier	family	stance	colour	why
+Juni	main	Liberty	friendly	82C5FD	sky blue: her blue LSF uniform
+King	main	Liberty	friendly	C190F6	royal purple: his name; the LSF officer
+Walker	main	Liberty	friendly	6496F4	navy blue: the Liberty Navy captain, the deepest Liberty blue
+President Jacobi	main	Liberty	friendly	F9D9F5	pearl rose: the president in white and red
+Lonnigan	main	Liberty	friendly	8DD3D2	pale aqua: framed as Orillion, a washed-out Order teal
+Tobias	main	Bretonia	friendly	15A0CE	deep steel blue: ex-Royal Space Force, Bretonia
+Sinclair	main	Bretonia	friendly	BFA1CD	dusty lilac: her lavender field suit, the Artifact's violet
+Quintaine	main	Bretonia	friendly	FDA6C8	rose: the red sash on his white coat
+Ozu	main	Kusari	friendly	E57BBA	raspberry: the Blood Dragons' red and mauve
+Lord Hakkera	main	Kusari	friendly	DBBFFE	wisteria: Kusari nobility (purple sails), the patient elder
+Orillion	main	Order	friendly	21C9CA	Order teal: the resistance
+Von Claussen	main	Rheinland	friendly	BDE5F9	ice blue: the Rheinland ace, cold and precise
+Botzler	main	Rheinland	friendly	80AEB3	slate: the Bundschuh rebel, worn Rheinland steel
+Van Pelt	side	Liberty	friendly	5AA8D4	the Benford scientist
+Liberty Diplomat	side	Liberty	neutral	9297DC	Juni's father
+Cosmo	side	Liberty	neutral	B2B8F4	the wrongly arrested pilot (M02)
+Ashcroft	side	Criminal	hostile	DBB597	the Artifact smuggler (M02)
+Freeport 7 Survivor	side	Liberty	friendly	0DE2EB	the Freeport 7 survivor who warns Trent (M03)
+Harrison	side	Liberty	friendly	02A9F7	the president's aide at the end
+Vance	side	Bretonia	friendly	88E7EC	Quintaine's pilot
+Dexter Hovis	side	Bretonia	neutral	49A9AE	the Dublin racer
+Albertson	side	Bretonia	friendly	6CC7D7	the race escort leader
+Kress	side	Order	friendly	7AC6AC	the Border Worlds cell leader
+Jonner	side	Rheinland	neutral	52CFF3	the fortune teller
+Hans Fischer	side	Rheinland	friendly	96C6DD	Bundschuh
+Cobo	side	Kusari	friendly	F499A7	Blood Dragon, with Lord Hakkera
+Ozu's Assistant	side	Kusari	friendly	E39CD3	
+Liberty Newscaster	side	Civil	neutral	D6CCBC	the news anchor (several scenes)
+Manhattan Bartender	side	Civil	neutral	E7E1D3	the Manhattan bar
+Newark Station	story	Liberty	friendly	9FC5ED	
+Prison Ship	story	Liberty	friendly	9BC6EC	
+LSF Fighter Alpha 1	story	Liberty	friendly	93D9DC	
+LSF Fighter Beta 4	story	Liberty	friendly	9BC6EC	
+LSF Fighter Delta 1	story	Liberty	friendly	B1DAFD	
+LSF Patrol Epsilon 2	story	Liberty	friendly	ABDBFE	
+LPU Beta Wing Leader	story	Liberty	friendly	72E8FC	
+Escort 1	story	Liberty	friendly	ABDBFE	
+SAR	story	Liberty	friendly	7EC1CD	
+Transport Leader	story	Liberty	friendly	88E7EC	
+Fort Bush	story	Liberty	friendly	B1DAFD	
+Fort Bush Wing	story	Liberty	friendly	72E8FC	
+Pueblo Station	story	Liberty	friendly	B1DAFD	
+Navy Patrol Zeta 1	story	Liberty	friendly	B1DAFD	
+Battleship Missouri	story	Liberty	friendly	ABDBFE	
+Battleship Unity	story	Liberty	friendly m04:hostile	93D9DC	the jump gate control in M02, the hunter in M04
+LSF Gamma 1	story	Liberty	friendly	B1DAFD	
+LSF Station	story	Liberty	neutral	B1DAFD	
+Station Control	story	Liberty	neutral	A0CACC	
+Navy Patrol	story	Liberty	hostile	F87966	arrests the survivor (M03)
+LSF Lambda 1	story	Liberty	friendly	B1DAFD	
+Lambda 4	story	Liberty	friendly	B1DAFD	
+Liberty Cruiser	story	Liberty	hostile	F87966	
+Liberty Navy Fighter 1	story	Liberty	hostile	F87966	
+Rogue Leader	story	Criminal	hostile	F87966	
+Bounty Hunter	story	Criminal	hostile	FD9887	
+Lane Hacker 1	story	Criminal	friendly	D1B099	
+Lane Hacker Base	story	Criminal	friendly	E4C4AA	
+Benford	story	Liberty	neutral	B1DAFD	
+California Minor	story	Liberty	neutral	B1DAFD	
+LSF Pilot	story	Liberty	friendly	B1DAFD	
+Vengeance	story	Liberty	hostile	F87966	the Omaha (M11)
+Rheinland Cruiser Donau	story	Rheinland	neutral	8BDFFA	
+Rheinland Escort 1	story	Rheinland	neutral m07:hostile	AEDCD2	
+Rheinland Escort 2	story	Rheinland	neutral	8EB9C7	
+Rheinland Battleship	story	Rheinland	hostile	FD9887	
+Rheinland Heavy Fighter 1	story	Rheinland	hostile	F87966	
+Rheinlander Cruiser	story	Rheinland	hostile	F87966	
+Rheinlander	story	Rheinland	hostile	F87966	
+Rheinland Agent 1	story	Rheinland	hostile	F87966	
+Glorious	story	Rheinland	hostile	FD9887	the gunship ambushing the race (M06)
+Battleship Freya	story	Rheinland	hostile	F87966	
+Traitor 1	story	Rheinland	neutral	ADD9E8	
+Scout	story	Rheinland	neutral	9DC4D8	
+Bundbase	story	Rheinland	friendly	9BC6D4	Bundschuh station
+Bundschuh A	story	Rheinland	friendly	9CC5D6	
+Bundschuh B	story	Rheinland	friendly	7BDAD9	
+Bundschuh C	story	Rheinland	friendly	8AB4EA	
+Bundschuh D	story	Rheinland	friendly	9BC6D4	
+Bundschuh E	story	Rheinland	friendly	7BD9DE	
+Order Ship	story	Order	hostile	F87966	destroys the Donau (M01): the Order is the enemy then
+Kress Fighter Razor 1	story	Order	friendly	8BCDBF	
+Kress Fighter Razor 2	story	Order	friendly	B6E6FF	
+Kress Fighter Razor 3	story	Order	friendly	9BE0DB	
+Big Man	story	Order	neutral	9BE0DB	Kress's door guard
+Quintaine Pilot 1	story	Order	friendly	9BE0DB	
+Order Pilot	story	Order	friendly	9BE0DB	
+Order Pilot 1	story	Order	friendly	9BDDEE	
+Order Pilot 2	story	Order	friendly	95CAC5	
+Order Pilot 3	story	Order	friendly	A9E0C1	
+Order Tech 1	story	Order	friendly	9BE0DB	
+Aide	story	Order	friendly	9BE0DB	
+Alpha Leader	story	Order	friendly	9BE0DB	
+Beta Leader	story	Order	friendly	95CAC5	
+Delta Leader	story	Order	friendly	9BE0DB	
+Phoenix	story	Order	friendly	9BE0DB	
+Blood Dragon 1	story	Kusari	friendly	DAA9C9	
+Blood Dragon 2	story	Kusari	friendly	FED0DC	
+Blood Dragon 3	story	Kusari	neutral	EBBDE0	
+Kyoto	story	Kusari	friendly	F7BBC7	
+Outpost Ryuku	story	Kusari	friendly	EBBDE0	
+Glasgow	story	Bretonia	friendly	A0D9E3	
+Stokes Smelter	story	Bretonia	neutral	A0D9E3	
+Norfolk	story	Bretonia	neutral	A0D9E3	
+Tobias Friend	story	Bretonia	friendly	A0D9E3	
+Freeport 7 Bridge	story	Civil	neutral	D5C9B1	
+Freeport 7 Other	story	Civil	neutral	C0C38A	
+Samura SA-14	story	Civil	neutral	E9DDC4	
+Freeport 1	story	Civil	neutral	E9DDC4	
+Transport	story	Civil	friendly	E9DDC4	
+Announcer	story	Civil	neutral	D5C9B1	
+Buoy	story	Civil	neutral	E9DDC4	
+Spectator	story	Civil	neutral	E9DDC4	

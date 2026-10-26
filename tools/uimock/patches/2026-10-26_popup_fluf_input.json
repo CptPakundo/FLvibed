@@ -1,0 +1,13 @@
+{
+ "_about": "The owner's attended run (26 Oct 2026): the story / tutorial popup on the pad (A OK, B CLOSE, the game's own buttons) and FLUF's input rules (the open palette holds FLvibed's keys like a chat box; every FLUF window that takes input gets the pad, B closes the focused one).",
+ "rows": {
+  "fluf_windows": {
+   "help": "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command's or a module's window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. While FLUF's command palette is open (typing or not) FLvibed's keys all pass to FLUF, like a chat box."
+  }
+ },
+ "states": {
+  "hud/pad": {
+   "notes": ["The story / tutorial popup (NeuroNet message box, e.g. M01's Basics of Combat) on the pad: A OK (or YES), B CLOSE (or NO / LATER when the box has them) - the box's own buttons, natively; the prompt bar says so. The flight buttons stay the flight's while no box is up."]
+  }
+ }
+}

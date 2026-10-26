@@ -1,0 +1,6 @@
+{
+ "_about": "The borderless row's help shortened to the options page's three tooltip lines (the first text ran past them: research\\experience\\runs\\borderless_2026-10-26\\shots\\N_page_borderless.png).",
+ "rows": {
+  "borderless": {"help": "A window without frame covering the monitor at its resolution - never exclusive fullscreen. Auto: only when nothing else provides it (HD Edition does); Always: also then; Off: the game's own mode. With FLUF, Alt+Enter switches to a bordered window. Next start."}
+ }
+}

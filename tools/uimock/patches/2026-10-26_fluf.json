@@ -1,0 +1,10 @@
+{
+ "_about": "FLUF awareness (A2, 26 Oct 2026; docs\\MOD_COMPATIBILITY.md FLUF): one choice of how FLvibed treats FLUF's windows, in the controller's SYSTEM section after run_in_background. No effect without FLUF.",
+ "add_rows": {
+  "controller/SYSTEM": {"after": "run_in_background", "rows": [
+   {"key": "fluf_windows", "label": "FLUF windows", "kind": "picker", "options": ["IGNORE", "PLAYER WINDOWS", "ALL"], "def": "PLAYER WINDOWS",
+    "help": "Only with FLUF installed. Player windows: FLvibed's HUD, prompts and subtitles step away from FLUF's palette, options window, map and notifications, and the controller drives them; All: also FLUF's developer windows (its Debug Window); Ignore: FLvibed's layout as without FLUF. FLvibed's keys always pass to FLUF's text box while you type in it.",
+    "tier": "player"}
+  ]}
+ }
+}

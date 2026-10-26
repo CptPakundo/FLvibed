@@ -1,0 +1,11 @@
+{
+ "_about": "Subtitle priority and the side chat (the owner, 26 Oct 2026, M01: King's 'Engage the enemy!' must not give way to chatter): story lines and dialogue take centre stage and hold their place until their audio ends; NPC lines that do not open the comm portrait (generic chatter, announcements) go to the game's chat window; the option copies every story line there too. subtitles\\docs\\DISPLAY_PLAN.md 'Two channels'.",
+ "rows": {
+  "chatter": {
+   "help": "NPC lines that do not open their comm portrait - generic radio chatter between others, broadcasts, announcements: to the chat window (default; every line kept in its log, under HUD 2 also in its comm feed), as subtitles (only while the dialogue leaves room - never over a story line), or off. Story lines and anyone speaking to you with their portrait are always the subtitles."
+  },
+  "chat_all_dialogue": {
+   "help": "Also copy every story, mission and Neural Net line into the chat window, so its log holds every spoken line - a rolling history to scroll back through. The subtitles stay as they are."
+  }
+ }
+}

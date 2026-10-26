@@ -1,0 +1,52 @@
+# Spelling/punctuation conventions, applied by merge.py to every final subtitle (corrections included) and
+# by the review tool when it fits typed text. pattern = Python regex, case-insensitive. The replacement
+# takes the capital of what it replaces ("Dammit!" -> "Damn it!", "dammit" -> "damn it") when it starts
+# lowercase; a replacement that starts with a capital ("Mr.") is always written as given, and one that
+# starts with "=" is written exactly as given ("=weaps").
+# Basis: the game's own text where it is clear, standard spelling otherwise, the user's picks where they
+# were consistent (session 1). Spoken variants stay as spoken: c'mon/come on, gotta/got to, gonna, ya.
+pattern	replacement	note
+\bdam(?:mit|nit|n-it)\b	damn it	"dammit"/"damnit" -> "damn it" (game text, standard)
+\balright\b	all right	standard; 184 vs 22 in the subtitles; user's picks
+\bok\b(?!-)	okay	game text "okay"
+\bmr\b\.?(?=\s+[A-Z])	Mr.	title before a name always "Mr."
+\bmister(?=\s+[A-Z][a-z])	Mr.	"Mister Trent" -> "Mr. Trent" (game text); "Mister...?" alone stays
+\bdr\b\.?(?=\s+[A-Z])	Dr.	title before a name always "Dr."
+\bdoctor(?=\s+[A-Z][a-z])	Dr.	"Doctor Quintaine" -> "Dr. Quintaine" (game text "Dr. Sinclair"); "Doctor," alone stays
+\borganis(e|ed|es|ing|ation)\b	organiz\1	American spelling, as the game text
+\bhome[\s-]world(s?)\b	homeworld\1	game text, user's pick
+\bsafe[\s-]house(s?)\b	safehouse\1	user's pick
+\bbull'?s[\s-]?eye\b	bullseye	user's pick
+\bshake[\s]?up\b	shake-up	game text, user's pick
+\bbaby[\s-]sit	babysit	user's pick
+\bjar[\s]?head\b	jar-head	user's pick (script spelling)
+\bxeno[\s-]?arch(?:a)?eolog(y|ist|ists|ical)\b	xenoarchaeolog\1	game text "Xenoarchaeology"
+\buh[\s]?huh\b	uh-huh	standard spelling
+\b(?:mhm|mm[\s]?hmm)\b	mm-hmm	standard spelling
+\bhm{1}\b|\bhm{3,}\b	hmm	standard spelling ("Hm", "Hmmmmm" -> "Hmm")
+\bwoah\b	whoa	standard spelling
+\s+\.\.\.(?=\s|$)	...	ellipsis attaches to the word before it ("Hold on ... I" -> "Hold on... I")
+\.{4,}	...	four or more dots -> ellipsis
+(?<=[\w,])\s*(?:--|—|-|–)$	=–	dialogue cut off by a scripted event: an en dash attached to the last word, no period ("Repeat–"; user)
+\s+-\s+|\s*—\s*	 – 	spaced hyphen / em dash -> spaced en dash
+!{2,}	!	"!!!" -> "!"
+(?=[?!]*\?)(?=[?!]*!)[?!]{2,}	?!	interrobang: any run of ? and ! as "?!" ("!?", "?!?")
+(?-i:\bthe Order\b)	The Order	faction name with capital "The" mid-sentence, as the game text (65 vs 20)
+(?-i:\brogue(s?)\b)	Rogue\1	the Liberty Rogues faction is always capitalized in the game text
+(?<=[A-Za-z])\.\.\.(?=[A-Za-z])	... 	ellipsis between words gets a space after it ("Liberty...thanks" -> "Liberty... thanks")
+(?-i:(?<=[a-z,] )Web'?s\b)	=weaps	mid-sentence "Webs" (capital from speech to text) -> "weaps"
+\bweb'?s\b	weaps	military pilot slang for "weapons" (pilot_f_mil_m02*: "Weaps are hot", "Switching to weaps"); misheard as "webs" (user, session 1)
+\bzone[\s-]?(?:21|twenty[\s-]one)\b	Zone 21	written "Zone 21" as in the game text (34x)
+\bstanding by[.,]\s*(?:let me,?|lemmy)\s+adam\b	Standing by, lemme at 'em	generic NPC line, misheard as "Let me, Adam" (user, session 1)
+^Edison Trent(?=,)	=Trent	speech to text read its glossary back for "Trent," at the start of a line (FLSubs: "Trent,")
+\bhush hush\b	hush-hush	standard spelling
+,\s*\.(?=[a-z])	=, 	script typo ", .it's"
+^(Ah|Hey|Oh|Whoa)\]$	=\1!	a lone exclamation FLSubs closed with "]"
+^Huh\]$	=Huh?	a lone exclamation FLSubs closed with "]"
+\b(were|was|been|being) lead to\b	\1 led to	script typo "were lead to believe" (user: "led")
+\bMadame President\b	=Madam President	the President's title, as the user picked it
+\bsector ([A-Z])[\s-]?eight\b	=Sector \g<1>8	grid sectors as on the map: "Sector C8" (user)
+^Edison(?=,)	=Trent	speech to text read its glossary back for "Trent," opening a line (other voices: "Trent,")
+\bregretabl	regrettabl	spelling (FLSubs "regretable")
+\bA[ .-]?O[ .-]?K\b	=A-OK	standard spelling ("Aok", "A O K")
+\bceasefire(?=[,!])	cease fire	the shouted order is two words ("Cease fire!", user picked); the noun stays "ceasefire"

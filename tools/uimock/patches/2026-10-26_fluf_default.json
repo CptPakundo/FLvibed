@@ -1,0 +1,7 @@
+{
+ "_about": "FLUF windows default ALL (the owner, 26 Oct 2026: the HUD fades under every one of FLUF's always-on-top windows; nothing of the HUD moves for them) and the row's FLUF status note (FLUF DETECTED / NO FLUF INSTALLED) on the options page. docs\\MOD_COMPATIBILITY.md FLUF.",
+ "rows": {
+  "fluf_windows": {"def": "ALL", "value": "ALL",
+   "help": "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives FLUF's palette, options window and map. All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. FLvibed's keys always pass to FLUF's text box while you type in it."}
+ }
+}

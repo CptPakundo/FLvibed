@@ -1,0 +1,49 @@
+# Whitelist: only FLvibed's own sources, tools, docs and the shipped subtitle data are tracked.
+# Game installs, audio, extracted game text, the CD image, installers, disassembly, cloned reference repos,
+# recordings and build output stay local (copyrighted game content must never end up in the repo).
+/*
+!/.gitignore
+!/.gitattributes
+!/CLAUDE.md
+!/README.md
+!/CHANGELOG.md
+!/LICENSES/
+!/HANDOFF.txt
+!/HANDOFF_history.txt
+!/build.cmd
+!/core/
+!/docs/
+!/tools/
+!/controller/
+!/subtitles/
+!/tests/
+!/.clang-format
+
+# the leg history (research\experience\legs\legs.tsv: the test loop's source of truth, one row per leg run) is the one
+# file tracked out of the otherwise local research\ tree - every other folder and file under it stays ignored
+!/research/
+/research/*
+!/research/experience/
+/research/experience/*
+!/research/experience/legs/
+/research/experience/legs/*
+!/research/experience/legs/legs.tsv
+
+# build output
+/controller/build/
+/subtitles/build/
+/build/
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.wav
+*.mp3
+*.utf
+
+# game knowledge base tables generated from the game's own data (tools\kbgen.ps1, regenerated locally in seconds)
+/docs/kb/generated/
+
+# Python bytecode caches (tools run from the repo)
+__pycache__/

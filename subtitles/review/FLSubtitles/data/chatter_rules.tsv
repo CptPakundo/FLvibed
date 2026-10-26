@@ -1,0 +1,61 @@
+# Fixes for words speech to text keeps mishearing in NPC radio chatter (gcs_/rms_ lines only; never story
+# dialogue). ids = regex on the line id (case-insensitive). pattern/replacement as in style_rules.tsv: a
+# lowercase replacement takes the capital of what it replaces; "=text" is written exactly as given.
+# Applied by merge.py after the name rules, before the style rules; reviewed lines they change go to Re-review.
+# Source: the user's answers on repeated lines (session 1).
+# voices (optional): regex on the voice name; the rule applies to those voices only.
+ids	pattern	replacement	note	voices
+^(gcs|rms)_	\b(?:mogis|moggies|boogies|bogies|boogeys|logis)\b	bogeys	"bogey" misheard (Mogi, Boogie, ...); standard spelling bogey/bogeys
+^(gcs|rms)_	\b(?:mogi|moggy|boogie|bogie|boogey|logi)\b	bogey	"bogey" misheard (Mogi, Boogie, ...); standard spelling bogey/bogeys
+^gcs_combat_insights_01-	\bmoy(?= on my six)	bogey	"bogey" misheard ("Moy on my six")
+^(gcs|rms)_	\b(?:bannon|barnett|manda|mandy|vanity|vantage|manned|banded|bandage)\b(?=[\s,.!]*(?:is|destroyed|shields|hard|down|you're|$))	bandit	"bandit" misheard
+^gcs_combat_brag_01-	\b(?:band|brand|round) it down\b	bandit down	"Bandit down" misheard
+^gcs_combat_insights_03-	^bad\.\s+it has\b	Bandit has	"Bandit has me in lock" misheard
+^gcs_combat_inflicting_damage_worst_06-	^this planet\b	=This bandit	"This bandit" misheard
+^gcs_combat_inflicting_damage_worst_06-	^this band is\b	=This bandit's	"This bandit's" misheard
+^gcs_combat_hasinsights_04-	\blying up\b	lining up	"Lining up a bandit" misheard
+^(gcs|rms)_	\bhostel\b	hostile	"hostile" misheard
+^gcs_combat_brag_01-	\bastral target\b	hostile target	"Hostile target down" misheard
+^gcs_combat_	\b(?:log|mug|fuck)\s+out\b	bug out	"bug out" (retreat) misheard
+^gcs_combat_announce_flee_03-	^(?:I'm\s+(?:buggering|booging|botting|fucking)|I bug it) out\b	=I'm bugging out	"I'm bugging out" misheard
+^gcs_combat_order_disengage_01-	^\s*[\w']+\s+pilots\b	=At ease, pilots	"At ease, pilots" misheard (Paddy's, Hades, Edison's, ...)
+^gcs_combat_order_disengage_04-	\bstewart pilots\b	=Stow it, pilots	"Stow it, pilots" misheard
+^(gcs|rms)_	\b(?:cool it,? vic|call it weak|come on,? link)\b	coolant leak	"coolant leak" misheard
+^(gcs|rms)_	\breactor link\b|\bwe're at your link\b	reactor leak	"reactor leak" misheard
+^(gcs|rms)_	\b(?:hall|call) breach\b	hull breach	"hull breach" misheard
+^(gcs|rms)_	\bhall is buckling\b	hull is buckling	"hull" misheard
+^(gcs|rms)_	\ball (?:bridge|breach) imminent\b	hull breach imminent	"Hull breach imminent" misheard
+^gcs_combat_order_engage_	\b(?:en)?gage it will\b	engage at will	"Engage at will" misheard
+^gcs_combat_order_engage_	\bfired? (?:it well|will)\b	fire at will	"Fire at will" misheard
+^(gcs|rms)_	\bD six\b	=D6	contact designation, written as in "Contact is D6" (user)
+^gcs_combat_brag_05-	\benemy target,?\s+(?:evaped|veeped|vaporized|evaded|vapor|named|faked|fate)\b	enemy target vaped	"vaped" is in the recording; the same line in every illegal pilot's mouth (user)
+^gcs_combat_order_retreattowards_	\bregroup (?:it|and|the)\b|\brecruit the\b	regroup at	retreat order fragment, a place name follows
+^gcs_combat_order_retreattowards_	\brendezvous it\b	rendezvous at	retreat order fragment, a place name follows
+^gcs_combat_order_retreattowards_	\bretreat it once\b	retreat at once	retreat order misheard
+^gcs_combat_order_retreattowards_	\bget (?:to )?(?:a|the)\b	get to	"Bug out and get to" (a place name follows)
+^gcs_combat_order_retreattowards_	\bfleet towards\b	flee towards	"Flee towards" misheard
+^gcs_patrol_idhome_	\b(?:on route|enroute)\b	en route	"en route" misheard
+^gcs_refer_base_yourstation	\byour session\b	your station	"your station" misheard
+^gcs_dockrequest_tomoor(?:_number)?$	(?s).+	=to moor	sentence piece "to moor" (moor = ships too big for a docking bay; user)
+^gcs_dockrequest_tomoor-	(?s).+	=to moor.	sentence piece "to moor", ends the sentence
+^gcs_dockrequest_todock(?:_number)?$	(?s).+	=to dock	sentence piece "to dock" (user)
+^gcs_dockrequest_todock-	(?s).+	=to dock.	sentence piece "to dock", ends the sentence
+^gcs_dockrequest_toland(?:_number)?$	(?s).+	=to land	sentence piece "to land" (user)
+^gcs_dockrequest_toland-	(?s).+	=to land.	sentence piece "to land", ends the sentence
+^gcs_misc_to$	(?s).+	=to	sentence-mixing word "to" (user); other reads were noise or glossary echo
+^gcs_misc_from$	(?s).+	=from	sentence-mixing word "from" (user)
+^gcs_misc_thisis\+	(?s).+	=this is	sentence-mixing words "this is"
+^(gcs|rms)_	(?-i:(?<=[a-z,] )Bandit(s?)\b)	=bandit\1	mid-sentence "Bandit" is lowercase like every other bandit line (user)
+^gcs_dhail_mbid_traders?_	\btraitor(s?)\b	trader\1	"trader" misheard as "traitor" (ship type in a base hail)
+^gcs_(trade|patrol)_idhome_	\bfor(?=\W*$)	from	a home-base piece leads into the base name: "...mission from" (user: "for" misheard)
+^gcs_combat_order_retreattowards_	\b(regroup|rendezvous)(?=\W*$)	\1 at	a retreat order leads into the place: "regroup at" / "rendezvous at" (speech to text drops "at")
+^GCS_ML_	,?\s*\bguys\?\s*Jing\b\??	=, gaijin?	rvp121 says "gaijin" (Kusari bar NPC); FLSubs heard it (user)	^rvp121$
+^GCS_ML_	\bguy,?\s*Jing\b	gaijin	rvp121 says "gaijin": "little gaijin", "you old gaijin" (user, FLSubs)	^rvp121$
+^GCS_ML_	\b(?:guyzine|gaijing)\b	=gaijin	rvp121 says "gaijin" (user, FLSubs)	^rvp121$
+^GCS_ML_D04aG01$	\bon you guys\b	on you, gaijin	rvp121 says "gaijin" (user, FLSubs)	^rvp121$
+^GCS_ML_F08dR0	\bthe Jews\b	the juice	slang for money ("Where's the juice?"), misheard by speech to text and FLSubs	^rvp106$
+W02bF	^run my\b	run by	base intro "run by <owner>" (nine voices say "by")	
+A03aG	(?<!Incorporated), (?=do(?:es)?n.t$)	= 	faction rebuff piece "<Faction> doesn't": no comma (a pause after the name)	
+^(gcs|rms)_	\bhostels\b	hostiles	"hostiles" misheard	
+D06aG	^Force the\b	=for the	"I work" + "for the <faction>": "Force the" misheard	
+manturrets	\b(?:torats|toroids|tours)\b	turrets	"man/activate all turrets" misheard	

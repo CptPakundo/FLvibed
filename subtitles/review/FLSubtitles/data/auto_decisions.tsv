@@ -1,0 +1,263 @@
+# Judged decisions for low-priority review lines (session 1, by Claude; user corrections override).
+# decision: script = keep the script (speech to text misheard); recording = the text given; unsure = left for the user.
+# voice: only that voice's line (empty = every voice of the id). A reason starting "[check]" = Claude was unsure: listed in the review tool's audit list until the user saves the line.
+id	decision	text	reason	voice
+dx_s059x_1202_Jonner	script		speech to text misheard: [herr von]->[heaven]:soundalike
+dx_s005a_0402_juni	script		speech to text misheard: [to baby sit]->[babysit]:soundalike
+dx_s011x_0302_juni	script		speech to text misheard: [neural net]->[neuronet]:soundalike
+dx_s014b_1701_juni	script		speech to text misheard: [c'mon]->[come on]:soundalike; [have]->[]:cosmetic
+dx_s045a_0302_juni	script		speech to text misheard: [tome]->[is home]:soundalike
+dx_s045d_0501_juni	script		speech to text misheard: []->[you]:cosmetic; [you]->[]:cosmetic
+dx_s068x_0601_juni	script		speech to text misheard: [c'mon]->[come on]:soundalike
+dx_s070x_0201_juni	script		speech to text misheard: [chancellor is]->[chancellor's]:soundalike
+dx_s071a_0301_juni	script		speech to text misheard: [c'mon]->[come on]:soundalike
+dx_s071d_0101_juni	script		speech to text misheard: [have]->[]:cosmetic
+dx_s009b_0403_King	script		speech to text misheard: [altogether]->[all together]:soundalike
+dx_s070x_2801_Orillion	script		speech to text misheard: [of the]->[other]:soundalike
+dx_s034x_1801_or_pi_01	script		speech to text misheard: [c'mon]->[come on]:soundalike
+dx_s037a_2402_Tobias	script		speech to text misheard: []->[have]:cosmetic
+dx_s012x_1301_Trent	script		speech to text misheard: [would]->[]:cosmetic
+dx_s034x_1301_Trent	script		speech to text misheard: [sinclair is]->[sinclair's]:soundalike
+dx_s038x_1301_Trent	script		speech to text misheard: []->[have]:cosmetic
+dx_s071b_0102_Trent	script		speech to text misheard: [skewered]->[escured]:soundalike; [shape shifters]->[shapeshifters]:cosmetic; [of]->[off]:soundalike
+dx_s062x_0703_vonclaussn	script		speech to text misheard: [hakkera]->[hacker has]:soundalike
+dx_s075x_0507_vonclaussn	script		speech to text misheard: [owe them]->[owes him]:soundalike
+dx_s074x_0001_Trent	script		speech to text misheard: [has taken]->[is taking]:soundalike
+DX_M13_1060_ORILLION	script		speech to text misheard: [7 100 rels]->[700 brels]:soundalike
+DX_M01_0340_LPU_BETA_LEADER	script		speech to text misheard: [newark]->[new york]:soundalike
+DX_M02_0840_COSMO	script		speech to text misheard: [jar head now]->[jawhead]:soundalike
+DX_M06_0130_DEXTER	script		speech to text misheard: [it]->[you]:cosmetic; [a shame]->[ashamed]:soundalike
+DX_M01_0130_DONAU	script		speech to text misheard: [newark]->[new york]:soundalike; [the]->[]:cosmetic
+DX_M01_0025_FREEPORT_7_BRIDGE	script		speech to text misheard: [all stations]->[off station]:soundalike
+DX_M07_0430_GLASGOW	script		speech to text misheard: [a rheinland]->[ryland]:soundalike
+dx_m10_1240_hakkera	script		speech to text misheard: [trent hakkera here]->[kent how can i hear]:soundalike; [claussen's safe house]->[clausen's safehouse]:soundalike
+DX_M04_0715_JUNI	script		speech to text misheard: [have got to]->[gotta]:soundalike
+DX_M05_0310_JUNI	script		speech to text misheard: [looked]->[look]:soundalike; [navy has]->[navy's]:soundalike
+DX_M11_1713_JUNI	script		speech to text misheard: [that will]->[that'll]:soundalike
+DX_M04_0165_JUNI	script		speech to text misheard: [unity is]->[unity's]:soundalike
+DX_M02_1170_JUNI	script		speech to text misheard: [juni]->[junie]:soundalike; [juni]->[junie]:soundalike
+DX_M13_0340_JUNI	script		speech to text misheard: [dammit]->[damn it]:soundalike
+DX_M13_0390_JUNI	script		speech to text misheard: [dammit]->[damn it]:soundalike
+DX_M13_0810_JUNI	script		speech to text misheard: [have]->[]:cosmetic
+DX_M05_0600_JUNI	script		speech to text misheard: [they will]->[there'll]:soundalike; [gate is]->[gate's]:soundalike
+DX_M04_0000_JUNI	script		speech to text misheard: [something is]->[something's]:soundalike
+DX_M02_1070_JUNI	script		speech to text misheard: [juni]->[junie]:soundalike
+DX_M05_0670_JUNI	script		speech to text misheard: [everyone is]->[everyone's]:soundalike
+DX_M11_1463_JUNI	script		speech to text misheard: [scanner is]->[scanners]:soundalike
+dx_m12_0260_juni	script		speech to text misheard: [have got to]->[gotta]:soundalike
+DX_M03_0440_JUNI	script		speech to text misheard: [have got to]->[gotta]:soundalike
+dx_m01_1585_juni	script		speech to text misheard: [jacobi has]->[jacobi's]:soundalike
+DX_M11_0650_KING	script		speech to text misheard: [ports are live]->[port's alive]:soundalike
+DX_M01_0610_KING	script		speech to text misheard: [dammit]->[damn it]:soundalike; [re enter]->[reenter]:cosmetic
+DX_M01_0700_KING	script		speech to text misheard: [dammit]->[damn it]:soundalike
+DX_M01_0200_ORDERSHIP	script		speech to text misheard: [newark]->[new york]:soundalike
+DX_M11_0110_Orillion	script		speech to text misheard: [jacobi]->[jacoby]:soundalike; []->[do]:cosmetic; [she]->[you]:cosmetic
+dx_m10_1200_cobo	script		speech to text misheard: [kusari]->[corsarius]:soundalike
+DX_M07_1320_CRUISER	script		speech to text misheard: [schiller]->[shiller]:soundalike; [all other]->[follow the]:soundalike
+DX_M04_1120_LANEHACKER_1	script		speech to text misheard: [everybody is]->[everybody's]:soundalike
+DX_M07_1340_RAZOR_1	script		speech to text misheard: [bull's eye]->[bullseye]:soundalike
+dx_m01_1082_prisonship	script		speech to text misheard: [xt 19]->[xc19]:soundalike
+DX_M06_0430_QUINTAINE	script		speech to text misheard: 
+DX_M07_0510_TOBIAS	script		speech to text misheard: [rheinland]->[ryndan]:soundalike
+DX_M07_0630_TOBIAS	script		speech to text misheard: [up on holman]->[upon holdman]:soundalike; [rheinlanders]->[einlanders]:soundalike
+DX_M07_0840_TOBIAS	script		speech to text misheard: [planet harris]->[planetaris]:soundalike
+DX_M07_0800_TOBIAS	script		speech to text misheard: []->[hmm]:cosmetic; [planet harris]->[planetaris]:soundalike
+DX_M04_0714_VANPELT	script		speech to text misheard: [they]->[]:cosmetic
+dx_m12_0520_vonclaussen	script		speech to text misheard: [the]->[they]:cosmetic
+dx_m10_0820_vonclaussen	script		speech to text misheard: [are]->[]:cosmetic; [dock with the]->[doc this is]:soundalike
+dx_m10_0361b_vonclaussen	script		speech to text misheard: [we]->[they]:cosmetic
+dx_s005a_0401_juni	script		judged: speech to text misheard ([have]->[]:cosmetic; [jumpaccess]->[jump access]:cosmetic; [it]->[this]:real)
+dx_s026b_0402_juni	script		judged: speech to text misheard ([a]->[to]:real)
+dx_s026c_0201_juni	unsure		speech to text heard an extra word ("trying"): may be spoken
+dx_s029x_1802_juni	unsure		"with her work" vs script "on her work": the actor may have fixed the wording
+dx_s045a_0304_juni	script		judged: speech to text misheard ([hakkera]->[hackett]:real)
+dx_s045a_0502_juni	script		judged: speech to text misheard ([]->[it]:cosmetic; [his]->[the]:real)
+dx_s067b_0701_juni	unsure		"her" vs "your": who is asked about is unclear from context
+dx_s006x_0501_King	script		judged: speech to text misheard ([in]->[and]:real)
+dx_s038x_3701_Kress	script		judged: speech to text misheard ([in]->[and]:real)
+dx_s064x_2101_Orillion	recording	That's right. They've been taking over human beings for some time now; controlling them.	script typo "from some time"; recording says "for"
+dx_s075x_0304_Orillion	unsure		speech to text heard "and fly" in addition: may be spoken
+dx_s034x_1202_Quintaine	script		judged: speech to text misheard ([then]->[ben]:real)
+dx_s038x_3801_Quintaine	script		judged: speech to text misheard ([well]->[what]:real)
+dx_s021x_1304_Tobias	recording	I want you to go and see the Ship Dealer on New London. I'll tell him you're coming.	recording and FLSubs: "go and see"
+dx_s037c_0301_Tobias	script		judged: speech to text misheard ([]->[edison]:real)
+dx_s006x_0601_Trent	script		judged: speech to text misheard ([]->[had]:real)
+dx_s011x_0601_Trent	recording	What's gonna happen to Ashcroft?	script typo "gonna to"
+dx_s020x_2501_Trent	script		judged: speech to text misheard ([of]->[]:real)
+dx_s020x_2503_Trent	script		judged: speech to text misheard ([him]->[them]:real)
+dx_s026c_0301_Trent	unsure		speech to text heard "some more time": may be spoken
+dx_s034x_1901_Trent	script		judged: speech to text misheard ([whoa]->[well]:real)
+dx_s076x_1401_Trent	unsure		"Be seeing you" vs "Pleasure seeing you"
+dx_s020x_1401_VanPelt	script		judged: speech to text misheard ([juni]->[junie]:soundalike; []->[all]:real; [all]->[]:real)
+dx_s062x_0501_vonclaussn	script		judged: speech to text misheard ([jonner]->[junna]:real; [you]->[]:cosmetic)
+dx_s062x_0702_vonclaussn	script		judged: speech to text misheard ([were]->[are]:real; [new]->[u]:real)
+DX_M06_0228_ANNOUNCER	script		judged: speech to text misheard ([hovis]->[harbors]:real)
+DX_M06_0170_DEXTER	recording	'Course, I don't; you hunk o' junk. I built this damn thing, but its memory banks are busted. Simple rules, Bretonian, one round, no shooting or bumping ... and if you stink it up or chicken out on the course, you'll make me angry! And you don't want that! You ready?	recording and FLSubs: "And you don't want that! You ready?"
+DX_M06_0230_DEXTER	script		judged: speech to text misheard ([him]->[them]:real)
+DX_M06_0270_DEXTER	recording	Okay, I'll tell you what you want to know ... but not over the comm channel. Meet me on the deck of the Hood.	script typo "want you want"
+DX_M06_0580_DEXTERB	script		judged: speech to text misheard ([]->[edison]:real)
+dx_m10_1300_fischer	recording	Freya, this is Daumann Freighter DHC-3417. We're transporting supplies to Planet Holstein.	recording and FLSubs drop "the" ("Freya" is a mishearing of Freighter)
+DX_M05_0170_FREEPORT_1	script		judged: speech to text misheard ([7]->[3]:real; [1]->[7]:real)
+DX_M07_0470_GLASGOW	script		judged: speech to text misheard ([this is outpost glasgow]->[southmost globes go]:soundalike; [bretonian]->[opportunity]:real)
+DX_M06_0333_GLORIOUS	script		judged: speech to text misheard ([foshko take]->[vasco check]:real)
+dx_m10_1110_hakkera	script		judged: speech to text misheard ([the]->[no]:real)
+dx_m10_1190_hakkera	script		judged: speech to text misheard ([hole]->[pull]:real)
+DX_M05_0690_JUNI	script		judged: speech to text misheard ([to]->[]:real)
+DX_M03_1680_JUNI	script		judged: speech to text misheard ([em]->[him]:real)
+DX_M03_0910_JUNI	script		judged: speech to text misheard ([co]->[c o]:cosmetic; [seemed]->[seem]:soundalike; [on]->[in]:real)
+dx_m12_0150_juni	script		judged: speech to text misheard ([trent]->[edison]:real)
+DX_M07_1740_JUNI	script		judged: speech to text misheard ([aso]->[osso]:real)
+DX_M04_1350_JUNI	recording	It's best if we split up. With that price on our heads, every bounty hunter in the colonies is going to be after us. I'll go to Cambridge to find Professor Quintaine. Trent, find your friend on Leeds and stay out of sight. I'm uploading the coordinates of the Leeds Jump Hole.	script typo "find to your friend"
+DX_M13_0380_JUNI	script		judged: speech to text misheard ([4]->[thor]:real)
+DX_M11_1471_JUNI	script		judged: speech to text misheard ([take]->[check]:real)
+DX_M09_0650_JUNI	script		judged: speech to text misheard ([em]->[him]:real)
+DX_M03_1060_JUNI	recording	Do you think this had anything to do with the artifacts? I just don't get it ... Rheinland? Even if there's a traitor in the Liberty Military, what do Rheinlanders have to do with anything?	script typo "had anything had to do"
+DX_M05_0640_JUNI	recording	Doctor, ever since Trent came in possession of the artifact, we've been hunted ... first by the Liberty Navy, then bounty hunters, now Rheinlanders. Everybody seems to be after it ... and we don't even know what it is. A friend told us that Professor Quintaine might be able to shed some light on this.	recording and FLSubs: "came in possession", "Professor"
+DX_M11_1470_KING	script		judged: speech to text misheard ([juni]->[jonny]:real)
+dx_m12_0240_king	script		judged: speech to text misheard ([hull]->[hole]:real)
+DX_M01_0385_KING	unsure		speech to text did not hear "blue" (script also lacks a full stop after "waypoint")
+DX_M03_1220_KING	script		judged: speech to text misheard ([your co]->[jaceo]:real)
+DX_M02_0800_KING	script		judged: speech to text misheard ([roger]->[watch]:real)
+dx_m01_1205_king	unsure		speech to text heard "must be around here" without "I can feel it"
+dx_m01_1410_king	script		judged: speech to text misheard ([to]->[]:real)
+dx_m01_1376_king	script		judged: speech to text misheard ([fighters]->[virus]:real)
+DX_M04_0340_KING	script		judged: speech to text misheard ([cruisers]->[cruises]:soundalike; [10000m and]->[10 thousand meters in]:real)
+DX_M02_0942_KING	recording	Don't you know how to use a tractor beam? Select Ashcroft's life pod and use the tractor beam in the target window on the left side of your HUD. Come on, we have to get this thug to Juni.	script typo "use select the"
+DX_M01_0540_KING	unsure		"get your weapons ready" vs script "ready your weapons"
+dx_m01_1528_king	recording	What we did here today will hopefully put a dent in the growing crime problem we've been having in this system. Maybe now we can focus our full attention on The Order and anyone who supports them. Schultzky's assassination can't go unpunished!	recording reworded: "What we did here today", "Schultzky's assassination can't go unpunished"
+DX_M01_0690_KING	script		judged: speech to text misheard ([were]->[are]:real)
+DX_M02_0291_KING	script		judged: speech to text misheard ([into]->[in a]:real)
+dx_m01_1306_king	script		judged: speech to text misheard ([]->[edison]:real)
+DX_M02_0113_KING	script		judged: speech to text misheard ([and]->[to]:real)
+DX_M02_0112_KING	script		judged: speech to text misheard ([and]->[on]:real)
+DX_M02_1112_KING	script		judged: speech to text misheard ([dock]->[dark]:real)
+DX_M13_0870_ORILLION	script		judged: speech to text misheard ([through]->[to]:real)
+DX_M08_0470_OZU	script		judged: speech to text misheard ([caught]->[cut the]:real)
+DX_M08_0410_OZU	script		judged: speech to text misheard ([ozu]->[hold it]:real)
+DX_M08_0260_DRAGON	script		judged: speech to text misheard ([fighter]->[fire]:real)
+DX_M01_0680_TRANSPORT1	script		judged: speech to text misheard ([them]->[him]:real)
+DX_M07_1520_RAZOR_1	script		judged: speech to text misheard ([shinkaku]->[chicago]:real)
+DX_M07_1480_RAZOR_1	script		judged: speech to text misheard ([them]->[him]:real)
+DX_M10_0410B_BUNDSCHUH_E	script		judged: speech to text misheard ([can not shake]->[that is it]:real)
+DX_M10_0382B_BUNDSCHUH_D	script		judged: speech to text misheard ([herr]->[hey]:real)
+DX_M01_0290_ESCORT_1	script		judged: speech to text misheard ([escort]->[let us go]:real)
+DX_M07_1330_RHEINLAND_BATTLESHIP	script		judged: speech to text misheard ([our]->[a]:real; [we are losing containment ahhhhhhh]->[]:real)
+DX_M02_0570_PUEBLO	script		judged: speech to text misheard ([pueblo]->[voyager]:real)
+DX_M05_0900_RH_BATTLESHIP	script		judged: speech to text misheard ([all]->[our]:real)
+DX_M05_0920_RH_BATTLESHIP	script		judged: speech to text misheard ([abandon]->[defend the]:real; [repeat]->[ready]:real)
+DX_M07_1150_SINCLAIR	script		judged: speech to text misheard ([kress]->[chris]:real)
+DX_M03_0669_TRANSPORT_LEADER	script		judged: speech to text misheard ([dammit]->[damn it]:soundalike; []->[got]:real)
+DX_M03_0671_TRANSPORT_LEADER	script		judged: speech to text misheard ([coolant leak]->[truly]:real; [engine core]->[open quarter]:real)
+DX_M07_1030_TOBIAS	script		judged: speech to text misheard ([shinkaku]->[chicago]:real)
+DX_M07_0650_TOBIAS	script		judged: speech to text misheard ([flight]->[fight]:soundalike; [shinkaku]->[chicago]:real)
+dx_m10_0381b_vonclaussen	script		judged: speech to text misheard ([with the]->[this]:real)
+dx_m10_0480b_vonclaussen	script		judged: speech to text misheard ([]->[edison]:real)
+cargo_jettisoned	recording	Cargo jettisoned	Neural Net: id + speech to text (FLSubs "jetisson" typo)
+bar	recording	Bar	Neural Net room name: id + FLSubs (speech to text "Far")
+increased_drag_detected	recording	Increased drag detected	Neural Net: id + speech to text (FLSubs "rad")
+waiting_to_dock	recording	Dock in use – entering queue	Neural Net: waiting in the docking queue (both reads misheard "queue")
+dock	recording	Dock	Neural Net: id + FLSubs (speech to text "Doc")
+info_sol_destroyed	recording	Mission critical structure destroyed	[check] Neural Net: sol = solar object; speech to text heard "structure" (pairs with info_ship_destroyed "vessel")
+ship_purchase_complete	recording	Ship purchase complete	Neural Net: id + speech to text (FLSubs "purchases")
+object_waypoint	recording	Waypoint	Neural Net: the game writes "Waypoint"
+not_enough_money	recording	Insufficient funds	Neural Net: id + speech to text (FLSubs "founds")
+dmsn_accepted	recording	Accepted – target zone loaded into Nav Map	[check] Neural Net: speech to text; destroy missions mark a target zone, same form as amsn_accepted
+look_at_news	recording	Look at the news	Neural Net: id + speech to text (FLSubs "look up")
+mine_dropper_destroyed	recording	Mine dropper lost	Neural Net: id + FLSubs (speech to text "mind")
+deck	recording	Deck	Neural Net room name: id + FLSubs (speech to text "Jack")
+hull_breach_imminent	recording	Hull breach imminent	Neural Net: id (both reads misheard)
+GCS_ML_F01aB03	recording	Yes, there might be something I have heard. Like to hear it.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp146
+GCS_ML_W03bB01	recording	If you want a drink, I can replicate anything you want.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp003
+DX_M06_0227_ANNOUNCER	recording	Trent leads as they come down the final stretch.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	announcer
+GCS_FM_F08dR02	recording	Uh yeah, it looks like you can't afford this right now. Sorry, try me later.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp501
+GCS_ML_A02aG04	recording	The action's pretty light right now, but I'm sure things will change.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp106
+GCS_ML_A02cG02	recording	Man with your rap might find himself dead if he's not careful.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp111
+GCS_ML_A02cG02	recording	I can't help you, and don't see how you made it this far with your rep.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp151
+GCS_ML_D01cG01	recording	Trent, as I live and breathe, it's good to see you.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp140
+GCS_ML_D07bG01	recording	It's a sweet deal. The owners keep out, and we give them some graft.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp106
+GCS_ML_F03cR02	recording	People have died for this, and likely will again.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp140
+GCS_ML_F03dR02	recording	You might get yourself iced for knowing about it.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp106
+GCS_ML_F10bR04	recording	Good day then. Shifting to standby mode.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp003
+GCS_ML_D01eV03	recording	You're back again? The lads will be jealous.	disagreed list A: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user, 12-line check)	rvp131
+GCS_FM_W01cG02	recording	Hi, you looking for something?	disagreed list, casual forms: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user)	rvp511
+DX_M04_0320B_JUNI	recording	Understood. Quickly, Trent, we've got to get to the Badlands. You take point.	disagreed list, casual forms: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user)	juni
+DX_M06_0226B_ANNOUNCER	recording	Hovis has the lead going to the final stretch.	disagreed list, casual forms: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user)	announcer
+GCS_ML_D01eV03	recording	You're back again? I thought we'd finished.	disagreed list, casual forms: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user)	rvp151
+GCS_ML_F05bG01	recording	Yeah, you'll earn your keep, and you'll return.	disagreed list, casual forms: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user)	rvp121
+GCS_ML_F05bG01	recording	It'll keep your interest, so you don't fall asleep.	disagreed list, casual forms: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user)	rvp140
+GCS_ML_W03bB01	recording	Something to drink, and got stuff that'll put you out.	disagreed list, casual forms: speech to text's words, FLSubs' end mark: the draft's punctuation was broken (user)	rvp106
+bc_enter_dist_follow_02	recording	Good. You have entered range.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	juni
+bc_goto_pos_04	recording	We are right on course.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	tobias
+dx_m01_1282_lsfbeta4	recording	Gone. We were sweeping through the debris field and ran into heavy fire inside a dense particle cloud.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	lsfbeta4_voice_m01a
+DX_M03_1761_JUNI	recording	I have to deduct some of your payment since we failed to protect the cruisers.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	juni
+dx_s026b_0501_Trent	recording	Anything else?	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	trent
+GCS_FM_F01eG01	recording	I do have some information that might interest you.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	rvp516
+GCS_FM_F04fG02	recording	But it appears you're currently on assignment. Why don't you finish that one up and then come back?	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	rvp511
+GCS_FM_F08dR01	recording	I am sorry. I'd love to work with you, but you can't afford this right now. Come back later.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	rvp541
+GCS_ML_A02aG02	recording	Got nothing for you. It's dead here now.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	rvp151
+GCS_ML_D01dG01	recording	You're back, don't you have work to do?	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	rvp131
+GCS_ML_D01fG06	recording	Thought you were going.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	rvp106
+GCS_ML_F04dG01	recording	You're short on cargo space. You should get serious. Dump your junk. Maybe get a bigger ship. Then come back.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	rvp106
+nag_dst_gate_02-	recording	Go ahead and enter the gate.	disagreed list, small word added/dropped: speech to text's words, FLSubs' end mark (user; sample 7/7)	juni
+DX_M06_1210_B-SPECTATOR	recording	A bottle of your best! Heck, get a round for the guys!	contextual pass: "get around" = "get a round" (drinks for the guys)	b-spectator
+GCS_ML_W03bB02	recording	So, a draft?	contextual pass: a draft beer, not a name	rvp146
+GCS_ML_V01aV01	recording	Take a gander. Let me know if I can help.	contextual pass: stray capital	rvp106
+GCS_ML_A04aG02	recording	like what you put over on them	contextual pass: one joined piece ("… doesn't like what you put over on them"), no mark inside	rvp151
+GCS_ML_W03bB01	recording	Anything to drink? May I get you something from the bar?	contextual pass: a question	rvp111
+GCS_ML_D04cE01	recording	I'm glad you stumbled in, then. I can get and fix it all, Mister...?	contextual pass: two sentences	rvp106
+gcs_combat_taking_damage_worst_01-	recording	Thirty-one dead. Hull is critical!	[check] contextual pass: Walker's version; other pilots say "I'm getting pounded!" / "My hull is buckling!"	walker
+GCS_ML_D01dG01	recording	Why, you! You have mission work to do.	[check] contextual pass: "Why you!" read as the exclamation "Why, you…!"	rvp126
+GCS_ML_F10aR03	recording	My masters will be pleased.	[check] contextual pass: the robot bartender; "Masters" capitalised by FLSubs	rvp003
+dx_s009b_1202_King	recording	I'll see you in space.	[check] contextual pass: speech to text "A sea in space"; FLSubs "I'll see you in space" (King's farewell)	king
+dx_m10_0237_vonclaussen	recording	It's over.	[check] contextual pass: speech to text "Pitova." is no word; FLSubs "It's over."	vonclaussn
+DX_M11_0832_JUNI	recording	Nooo!	[check] contextual pass: a scream; FLSubs' sound kept as the user chose for sounds so far (speech to text "Yo!")	juni
+DX_M07_0740_QUINTAINE	recording	Aaaaahhh!	contextual pass: a scream; FLSubs' sound kept as the user chose for sounds so far	quintaine
+DX_M07_0770_SINCLAIR	recording	Aaaaahhh!	contextual pass: a scream; FLSubs' sound kept as the user chose for sounds so far	sinclair
+dx_m10_0461_vonclaussen	recording	Nooo!	contextual pass: a scream; FLSubs' sound kept as the user chose for sounds so far	vonclaussn
+gcs_combat_insights_01-	recording	Bogey on our six.	contextual pass: "Bogey R six" misheard (FLSubs "on our six")	walker
+gcs_combat_taking_damage_worst_03-	recording	I can't breathe.	contextual pass: "Hi, can you breathe?" misheard; other voices say "I can't breathe."	pilot_f_ill_m01a
+gcs_dockhail_hailee_datasubmit_02-	recording	We're sending the data now	contextual pass: "the dead and now" misheard (data submission)	pilot_f_ill_m02
+gcs_combat_engaging_01+	recording	I'm taking on	contextual pass: "I'm checking on" misheard; other voices "I'm taking on" / "I'm engaging"	pilot_f_ill_m02
+GCS_ML_A02aG03	recording	I have nothing for you now. Sayonara until later.	contextual pass: "Cyanar" misheard (FLSubs "Sayonara")	rvp126
+GCS_ML_A02cG03	recording	You're not safe. Not around here with your rep.	contextual pass: "wrap" misheard (FLSubs "rep")	rvp111
+GCS_FM_D07aG02	recording	We own this base.	contextual pass: "the space" misheard (FLSubs "this base"; other voices "We run this place")	rvp546
+GCS_ML_A04aG01	recording	lose sleep icing guys who step on their toes	contextual pass: one piece ("… doesn't lose sleep icing guys who step on their toes"), no comma	rvp106
+GCS_ML_F03dR03	recording	It's not the usual kind of fare. This info's top secret.	contextual pass: "fare" (another voice: "It's not the usual fare.")	rvp111
+GCS_ML_F10aR02	recording	Very well. Sayonara.	contextual pass: spelling "Sayonara"	rvp126
+GCS_ML_V01aV02	recording	Look to your heart's content.	contextual pass: "arch content" misheard (FLSubs "heart's content")	rvp140
+GCS_ML_W03aF04	recording	What are you needin'?	contextual pass: dropped g as the same actor's "wantin'"	rvp140
+nag_dst_hole_01-	recording	This Jump Hole leads to the next system. Go ahead and activate your dock maneuver.	contextual pass: "dark maneuver" misheard (the dock maneuver)	tobias
+nag_dst_tl_03-	recording	Dock with the Trade Lane so we can move on.	contextual pass: "Talk with" misheard (FLSubs "Dock with")	juni
+GCS_ML_D01fG06	recording	You were just here, sir.	[check] contextual pass: robot bartender; FLSubs "You were just here, sir." (speech to text "You are just here")	rvp003
+dx_m01_1445_king	recording	Trent, look out! More pirate ships closing in fast! I hope those reinforcements get here soon!	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	king
+DX_M03_1660_JUNI	recording	YESSSS! That's one down.	contextual pass: a shout: the script's capitals kept, as the user chose for shouts (YEE HAW!, NOOOO!)	juni
+DX_M04_1080_BOUNTY_01	recording	Negative. Those two have a big bounty on their heads. Clear out, there's no bounty for hackers.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	pilot_c_ill_f01
+DX_M05_0300_JUNI	recording	We have to hurry! I have a bad feeling that there are more of them out there somewhere.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	juni
+DX_M05_0970_TRAITOR_1	recording	You're welcome... but this isn't the end of it. Something has happened in Rheinland and I'm afraid the worst is yet to come. We'll fly to the Norfolk and give ourselves up. Hopefully, someone in the Bretonia military will believe our story. Good luck to you.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	pilot_c_leg_m01
+DX_M07_0590_TOBIAS	recording	Ah, enough already! We have to get out of here.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	tobias
+DX_M07_0980_TOBIAS	recording	Hmm, there's no sign of them, but I'm sure they'll be back. We need to keep moving.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	tobias
+DX_M10_0380B_BOTZLER	recording	Herr Von Claussen, I'm picking up another passage on the far side of the interior. We must use this passage as our means of escape. We will not survive a head-on fight with the capital ships.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	botzler
+dx_m10_0470b_vonclaussen	recording	Goodbye, old friend, and Godspeed!	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	vonclaussn
+dx_m10_1170_hakkera	recording	They have bigger fish to catch than us.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	hakkera
+DX_M11_0801_KING	recording	This whole place is lit up!	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	king
+DX_M11_0818_KING	recording	We can't hold them off any longer!	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	king
+DX_M13_0450_JUNI	recording	Damn it! Another Nomad capital ship just uncloaked. All units: break off your attacks and engage the capital ship!	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	juni
+DX_M13_0510_ORILLION	recording	We're picking up another set of signals. Yet another Nomad capital ship is approaching Omicron. All combat wings: concentrate your fire on that ship and whatever else they throw at us. It is imperative that we buy our people some time to evacuate! I'm heading to the Osiris. Colonel Zane, make sure that Quintaine and Sinclair get safely to the rallying point.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	orillion
+DX_M13_1170_JUNI	recording	No. They're gone, but they're not beaten...	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	mission13
+dx_s003x_1901_Trent	recording	Well, it can't get any worse.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	trent
+dx_s004x_0801_Trent	recording	Sorry. The bartender said you work for the Liberty Security Force.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	trent
+dx_s004x_0901_juni	recording	And who do you work for, Mister...?	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	juni
+dx_s020x_2401_juni	recording	I don't want to identify it. I want to get rid of it!	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	juni
+dx_s026b_1001_Vance	recording	It's not entirely unusual for Doctor Quintaine to miss an appointment now and then – even one regarding funding.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	vance
+dx_s026b_2601_Vance	recording	From the New Berlin Museum. They're also very interested in their work. You just missed them.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	vance
+dx_s039x_0503_Akira	recording	I understand that you are here for the Proteus Tome.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	hakkera
+dx_s039x_0801_juni	recording	Like hell we will. I have contacts here, too.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	juni
+dx_s059x_0801_Jonner	recording	Mr Blix has connections to sources on a higher plane.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	jonner
+dx_s059x_1004_Jonner	recording	You see, we have been waiting for you for some time.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	jonner
+dx_s070x_2803_Orillion	recording	Communication is breaking down. Soon this will develop into all-out genocide.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	orillion
+dx_s074x_0401_Orillion	recording	This is it. Everybody to their ships! Trent, Juni, escort the freighter with Quintaine and Sinclair.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	orillion
+dx_s075x_0303_Orillion	recording	We'll fly there through the Badlands, which should give us some cover from the Nomad attacks.	contextual pass: FLSubs and speech to text both heard other words than the script (a script typo or the actor's wording)	orillion
+DX_M02_0941_KING	recording	Come on, Trent. We have to get going. Pick up the life pod with your tractor beam.	contextual pass: script typo "you tractor beam" (FLSubs copied it); speech to text heard "your"	king
+dx_s015x_0901_Walker	recording	Suit yourself... Now, if you'll excuse me, I need to make preparations.	contextual pass: both reads heard "you'll"	walker
+GCS_FM_F08dR01	recording	I do like you, Trent. But don't try my patience. You don't have enough credits for this.	contextual pass: two sentences	rvp516
+DX_M04_0217_UNITY	recording	All heads of abandoned ship! I'm in communication with General Walker: all ships of abandoned ship.	[check] stray "]" removed (merge artifact of FLSubs' "[static]"; speech to text ends with "."); the words themselves are suspect: the aligner could not place 4 words and FLSubs reads "All hands: abandon ship! I repeat: all hands abandon– [static]" - needs the owner's ear (25 Oct 2026)	unity_voice_m04

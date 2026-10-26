@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Run version="1.7.0">
+  <GameIcon />
+  <GameName>Freelancer: HD Edition (FLvibed autopilot)</GameName>
+  <CategoryName>M01a (speedrun leg, scene-free)</CategoryName>
+  <LayoutPath />
+  <Metadata><Run id="" /><Platform usesEmulator="False">PC</Platform><Region /><Variables /></Metadata>
+  <Offset>00:00:00</Offset>
+  <AttemptCount>0</AttemptCount>
+  <AttemptHistory />
+  <Segments>
+    <Segment>
+      <Name>control</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:01:44.7000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:01:33.7500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:01:34.5000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:01:35.3000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:01:33.7500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:01:33.7500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:01:44.7000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+    <Segment>
+      <Name>wing</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:01:45.7000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:01:39.0500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:01:39.0000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:01:40.0000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:01:39.0500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:01:38.2500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:00:00.9000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+    <Segment>
+      <Name>wingdown</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:03:26.3000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:02:57.0500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:03:02.0000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:03:03.0000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:02:57.0500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:02:56.2500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:01:34.5000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+    <Segment>
+      <Name>lane1</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:03:56.1000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:03:14.0500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:03:20.0000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:03:20.0000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:03:14.0500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:03:13.2500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:00:29.8000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+    <Segment>
+      <Name>brandt</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:04:27.9000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:03:40.0500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:03:46.0000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:03:46.0000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:03:40.0500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:03:39.2500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:00:29.9000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+    <Segment>
+      <Name>ambush</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:05:46.6000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:04:58.0500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:05:04.0000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:05:04.0000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:04:58.0500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:04:57.2500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:01:17.8000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+    <Segment>
+      <Name>reform</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:06:56.5000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:05:54.0500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:05:57.0000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:06:08.0000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:05:54.0500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:05:50.2500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:01:09.8000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+    <Segment>
+      <Name>lane2</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:07:23.8000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:06:20.0500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:06:26.0000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:06:35.0000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:06:20.0500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:06:16.2500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:00:27.3000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+    <Segment>
+      <Name>end</Name>
+      <Icon />
+      <SplitTimes>
+        <SplitTime name="Personal Best"><RealTime>00:08:34.7000000</RealTime></SplitTime>
+        <SplitTime name="Par (golden run)"><RealTime>00:06:48.5500000</RealTime></SplitTime>
+        <SplitTime name="WR run (TM4S13)"><RealTime>00:06:57.0000000</RealTime></SplitTime>
+        <SplitTime name="OldOak"><RealTime>00:07:03.0000000</RealTime></SplitTime>
+        <SplitTime name="SydMontague"><RealTime>00:06:48.5500000</RealTime></SplitTime>
+        <SplitTime name="Runners best segments"><RealTime>00:06:44.2500000</RealTime></SplitTime>
+      </SplitTimes>
+      <BestSegmentTime><RealTime>00:01:01.0000000</RealTime></BestSegmentTime>
+      <SegmentHistory />
+    </Segment>
+  </Segments>
+  <AutoSplitterSettings />
+</Run>

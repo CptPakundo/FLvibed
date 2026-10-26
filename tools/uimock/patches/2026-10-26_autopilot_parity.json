@@ -1,0 +1,10 @@
+{
+ "_about": "Autopilot parity (the owner, 26 Oct 2026: \"Autopilot functionality needs to be identical across K&M and Gamepad\"). The plain start (the autopilot key, the bar button, View held, ASSISTED's A) reads the game's live state first: an objective -> the objective mode, else the waypoint list -> travel along it, else the target (controller\\src\\impl\\autopilot.cpp StartSmart). One row after autopilot_key; the registry row [Autopilot] start_smart 0 / 1.",
+ "add_rows": {
+  "autopilot/": {"after": "autopilot_key", "rows": [
+   {"key": "start_smart", "label": "Autopilot start", "kind": "picker", "options": ["THE TARGET ONLY", "OBJECTIVE FIRST"], "def": "OBJECTIVE FIRST",
+    "help": "What the autopilot key, the bar button and View held start. Objective first (default): the mission's objective if there is one, else your waypoints (across systems), else the target. The target only: fight, escort, dock or fly to the selected target.",
+    "tier": "player", "needs": "live"}
+  ]}
+ }
+}

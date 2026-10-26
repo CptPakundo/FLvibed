@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subtitle Review</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1b1f24; --muted: #5d6673; --line: #d9dee5;
+    --accent: #2563eb; --accent-soft: #e8efff; --warn: #b45309; --warn-soft: #fff4e5; --ok: #15803d;
+    --key: #eef1f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151a; --panel: #1a1f26; --text: #e6e9ee; --muted: #9aa4b2; --line: #2c333d;
+      --accent: #6b9bff; --accent-soft: #1f2a40; --warn: #f0a24a; --warn-soft: #33281a; --ok: #4ade80;
+      --key: #262d37;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.45 "Segoe UI", system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+           padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 17px; margin: 0 8px 0 0; }
+  select, input[type=search], button, textarea {
+    font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #progress { margin-left: auto; color: var(--muted); font-size: 14px; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px;
+          margin-bottom: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+  .meta .id { font-family: Consolas, monospace; font-size: 15px; }
+  .speaker { font-weight: 600; }
+  .badge { font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--key); color: var(--muted); }
+  .badge.high { background: var(--warn-soft); color: var(--warn); }
+  .note { color: var(--warn); font-size: 14px; margin-top: 6px; }
+  .scene { font-size: 15px; line-height: 1.5; margin: 8px 0; padding: 8px 10px; border-left: 3px solid var(--warn);
+           background: rgba(127, 127, 127, 0.08); white-space: pre-line; }
+  audio { width: 100%; margin-top: 12px; }
+  .ctx { margin: 10px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
+  .ctx li { display: grid; grid-template-columns: minmax(8em, 15em) 1fr; gap: 14px; padding: 3px 0; }
+  .ctx li.cur { color: var(--text); font-weight: 600; }
+  .ctx .who { overflow-wrap: anywhere; font-size: 13px; letter-spacing: 0.02em; padding-top: 1px; }
+  @media (max-width: 640px) { .ctx li { grid-template-columns: 1fr; gap: 0; } .ctx .who { font-size: 12px; } }
+  .optrow { display: flex; gap: 6px; align-items: stretch; margin: 6px 0; }
+  .opt { display: flex; gap: 12px; align-items: flex-start; flex: 1; min-width: 0; text-align: left;
+         padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+  .opt:hover, .opt:focus { border-color: var(--accent); background: var(--accent-soft); outline: none; }
+  .opt kbd { flex: none; }
+  .opt .lbl { flex: none; width: 10.5em; color: var(--muted); font-size: 14px; padding-top: 2px; }
+  .opt .txt { flex: 1; font-size: 17px; }
+  .opt.saved { border-color: var(--ok); }
+  .opt.sel { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 4px 0 0 var(--accent); }
+  .edit, .pickbtn { flex: none; font-size: 14px; color: var(--muted); }
+  .edit:hover, .edit:focus, .pickbtn:hover, .pickbtn:focus { color: var(--text); border-color: var(--accent); outline: none; }
+  .opt.sel ~ .pickbtn { background: var(--accent); border-color: var(--accent); color: #fff; }
+  kbd { display: inline-block; min-width: 1.6em; text-align: center; padding: 1px 6px; border-radius: 5px;
+        background: var(--key); border: 1px solid var(--line); font: 13px Consolas, monospace; }
+  textarea { width: 100%; min-height: 64px; font-size: 17px; resize: vertical; margin-top: 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  .fit { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); display: none; }
+  .fit .will { font-size: 17px; margin: 4px 0 8px; }
+  .fit ul { margin: 4px 0 8px 18px; padding: 0; color: var(--muted); font-size: 14px; }
+  .sentence { font-size: 15px; color: var(--muted); }
+  .sentence .cur { color: var(--text); font-weight: 600; }
+  .sentence .playing { background: var(--accent-soft); border-radius: 4px; }
+  .sentence .sep { opacity: 0.6; }
+  .sentence .typed { flex-basis: 100%; color: var(--text); font-size: 15px; }
+  .badge.kind { background: var(--accent-soft); color: var(--text); }
+  .batch { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .batch .row { margin-top: 0; }
+  .batch ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 260px; overflow-y: auto; font-size: 14px; }
+  .batch li { display: flex; gap: 10px; align-items: center; padding: 2px 4px; border-radius: 4px; }
+  .batch li.cur { font-weight: 600; }
+  .batch li.playing { background: var(--accent-soft); }
+  .batch .playOne { padding: 1px 8px; }
+  .batch .who { min-width: 11em; color: var(--muted); }
+  .batch .bid { font-family: Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; flex: 1; }
+  .sentence .situation { flex-basis: 100%; font-size: 12px; opacity: 0.8; margin-top: -4px; }
+  .saved-line { color: var(--ok); font-size: 14px; margin-top: 8px; }
+  .help { color: var(--muted); font-size: 13px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  .words { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; margin-top: 8px; font-size: 15px; }
+  .words .state { color: var(--muted); font-size: 12px; margin-right: 4px; }
+  .words .w { padding: 1px 6px; border-radius: 4px; background: var(--key); border: 1px solid transparent; cursor: pointer; }
+  .words .w:hover { border-color: var(--accent); }
+  .words .w.now { background: var(--accent); color: #fff; }
+  .words .w.unplaced { opacity: 0.55; cursor: default; text-decoration: underline dotted; }
+  .words .w.piled { background: var(--warn-soft); color: var(--warn); }
+  .badge.unsure { background: var(--warn-soft); color: var(--warn); }
+  #statsCard table { border-collapse: collapse; font-size: 14px; }
+  #statsCard td { padding: 1px 12px 1px 0; vertical-align: top; }
+  #statsCard td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  #statsCard h3 { font-size: 14px; margin: 10px 0 2px; color: var(--muted); }
+  #statsCard .cols { display: flex; flex-wrap: wrap; gap: 8px 32px; }
+  .story { border-left: 3px solid var(--muted); padding: 2px 0 6px 10px; margin-bottom: 8px; }
+  .story .head { font-weight: 600; }
+  .story .prov { font-size: 12px; color: var(--muted); }
+  .story ul { list-style: none; margin: 4px 0 0; padding: 0; font-size: 14px; }
+  .story li { cursor: pointer; padding: 1px 0; }
+  .story li.cur { font-weight: 600; }
+  .story li .sec { color: var(--muted); font-size: 12px; margin-left: 6px; }
+  .story .branch { color: #b06000; }
+  #storyJump { max-width: 28em; }
+  @media (max-width: 640px) { .opt .lbl { width: auto; } .opt { flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Subtitle Review</h1>
+  <select id="mode" title="Which lines to review (number = lines still to review)"></select>
+  <input id="search" type="search" placeholder="Search id, voice or text" size="24">
+  <label class="help" id="doneLabel"><input id="done" type="checkbox"> show reviewed</label>
+  <label class="help" id="unrevLabel" style="display:none" title="Story order: only the lines nobody has decided yet"><input id="unrev" type="checkbox"> unreviewed only</label>
+  <select id="storyJump" style="display:none" title="Jump to a mission or scene of the story order"></select>
+  <button id="sampleBtn" style="display:none" title="Check a random sample of this list; if the drafts hold up, accept the rest in one go"></button>
+  <button id="moreBtn" style="display:none" title="Draw another random 50 of this list's open entries">Sample 50 more</button>
+  <button id="rebuildBtn" title="Re-run the build with your latest saves (Re-review, other takes, list counts) — no restart (B)">Rebuild</button>
+  <button id="statsBtn" title="Coverage: lines, how they were decided, word timings, open lists (T)">Stats</button>
+  <span id="buildState" class="help"></span>
+  <span id="progress"></span>
+</header>
+<main>
+  <div id="statsCard" class="card" style="display:none"></div>
+  <div id="view"></div>
+  <p class="help">
+    Click or <kbd>1</kbd>–<kbd>5</kbd> select a read &nbsp; double-click, <b>Pick</b> or <kbd>Enter</kbd> pick the
+    selected read &nbsp; <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>5</kbd> or <b>Edit</b> copy a read into the text box &nbsp;
+    <kbd>E</kbd> edit the draft &nbsp; <kbd>Enter</kbd> in the text box: save typed text &nbsp;
+    <kbd>Shift</kbd>+<kbd>Enter</kbd> save exactly as typed &nbsp; <kbd>Space</kbd> / <kbd>R</kbd> replay &nbsp; <kbd>S</kbd> play a chatter piece in a sentence &nbsp; <kbd>A</kbd> play every clip of a same-text batch &nbsp; <kbd>D</kbd> slow playback (0.75×) &nbsp; <kbd>L</kbd> loop &nbsp;
+    <kbd>U</kbd> / <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo the last save &nbsp; <kbd>B</kbd> rebuild &nbsp; <mark>highlighted</mark> words differ from the draft &nbsp;
+    <kbd>P</kbd>/<kbd>←</kbd> back (also to lines you already saved) &nbsp; <kbd>N</kbd>/<kbd>→</kbd> forward / skip &nbsp;
+    <kbd>Esc</kbd> leave the text box &nbsp; <b>Words</b> (the aligner's word starts): click a word to play from it,
+    <kbd>[</kbd> / <kbd>]</kbd> previous / next word, <kbd>W</kbd> show / hide them; <span class="badge">grey dotted</span> = not placed,
+    <span class="badge high">orange</span> = piled at the clip's end (the text may say more than the recording) &nbsp;
+    <kbd>X</kbd> mark / clear "not sure" (<kbd>Shift</kbd>+<kbd>X</kbd> with a note) &nbsp; <kbd>T</kbd> stats
+  </p>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+// queue = line numbers still to do in this list; pos = where we are in it.
+// back/fwd = lines seen this session (saved or skipped), so any of them can be revisited.
+let queue = [], pos = 0, cur = null, reviewed = 0, pendingFit = null, back = [], fwd = [], selected = -1;
+
+// The back history survives reloads (per browser; the corrections file is the real record).
+try { back = JSON.parse(localStorage.getItem("flsubs-review-back") || "[]"); } catch (e) { back = []; }
+function remember() {
+  try { localStorage.setItem("flsubs-review-back", JSON.stringify(back.slice(-500))); } catch (e) { /* private mode */ }
+}
+
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// The list menu comes from the server, with the number of lines still to review in each list.
+let modesInfo = [];
+async function loadModes(first) {
+  const modes = await (await fetch("/api/modes")).json();
+  modesInfo = modes;
+  const sel = $("#mode"), was = sel.value;
+  // lists with nothing left are hidden (they come back when something lands in them); the open lists
+  // first, then the ones that wait for a later stage, then browsing
+  const opt = m => `<option value="${m.mode}">${esc(m.label)}${m.count == null ? "" : ` (${m.count})`}</option>`;
+  const shown = m => m.count == null || m.count > 0 || m.mode === was || (m.sample && m.sample.done === m.sample.size && m.count > 0);
+  const sec = (name, label) => { const ms = modes.filter(m => m.section === name && shown(m));
+    return ms.length ? `<optgroup label="${label}">${ms.map(opt).join("")}</optgroup>` : ""; };
+  sel.innerHTML = sec("review", "To review") + sec("later", "Later stages / spot-check") + sec("browse", "Browse");
+  if (first) {
+    const next = modes.find(m => m.count > 0);
+    sel.value = next ? next.mode : "all";
+  } else if (was) sel.value = was;
+  sampleButton();
+}
+
+// Sampling: a list gets a random sample (~50 decisions); when the sample is checked, the rest of the list
+// can be accepted as drafted (bulk_accepted.tsv: not listened to, any line can still be reviewed by hand).
+function sampleButton() {
+  const b = $("#sampleBtn"), m = modesInfo.find(x => x.mode === $("#mode").value);
+  b.style.display = "none";
+  $("#moreBtn").style.display = "none";
+  if (!m || !m.can_sample || !m.count) return;
+  const st = m.sample;
+  b.style.display = "";
+  if (!st) { b.textContent = "Sample this list"; b.onclick = makeSample; return; }
+  if (st.done < st.size) { b.textContent = `Sample: ${st.done}/${st.size} checked`; b.onclick = () => { $("#mode").value = "sample:" + m.mode; loadQueue(false); }; return; }
+  b.textContent = `Accept the rest (${m.count}) · sample ${st.wrong}/${st.size} wrong`;
+  b.onclick = () => acceptRest(m, st);
+  const more = $("#moreBtn"); more.style.display = "";
+  more.onclick = async () => {
+    await (await fetch("/api/sample", { method: "POST", body: JSON.stringify({ mode: m.mode, more: true }) })).json();
+    await loadModes(false); $("#mode").value = "sample:" + m.mode; await loadQueue(false);
+  };
+}
+async function makeSample() {
+  const mode = $("#mode").value;
+  await (await fetch("/api/sample", { method: "POST", body: JSON.stringify({ mode }) })).json();
+  await loadModes(false); $("#mode").value = "sample:" + mode; await loadQueue(false);
+}
+async function acceptRest(m, st) {
+  if (!confirm(`Accept the remaining ${m.count} entries of "${m.label}" as drafted?
+Sample: ${st.wrong} of ${st.size} needed a change.
+They stay open to a manual review.`)) return;
+  const r = await (await fetch("/api/accept_rest", { method: "POST", body: JSON.stringify({ mode: m.mode }) })).json();
+  $("#buildState").textContent = r.accepted != null ? `accepted ${r.accepted} lines` : (r.error || "");
+  await loadModes(false); await loadQueue(false);
+}
+
+// Rebuild in place: the build re-runs with your saves (about half a minute), the tool keeps its place.
+let unbuilt = 0;
+function buildState(t) { $("#buildState").textContent = t ?? (unbuilt ? `${unbuilt} save(s) not built yet` : ""); }
+async function rebuild() {
+  const b = $("#rebuildBtn"); b.disabled = true; buildState("rebuilding…");
+  const r = await (await fetch("/api/rebuild", { method: "POST", body: "{}" })).json();
+  b.disabled = false;
+  if (r.ok) { unbuilt = 0; buildState((r.summary || []).slice(0, 2).join(" · ")); await loadModes(false); await loadQueue(true); }
+  else buildState("rebuild failed: " + (r.error || "").slice(0, 120));
+}
+async function undo() {
+  const r = await (await fetch("/api/undo", { method: "POST", body: "{}" })).json();
+  if (!r.ok) { buildState("nothing to undo"); return; }
+  unbuilt += 1; buildState(`undone: ${r.ids[0] || ""}`); reviewed = r.reviewed;
+  await loadModes(false);
+  if (back.length) { const n = back.pop(); remember(); return render(n); }
+  await loadQueue(true);
+}
+
+// Word-level difference against the draft (option 1): the words a read adds or changes are marked.
+function markDiff(text, base) {
+  const w = text.split(/\s+/), b = base.split(/\s+/), key = t => t.toLowerCase().replace(/[^a-z0-9']/g, "");
+  const n = w.length, m = b.length, L = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    L[i][j] = key(w[i]) === key(b[j]) ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const keep = new Set(); let i = 0, j = 0;
+  while (i < n && j < m) { if (key(w[i]) === key(b[j])) { keep.add(i); i++; j++; } else if (L[i + 1][j] >= L[i][j + 1]) i++; else j++; }
+  return w.map((t, k) => keep.has(k) ? esc(t) : `<mark>${esc(t)}</mark>`).join(" ");
+}
+
+// Story order: the lines in the order the game plays them (data/story_order.tsv); the headings jump list and
+// "unreviewed only" replace "show reviewed" there (saving keeps the line in the list).
+let storyIndex = [];
+function storyMode() { return $("#mode").value === "storyorder"; }
+async function loadQueue(keep) {
+  const story = storyMode();
+  $("#unrevLabel").style.display = story ? "" : "none";
+  $("#storyJump").style.display = story ? "" : "none";
+  $("#doneLabel").style.display = story ? "none" : "";
+  const p = new URLSearchParams({ mode: $("#mode").value, q: $("#search").value, done: $("#done").checked ? 1 : 0,
+                                  unrev: $("#unrev").checked ? 1 : 0 });
+  const r = await (await fetch("/api/queue?" + p)).json();
+  const was = cur && cur.n;
+  queue = r.items; reviewed = r.reviewed;
+  storyIndex = r.story_index || [];
+  if (story) {
+    $("#storyJump").innerHTML = r.story_file === false ? '<option>No story order yet: run asr/story_order.py</option>' :
+      '<option value="">Jump to a mission / scene…</option>' + (r.headings || []).map(h =>
+        `<option value="${h.i}">${esc(h.label)}</option>`).join("");
+  }
+  pos = keep && was != null && queue.indexOf(was) >= 0 ? queue.indexOf(was) : 0;
+  await showQueue();
+}
+
+function inQueue() { return cur && queue[pos] === cur.n; }
+
+function progress() {
+  const where = !cur ? "" : inQueue() ? `${pos + 1} / ${queue.length} in this list`
+    : `earlier line · ${queue.length} left in this list`;
+  $("#progress").textContent = `${where}${where ? " · " : ""}${reviewed} reviewed in total`;
+}
+
+async function showQueue() {
+  if (!queue.length) {
+    cur = null; pendingFit = null; progress();
+    $("#view").innerHTML = '<div class="card empty">Nothing left in this list.' +
+      (back.length ? ' Press <kbd>P</kbd> to go back to lines you saved.' : '') + '</div>';
+    return;
+  }
+  pos = Math.max(0, Math.min(pos, queue.length - 1));
+  await render(queue[pos]);
+}
+
+// The line's place in the story order (Story order view): heading, provenance, the lines around it (click = go there)
+function storyBoxHtml(st) {
+  return st ? `<div class="story">
+      <div class="head">${st.placed ? `${esc(st.mission)} · ${esc(st.section)} <span class="help">#${esc(st.order)} of the story order</span>`
+        : `Not placed: <span class="branch">${esc(st.play)}</span>`}
+        ${st.placed && st.play !== "main" ? ` <span class="branch">${esc(st.play)}</span>` : ""}</div>
+      ${st.placed ? `<div class="prov" title="Where the order comes from (asr/story_order.py)">${esc(st.via)} · ${esc(st.source)}${st.at ? ` · ~${esc(st.at)} s into the mission (estimated)` : ""}</div>` : ""}
+      ${st.mix ? '<div class="note">Scene mix: no subtitles yet (its timed cues are a later stage); the text below is the speech-to-text draft for reference.</div>' : ""}
+      <ul>${st.near.map(x => `<li class="${x.current ? "cur" : ""}" data-n="${x.n}" title="${esc(x.id)} · ${esc(x.section)}${x.play !== "main" ? " · " + esc(x.play) : ""}">
+        <span class="who">${esc(x.speaker)}</span>${esc(x.text)}${x.play !== "main" ? ' <span class="sec branch">branch</span>' : ""}</li>`).join("")}</ul>
+    </div>` : "";
+}
+
+async function render(n) {
+  pendingFit = null;
+  cur = await (await fetch("/api/item?n=" + n)).json();
+  const c = cur;
+  progress();
+  if (c.movie) {  // an intro movie line: shown in place, edited in data/movies.tsv (no clip of its own here)
+    const m = c.movie;
+    $("#view").innerHTML = `<div class="card">${storyBoxHtml(c.story)}
+      <div class="meta"><span class="speaker">${esc(m.speaker)}</span><span class="id">${esc(m.movie)}</span>
+        <span class="badge">${esc(m.start)}–${esc(m.end)} s on the movie clock</span><span class="badge kind">movie line</span></div>
+      <div class="saved-line">${esc(m.text)}</div>
+      ${m.note ? `<div class="note">${esc(m.note)}</div>` : ""}
+      <div class="help">Intro movie lines live in data/movies.tsv (built by asr/intro_align.py); the movie's sound is not
+        served as a clip here. <kbd>N</kbd> / <kbd>P</kbd> move on in the story order.</div></div>`;
+    document.querySelectorAll(".story li").forEach(li => li.onclick = () => jumpToLine(+li.dataset.n));
+    return;
+  }
+  const ctx = c.context.length ? '<ul class="ctx">' + c.context.map(x =>
+      `<li class="${x.current ? "cur" : ""}"><span class="who">${esc(x.speaker)}</span>${esc(x.text)}</li>`).join("") + "</ul>" : "";
+  // chatter fragment: the same voice's pieces around it, played back to back (approximate sentence)
+  // (the sentences the game builds with this piece: data/chatter_grammar.tsv, read from Content.dll)
+  const sentence = c.sentence.map((s, k) => `<div class="row sentence" data-k="${k}"><button class="playSentence"
+      data-k="${k}" title="Play this piece inside the game's sentence, from the same voice's clips${k ? "" : " (S)"}">▶ In sentence${k ? "" : " <kbd>S</kbd>"}</button>
+      <span>${s.pieces.map((x, i) => `<span data-i="${i}" class="${x.current ? "cur" : ""}">${esc(x.text)}</span>`)
+        .join(' <span class="sep">+</span> ')}</span>
+      <span class="typed" title="The subtitle as the game will type it out (joined, capitals, end marks)">In game: ${esc(s.rendered)}</span>
+      <span class="situation">${esc(s.situation)}</span></div>`).join("");
+  // same-text batch: every clip with this text; untick the ones that say something else
+  const batch = c.batch.length > 1 ? `<div class="batch"><div class="row"><b>${c.batch.length} clips have this text.</b>
+      <button id="playAll" title="Play every ticked clip in turn (A)">▶ Play all <kbd>A</kbd></button>
+      <span class="help">Untick a clip that says something else: your pick or text is saved for the ticked ones only.</span></div>
+      <ul>${c.batch.map((x, i) => `<li data-i="${i}" class="${x.current ? "cur" : ""}">
+        <input type="checkbox" checked data-n="${x.n}" title="Save the decision for this clip">
+        <button class="playOne" data-n="${x.n}" title="Play this clip">▶</button>
+        <span class="who">${esc(x.voice)}</span><span class="bid">${esc(x.id)}</span>
+        <span class="help">${x.sec.toFixed(1)} s</span></li>`).join("")}</ul></div>` : "";
+  const copies = c.copies.length ? `<div class="help">Same recording also used as: ${c.copies.map(x =>
+      `${esc(x.voice)} ${esc(x.id)}`).join(", ")} (saved together)</div>` : "";
+  selected = -1;
+  const opts = c.options.map((o, i) =>
+      `<div class="optrow"><button class="opt ${c.saved === o.text ? "saved" : ""}" data-i="${i}"
+          title="Click to select, double-click to pick">
+        <kbd>${i + 1}</kbd><span class="lbl">${esc(o.label)}</span><span class="txt">${i === 0 ? esc(o.text) : markDiff(o.text, c.options[0].text)}</span></button>
+        <button class="pickbtn" data-i="${i}" title="Save this read">Pick</button>
+        <button class="edit" data-i="${i}" title="Copy into the text box to edit (Shift+${i + 1})">Edit</button></div>`).join("");
+  const storyBox = storyBoxHtml(c.story);
+  $("#view").innerHTML = `
+    <div class="card">
+      ${storyBox}
+      <div class="meta">
+        <span class="speaker">${esc(c.speaker)}</span><span class="id">${esc(c.id)}</span>
+        <span class="badge">${esc(c.voice)}</span><span class="badge">${c.sec.toFixed(1)} s</span>
+        <span class="badge">${esc(c.source)}</span>
+        ${c.line_kind === "story" ? '<span class="badge kind" title="Story, campaign or unique mission dialogue: the subtitle is shown exactly as you save it">story line: kept as written</span>'
+          : c.line_kind === "chunk" ? '<span class="badge kind" title="A generic piece the game joins with others: save the piece without a sentence-ending period; the full sentence is typed out by the game logic (see In game)">chunk: part of a generated sentence</span>'
+          : c.line_kind === "line" ? '<span class="badge kind" title="A generic line the game plays on its own: a whole sentence, saved with its end mark">generic line: a whole sentence</span>'
+          : '<span class="badge kind" title="A whole Neural Net message, shown as you save it">Neural Net message</span>'}
+        ${c.review ? `<span class="badge ${c.review}">${esc(c.review)} review</span>` : ""}
+        <span id="unsureBadge"></span>
+      </div>
+      ${c.note ? `<div class="note">${esc(c.note)}</div>` : ""}
+      ${c.suspect ? `<div class="note" title="Why this line is on the alignment suspects list (score ${c.suspect[0]})">Alignment: ${esc(c.suspect[1].join(" · "))}</div>` : ""}
+      ${c.scene ? `<div class="scene"><b>Context:</b> ${esc(c.scene)}</div>` : ""}
+      <audio id="audio" controls autoplay src="/audio/${c.n}"></audio>
+      <div id="words" class="words"></div>
+      ${copies}
+      ${batch}
+      ${sentence}
+      ${ctx}
+      ${c.saved != null ? `<div class="saved-line">Saved: ${esc(c.saved)} (${esc(c.saved_source)}) · pick or type again to change it</div>` : ""}
+    </div>
+    <div class="card">${opts}
+      <textarea id="typed" placeholder="Or type what you hear (Enter to save)"></textarea>
+      <div class="fit" id="fit"><div>Will be saved as:</div><div class="will" id="will"></div>
+        <div class="help">Adjusted to the subtitle conventions:</div><ul id="changes"></ul>
+        <div class="row"><button class="primary" id="saveFit">Save adjusted (Enter)</button>
+          <button id="saveRaw">Keep my exact text (Shift+Enter)</button></div></div>
+    </div>`;
+  document.querySelectorAll(".opt").forEach(b => {
+    b.onclick = () => select(+b.dataset.i);
+    b.ondblclick = () => pick(+b.dataset.i);
+  });
+  document.querySelectorAll(".pickbtn").forEach(b => b.onclick = () => pick(+b.dataset.i));
+  document.querySelectorAll(".story li").forEach(li => li.onclick = () => jumpToLine(+li.dataset.n));
+  document.querySelectorAll(".edit").forEach(b => b.onclick = () => editOption(+b.dataset.i));
+  $("#saveFit").onclick = () => saveTyped(false);
+  $("#saveRaw").onclick = () => saveTyped(true);
+  document.querySelectorAll(".playSentence").forEach(b => b.onclick = () => playSentence(+b.dataset.k));
+  document.querySelectorAll(".playOne").forEach(b => b.onclick = () => playClips([+b.dataset.n]));
+  if ($("#playAll")) $("#playAll").onclick = playAll;
+  document.querySelectorAll(".batch input").forEach(b => b.onchange = () => b.blur());  // keys keep working
+  renderWords();
+  renderUnsure();
+}
+
+// The word strip: each word of the line at the start the aligner found for it (FLSubtitles/aligner); click =
+// play from that word; the word being heard is highlighted. Words it could not place are dotted, words piled at
+// the clip's end orange (the text may say more than the recording).
+let wordsShown = true;
+try { wordsShown = localStorage.getItem("flsubs-review-words") !== "0"; } catch (e) { /* private mode */ }
+function renderWords() {
+  const box = $("#words"), w = cur && cur.words;
+  if (!box || !w) return;
+  box.style.display = wordsShown ? "" : "none";
+  const state = { current: "words:", stale: "words (timed for an earlier text, re-aligned at the next commit):",
+                  none: "no word timings for this clip", failed: "the aligner could not match these words:" }[w.state] || "";
+  const piledFrom = w.collapsed >= 2 ? w.words.length - w.collapsed : w.words.length;
+  box.innerHTML = `<span class="state">${esc(state)}</span>` + (w.state === "none" ? "" : w.words.map((x, i) => {
+    const cls = ["w", x.ms < 0 ? "unplaced" : "", i >= piledFrom ? "piled" : ""].join(" ");
+    const tip = x.ms < 0 ? "not placed by the aligner" : `${(x.ms / 1000).toFixed(2)} s — click to play from here`;
+    return `<span class="${cls}" data-i="${i}" data-ms="${x.ms}" title="${tip}">${esc(x.w)}</span>`;
+  }).join(""));
+  box.querySelectorAll(".w").forEach(s => s.onclick = () => seekWord(+s.dataset.i));
+  const a = $("#audio");
+  if (a) a.ontimeupdate = () => markWord(a.currentTime * 1000);
+}
+function placed() { return (cur && cur.words ? cur.words.words : []).map((x, i) => [i, x.ms]).filter(p => p[1] >= 0); }
+function markWord(ms) {
+  let now = -1;
+  for (const [i, s] of placed()) if (s <= ms + 30) now = i;
+  document.querySelectorAll("#words .w").forEach(s => s.classList.toggle("now", +s.dataset.i === now));
+  return now;
+}
+function seekWord(i) {
+  const a = $("#audio"), x = cur && cur.words.words[i];
+  if (!a || !x || x.ms < 0) return;
+  a.currentTime = x.ms / 1000; markWord(x.ms); a.play();
+}
+function stepWord(dir) {
+  const a = $("#audio"); if (!a) return;
+  const p = placed(), ms = a.currentTime * 1000, now = markWord(ms);
+  const k = p.findIndex(q => q[0] === now);
+  const next = dir > 0 ? p[k + 1] : (k > 0 ? p[k - 1] : p[0]);
+  if (next) seekWord(next[0]);
+}
+function toggleWords() {
+  wordsShown = !wordsShown;
+  try { localStorage.setItem("flsubs-review-words", wordsShown ? "1" : "0"); } catch (e) { /* private mode */ }
+  renderWords();
+}
+
+// "Not sure": a mark to hear the line again or decide later (data/unsure.tsv; the list "Marked not sure").
+function renderUnsure() {
+  const b = $("#unsureBadge"); if (!b) return;
+  const u = cur && cur.unsure;
+  b.innerHTML = u ? `<span class="badge unsure" title="${esc(u.when)}${u.note ? " · " + esc(u.note) : ""}">not sure${u.note ? ": " + esc(u.note) : ""}</span>` : "";
+}
+async function toggleUnsure(withNote) {
+  if (!cur) return;
+  const on = withNote || !cur.unsure;
+  const note = withNote ? (prompt("Not sure — a note for later:", (cur.unsure && cur.unsure.note) || "") ?? null) : "";
+  if (note === null) return;
+  const r = await (await fetch("/api/unsure", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ n: cur.n, on, note }) })).json();
+  if (r.ok) { cur.unsure = r.unsure; renderUnsure(); buildState(on ? "marked not sure" : "not-sure mark cleared"); loadModes(false); }
+}
+
+// Stats: coverage at a glance (/api/stats).
+async function toggleStats() {
+  const card = $("#statsCard");
+  if (card.style.display !== "none") { card.style.display = "none"; return; }
+  const s = await (await fetch("/api/stats")).json();
+  const table = (title, obj) => `<div><h3>${esc(title)}</h3><table>${Object.entries(obj).map(([k, v]) =>
+    `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table></div>`;
+  const label = Object.fromEntries(modesInfo.map(m => [m.mode, m.label.trim()]));
+  const lists = Object.fromEntries(Object.entries(s.lists).filter(([, v]) => v).map(([k, v]) => [label[k] || k, v]));
+  card.innerHTML = `<b>${s.lines} lines · ${s.reviewed} saved by you · ${s.suspects} alignment suspects · ${s.unsure} not sure</b>
+    <div class="cols">${table("How each line is decided", s.decided)}${table("Word timings", s.word_timings)}
+    ${table("Kinds of clip", s.kinds)}${table("Still open per list", lists)}</div>
+    ${s.input_problems.length ? `<h3>Input problems</h3><ul>${s.input_problems.map(p => `<li>${esc(p[0])}:${p[1]} ${esc(p[2])}</li>`).join("")}</ul>` : ""}`;
+  card.style.display = "";
+}
+
+// Plays clips one after another (batch list), marking the one that plays.
+function playClips(ns) {
+  const main = $("#audio"); if (main) main.pause();
+  if (sentenceAudio) sentenceAudio.pause();
+  const shown = cur.n;
+  const step = (i) => {
+    document.querySelectorAll(".batch li").forEach(li =>
+      li.classList.toggle("playing", i < ns.length && +li.querySelector("input").dataset.n === ns[i]));
+    if (i >= ns.length || !cur || cur.n !== shown) return;
+    sentenceAudio = new Audio("/audio/" + ns[i]);
+    sentenceAudio.onended = () => step(i + 1);
+    sentenceAudio.onerror = () => step(i + 1);
+    sentenceAudio.play();
+  };
+  step(0);
+}
+function batchTicked() { return [...document.querySelectorAll(".batch input:checked")].map(b => +b.dataset.n); }
+function playAll() { if (cur && cur.batch.length > 1) playClips(batchTicked()); }
+
+// Plays the sentence pieces one after another, highlighting the one that is playing.
+let sentenceAudio = null;
+function playSentence(k = 0) {
+  if (!cur || !cur.sentence[k]) return;
+  const main = $("#audio"); if (main) main.pause();
+  if (sentenceAudio) sentenceAudio.pause();
+  const shown = cur.n, pieces = cur.sentence[k].pieces;
+  const marks = document.querySelectorAll(`.sentence[data-k="${k}"] [data-i]`);
+  document.querySelectorAll(".sentence .playing").forEach(m => m.classList.remove("playing"));
+  const step = (i) => {
+    marks.forEach(m => m.classList.toggle("playing", +m.dataset.i === i));
+    if (i >= pieces.length || !cur || cur.n !== shown) return;
+    sentenceAudio = new Audio("/audio/" + pieces[i].n);
+    sentenceAudio.onended = () => step(i + 1);
+    sentenceAudio.onerror = () => step(i + 1);
+    sentenceAudio.play();
+  };
+  step(0);
+}
+
+async function save(text, source, note) {
+  const r = await (await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ n: cur.n, text, source, note, batch: cur.batch.length > 1 ? batchTicked() : [] }) })).json();
+  reviewed = r.reviewed;
+  unbuilt = r.unbuilt || unbuilt + 1; buildState();
+  loadModes(false);
+  const wasInQueue = inQueue();
+  back.push(cur.n);
+  remember();
+  if (fwd.length) return render(fwd.pop());          // changed an earlier line: continue where you were
+  if (wasInQueue && (storyMode() ? $("#unrev").checked : !$("#done").checked)) queue.splice(pos, 1), storyIndex.splice(pos, 1);
+  else if (wasInQueue) pos += 1;
+  await showQueue();
+}
+
+function select(i) {
+  if (!cur || !cur.options[i]) return;
+  selected = i;
+  document.querySelectorAll(".opt").forEach(b => b.classList.toggle("sel", +b.dataset.i === i));
+  document.querySelector(`.opt[data-i="${i}"]`).focus();
+}
+
+function pick(i) {
+  const o = cur && cur.options[i];
+  if (o) save(o.text, "user picked: " + o.label, "");
+}
+
+function editOption(i) {
+  const o = cur && cur.options[i];
+  if (!o) return;
+  const t = $("#typed");
+  t.value = o.text;
+  t.focus();
+  t.setSelectionRange(t.value.length, t.value.length);
+}
+
+async function saveTyped(raw) {
+  const typed = $("#typed").value.trim();
+  if (!typed) return;
+  if (raw) return save(typed, "user typed", "kept exactly as typed");
+  if (pendingFit && pendingFit.typed === typed) return save(pendingFit.text, "user typed", pendingFit.changes.join("; "));
+  const r = await (await fetch("/api/fit", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ n: cur.n, text: typed }) })).json();
+  if (!r.changes.length) return save(r.text, "user typed", "");
+  pendingFit = { typed, text: r.text, changes: r.changes };
+  $("#will").textContent = r.text;
+  $("#changes").innerHTML = r.changes.map(x => `<li>${esc(x)}</li>`).join("");
+  $("#fit").style.display = "block";
+  $("#fit").scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+// a line of the story box: move the list position there (it may be outside an "unreviewed only" list)
+function jumpToLine(n) {
+  const i = queue.indexOf(n);
+  if (cur) { back.push(cur.n); remember(); }
+  if (i >= 0) { pos = i; return showQueue(); }
+  return render(n);
+}
+function jumpToHeading(rowIndex) {
+  if (!storyIndex.length) return;
+  let i = storyIndex.findIndex(x => x != null && x >= rowIndex);
+  if (i < 0) i = storyIndex.length - 1;
+  if (cur) { back.push(cur.n); remember(); }
+  pos = i; showQueue();
+}
+
+function replay() { const a = $("#audio"); if (a) { a.currentTime = 0; a.play(); } }
+
+function goBack() {
+  if (back.length) { if (cur) fwd.push(cur.n); const n = back.pop(); remember(); return render(n); }
+  if (inQueue() && pos > 0) { pos -= 1; return showQueue(); }
+}
+
+function goForward() {
+  if (fwd.length) { if (cur) back.push(cur.n); remember(); return render(fwd.pop()); }
+  if (!queue.length) return;
+  if (cur) { back.push(cur.n); remember(); }         // skipped lines go into the history too
+  if (inQueue()) pos += 1;
+  if (pos >= queue.length) pos = queue.length - 1;
+  return showQueue();
+}
+
+document.addEventListener("keydown", (e) => {
+  const inText = e.target.id === "typed";
+  if (inText) {
+    if (e.key === "Enter" && !e.ctrlKey) { e.preventDefault(); saveTyped(e.shiftKey); }
+    else if (e.key === "Escape") { e.target.blur(); }
+    else if (pendingFit) { pendingFit = null; $("#fit").style.display = "none"; }
+    return;
+  }
+  if (["INPUT", "SELECT"].includes(e.target.tagName)) return;
+  // a movie line (story order) has no reads or clip: only moving on and the stats work there
+  if (cur && cur.movie && !["n", "N", "p", "P", "ArrowRight", "ArrowLeft", "t", "T"].includes(e.key)) return;
+  const digit = /^Digit([1-9])$/.exec(e.code) || /^Numpad([1-9])$/.exec(e.code);
+  if (digit && e.shiftKey) { e.preventDefault(); editOption(+digit[1] - 1); }
+  else if (digit) { select(+digit[1] - 1); }
+  else if (e.key === "Enter") { e.preventDefault(); if (selected >= 0) pick(selected); }
+  else if (e.key === " " || e.key === "r" || e.key === "R") { e.preventDefault(); replay(); }
+  else if (e.key === "n" || e.key === "N" || e.key === "ArrowRight") { goForward(); }
+  else if (e.key === "p" || e.key === "P" || e.key === "ArrowLeft") { goBack(); }
+  else if (e.key === "e" || e.key === "E") { e.preventDefault(); editOption(0); }
+  else if (e.key === "s" || e.key === "S") { e.preventDefault(); playSentence(0); }
+  else if (e.key === "a" || e.key === "A") { e.preventDefault(); playAll(); }
+  else if (e.key === "d" || e.key === "D") { e.preventDefault(); const a = $("#audio"); if (a) { a.playbackRate = a.playbackRate < 1 ? 1 : 0.75; a.preservesPitch = true; buildState(a.playbackRate < 1 ? "slow playback 0.75×" : "normal speed"); } }
+  else if (e.key === "l" || e.key === "L") { e.preventDefault(); const a = $("#audio"); if (a) { a.loop = !a.loop; buildState(a.loop ? "loop on" : "loop off"); if (a.loop) a.play(); } }
+  else if (e.key === "u" || e.key === "U" || (e.ctrlKey && (e.key === "z" || e.key === "Z"))) { e.preventDefault(); undo(); }
+  else if (e.key === "b" || e.key === "B") { e.preventDefault(); rebuild(); }
+  else if (e.key === "[") { e.preventDefault(); stepWord(-1); }
+  else if (e.key === "]") { e.preventDefault(); stepWord(1); }
+  else if (e.key === "w" || e.key === "W") { e.preventDefault(); toggleWords(); }
+  else if (e.key === "x" || e.key === "X") { e.preventDefault(); toggleUnsure(e.shiftKey); }
+  else if (e.key === "t" || e.key === "T") { e.preventDefault(); toggleStats(); }
+});
+$("#statsBtn").onclick = toggleStats;
+$("#mode").onchange = () => { sampleButton(); loadQueue(false); };
+$("#rebuildBtn").onclick = rebuild;
+$("#done").onchange = () => loadQueue(true);
+$("#unrev").onchange = () => loadQueue(true);
+$("#storyJump").onchange = (e) => { if (e.target.value !== "") jumpToHeading(+e.target.value); e.target.value = ""; e.target.blur(); };
+let timer; $("#search").oninput = () => { clearTimeout(timer); timer = setTimeout(() => loadQueue(false), 250); };
+loadModes(true).then(() => loadQueue(false));
+</script>
+</body>
+</html>

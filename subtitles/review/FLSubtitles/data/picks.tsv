@@ -1,0 +1,29 @@
+# Hand-picked review lists (review tool: "Picked: <list>"): a few lines Claude puts in front of the user to
+# settle a question about a bigger list. Each stays until the user saves it. Remove a list once discussed.
+id	voice	list	note	context
+GCS_ML_F01bB02	rvp151	Agreed list (sample 2)	line
+GCS_FM_D01fG01	rvp516	Agreed list (sample 2)	line
+GCS_ML_D01fG01	rvp151	Agreed list (sample 2)	line
+GCS_ML_F03dR03	rvp151	Agreed list (sample 2)	line
+GCS_Trent_D05bP022	trent_voice	Agreed list (sample 2)	line
+GCS_ML_F04fG01	rvp106	Agreed list (sample 2)	line
+GCS_ML_D01cG04	rvp121	Agreed list (sample 2)	line
+GCS_FM_D03aN01	rvp511	Agreed list (sample 2)	line
+GCS_ML_D07bG01	rvp151	Agreed list (sample 2)	line
+GCS_ML_D01hG02	rvp151	Agreed list (sample 2)	line
+GCS_ML_D03aN01	rvp111	Agreed list (sample 2)	line
+gcs_combat_announce_combatdrift_01-	hakkera	Agreed list (sample 2)	line
+gcs_combat_insights_02-	sinclair	Agreed list (sample 2)	line
+GCS_FM_F05cG01	rvp541	Agreed list (sample 2)	line
+dx_m12_0215_KING	king	Agreed list (sample 2)	story
+nag_pos_01-	sinclair	Agreed list (sample 2)	story
+DX_M06_1020_A-SPECTATOR	a-spectator	Agreed list (sample 2)	story
+DX_M07_0950_TOBIAS	tobias	Agreed list (sample 2)	story
+DX_M06_0381_ALBERTSON	pilot_f_leg_f01	Agreed list (sample 2)	story
+dx_s020x_2901_benford_cv	cv_benford	Agreed list (sample 2)	story
+DX_M06_2000_ALBERTSON	pilot_f_leg_f01	Agreed list (sample 2)	story
+dx_s062x_0101_vonclaussn	vonclaussn	Agreed list (sample 2)	story
+GCS_ML_D06aG00	rvp131	Agreed list (sample 2)	chunk
+GCS_ML_D06aG00	rvp111	Agreed list (sample 2)	chunk
+GCS_ML_D06aG00	rvp106	Agreed list (sample 2)	chunk
+GCS_Trent_F04gP022	trent_voice	Agreed list (sample 2)	line (from sample 1: Trent asks how hard a mission is; the NPC answers easy/medium/hard)	Base/bar mission talk (game scenes GCS_*_F01 to F10). The NPC offers a job ("Candidly, I do need someone for a mission.") -> Trent: "All right. I'm listening." -> the job is shown -> TRENT ASKS HOW HARD IT IS with one of his variants: "Is it dangerous?" / "Is it a tough one?" / "Rough odds?" / "Hazardous?" / "Dangerous?" / "Unpleasant?" (this line) / "Risky?" / "Is it tough?" -> the NPC answers by the job's difficulty: easy "Don't sweat it, pal. A walk in the park.", medium "Could be kind of bumpy, but you'll pull through.", hard "Yeah, you'll be scrappin' some." -> Trent accepts ("Okay. Give me the details.") or declines ("No, thanks. I'm not really interested."). So this one word is Trent's question about the job's danger.

@@ -1,0 +1,35 @@
+# Whitelist: only the mod's own sources, tools and docs are tracked.
+# Game installs, audio, extracted dialogue text, transcripts, the CD image, installers, disassembly,
+# cloned reference repos and build output stay local (copyrighted game content must never end up in a repo).
+/*
+!/.gitignore
+!/.gitattributes
+!/CLAUDE.md
+!/docs/
+!/FLSubtitles/
+!/tools/
+!/review.cmd
+
+# an atomic write's temporary file (tsvio.py), left only if the process was killed mid-write
+*.tmp
+# the review tool's one-server-per-corrections-file lock (review_server.py hold_lock)
+*.tsv.lock
+
+# build output and generated data
+/FLSubtitles/build/
+/FLSubtitles/out/
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.wav
+*.mp3
+*.utf
+
+# speech-to-text environment and model cache
+/FLSubtitles/asr/.venv/
+/FLSubtitles/asr/.cache/
+/FLSubtitles/aligner/.venv/
+/FLSubtitles/aligner/.cache/
+__pycache__/

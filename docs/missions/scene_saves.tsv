@@ -1,0 +1,248 @@
+name	mission	step	label	source	objective	place	build	commit	date	speed	cruise	hull	shield	nanobots	batteries	objective_text	fit	fit_note	fit_date
+SaveS022.fl	M01a	end	leg-end	leg	22065	docked	89F4FC10-EAF82C76	a38d30d	2026-10-22 08:03										
+SaveS022.fl	M01a	end	leg-end	leg	22065	docked	89F4FC10-EAF82C76	a38d30d	2026-10-22 08:03										
+SaveS204.fl	M01a-gate-s11gate	end	leg-end	leg	22065	docked	89F4FC10-EAF82C76	c7f0993	2026-10-24 10:43										
+SaveS225.fl	M01a-gate-s11preset	end	leg-end	leg	22065	docked	89F4FC10-EAF82C76	a898dd1	2026-10-24 14:25										
+SaveS089.fl	M01a-gate-s8	end	leg-end	leg	22065	docked	89F4FC10-EAF82C76	b88ff41	2026-10-23 08:46										
+SaveS117.fl	M01a-gate-s8v	end	leg-end	leg	22065	docked	89F4FC10-EAF82C76	7d3275a	2026-10-23 15:27										
+SaveS161.fl	M01a-gate-s9gate	end	leg-end	leg	22065	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 23:33										
+SaveS011.fl	M01b	end	leg-end	leg	0	space 2208796239 52568,39,-69228	89F4FC10-EAF82C76	3f06367	2026-10-22 05:41										
+SaveS011.fl	M01b	end	leg-end	leg	0	space 2208796239 52568,39,-69228	89F4FC10-EAF82C76	3f06367	2026-10-22 05:41										
+SaveS202.fl	M01b-gate-s11gate	end	leg-end	leg	0	space 2208796239 52659,-14,-69225	89F4FC10-EAF82C76	c7f0993	2026-10-24 10:30										
+SaveS226.fl	M01b-gate-s11preset	end	leg-end	leg	0	space 2208796239 52536,2,-69087	89F4FC10-EAF82C76	a898dd1	2026-10-24 14:28										
+SaveS085.fl	M01b-gate-s8	end	leg-end	leg	0	space 2208796239 52674,-57,-69172	89F4FC10-EAF82C76	b88ff41	2026-10-23 08:24										
+SaveS121.fl	M01b-gate-s8x	end	leg-end	leg	0	space 2208796239 52624,158,-69098	89F4FC10-EAF82C76	b6331d5	2026-10-23 16:21										
+SaveS157.fl	M01b-gate-s9gate	end	leg-end	leg	0	space 2208796239 52798,44,-69265	89F4FC10-EAF82C76	ad39f6a	2026-10-23 23:19										
+SaveS006.fl	M02	17	jailbreak-fight	manual	22269	space 2208796239 3829,-255,-52023	89F4FC10-EAF82C76	4f82665	2026-10-18 23:05										
+SaveS006.fl	M02	17	jailbreak-fight	manual	22269	space 2208796239 3829,-255,-52023	89F4FC10-EAF82C76	4f82665	2026-10-18 23:05										
+SaveS007.fl	M02	18	missouri-leg	manual	21660	space 2208796239 11027,-255,-42240	89F4FC10-EAF82C76	4f82665	2026-10-18 23:06										
+SaveS007.fl	M02	18	missouri-leg	manual	21660	space 2208796239 11027,-255,-42240	89F4FC10-EAF82C76	4f82665	2026-10-18 23:06										
+SaveS001.fl	M02	8	scan-stop	manual	22240	space 2208818767 6255,66,81832	89F4FC10-EAF82C76	4f82665	2026-10-18 22:45										
+SaveS001.fl	M02	8	scan-stop	manual	22240	space 2208818767 6255,66,81832	89F4FC10-EAF82C76	4f82665	2026-10-18 22:45										
+SaveS002.fl	M02	ckpt-32205	checkpoint-32205	checkpoint		space Li01 -29349.4,0.228799,-29720.3	89F4FC10-EAF82C76	4f82665	2026-10-18 23:00										
+SaveS002.fl	M02	ckpt-32205	checkpoint-32205	checkpoint		space Li01 -29349.4,0.228799,-29720.3	89F4FC10-EAF82C76	4f82665	2026-10-18 23:00										
+SaveS003.fl	M02	ckpt-32210	checkpoint-32210	checkpoint		space Li03 6309.47,-1.8187,81991	89F4FC10-EAF82C76	4f82665	2026-10-18 23:00										
+SaveS003.fl	M02	ckpt-32210	checkpoint-32210	checkpoint		space Li03 6309.47,-1.8187,81991	89F4FC10-EAF82C76	4f82665	2026-10-18 23:00										
+SaveS004.fl	M02	ckpt-32215	checkpoint-32215	checkpoint		space Li03 -36036.3,-120.162,26548.3	89F4FC10-EAF82C76	4f82665	2026-10-18 23:00										
+SaveS004.fl	M02	ckpt-32215	checkpoint-32215	checkpoint		space Li03 -36036.3,-120.162,26548.3	89F4FC10-EAF82C76	4f82665	name										
+SaveS005.fl	M02	ckpt-32220	checkpoint-32220	checkpoint	22267	space Li03 -23061.4,837.793,74870.1	89F4FC10-EAF82C76	4f82665	2026-10-18 23:00										
+SaveS028.fl	M02	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ee2579a	2026-10-22 08:54										
+SaveS200.fl	M02-gate-s11gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f0993	2026-10-24 10:15										
+SaveS222.fl	M02-gate-s11preset	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a898dd1	2026-10-24 14:04										
+SaveS094.fl	M02-gate-s8c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c03dc12	2026-10-23 10:03										
+SaveS114.fl	M02-gate-s8v	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	7d3275a	2026-10-23 15:16										
+SaveS154.fl	M02-gate-s9gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 23:03										
+SaveS009.fl	M03	13	valkyries	manual	22520	space 2745692751 -11310,-1507,42016	89F4FC10-EAF82C76	c03c646	2026-10-19 05:22										
+SaveS010.fl	M03	16	to-willard-battle	manual	22490	space 2745692751 5829,-2,47882	89F4FC10-EAF82C76	8309682	2026-10-19 06:00										
+SaveS008.fl	M03	9	convoy-ambush	manual	22455	space 2745692751 -33203,-150,61048	89F4FC10-EAF82C76	c03c646	2026-10-19 05:17										
+SaveS023.fl	M03	end	leg-end	leg	0	space 2745692751 -8534,129,48466	89F4FC10-EAF82C76	c608521	2026-10-22 08:20										
+SaveS203.fl	M03-gate-s11gate	end	leg-end	leg	0	space 2745692751 -8502,87,48470	89F4FC10-EAF82C76	c7f0993	2026-10-24 10:34										
+SaveS223.fl	M03-gate-s11preset	end	leg-end	leg	0	space 2745692751 -8624,71,48536	89F4FC10-EAF82C76	a898dd1	2026-10-24 14:16										
+SaveS087.fl	M03-gate-s8	end	leg-end	leg	0	space 2745692751 -8857,37,48390	89F4FC10-EAF82C76	b88ff41	2026-10-23 08:37										
+SaveS115.fl	M03-gate-s8v	end	leg-end	leg	0	space 2745692751 -8652,255,48506	89F4FC10-EAF82C76	7d3275a	2026-10-23 15:18										
+SaveS159.fl	M03-gate-s9gate	end	leg-end	leg	0	space 2745692751 -8561,129,48382	89F4FC10-EAF82C76	ad39f6a	2026-10-23 23:24										
+SaveS025.fl	M04	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	9c00ca7	2026-10-22 08:42										
+SaveS206.fl	M04-gate-s11gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f0993	2026-10-24 11:29										
+SaveS084.fl	M04-gate-s8	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b88ff41	2026-10-23 08:19										
+SaveS102.fl	M04-gate-s8i	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	0246ba0	2026-10-23 11:18										
+SaveS120.fl	M04-gate-s8x	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b6331d5	2026-10-23 16:10										
+SaveS156.fl	M04-gate-s9gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 23:12										
+SaveS229.fl	M04-s11q-dr	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	44b14c8	2026-10-24 15:32										
+SaveS233.fl	M04-s12b-pa	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	81f921c	2026-10-24 17:23										
+SaveS234.fl	M04-s12c-padr	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	77384d8	2026-10-24 18:01										
+SaveS235.fl	M04-s12d-padr2	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	d457c51	2026-10-24 18:37										
+SaveS238.fl	M04-s13a-padr	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f5d8d76	2026-10-24 23:11										
+SaveS239.fl	M04-s13b-padr	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	34ba88f	2026-10-24 23:55										
+SaveS029.fl	M05	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	571d192	2026-10-22 09:05										
+SaveS201.fl	M05-gate-s11gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f0993	2026-10-24 10:18										
+SaveS221.fl	M05-gate-s11preset	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a898dd1	2026-10-24 14:01										
+SaveS090.fl	M05-gate-s8b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	d295587	2026-10-23 09:09										
+SaveS118.fl	M05-gate-s8w	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	6c925a9	2026-10-23 15:51										
+SaveS155.fl	M05-gate-s9gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 23:08										
+SaveS228.fl	M05-s11p5-o	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8aeabd6	2026-10-24 15:12										
+SaveS227.fl	M05-s11p5-p	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8aeabd6	2026-10-24 15:12										
+SaveS021.fl	M06	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a38d30d	2026-10-22 08:03										
+SaveS012.fl	M06-from-glorious	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3f06367	2026-10-22 05:41										
+SaveS216.fl	M06-gate-s11preset	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	73eb4c3	2026-10-24 13:24										
+SaveS082.fl	M06-gate-s8	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b88ff41	2026-10-23 07:52										
+SaveS110.fl	M06-gate-s8v	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b2fe700	2026-10-23 14:37										
+SaveS151.fl	M06-gate-s9gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 22:32										
+SaveS211.fl	M06-s11n-dr	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	88ab419	2026-10-24 11:57										
+SaveS016.fl	M07	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e2c7809	2026-10-22 06:41										
+SaveS207.fl	M07	M07.gate	M07-s11n-cl	leg-checkpoint	23245	space 2409063426 40041,474,-68608	89F4FC10-EAF82C76	88ab419	2026-10-24 11:38	0.0	0	1.000	1.00	20	17	23245	unverified	state from the M07-s11n-cl leg log (SAVE line, self event)	
+SaveS209.fl	M07	M07.sinclair	M07-s11n-cl	leg-checkpoint	23270	space 2610157064 16511,-113,-3364	89F4FC10-EAF82C76	88ab419	2026-10-24 11:43	300.0	1	1.000	1.00	20	17	23270	unverified	state from the M07-s11n-cl leg log (SAVE line, self event; cruise read from the 300 m/s)	
+SaveS210.fl	M07	M07.tau29	M07-s11n-cl	leg-checkpoint	23280	space 2610157064 21785,-66,-13347	89F4FC10-EAF82C76	88ab419	2026-10-24 11:44	77.3		1.000	1.00	20	17	23280	unverified	state from the M07-s11n-cl leg log (SAVE line, self event; cruise not logged)	
+SaveS208.fl	M07	M07.tau31	M07-s11n-cl	leg-checkpoint	23250	space 2610157064 -28491,187,33387	89F4FC10-EAF82C76	88ab419	2026-10-24 11:38	299.1	1	1.000	1.00	20	17	23250	unverified	state from the M07-s11n-cl leg log (SAVE line, self event; cruise read from the 299 m/s)	
+SaveS013.fl	M07-from-ku03	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	d638602	2026-10-22 06:10										
+SaveS199.fl	M07-gate-s11gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f0993	2026-10-24 09:58										
+SaveS217.fl	M07-gate-s11preset	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e74dc4c	2026-10-24 13:40										
+SaveS083.fl	M07-gate-s8	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b88ff41	2026-10-23 08:11										
+SaveS111.fl	M07-gate-s8v	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	2b94663	2026-10-23 14:52										
+SaveS153.fl	M07-gate-s9gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 22:47										
+SaveS020.fl	M08	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8ac4918	2026-10-22 14:03										
+SaveS205.fl	M08-gate-s11gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f0993	2026-10-24 11:24										
+SaveS219.fl	M08-gate-s11preset	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a898dd1	2026-10-24 13:53										
+SaveS086.fl	M08-gate-s8	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b88ff41	2026-10-23 08:31										
+SaveS113.fl	M08-gate-s8v	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	7d3275a	2026-10-23 15:11										
+SaveS158.fl	M08-gate-s9gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 23:24										
+SaveS038.fl	M08-hold3	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c772206	2026-10-22 18:35										
+SaveS044.fl	M08-reachfix	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	4154613	2026-10-23 00:06										
+SaveS049.fl	M08-trace	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f51cf	2026-10-23 00:26										
+SaveS018.fl	M09	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	665fb13	2026-10-22 13:47										
+SaveS017.fl	M09-from-arch	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	7d2e437	2026-10-22 07:24										
+SaveS043.fl	M09-from-arch-4c7d	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	4154613	2026-10-22 23:57										
+SaveS036.fl	M09-from-arch-hold	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	c772206	2026-10-22 18:20										
+SaveS042.fl	M09-from-arch-hold5	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	8df84fb	2026-10-22 18:52										
+SaveS224.fl	M09-gate-s11preset	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	a898dd1	2026-10-24 14:17										
+SaveS039.fl	M09-hold3	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	c772206	2026-10-22 18:38										
+SaveS212.fl	M09-s11o9-sd	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	7ccb022	2026-10-24 12:29										
+SaveS215.fl	M09-s11o9b-sd	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	6512a55	2026-10-24 13:08										
+SaveS231.fl	M09-s12a-fix	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	84310e2	2026-10-24 16:45										
+SaveS026.fl	M10	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	9c00ca7	2026-10-22 08:44										
+SaveS015.fl	M10-from-holstein	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	80c6fda	2026-10-22 13:51										
+SaveS104.fl	M10-gate-s8o	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	ff430f5	2026-10-23 13:24										
+SaveS123.fl	M10-gate-s8y	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	b34853d	2026-10-23 16:46										
+SaveS125.fl	M10-gate-s8z	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	936c479	2026-10-23 17:07										
+SaveS152.fl	M10-gate-s9gate	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 22:40										
+SaveS232.fl	M10-s12a-fix	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	0be086e	2026-10-24 16:59										
+SaveS019.fl	M11	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	5fa8cd6	2026-10-22 13:35										
+SaveS014.fl	M11-from-buffalo	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	770a3f5	2026-10-22 06:28										
+SaveS198.fl	M11-gate-s11gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f0993	2026-10-24 09:56										
+SaveS218.fl	M11-gate-s11preset	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e74dc4c	2026-10-24 13:44										
+SaveS112.fl	M11-gate-s8v	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	91328ff	2026-10-23 14:57										
+SaveS163.fl	M11-gate-s9m11	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	84b8ef6	2026-10-24 00:01										
+SaveS033.fl	M12	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	0f0749a	2026-10-22 13:59										
+SaveS176.fl	M12	M12.banner	M12-s11-saves	leg-checkpoint	24223	space 2550112387 -2261,252,329	89F4FC10-EAF82C76	cba3ef5	2026-10-24 04:49	0.0	0	1.000	1.00	29	29	24223	fit	at rest before the banner; runs true (session 11; 3/3 + 3/3 tonight)	2026-10-24 22:29
+SaveS181.fl	M12	M12.cell	M12-s11-saves	leg-checkpoint	24240	space 3215405891 -1,0,-776	89F4FC10-EAF82C76	cba3ef5	2026-10-24 04:51	300.0	1	0.834	0.92	29	9	24240	unfit	saved at ~300 m/s in cruise, loads at rest: the exit run from a standstill, 'no transit' + a refused dock in 6/6 runs (apb563 / aprefac, 24 Oct 2026)	2026-10-24 22:29
+SaveS180.fl	M12	M12.core	M12-s11-saves	leg-checkpoint	24230	space 3215405891 0,0,1365	89F4FC10-EAF82C76	cba3ef5	2026-10-24 04:51	47.4		1.000	0.67	29	9	24230	unverified	state from the M12-s11-saves leg log (SAVE line, self event; cruise not logged)	
+SaveS177.fl	M12	M12.gen1	M12-s11-saves	leg-checkpoint	24223	space 2550112387 -2218,103,392	89F4FC10-EAF82C76	cba3ef5	2026-10-24 04:50	37.7		1.000	1.00	29	29	24223	unverified	state from the M12-s11-saves leg log (SAVE line, self event; cruise not logged)	
+SaveS178.fl	M12	M12.gen2	M12-s11-saves	leg-checkpoint	24223	space 2550112387 -2225,-4,-2755	89F4FC10-EAF82C76	cba3ef5	2026-10-24 04:50	29.8		1.000	0.87	29	23	24223	unverified	state from the M12-s11-saves leg log (SAVE line, self event; cruise not logged)	
+SaveS179.fl	M12	M12.gen3	M12-s11-saves	leg-checkpoint	24223	space 2550112387 586,-22,-1550	89F4FC10-EAF82C76	cba3ef5	2026-10-24 04:51	20.2		1.000	1.00	29	9	24223	unfit	written at the kill: loads stuck on 'destroy the generators' (TESTING.md)	2026-10-24 22:29
+SaveS182.fl	M12	M12.hole	M12-s11-saves	leg-checkpoint	21660	space 3086998659 -4623,-332,-18288	89F4FC10-EAF82C76	cba3ef5	2026-10-24 04:52	47.2		0.947	1.00	28	9	24260	unfit	after the load the objective reads Awaiting (21660): the script goals offer only destroy goals, the autopilot fought the Nomads instead of flying to Toledo (TESTING.md)	2026-10-24 22:29
+SaveS236.fl	M12-aprefac-cell	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e3bbd96	2026-10-24 22:07										
+SaveS237.fl	M12-aprefacb-cell	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e3bbd96	2026-10-24 22:19										
+SaveS024.fl	M12-from-lair	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	4beba19	2026-10-22 13:12										
+SaveS035.fl	M12-from-lair-hold	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c772206	2026-10-22 18:15										
+SaveS027.fl	M12-from-launch	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ee2579a	2026-10-22 08:45										
+SaveS220.fl	M12-gate-s11preset	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a898dd1	2026-10-24 13:59										
+SaveS088.fl	M12-gate-s8	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b88ff41	2026-10-23 08:39										
+SaveS103.fl	M12-gate-s8p	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	0d9e9e5	2026-10-23 13:09										
+SaveS105.fl	M12-gate-s8q	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	0d983bc	2026-10-23 13:33										
+SaveS106.fl	M12-gate-s8r	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	154a7fc	2026-10-23 13:46										
+SaveS107.fl	M12-gate-s8s	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a5caabb	2026-10-23 13:57										
+SaveS108.fl	M12-gate-s8t	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	9ea3384	2026-10-23 14:12										
+SaveS109.fl	M12-gate-s8u	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b916a22	2026-10-23 14:23										
+SaveS116.fl	M12-gate-s8v	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	7d3275a	2026-10-23 15:18										
+SaveS119.fl	M12-gate-s8x	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b6331d5	2026-10-23 16:17										
+SaveS122.fl	M12-gate-s8y	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	fd81832	2026-10-23 16:30										
+SaveS124.fl	M12-gate-s8z	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b34853d	2026-10-23 16:54										
+SaveS126.fl	M12-gate-s9a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	997fdda	2026-10-23 17:14										
+SaveS164.fl	M12-gate-s9aa	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8ab9b2b	2026-10-24 00:07										
+SaveS127.fl	M12-gate-s9b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	1ef7ea1	2026-10-23 17:27										
+SaveS128.fl	M12-gate-s9c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	5dddece	2026-10-23 17:36										
+SaveS129.fl	M12-gate-s9d	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	21686e7	2026-10-23 17:50										
+SaveS130.fl	M12-gate-s9e	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8961c9a	2026-10-23 18:03										
+SaveS131.fl	M12-gate-s9f	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	266007a	2026-10-23 18:14										
+SaveS132.fl	M12-gate-s9g	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	bcce3cf	2026-10-23 18:24										
+SaveS160.fl	M12-gate-s9gate	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ad39f6a	2026-10-23 23:30										
+SaveS133.fl	M12-gate-s9h	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	15f50f8	2026-10-23 18:33										
+SaveS134.fl	M12-gate-s9i	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a1ac18b	2026-10-23 18:42										
+SaveS135.fl	M12-gate-s9j	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	6067bc6	2026-10-23 18:52										
+SaveS136.fl	M12-gate-s9k	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	69145b4	2026-10-23 19:03										
+SaveS137.fl	M12-gate-s9l	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	b011598	2026-10-23 19:12										
+SaveS138.fl	M12-gate-s9m	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	756ea21	2026-10-23 19:21										
+SaveS139.fl	M12-gate-s9n	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	9f52b7a	2026-10-23 19:31										
+SaveS140.fl	M12-gate-s9o	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	54c6d9d	2026-10-23 19:50										
+SaveS141.fl	M12-gate-s9p	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	5e62095	2026-10-23 20:00										
+SaveS142.fl	M12-gate-s9q	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	d85d256	2026-10-23 20:58										
+SaveS143.fl	M12-gate-s9r	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f3106c8	2026-10-23 21:07										
+SaveS144.fl	M12-gate-s9s	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f8190a1	2026-10-23 21:16										
+SaveS145.fl	M12-gate-s9t	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3524a65	2026-10-23 21:26										
+SaveS146.fl	M12-gate-s9u	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	82c8b87	2026-10-23 21:38										
+SaveS147.fl	M12-gate-s9v	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	210746d	2026-10-23 21:49										
+SaveS148.fl	M12-gate-s9w	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	6cddd35	2026-10-23 21:58										
+SaveS149.fl	M12-gate-s9x	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	6835503	2026-10-23 22:07										
+SaveS150.fl	M12-gate-s9y	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ffc4f8c	2026-10-23 22:16										
+SaveS162.fl	M12-gate-s9z	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	4cad6dd	2026-10-23 23:47										
+SaveS041.fl	M12-hold4	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8df84fb	2026-10-22 18:42										
+SaveS045.fl	M12-ownhull	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	4154613	2026-10-23 00:10										
+SaveS165.fl	M12-s10-base	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	29fabbc	2026-10-24 01:47										
+SaveS166.fl	M12-s10-core	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	869ae2a	2026-10-24 02:00										
+SaveS169.fl	M12-s10-e	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	fe7777b	2026-10-24 02:27										
+SaveS168.fl	M12-s10-hop	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	beef833	2026-10-24 02:18										
+SaveS170.fl	M12-s10-hugprobe	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	0e42dcc	2026-10-24 02:49										
+SaveS172.fl	M12-s10-hugprobe2	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	55cf4f3	2026-10-24 02:59										
+SaveS171.fl	M12-s10-i	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	55cf4f3	2026-10-24 03:04										
+SaveS174.fl	M12-s10-j	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	6630e30	2026-10-24 03:54										
+SaveS175.fl	M12-s10-k	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	990e167	2026-10-24 04:10										
+SaveS167.fl	M12-s10-lair	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f3647f3	2026-10-24 02:13										
+SaveS173.fl	M12-s10-narrowprobe	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	6728886	2026-10-24 03:39										
+SaveS183.fl	M12-s11-saves	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	cba3ef5	2026-10-24 04:53										
+SaveS186.fl	M12-s11g-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3d102cd	2026-10-24 06:53										
+SaveS184.fl	M12-s11g-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3d102cd	2026-10-24 06:50										
+SaveS185.fl	M12-s11g-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3d102cd	2026-10-24 06:40										
+SaveS187.fl	M12-s11g-d	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3d102cd	2026-10-24 06:49										
+SaveS188.fl	M12-s11h-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8533254	2026-10-24 07:31										
+SaveS189.fl	M12-s11h-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8533254	2026-10-24 07:32										
+SaveS190.fl	M12-s11h-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8533254	2026-10-24 07:27										
+SaveS191.fl	M12-s11i-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	1f02b69	2026-10-24 08:23										
+SaveS194.fl	M12-s11i-j	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	1f02b69	2026-10-24 08:22										
+SaveS192.fl	M12-s11i-n	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	1f02b69	2026-10-24 08:14										
+SaveS193.fl	M12-s11i-x	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	1f02b69	2026-10-24 08:18										
+SaveS195.fl	M12-s11s-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ef7a72f	2026-10-24 09:03										
+SaveS196.fl	M12-s11s-r	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ef7a72f	2026-10-24 09:07										
+SaveS197.fl	M12-s11t-r	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	69f574e	2026-10-24 09:27										
+SaveS230.fl	M12-s11v-r	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	622f04a	2026-10-24 15:44										
+SaveS053.fl	M12-s7-3d-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	2459f3f	2026-10-23 04:34										
+SaveS052.fl	M12-s7-airlock2	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	fb48759	2026-10-23 04:07										
+SaveS051.fl	M12-s7-holewait	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	005a7bb	2026-10-23 03:40										
+SaveS060.fl	M12-s7-r3-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	84bd318	2026-10-23 05:52										
+SaveS059.fl	M12-s7-r3-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	84bd318	2026-10-23 05:52										
+SaveS058.fl	M12-s7-r3-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	84bd318	2026-10-23 05:52										
+SaveS054.fl	M12-s7-x3-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	10bff5c	2026-10-23 05:05										
+SaveS055.fl	M12-s7-y3-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f718e4a	2026-10-23 05:25										
+SaveS056.fl	M12-s7-z3-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	75a2d8f	2026-10-23 05:39										
+SaveS057.fl	M12-s7-z3-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	75a2d8f	2026-10-23 05:39										
+SaveS062.fl	M12-s8-base-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	0cafa8f	2026-10-23 06:26										
+SaveS061.fl	M12-s8-base-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	0cafa8f	2026-10-23 06:26										
+SaveS063.fl	M12-s8-base-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	0cafa8f	2026-10-23 06:27										
+SaveS065.fl	M12-s8-f1-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f223531	2026-10-23 06:36										
+SaveS064.fl	M12-s8-f1-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f223531	2026-10-23 06:36										
+SaveS066.fl	M12-s8-f1-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f223531	2026-10-23 06:37										
+SaveS077.fl	M12-s8-f10-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	250c218	2026-10-23 07:27										
+SaveS079.fl	M12-s8-f10-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	250c218	2026-10-23 07:29										
+SaveS078.fl	M12-s8-f10-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	250c218	2026-10-23 07:27										
+SaveS080.fl	M12-s8-f11-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	7df5eff	2026-10-23 07:37										
+SaveS081.fl	M12-s8-f11-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	7df5eff	2026-10-23 07:37										
+SaveS092.fl	M12-s8-f12-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3e0e010	2026-10-23 09:47										
+SaveS091.fl	M12-s8-f12-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3e0e010	2026-10-23 09:47										
+SaveS093.fl	M12-s8-f12-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c03dc12	2026-10-23 09:55										
+SaveS095.fl	M12-s8-f13-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	38f66d5	2026-10-23 10:13										
+SaveS096.fl	M12-s8-f13-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	38f66d5	2026-10-23 10:13										
+SaveS097.fl	M12-s8-f15-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8bd7d84	2026-10-23 10:42										
+SaveS098.fl	M12-s8-f15-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8bd7d84	2026-10-23 10:45										
+SaveS099.fl	M12-s8-f15-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c148eb6	2026-10-23 10:53										
+SaveS100.fl	M12-s8-f16-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	2ebf0bd	2026-10-23 11:06										
+SaveS101.fl	M12-s8-f16-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	2ebf0bd	2026-10-23 11:14										
+SaveS067.fl	M12-s8-f5-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	52e6d90	2026-10-23 06:46										
+SaveS068.fl	M12-s8-f5-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	52e6d90	2026-10-23 06:47										
+SaveS069.fl	M12-s8-f6-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	fe3b317	2026-10-23 06:56										
+SaveS070.fl	M12-s8-f6-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	fe3b317	2026-10-23 06:56										
+SaveS071.fl	M12-s8-f6-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	fe3b317	2026-10-23 06:56										
+SaveS072.fl	M12-s8-f8-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a144c01	2026-10-23 07:07										
+SaveS073.fl	M12-s8-f8-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a144c01	2026-10-23 07:07										
+SaveS074.fl	M12-s8-f9-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e5268b8	2026-10-23 07:18										
+SaveS075.fl	M12-s8-f9-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e5268b8	2026-10-23 07:18										
+SaveS076.fl	M12-s8-f9-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e5268b8	2026-10-23 07:19										
+SaveS048.fl	M12-toledo-trace	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f51cf	2026-10-23 00:25										
+SaveS031.fl	M13	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ce50649	2026-10-22 11:35										
+SaveS030.fl	M13-from-city	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3f5991e	2026-10-22 13:53										
+SaveS050.fl	M13-from-city-goals	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f51cf	2026-10-23 00:28										
+SaveS047.fl	M13-from-city-recheck	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f51cf	2026-10-23 00:24										
+SaveS034.fl	M13-from-st03	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3fa5999	2026-10-22 14:17										
+SaveS046.fl	M13-from-st03-airlock	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f51cf	2026-10-23 00:22										
+SaveS037.fl	M13-from-st03-hold2	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c772206	2026-10-22 18:22										
+SaveS040.fl	M13-from-st03-hold4	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c772206	2026-10-22 18:38										
+SaveS032.fl	M13-lbprobe	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f00aa71	2026-10-22 12:30										
+SaveS213.fl	M13-s11c-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	64d3569	2026-10-24 12:39										
+SaveS214.fl	M13-s11c2-sd	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3e73395	2026-10-24 12:49										

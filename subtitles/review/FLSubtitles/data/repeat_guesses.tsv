@@ -1,0 +1,41 @@
+# Repeated lines (one actor, several takes) Claude could not settle from the takes alone: a guessed
+# wording (text) or none (unclear). merge.py puts the guess in the draft of every take of that actor
+# (family = voice without the take letter a/b) unless a take is reviewed; the review tool lists them
+# under "Repeated lines: unclear & Claude's guesses". The user decides each one there.
+id	family	text	note
+gcs_combat_brag_05-	pilot_f_ill_m01	Enemy target vaped.	heard "vaporized / evaded / vapor"; the other illegal pilots say "vaped"
+gcs_combat_brag_05-	pilot_f_ill_m02	Enemy target vaped.	heard "named / faked / fate"; the other illegal pilots say "vaped"
+gcs_combat_order_retreattowards_02+	pilot_f_leg_m01	Bug out and get to	heard "get a / get the"; pilot_f_leg_f01 says "Bug out and get to"
+gcs_combat_order_retreattowards_02+	pilot_f_ill_m02	Bug out! Regroup at	heard "Recruit the ×2 / Regroup"
+gcs_combat_order_retreattowards_06+	pilot_c_ill_m02	That's enough. Break it off and rendezvous at	heard "Break it up / Break it off / Break it up, and Ron David would"
+gcs_combat_inflicting_damage_04-	pilot_c_leg_m01	Hitting bandit hard.	heard "Getting banded hard ×2 / Hitting banded hard"
+gcs_combat_taking_damage_05-	pilot_f_leg_m01	I'm hit. Bandit is hitting me.	heard "I'm hit. Bandit is hitting me. / I'm half. Bandit is heading me."
+gcs_fidget_saystatus_damagenone_01-	pilot_f_ill_m01	Ship's fine.	heard "Ship's fine ×2 / Chips five"
+gcs_combat_announce_ff_02-	pilot_f_mil_m01	Curb your fire, freelancer.	heard "Curb ×2 / Carve"
+gcs_combat_announce_ff_03-	pilot_f_ill_m01	Check your target, chump.	heard "Chuck ×2 / jerk"
+gcs_fidget_trade_simple_02-	pilot_f_ill_m01	This beats the straight and narrow, hypocrites. The so-called authorities are more corrupt than we are.	heard "Striking Arrow / straitened now / straitened arrow"
+gcs_fidget_trade_simple_02-	pilot_f_mil_m01	The military's fine, but I'm starting to want a piece of the action.	heard "military's fine ×2 / military spine"
+rms_smallshiptaunt_03-	pilot_f_ill_m02	Mess with the Viper and you'll get the fangs.	heard "fags ×2 / fangs"
+gcs_combat_fleereason_other_03-	pilot_f_ill_m02	I'd rather live to fight another day.	heard "find ×2 / fight"
+gcs_combat_taking_damage_worst_07-	pilot_f_ill_m01	Lost maneuvering. Lost life support. Lost.	heard "mineral ring / the ring / maneuvering"
+gcs_combat_taking_damage_worst_07-	pilot_c_ill_m01	Lost maneuvering. Lost life support. Lost.	the clip trails off after "Lost"
+gcs_scan_lootdestroyed_02-	pilot_f_ill_m01	No! Not the loot!	heard "loot / route / loot"
+gcs_scan_lootdestroyed_02-	pilot_f_ill_m02	No! Not the loot!	heard "to loot / the loan / the loot"
+gcs_scan_lootdestroyed_03-	pilot_f_ill_m02	Oh no! I lost the loot.	heard "loop ×2 / loot"
+gcs_scan_lootdestroyed_02-	pilot_f_leg_m01	The goods, they're gone.	heard "goods / gods"
+gcs_combat_announce_allclear_03-	pilot_f_leg_m01	Area clear. No bandits in sight.	heard "No bad. It's in sight. / No bandits in sight."
+gcs_combat_fleereason_damaged_02-	pilot_f_ill_m02	I've been stomped on pretty hard.	heard "stopped off ×2 / stopped on"
+gcs_fidget_talkcargo_01-	pilot_f_ill_m01	Should bring in a ripe payday.	heard "ripe ×2 / rapid"
+gcs_fidget_talkcargo_01-	pilot_f_ill_m02	It'll bring in a ripe payday.	heard "It will ... ripe ×2 / We'll ... right"
+gcs_fidget_trade_ihear_01+	pilot_f_ill_m01	A bay full of	heard "A bay full of ×2 / A pay for"
+gcs_fidget_trade_ihear_01+	pilot_f_ill_m02	A bay full of	heard "A bag full of ×2 / A bayful"
+gcs_combat_announce_flee_01-	pilot_f_mil_m02	Retreating.	heard "Retreating ×2 / Retraining"
+gcs_combat_resume_patrol_04-	pilot_f_ill_m02	Back to the patrol.	heard "patrol ×2 / control"
+gcs_fidget_trade_simple_03-	pilot_f_mil_m02	My CO's not the man he used to be. Something's happened. Must be the stress.	heard "CO's / ceo's / co's"
+gcs_combat_offerhelp_03-	pilot_f_leg_m01	Need some cover, friend?	heard "Fred / friend"
+gcs_combat_taking_damage_worst_01-	pilot_f_ill_m02		unclear: heard "Pocket holder / Lucky Holder / What's your order?"
+rms_defendsolar_03-	pilot_f_mil_m01		unclear: heard "I'm calling joy on the installation, bogey. You're going down. ×2 / I'm Colin joy ..."
+gcs_fidget_patrolsimple_01-	pilot_f_ill_m02		unclear: "Keep it icy, man ×2" or "Keep an eye, see man"?
+gcs_fidget_talkcargo_01-	pilot_f_leg_f01		unclear: "Lands a good price ×2" or "Winds a good price"?
+gcs_combat_taking_damage_worst_05-	pilot_f_leg_m01		unclear: "Reactor leak!" or "Freelancer."?
+gcs_dockrequest_request_02+	pilot_f_ill_m02		unclear: heard "Image / Give me / Yeah"

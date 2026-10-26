@@ -1,0 +1,44 @@
+// FLvibed Setup's resources: the payload (the release build and the shipped data; ids as in setup.cpp's kPayload), the
+// version, the manifest. Compiled from the repository root by build.cmd setup (paths relative to it).
+#include <winver.h>
+#include <winuser.h>
+#include "version.h"
+
+1 ICON "tools/setup/flvibed.ico"
+
+101 RCDATA "build/release/FLvibed.dll"
+102 RCDATA "subtitles/data/subtitles.tsv"
+103 RCDATA "subtitles/data/movies.tsv"
+104 RCDATA "subtitles/data/movie_frames.tsv"
+105 RCDATA "subtitles/data/speaker_colors.tsv"
+106 RCDATA "subtitles/data/word_times.tsv"
+107 RCDATA "controller/data/autopilot.3db"
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "tools/setup/setup.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION FLV_VERSION_MAJOR, FLV_VERSION_MINOR, FLV_VERSION_PATCH, 0
+PRODUCTVERSION FLV_VERSION_MAJOR, FLV_VERSION_MINOR, FLV_VERSION_PATCH, 0
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE 0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileDescription", "FLvibed Setup - installs and uninstalls FLvibed for Freelancer"
+            VALUE "FileVersion", FLV_VERSION
+            VALUE "ProductName", "FLvibed"
+            VALUE "ProductVersion", FLV_VERSION
+            VALUE "OriginalFilename", "FLvibed-Setup.exe"
+            VALUE "LegalCopyright", "Freelancer is (c) Microsoft; FLvibed is not affiliated with Microsoft"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

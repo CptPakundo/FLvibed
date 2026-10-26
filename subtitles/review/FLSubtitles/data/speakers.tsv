@@ -1,0 +1,60 @@
+# Speaker display names for subtitles.tsv's speaker column (merge.speaker_name).
+# voice:<nickname>  = name for every line of that voice (named characters: one name everywhere)
+# raw:<SCRIPT NAME>  = fix or replace a shooting-script speaker tag (after stage notes are removed)
+# An empty name = no shipped name (the runtime uses the name the game shows for the sender).
+match	name
+voice:juni	Juni
+voice:juni_voice_m01a	Juni
+voice:king	King
+voice:trent	Trent
+voice:trent_voice	Trent
+voice:hakkera	Lord Hakkera
+voice:ozu	Ozu
+voice:ozu_asst_1	Ozu's Assistant
+voice:orillion	Orillion
+voice:vonclaussn	Von Claussen
+voice:quintaine	Quintaine
+voice:tobias	Tobias
+voice:walker	Walker
+voice:sinclair	Sinclair
+voice:botzler	Botzler
+voice:fischer	Hans Fischer
+voice:dexter	Dexter Hovis
+voice:jonner	Jonner
+voice:kress	Kress
+voice:lonnigan	Lonnigan
+voice:jacobi	President Jacobi
+voice:nnvoice	Neural Net
+voice:nnvoice_vanilla	Neural Net
+voice:manhtn_bar	Manhattan Bartender
+voice:announcer	Announcer
+voice:cosmo_voice_m02	Cosmo
+voice:ashcroft_voice_m02	Ashcroft
+voice:harrison	Harrison
+voice:van_pelt	Van Pelt
+voice:vance	Vance
+voice:albertson	Albertson
+raw:ORLLION	Orillion
+raw:BOZTLER	Botzler
+raw:VONCLAUSSEN	Von Claussen
+raw:AKIRA	Lord Hakkera
+raw:HAKKERA	Lord Hakkera
+raw:DEXTER	Dexter Hovis
+raw:LIBERTY NAVY FIGTER 1	Liberty Navy Fighter 1
+raw:LI NEWS	Liberty Newscaster
+raw:LIBERTY NEWSCASTER	Liberty Newscaster
+raw:A-SPECTATOR	Spectator
+raw:B-SPECTATOR	Spectator
+raw:C-SPECTATOR	Spectator
+raw:D-SPECTATOR	Spectator
+raw:BIG MAN 1	Big Man
+raw:BOUNTY HUNTER 1	Bounty Hunter
+raw:BUNDSCHUH_E	Bundschuh E
+raw:CALI	California Minor
+raw:BENFORD CV	Benford
+raw:SAMURA SA 14	Samura SA-14
+raw:PROTO1
+raw:LNC2
+raw:ORDEREXTRA 01	Order Pilot
+raw:ORDEREXTRA 02	Order Pilot
+raw:TIMER

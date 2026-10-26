@@ -1,0 +1,29 @@
+{
+ "_about": "HUD 2 approved by the owner (25 Oct 2026 ~11:00: 'you have my permission to build this'): FLvibed's own flight HUD (docs\\UI_HUD2.md) - its settings at the top of the CONTROLLER tab's HUD section, the classic rows marked as such, a note on the HUD screen and decision 16.",
+ "add_rows": {
+  "controller/HUD": {"first": true, "rows": [
+   {"key": "hud_style", "label": "HUD", "kind": "picker", "options": ["CLASSIC", "HUD 2 ON THE PAD", "HUD 2 ALWAYS"], "def": "HUD 2 ON THE PAD", "help": "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's HUD (with the controller's glyphs and legend)."},
+   {"key": "hud_fade", "label": "Fade when calm", "kind": "picker", "options": ["ALWAYS FULL", "CALM DIMS", "MINIMAL"], "def": "CALM DIMS", "help": "HUD 2 in quiet flight. Calm dims: the ring and the side panels dim while nothing happens and come back the moment something changes or a fight starts. Minimal: calm flight shows almost nothing. Always full: no fading."},
+   {"key": "hud_opacity", "label": "HUD opacity", "kind": "slider", "min": 40, "max": 100, "step": 10, "def": 100, "unit": "%", "help": "How opaque HUD 2 is overall."},
+   {"key": "hud_scale", "label": "HUD size", "kind": "slider", "min": 80, "max": 130, "step": 10, "def": 100, "unit": "%", "help": "The size of HUD 2's panels, text and glyphs."},
+   {"key": "hud_numbers", "label": "Numbers on the ring", "kind": "picker", "options": ["WHEN LOW", "ALWAYS", "NEVER"], "def": "WHEN LOW", "help": "The shield, hull and power numbers at the ends of the ring's arcs: only when a value runs low, always, or never (the arcs alone)."},
+   {"key": "hud_threats", "label": "Threat list", "kind": "toggle", "def": true, "help": "In a fight, the nearest hostiles under the target card, with the buttons that pick them."},
+   {"key": "hud_context", "label": "Context prompts", "kind": "picker", "options": ["CONTEXTUAL", "OFF"], "def": "CONTEXTUAL", "help": "Under your ship, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons."},
+   {"key": "hud_alerts", "label": "Alerts", "kind": "toggle", "def": true, "help": "A short card at the top when something needs you now (shield failing, missile incoming, cruise disrupted, hold full), naming the button that helps; that slot lights up."},
+   {"key": "hud_info", "label": "Situation details", "kind": "toggle", "def": true, "help": "Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers."},
+   {"key": "hud_wireframes", "label": "Wireframe views", "kind": "toggle", "def": true, "help": "The game's wireframe pictures of your target and your ship in HUD 2's panels (else their icons)."},
+   {"key": "hud_transition", "label": "HUD switch fade", "kind": "slider", "min": 0, "max": 400, "step": 20, "def": 120, "unit": " ms", "tier": "advanced", "help": "How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse."}
+  ]}
+ },
+ "rows": {
+  "hud_glyphs": {"help": "Classic HUD: in pad mode the HUD's own buttons carry the glyph of the button that acts on them (the maneuver bar, the cruise box, the NeuroNet box, the contact filters, repair and battery, the weapon groups)."},
+  "button_legend": {"help": "Classic HUD: a small list in the empty right-middle of the screen with the actions available right now and their buttons, changing with the context (a dockable target, a fight, the autopilot flying). HUD 2 has its context prompts instead."},
+  "ap_status_line": {"help": "Classic HUD: the one line under the maneuver bar while the autopilot flies, cruise charges or turret view is on. HUD 2 shows it in its navigation block."}
+ },
+ "states": {
+  "hud/pad": {"notes": ["HUD 2 (approved 25 Oct 2026, docs\\UI_HUD2.md; the HUD row, default HUD 2 ON THE PAD): in pad flight FLvibed's own HUD replaces the game's panels - the reticle ring (shield left, hull right, power below, speed inside), the objective and maneuver top left, the target card top right with the threat list, the ship panel bottom left, the loadout with the D-pad cross bottom right, context prompts under the ship, one alert at a time; the subtitles' panel with the portrait top centre. The badges above remain the Classic HUD. Mock-ups: the HUD 2 proposal page (artifact D6XnaBvWLKHARfdvTQuj3Y)."]}
+ },
+ "decisions": {
+  "c_hud": {"note": "Superseded for the pad by HUD 2 (25 Oct 2026, the owner's go: 'a modern looking and feeling HUD that has the Freelancer flavor'); the badge HUD stays as the Classic HUD - docs\\UI_HUD2.md."}
+ }
+}

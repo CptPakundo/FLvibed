@@ -1,0 +1,98 @@
+# Subtitles for the movies Freelancer plays (FLSubtitles). Times in seconds from the movie start. Spoken lines only.
+# Built with asr/intro_align.py (speech to text + 2 s windows, about +-0.5 s) and corrected by Claude in context;
+# since 26 Oct 2026 force-aligned (aligner/align_words.py: word starts in word_times.tsv, voice "movie"; windows the
+# alignment places unambiguously moved to the words, --fix-windows, log out/movie_window_changes.tsv);
+# a note starting [check] needs a listen. fl_intro = HD Edition intro (224 s), fl_intro_vanilla = the original
+# intro (227 s), fl_intro_full = the full original intro from the Bonus DVD (451 s, title 3); the runtime tells
+# them apart by duration and size.
+movie	start	end	speaker	text	note
+fl_intro	5.70	10.80	Narrator	It was the 23rd century. Mankind's darkest hour.	
+fl_intro	12.00	13.50	Computer	Heart rate and respiration nominal.	
+fl_intro	14.90	24.20	Computer	Life support online. Initiating cryogenic freezing.	
+fl_intro	28.80	31.40	Computer	Commencing pod lockdown.	
+fl_intro	50.00	52.80	Radio	Control, cryos complete. Main navigation systems online.	[check] the vanilla read heard "bios"
+fl_intro	53.50	55.50	Radio	Copy that. Reading green.	[check] radio chatter under music: speech to text heard different words in each intro; time placed after the line before
+fl_intro	71.70	75.30	Narrator	The war had been raging for almost a hundred years.	
+fl_intro	76.00	82.30	Narrator	We had been fighting for so long, no one could remember the reason why it all started in the first place.	
+fl_intro	83.10	88.80	Narrator	All we knew is that there were two sides: the Coalition and the Alliance.	
+fl_intro	90.00	95.80	Narrator	For decades, millions died for the same piece of rock, again and again.	
+fl_intro	95.90	101.30	Narrator	Finally, one side managed to gain the upper hand: the Coalition.	
+fl_intro	104.50	106.00	Radio	Coalition carriers! Get out! Jump!	[check] radio chatter under music: speech to text heard different words in each intro
+fl_intro	106.00	106.90	Radio	All fighters engage.	
+fl_intro	128.00	129.80	Radio	ASF One, we have liftoff.	
+fl_intro	141.50	144.80	Narrator	In desperation, the Alliance launched five sleeper ships.	
+fl_intro	145.50	155.80	Narrator	The hope was for them to begin again, far from the war and strife that had befallen Earth, to start free from the prejudices that had divided us for so long.	
+fl_intro	155.80	168.30	Narrator	Each sleeper ship was christened after its patron nation: the Bretonia, the Rheinland, the Hispania, the Kusari, the Liberty.	
+fl_intro	192.15	200.30	Narrator	Against all odds, the colony ships broke through the Coalition blockade and headed for the Sirius system.	
+fl_intro	203.00	208.30	Narrator	That was 800 years ago, when we came here to rebuild our lives.	
+fl_intro	209.00	211.30	Narrator	We've come a long way since then.	
+fl_intro	211.55	216.00	Narrator	We have grown, we have prospered, we have flourished.	
+fl_intro	216.95	219.55	Narrator	But we will never forget.	
+fl_intro_vanilla	5.70	11.30	Narrator	It was the 23rd century. Mankind's darkest hour.	
+fl_intro_vanilla	12.00	13.50	Computer	Heart rate and respiration nominal.	
+fl_intro_vanilla	14.95	24.15	Computer	Life support online. Initiating cryogenic freezing.	
+fl_intro_vanilla	29.00	30.10	Computer	Commencing pod lockdown.	
+fl_intro_vanilla	50.00	52.80	Radio	Control, cryos complete. Main navigation systems online.	[check] the vanilla read heard "bios"
+fl_intro_vanilla	53.50	55.50	Radio	Copy that. Reading green.	[check] radio chatter under music: speech to text heard different words in each intro; time placed after the line before
+fl_intro_vanilla	71.70	75.30	Narrator	The war had been raging for almost a hundred years.	
+fl_intro_vanilla	76.00	82.30	Narrator	We had been fighting for so long, no one could remember the reason why it all started in the first place.	
+fl_intro_vanilla	83.15	88.80	Narrator	All we knew is that there were two sides: the Coalition and the Alliance.	
+fl_intro_vanilla	90.00	95.80	Narrator	For decades, millions died for the same piece of rock, again and again.	
+fl_intro_vanilla	95.95	101.30	Narrator	Finally, one side managed to gain the upper hand: the Coalition.	
+fl_intro_vanilla	104.50	106.00	Radio	Coalition carriers! Get out! Jump!	[check] radio chatter under music: speech to text heard different words in each intro
+fl_intro_vanilla	106.00	106.90	Radio	All fighters engage.	
+fl_intro_vanilla	127.85	130.00	Radio	ASF One, we have liftoff.	
+fl_intro_vanilla	141.50	144.80	Narrator	In desperation, the Alliance launched five sleeper ships.	
+fl_intro_vanilla	145.50	155.80	Narrator	The hope was for them to begin again, far from the war and strife that had befallen Earth, to start free from the prejudices that had divided us for so long.	
+fl_intro_vanilla	155.80	168.30	Narrator	Each sleeper ship was christened after its patron nation: the Bretonia, the Rheinland, the Hispania, the Kusari, the Liberty.	
+fl_intro_vanilla	192.15	200.45	Narrator	Against all odds, the colony ships broke through the Coalition blockade and headed for the Sirius system.	
+fl_intro_vanilla	203.00	208.30	Narrator	That was 800 years ago, when we came here to rebuild our lives.	
+fl_intro_vanilla	209.00	211.30	Narrator	We've come a long way since then.	
+fl_intro_vanilla	211.55	216.00	Narrator	We have grown, we have prospered, we have flourished.	
+fl_intro_vanilla	217.00	219.60	Narrator	But we will never forget.	
+fl_intro_full	5.70	11.30	Narrator	It was the 23rd century. Mankind's darkest hour.	
+fl_intro_full	13.00	14.40	Computer	Heart rate and respiration nominal.	
+fl_intro_full	15.30	24.20	Computer	Life support online. Initiating cryogenic freezing.	
+fl_intro_full	29.50	30.40	Computer	Commencing pod lockdown.	
+fl_intro_full	52.10	55.80	Radio	Control, cryos complete. Bringing navigation systems online.	
+fl_intro_full	56.70	59.00	Radio	Copy that. We're reading green across the board.	
+fl_intro_full	59.00	61.80	Radio	Good to hear. Bringing primary engines online.	
+fl_intro_full	63.00	64.50	Radio	How's it looking out there?	
+fl_intro_full	65.20	67.15	Radio	All systems are go for ignition.	
+fl_intro_full	67.15	69.90	Radio	Launch in T-minus ten minutes and counting.	
+fl_intro_full	70.05	73.30	Radio	Control, incoming hostiles. Ten minutes out. Shall I abort?	
+fl_intro_full	73.50	75.00	Radio	Negative. Launch is still a go.	
+fl_intro_full	75.00	78.30	Narrator	The war had been raging for almost a hundred years.	
+fl_intro_full	79.00	85.30	Narrator	We had been fighting for so long, no one could remember the reason why it all started in the first place.	
+fl_intro_full	86.05	91.80	Narrator	All we knew is that there were two sides: the Coalition and the Alliance.	
+fl_intro_full	92.60	98.80	Narrator	For decades, millions died for the same piece of rock, again and again.	
+fl_intro_full	99.75	104.00	Narrator	Finally, one side managed to gain the upper hand: the Coalition.	
+fl_intro_full	106.80	108.30	Radio	Coalition carriers coming out!	[check] radio chatter under music (the short intro's version reads differently)
+fl_intro_full	108.50	109.80	Radio	All fighters engage.	
+fl_intro_full	111.00	112.80	Radio	T-minus ten seconds and counting.	
+fl_intro_full	113.00	115.80	Radio	Nine, eight, seven, six, five, four, three, two, one.	
+fl_intro_full	123.25	125.30	Radio	ASF One, we have liftoff.	
+fl_intro_full	132.00	133.80	Radio	ASF Two, you are clear.	
+fl_intro_full	135.35	136.45	Radio	Three is a go.	
+fl_intro_full	137.50	140.30	Narrator	In desperation, the Alliance launched five sleeper ships.	
+fl_intro_full	141.00	151.30	Narrator	The hope was for them to begin again, far from the war and strife that had befallen Earth, to start free from the prejudices that had divided us for so long.	
+fl_intro_full	151.30	163.80	Narrator	Each sleeper ship was christened after its patron nation: the Bretonia, the Rheinland, the Hispania, the Kusari, the Liberty.	
+fl_intro_full	187.55	195.80	Narrator	Against all odds, the colony ships broke through the Coalition blockade and headed for the Sirius system.	
+fl_intro_full	196.45	200.20	Narrator	One by one, the remaining Alliance bases were overrun.	
+fl_intro_full	200.20	202.85	Narrator	Until all that remained was Pluto.	
+fl_intro_full	202.85	208.80	Narrator	It was here the Alliance forces prepared for one gallant last stand.	
+fl_intro_full	236.00	240.30	Narrator	But then something happened that no one could have ever imagined.	
+fl_intro_full	247.50	248.10	Narrator	They arrived.	
+fl_intro_full	250.00	255.80	Narrator	It was our first contact with another species, and for a moment we forgot our differences.	
+fl_intro_full	255.95	260.80	Narrator	We just stood there, dumbfounded by its size and beauty.	
+fl_intro_full	263.15	267.70	Narrator	It was ironic that in those moments we were finally united as a people.	
+fl_intro_full	271.80	281.80	Narrator	But this revelation could only be savored in those few bitter seconds, for these aliens had not come in peace.	
+fl_intro_full	375.50	380.80	Narrator	By blind luck, a young general survived the shock wave on the dark side of Pluto.	
+fl_intro_full	391.80	394.30	Narrator	His name was Atticus Rockford.	[check] first name as heard; the draft script calls him Rockford only
+fl_intro_full	396.05	402.80	Narrator	Someone had to warn the colonists in the Sirius system that these aliens were coming.	
+fl_intro_full	402.80	409.30	Narrator	They needed to prepare, for mankind had found its real enemy: the Nomads.	
+fl_intro_full	418.65	422.30	Narrator	I knew then that I had been spared for a purpose.	
+fl_intro_full	429.00	434.30	Narrator	That was 800 years ago, when we came here to rebuild our lives.	
+fl_intro_full	434.50	437.15	Narrator	We've come a long way since then.	
+fl_intro_full	437.15	441.80	Narrator	We have grown, we have prospered, we have flourished.	
+fl_intro_full	443.35	445.80	Narrator	But we will never forget.	

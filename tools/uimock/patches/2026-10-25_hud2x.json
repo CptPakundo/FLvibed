@@ -1,0 +1,8 @@
+{
+ "_about": "Extended HUD 2 (docs\\UI_HUD2_EXTENDED.md, 25 Oct 2026, built while the owner was away; the owner decides keep or discard): one setting for the look of the menus, rooms and dialogs, at the top of the CONTROLLER tab's MENUS AND PROMPTS section; default CLASSIC (today's screens).",
+ "add_rows": {
+  "controller/MENUS AND PROMPTS": {"first": true, "rows": [
+   {"key": "ui_style", "label": "Screens", "kind": "picker", "options": ["CLASSIC", "HUD 2"], "def": "CLASSIC", "help": "The look of the menus, rooms and dialogs: Classic = the game's own; HUD 2 = FLvibed's HUD 2 skin over the same screens (the game's controls stay as they are).", "tier": "player"}
+  ]}
+ }
+}
