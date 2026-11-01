@@ -50,3 +50,12 @@ To add: factions and attitudes, loadouts.
 ## Missions
 `missions\<Mxx>.md`: what each mission *does* that a pilot must understand (set pieces, special spawns, what is marked,
 what fails it) - distilled from the script (`DATA\MISSIONS`), the runbook and the footage. Template: M01b.
+
+**How a story script runs** (`[game]` 29-30 Oct 2026, HDE 0.7.1; `..\FREELANCER_RE.md` "The live trigger table"): the
+mission keeps a list of armed triggers (each waits on one `Cnd_*`; firing runs its `Act_*`s, `Act_ActTrig` arms more) -
+read live by debug `mission live` (`core\game\mission_live.*`). A save writes that list (`[TriggerSave]`); a load re-arms
+exactly those triggers but **restarts their conditions**: a saved timer starts again from 0, a kill count from 0 (M12.hole:
+`tr_to_st01`'s 10 s run again from the load). An objective that only a comm's end sets stays "Awaiting" (21660) after a
+mid-mission load while that comm does not replay (M12.hole: `timer_setNNObj_assist_von_claussen` armed, waiting on
+`dx_m12_0470_von_claussen`). A key save (`Act_Save`) keeps one trigger (M01b's `space_enter`). The player's death ends the
+story controller (nothing is armed until a load); a free-roam save has no story mission.

@@ -1,0 +1,13 @@
+; The FLHook.dll exports flvibed_server.dll uses (HD Edition's FLHook, plugin API 4.0): build.cmd flhook makes the import
+; library from this list (FLHook's own FLHook.lib is not shipped).
+LIBRARY FLHook.dll
+EXPORTS
+    ?versionMajor@PluginInfo@@QAEXW4PluginMajorVersion@@@Z
+    ?versionMinor@PluginInfo@@QAEXW4PluginMinorVersion@@@Z
+    ?name@PluginInfo@@QAEXPBD@Z
+    ?shortName@PluginInfo@@QAEXPBD@Z
+    ?mayUnload@PluginInfo@@QAEX_N@Z
+    ?returnCode@PluginInfo@@QAEXPAW4ReturnCode@@@Z
+    ?addHook@PluginInfo@@QAEXABVPluginHook@@@Z
+    ?IsValidClientID@Client@Hk@@YA_NI@Z
+    ?FMsgSendChat@Message@Hk@@YAXIPADI@Z

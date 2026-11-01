@@ -48,29 +48,45 @@ bool Load(const std::string& path)
     g_lines.clear();
     std::ifstream in(path, std::ios::binary);
     if (!in)
+    {
+        Log("movie: cannot open %s (no movie subtitles)", path.c_str());
         return false;
+    }
     std::string l;
     bool header = false;
+    size_t skipped = 0;
     while (std::getline(in, l))
     {
         if (!l.empty() && l.back() == '\r')
             l.pop_back();
+        if (l.compare(0, 3, "\xEF\xBB\xBF") == 0) // a UTF-8 BOM (an editor's save) must not break the header
+            l.erase(0, 3);
         if (l.empty() || l[0] == '#')
             continue;
         if (!header)
         {
-            header = true; // movie start end speaker text note
+            header = true; // movie start end speaker text note - checked: another column order would show wrong text
+            const std::vector<std::string> h = data::SplitTsv(l);
+            if (h.size() < 5 || h[0] != "movie" || h[1] != "start" || h[2] != "end" || h[3] != "speaker" ||
+                h[4] != "text")
+            {
+                Log("movie: unexpected header in %s (no movie subtitles)", path.c_str());
+                return false;
+            }
             continue;
         }
         const std::vector<std::string> f = data::SplitTsv(l);
         if (f.size() < 5 || f[1].empty())
+        {
+            ++skipped;
             continue;
+        }
         Line ln{f[0], static_cast<float>(atof(f[1].c_str())), static_cast<float>(atof(f[2].c_str())),
                 data::Widen(f[3]), data::Widen(f[4])};
         ln.textFnv = moviewords::TextFnv(f[4]);
         g_lines.push_back(std::move(ln));
     }
-    Log("movie: %zu lines from %s", g_lines.size(), path.c_str());
+    Log("movie: %zu lines from %s (%zu malformed rows skipped)", g_lines.size(), path.c_str(), skipped);
     const std::string dir = path.substr(0, path.find_last_of("\\/") + 1);
     LoadFrames(dir + "movie_frames.tsv");
     LoadWordTimes(dir + "word_times.tsv");
@@ -92,11 +108,19 @@ static void LoadWordTimes(const std::string& path)
     {
         if (!l.empty() && l.back() == '\r')
             l.pop_back();
+        if (l.compare(0, 3, "\xEF\xBB\xBF") == 0) // a UTF-8 BOM (an editor's save) must not break the header
+            l.erase(0, 3);
         if (l.empty() || l[0] == '#')
             continue;
         if (!head) // id voice text_fnv audio_sha1 end_ms starts_ms collapsed
         {
             head = true;
+            const std::vector<std::string> h = data::SplitTsv(l);
+            if (h.size() < 6 || h[0] != "id" || h[1] != "voice" || h[2] != "text_fnv" || h[5] != "starts_ms")
+            {
+                Log("movie: unexpected header in %s (movie lines keep estimated timing)", path.c_str());
+                return;
+            }
             continue;
         }
         const size_t t1 = l.find('\t');
@@ -161,6 +185,8 @@ static void LoadFrames(const std::string& path)
     {
         if (!l.empty() && l.back() == '\r')
             l.pop_back();
+        if (l.compare(0, 3, "\xEF\xBB\xBF") == 0) // a UTF-8 BOM (an editor's save) must not break the header
+            l.erase(0, 3);
         if (l.empty() || l[0] == '#')
             continue;
         if (!header)
@@ -183,7 +209,8 @@ static void LoadFrames(const std::string& path)
         char* pend = nullptr;
         Frame f;
         f.par = t.size() > 3 ? strtof(t[3].c_str(), &pend) : 0;
-        if (ok && pend != t[3].c_str() && !*pend)
+        // sizes, the crop and the pixel aspect must be positive (FitVideo divides by them)
+        if (ok && pend != t[3].c_str() && !*pend && f.par > 0 && v[1] > 0 && v[2] > 0 && v[6] > 0 && v[7] > 0)
         {
             f.w = v[1], f.h = v[2];
             f.cx = v[4], f.cy = v[5], f.cw = v[6], f.ch = v[7];
@@ -335,6 +362,7 @@ static std::string Identify(const char* path)
     dir = dir.substr(0, dir.find_last_of("\\/") + 1);
     LARGE_INTEGER size = {};
     double seconds = 0;
+    g_frame = Frame(); // a movie no candidate path opens must not inherit the previous movie's size and crop
     for (const std::string& cand : {p, dir + "..\\DATA\\" + p, dir + "..\\" + p})
     {
         HANDLE h = CreateFileA(cand.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING,
@@ -999,7 +1027,9 @@ static void RequestNativeSkip()
     // the harness's channel mutex (flctl.core.ps1 Send-FL: Local\FLvibedCmd_<channel name>), so a command of its own
     // is never overwritten; a channel in use = no skip this time (the next pass tries again)
     HANDLE mutex = CreateMutexA(nullptr, FALSE, ("Local\\FLvibedCmd_" + channel).c_str());
-    const bool owned = mutex && WaitForSingleObject(mutex, 0) == WAIT_OBJECT_0;
+    // WAIT_ABANDONED (a harness process died holding it) also makes this thread the owner: it must be released too
+    const DWORD w = mutex ? WaitForSingleObject(mutex, 0) : WAIT_FAILED;
+    const bool owned = w == WAIT_OBJECT_0 || w == WAIT_ABANDONED;
     ShmBlock* s = owned ? static_cast<ShmBlock*>(MapViewOfFile(mapping, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(ShmBlock)))
                         : nullptr;
     if (s && s->magic == kShmMagic && s->cmdSeq == s->cmdAck)
@@ -1132,6 +1162,8 @@ static SleepFn g_prevSleep = nullptr;
 static void** g_sleepSlot = nullptr;
 static HRESULT(WINAPI* g_dwmFlush)() = nullptr;
 static bool g_inSleep = false;
+// Windows 7 with Aero off (the Basic theme): DWM is not composing and DwmFlush fails at once (FLVIBED_SIM_WIN7)
+static HRESULT WINAPI DwmFlushNoComposition() { return static_cast<HRESULT>(0x80263001L); } // DWM_E_COMPOSITIONDISABLED
 
 static void WINAPI MovieSleep(DWORD ms)
 {
@@ -1161,6 +1193,8 @@ static void HookSleep(bool on)
 {
     if (on && !g_sleepSlot)
     {
+        if (!g_dwmFlush && SimWin7())
+            g_dwmFlush = DwmFlushNoComposition;
         if (!g_dwmFlush)
             if (HMODULE dwm = LoadLibraryW(L"dwmapi.dll"))
                 g_dwmFlush = reinterpret_cast<HRESULT(WINAPI*)()>(GetProcAddress(dwm, "DwmFlush"));

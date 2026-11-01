@@ -1,10 +1,13 @@
 #include "uikit.h"
 
 #include "../fl.h"
+#include "controller.h" // ctl::StickDeadzone, ctl::FocusOnly
+#include "device.h"     // ConfirmMask / CancelMask: confirm_button
 #include "game/gamefont.h"
 #include "game/uidraw.h"
 #include "gamepad.h"
 #include "log.h"
+#include "str.h"
 
 #include <algorithm>
 
@@ -68,27 +71,8 @@ void FreeFonts()
     g_fonts.ok = false;
 }
 
-std::wstring Widen(const char* utf8)
-{
-    if (!utf8 || !*utf8)
-        return L"";
-    const int n = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, nullptr, 0);
-    std::wstring w(n > 0 ? n - 1 : 0, L'\0');
-    if (n > 1)
-        MultiByteToWideChar(CP_UTF8, 0, utf8, -1, &w[0], n);
-    return w;
-}
-
-std::string Narrow(const std::wstring& s)
-{
-    if (s.empty())
-        return "";
-    const int n = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    std::string a(n > 0 ? n - 1 : 0, '\0');
-    if (n > 1)
-        WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, &a[0], n, nullptr, nullptr);
-    return a;
-}
+std::wstring Widen(const char* utf8) { return str::Widen(utf8); }
+std::string Narrow(const std::wstring& s) { return str::Narrow(s); }
 
 // ------------------------------------------------------------------ keys
 struct NamedKey
@@ -198,12 +182,14 @@ UiInput Input::Poll(float dt, bool capturing)
     if (pad_)
     {
         Gamepad& p = *Pad(pad_);
-        p.ignoreReal = GetForegroundWindow() != fl::MainWindow();
+        p.ignoreReal = Gamepad::IgnoreRealNow(ctl::FocusOnly()); // the flight pad's gate and setting (focus_gate.h)
+        p.stickDeadzone = ctl::StickDeadzone(); // the player's setting, as in flight (it kept the default: 29 Oct 2026)
+        p.padBackend = ctl::PadBackend(); // and the backend (Q5 slice 2: with pad_backend 1 this reader stayed on XInput)
         p.Update(dt);
         const PadState& s = p.Cur();
         in.anyPad = p.AnyInput();
-        in.accept |= p.Pressed(XINPUT_GAMEPAD_A);
-        in.back |= p.Pressed(XINPUT_GAMEPAD_B);
+        in.accept |= p.Pressed(device::ConfirmMask()); // A, or B with confirm_button 1
+        in.back |= p.Pressed(device::CancelMask());
         in.tabPrev |= p.Pressed(XINPUT_GAMEPAD_LEFT_SHOULDER);
         in.tabNext |= p.Pressed(XINPUT_GAMEPAD_RIGHT_SHOULDER);
         in.pageUp |= p.Pressed(PAD_LT);
@@ -433,7 +419,7 @@ Input::PadExtra Input::Extra() const
     e.l3 = p.Pressed(XINPUT_GAMEPAD_LEFT_THUMB), e.r3 = p.Pressed(XINPUT_GAMEPAD_RIGHT_THUMB);
     e.xDown = p.Down(XINPUT_GAMEPAD_X), e.yDown = p.Down(XINPUT_GAMEPAD_Y);
     e.lbDown = p.Down(XINPUT_GAMEPAD_LEFT_SHOULDER), e.rbDown = p.Down(XINPUT_GAMEPAD_RIGHT_SHOULDER);
-    e.aDown = p.Down(XINPUT_GAMEPAD_A), e.bDown = p.Down(XINPUT_GAMEPAD_B);
+    e.aDown = p.Down(device::ConfirmMask()), e.bDown = p.Down(device::CancelMask()); // accept / back (confirm_button)
     e.menuDown = p.Down(XINPUT_GAMEPAD_START), e.viewDown = p.Down(XINPUT_GAMEPAD_BACK);
     e.xHeld = p.HeldTime(XINPUT_GAMEPAD_X);
     e.lx = s.lx, e.ly = s.ly, e.rx = s.rx, e.ry = s.ry, e.lt = s.lt, e.rt = s.rt;

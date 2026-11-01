@@ -48,6 +48,16 @@ inline std::string EnvVar(const char* name)
     return {};
 }
 
+// Test switch: FLVIBED_SIM_WIN7=1 in the game's environment (set it in the shell before deploy.ps1 -Background) makes
+// FLvibed take its Windows 7 paths on a newer Windows - XInput without xinput1_4 / xinput1_3 (no DirectX runtime),
+// no GetDpiForWindow, DwmFlush failing (Aero off) - so the fallbacks can be tested here (tools\win7_check.ps1 covers
+// the imports). Never set on a player's machine.
+inline bool SimWin7()
+{
+    static const bool on = EnvVar("FLVIBED_SIM_WIN7") == "1";
+    return on;
+}
+
 // The parallel test game's instance name (deploy.ps1 -Instance, FLVIBED_INSTANCE); "" = the main install. It names
 // the debug channels ("Local\FLControllerShm_<name>") and the background window title.
 inline std::string InstanceName() { return EnvVar("FLVIBED_INSTANCE"); }

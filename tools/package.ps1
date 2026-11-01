@@ -22,10 +22,12 @@ if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Force (Join-Path $stage 'EXE\FLSubtitles'), (Join-Path $stage 'EXE\FLvibed'), (Join-Path $stage 'LICENSES') | Out-Null
 
 Copy-Item $dll (Join-Path $stage 'EXE')
-foreach ($f in 'subtitles.tsv', 'movies.tsv', 'movie_frames.tsv', 'speaker_colors.tsv', 'word_times.tsv') {
+foreach ($f in 'subtitles.tsv', 'movies.tsv', 'mixes.tsv', 'movie_frames.tsv', 'speaker_colors.tsv', 'word_times.tsv') {
     Copy-Item (Join-Path $root "subtitles\data\$f") (Join-Path $stage 'EXE\FLSubtitles')
 }
 Copy-Item (Join-Path $root 'controller\data\autopilot.3db') (Join-Path $stage 'EXE\FLvibed')
+# deliberately WITHOUT the settings stamp (core\settings_reset.h): merged by hand over an older release's files it must
+# not skip that release's settings reset (a fresh install by hand only gets a backup of these defaults)
 [IO.File]::WriteAllText((Join-Path $stage 'EXE\FLvibed.ini'), "[Modules]`r`nsubtitles = 1`r`ncontroller = 1`r`n")
 Copy-Item (Join-Path $root 'CHANGELOG.md') $stage
 Copy-Item (Join-Path $root 'LICENSES\*') (Join-Path $stage 'LICENSES')
@@ -53,7 +55,8 @@ Remove the FLvibed.dll line from EXE\dacom.ini, then delete EXE\FLvibed.dll, FLv
 FLSubtitles.ini, FLController.log, FLSubtitles.log and the folders EXE\FLSubtitles\ and EXE\FLvibed\. Saves stay valid.
 
 NEEDS
-Windows 10 or 11 and your own copy of the game. Controllers: XInput (Xbox) pads; other pads through Steam Input,
+Windows 10 or 11 (tested; Windows 7 SP1, 8 and 8.1 should work - checked, not played there yet) and your own copy
+of the game. Controllers: XInput (Xbox) pads; other pads through Steam Input,
 DS4Windows or similar. No other mod, loader or runtime is needed.
 
 THIS IS A PREVIEW
@@ -68,7 +71,7 @@ Microsoft. This package contains no game files and no audio.
 The subtitle data (EXE\FLSubtitles\*.tsv) is licensed GPL-3.0 (LICENSES\GPL-3.0.txt). It uses the work of FLSubs by
 Lorash, Freelancer Subtitles by L@Zar0 and the Russian edition's editor (GPL-3.0), and the wedge009.net mission
 transcripts (CC BY-SA 4.0) and the transcript sites they cite. Thanks to everyone who contributed.
-FLvibed's code: no licence has been chosen yet; until one is, no licence is granted for the code.
+FLvibed's code is licensed GPL-3.0 (LICENSES\GPL-3.0.txt), like the subtitle data.
 Made with AI ("vibe coded"): written by an AI (Claude, by Anthropic) under the owner's direction and tested in game.
 No warranty.
 "@
@@ -86,6 +89,9 @@ if ($LASTEXITCODE) { throw "setup build failed ($LASTEXITCODE)" }
 $setupExe = Join-Path $out "$name-Setup.exe"
 Copy-Item (Join-Path $root 'build\setup\FLvibed-Setup.exe') $setupExe -Force
 if ((Get-Item $setupExe).VersionInfo.ProductVersion -ne $version) { throw "the setup is not version $version" }
+# Windows 7: no import the system lacks (an import of a newer function keeps the DLL from loading at all; 0.1.0's report)
+& (Join-Path $PSScriptRoot 'win7_check.ps1') -Files $dll, $setupExe
+if ($LASTEXITCODE) { throw 'win7_check: an import not verified for Windows 7 (above)' }
 $setupHash = (Get-FileHash $setupExe -Algorithm SHA256).Hash.ToLower()
 "$name-Setup.exe  $([math]::Round((Get-Item $setupExe).Length / 1MB, 2)) MB  sha256 $setupHash"
 Get-ChildItem $stage -Recurse -File | ForEach-Object { $_.FullName.Substring($stage.Length + 1) }

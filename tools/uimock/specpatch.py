@@ -9,7 +9,8 @@ help replaced, a state extra's field set. Nothing of the owner's other edits is 
 patch.json: { "add_rows": {"<tab id>/<section label>": {"first": true | "after": "<row key>", "rows": [{"key", "label", "kind": "toggle" | "picker" |
 "slider", "def", "options" | "min" / "max" / "step" / "unit", "help", "tier"}]}}, "rows": {"<key>": {"def": .., "value": ..,
 "help": ".."}}, "states": {"<screen>/<state>": {"notes": [".."],
-"extras": {"<t>": {"<field>": value}}}}, "decisions": {"<id>": {"note": ".."}} }. A decision note is appended to the
+"extras": {"<t>": {"<field>": value}}}}, "decisions": {"<id>": {"note": ".."}}, "top": {"<key>": <block>} }. "top" sets a
+spec-only top-level block (the spec half only; e.g. "hud2_presets", Q7). A decision note is appended to the
 existing note (" | " between). The spec file's top-level shape is either the artifact's document ({spec: {...}}) or the
 spec itself (docs\\UI_SPEC.json with an `_about` line).
 """
@@ -229,6 +230,12 @@ def patch_spec(doc, patch):
         old = hit[0].get('note', '')
         if p['note'] not in old:
             hit[0]['note'] = (old + ' | ' if old else '') + p['note']
+    # top: whole spec-only data blocks the page does not render (e.g. hud2_presets, Q7): set / replace the key; the
+    # page's applySpec keeps unknown top-level keys and saves them back. The page's own keys are refused (use the ops above).
+    for key, value in patch.get('top', {}).items():
+        if key in ('tabs', 'presets', 'bindings', 'screens', 'decisions', 'bar', 'device', 'notes', 'v', '_about'):
+            sys.exit('top: %s is a key the page owns' % key)
+        spec[key] = value
     return doc
 
 

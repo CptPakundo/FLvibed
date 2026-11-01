@@ -17,6 +17,14 @@ engine facts in `..\FREELANCER_RE.md` "Main menu, load screens, pause menu"; cod
   `Confirm_delBtnYes` / `Confirm_delBtnNo` (both hit-testable, Yes left, No right). The pad: focus on NO first, A = the
   focused answer's own button (natively: the free cursor's click does not land out of focus), B = `Confirm_delBtnNo`;
   YES on the quit question goes to the main menu (`mode docked -> menu`), NO back to the pause menu.
+- **The multiplayer LAN / INTERNET prompt** `[game, 30 Oct 2026, found by the focus crawler]`: `PromptYes` (LAN),
+  `PromptNo` (INTERNET), `PromptExit` run as a modal loop but do NOT take the game's keyboard focus (`exe::KeyFocus`), so
+  the D-pad's modal test (`ui::ModalRoot`) misses it and the main menu's buttons behind it stayed D-pad targets - the
+  focus walked off the prompt (A then did nothing). `padmenus::ModalRoot` names the prompt's window as the modal one.
+  The game's EXIT confirmation (`ExitButtonBox0` / `1`) opens on a B / Escape on the main menu.
+- **The Options screen's rows** `[game, 30 Oct 2026]`: a page's rows (`opt_toggle N`, `opt_scroll N`) come up ~1.5-3 s
+  after the screen opens; the 54-px sliders are found by the hit-test probe only (`uiitems` depth 0) and can be missed by
+  its grid - the game's hit test at the cursor (`hit x y`) finds them.
 - **The game's arrow on the pad** `[FLvibed, 25 Oct 2026, PADFIX]`: on the main menu, load, save, pause, confirm and death
   screens as in bases, the arrow hides while the pad drives the focus (a D-pad / bumper press, or `pad_cursor 0`) and
   shows on a stick move (`pad_cursor` > 0), through the host's `SetCursorHidden` (HostApi v20); keyboard and mouse - or

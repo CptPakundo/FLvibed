@@ -12,6 +12,8 @@
 #include "game/room.h"
 #include "game/textfit.h"
 #include "game/uidraw.h"
+#include "linebreak.h"
+#include "stack_fit.h"
 
 #include "../api.h"
 #include "hud_bus.h"
@@ -105,6 +107,8 @@ static const settings::Def kDefs[] = {
     {"word_pop", Bool, &g_set.wordPop, 0, 0, "the word being spoken grows slightly (lines with word timings)"},
     {"word_timing", Bool, &g_set.wordTiming, 0, 0,
      "pages turn on the speaker's words (forced alignment); 0 = spread over the time on screen"},
+    {"stack_fit", Float, &g_set.stackFit, 0.5f, 1,
+     "stacked speakers' lines shrink together (down to this size) so the stack keeps about one line's height; 1 = off"},
     {"chat_layout_narrow", Int, &g_set.chatLayoutNarrow, 0, 1,
      "chat log NPC lines on narrow screens: 1 a header row with name and faction, 0 the column layout"},
     {"chat_layout_wide", Int, &g_set.chatLayoutWide, 0, 1, "the same on wider screens"},
@@ -503,7 +507,14 @@ static void Insert(Block&& nb)
         }
 }
 
-void Clear() { g_blocks.clear(); }
+// Every block goes; the next draw also starts the top panel, the stack fit and the anchor's glide afresh (a game load,
+// the menu: nothing of the old stack slides or shrinks the new game's first line).
+static bool g_freshStack = false;
+void Clear()
+{
+    g_blocks.clear();
+    g_freshStack = true;
+}
 
 std::string PagesReport()
 {
@@ -573,140 +584,22 @@ std::string ActiveText()
     return s;
 }
 
-// ------------------------------------------------------------------ line breaking
-static bool WeakWord(const std::wstring& w)
-{
-    static const wchar_t* weak[] = {L"a",     L"an",   L"the", L"to",   L"of", L"in",   L"on",  L"at",  L"for",
-                                    L"and",   L"with", L"by",  L"from", L"my", L"your", L"our", L"his", L"her",
-                                    L"their", L"its",  L"is",  L"be",   L"or", L"but",  L"as",  L"if",  L"no"};
-    std::wstring l;
-    for (wchar_t c : w)
-        l += static_cast<wchar_t>(towlower(c));
-    for (const wchar_t* x : weak)
-        if (l == x)
-            return true;
-    return false;
-}
-
-static std::vector<std::wstring> SplitWords(const std::wstring& s)
-{
-    std::vector<std::wstring> out;
-    std::wstring cur;
-    for (wchar_t c : s)
-    {
-        if (c == L' ')
-        {
-            if (!cur.empty())
-                out.push_back(cur), cur.clear();
-        }
-        else
-            cur += c;
-    }
-    if (!cur.empty())
-        out.push_back(cur);
-    return out;
-}
-
-static std::wstring Join(const std::vector<std::wstring>& w, size_t a, size_t b)
-{
-    std::wstring s;
-    for (size_t i = a; i < b; ++i)
-        s += (i > a ? L" " : L"") + w[i];
-    return s;
-}
+// ------------------------------------------------------------------ line breaking (linebreak.h; unit-tested)
+using linebreak::Join;
+using linebreak::SplitWords;
 
 // Words of an inline "Name:" prefix at the start of the block being laid out (0 = none): no row or page cut
 // falls inside it or right after it (the colon would otherwise win as a clause end and leave the name alone
 // on a short first row).
 static size_t s_nameWords = 0;
 
-static bool InName(size_t k) { return k <= s_nameWords; }
+static int FontWidth(const std::wstring& s, const void*) { return render::TextWidth(g_font, s); }
+static linebreak::Fit FitOf(int maxW) { return {FontWidth, nullptr, maxW, s_nameWords}; }
 
-// Best two-row split of words[a,b): both rows fit, the top row a little shorter (bottom-heavy pyramid),
-// no row ending in an article/preposition, a clause boundary preferred.
+// Best two-row split of words[a,b) (linebreak::BestBreak with the subtitle font and the current name prefix).
 static size_t BestBreak(const std::vector<std::wstring>& w, size_t a, size_t b, int maxW)
 {
-    size_t best = 0;
-    double bestCost = 1e30;
-    for (size_t k = a + 1; k < b; ++k)
-    {
-        // never inside the name; right after it ("Name:" alone on the first row) only when nothing else fits (user, 22
-        // Oct 2026: a long "Name · Faction" with a short line had no valid break, and the page was cut after the
-        // name's first word - "Agent" alone, the rest uncoloured)
-        if (InName(k) && k != s_nameWords)
-            continue;
-        const int w1 = render::TextWidth(g_font, Join(w, a, k)), w2 = render::TextWidth(g_font, Join(w, k, b));
-        if (w1 > maxW || w2 > maxW)
-            continue;
-        double cost = std::abs(w1 - w2) + (w1 > w2 ? (w1 - w2) * 0.5 : 0);
-        if (k == s_nameWords)
-            cost += maxW * 4.0;
-        if (WeakWord(w[k - 1]))
-            cost += maxW * 0.5;
-        const wchar_t last = w[k - 1].back();
-        if (last == L'.' || last == L'?' || last == L'!' || last == L'\x2026')
-            cost -= maxW * 0.7; // a sentence per row reads best
-        else if (last == L',' || last == L';' || last == L':' || last == L'\x2013')
-            cost -= maxW * 0.3;
-        // never split a name ("Fort / Bush", "Planet / Manhattan")
-        if (iswupper(w[k - 1][0]) && iswupper(w[k][0]) && iswalpha(last))
-            cost += maxW * 0.6;
-        if (cost < bestCost)
-            bestCost = cost, best = k;
-    }
-    return best;
-}
-
-static bool EndsClause(const std::wstring& word, bool sentenceOnly)
-{
-    const wchar_t c = word.back();
-    if (c == L'.' || c == L'?' || c == L'!' || c == L'\x2026')
-        return true;
-    return !sentenceOnly && (c == L',' || c == L';' || c == L':' || c == L'\x2013');
-}
-
-// Words [a,b) fit on one page: one row, or two rows with a valid break.
-static bool FitsPage(const std::vector<std::wstring>& w, size_t a, size_t b, int maxW)
-{
-    return render::TextWidth(g_font, Join(w, a, b)) <= maxW || BestBreak(w, a, b, maxW) != 0;
-}
-
-// Splits words [a,b) (too long for one page) into the fewest pages of about equal length, cutting at
-// clause boundaries where possible.
-static void SplitEven(const std::vector<std::wstring>& w, size_t a, size_t b, int maxW,
-                      std::vector<std::pair<size_t, size_t>>& out)
-{
-    while (a < b)
-    {
-        if (FitsPage(w, a, b, maxW))
-        {
-            out.push_back({a, b});
-            return;
-        }
-        const int total = render::TextWidth(g_font, Join(w, a, b));
-        const int pages = std::max(2, (total + 2 * maxW * 9 / 10 - 1) / (2 * maxW * 9 / 10));
-        const int target = total / pages;
-        // the cut nearest the even share that still fits, preferring a clause end
-        size_t best = 0;
-        double bestCost = 1e30;
-        for (size_t k = a + 1; k < b && (InName(k) || FitsPage(w, a, k, maxW)); ++k)
-        {
-            if (InName(k))
-                continue;
-            const int wk = render::TextWidth(g_font, Join(w, a, k));
-            double cost = std::abs(wk - target);
-            if (EndsClause(w[k - 1], false))
-                cost -= maxW * 0.4;
-            if (WeakWord(w[k - 1]))
-                cost += maxW * 0.5;
-            if (cost < bestCost)
-                bestCost = cost, best = k;
-        }
-        if (!best) // nothing fits: one word per page, but the name whole
-            best = std::max(a + 1, a < s_nameWords ? s_nameWords + 1 : 0);
-        out.push_back({a, best});
-        a = best;
-    }
+    return linebreak::BestBreak(FitOf(maxW), w, a, b);
 }
 
 static void Layout(Block& b, int maxW, bool inlineName)
@@ -720,34 +613,7 @@ static void Layout(Block& b, int maxW, bool inlineName)
     s_nameWords = prefix.empty() ? 0 : SplitWords(prefix).size();
     // Pages follow sentences: whole sentences share a page while they fit in two rows; a sentence too
     // long for one page is cut into even parts at clause boundaries.
-    std::vector<std::pair<size_t, size_t>> spans;
-    size_t a = 0;
-    while (a < w.size())
-    {
-        size_t e = std::max(a + 1, s_nameWords + 1); // a name ending in "." ("Dr.") is no sentence end
-        while (e < w.size() && !EndsClause(w[e - 1], true))
-            ++e;
-        if (!FitsPage(w, a, e, maxW))
-        {
-            SplitEven(w, a, e, maxW, spans);
-            a = e;
-            continue;
-        }
-        // extend with further whole sentences while they fit
-        for (;;)
-        {
-            size_t f = e + 1;
-            if (e >= w.size())
-                break;
-            while (f < w.size() && !EndsClause(w[f - 1], true))
-                ++f;
-            if (!FitsPage(w, a, f, maxW))
-                break;
-            e = f;
-        }
-        spans.push_back({a, e});
-        a = e;
-    }
+    const std::vector<std::pair<size_t, size_t>> spans = linebreak::PageSpans(FitOf(maxW), w);
     // Pages are spread over the time on screen (audio + linger) in proportion to their characters. (Timed over the audio
     // alone for a few hours on 22 Oct 2026: the next page then came before the speaker had finished the last one, and a
     // short first page - "Hello." - flashed by; the user preferred this. Exact page times would come from the clip's
@@ -1631,11 +1497,20 @@ struct Hole
 };
 static Hole g_hole, g_closingHole; // g_closingHole: the closing animation's outline, drawn last frame
 
+// The stack fit's zoom (stack_fit.h) while DrawTopPanel runs (DrawImpl sets it): the panel is drawn in its unscaled place
+// and render::ZoomEnd shrinks it about (x, y) by s. Unzoomed(y) = the unscaled y that lands on screen y: the screen's top
+// edge there keeps a panel flush with it flush after the zoom (the tab layout's zoom centre is the body's top).
+static struct
+{
+    float s = 1, x = 0, y = 0;
+} g_zoom;
+static float Unzoomed(float y) { return g_zoom.s > 0 && g_zoom.s < 1 ? g_zoom.y + (y - g_zoom.y) / g_zoom.s : y; }
+
 // A horizontal band [ya, yb] filled inside the polygon (any shape), colour ca at ya to cb at yb: slabs between the
 // corners' heights, each split into the spans the outline crosses at its middle (and around g_hole).
 static void PolyBand(const Poly& p, float ya, float yb, u32 ca, u32 cb)
 {
-    ya = std::max(ya, 0.0f);
+    ya = std::max(ya, Unzoomed(0.0f)); // (the screen's top edge after the stack fit's zoom)
     if (yb <= ya)
         return;
     float ys[30];
@@ -1719,7 +1594,9 @@ static void DrawTopPanel(float sh, float opacity, double now)
     // the top beyond the screen edge, or (space_narrow 3) the panel's own top edge with its frame line drawn
     const bool floating = g_panel.top > 0;
     const float bot = g_panel.h + g_panel.yoff;
-    const float top = floating ? g_panel.top + g_panel.yoff : std::min(0.0f, bot - g_panel.h) - sh * 0.01f;
+    // (flush: beyond the edge after the stack fit's zoom too - the tab then reaches up to it from the body's top)
+    const float top =
+        floating ? g_panel.top + g_panel.yoff : Unzoomed(std::min(0.0f, bot - g_panel.h) - sh * 0.01f);
     const float cw = sh * kChamW, ch = sh * kChamH;
     Poly poly;
     const float tx0 = g_panel.x - g_panel.tabW * 0.5f, tx1 = g_panel.x + g_panel.tabW * 0.5f;
@@ -1769,10 +1646,11 @@ static void DrawTopPanel(float sh, float opacity, double now)
     const float breath = 1.0f + 0.06f * std::sin(static_cast<float>(now) * 3.14159265f); // 2 s period, +-6 %
     const Poly o0 = Offset(poly, -rim), o1 = Offset(poly, 0.0f), o2 = Offset(poly, line),
                o3 = Offset(poly, line + bevel);
+    const float edgeY = Unzoomed(0.5f);
     for (int i = 0; i < poly.n; ++i)
     {
         const int j = (i + 1) % poly.n;
-        if (poly.v[i * 2 + 1] <= 0.5f && poly.v[j * 2 + 1] <= 0.5f)
+        if (poly.v[i * 2 + 1] <= edgeY && poly.v[j * 2 + 1] <= edgeY)
             continue; // beyond the top edge
         float nx, ny;
         InwardNormal(poly, i, nx, ny);
@@ -2062,6 +1940,7 @@ static struct
     float portraitX = 0, portraitY = 0, portraitS = 0; // the comm portrait's slot (0 = none)
     bool hud2 = false; // placed in HUD 2's room: the band, the stack's limit, the Neural Net column (px)
     float freeL = 0, freeR = 0, limit = 0, nnLeft = 0, nnTop = 0;
+    float stackFit = 1; // the stack fit's drawn scale (stack_fit; every other number here is unscaled)
     std::vector<LayoutBlock> blocks;
     ULONGLONG at = 0;
 } g_layout;
@@ -2921,7 +2800,8 @@ std::string LayoutReport()
       << " letterbox " << (g_layout.letterbox ? 1 : 0) << " anchor " << g_layout.bottom
       << (g_layout.fromTop ? " top" : " bottom") << " centerX " << g_layout.centerX << " bar " << g_layout.bar
       << (g_layout.inBar ? " in-bar" : " ") << " viewport " << g_layout.vpX << "," << g_layout.vpY << " "
-      << g_layout.vpW << "x" << g_layout.vpH << " age_ms " << (GetTickCount64() - g_layout.at) << "\n";
+      << g_layout.vpW << "x" << g_layout.vpH << " age_ms " << (GetTickCount64() - g_layout.at)
+      << " stackfit=" << g_layout.stackFit << "\n";
     o << Hud2Report();
     if (g_layout.hud2)
         o << "hud2-place band=" << g_layout.freeL << ".." << g_layout.freeR << " limit=" << g_layout.limit
@@ -3398,10 +3278,35 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
     static bool lastTop = false;
     static float anchor = 0;
     const float dt = static_cast<float>(std::clamp(now - lastDraw, 0.0, 0.25));
-    const bool fresh = now - lastDraw > 0.5 || lastTop != place.fromTop || !g_set.motion;
+    const bool fresh = now - lastDraw > 0.5 || lastTop != place.fromTop || !g_set.motion || g_freshStack;
     lastDraw = now, lastTop = place.fromTop;
+    if (g_freshStack) // after Clear: the panel starts hidden (it slides in with the new game's first line)
+        g_panel.s = 0, g_panel.sized = false, g_panel.alpha = 0, g_panel.tabNoRoom = false, g_freshStack = false;
     const float k = fresh ? 1.0f : 1.0f - std::exp(-dt / kGlideTau);
     anchor += (place.bottom - anchor) * k;
+    // Stack fit (stack_fit; the owner, 1 Nov 2026: at 4:3 and in letterboxed story scenes a two-speaker stack covered a
+    // large part of the picture): two or more blocks in the main stack - not the Neural Net corner, not lines fading out
+    // or released - shrink together so the stack keeps about the tallest block's height, down to the setting; gliding as
+    // the stack does. Drawn through render::ZoomBegin / ZoomEnd below; every placement, keep-out, the crosshair limit and
+    // the retiring above stay unscaled (the scale only shrinks: the drawn stack lies inside its unscaled place). Movies
+    // (the software target) unscaled.
+    static float fitScale = 1.0f;
+    {
+        std::vector<float> stacked;
+        for (size_t i = 0; i < g_blocks.size(); ++i)
+            if (!inCorner(g_blocks[i]) && !released[i] && g_blocks[i].leaving < 0)
+                stacked.push_back(heights[i]);
+        const float target = soft ? 1.0f : stackfit::Target(stacked, gap, g_set.stackFit);
+        fitScale = stackfit::Ease(fitScale, target, dt, kGlideTau, fresh);
+        g_layout.stackFit = soft ? 1.0f : fitScale;
+    }
+    const float zoomS = soft ? 1.0f : fitScale;
+    // unscaled coordinates of a point drawn at screen v (the game's comm window is placed on screen, the panel unscaled)
+    auto unzoom = [&](float v, float o) { return zoomS < 1.0f ? o + (v - o) / zoomS : v; };
+    auto zoomed = [&](float v, float o) { return o + (v - o) * zoomS; }; // and back
+    // the zoom's centre (set below, once the panel and the rows' centre are placed): top-anchored stacks about their top,
+    // bottom-anchored about their bottom, centred on the panel / the rows
+    float zoomX = place.centerX, zoomY = anchor;
     // slots: top-anchored oldest first downwards; bottom-anchored newest at the bottom, older above; the corner hangs
     // from its own top
     std::vector<float> slot(g_blocks.size());
@@ -3433,6 +3338,9 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
     // stack (widest row, every block still holding a slot); it slides in from the top edge while a line shows and back
     // out after the last one; its width and height glide as the stack changes. Leaving flight hides it at once (the
     // HUD goes with it).
+    // everything of the main stack from here on (the panel, its dividers, the rows, names, markers, the word pop, the
+    // portrait's animations) is zoomed by the stack fit at the end; the Neural Net corner is drawn after it, unscaled
+    const size_t zoomFrom = render::ZoomBegin();
     float panelPartition[4] = {};
     int partitions = 0;
     // the rows' centre; the tab names' room right of the portrait (left edge, width; -1 without the portrait); the
@@ -3540,17 +3448,28 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             // last frame)
             // (the game's outline as written - it grows with the opening line -, or the closing animation's own, from
             // the last frame)
+            // the stack fit's zoom centre: the panel's centre line at its top edge - flush: the screen's (riding the
+            // slide); below the top row (space_narrow 3): its own; the tab layout: the body's top, so the body shrinks
+            // inside its own place and the tab reaches up to the screen's edge from it (DrawTopPanel, Unzoomed)
+            zoomX = g_panel.x;
+            zoomY = g_panel.bodyTop > 0 ? g_panel.bodyTop + g_panel.yoff
+                    : g_panel.top > 0   ? g_panel.top + g_panel.yoff
+                                        : g_panel.yoff;
             if (g_comm.moved && g_comm.s > 0)
             {
                 // while it opens only the picture's part (the panel stays behind the growing outline), then the outline
+                // (the game's window is on screen, the panel drawn unscaled: the hole in the panel's coordinates)
                 const bool whole = g_comm.w >= g_comm.s - 0.5f && g_comm.h >= g_comm.s - 0.5f;
                 const float c = g_comm.s * 0.5f, fx = (whole ? g_comm.f : g_comm.w) * 0.5f,
                             fy = (whole ? g_comm.f : g_comm.h) * 0.5f;
-                g_hole = {true, g_comm.x + c - fx, g_comm.y + c - fy, g_comm.x + c + fx, g_comm.y + c + fy};
+                g_hole = {true, unzoom(g_comm.x + c - fx, zoomX), unzoom(g_comm.y + c - fy, zoomY),
+                          unzoom(g_comm.x + c + fx, zoomX), unzoom(g_comm.y + c + fy, zoomY)};
             }
             else
                 g_hole = g_closingHole;
+            g_zoom = {zoomS, zoomX, zoomY};
             DrawTopPanel(static_cast<float>(sh), g_set.bgOpacity / 100.0f, now);
+            g_zoom = {};
             g_hole.on = false;
             // partitions between speakers: the HUD's thin divider, inset from the chamfers
             const float divSlot = portraitInTab ? 0.0f : slotW; // the dividers start right of the portrait
@@ -3569,9 +3488,12 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
         shownCx = fresh || std::fabs(shownCx - textCx) > sw * 0.5f ? textCx : shownCx + (textCx - shownCx) * k;
         textCx = shownCx;
     }
+    if (!place.topPanel) // (the panel's zoom centre: above) the rows' centre at the anchor - the stack's top or bottom
+        zoomX = textCx, zoomY = anchor;
     float portraitAlpha = 0;
     float commBoxL = -1, commBoxR = 0, commBoxT = 0; // the newest comm-with-portrait block's box outside the top panel
-    for (size_t bi = 0; bi < g_blocks.size(); ++bi)
+    std::vector<size_t> laidOut; // the block each g_layout.blocks entry is (the corner is drawn last: reordered below)
+    auto drawBlock = [&](size_t bi)
     {
         Block& b = g_blocks[bi];
         b.y = b.placed && !fresh && !b.snap ? b.y + (slot[bi] - b.y) * k : slot[bi];
@@ -3601,7 +3523,7 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             g_movie.animating = g_movie.animating || b.leaving >= 0 || (a > 0.01f && a < 0.995f) ||
                                 std::fabs(slot[bi] - b.y) > 0.5f;
         if (a <= 0.01f)
-            continue;
+            return;
         const auto& rows = blockRows[bi];
         const float by = b.y + (inPanel ? g_panel.yoff : 0.0f);
         float movieBox = 1; // a movie line's backing share (soft): none on the bars, by the picture under it inside
@@ -3684,6 +3606,7 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             // the resting place (the top panel's slide offset is on the report's panel line)
             g_layout.blocks.push_back({data::Narrow(b.speaker), b.y, heights[bi], wmax, corner,
                                        corner ? cornerLeft + padX : textCx - wmax * 0.5f, b.nameArgb, b.hostile});
+            laidOut.push_back(bi);
         }
         // a row's left edge: centred (right of the portrait's column when it is in the panel), or left-aligned in the
         // Neural Net column
@@ -3862,7 +3785,10 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             }
             ry += r.h;
         }
-    }
+    };
+    for (size_t bi = 0; bi < g_blocks.size(); ++bi) // the main stack (zoomed); the corner after the zoom, below
+        if (!inCorner(g_blocks[bi]))
+            drawBlock(bi);
     // the comm window into its slot (PlaceCommWindow writes it with the frame update): beside its line, riding the
     // panel's slide, never above the screen's top edge (the game's viewport must stay on screen)
     // It glides between places as the rows do (the line's slot in the body -> the tab when the older line leaves), and
@@ -3925,7 +3851,9 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
                 render::Box(gx, cy - h * 0.5f, gs, h, argb(kScanBlue, 0.55f * (1.0f - e) * la));
                 line(gs, 1.0f - e);
             }
-            CommSlotRequest(gx, shownY, gs, sx, sy, fs);
+            // the game draws the window itself: its slot zoomed with the stack (the animations here are drawn unscaled
+            // and zoomed with it); never above the screen's top edge
+            CommSlotRequest(zoomed(gx, zoomX), std::max(1.0f, zoomed(shownY, zoomY)), gs * zoomS, sx, sy, fs);
             g_liveBlock = g_blocks[portraitBlock].start;
         }
         else if (g_held.img.texture)
@@ -3971,7 +3899,7 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
         const float s = std::min(nativePortrait, sh * 0.11f), pg = sh * kPanelGap;
         const float x = commBoxL - pg - s >= pg ? commBoxL - pg - s : commBoxR + pg;
         const float y = std::max(1.0f, commBoxT);
-        CommSlotRequest(x, y, s);
+        CommSlotRequest(zoomed(x, zoomX), std::max(1.0f, zoomed(y, zoomY)), s * zoomS); // beside its zoomed line
         g_layout.portraitX = x, g_layout.portraitY = y, g_layout.portraitS = s;
         gs = 0, wasLive = false, g_closingHole.on = false;
     }
@@ -3994,6 +3922,22 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
     }
     else
         gs = 0, wasLive = false, g_closingHole.on = false;
+    render::ZoomEnd(zoomFrom, zoomS, zoomX, zoomY);
+    // the Neural Net corner: its own place, never zoomed
+    for (size_t bi = 0; bi < g_blocks.size(); ++bi)
+        if (inCorner(g_blocks[bi]))
+            drawBlock(bi);
+    if (laidOut.size() == g_layout.blocks.size()) // the `layout` report keeps the stack's order
+    {
+        std::vector<LayoutBlock> ordered(g_layout.blocks.size());
+        std::vector<size_t> idx(laidOut.size());
+        for (size_t i = 0; i < idx.size(); ++i)
+            idx[i] = i;
+        std::sort(idx.begin(), idx.end(), [&](size_t x, size_t y) { return laidOut[x] < laidOut[y]; });
+        for (size_t i = 0; i < idx.size(); ++i)
+            ordered[i] = std::move(g_layout.blocks[idx[i]]);
+        g_layout.blocks.swap(ordered);
+    }
     (void)bg;
     render::End(ownScene);
 }
@@ -4054,6 +3998,10 @@ void Draw(bool ownScene)
 {
     PerfScope perf(g_perf.draw);
     int sw = 0, sh = 0;
+    // nothing to draw (no line, the panel gone, no HUD 2 feed or sim): skip the menu poll too - it walks up to 8,000
+    // control nodes 4 times a second (audit A3-8)
+    if (g_blocks.empty() && g_panel.s <= 0 && g_feed.empty() && !g_hud2.sim)
+        return;
     if (MenuOver())
         return;
     if (render::ScreenSize(sw, sh))

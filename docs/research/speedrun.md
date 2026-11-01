@@ -1,17 +1,122 @@
 # Speedrunning Freelancer: records, routes, money gates and skips versus the autopilot
-Status: current (re-based 25 Oct 2026 at 855745b on SPLITS.md 24 Oct 23:55 and dossier M04; the older dated lines below are history) (before: partly stale (25 Oct 2026: the PBs moved - M04 974, M10 1124, M09 724 - and sets s12-s13 landed, `docs\SPLITS.md` was regenerated 24 Oct 23:55; "What it means" needs a re-base on `docs\SPLITS.md` and the M04 dossier before the next autopilot session - **pending**, not attempted in the 25 Oct ~07:00 UI-build check-up nor in the ~12:15 HUD 2 one) (the "What it means" section re-based on `docs\SPLITS.md` on 24 Oct 2026; V2 / V3's "ours" numbers are dated and marked))
-Checked against: FLvibed 144e362 (26 Oct 2026, coordinator short form before the export; 144e362 itself only the handoff + README text: the watched commits since - d89f88c / 79e2bcc smart start + K&M goal panel, 7632ced job objective text, 77d8655 objective-named loot shot, 9ff7fe7 handoff - are autopilot / UI internals; no statement of this note changes; not re-read in depth); before: FLvibed 01fcfa9 (26 Oct 2026, the step 3 short form re-confirmed: the only watched commits since, 9327f86 / 01fcfa9, are doc and handoff edits recording what this note already says); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: no autopilot / splits change - first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 30 watched-path commits 12bc233..855745b, all handoffs plus PADFIX 1 / 4-5 (docs\kb, pad screens) - no autopilot code, SPLITS.md, LEGS.md, checkpoints or dossier change since 9f45cd8; **What it means re-based** on SPLITS.md 24 Oct 23:55 and dossier M04 (s12d-s13b): new first bullet, the 24 Oct one marked superseded); before: 12bc233 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 15 watched-path commits abf84ac..12bc233 (the 15th, 72a6d4e, a handoff that landed during the round), only `HANDOFF.txt` (the HUD 2 build's handoffs, the queued extended HUD 2 task, the owner's rule that HUD 2 never gets in the way of the autopilot work) and `docs/kb/hud-controls.md` (+10 lines, HUD roots, 1ae14b0); no autopilot code, SPLITS.md, LEGS.md, checkpoints or dossier changed - no finding touched; HUD 2 moves the speedrun timer under the target card (placement only, A10 / U22 unchanged); the re-base stays pending); before: abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 33 watched-path commits 25a8c6b..abf84ac, none changing a finding - 24 Oct: the refactors 8989640..e3bbd96 (one settings registry, 16 abandoned switches deleted 244a4b7, file splits, enums, clang-format; behaviour unchanged by their messages), the practice-save fitness check f5d8d76, sets s13a 946d274 (M04 6/6 PASS) and s13b 771c2c5 (5/6, PB 974, mactan 133 s; the FAIL = Mactan's script-locked dock waiting for Juni), 34ba88f (a placeholder step's marked hostiles while an escort is active are the escort's threats); 25 Oct: the UI build's in-game split detector / LiveSplit client / HUD timer / SPEEDRUN save mode (13c41f0, 7383675: A10, U21, U22) and the handoff rewrites; the re-base stays pending); before: 25a8c6b (24 Oct 2026 ~18:50, short form: the 6 later commits - review fixes, the M04 swallowed-objective fix, FREELANCER_RE facts - change no finding here; before that 648d6bd ~18:15, dirty: none: 16 watched-path commits since 1defa3f - session 12: pre_aggro (A6, built, in test on M04), blast_flank (A17), the Holstein lock retry and M10 PB 1125, dock_regain rescuing Benford stalls (A24), lethal guard, sets s12a-s12c; IDEAS A6 / A17 / A24 / A34 updated, "What it means" given a dated line); before: 1defa3f (24 Oct 2026, short-form check-up: 303 commits since f944652, 189 in watched paths - sessions 6-11 of the speedrun autopilot: story checkpoints / splits / par (6d4f5b0), segment practice, the speedrun preset (19482da), M12 at par, stale_destroy_wait, leave_on_kill / charge_cm / jumpin_burn / dock_regain / leash_follow (off); IDEAS A3-A33 re-checked, A34-A36 added); before: f944652 (23 Oct 2026, V12 the M12 lair corrected by the user's play-by-play and reference run); before: 4c7d3fe (22 Oct 2026, V11 the dense reference added; before: 78147c1, the video round: the top-3 recordings analysed against the autopilot's leg bests of LEGS.md at this commit, incl. session 4's static_pass / pressed / blind-spot / torpedo-rule commits f001197..3fa5999); before: 52047ed, 2883bd8 (21 Oct 2026); speedrun.com board as of 21 Oct 2026
-Dirty paths at check: none at the start (25 Oct 2026 ~23:05; during the round another session's uncommitted `controller/src/impl/padbases.cpp`, `controller/src/impl/promptbar.cpp`, `docs/UI_HUD2_EXTENDED.md` appeared - not judged); none (25 Oct 2026 ~12:15); none (25 Oct 2026 ~07:00); before: none at the start (24 Oct 2026, 1defa3f); at the end `controller/src/impl/autopilot_frame.cpp`, `controller/src/impl/autopilot_objective.cpp` (another session's uncommitted edits, appeared during the check; not judged here)
+Status: current (re-based 29 Oct 2026 at 7518008 on SPLITS.md 29 Oct 03:41 and dossier M04's 29 Oct notes; the older dated lines below are history) (before: re-based 25 Oct 2026 at 855745b on SPLITS.md 24 Oct 23:55 and dossier M04) (before: partly stale (25 Oct 2026: the PBs moved - M04 974, M10 1124, M09 724 - and sets s12-s13 landed, `docs\SPLITS.md` was regenerated 24 Oct 23:55; "What it means" needs a re-base on `docs\SPLITS.md` and the M04 dossier before the next autopilot session - **pending**, not attempted in the 25 Oct ~07:00 UI-build check-up nor in the ~12:15 HUD 2 one) (the "What it means" section re-based on `docs\SPLITS.md` on 24 Oct 2026; V2 / V3's "ours" numbers are dated and marked))
+Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 11 watched-path commits (14:27-15:18): strafe_pass flown (sp1) BAD and parked; ab13 / ally_kill and chase_kill + spawn_stage run-judged BAD; the locked-gate loop fixes bd5d7af6 / 44659916 (fx2 i3 still STALLs, cause inferred); AUTOPILOT.md logs split to AUTOPILOT_LOG.md; the HUD 2 lint; SPLITS 15:10: M13 PB 744 (+58), sum of best 692 (+6, was 694); this note's own tables not re-based)
+Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
 Watch: controller/docs/AUTOPILOT.md, controller/src/impl/autopilot_*.cpp, docs/kb, docs/missions, docs/LEGS.md, docs/SPLITS.md, docs/checkpoints.tsv, docs/LEG_DOSSIER.md, HANDOFF.txt
 Evidence: research\evidence\speedrun\ (commodity_prices.tsv; runs_all.json; **runs\** = the three recordings analysed: per run notes.md, legs.tsv, events.tsv, banners.tsv, scenes.tsv, economy.tsv, loadouts.md, splits.tsv, frames, scripts; METHOD.md = the shared brief; **topics\combat\** = 22 fights x 3 runs (fights.tsv, HUD readings); **topics\navigation\** = 619 entries (docks.tsv), sections.tsv = every mission leg in sections vs our autopilot runs)
 Sources: [video] the top-3 any% recordings (research\videos\speedruns\, provided by the user 22 Oct 2026, decoded frame by frame with ffmpeg, never played, no audio) with the runners' / commenters' notes beside them; [page] speedrun.com API and the two written route guides; [data] HDE goods.ini x market_commodities.ini; [page] StrategyWiki / forum notes; [repo] LEGS.md, research\experience\legs\ (our leg runs' phases / logs)
 
 ## What it means for FLvibed
 
+*31 Oct 2026 ~15:20 (32c80fce, short form):* **the battleship's escalation step 2 failed** - `strafe_pass` (4a4bd7b1, lengthwise passes 150-250 m off the hull with afterburner pulses, from `runners\M13_bsdown_datapass.md`) flown as probe sp1 and run-judged BAD, parked (default 0; `AUTOPILOT.md` 'Flown 31 Oct 2026 ~14:52'): S415 -> M13.bsdown 87.7-105.0 s vs kb3 70.7-76.6 (segment par 45.0), banner -> kill 60-77 s vs runners 20-31; safe (hull 1.00 in all 5) but guns on the hull 9-17 % of the time, 14-34 launches held, ~40 % of each cycle beyond the ends and in turns; the full leg hit the FAIL STATE at bsdown (171 s). M13 rests until a new idea (escalation step 3). The pre-crash batch's final verdicts (934fbaab): set ab13 / `ally_kill` BAD on time (it works: allies kill the gate battleship in 8-14 s; barrier 90.2 vs 84.9), chase_kill + spawn_stage BAD. A locked-gate loop (ak2-b_i4: 154 'found no way') got a back-off (bd5d7af6, widened to Jump trips 44659916); fx2 still STALLs in 1 of 3 - the inferred cause is `wait_for_trent` re-locking the gate when our trip skips Orillion (the runners cruise behind him; not verified). **M02 Ashcroft, escalation step 1** (`runners\M02_ashcroft_consensus.md`, f8e1dd31): we sit 740-1,238 m from Ashcroft at 0-186 m/s when he spawns, press cruise only once he outruns the engine, and the cruise gap freezes at 1.4-1.5 km - proposed `spawn_charge` (a point on his line 250 m behind the spawn inside every leash, King's 3 km leash Li01_03 included; cruise pressed at his spawn); A36 answered (an engine kill at full cruise holds 300 -> 287 m/s over 6.8 s in HDE). SPLITS 15:10: M13 PB 744 (+58), sum of best 692.
+
+*Check-up 31 Oct 2026 ~05:10 (short form, HEAD 4338909; 16 watched-path commits fc379a3..4338909):* the city-hold probes: `city_hold_side` (clearance e113fa73, transit 19cf6932 / aa79f7dd) - ch1 PASS 777.6 s (+91.8 vs par, +23 vs the 754.6 PB), ch2 3/3 PASS 780.8 / 788.0 / 776.0 s with M13.end 161.1 / 158.1 / 149.7 (gold; was 150.5), ch3 i1 FAIL 96 s at the battleship (not the switch, per the handoff) and i2 PASS 797.9, ch4 i1 FAIL 435 s at the gate battleship. The M13 PB (755) and sum of best (703) stand; no probe closed on par. The battleship breakdown is the open part (A35); AFK_PLAYBOOK 13a now escalates a section that does not improve (a new speedrun data pass is step 2).
+
+*Check-up 31 Oct 2026 ~04:00 (short form, HEAD fc379a3; 89 watched-path commits 5eb7bcb..fc379a3, mostly handoffs):* `docs\SPLITS.md` (03:24): **PBs 12,046 (+1,998; was 12,153 / +2,106), golds 11,314 (+1,266; was 11,366 / +1,319)**; **M13: PB 755 s (+69 vs par 686; ab8-b_i1, 754.6 s, n=1; was 861.7), sum of best 703 (+17)** - the 'parked after three slices' line below is superseded: M13-MIMIC (the owner's 'mimic the runners') reopened it with the runner study (`runners\M13.md`) - kill_ahead GOOD, the battery budget and standoff hold BAD as built, the dash gained nothing measurable, kills +28-46 s once it was dropped; set ab11 BAD (3 of 5 dead at the city's first generator, +73 vs par, PB SAME); next: the city-hold rule (858c27b `city_hold_side`, default 0, probe first). A finding of the study: our guided rounds burst at the first hull on their path (median 7 m, 5,299 hits), so a safe burst is chosen by the launch site (A35). Not at par; no run-judged 'closing on par' beyond the PB.
+
+*Check-up 30 Oct 2026 ~23:30 (short form, HEAD 5eb7bcb; 14 watched-path commits bf4d1d1..5eb7bcb):* `docs\SPLITS.md`
+(22:46): **PBs 12,153 (+2,106; was 12,169 / +2,121)** - only M01b moved (536 -> 521), because M01b.end now ends at GAME
+SAVED like the runners' split (9e4ec5b, save:32120; gold - par +41 -> +25), not by faster flying; **golds 11,366 (+1,319;
+was 11,391 / +1,344)**, M13's sum of best 765 -> 755 (+70, set td1). The runners' "don't fight what the script ends by
+itself" (A21) got three switches, all default 0 and run-judged GOOD: `timer_destroy` (td1: M13.sinclair 27.4 vs 57.3 s),
+`escort_by_place` (mm2: M13.osiris 108.8 vs 122-141 s), `td_window` (mm3: M13.sinclair 20.5-21.1 s) - M13.sinclair +
+osiris 134-141 s vs par 137, **AT PAR**, not in a PB until the gate. M02.pod's gap is the start geometry, not the follow
+(LOOK L2 closed unbuilt, 1e71507; ASH-START, A22). A story-leg launch (gates exempt) now needs its runner study (`docs\research\runners\`,
+9e58722; M13 the first, ea2364d).
+
+*Check-up 30 Oct 2026 ~19:00 (short form, HEAD bf4d1d1; 13 watched-path commits 16df8bd..bf4d1d1):* `docs\SPLITS.md`
+(17:38, after gates s5shadow / s7arb / s7arb2 / s7arb3 and the evening's jrs / kcs runs): **PBs 12,169 (+2,121; was
+12,277 / +2,229)** - M01b 564 -> 536, M02 1108 -> 1099, M03 869 -> 860, M04 956 -> 939, M08 656 -> 655, M10 1095 ->
+1078, **M13 890 -> 862 scene-free (LEGS.md 864 s, kcs on 51fd767, default flight; hull 0.11 at the barrier generators,
+run-judged ba1d436)**; **golds 11,391 (+1,344; was 11,517 / +1,470)**, M13's sum of best still 765 (+79). Where the
+rest goes by kind: `gap_decomposition.md` (fights 48 %, jumps 25 %, lanes 12 % of the recent medians' +2,518 s; fight
+phases: kill speed ~35 %, placement / exits ~37 % of the top-12 fight gap). The jump-entry lever measured there was
+wrong (JRS parked, bb9163a: the hole's occupant decides, not the rush; A23). The arbiter (`situation_arbiter` 1)
+flew gate s7arb3 at parity (481 / 0): the same decisions, so no time gain from it by design. Harness rules that guard the numbers: a
+story-unfit checkpoint load ends a run at once (c1e287c), a checkpoint save above 50 m/s or in cruise is unfit
+(652c3b6 / eee33b7), a skipped obj checkpoint is soft (408c85e), a docking letterbox held > 120 s ends a run STALL
+(638ca29). Next per the queue: LOOK (`controller\docs\LOOK_PLAN.md`), KILL (needs a fit save), CP-M01b.
+
+*Check-up 30 Oct 2026 ~07:25 (short form, HEAD aafe41d; 44 watched-path commits 4ca36df..aafe41d, most of them
+handoffs):* `docs\SPLITS.md` (05:56) after gate q3s2 and the M07 fix check: **PBs 12,277 (+2,229; was 12,346 /
++2,299)** - M05 1112 -> 1084, M07 1669 -> 1647, M10 1114 -> 1095; **golds 11,517 (+1,470; was 11,566 / +1,518)**, M13's
+sum of best 765 (+79). The M13 battleship (Q4, A17 / A18 / A31 / A35) is **parked after three slices, 75 bsdown legs,
+no verdict** (217a972 ordnance from a burst-clear site: INCONCLUSIVE; 7609f06 `static_volley`: REVERT; `blind_rush`
+with the fixed reserve: INCONCLUSIVE; all OFF). What it taught, against V4.4 / V11 here: every death is one turret
+volley of 3.9-5.7k on a low shield, and **the batteries left on reaching 300 m decide** (>= 7: 15 / 15 lived) - our
+16-27 s crawl through the cover drains them where the runners cross it in ~7 s (dossier M13, 770f4d2). So the next M13
+attempt is the runners' shape as ONE switch set (cruise in, 0 m, batteries on each shield failure), after a variance
+cut: fixed dt is parked for comm-gated segments (19c034c) and seeds gave no common random numbers (10e69bd). The
+battleship is a static (`nomadcap`, 15 turrets, 697 a round: FREELANCER_RE, 29b6ae2), which the ship-only survival
+model had missed.
+*Check-up 30 Oct 2026 ~01:50 (short form, HEAD 4ca36df; 5 watched-path commits c151f2d..4ca36df):* `docs\SPLITS.md`
+regenerated 30 Oct 01:38 (4ca36df) folds in two 29 Oct golds not counted before: M13.battleship 49 -> **48** (-8 vs par
+56), M13.bsdown 73 -> **67** (+22 vs par 45); M13's sum of best 779 -> 773 (+87), **golds 11,566 (+1,518; was 11,572 /
++1,524)**; PBs unchanged (12,346, +2,299). None comes from the fixed-dt arm. M13.bsdown drops below +28 but the list of
+the largest gold-vs-par segments below (M04.mactan +104 ...) is unchanged in order. The `fixeddt` probe's 3 + 3 M13 legs
+at `fpscap 60` (156-178 s to M13.bsdown) are a 60 fps group, not comparable with the PB runs (`test-efficiency.md` T2).
+Carried risk, new evidence: instance 1 dies far more on M13 from Save3989 (5 of 18 runs since 29 Oct 17:43, against 0
+and 1 of 18 on the other two instances; WORK_QUEUE Q3 note, for Q4) - an instance difference to rule out before reading M13
+death rates. The other commits (the focus gate, test pads, crawler) touch no leg. The figures below stand otherwise.
+
+*Check-up 29 Oct 2026 ~22:30 (short form, HEAD 04b4c05; 18 M13 commits since ff9fdee, SPLITS.md unchanged):* one
+reading of the runners changes: **their 0 m torpedo approach at the Nomad battleship is not evidence it is safe for us** -
+they play vanilla 1.1, where explosion damage falls off in thirds; HDE's 0x960C patch makes it full at any distance
+(`FREELANCER_RE.md`, f4874b4, from Server.dll). blind_rush (the 0 m rush) was tested and not kept (89221af: 0 deaths, the
+kill ~2x slower); the four shape switches stay off (eb30dcb), battery_reserve works (31d1e14); the owner decided
+(04b4c05): full DPS always, splash avoided by where we fire from, never by holding fire - decided, not built. The figures
+below stand. The same round's `test-efficiency.md` bears on how every gap below is closed (T1-T6).
+
+*Check-up 29 Oct 2026 ~17:30 (short form, HEAD ff9fdee; gates mpb23 941da84 and mpb24 bd0d12e, `docs\SPLITS.md`
+generated 15:51):* the figures of the re-based bullet below are superseded by these; its reasoning holds. **PBs 12,346 s
+(+2,299 over par 10,047; was 12,542 / +2,494), golds 11,572 (+1,524; was 11,808 / +1,761).** By PB: M07 +419, M02 +232,
+**M13 +205** (PB 890, mpb23), M10 +200, M09 +195, M06 +192, M11 +191, **M05 +160** (PB 1112, mpb24; was +251), M04 +143,
+M01b +107, M03 +106 (PB 869), M08 +74, M01a +70 (PB 479), M12 +6. The largest gold-vs-par segments are unchanged in
+order: M04.mactan +104, M07.sinclair +96, M02.pod +91, M03.end +74, M01b.end +52, M07.cali +46, M02.cosmo +44, M06.end
++43, M11.nygate +42, M11.osiris / M09.tekagi +41 - the gates moved PBs by consistency, not by closing these segments.
+Gate mpb24: 13 / 14 PASS (M11 passes 1219 s; M13 died in its opening fight at 112 s - the carried M13 death risk; M12
+424 SLOWER, a noisy leg). Code since bd0d12e: the Windows 7 fallbacks only (inactive without FLVIBED_SIM_WIN7), so
+mpb24 stands as HEAD's gate.
+
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 17 watched-path commits 7518008..067bf32):* the re-based
+bullet below holds; three small updates. (1) `docs\SPLITS.md` regenerated 29 Oct 06:58 after the M01a verification leg
+(PASS 511 s): **PBs unchanged (12,542, +2,494); golds 11,808 (+1,761; was 11,813 / +1,765)** - M01a.lane1 gold 30 -> 26
+(par 17), M01a.lane2 27 -> 26 (par 26). (2) **M01a.control's gap (gold 104 vs par 94) was partly the harness, not the
+autopilot:** `Goto-FLRoom` clicked the Equipment room the save starts in and waited out its 15 s room-change timeout in
+every recent M01a run, inside that split (3c7dec9, a harness commit outside the watched paths, fixes it: 96-192 ms) - expect the next M01a runs to drop up to ~15 s
+there; M01a PBs and golds before 3c7dec9 carry the wait. (3) The handoff records `prestage_next` firing twice in that
+leg, the second toward a lethal-guard zone (+13 s on a 6.6 s plan; the owner's feature, untested further) - one more
+reason to gate 4c67fee's switches before reading their M04 effect. A12: the escape stance now keys on M04's title id
+22602 (420506f), behaviour on English installs unchanged.
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 90 watched-path commits 144e362..7518008 - the 28 Oct sweep, the gates
+mpb0..mpb22, the time-on-target / roll / head-on / stand-off rounds, 0332ec1, 2097d8f, 4c67fee):* **"What it means"
+re-based** on `docs\SPLITS.md` generated 29 Oct 03:41 and dossier M04's 29 Oct key notes (first bullet); the 25 Oct
+bullet is superseded.
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 7 watched-path commits 855745b..e5c02cc):* handoffs, the docs
 sweeps and the kb's display / Reset pages only - no autopilot code, `SPLITS.md`, `LEGS.md`, checkpoints or dossier change;
 the re-based "Where it stands" below holds.
-- **Where it stands (re-based 25 Oct 2026, HEAD 855745b, on `docs\SPLITS.md` generated 24 Oct 23:55 and dossier M04
+- **Where it stands (re-based 29 Oct 2026, HEAD 7518008, on `docs\SPLITS.md` generated 29 Oct 03:41 and dossier M04's 29
+  Oct key notes):** par **10,047 s**; **our PBs 12,542 s (+2,494; +2,820 on 24 Oct), our golds 11,813 (+1,765; was
+  +2,094)**. By PB the legs to win back are M07 +419, M02 +252, M05 +251, **M13 +221 (was +507; 4 full passes now, PB
+  906 from 28 Oct)**, M10 +210, M09 +195, M06 +192, M11 +191, M04 +153, M03 +123, M01b +110, M01a +100 (PB 508, gate
+  mpb21), M08 +74; M12 at par (+6, gold sum -10). **Largest gold-vs-par segments and the idea behind each (A34):**
+  M04.mactan +104 (below), M07.sinclair +96 (Tau-31, dialogue-gated), M02.pod +91 (Ashcroft: A22, not built), M03.end
+  +74 (A7), M10.expdone +55 (A18), M01b.end +52 (platforms only), M07.cali +46, M02.cosmo +46 (A21), M06.end +43,
+  M11.nygate +42, M11.osiris +41, M09.tekagi +41 (A16), M07.end +39, M05.spraguefight +37, M09.patroldown +36. **M13
+  left the top of the list:** M13.end +33 (was +114), M13.sphere +30 (+48), M13.bsdown +28 (+43); the huge-static rules
+  of 28-29 Oct (`fire_covering`, `static_hold_guns`, ca3e715; `big_coast`, 4c67fee: cruise in, engine kill in cruise
+  1,500 m beyond gun reach, coast in firing every launcher, stop at weapons range) are the runners' "cruise in, brake
+  short, fire everything" (A16) reached by a coast instead of a 0 m hold, and the first use of engine kill from cruise
+  (A36) - the city fixture passed 4/4 in 126-136 s (par M13.end 129), the full M13 leg not yet run with it (handoff NEXT
+  5). **M04, read with the dossier:** the owner's 29 Oct rule - up to the jump after Benford no kill buys time - is the
+  runners' reading too (ref.py M04: 0 / 2 Unity kills, hull lost 0-0.04) and is built (`survival_calm`,
+  `survival_until_jump`, `prestage_next`: fly toward the next objective while the script talks; 4c67fee, not gated);
+  M04.benford gold 8 (par 12) after `bay_arrive` (2097d8f). The mactan gap (+104) stands: the hunters / Mactan pair is
+  the leg's lever, now fought by the normal rules after the first jump (A6 `pre_aggro` still 0 by default, A21, A24's
+  locked dock). Combat is still the bulk, but the time-on-target round (`finish_target`, `headon_reverse`, `standoff`,
+  `missile_lead`, `roll_guns`; gate mpb21: 10 of 12 legs faster, PBs M01a / M02 / M06 / M08; fight matrix 30/32) moved
+  the gap on nearly every leg. Not gated yet: 4c67fee's switches (handoff NEXT 1).
+- **Where it stood (re-based 25 Oct 2026, HEAD 855745b; superseded by the 29 Oct bullet above; on `docs\SPLITS.md` generated 24 Oct 23:55 and dossier M04
   through set s13b; no autopilot code has changed since 34ba88f, 24 Oct 23:20):** par **10,047 s**; **our PBs 12,867 s
   (+2,820), our golds 12,141 (+2,094)**. By PB the legs to win back are M13 +507 (one full pass only), M07 +419, M02 +258,
   M05 +251, M10 +210, M09 +195, M06 +193, M11 +191, M04 +158, M03 +123, M01b +110, M01a +106, M08 +94; M12 is at par (+6,
@@ -164,7 +269,7 @@ Run totals (scene class, run 1): 10,283 space (2,686 combat), 3,518 letterboxed 
 menus. Room scenes watched (Esc-skippable on HDE, checked frame by frame in run 2: all 20 are base interiors, none a
 space cutscene): ~1,950 (run 1), 1,947 (run 2), 2,174 (run 3); space cutscenes ~845-1,008 per run (nobody skips them).
 The 2020 playthrough (the user's casual 4K play, per-mission videos 700-7,043 s incl. exploration) is no longer the
-time reference; it stays the reference for style and hull (memory playthrough-time-benchmark).
+time reference; it stays the reference for style and hull (the owner's benchmark).
 
 ### V3 Where the autopilot loses the ~4,600 s (`topics\navigation\sections.tsv`)
 | Cause | ~s | Largest sections (gap vs the best runner) |
@@ -315,7 +420,7 @@ Built by two agents (`research\evidence\speedrun\reference\`; README there = fie
 - **Lookup:** `python ref.py <leg> [<section>]` (the OCR venv) prints the three runs side by side in < 1 s;
   `--frames <run> <video_s> [<s>]` cuts a 10 fps sheet.
 - **Calibration ledger** `reference\calib\CALIBRATION.md`: the user's readings of the footage outrank automated reads
-  (memory footage-reading-calibration). Key corrections: the runners hold generators near contact with a slow one-way
+  (the owner's reading of footage outranks a data read: research\videos CALIBRATION.md). Key corrections: the runners hold generators near contact with a slow one-way
   slide, never ram; the HUD target distance is a surface distance (0-M against a cruiser's hull); "MOUSE FLIGHT" is a
   steering toggle, not an autopilot state.
 Rules found (frame-backed; the autopilot side: `controller\docs\AUTOPILOT.md` hold-and-salvo, IDEAS A16-A30):

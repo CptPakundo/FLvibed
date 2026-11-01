@@ -53,9 +53,40 @@ enum class Screen
     Chat,
     Confirm, // NN_Confirm (a child of NN_Pause: the quit question; the front-end delete uses it too)
     Options, // the game's Options screen (in game and front end; FLvibed's own page is options_page's)
-    Popup    // the story / tutorial popup (NeuroNetMissionMessage: pub::Player::PopUpDialog's box, in space and docked)
+    Popup,   // the story / tutorial popup (NeuroNetMissionMessage: pub::Player::PopUpDialog's box, in space and docked)
+    MpTable, // the multiplayer server list (ServerTable) or character list (CharacterTable): table controls (28 Oct 2026)
+    MpPrompt // the MULTIPLAYER button's "LAN / INTERNET" prompt (PromptYes LAN, PromptNo INTERNET, PromptExit; a modal loop)
 };
-static const char* kScreenName[] = {"none", "mainmenu", "load", "load", "save", "pause", "death", "chat", "confirm", "options", "popup"};
+static const char* kScreenName[] = {"none", "mainmenu", "load", "load", "save", "pause", "death", "chat", "confirm", "options", "popup", "mptable", "mpprompt"};
+
+// The multiplayer lists: the table, the screen's action (CONNECT on the server list, LOAD on the character list), its
+// back button. Rows from 1 (row 0 is never selectable: docs\FREELANCER_RE.md "Multiplayer").
+struct MpTable
+{
+    u32 table = 0;
+    const char* action = nullptr;
+    const char* back = nullptr;
+    bool characters = false;
+};
+static MpTable FindMpTable()
+{
+    MpTable t;
+    if ((t.table = uiclick::FindVisible("CharacterTable")) != 0)
+        t.action = "LoadCharacter", t.back = "Back", t.characters = true;
+    else if ((t.table = uiclick::FindVisible("ServerTable")) != 0)
+        t.action = "Connect", t.back = "MainMenu";
+    return t;
+}
+
+// The next selectable row from the selection in direction dir (+1 down, -1 up); the first one when nothing is selected.
+static bool StepMpRow(u32 table, int dir)
+{
+    const int rows = uiclick::TableRows(table), sel = uiclick::TableSelected(table);
+    for (int r = sel < 1 ? 1 : sel + dir; r >= 1 && r < rows; r += dir)
+        if (uiclick::SelectTableRow(table, r, false))
+            return true;
+    return false;
+}
 
 // The popup's buttons (Freelancer.exe's names; PopUpDialog's `buttons` bits 0x1 YES, 0x2 NO, 0x4 LATER, 0x8 OK - the
 // story's tutorial boxes are 0x8, OK alone): A = the accepting one, B = the declining one, else the only one.
@@ -224,6 +255,17 @@ static bool ClickNamed(const char* name, const char* what)
     Log("menus: %s -> %s (%s)", what, name, ok ? "clicked" : "not clickable");
     return ok;
 }
+static u32 CtlUnderCursor();
+// A = the game's own click on the dialog button under the focus, natively (the free cursor's click needs the game's
+// hover, which a game out of focus never recomputes - the harness gap, 28 Oct 2026); false when the focus is on none
+static bool ClickFocused(std::initializer_list<const char*> names, const char* what)
+{
+    const u32 under = CtlUnderCursor();
+    for (const char* n : names)
+        if (under && uiclick::FindVisible(n) == under)
+            return ClickNamed(n, what);
+    return false;
+}
 // The pause menu's box with the given action code (1 Resume, 2 Save, 3 Load, 4 Options, 5 Quit), 0 none.
 static u32 PauseBox(u32 code)
 {
@@ -245,10 +287,16 @@ static Screen Detect()
         return Screen::Save;
     if (uiclick::FindVisible("LoadSave_LoadGame"))
         return Screen::LoadGame;
+    // (before LoadFront: the multiplayer character list has a LoadCharacter button too)
+    if (FindMpTable().table)
+        return Screen::MpTable;
     if (uiclick::FindVisible("LoadCharacter"))
         return Screen::LoadFront;
-    if (uiclick::FindVisible("LoadAutosaveButton"))
+    // (the multiplayer death dialog: RESPAWN / NEW CHARACTER / NEW SERVER / MAIN MENU, no autosave)
+    if (uiclick::FindVisible("LoadAutosaveButton") || uiclick::FindVisible("RespawnButtonButton"))
         return Screen::Death;
+    if (uiclick::FindVisible("PromptYes"))
+        return Screen::MpPrompt;
     // the story / tutorial popup (the owner's attended run 26 Oct 2026: "Basics of Combat" in M01 had no pad prompt and
     // no pad bind - with the pad in flight the cursor is the crosshair, so the mode stays `space` and the menu pad code
     // never saw the box)
@@ -460,13 +508,65 @@ void Update(float dt, const char* modeName)
             SnapTo(newGame), g_focused = true;
         static const promptbar::Prompt p[] = {{glyphs::A, L"SELECT"}};
         promptbar::Set("mainmenu", p, 1, false, 10);
-        if (in.accept && newGame && CtlUnderCursor() == newGame)
+        const u32 under = in.accept ? CtlUnderCursor() : 0;
+        if (in.accept && newGame && under == newGame)
         {
             newgame::OpenPrompt();
             g_owns = true;
         }
+        else if (under)
+        {
+            // the other front buttons by the menu's own click (menu::ClickMainButton: the parent's 0x3004 with the
+            // button's id), not the cursor's - out of focus the game's hover never moves onto them
+            const u32 id = RdOr<u32>(under + 0xEC, 0u);
+            std::string what;
+            if ((id == menu::kLoadGame || id == menu::kMultiplayer || id == menu::kOptions || id == menu::kExit) &&
+                newgame::MainMenuButton(id) == under && menu::ClickMainButton(id, &what))
+            {
+                events::Push("menus main-menu button 0x%X", id);
+                g_owns = true;
+            }
+        }
         if (in.back)
             g_owns = true; // B does nothing here (no Escape)
+        break;
+    }
+    case Screen::MpTable:
+    {
+        const MpTable t = FindMpTable();
+        // the first row selected as the screen settles (a server found by the LAN search, the account's first character)
+        if (!g_focused && settled && uiclick::TableSelected(t.table) < 1)
+            g_focused = StepMpRow(t.table, +1);
+        const bool canAct = t.action && uiclick::FindVisible(t.action);
+        // A: the action once the game enables it (a row selected); Y: a new character (the character list only); B: back
+        promptbar::Prompt p[3];
+        int n = 0;
+        if (canAct)
+            p[n++] = {glyphs::A, t.characters ? L"LOAD" : L"CONNECT"};
+        if (t.characters)
+            p[n++] = {glyphs::Y, L"NEW CHARACTER"};
+        p[n++] = {glyphs::B, L"BACK"};
+        promptbar::Set("mptable", p, n, false, 10);
+        if (in.up || in.down)
+        {
+            StepMpRow(t.table, in.down ? +1 : -1);
+            g_owns = true;
+        }
+        else if (in.accept && canAct)
+        {
+            ClickNamed(t.action, t.characters ? "load character" : "connect");
+            g_owns = true;
+        }
+        else if (x.y && t.characters)
+        {
+            ClickNamed("NewCharacter", "new character");
+            g_owns = true;
+        }
+        else if (in.back)
+        {
+            ClickNamed(t.back, "back");
+            g_owns = true;
+        }
         break;
     }
     case Screen::LoadFront:
@@ -595,13 +695,51 @@ void Update(float dt, const char* modeName)
     case Screen::Death:
     {
         // (FIX2: the focus on LOAD AUTOSAVE once the dialog is up, so A SELECT has a mark - the game's own rollover)
-        const u32 autosave = uiclick::FindVisible("LoadAutosaveButton");
-        if (!g_focused && settled && autosave && ItemOf(autosave))
-            SnapTo(autosave), g_focused = true;
+        // (multiplayer: the focus on RESPAWN)
+        u32 first = uiclick::FindVisible("LoadAutosaveButton");
+        if (!first)
+            first = uiclick::FindVisible("RespawnButtonButton");
+        if (!g_focused && settled && first && ItemOf(first))
+            SnapTo(first), g_focused = true;
         static const promptbar::Prompt p[] = {{glyphs::A, L"SELECT"}};
         promptbar::Set("death", p, 1, true, 10);
+        // A: the focused button natively (single player's and multiplayer's dialogs; the D-pad focus moves between them)
+        if (in.accept && settled &&
+            ClickFocused({"LoadAutosaveButton", "LoadSavegameButton", "MainMenuButton", "RespawnButtonButton",
+                          "NewPlayerButtonButton", "NewServerButtonButton"},
+                         "death select"))
+            g_owns = true;
         if (in.back)
             g_owns = true; // B does nothing here on purpose
+        break;
+    }
+    case Screen::MpPrompt:
+    {
+        // "Which type of multiplayer game?": the focus on LAN; A = the focused answer by the game's own click (a modal
+        // loop: the host serves the frames from its render); B = the prompt's own cancel (PromptExit), never INTERNET
+        const u32 lan = uiclick::FindVisible("PromptYes");
+        if (!g_focused && settled && lan && ItemOf(lan))
+            SnapTo(lan), g_focused = true;
+        const u32 under = CtlUnderCursor();
+        const promptbar::Prompt p[] = {{glyphs::A, under == lan                                 ? L"LAN"
+                                                   : under == uiclick::FindVisible("PromptNo") ? L"INTERNET"
+                                                                                               : L"SELECT"},
+                                       {glyphs::DU, L"CHOOSE", false, glyphs::DD},
+                                       {glyphs::B, L"BACK"}};
+        promptbar::Set("mpprompt", p, 3, true, 10);
+        if (in.accept && settled)
+        {
+            ClickFocused({"PromptYes", "PromptNo", "PromptExit"}, "mp prompt");
+            g_owns = true;
+        }
+        else if (in.back && settled)
+        {
+            if (!ClickNamed("PromptExit", "mp prompt back"))
+                fl::TapKey(VK_ESCAPE);
+            g_owns = true;
+        }
+        else if (in.accept || in.back)
+            g_owns = true;
         break;
     }
     case Screen::Options:
@@ -722,6 +860,15 @@ void Draw()
     padbases::Overlay(); // the pad screens' arrow decision, or their stand-down when no pad frame ran (every pass)
     newgame::Draw(); // the prompt and the load screens' tags
     osk::Draw();     // (the prompt bar is drawn by OnRenderOverlay itself, after every pad screen)
+}
+
+uintptr_t ModalRoot()
+{
+    if (g_screen != Screen::MpPrompt)
+        return 0;
+    const u32 lan = uiclick::FindVisible("PromptYes");
+    const ui::Item* it = lan ? ItemOf(lan) : nullptr;
+    return it ? it->root : 0;
 }
 
 std::string Status()

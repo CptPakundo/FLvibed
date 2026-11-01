@@ -9,6 +9,7 @@
 #include "pre.h"
 
 #include "settings_bus.h"
+#include "settings_reset.h"
 
 namespace flv_subtitles_host
 {
@@ -43,7 +44,13 @@ static void RegisterModules(HINSTANCE self)
 {
     GetModuleFileNameA(self, g_iniPath, MAX_PATH);
     if (char* slash = strrchr(g_iniPath, '\\'))
+    {
+        // a release that changed the defaults resets an older release's settings first (settings_reset.h), before
+        // the switches below or any module read them
+        slash[1] = '\0';
+        settings_reset::Run(g_iniPath);
         strcpy_s(slash + 1, MAX_PATH - (slash + 1 - g_iniPath), "FLvibed.ini");
+    }
     g_modSubtitles = GetPrivateProfileIntA("Modules", "subtitles", 1, g_iniPath) != 0;
     g_modController = GetPrivateProfileIntA("Modules", "controller", 1, g_iniPath) != 0;
     static SettingsBusSection section = {"core", "Modules", kModuleDefs, sizeof(kModuleDefs) / sizeof(kModuleDefs[0]),
@@ -62,6 +69,12 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
         char bg[8] = {};
         if (!(GetEnvironmentVariableA("FLVIBED_BACKGROUND", bg, sizeof(bg)) && bg[0] == '1'))
             DisableThreadLibraryCalls(instance);
+        // Pinned for the life of the process: FLvibed leaves detours, vtable and import patches in the game's code, so the
+        // DLL must never go before the game's last call into them (a player's report, 28 Oct 2026: a crash on exit
+        // executing at an unmapped address = code of an unloaded DLL; the game's shutdown may free its plugins first).
+        HMODULE pinned = nullptr;
+        GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+                           reinterpret_cast<LPCWSTR>(&DllMain), &pinned);
         RegisterModules(instance); // the switches as read now: the modules start from these
         subtitles = g_modSubtitles;
         controller = g_modController;

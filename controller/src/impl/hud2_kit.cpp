@@ -1,6 +1,8 @@
 #include "hud2_kit.h"
 
 #include "game/gamefont.h"
+#include "game/marquee.h"
+#include "game/promptfit.h"
 #include "game/render.h"
 #include "game/textfit.h"
 #include "hook.h"
@@ -51,6 +53,9 @@ static int g_textPx = 0;
 static void* g_fontDev = nullptr;
 static bool g_fontsOk = false;
 static float g_alpha = 1, g_ox = 0, g_oy = 0;
+// the text clip (TextMarquee): glyph quads are cut to x in [g_clipX0, g_clipX1] (before the offset), their texture
+// coordinates cut with them - no draw call of its own (D3D8 has no scissor rect; the viewport would split the batch)
+static float g_clipX0 = -1e30f, g_clipX1 = 1e30f;
 static float g_wu = 0, g_wv = 0; // the white texel (small font)
 static u32 g_frames = 0, g_lastVerts = 0, g_lastCalls = 0, g_fontBuilds = 0;
 
@@ -156,6 +161,41 @@ static bool Fonts(int px)
     return true;
 }
 
+// The marquees' clocks (TextMarquee): when each cut text first showed, by its string, size and room (a hash: no
+// allocation per frame once a text is known); a text not drawn for 30 passes starts over the next time it shows (a new
+// target, a panel that faded out and back). Pruned at a pass's start once the table grows.
+struct MarqueeClock
+{
+    double t0 = 0;
+    u32 seen = 0; // the pass it was last drawn in (g_frames + 1: 0 = never)
+};
+static std::unordered_map<unsigned long long, MarqueeClock> g_marquees;
+static unsigned long long MarqueeKey(const std::wstring& s, float size, float room)
+{
+    unsigned long long h = 1469598103934665603ull; // FNV-1a
+    for (wchar_t c : s)
+        h = (h ^ static_cast<unsigned long long>(c)) * 1099511628211ull;
+    h = (h ^ static_cast<unsigned long long>(static_cast<long long>(room * 4))) * 1099511628211ull;
+    h = (h ^ static_cast<unsigned long long>(static_cast<long long>(size * 8))) * 1099511628211ull;
+    return h;
+}
+static double MarqueeClockOf(const std::wstring& s, float size, float room)
+{
+    const double now = perf::Now();
+    MarqueeClock& c = g_marquees[MarqueeKey(s, size, room)];
+    if (c.seen == 0 || g_frames + 1 - c.seen > 30)
+        c.t0 = now;
+    c.seen = g_frames + 1;
+    return now - c.t0;
+}
+static void PruneMarquees()
+{
+    if (g_marquees.size() < 64)
+        return;
+    for (auto it = g_marquees.begin(); it != g_marquees.end();)
+        it = g_frames + 1 - it->second.seen > 120 ? g_marquees.erase(it) : std::next(it);
+}
+
 bool Begin(void* device, int sw, int sh, int textPx)
 {
     if (!device || sw <= 0 || sh <= 0)
@@ -178,6 +218,8 @@ bool Begin(void* device, int sw, int sh, int textPx)
     g_layers[LTextBig].tex = g_big.texture;
     g_wu = g_small.whiteU, g_wv = g_small.whiteV;
     g_alpha = 1, g_ox = g_oy = 0;
+    g_clipX0 = -1e30f, g_clipX1 = 1e30f;
+    PruneMarquees();
     return true;
 }
 
@@ -194,6 +236,62 @@ static u32 Mul(u32 argb)
 static void Push(Layer& l, float x, float y, u32 c, float u, float v)
 {
     l.v.push_back({x + g_ox - 0.5f, y + g_oy - 0.5f, 0, 1, c, u, v});
+}
+
+// ---------------------------------------------------------------- the lint's recorder (hud2_kit.h Record)
+static std::vector<Drawn>* g_rec = nullptr;
+static const char* g_recTag = "";
+static int g_recDepth = 0; // kit calls inside kit calls: only the outermost records
+static int g_recUnit = 0, g_recUnitNext = 0; // the current designed unit (RecUnit), the last id handed out
+void Record(std::vector<Drawn>* out) { g_rec = out, g_recTag = "", g_recDepth = 0, g_recUnit = 0, g_recUnitNext = 0; }
+void RecordTag(const char* tag) { g_recTag = tag ? tag : ""; }
+RecUnit::RecUnit() : prev(g_recUnit)
+{
+    if (g_rec && !g_recUnit) // (ids only while a pass records: Record restarts them, nothing counts up between)
+        g_recUnit = ++g_recUnitNext;
+}
+RecUnit::~RecUnit() { g_recUnit = prev; }
+struct RecScope
+{
+    bool on, top;
+    RecScope() : on(g_rec != nullptr), top(on && g_recDepth == 0)
+    {
+        if (on)
+            ++g_recDepth;
+    }
+    ~RecScope()
+    {
+        if (on)
+            --g_recDepth;
+    }
+};
+static float AlphaOf(u32 argb) { return ((argb >> 24) / 255.0f) * g_alpha; }
+static Drawn* Rec(char kind, float x0, float y0, float x1, float y1, float size, float alpha)
+{
+    if (!g_rec || alpha <= 0)
+        return nullptr;
+    Drawn d;
+    d.kind = kind, d.x0 = x0 + g_ox, d.y0 = y0 + g_oy, d.x1 = x1 + g_ox, d.y1 = y1 + g_oy, d.size = size, d.alpha = alpha;
+    d.tag = g_recTag, d.unit = g_recUnit;
+    g_rec->push_back(std::move(d));
+    return &g_rec->back();
+}
+static void RecArc(float cx, float cy, float r, float a0, float a1, float width, float alpha)
+{
+    if (a1 < a0)
+        std::swap(a0, a1);
+    // the box from the band (the centre line every <= 6 degrees, +- half the width)
+    constexpr float kDeg = 3.14159265f / 180.0f;
+    const int n = std::max(1, static_cast<int>(ceilf((a1 - a0) / 6.0f)));
+    float x0 = 1e30f, y0 = 1e30f, x1 = -1e30f, y1 = -1e30f;
+    for (int i = 0; i <= n; ++i)
+    {
+        const float t = (a0 + (a1 - a0) * i / n) * kDeg, x = cx + r * cosf(t), y = cy + r * sinf(t);
+        x0 = std::min(x0, x), y0 = std::min(y0, y), x1 = std::max(x1, x), y1 = std::max(y1, y);
+    }
+    const float h = width * 0.5f;
+    if (Drawn* d = Rec('A', x0 - h, y0 - h, x1 + h, y1 + h, width, alpha))
+        d->cx = cx + g_ox, d->cy = cy + g_oy, d->r = r, d->a0 = a0, d->a1 = a1, d->w = width;
 }
 
 // ---------------------------------------------------------------- shapes
@@ -220,6 +318,9 @@ void Rect(float x, float y, float w, float h, u32 argb)
 {
     if (w <= 0 || h <= 0)
         return;
+    const RecScope rs;
+    if (rs.top)
+        Rec('S', x, y, x + w, y + h, 0, AlphaOf(argb));
     const float q[8] = {x, y, x + w, y, x + w, y + h, x, y + h};
     Quad(q, argb);
 }
@@ -239,6 +340,10 @@ void Line(float x0, float y0, float x1, float y1, float width, u32 argb)
     const float dx = x1 - x0, dy = y1 - y0, len = sqrtf(dx * dx + dy * dy);
     if (len < 0.01f)
         return;
+    const RecScope rs;
+    if (rs.top)
+        Rec('S', std::min(x0, x1) - width * 0.5f, std::min(y0, y1) - width * 0.5f, std::max(x0, x1) + width * 0.5f,
+            std::max(y0, y1) + width * 0.5f, 0, AlphaOf(argb));
     const float nx = -dy / len * width * 0.5f, ny = dx / len * width * 0.5f;
     const float q[8] = {x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny};
     Quad(q, argb);
@@ -252,6 +357,15 @@ void Poly(const float* xy, int n, u32 argb)
 
 void Outline(const float* xy, int n, float width, u32 argb)
 {
+    const RecScope rs;
+    if (rs.top && n > 0)
+    {
+        float x0 = xy[0], y0 = xy[1], x1 = xy[0], y1 = xy[1];
+        for (int i = 1; i < n; ++i)
+            x0 = std::min(x0, xy[i * 2]), x1 = std::max(x1, xy[i * 2]), y0 = std::min(y0, xy[i * 2 + 1]),
+            y1 = std::max(y1, xy[i * 2 + 1]);
+        Rec('S', x0 - width * 0.5f, y0 - width * 0.5f, x1 + width * 0.5f, y1 + width * 0.5f, 0, AlphaOf(argb));
+    }
     for (int i = 0; i < n; ++i)
     {
         const int j = (i + 1) % n;
@@ -269,6 +383,9 @@ void Arc(float cx, float cy, float r, float a0, float a1, float width, u32 argb)
 {
     if (a1 < a0)
         std::swap(a0, a1);
+    const RecScope rs;
+    if (rs.top)
+        RecArc(cx, cy, r, a0, a1, width, AlphaOf(argb));
     const int steps = std::max(1, static_cast<int>(ceilf((a1 - a0) / 6.0f)));
     const float ri = r - width * 0.5f, ro = r + width * 0.5f;
     constexpr float kDeg = 3.14159265f / 180.0f;
@@ -306,6 +423,9 @@ void SegBar(float x, float y, float w, float h, float frac, u32 rgb, int n, floa
 {
     if (n <= 0 || w <= 0)
         return;
+    const RecScope rs;
+    if (rs.top)
+        Rec('S', x, y, x + w, y + h, 0, g_alpha);
     if (gap < 0)
         gap = std::max(2.0f, h * 0.28f);
     const float sw = (w - gap * (n - 1)) / n;
@@ -336,6 +456,11 @@ void SegArc(float cx, float cy, float r, float a0, float a1, float width, float 
 {
     const float span = (a1 - a0) / n;
     const float ew = emptyWidth > 0 ? emptyWidth : width;
+    const RecScope rs;
+    // (the lint's record: the drawn extent - the first block starts half a gap after a0, the last ends half a gap before
+    // a1; recording a0..a1 put two ring arcs 6 degrees apart where the drawn ones are 7.7 apart: UI_HUD2_PRESETS.md 6 item 3)
+    if (rs.top && n > 0)
+        RecArc(cx, cy, r, a0 + gapDeg * 0.5f, a1 - gapDeg * 0.5f, std::max(width, ew), g_alpha);
     for (int i = 0; i < n; ++i)
     {
         const int k = reverse ? n - 1 - i : i;
@@ -348,6 +473,9 @@ void SegArc(float cx, float cy, float r, float a0, float a1, float width, float 
 void Plate(float x0, float y0, float x1, float y1, float c, int corners, float fill, u32 rim, float rimA, char accent,
            u32 accentRgb)
 {
+    const RecScope rs;
+    if (rs.top)
+        Rec('P', x0, y0, x1, y1, 0, g_alpha);
     const float tl = (corners & kTL) ? c : 0, tr = (corners & kTR) ? c : 0, br = (corners & kBR) ? c : 0,
                 bl = (corners & kBL) ? c : 0;
     const float pts[16] = {x0 + tl, y0, x1 - tr, y0, x1, y0 + tr, x1, y1 - br,
@@ -377,6 +505,8 @@ bool Icon(flicons::Icon icon, float cx, float cy, float size, u32 argb, float an
     const u32 c = Mul(argb);
     if (!(c >> 24))
         return true;
+    if (g_rec && g_recDepth == 0)
+        Rec('I', cx - size * 0.5f, cy - size * 0.5f, cx + size * 0.5f, cy + size * 0.5f, size, (c >> 24) / 255.0f);
     Layer& l = g_layers[size <= 64 * 1.1f ? LIconSmall : LIconBig];
     l.tex = tex;
     const float h = size * 0.5f, co = cosf(angle), si = sinf(angle);
@@ -548,15 +678,27 @@ static void Glyphs(Layer& l, const render::Font& f, float x, float yTop, const s
         const render::Glyph& g = it->second;
         if (g.w > 0)
         {
-            const float x0 = pen + g.ox * k, y0 = yTop + g.oy * k, x1 = x0 + g.w * k, y1 = y0 + g.h * k;
-            Push(l, x0, y0, c, g.u0, g.v0), Push(l, x1, y0, c, g.u1, g.v0), Push(l, x1, y1, c, g.u1, g.v1);
-            Push(l, x0, y0, c, g.u0, g.v0), Push(l, x1, y1, c, g.u1, g.v1), Push(l, x0, y1, c, g.u0, g.v1);
+            float x0 = pen + g.ox * k, x1 = x0 + g.w * k, u0 = g.u0, u1 = g.u1;
+            const float y0 = yTop + g.oy * k, y1 = y0 + g.h * k;
+            if (x1 > g_clipX0 && x0 < g_clipX1) // (the clip: TextMarquee's room; else unbounded)
+            {
+                const float qx0 = x0, qw = x1 - x0, du = g.u1 - g.u0;
+                if (x0 < g_clipX0)
+                    u0 = g.u0 + du * (g_clipX0 - qx0) / qw, x0 = g_clipX0;
+                if (x1 > g_clipX1)
+                    u1 = g.u0 + du * (g_clipX1 - qx0) / qw, x1 = g_clipX1;
+                Push(l, x0, y0, c, u0, g.v0), Push(l, x1, y0, c, u1, g.v0), Push(l, x1, y1, c, u1, g.v1);
+                Push(l, x0, y0, c, u0, g.v0), Push(l, x1, y1, c, u1, g.v1), Push(l, x0, y1, c, u0, g.v1);
+            }
         }
         pen += g.advance * k + track * f.px * k;
     }
 }
 
-float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align align, float track, bool outline)
+// Text without its record (Text records it; TextMarquee records its room instead); `snap` = onto the pixel grid at the
+// font's own size (a scrolling text keeps its sub-pixel place: linear filtering draws it between pixels).
+static float TextDraw(float x, float y, const std::wstring& s, float size, u32 argb, Align align, float track, bool outline,
+                      bool snap, bool record)
 {
     if (!g_fontsOk || s.empty())
         return 0;
@@ -573,9 +715,16 @@ float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align 
         x -= w * 0.5f;
     else if (align == Right)
         x -= w;
+    if (record && g_rec && g_recDepth == 0) // (a glyph's letter, a keycap's name: inside their call, not recorded)
+        if (Drawn* d = Rec('T', x, y - size * 0.5f, x + w, y + size * 0.5f, size, (c >> 24) / 255.0f))
+            d->text = s;
     float yTop = y - f.lineHeight * k * 0.5f;
-    if (k > 0.98f && k < 1.02f) // at the font's own size: on the pixel grid (sharp as point sampling)
-        x = floorf(x + 0.5f), yTop = floorf(yTop + 0.5f);
+    if (k > 0.98f && k < 1.02f) // at the font's own size: on the pixel grid (sharp as point sampling); a scrolling
+    {                           // text only vertically
+        if (snap)
+            x = floorf(x + 0.5f);
+        yTop = floorf(yTop + 0.5f);
+    }
     if (outline)
     {
         const float o = std::max(1.0f, size * 0.06f);
@@ -586,6 +735,53 @@ float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align 
     }
     Glyphs(l, f, x, yTop, s, k, track, c);
     return w;
+}
+
+float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align align, float track, bool outline)
+{
+    return TextDraw(x, y, s, size, argb, align, track, outline, true, true);
+}
+
+// The marquee (core\game\marquee.h; the owner, 31 Oct 2026, HUD 2 decision 1): the fit rule first; a text it would cut
+// draws in full, clipped to its room [bx, bx + maxW], moved by the marquee's offset at this moment (its clock: since the
+// text first showed, MarqueeClockOf), the ellipsis at the clip's edge with its alpha. Recorded for the lint as ONE text
+// whose box is the room (never the full text: nothing is drawn outside it) - the lint sees the same box at every moment.
+static const marquee::Timing kMarquee{};
+float TextMarquee(float x, float y, const std::wstring& s, float size, float maxW, u32 argb, Align align, float track,
+                  bool outline, float floor)
+{
+    const textfit::Result& r = FitText(s, size, maxW, track, floor);
+    if (!r.cut || !g_fontsOk || maxW < 1.0f || s.empty())
+        return Text(x, y, r.text, r.size, argb, align, track, outline);
+    const float z = std::max(r.size, g_minPx);
+    const float bx = align == Center ? x - maxW * 0.5f : align == Right ? x - maxW : x;
+    static const std::wstring kEll(1, textfit::kEllipsis);
+    const float textW = TextWidth(s, z, track), ellW = TextWidth(kEll, z, track);
+    // the cut form's prefix (its whole characters before the ellipsis): its width without the ellipsis and the track
+    // gap before it
+    const float prefixW = r.text.size() > 1 ? std::max(0.0f, r.width - ellW - track * z) : 0.0f;
+    const marquee::Frame f = marquee::At(kMarquee, textW, maxW, prefixW, ellW,
+                                         marquee::Speed(kMarquee, static_cast<float>(g_sh), z, g_floor),
+                                         MarqueeClockOf(s, z, maxW));
+    const RecScope rs; // (the parts inside draw without records: the room is the record)
+    if (rs.top)
+        if (Drawn* d = Rec('T', bx, y - z * 0.5f, bx + maxW, y + z * 0.5f, z, AlphaOf(argb)))
+            d->text = s;
+    auto fade = [&](float a)
+    {
+        const u32 al = static_cast<u32>((argb >> 24) * Clampf(a, 0, 1) + 0.5f);
+        return (al << 24) | (argb & 0xFFFFFF);
+    };
+    const float cx0 = g_clipX0, cx1 = g_clipX1;
+    g_clipX0 = bx, g_clipX1 = bx + f.clip;
+    TextDraw(bx - f.offset, y, s, z, fade(f.alpha), Left, track, outline, false, false);
+    if (f.ellipsis > 0.004f)
+    {
+        g_clipX1 = bx + maxW;
+        TextDraw(bx + f.clip + track * z, y, kEll, z, fade(f.alpha * f.ellipsis), Left, track, outline, false, false);
+    }
+    g_clipX0 = cx0, g_clipX1 = cx1;
+    return maxW;
 }
 
 // A glyph's mark (its letter inside the button's shape): sized by the shape, not text - exempt from the legibility floor
@@ -625,6 +821,13 @@ static void Chamfered(float cx, float cy, float w, float h, float c, float width
 
 void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
 {
+    const RecScope rs;
+    if (rs.top)
+    {
+        const float hw = std::max(GlyphWidth(id, h) * 0.5f, hold ? h * 0.65f : 0.0f), hh = hold ? h * 0.65f : h * 0.5f;
+        if (Drawn* d = Rec('G', cx - hw, cy - hh, cx + hw, cy + hh, h, AlphaOf(argb)))
+            d->glyph = static_cast<int>(id);
+    }
     const float a = (argb >> 24) / 255.0f;
     const u32 rgb = argb & 0xFFFFFF;
     const float r = h * 0.46f, lw = std::max(1.5f, h * 0.075f);
@@ -722,15 +925,36 @@ void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
     (void)rgb;
 }
 
-float Keycap(const std::wstring& name, float cx, float cy, float h, u32 argb, bool measure)
+float Keycap(const std::wstring& name, float cx, float cy, float h, u32 argb, bool measure, bool tight)
 {
+    if (tight) // the dense panels' keycap (hud2_kit.h): the name at the floor, the cap 1.2 x the name, no lip margin
+    {
+        const float ts = promptfit::KeycapTightNameSize(h, std::max(0.024f * g_sh, g_minPx)), hc = ts * 1.2f;
+        const float w = promptfit::KeycapTightWidth(TextWidth(name, ts, 0.04f), ts); // (the layout tests' numbers)
+        if (measure)
+            return w;
+        const RecScope rs;
+        if (rs.top)
+            if (Drawn* d = Rec('K', cx - w * 0.5f, cy - hc * 0.5f, cx + w * 0.5f, cy + hc * 0.5f, ts, AlphaOf(argb)))
+                d->text = name;
+        const float a = (argb >> 24) / 255.0f;
+        const float lw = std::max(1.5f, hc * 0.07f);
+        Chamfered(cx, cy, w, hc, hc * 0.18f, lw, argb, Argb(0x0D0B1A, 0.75f * a));
+        Rect(cx - w * 0.5f + hc * 0.18f, cy + hc * 0.5f - lw * 0.5f, w - hc * 0.36f, lw, Argb(argb & 0xFFFFFF, a * 0.6f));
+        Text(cx, cy - hc * 0.03f, name, ts, argb, Center, 0.04f, false);
+        return w;
+    }
     // the key's name never under the 0.024 H text floor (UI_HUD2.md 1.9; the round 3 critique measured ~10 px keycaps):
-    // the cap grows around it
-    const float ts = std::max(name.size() > 2 ? h * 0.42f : h * 0.5f, 0.024f * g_sh);
-    h = std::max(h, ts * (name.size() > 2 ? 1.0f / 0.42f : 2.0f) * 0.8f);
-    const float w = std::max(h, TextWidth(name, ts, 0.04f) + h * 0.5f);
+    // the cap grows around it (promptfit.h KeycapNameSize / KeycapHeight / KeycapWidth: the layout tests' same numbers)
+    const float ts = promptfit::KeycapNameSize(name.size(), h, static_cast<float>(g_sh));
+    const float w = promptfit::KeycapWidth(TextWidth(name, ts, 0.04f), name.size(), h, static_cast<float>(g_sh));
+    h = promptfit::KeycapHeight(name.size(), h, static_cast<float>(g_sh));
     if (measure)
         return w;
+    const RecScope rs;
+    if (rs.top)
+        if (Drawn* d = Rec('K', cx - w * 0.5f, cy - h * 0.43f, cx + w * 0.5f, cy + h * 0.43f, ts, AlphaOf(argb)))
+            d->text = name;
     const float a = (argb >> 24) / 255.0f;
     const float lw = std::max(1.5f, h * 0.07f);
     Chamfered(cx, cy, w, h * 0.86f, h * 0.18f, lw, argb, Argb(0x0D0B1A, 0.75f * a));

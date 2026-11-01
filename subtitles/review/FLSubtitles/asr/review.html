@@ -5,141 +5,306 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Subtitle Review</title>
 <style>
+  /* The look (usability sweep, the owner 31 Oct 2026: "a lot of text ... not spaced properly"; research in
+     docs/REVIEW_PROCESS.md section 7): one spacing scale (4 / 8 / 12 / 16 / 24 px), three text sizes (12 / 14 /
+     16 px) and two weights (400 / 600); closer inside a group than between groups; colour only on top of another
+     cue. Speaker names in a column of their own in every list of lines. */
   :root {
-    --bg: #f6f7f9; --panel: #ffffff; --text: #1b1f24; --muted: #5d6673; --line: #d9dee5;
-    --accent: #2563eb; --accent-soft: #e8efff; --warn: #b45309; --warn-soft: #fff4e5; --ok: #15803d;
-    --key: #eef1f5;
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1b1f24; --muted: #59616d; --line: #d9dee5;
+    --accent: #2563eb; --accent-soft: #e8efff; --warn: #9a5a00; --warn-soft: #fff4e5; --ok: #15803d;
+    --danger: #c02626; --diff: #fff1b8; --diff-line: #c58a00;
+    --key: #eef1f5; --wave: rgba(37, 99, 235, 0.30); --wcard: rgba(255, 255, 255, 0.62); --track: #f9fafc;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #12151a; --panel: #1a1f26; --text: #e6e9ee; --muted: #9aa4b2; --line: #2c333d;
-      --accent: #6b9bff; --accent-soft: #1f2a40; --warn: #f0a24a; --warn-soft: #33281a; --ok: #4ade80;
-      --key: #262d37;
+      --accent: #6b9bff; --accent-soft: #1f2a40; --warn: #f0a24a; --warn-soft: #2e2416; --ok: #4ade80;
+      --danger: #f87171; --diff: rgba(240, 162, 74, 0.24); --diff-line: #f0a24a;
+      --key: #262d37; --wave: rgba(107, 155, 255, 0.38); --wcard: rgba(38, 45, 55, 0.62); --track: #151a20;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
-         font: 16px/1.45 "Segoe UI", system-ui, sans-serif; }
-  header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-           padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
-  header h1 { font-size: 17px; margin: 0 8px 0 0; }
-  select, input[type=search], button, textarea {
-    font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line);
-    border-radius: 6px; padding: 6px 10px; }
+         font: 16px/1.5 "Segoe UI", system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4);
+           align-items: center; padding: var(--s2) var(--s4); background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; white-space: nowrap; }
+  .hgroup { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+  .hgroup.end { margin-left: auto; }
+  select, input, button, textarea {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; padding: 5px 10px; }
+  input[type=checkbox] { padding: 0; margin: 0 var(--s1) 0 0; vertical-align: -2px; accent-color: var(--accent); }
   button { cursor: pointer; }
+  button:hover:not(:disabled), select:hover { border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: default; }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  #progress { margin-left: auto; color: var(--muted); font-size: 14px; }
-  main { max-width: 980px; margin: 0 auto; padding: 16px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px;
-          margin-bottom: 14px; }
-  .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
-  .meta .id { font-family: Consolas, monospace; font-size: 15px; }
-  .speaker { font-weight: 600; }
-  .badge { font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--key); color: var(--muted); }
-  .badge.high { background: var(--warn-soft); color: var(--warn); }
-  .note { color: var(--warn); font-size: 14px; margin-top: 6px; }
-  .scene { font-size: 15px; line-height: 1.5; margin: 8px 0; padding: 8px 10px; border-left: 3px solid var(--warn);
-           background: rgba(127, 127, 127, 0.08); white-space: pre-line; }
-  audio { width: 100%; margin-top: 12px; }
-  .ctx { margin: 10px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
-  .ctx li { display: grid; grid-template-columns: minmax(8em, 15em) 1fr; gap: 14px; padding: 3px 0; }
-  .ctx li.cur { color: var(--text); font-weight: 600; }
-  .ctx .who { overflow-wrap: anywhere; font-size: 13px; letter-spacing: 0.02em; padding-top: 1px; }
-  @media (max-width: 640px) { .ctx li { grid-template-columns: 1fr; gap: 0; } .ctx .who { font-size: 12px; } }
-  .optrow { display: flex; gap: 6px; align-items: stretch; margin: 6px 0; }
-  .opt { display: flex; gap: 12px; align-items: flex-start; flex: 1; min-width: 0; text-align: left;
-         padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+  button.danger { color: var(--danger); }
+  button.danger:hover { border-color: var(--danger); }
+  #progress { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #mode { max-width: 24em; }
+  #buildState:empty { display: none; }
+  #page { max-width: 980px; margin: 0 auto; padding: var(--s4); }
+  /* wide screens: the recent decisions beside the work; narrower: below it */
+  @media (min-width: 1380px) {
+    #page { max-width: 1320px; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s4); align-items: start; }
+    #recent { position: sticky; top: 72px; }
+  }
+  #recent { font-size: 12px; line-height: 16px; }
+  #recent:empty { display: none; }
+  #recent h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0; }
+  #recent ol { list-style: none; margin: 0; padding: 0; }
+  #recent li { padding: var(--s1) var(--s2); border-radius: 4px; cursor: pointer; color: var(--muted); }
+  #recent li + li { margin-top: 2px; }
+  #recent li:hover { background: rgba(127, 127, 127, 0.10); color: var(--text); }
+  #recent li.cur { background: var(--accent-soft); color: var(--text); }
+  #recent .who { font-weight: 600; letter-spacing: 0.02em; margin-right: var(--s1); }
+  #recent .txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #recent .why { color: var(--warn); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: var(--s4);
+          margin-bottom: var(--s4); }
+  .card > * + * { margin-top: var(--s4); }      /* blocks inside a card: one gap */
+  .card > .tight { margin-top: var(--s2); }      /* ... except what belongs to the block above */
+  /* the line: its speaker and id, then its facts as plain text, the status as one or two lozenges */
+  .meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); align-items: baseline; }
+  .speaker { font-weight: 600; font-size: 16px; }
+  .meta .id { font-family: Consolas, monospace; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  .facts { font-size: 12px; line-height: 16px; color: var(--muted); display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); }
+  .facts span + span::before { content: "·"; margin-right: var(--s3); opacity: 0.6; }
+  .badge { font-size: 12px; line-height: 18px; padding: 0 var(--s2); border-radius: 9px; background: var(--key);
+           color: var(--muted); white-space: nowrap; }
+  .badge.kind { background: var(--accent-soft); color: var(--text); }
+  .badge.high, .badge.unsure { background: var(--warn-soft); color: var(--warn); }
+  /* a warning: one callout, long ones folded to three lines (click: all of it) */
+  .note { color: var(--warn); font-size: 14px; line-height: 20px; padding: var(--s2) var(--s3);
+          background: var(--warn-soft); border-left: 3px solid var(--warn); border-radius: 0 6px 6px 0; }
+  .note.fold { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+  .scene { font-size: 14px; line-height: 20px; padding: var(--s2) var(--s3); border-left: 3px solid var(--line);
+           background: rgba(127, 127, 127, 0.08); border-radius: 0 6px 6px 0; white-space: pre-line; }
+  .scene b { font-weight: 600; }
+  audio { width: 100%; display: block; }
+  /* every list of lines (context, story box, scene mixes): [time] | NAME | text; the name once per run */
+  .lines { margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 20px; color: var(--muted); }
+  .lines li { display: grid; grid-template-columns: 10em 1fr; gap: var(--s3); padding: 2px var(--s2); border-radius: 4px; }
+  .lines.timed li { grid-template-columns: 7.5em 10em 1fr; }
+  .lines li.cur { color: var(--text); font-weight: 600; background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  .lines li[data-n] { cursor: pointer; }
+  .lines li[data-n]:hover { background: rgba(127, 127, 127, 0.10); }
+  .lines .who { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; text-align: right; overflow-wrap: anywhere; padding-top: 1px; }
+  .lines .t { font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 1px; white-space: nowrap; }
+  .lines .rev .t::after { content: " ✓"; color: var(--ok); }
+  .lines .branch { color: var(--warn); font-size: 12px; margin-left: var(--s2); }
+  @media (max-width: 640px) {
+    .lines li, .lines.timed li { grid-template-columns: 1fr; gap: 0; }
+    .lines .who { text-align: left; }
+  }
+  /* the reads: number key | label | text, then Pick / Edit; a read equal to read 1 says so instead of repeating it */
+  .optrow { display: flex; gap: var(--s2); align-items: stretch; }
+  .optrow + .optrow { margin-top: var(--s2); }
+  .opt { display: flex; gap: var(--s3); align-items: baseline; flex: 1; min-width: 0; text-align: left;
+         padding: var(--s3); border-radius: 8px; border: 1px solid var(--line); background: var(--panel); font-size: 16px; }
   .opt:hover, .opt:focus { border-color: var(--accent); background: var(--accent-soft); outline: none; }
   .opt kbd { flex: none; }
-  .opt .lbl { flex: none; width: 10.5em; color: var(--muted); font-size: 14px; padding-top: 2px; }
-  .opt .txt { flex: 1; font-size: 17px; }
+  .opt .lbl { flex: none; width: 8.5em; color: var(--muted); font-size: 12px; line-height: 16px; }
+  .opt .txt { flex: 1; min-width: 0; line-height: 24px; overflow-wrap: anywhere; }
+  .opt .txt.same { color: var(--muted); font-size: 14px; font-style: italic; }
+  .opt .agree { flex: none; font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; }
+  .opt.sel .agree { color: var(--text); }
+  /* why a pick was needed (optional, C cycles): written to the decision's note */
+  .reasons { display: flex; flex-wrap: wrap; gap: var(--s1); align-items: center; font-size: 12px; }
+  .reasons .help { margin-right: var(--s1); }
+  .reasons button { font-size: 12px; padding: 1px var(--s2); border-radius: 9px; color: var(--muted); }
+  .reasons button.on { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
   .opt.saved { border-color: var(--ok); }
   .opt.sel { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 4px 0 0 var(--accent); }
-  .edit, .pickbtn { flex: none; font-size: 14px; color: var(--muted); }
+  .edit, .pickbtn { flex: none; color: var(--muted); min-width: 4.5em; }
   .edit:hover, .edit:focus, .pickbtn:hover, .pickbtn:focus { color: var(--text); border-color: var(--accent); outline: none; }
   .opt.sel ~ .pickbtn { background: var(--accent); border-color: var(--accent); color: #fff; }
-  kbd { display: inline-block; min-width: 1.6em; text-align: center; padding: 1px 6px; border-radius: 5px;
-        background: var(--key); border: 1px solid var(--line); font: 13px Consolas, monospace; }
-  textarea { width: 100%; min-height: 64px; font-size: 17px; resize: vertical; margin-top: 6px; }
-  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
-  .fit { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); display: none; }
-  .fit .will { font-size: 17px; margin: 4px 0 8px; }
-  .fit ul { margin: 4px 0 8px 18px; padding: 0; color: var(--muted); font-size: 14px; }
-  .sentence { font-size: 15px; color: var(--muted); }
+  /* words that differ from read 1: one quiet tint per run of words, with an underline (not colour alone) */
+  mark { background: var(--diff); color: inherit; border-bottom: 2px solid var(--diff-line); border-radius: 3px; padding: 0 2px; }
+  kbd { display: inline-block; min-width: 1.7em; text-align: center; padding: 0 5px; border-radius: 4px; line-height: 18px;
+        background: var(--key); border: 1px solid var(--line); border-bottom-width: 2px; font: 12px Consolas, monospace; color: var(--text); }
+  textarea { display: block; width: 100%; min-height: 64px; font-size: 16px; line-height: 24px; resize: vertical; padding: var(--s2) var(--s3); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+  .row + .row { margin-top: var(--s2); }
+  .row label { display: inline-flex; align-items: center; gap: var(--s2); }
+  .fit { padding: var(--s3); border-radius: 8px; background: var(--accent-soft); display: none; }
+  .fit .will { font-size: 16px; margin: var(--s1) 0 var(--s2); }
+  .fit ul { margin: var(--s1) 0 var(--s2) var(--s4); padding: 0; color: var(--muted); font-size: 14px; }
+  .sentence { font-size: 14px; color: var(--muted); }
   .sentence .cur { color: var(--text); font-weight: 600; }
   .sentence .playing { background: var(--accent-soft); border-radius: 4px; }
-  .sentence .sep { opacity: 0.6; }
-  .sentence .typed { flex-basis: 100%; color: var(--text); font-size: 15px; }
-  .badge.kind { background: var(--accent-soft); color: var(--text); }
-  .batch { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
-  .batch .row { margin-top: 0; }
-  .batch ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 260px; overflow-y: auto; font-size: 14px; }
-  .batch li { display: flex; gap: 10px; align-items: center; padding: 2px 4px; border-radius: 4px; }
+  .sentence .sep { opacity: 0.6; margin: 0 2px; }
+  .sentence .typed { flex-basis: 100%; color: var(--text); font-size: 14px; }
+  .sentence .situation { flex-basis: 100%; font-size: 12px; line-height: 16px; opacity: 0.85; }
+  .batch { padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: 8px; }
+  .batch ul { list-style: none; margin: var(--s2) 0 0; padding: 0; max-height: 260px; overflow-y: auto; font-size: 14px; }
+  .batch li { display: grid; grid-template-columns: auto auto 9em 1fr auto; gap: var(--s2); align-items: center; padding: 2px var(--s1); border-radius: 4px; }
   .batch li.cur { font-weight: 600; }
   .batch li.playing { background: var(--accent-soft); }
-  .batch .playOne { padding: 1px 8px; }
-  .batch .who { min-width: 11em; color: var(--muted); }
-  .batch .bid { font-family: Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; flex: 1; }
-  .sentence .situation { flex-basis: 100%; font-size: 12px; opacity: 0.8; margin-top: -4px; }
-  .saved-line { color: var(--ok); font-size: 14px; margin-top: 8px; }
-  .help { color: var(--muted); font-size: 13px; }
-  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
-  .words { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; margin-top: 8px; font-size: 15px; }
-  .words .state { color: var(--muted); font-size: 12px; margin-right: 4px; }
-  .words .w { padding: 1px 6px; border-radius: 4px; background: var(--key); border: 1px solid transparent; cursor: pointer; }
-  .words .w:hover { border-color: var(--accent); }
-  .words .w.now { background: var(--accent); color: #fff; }
-  .words .w.unplaced { opacity: 0.55; cursor: default; text-decoration: underline dotted; }
-  .words .w.piled { background: var(--warn-soft); color: var(--warn); }
-  .badge.unsure { background: var(--warn-soft); color: var(--warn); }
-  #statsCard table { border-collapse: collapse; font-size: 14px; }
-  #statsCard td { padding: 1px 12px 1px 0; vertical-align: top; }
+  .batch .playOne { padding: 0 var(--s2); }
+  .batch .who { color: var(--muted); overflow-wrap: anywhere; }
+  .batch .bid { font-family: Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
+  .saved-line { color: var(--ok); font-size: 14px; }
+  .help { color: var(--muted); font-size: 12px; line-height: 16px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; line-height: 1.8; }
+  /* the few keys that matter here, under the controls; everything else behind ? */
+  .keys { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); font-size: 12px; line-height: 20px; color: var(--muted); }
+  .keys span { white-space: nowrap; }
+  .keys kbd + kbd { margin-left: 2px; }
+  #keysOverlay { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, 0.45); display: none;
+                 align-items: flex-start; justify-content: center; padding: 48px var(--s4); overflow-y: auto; }
+  #keysOverlay.on { display: flex; }
+  #keysOverlay .card { max-width: 980px; width: 100%; margin: 0; }
+  #keysOverlay h2 { font-size: 16px; margin: 0; display: flex; justify-content: space-between; align-items: center; }
+  #keysOverlay .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: var(--s5) var(--s5); }
+  @media (max-width: 640px) { #keysOverlay .grid { grid-template-columns: 1fr; } }
+  #keysOverlay h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 var(--s2); }
+  #keysOverlay dl { display: grid; grid-template-columns: auto 1fr; gap: var(--s1) var(--s3); margin: 0; font-size: 14px; line-height: 20px; }
+  #keysOverlay dt { text-align: right; white-space: nowrap; }
+  #keysOverlay dd { margin: 0; color: var(--muted); }
+  .words .state { color: var(--muted); font-size: 12px; }
+  #statsCard table { border-collapse: collapse; font-size: 14px; line-height: 20px; }
+  #statsCard td { padding: 1px var(--s3) 1px 0; vertical-align: top; }
   #statsCard td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-  #statsCard h3 { font-size: 14px; margin: 10px 0 2px; color: var(--muted); }
-  #statsCard .cols { display: flex; flex-wrap: wrap; gap: 8px 32px; }
-  .story { border-left: 3px solid var(--muted); padding: 2px 0 6px 10px; margin-bottom: 8px; }
-  .story .head { font-weight: 600; }
-  .story .prov { font-size: 12px; color: var(--muted); }
-  .story ul { list-style: none; margin: 4px 0 0; padding: 0; font-size: 14px; }
-  .story li { cursor: pointer; padding: 1px 0; }
-  .story li.cur { font-weight: 600; }
-  .story li .sec { color: var(--muted); font-size: 12px; margin-left: 6px; }
-  .story .branch { color: #b06000; }
+  #statsCard h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 var(--s1); color: var(--muted); }
+  #statsCard .cols { display: flex; flex-wrap: wrap; gap: var(--s4) var(--s5); }
+  /* the line's place in the story order */
+  .story { border-left: 3px solid var(--line); padding-left: var(--s3); }
+  .story .head { font-weight: 600; font-size: 14px; }
+  .story .head .help { font-weight: 400; margin-left: var(--s2); }
+  .story .prov { font-size: 12px; line-height: 16px; color: var(--muted); overflow-wrap: anywhere; }
+  .story .lines { margin-top: var(--s2); }
+  .story .note { margin-top: var(--s2); }
+  .story .branch { color: var(--warn); }
   #storyJump { max-width: 28em; }
-  @media (max-width: 640px) { .opt .lbl { width: auto; } .opt { flex-wrap: wrap; } }
+  .tl { display: block; }
+  .tl-bar { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin-bottom: var(--s2); }
+  .tl-bar button { padding: 2px 10px; font-size: 12px; }
+  .tl-bar label { font-size: 12px; color: var(--muted); }
+  .tltime { font: 12px Consolas, monospace; min-width: 5.5em; text-align: right; font-variant-numeric: tabular-nums; }
+  .tl-ruler { cursor: pointer; }
+  .tl-track { cursor: text; }
+  .tl-bar .note { padding: 2px var(--s2); font-size: 12px; }
+  .tl-bar .note:empty { display: none; }
+  .tl-scroll { position: relative; overflow-x: auto; overflow-y: hidden; border: 1px solid var(--line); border-radius: 6px;
+               user-select: none; -webkit-user-select: none; touch-action: none; }
+  .tl-inner { position: relative; height: 92px; min-width: 100%; background: var(--track); }
+  .tl-wave { position: absolute; top: 21px; height: calc(100% - 21px); pointer-events: none; }
+  .tl-ruler .tick.minor { height: 5px; border-left-color: var(--line); padding: 0; }
+  .tl-ruler { position: absolute; top: 0; left: 0; right: 0; height: 20px; cursor: text; border-bottom: 1px solid var(--line); }
+  .tl-ruler .tick { position: absolute; top: 0; height: 100%; border-left: 1px solid var(--line); padding-left: 3px;
+                    font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .tl-track { position: absolute; top: 21px; left: 0; right: 0; bottom: 0; }
+  .wcard { position: absolute; top: 10px; height: 50px; box-sizing: border-box; background: var(--wcard);
+           border: 1px solid var(--muted); border-radius: 5px; overflow: hidden; white-space: nowrap; font-size: 13px;
+           line-height: 48px; padding: 0 6px; cursor: grab; text-overflow: clip; }
+  .wcard:active { cursor: grabbing; }
+  .wcard span { pointer-events: none; }
+  .wcard.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+  .wcard.now { background: var(--accent); color: #fff; }
+  .wcard.est { border-style: dashed; opacity: 0.7; }
+  .wcard.realign { border-color: var(--warn); color: var(--warn); }
+  .wcard .h, .tl-win .h { position: absolute; top: 0; width: 6px; height: 100%; cursor: ew-resize; z-index: 1; }
+  .wcard .h.l, .tl-win .h.l { left: 0; } .wcard .h.r, .tl-win .h.r { right: 0; }
+  .wcard .h:hover, .tl-win .h:hover { background: var(--accent); opacity: 0.5; }
+  .tl-win { position: absolute; top: 0; height: 100%; background: rgba(37, 99, 235, 0.08);
+            border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+  .tl-marq { position: absolute; top: 0; height: 100%; display: none; background: rgba(37, 99, 235, 0.15);
+             border: 1px dashed var(--accent); pointer-events: none; }
+  .tl-head { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #e5484d; pointer-events: none; z-index: 2; }
+  .mixlist { max-height: 320px; overflow-y: auto; }
+  @media (max-width: 640px) {
+    .opt .lbl { width: auto; } .opt { flex-wrap: wrap; } .optrow { flex-wrap: wrap; }
+    .optrow .pickbtn, .optrow .edit { flex: 1; }
+    header h1 { display: none; }
+    .batch li { grid-template-columns: auto auto 1fr auto; } .batch .bid { display: none; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>Subtitle Review</h1>
-  <select id="mode" title="Which lines to review (number = lines still to review)"></select>
-  <input id="search" type="search" placeholder="Search id, voice or text" size="24">
-  <label class="help" id="doneLabel"><input id="done" type="checkbox"> show reviewed</label>
-  <label class="help" id="unrevLabel" style="display:none" title="Story order: only the lines nobody has decided yet"><input id="unrev" type="checkbox"> unreviewed only</label>
-  <select id="storyJump" style="display:none" title="Jump to a mission or scene of the story order"></select>
-  <button id="sampleBtn" style="display:none" title="Check a random sample of this list; if the drafts hold up, accept the rest in one go"></button>
-  <button id="moreBtn" style="display:none" title="Draw another random 50 of this list's open entries">Sample 50 more</button>
-  <button id="rebuildBtn" title="Re-run the build with your latest saves (Re-review, other takes, list counts) — no restart (B)">Rebuild</button>
-  <button id="statsBtn" title="Coverage: lines, how they were decided, word timings, open lists (T)">Stats</button>
-  <span id="buildState" class="help"></span>
-  <span id="progress"></span>
+  <div class="hgroup">
+    <h1>Subtitle Review</h1>
+    <select id="mode" title="Which lines to review (number = lines still to review)"></select>
+    <input id="search" type="search" placeholder="Search id, voice or text" size="22">
+    <label class="help" id="doneLabel"><input id="done" type="checkbox">show reviewed</label>
+    <label class="help" id="unrevLabel" style="display:none" title="Story order: only the lines nobody has decided yet"><input id="unrev" type="checkbox">unreviewed only</label>
+    <select id="storyJump" style="display:none" title="Jump to a mission or scene of the story order"></select>
+    <button id="sampleBtn" style="display:none" title="Check a random sample of this list; if the drafts hold up, accept the rest in one go"></button>
+    <button id="moreBtn" style="display:none" title="Draw another random 50 of this list's open entries">Sample 50 more</button>
+  </div>
+  <div class="hgroup end">
+    <span id="buildState" class="help"></span>
+    <span id="progress"></span>
+    <button id="rebuildBtn" title="Re-run the build with your latest saves (Re-review, other takes, list counts) — no restart (B)">Rebuild</button>
+    <button id="statsBtn" title="Coverage: lines, how they were decided, word timings, open lists (T)">Stats</button>
+    <button id="keysBtn" title="Every keyboard shortcut (?)">Keys <kbd>?</kbd></button>
+    <button id="stopBtn" class="danger" title="Stop the review tool (every save is already on disk; start it again with review.cmd)">Stop</button>
+  </div>
 </header>
+<div id="page">
 <main>
   <div id="statsCard" class="card" style="display:none"></div>
   <div id="view"></div>
-  <p class="help">
-    Click or <kbd>1</kbd>–<kbd>5</kbd> select a read &nbsp; double-click, <b>Pick</b> or <kbd>Enter</kbd> pick the
-    selected read &nbsp; <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>5</kbd> or <b>Edit</b> copy a read into the text box &nbsp;
-    <kbd>E</kbd> edit the draft &nbsp; <kbd>Enter</kbd> in the text box: save typed text &nbsp;
-    <kbd>Shift</kbd>+<kbd>Enter</kbd> save exactly as typed &nbsp; <kbd>Space</kbd> / <kbd>R</kbd> replay &nbsp; <kbd>S</kbd> play a chatter piece in a sentence &nbsp; <kbd>A</kbd> play every clip of a same-text batch &nbsp; <kbd>D</kbd> slow playback (0.75×) &nbsp; <kbd>L</kbd> loop &nbsp;
-    <kbd>U</kbd> / <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo the last save &nbsp; <kbd>B</kbd> rebuild &nbsp; <mark>highlighted</mark> words differ from the draft &nbsp;
-    <kbd>P</kbd>/<kbd>←</kbd> back (also to lines you already saved) &nbsp; <kbd>N</kbd>/<kbd>→</kbd> forward / skip &nbsp;
-    <kbd>Esc</kbd> leave the text box &nbsp; <b>Words</b> (the aligner's word starts): click a word to play from it,
-    <kbd>[</kbd> / <kbd>]</kbd> previous / next word, <kbd>W</kbd> show / hide them; <span class="badge">grey dotted</span> = not placed,
-    <span class="badge high">orange</span> = piled at the clip's end (the text may say more than the recording) &nbsp;
-    <kbd>X</kbd> mark / clear "not sure" (<kbd>Shift</kbd>+<kbd>X</kbd> with a note) &nbsp; <kbd>T</kbd> stats
-  </p>
 </main>
+<aside id="recent" class="card" aria-label="Recent decisions"></aside>
+</div>
+<div id="keysOverlay" role="dialog" aria-modal="true" aria-labelledby="keysTitle">
+  <div class="card">
+    <h2 id="keysTitle">Keyboard shortcuts <button id="keysClose" title="Close (Esc or ?)">Close <kbd>Esc</kbd></button></h2>
+    <div class="grid">
+      <section><h3>Decide a line</h3><dl>
+        <dt><kbd>1</kbd>–<kbd>5</kbd></dt><dd>select a read (or click it); the read the others agree with (= same text, ≈ same words) comes pre-selected</dd>
+        <dt><kbd>Enter</kbd></dt><dd>pick the selected read (or double-click, or Pick)</dd>
+        <dt><kbd>C</kbd></dt><dd>why it needed a change (optional): misheard, spelling, name, punctuation, other, none; saved with the pick</dd>
+        <dt><kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>5</kbd></dt><dd>copy a read into the text box (Edit)</dd>
+        <dt><kbd>E</kbd></dt><dd>edit read 1 in the text box</dd>
+        <dt><kbd>Enter</kbd></dt><dd>in the text box: save, fitted to the conventions</dd>
+        <dt><kbd>Shift</kbd>+<kbd>Enter</kbd></dt><dd>in the text box: save exactly as typed</dd>
+        <dt><kbd>Esc</kbd></dt><dd>leave the text box</dd>
+        <dt><kbd>X</kbd></dt><dd>mark / clear "not sure" (<kbd>Shift</kbd>+<kbd>X</kbd>: with a note)</dd>
+        <dt><kbd>U</kbd> · <kbd>Ctrl</kbd>+<kbd>Z</kbd></dt><dd>undo the last save</dd>
+      </dl></section>
+      <section><h3>Move</h3><dl>
+        <dt><kbd>N</kbd> · <kbd>→</kbd></dt><dd>next line (skip)</dd>
+        <dt><kbd>P</kbd> · <kbd>←</kbd></dt><dd>back, also to lines you saved</dd>
+      </dl>
+      <h3 style="margin-top: var(--s4)">Listen</h3><dl>
+        <dt><kbd>Space</kbd></dt><dd>play / pause from the playhead</dd>
+        <dt><kbd>R</kbd></dt><dd>replay from the start (a scene mix line: its window)</dd>
+        <dt><kbd>,</kbd> · <kbd>.</kbd></dt><dd>step the playhead 0.25 s back / forward (<kbd>Shift</kbd>: 1 s)</dd>
+        <dt>click</dt><dd>the timeline's empty track or its ruler: move the playhead there</dd>
+        <dt><kbd>F</kbd> · <kbd>G</kbd></dt><dd>the first / last half second of the speech</dd>
+        <dt><kbd>D</kbd></dt><dd>slow playback (0.75×) on / off</dd>
+        <dt><kbd>L</kbd></dt><dd>loop on / off</dd>
+        <dt><kbd>S</kbd></dt><dd>a chatter piece: play it in its sentence</dd>
+        <dt><kbd>A</kbd></dt><dd>same-text batch: play every ticked clip</dd>
+      </dl></section>
+      <section><h3>Timeline (word timings)</h3><dl>
+        <dt>click</dt><dd>a card plays from its word (while paused; it is selected too)</dd>
+        <dt>drag</dt><dd>a card moves it (with the selected ones), its edges trim it</dd>
+        <dt><kbd>Ctrl</kbd>/<kbd>Shift</kbd>+click</dt><dd>select several (or drag on empty track)</dd>
+        <dt><kbd>A</kbd> · <kbd>Ctrl</kbd>+<kbd>A</kbd></dt><dd>select it and all after · select all</dd>
+        <dt><kbd>K</kbd></dt><dd>the selected word starts at the playhead (tap along)</dd>
+        <dt><kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd></dt><dd>nudge 10 ms (<kbd>Shift</kbd>: 100 ms)</dd>
+        <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>previous / next word</dd>
+        <dt><kbd>S</kbd></dt><dd>snap on / off</dd>
+        <dt><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd>save the timings (<kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes a change before)</dd>
+        <dt><kbd>W</kbd></dt><dd>show / hide the timeline</dd>
+        <dt>mouse</dt><dd><kbd>Ctrl</kbd>+wheel zoom, wheel scroll, click the ruler to seek, double-click a card to play from it</dd>
+        <dt></dt><dd>dashed card = an estimate (not placed), orange = waiting for the aligner</dd>
+      </dl></section>
+      <section><h3>Tool</h3><dl>
+        <dt><kbd>B</kbd></dt><dd>rebuild with your saves</dd>
+        <dt><kbd>T</kbd></dt><dd>stats</dd>
+        <dt><kbd>?</kbd></dt><dd>this overview</dd>
+        <dt><mark>word</mark></dt><dd>differs from read 1</dd>
+      </dl></section>
+    </div>
+  </div>
+</div>
 <script>
 const $ = (s) => document.querySelector(s);
 // queue = line numbers still to do in this list; pos = where we are in it.
@@ -222,7 +387,7 @@ async function undo() {
   if (!r.ok) { buildState("nothing to undo"); return; }
   unbuilt += 1; buildState(`undone: ${r.ids[0] || ""}`); reviewed = r.reviewed;
   await loadModes(false);
-  if (back.length) { const n = back.pop(); remember(); return render(n); }
+  if (back.length) { const n = back.pop(); remember(); dropRecent(n); return render(n); }
   await loadQueue(true);
 }
 
@@ -234,7 +399,12 @@ function markDiff(text, base) {
     L[i][j] = key(w[i]) === key(b[j]) ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
   const keep = new Set(); let i = 0, j = 0;
   while (i < n && j < m) { if (key(w[i]) === key(b[j])) { keep.add(i); i++; j++; } else if (L[i + 1][j] >= L[i][j + 1]) i++; else j++; }
-  return w.map((t, k) => keep.has(k) ? esc(t) : `<mark>${esc(t)}</mark>`).join(" ");
+  // one mark per run of changed words (not a box per word)
+  let out = "", run = [];
+  const flush = () => { if (run.length) { out += (out ? " " : "") + `<mark>${run.map(esc).join(" ")}</mark>`; run = []; } };
+  w.forEach((t, k) => { if (keep.has(k)) { flush(); out += (out ? " " : "") + esc(t); } else run.push(t); });
+  flush();
+  return out;
 }
 
 // Story order: the lines in the order the game plays them (data/story_order.tsv); the headings jump list and
@@ -280,38 +450,80 @@ async function showQueue() {
   await render(queue[pos]);
 }
 
+// Every list of lines (context, story box, scene mixes): [time] | NAME | text, the name once per run of one
+// speaker (screenplay style; the full name stays in the tooltip). x: {speaker, text, current, n (click = go there),
+// t (time, for the timed lists), cls, title, extra (html after the text)}.
+function linesHtml(items, cls = "") {
+  let prev = null;
+  return `<ul class="lines ${cls}">${items.map(x => {
+    const who = x.speaker === prev && !x.current ? "" : x.speaker; prev = x.speaker;
+    return `<li class="${x.current ? "cur" : ""} ${x.cls || ""}"${x.n != null ? ` data-n="${x.n}"` : ""}
+        title="${esc(x.title || x.speaker)}">${x.t != null ? `<span class="t">${esc(x.t)}</span>` : ""}
+      <span class="who">${esc(who)}</span><span>${x.text ? esc(x.text) : "<i>(empty)</i>"}${x.extra || ""}</span></li>`;
+  }).join("")}</ul>`;
+}
+
 // The line's place in the story order (Story order view): heading, provenance, the lines around it (click = go there)
 function storyBoxHtml(st) {
   return st ? `<div class="story">
-      <div class="head">${st.placed ? `${esc(st.mission)} · ${esc(st.section)} <span class="help">#${esc(st.order)} of the story order</span>`
+      <div class="head">${st.placed ? `${esc(st.mission)} · ${esc(st.section)}<span class="help">#${esc(st.order)} of the story order</span>`
         : `Not placed: <span class="branch">${esc(st.play)}</span>`}
         ${st.placed && st.play !== "main" ? ` <span class="branch">${esc(st.play)}</span>` : ""}</div>
       ${st.placed ? `<div class="prov" title="Where the order comes from (asr/story_order.py)">${esc(st.via)} · ${esc(st.source)}${st.at ? ` · ~${esc(st.at)} s into the mission (estimated)` : ""}</div>` : ""}
-      ${st.mix ? '<div class="note">Scene mix: no subtitles yet (its timed cues are a later stage); the text below is the speech-to-text draft for reference.</div>' : ""}
-      <ul>${st.near.map(x => `<li class="${x.current ? "cur" : ""}" data-n="${x.n}" title="${esc(x.id)} · ${esc(x.section)}${x.play !== "main" ? " · " + esc(x.play) : ""}">
-        <span class="who">${esc(x.speaker)}</span>${esc(x.text)}${x.play !== "main" ? ' <span class="sec branch">branch</span>' : ""}</li>`).join("")}</ul>
+      ${st.mix ? `<div class="note">Scene mix: ${st.mixlines.length} lines (data/mixes.tsv). Click one to review it; the text below is the old whole-clip speech-to-text draft.</div>
+        ${linesHtml(st.mixlines.map(x => ({ ...x, t: `${x.start} s`, cls: x.reviewed ? "rev" : "" })), "timed mixlist")}` : ""}
+      ${linesHtml(st.near.map(x => ({ ...x, title: `${x.speaker} · ${x.id} · ${x.section}${x.play !== "main" ? " · " + x.play : ""}`,
+                                      extra: x.play !== "main" ? '<span class="branch">branch</span>' : "" })))}
     </div>` : "";
 }
 
+// The line's head: speaker and id, then its facts as plain text, then the status lozenges
+function metaHtml(speaker, id, facts, badges) {
+  return `<div class="meta"><span class="speaker">${esc(speaker) || "(no name)"}</span><span class="id">${esc(id)}</span>${badges || ""}</div>
+    <div class="facts tight">${facts.filter(Boolean).map(f => `<span>${f}</span>`).join("")}</div>`;
+}
+
+// Long warnings fold to three lines; a click shows all of it
+function foldNotes() {
+  document.querySelectorAll("#view .note").forEach(n => {
+    if (n.dataset.fold) return;
+    n.dataset.fold = "1";
+    n.classList.add("fold");
+    if (n.scrollHeight <= n.clientHeight + 2) { n.classList.remove("fold"); return; }
+    n.title = "Click to show all of it";
+    n.onclick = () => { n.classList.toggle("fold"); };
+  });
+}
+
+// The few keys of this view, under its controls (everything else: ?)
+function keysHtml(list) {
+  return `<div class="keys">${list.map(([k, what]) => `<span>${k} ${what}</span>`).join("")}
+    <span><kbd>?</kbd> all keys</span></div>`;
+}
+
 async function render(n) {
+  if (tl && tl.dirty && tl.n !== n && !confirm("This line has unsaved timing changes. Leave them?")) return;
+  if (tl && tl.n !== n) { cancelAnimationFrame(tl.raf); tl = null; }
   pendingFit = null;
   cur = await (await fetch("/api/item?n=" + n)).json();
   const c = cur;
   progress();
+  if (c.error) { $("#view").innerHTML = `<div class="card"><div class="note">${esc(c.error)}</div></div>`; return; }
+  if (c.mixline) return renderMix(c);
   if (c.movie) {  // an intro movie line: shown in place, edited in data/movies.tsv (no clip of its own here)
     const m = c.movie;
     $("#view").innerHTML = `<div class="card">${storyBoxHtml(c.story)}
-      <div class="meta"><span class="speaker">${esc(m.speaker)}</span><span class="id">${esc(m.movie)}</span>
-        <span class="badge">${esc(m.start)}–${esc(m.end)} s on the movie clock</span><span class="badge kind">movie line</span></div>
+      ${metaHtml(m.speaker, m.movie, [`${esc(m.start)}–${esc(m.end)} s on the movie clock`], '<span class="badge kind">movie line</span>')}
       <div class="saved-line">${esc(m.text)}</div>
       ${m.note ? `<div class="note">${esc(m.note)}</div>` : ""}
       <div class="help">Intro movie lines live in data/movies.tsv (built by asr/intro_align.py); the movie's sound is not
-        served as a clip here. <kbd>N</kbd> / <kbd>P</kbd> move on in the story order.</div></div>`;
-    document.querySelectorAll(".story li").forEach(li => li.onclick = () => jumpToLine(+li.dataset.n));
+        served as a clip here.</div>
+      ${keysHtml([["<kbd>N</kbd> <kbd>P</kbd>", "next / back in the story order"]])}</div>`;
+    document.querySelectorAll(".story li[data-n]").forEach(li => li.onclick = () => jumpToLine(+li.dataset.n));
+    foldNotes();
     return;
   }
-  const ctx = c.context.length ? '<ul class="ctx">' + c.context.map(x =>
-      `<li class="${x.current ? "cur" : ""}"><span class="who">${esc(x.speaker)}</span>${esc(x.text)}</li>`).join("") + "</ul>" : "";
+  const ctx = c.context.length ? linesHtml(c.context) : "";
   // chatter fragment: the same voice's pieces around it, played back to back (approximate sentence)
   // (the sentences the game builds with this piece: data/chatter_grammar.tsv, read from Content.dll)
   const sentence = c.sentence.map((s, k) => `<div class="row sentence" data-k="${k}"><button class="playSentence"
@@ -321,62 +533,83 @@ async function render(n) {
       <span class="typed" title="The subtitle as the game will type it out (joined, capitals, end marks)">In game: ${esc(s.rendered)}</span>
       <span class="situation">${esc(s.situation)}</span></div>`).join("");
   // same-text batch: every clip with this text; untick the ones that say something else
-  const batch = c.batch.length > 1 ? `<div class="batch"><div class="row"><b>${c.batch.length} clips have this text.</b>
+  const batch = c.batch.length > 1 ? `<div class="batch"><div class="row"><b>${c.batch.length} clips have this text</b>
       <button id="playAll" title="Play every ticked clip in turn (A)">▶ Play all <kbd>A</kbd></button>
       <span class="help">Untick a clip that says something else: your pick or text is saved for the ticked ones only.</span></div>
-      <ul>${c.batch.map((x, i) => `<li data-i="${i}" class="${x.current ? "cur" : ""}">
+      <ul>${c.batch.map((x, i) => `<li data-i="${i}" class="${x.current ? "cur" : ""}" title="${esc(x.voice)} · ${esc(x.id)}">
         <input type="checkbox" checked data-n="${x.n}" title="Save the decision for this clip">
         <button class="playOne" data-n="${x.n}" title="Play this clip">▶</button>
         <span class="who">${esc(x.voice)}</span><span class="bid">${esc(x.id)}</span>
         <span class="help">${x.sec.toFixed(1)} s</span></li>`).join("")}</ul></div>` : "";
   const copies = c.copies.length ? `<div class="help">Same recording also used as: ${c.copies.map(x =>
       `${esc(x.voice)} ${esc(x.id)}`).join(", ")} (saved together)</div>` : "";
-  selected = -1;
-  const opts = c.options.map((o, i) =>
-      `<div class="optrow"><button class="opt ${c.saved === o.text ? "saved" : ""}" data-i="${i}"
+  selected = -1; reason = "";
+  // which reads agree: "= 3 4" the same text, "≈ 2" the same words (case / punctuation differ). The read the others
+  // agree with most is pre-selected, so the common case is one key (Enter); a saved line pre-selects its saved read.
+  // Prodigy's review recipe does the same, and warns: a mistake every read shares slips through - listen first.
+  const agree = c.options.map((o, i) => ({
+    same: c.options.flatMap((p, j) => j !== i && p.text === o.text ? [j + 1] : []),
+    words: c.options.flatMap((p, j) => j !== i && p.text !== o.text && wordsKey(p.text) === wordsKey(o.text) ? [j + 1] : []) }));
+  const score = a => a.same.length * 2 + a.words.length;
+  let pre = c.options.findIndex(o => c.saved != null && o.text === c.saved);
+  if (pre < 0) agree.forEach((a, i) => { if (score(a) > 0 && (pre < 0 || score(a) > score(agree[pre]))) pre = i; });
+  const agreeHtml = a => a.same.length || a.words.length ? `<span class="agree" title="${[
+      a.same.length ? `the same text as read ${a.same.join(", ")}` : "", a.words.length ? `the same words as read ${a.words.join(", ")} (case or punctuation differ)` : ""
+    ].filter(Boolean).join("; ")}">${a.same.length ? "= " + a.same.join(" ") : ""}${a.same.length && a.words.length ? " · " : ""}${a.words.length ? "≈ " + a.words.join(" ") : ""}</span>` : "";
+  // a read with read 1's exact text says so (the eye compares only what differs); it can still be picked
+  const opts = c.options.map((o, i) => {
+      const same = i > 0 && o.text === c.options[0].text;
+      return `<div class="optrow"><button class="opt ${c.saved === o.text ? "saved" : ""}" data-i="${i}"
           title="Click to select, double-click to pick">
-        <kbd>${i + 1}</kbd><span class="lbl">${esc(o.label)}</span><span class="txt">${i === 0 ? esc(o.text) : markDiff(o.text, c.options[0].text)}</span></button>
+        <kbd>${i + 1}</kbd><span class="lbl">${esc(o.label)}</span>${same ? '<span class="txt same">same as 1</span>'
+          : `<span class="txt">${i === 0 ? esc(o.text) : markDiff(o.text, c.options[0].text)}</span>`}${agreeHtml(agree[i])}</button>
         <button class="pickbtn" data-i="${i}" title="Save this read">Pick</button>
-        <button class="edit" data-i="${i}" title="Copy into the text box to edit (Shift+${i + 1})">Edit</button></div>`).join("");
+        <button class="edit" data-i="${i}" title="Copy into the text box to edit (Shift+${i + 1})">Edit</button></div>`; }).join("");
+  const kind = { story: ["story line: kept as written", "Story, campaign or unique mission dialogue: the subtitle is shown exactly as you save it"],
+                 chunk: ["chunk of a generated sentence", "A generic piece the game joins with others: save the piece without a sentence-ending period; the full sentence is typed out by the game logic (see In game)"],
+                 line: ["generic line: a whole sentence", "A generic line the game plays on its own: a whole sentence, saved with its end mark"] }[c.line_kind]
+               || ["Neural Net message", "A whole Neural Net message, shown as you save it"];
   const storyBox = storyBoxHtml(c.story);
   $("#view").innerHTML = `
     <div class="card">
       ${storyBox}
-      <div class="meta">
-        <span class="speaker">${esc(c.speaker)}</span><span class="id">${esc(c.id)}</span>
-        <span class="badge">${esc(c.voice)}</span><span class="badge">${c.sec.toFixed(1)} s</span>
-        <span class="badge">${esc(c.source)}</span>
-        ${c.line_kind === "story" ? '<span class="badge kind" title="Story, campaign or unique mission dialogue: the subtitle is shown exactly as you save it">story line: kept as written</span>'
-          : c.line_kind === "chunk" ? '<span class="badge kind" title="A generic piece the game joins with others: save the piece without a sentence-ending period; the full sentence is typed out by the game logic (see In game)">chunk: part of a generated sentence</span>'
-          : c.line_kind === "line" ? '<span class="badge kind" title="A generic line the game plays on its own: a whole sentence, saved with its end mark">generic line: a whole sentence</span>'
-          : '<span class="badge kind" title="A whole Neural Net message, shown as you save it">Neural Net message</span>'}
-        ${c.review ? `<span class="badge ${c.review}">${esc(c.review)} review</span>` : ""}
-        <span id="unsureBadge"></span>
-      </div>
+      ${metaHtml(c.speaker, c.id, [`voice ${esc(c.voice)}`, `${c.sec.toFixed(1)} s`, esc(c.source)],
+          `<span class="badge kind" title="${esc(kind[1])}">${esc(kind[0])}</span>
+           ${c.review ? `<span class="badge ${c.review}">${esc(c.review)} review</span>` : ""}<span id="unsureBadge"></span>`)}
       ${c.note ? `<div class="note">${esc(c.note)}</div>` : ""}
       ${c.suspect ? `<div class="note" title="Why this line is on the alignment suspects list (score ${c.suspect[0]})">Alignment: ${esc(c.suspect[1].join(" · "))}</div>` : ""}
       ${c.scene ? `<div class="scene"><b>Context:</b> ${esc(c.scene)}</div>` : ""}
       <audio id="audio" controls autoplay src="/audio/${c.n}"></audio>
-      <div id="words" class="words"></div>
+      <div id="words" class="words tight"></div>
       ${copies}
       ${batch}
       ${sentence}
       ${ctx}
       ${c.saved != null ? `<div class="saved-line">Saved: ${esc(c.saved)} (${esc(c.saved_source)}) · pick or type again to change it</div>` : ""}
     </div>
-    <div class="card">${opts}
-      <textarea id="typed" placeholder="Or type what you hear (Enter to save)"></textarea>
+    <div class="card"><div>${opts}</div>
+      <div class="reasons tight"><span class="help">Why it needed a change (optional) <kbd>C</kbd></span>
+        ${REASONS.map(r => `<button data-r="${r}" title="Written with your pick or text as its reason">${r}</button>`).join("")}</div>
+      <textarea id="typed" placeholder="Or type what you hear (Enter saves it)"></textarea>
       <div class="fit" id="fit"><div>Will be saved as:</div><div class="will" id="will"></div>
         <div class="help">Adjusted to the subtitle conventions:</div><ul id="changes"></ul>
-        <div class="row"><button class="primary" id="saveFit">Save adjusted (Enter)</button>
-          <button id="saveRaw">Keep my exact text (Shift+Enter)</button></div></div>
+        <div class="row"><button class="primary" id="saveFit">Save adjusted <kbd>Enter</kbd></button>
+          <button id="saveRaw">Keep my exact text <kbd>Shift</kbd>+<kbd>Enter</kbd></button></div></div>
+      ${keysHtml([["<kbd>1</kbd>–<kbd>5</kbd>", "select"], ["<kbd>Enter</kbd>", "pick the selected"], ["<kbd>E</kbd>", "edit"],
+                  ["<kbd>Space</kbd>", "play / pause"], ["<kbd>R</kbd>", "replay"], ["<kbd>,</kbd> <kbd>.</kbd>", "step"],
+                  ["<kbd>F</kbd> <kbd>G</kbd>", "first / last ½ s"], ["<kbd>N</kbd> <kbd>P</kbd>", "next / back"],
+                  ["<kbd>X</kbd>", "not sure"], ["<kbd>U</kbd>", "undo"]])}
     </div>`;
   document.querySelectorAll(".opt").forEach(b => {
     b.onclick = () => select(+b.dataset.i);
     b.ondblclick = () => pick(+b.dataset.i);
   });
   document.querySelectorAll(".pickbtn").forEach(b => b.onclick = () => pick(+b.dataset.i));
-  document.querySelectorAll(".story li").forEach(li => li.onclick = () => jumpToLine(+li.dataset.n));
+  document.querySelectorAll(".story li[data-n]").forEach(li => li.onclick = () => jumpToLine(+li.dataset.n));
+  document.querySelectorAll(".reasons button").forEach(b => b.onclick = () => { setReason(reason === b.dataset.r ? "" : b.dataset.r); b.blur(); });
+  if (pre >= 0) select(pre, false);
+  foldNotes();
+  renderRecent();
   document.querySelectorAll(".edit").forEach(b => b.onclick = () => editOption(+b.dataset.i));
   $("#saveFit").onclick = () => saveTyped(false);
   $("#saveRaw").onclick = () => saveTyped(true);
@@ -388,45 +621,393 @@ async function render(n) {
   renderUnsure();
 }
 
-// The word strip: each word of the line at the start the aligner found for it (FLSubtitles/aligner); click =
-// play from that word; the word being heard is highlighted. Words it could not place are dotted, words piled at
-// the clip's end orange (the text may say more than the recording).
+// ---------------------------------------------------------------- the timeline (the owner, 29 Oct 2026: "a timeline
+// you can zoom in and out of ... cards of each aligned word ... whose length and position you can edit by dragging
+// them ... even during playback"; selection like Adobe Premiere's). Each word is a card from its start to its end (the
+// aligner's ends_ms cut a word where a measured pause begins, so pauses show as gaps; a row without them runs each word
+// to the next one). Drag a card to move it (with every selected card),
+// its edges to trim it; Ctrl/Shift+click and a drag on empty track select several; A selects it and everything
+// after (Track Select Forward); Ctrl+wheel zooms, the wheel scrolls, the ruler seeks; K sets the selected word's
+// start at the playhead and moves on (tap timing while it plays); Alt+←/→ nudges (Shift: 100 ms); snapping to the
+// playhead and the other cards (S). Ctrl+S saves the timings (data/word_overrides.tsv; they win over the aligner
+// while the text stays the same), Ctrl+Z undoes the last change before saving. Dashed cards = not placed yet (an
+// estimate), orange = waiting for the aligner (words an edit changed). A mix line's window is the shaded region.
 let wordsShown = true;
 try { wordsShown = localStorage.getItem("flsubs-review-words") !== "0"; } catch (e) { /* private mode */ }
+let tl = null;
+const TL_MIN_WORD = 0.03;
+function tlInit() {
+  const w = cur.words, a = $("#audio");
+  const end0 = (w.end_ms || 0) / 1000;
+  const words = w.words.map(x => ({ w: x.w, s: x.ms >= 0 ? x.ms / 1000 : -1, e: x.ms >= 0 && x.end >= 0 ? x.end / 1000 : -1,
+                                    placed: x.ms >= 0, realign: !!x.realign }));
+  const win = cur.mixline ? { s: +cur.mixline.start, e: +cur.mixline.end } : null;
+  // placed words without a length: the aligner puts the last word's end on its start where speech meets the clip's
+  // end, and stacks several words on one start where it lost track. Words on one start share the time up to the
+  // next start (0.25 s each when none follows); a word whose end is not after its start runs up to the next word,
+  // at most 0.3 s. Otherwise the timeline's save refused the line - and a split, which saves first (1 Nov 2026).
+  for (let i = 0; i < words.length; i++) {
+    if (!words[i].placed) continue;
+    let j = i + 1; while (j < words.length && words[j].placed && Math.abs(words[j].s - words[i].s) < 0.001) j++;
+    const nxt = words.slice(j).find(y => y.placed);
+    if (j - i > 1) {  // stacked
+      const s0 = words[i].s, s1 = nxt && nxt.s > s0 ? nxt.s : s0 + 0.25 * (j - i), step = (s1 - s0) / (j - i);
+      for (let k = i; k < j; k++) { words[k].s = s0 + step * (k - i); words[k].e = words[k].s + step; }
+      i = j - 1; continue;
+    }
+    if (!(words[i].e > words[i].s)) words[i].e = Math.min(words[i].s + 0.3, nxt && nxt.s > words[i].s ? nxt.s : words[i].s + 0.3);
+  }
+  // not placed: an even estimate inside the gap around it (dashed until moved)
+  for (let i = 0; i < words.length; i++) {
+    if (words[i].placed) continue;
+    let j = i; while (j < words.length && !words[j].placed) j++;
+    const g0 = i > 0 ? words[i - 1].e : (win ? win.s : 0);
+    const g1 = j < words.length ? words[j].s : Math.max(g0 + 0.3 * (j - i), win ? win.e : end0 || g0 + 0.3 * (j - i));
+    const step = (g1 - g0) / (j - i);
+    for (let k = i; k < j; k++) { words[k].s = g0 + step * (k - i); words[k].e = words[k].s + step; }
+    i = j - 1;
+  }
+  const dur = Math.max(a && isFinite(a.duration) ? a.duration : 0, cur.sec || 0, ...words.map(x => x.e + 0.5), win ? win.e + 0.5 : 0, 1);
+  const keep = tl && tl.n === cur.n ? { pps: tl.pps, scroll: tl.scroll } : null;
+  tl = { n: cur.n, words, win, dur, pps: keep ? keep.pps : 0, scroll: keep ? keep.scroll : null, sel: new Set(), anchor: -1,
+         dirty: false, undo: [], snap: tl ? tl.snap : true, drag: null, state: w.state };
+}
 function renderWords() {
   const box = $("#words"), w = cur && cur.words;
   if (!box || !w) return;
   box.style.display = wordsShown ? "" : "none";
-  const state = { current: "words:", stale: "words (timed for an earlier text, re-aligned at the next commit):",
-                  none: "no word timings for this clip", failed: "the aligner could not match these words:" }[w.state] || "";
-  const piledFrom = w.collapsed >= 2 ? w.words.length - w.collapsed : w.words.length;
-  box.innerHTML = `<span class="state">${esc(state)}</span>` + (w.state === "none" ? "" : w.words.map((x, i) => {
-    const cls = ["w", x.ms < 0 ? "unplaced" : "", i >= piledFrom ? "piled" : ""].join(" ");
-    const tip = x.ms < 0 ? "not placed by the aligner" : `${(x.ms / 1000).toFixed(2)} s — click to play from here`;
-    return `<span class="${cls}" data-i="${i}" data-ms="${x.ms}" title="${tip}">${esc(x.w)}</span>`;
-  }).join(""));
-  box.querySelectorAll(".w").forEach(s => s.onclick = () => seekWord(+s.dataset.i));
+  if (!tl || tl.n !== cur.n || !tl.dirty) tlInit();
+  const state = { current: "aligned", stale: "timed for an earlier text (re-aligned at the next commit)",
+                  none: "no word timings for this clip (estimates)", failed: "the aligner could not match these words (estimates)",
+                  aligning: "re-aligning in the background…", manual: "hand-placed timings" }[w.state] || w.state;
+  box.className = "words tl";
+  box.innerHTML = `<div class="tl-bar">
+      <span class="state">${esc(state)}</span>
+      <span id="tlTime" class="tltime" title="The playhead (click the track or the ruler to move it; , and . step)"></span>
+      <button data-tl="out" title="Zoom out (Ctrl+wheel)">−</button><button data-tl="in" title="Zoom in (Ctrl+wheel)">+</button>
+      <button data-tl="fit" title="Zoom to the line">Fit</button>
+      <label class="help" title="Snap to the playhead and the other cards (S)"><input type="checkbox" id="tlSnap" ${tl.snap ? "checked" : ""}> snap</label>
+      <button data-tl="after" title="Select this card and every card after it (A)">Select after</button>
+      <button data-tl="save" class="primary" title="Save these timings (Ctrl+S): they win over the aligner while the text stays the same">Save timings</button>
+      ${w.state === "manual" ? '<button data-tl="reset" title="Drop the hand-placed timings: back to the aligner\'s">Back to aligner</button>' : ""}
+      <span id="tlDirty" class="note"></span></div>
+    <div class="tl-scroll"><div class="tl-inner">
+      <div class="tl-ruler" title="Click or drag to move the playhead"></div><canvas class="tl-wave"></canvas>
+      <div class="tl-track">${tl.win ? '<div class="tl-win"><div class="h l"></div><div class="h r"></div></div>' : ""}
+        ${tl.words.map((x, i) => `<div class="wcard" data-i="${i}"><div class="h l"></div><span>${esc(x.w)}</span><div class="h r"></div></div>`).join("")}
+        <div class="tl-marq"></div></div>
+      <div class="tl-head"></div></div></div>`;
+  box.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => tlCommand(b.dataset.tl));
+  $("#tlSnap").onchange = (e) => { tl.snap = e.target.checked; e.target.blur(); };
+  const sc = box.querySelector(".tl-scroll");
+  if (!tl.pps) tlFit(sc); else { tlLayout(); sc.scrollLeft = tl.scroll ?? sc.scrollLeft; }
+  sc.onscroll = () => { tl.scroll = sc.scrollLeft; tlRuler(); tlWave(); };
+  tlLoadPeaks();
+  sc.onwheel = (e) => {
+    e.preventDefault();
+    if (e.ctrlKey) {
+      const r = sc.getBoundingClientRect(), mx = e.clientX - r.left, t = (sc.scrollLeft + mx) / tl.pps;
+      tlZoom(Math.exp(-e.deltaY * 0.0015), t, mx);
+    } else sc.scrollLeft += e.deltaX || e.deltaY;
+  };
+  box.querySelector(".tl-ruler").onpointerdown = tlRulerDown;
+  box.querySelector(".tl-track").onpointerdown = tlDown;
+  box.querySelector(".tl-track").ondblclick = (e) => { const c = e.target.closest(".wcard"); if (c) seekWord(+c.dataset.i); };
   const a = $("#audio");
-  if (a) a.ontimeupdate = () => markWord(a.currentTime * 1000);
+  if (a) a.ontimeupdate = () => (cur.mixline ? mixTime(a) : markWord(a.currentTime * 1000));
+  // a mix line stops at its window's end only while its window plays (R, ▶ Window, the line's start): any other
+  // seek (the track, the ruler, , / ., a word, the player's own bar) plays on freely
+  if (a) a.onseeking = () => { if (mixWin && Math.abs(a.currentTime - mixWin.start) > 0.01) mixWin = null; };
+  tlMarkDirty();
+  tlTick();
 }
-function placed() { return (cur && cur.words ? cur.words.words : []).map((x, i) => [i, x.ms]).filter(p => p[1] >= 0); }
+function tlX(t) { return t * tl.pps; }
+function tlFit(sc) {
+  sc = sc || $(".tl-scroll"); if (!sc) return;
+  const xs = tl.words.filter(x => x.e > x.s);
+  let t0 = tl.win ? tl.win.s : (xs.length ? xs[0].s : 0), t1 = tl.win ? tl.win.e : (xs.length ? xs[xs.length - 1].e : tl.dur);
+  if (t1 - t0 < 0.5) t1 = t0 + 0.5;
+  const pad = (t1 - t0) * 0.08 + 0.2;
+  tl.pps = Math.min(4000, Math.max(sc.clientWidth / tl.dur, (sc.clientWidth - 2) / (t1 - t0 + 2 * pad)));
+  tlLayout(); sc.scrollLeft = Math.max(0, tlX(t0 - pad)); tl.scroll = sc.scrollLeft;
+}
+function tlZoom(f, t, mx) {
+  const sc = $(".tl-scroll"); if (!sc) return;
+  if (t == null) { mx = sc.clientWidth / 2; t = (sc.scrollLeft + mx) / tl.pps; }
+  tl.pps = Math.min(4000, Math.max(sc.clientWidth / tl.dur, tl.pps * f));
+  tlLayout(); sc.scrollLeft = tlX(t) - mx; tl.scroll = sc.scrollLeft;
+}
+function tlLayout() {
+  const inner = $(".tl-inner"); if (!inner) return;
+  inner.style.width = tlX(tl.dur) + "px";
+  document.querySelectorAll(".wcard").forEach(c => {
+    const x = tl.words[+c.dataset.i];
+    c.style.left = tlX(x.s) + "px"; c.style.width = Math.max(4, tlX(x.e - x.s)) + "px";
+    c.classList.toggle("sel", tl.sel.has(+c.dataset.i));
+    c.classList.toggle("est", !x.placed);
+    c.classList.toggle("realign", x.realign);
+    c.title = `${x.w}: ${x.s.toFixed(2)}–${x.e.toFixed(2)} s${x.placed ? "" : " (estimate: not placed)"}${x.realign ? " (waiting for the aligner)" : ""}`;
+  });
+  const w = $(".tl-win");
+  if (w && tl.win) { w.style.left = tlX(tl.win.s) + "px"; w.style.width = tlX(tl.win.e - tl.win.s) + "px"; }
+  tlRuler(); tlHead(); tlWave();
+}
+window.addEventListener("resize", () => { if (tl && $(".tl-scroll")) tlLayout(); });
+// a failed request (the tool stopped, a refused edit) says so instead of failing silently; a clip that cannot play
+// (--no-audio, autoplay rules) is not an error worth a message
+window.addEventListener("unhandledrejection", (e) => {
+  const r = e.reason || {}, msg = String(r.message || r);
+  e.preventDefault();
+  if (["NotSupportedError", "NotAllowedError", "AbortError"].includes(r.name)) return;
+  buildState("request failed: " + msg + " (is the review tool still running?)");
+});
+function tlRuler() {
+  const ru = $(".tl-ruler"), sc = $(".tl-scroll"); if (!ru || !sc) return;
+  const steps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60];
+  const step = steps.find(s => s * tl.pps >= 70) || 60, minor = step / 5;
+  const t0 = Math.floor(sc.scrollLeft / tl.pps / step) * step, t1 = (sc.scrollLeft + sc.clientWidth) / tl.pps;
+  let h = "";
+  for (let k = 0, t = t0; t <= t1 + step; k++, t = t0 + k * minor)
+    h += k % 5 ? `<span class="tick minor" style="left:${tlX(t)}px"></span>`
+               : `<span class="tick" style="left:${tlX(t)}px">${(+t.toFixed(2))}s</span>`;
+  ru.innerHTML = h;
+}
+// The waveform behind the cards (GET /api/peaks: the clip's envelope, cached per clip here and on the server); only
+// the visible part is drawn, so any zoom costs the same.
+const peakCache = new Map();
+async function tlLoadPeaks() {
+  const clip = cur && (cur.mixline ? cur.clip : cur.n);
+  if (clip == null || !tl) return;
+  if (!peakCache.has(clip)) {
+    try {
+      const r = await fetch("/api/peaks?n=" + clip);
+      if (!r.ok) return;
+      const j = await r.json(), bin = atob(j.peaks), p = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) p[i] = bin.charCodeAt(i);
+      peakCache.set(clip, { rate: j.rate, p });
+      if (peakCache.size > 40) peakCache.delete(peakCache.keys().next().value);
+    } catch (e) { return; }
+  }
+  if (tl) { tl.peaks = peakCache.get(clip); tlWave(); }
+}
+function tlWave() {
+  const cv = $(".tl-wave"), sc = $(".tl-scroll");
+  if (!cv || !sc || !tl || !tl.peaks) return;
+  const w = sc.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+  cv.style.left = sc.scrollLeft + "px"; cv.style.width = w + "px";
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const g = cv.getContext("2d"), { rate, p } = tl.peaks, mid = h / 2;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--wave").trim() || "rgba(37,99,235,.35)";
+  for (let x = 0; x < w; x++) {
+    const i0 = Math.floor((sc.scrollLeft + x) / tl.pps * rate), i1 = Math.max(i0 + 1, Math.ceil((sc.scrollLeft + x + 1) / tl.pps * rate));
+    let m = 0; for (let i = i0; i < i1 && i < p.length; i++) if (p[i] > m) m = p[i];
+    const a = m / 255 * (mid - 2);
+    if (a > 0.3) g.fillRect(x, mid - a, 1, 2 * a);
+  }
+}
+function tlHead() {
+  const a = $("#audio"), hd = $(".tl-head"); if (!a || !hd) return;
+  hd.style.left = tlX(a.currentTime) + "px";
+}
+function tlTick() {  // the playhead follows playback (the view scrolls with it unless you are dragging)
+  const a = $("#audio"), sc = $(".tl-scroll");
+  if (!a || !sc || !tl) return;
+  tlHead();
+  const tt = $("#tlTime"); if (tt) tt.textContent = `${a.currentTime.toFixed(2)} s`;
+  if (!a.paused && !tl.drag) {
+    const x = tlX(a.currentTime);
+    if (x < sc.scrollLeft || x > sc.scrollLeft + sc.clientWidth * 0.85) { sc.scrollLeft = x - sc.clientWidth * 0.2; tl.scroll = sc.scrollLeft; }
+  }
+  cancelAnimationFrame(tl.raf); tl.raf = requestAnimationFrame(tlTick);
+}
+function tlMarkDirty() {
+  const d = $("#tlDirty"); if (d) d.textContent = tl.dirty ? "unsaved timing changes (Ctrl+S)" : "";
+}
+function tlChanged(snapshot) {
+  tl.undo.push(snapshot); if (tl.undo.length > 100) tl.undo.shift();
+  tl.dirty = true; tlLayout(); tlMarkDirty();
+}
+const tlCopy = () => tl.words.map(x => ({ ...x }));
+function tlSnap(t, skip) {  // nearest playhead / card edge within 7 px
+  if (!tl.snap) return t;
+  const a = $("#audio"), cands = a ? [a.currentTime] : [];
+  tl.words.forEach((x, i) => { if (!skip.has(i)) cands.push(x.s, x.e); });
+  let best = t, d = 7 / tl.pps;
+  for (const c of cands) if (Math.abs(c - t) < d) { d = Math.abs(c - t); best = c; }
+  return best;
+}
+function tlDown(e) {
+  if (e.button !== 0) return;
+  const card = e.target.closest(".wcard"), sc = $(".tl-scroll");
+  const track = e.currentTarget, rect = track.getBoundingClientRect();
+  // a mix line's window: its edge handles resize it; a click inside it is a click on the track
+  if (e.target.closest(".tl-win") && e.target.classList.contains("h")) return tlWinDown(e, e.target.classList.contains("l") ? "s" : "e");
+  if (!card) {  // a click on empty track moves the playhead there; a drag is a marquee: select the cards it touches
+    const x0 = e.clientX - rect.left, before = e.ctrlKey || e.metaKey ? new Set(tl.sel) : new Set();
+    const m = $(".tl-marq"); m.style.display = "block"; m.style.left = x0 + "px"; m.style.width = "0px";
+    tl.drag = { kind: "marq" };
+    let dragged = false;
+    track.setPointerCapture(e.pointerId);
+    track.onpointerup = (ev) => {
+      m.style.display = "none"; tl.drag = null; track.onpointermove = track.onpointerup = track.onpointercancel = null;
+      if (!dragged) { tl.sel = before; tlLayout(); seekTo(x0 / tl.pps); }  // a click also clears the selection (Ctrl keeps it)
+    };
+    track.onpointercancel = () => { m.style.display = "none"; tl.drag = null; track.onpointermove = track.onpointerup = track.onpointercancel = null; };
+    track.onpointermove = (ev) => {
+      if (!dragged && Math.abs(ev.clientX - rect.left - x0) < 3) return;
+      dragged = true;
+      const x1 = ev.clientX - rect.left, a = Math.min(x0, x1), b = Math.max(x0, x1);
+      m.style.left = a + "px"; m.style.width = (b - a) + "px";
+      tl.sel = new Set(before);
+      tl.words.forEach((x, i) => { if (tlX(x.e) >= a && tlX(x.s) <= b) tl.sel.add(i); });
+      tlLayout();
+    };
+    return;
+  }
+  const i = +card.dataset.i;
+  if (typeof splitMode !== "undefined" && splitMode && cur.mixline) { splitMode = false; buildState(""); return mixEdit("split", { at: i }); }
+  if (e.ctrlKey || e.metaKey) { tl.sel.has(i) ? tl.sel.delete(i) : tl.sel.add(i); tl.anchor = i; tlLayout(); if (!tl.sel.has(i)) return; }
+  else if (e.shiftKey && tl.anchor >= 0) { tl.sel = new Set(); for (let k = Math.min(tl.anchor, i); k <= Math.max(tl.anchor, i); k++) tl.sel.add(k); tlLayout(); }
+  else if (!tl.sel.has(i)) { tl.sel = new Set([i]); tl.anchor = i; tlLayout(); }
+  const zone = e.target.classList.contains("l") ? "start" : e.target.classList.contains("r") ? "end" : "move";
+  const snap = tlCopy(), orig = tlCopy(), x0 = e.clientX;
+  let moved = false;
+  tl.drag = { kind: zone };
+  card.setPointerCapture(e.pointerId);
+  card.onpointermove = (ev) => {
+    let dt = (ev.clientX - x0) / tl.pps;
+    if (!moved && Math.abs(ev.clientX - x0) < 3) return;
+    moved = true;
+    const W = tl.words;
+    if (zone === "move") {
+      const sel = [...tl.sel].sort((p, q) => p - q);
+      let lo = -Infinity, hi = Infinity;
+      for (const k of sel) {
+        const prevFree = k > 0 && !tl.sel.has(k - 1), nextFree = k < W.length - 1 && !tl.sel.has(k + 1);
+        if (k === 0) lo = Math.max(lo, -orig[k].s); else if (prevFree) lo = Math.max(lo, orig[k - 1].e - orig[k].s);
+        if (k === W.length - 1) hi = Math.min(hi, tl.dur - orig[k].e); else if (nextFree) hi = Math.min(hi, orig[k + 1].s - orig[k].e);
+      }
+      const lead = orig[sel[0]].s + dt, snapped = tlSnap(lead, tl.sel);
+      if (snapped !== lead) dt += snapped - lead;
+      else { const tail = orig[sel[sel.length - 1]].e + dt, st = tlSnap(tail, tl.sel); dt += st - tail; }
+      dt = Math.min(hi, Math.max(lo, dt));
+      for (const k of sel) { W[k].s = orig[k].s + dt; W[k].e = orig[k].e + dt; W[k].placed = true; W[k].realign = false; }
+    } else if (zone === "start") {
+      const lo = i > 0 ? W[i - 1].e : 0;
+      W[i].s = Math.min(W[i].e - TL_MIN_WORD, Math.max(lo, tlSnap(orig[i].s + dt, new Set([i]))));
+      W[i].placed = true; W[i].realign = false;
+    } else {
+      const hi = i < W.length - 1 ? W[i + 1].s : tl.dur;
+      W[i].e = Math.max(W[i].s + TL_MIN_WORD, Math.min(hi, tlSnap(orig[i].e + dt, new Set([i]))));
+      W[i].placed = true; W[i].realign = false;
+    }
+    tlLayout();
+  };
+  card.onpointerup = card.onpointercancel = (ev) => {  // a cancelled drag (focus lost, touch) still ends cleanly
+    card.onpointermove = card.onpointerup = card.onpointercancel = null; tl.drag = null;
+    if (moved) tlChanged(snap);
+    // a plain click (no drag, no modifier) on a card plays from its word (Rev, Auphonic, Descript) - while the clip
+    // is paused only, so clicking cards to select them for K while it plays stays as it was
+    else if (ev.type === "pointerup" && zone === "move" && !e.ctrlKey && !e.metaKey && !e.shiftKey && $("#audio") && $("#audio").paused) seekWord(i);
+  };
+}
+function tlWinDown(e, edge) {  // a mix line's window: drag its edges (the Start / End fields follow; saved with the line)
+  if (!edge) return;
+  const el = e.target, x0 = e.clientX, o = { ...tl.win };
+  const a = $("#audio"), clipEnd = (a && isFinite(a.duration) && a.duration) || cur.sec || tl.dur;  // not past the recording
+  el.setPointerCapture(e.pointerId);
+  el.onpointermove = (ev) => {
+    const t = Math.round(tlSnap(o[edge] + (ev.clientX - x0) / tl.pps, new Set()) * 20) / 20;
+    if (edge === "s") tl.win.s = Math.max(0, Math.min(tl.win.e - 0.1, t)); else tl.win.e = Math.min(clipEnd, Math.max(tl.win.s + 0.1, t));
+    $("#mixStart").value = tl.win.s.toFixed(2); $("#mixEnd").value = tl.win.e.toFixed(2);
+    tlLayout();
+  };
+  el.onpointerup = el.onpointercancel = () => {
+    el.onpointermove = el.onpointerup = el.onpointercancel = null; buildState("window changed: Save (Enter) keeps it"); };
+}
+function tlRulerDown(e) {  // seek; drag to scrub
+  const a = $("#audio"), ru = e.currentTarget; if (!a) return;
+  const seek = (ev) => { const r = ru.getBoundingClientRect(); a.currentTime = Math.max(0, (ev.clientX - r.left) / tl.pps); tlHead(); markWord(a.currentTime * 1000); };
+  seek(e); ru.setPointerCapture(e.pointerId);
+  ru.onpointermove = seek; ru.onpointerup = ru.onpointercancel = () => { ru.onpointermove = ru.onpointerup = ru.onpointercancel = null; };
+}
+function tlSelectAfter() {
+  const a = $("#audio");
+  let from = tl.sel.size ? Math.min(...tl.sel) : tl.words.findIndex(x => a && x.e > a.currentTime);
+  if (from < 0) from = 0;
+  tl.sel = new Set(tl.words.map((_, i) => i).filter(i => i >= from)); tl.anchor = from; tlLayout();
+}
+function tlNudge(dt) {
+  if (!tl.sel.size) return;
+  const snap = tlCopy(), W = tl.words, sel = [...tl.sel].sort((p, q) => p - q);
+  let lo = -Infinity, hi = Infinity;
+  for (const k of sel) {
+    if (k === 0) lo = Math.max(lo, -W[k].s); else if (!tl.sel.has(k - 1)) lo = Math.max(lo, W[k - 1].e - W[k].s);
+    if (k === W.length - 1) hi = Math.min(hi, tl.dur - W[k].e); else if (!tl.sel.has(k + 1)) hi = Math.min(hi, W[k + 1].s - W[k].e);
+  }
+  dt = Math.min(hi, Math.max(lo, dt));
+  if (!dt) return;
+  for (const k of sel) { W[k].s += dt; W[k].e += dt; W[k].placed = true; W[k].realign = false; }
+  tlChanged(snap);
+}
+function tlTap() {  // K: the selected word starts at the playhead; the selection moves to the next word
+  const a = $("#audio"); if (!a) return;
+  const W = tl.words, t = a.currentTime;
+  let i = tl.sel.size ? Math.min(...tl.sel) : W.findIndex(x => x.e > t);
+  if (i < 0) return;
+  const snap = tlCopy(), lo = i > 0 ? W[i - 1].s + TL_MIN_WORD : 0;
+  const s = Math.max(lo, t), len = Math.max(TL_MIN_WORD, W[i].e - W[i].s);
+  if (i > 0 && W[i - 1].e > s) W[i - 1].e = s;  // the word before ends where this one starts
+  W[i].s = s; W[i].e = Math.min(i < W.length - 1 ? Math.max(W[i + 1].s, s + TL_MIN_WORD) : tl.dur, s + len);
+  if (i < W.length - 1 && W[i + 1].s < W[i].e) W[i].e = Math.max(s + TL_MIN_WORD, W[i + 1].s);
+  W[i].placed = true; W[i].realign = false;
+  tl.sel = new Set(i + 1 < W.length ? [i + 1] : []); tl.anchor = i + 1;
+  tlChanged(snap);
+}
+function tlUndo() {
+  if (!tl || !tl.undo.length) return false;
+  tl.words = tl.undo.pop(); tl.dirty = tl.undo.length > 0 || tl.dirty; tlLayout(); tlMarkDirty(); return true;
+}
+async function tlSave() {
+  if (!tl) return;
+  const W = tl.words;
+  const r = await (await fetch("/api/words", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ n: cur.n, starts: W.map(x => x.placed ? Math.round(x.s * 1000) : -1),
+                           ends: W.map(x => x.placed ? Math.round(x.e * 1000) : -1) }) })).json();
+  if (r.error) { buildState(r.error); return false; }
+  cur.words = r.words; tl.dirty = false; tl.undo = []; buildState("timings saved (hand-placed)");
+  renderWords(); return true;
+}
+async function tlCommand(c) {
+  if (document.activeElement) document.activeElement.blur();  // Space replays, not "click the button again"
+  if (c === "in") tlZoom(1.6); else if (c === "out") tlZoom(1 / 1.6); else if (c === "fit") tlFit();
+  else if (c === "after") tlSelectAfter(); else if (c === "save") tlSave();
+  else if (c === "reset" && confirm("Drop the hand-placed timings of this line (back to the aligner's)?")) {
+    const r = await (await fetch("/api/words", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ n: cur.n, reset: true }) })).json();
+    if (r.error) return buildState(r.error);
+    cur.words = r.words; tl.dirty = false; tl.undo = []; renderWords(); buildState("back to the aligner's timings");
+  }
+}
+function placed() { return tl ? tl.words.map((x, i) => [i, x.placed ? x.s * 1000 : -1]).filter(p => p[1] >= 0) : []; }
 function markWord(ms) {
   let now = -1;
-  for (const [i, s] of placed()) if (s <= ms + 30) now = i;
-  document.querySelectorAll("#words .w").forEach(s => s.classList.toggle("now", +s.dataset.i === now));
+  if (tl) tl.words.forEach((x, i) => { if (x.s * 1000 <= ms + 30 && ms < x.e * 1000 + 30) now = i; });
+  document.querySelectorAll(".wcard").forEach(s => s.classList.toggle("now", +s.dataset.i === now));
+  tlHead();
   return now;
 }
 function seekWord(i) {
-  const a = $("#audio"), x = cur && cur.words.words[i];
-  if (!a || !x || x.ms < 0) return;
-  a.currentTime = x.ms / 1000; markWord(x.ms); a.play();
+  const a = $("#audio"), x = tl && tl.words[i];
+  if (!a || !x) return;
+  a.currentTime = x.s; markWord(x.s * 1000); a.play();
 }
 function stepWord(dir) {
-  const a = $("#audio"); if (!a) return;
-  const p = placed(), ms = a.currentTime * 1000, now = markWord(ms);
-  const k = p.findIndex(q => q[0] === now);
-  const next = dir > 0 ? p[k + 1] : (k > 0 ? p[k - 1] : p[0]);
-  if (next) seekWord(next[0]);
+  const a = $("#audio"); if (!a || !tl) return;
+  const now = markWord(a.currentTime * 1000);
+  const k = Math.max(0, Math.min(tl.words.length - 1, now < 0 ? (dir > 0 ? tl.words.findIndex(x => x.s > a.currentTime) : 0) : now + dir));
+  if (k >= 0) seekWord(k);
 }
 function toggleWords() {
   wordsShown = !wordsShown;
@@ -506,8 +1087,11 @@ function playSentence(k = 0) {
 }
 
 async function save(text, source, note) {
+  note = [note, reason && "reason: " + reason].filter(Boolean).join("; ");
   const r = await (await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ n: cur.n, text, source, note, batch: cur.batch.length > 1 ? batchTicked() : [] }) })).json();
+  if (r.error) { buildState(r.error); return; }
+  pushRecent({ n: cur.n, id: cur.id, who: cur.speaker, text, why: reason });
   reviewed = r.reviewed;
   unbuilt = r.unbuilt || unbuilt + 1; buildState();
   loadModes(false);
@@ -520,16 +1104,53 @@ async function save(text, source, note) {
   await showQueue();
 }
 
-function select(i) {
+function select(i, focus = true) {
   if (!cur || !cur.options[i]) return;
   selected = i;
   document.querySelectorAll(".opt").forEach(b => b.classList.toggle("sel", +b.dataset.i === i));
-  document.querySelector(`.opt[data-i="${i}"]`).focus();
+  if (focus) document.querySelector(`.opt[data-i="${i}"]`).focus();  // the pre-selection does not move the page
 }
 
 function pick(i) {
   const o = cur && cur.options[i];
   if (o) save(o.text, "user picked: " + o.label, "");
+}
+
+// the same words, whatever the case and punctuation (the reads' agreement)
+function wordsKey(t) { return t.toLowerCase().replace(/[^a-z0-9']+/g, " ").trim(); }
+
+// Why a line needed a change (optional; C cycles): written into the decision's note as "reason: ..." (Netflix logs
+// every fix with its reason; here it shows which kind of mistake the drafts make most).
+const REASONS = ["misheard", "spelling", "name", "punctuation", "other"];
+let reason = "";
+function setReason(r) {
+  reason = r;
+  document.querySelectorAll(".reasons button").forEach(b => b.classList.toggle("on", b.dataset.r === r));
+  buildState(r ? `reason: ${r}` : "");
+}
+function cycleReason() { setReason(REASONS[(REASONS.indexOf(reason) + 2) % (REASONS.length + 1) - 1] || ""); }  // ... -> none
+
+// The last decisions of this browser (newest first), each reopenable (click); undo takes the newest off.
+let recent = [];
+try { recent = JSON.parse(localStorage.getItem("flsubs-review-recent") || "[]"); } catch (e) { recent = []; }
+function pushRecent(x) {
+  recent = [x, ...recent.filter(r => r.n !== x.n)].slice(0, 10);
+  try { localStorage.setItem("flsubs-review-recent", JSON.stringify(recent)); } catch (e) { /* private mode */ }
+  renderRecent();
+}
+function dropRecent(n) {
+  if (recent.length && recent[0].n === n) {
+    recent.shift();
+    try { localStorage.setItem("flsubs-review-recent", JSON.stringify(recent)); } catch (e) { /* private mode */ }
+  }
+  renderRecent();
+}
+function renderRecent() {
+  const box = $("#recent"); if (!box) return;
+  box.innerHTML = recent.length ? `<h3>Your last decisions</h3><ol class="tight">${recent.map(r =>
+    `<li data-n="${r.n}" class="${cur && cur.n === r.n ? "cur" : ""}" title="${esc(r.id)}${r.why ? " · reason: " + esc(r.why) : ""} · click to open it">
+      <div class="txt"><span class="who">${esc(r.who)}</span>${esc(r.text)}${r.why ? ` <span class="why">· ${esc(r.why)}</span>` : ""}</div></li>`).join("")}</ol>` : "";
+  box.querySelectorAll("li").forEach(li => li.onclick = () => jumpToLine(+li.dataset.n));
 }
 
 function editOption(i) {
@@ -571,7 +1192,190 @@ function jumpToHeading(rowIndex) {
   pos = i; showQueue();
 }
 
-function replay() { const a = $("#audio"); if (a) { a.currentTime = 0; a.play(); } }
+// Moving freely along a line (the owner, 1 Nov 2026: "I can't freely move along the timeline"): Space plays / pauses
+// from the playhead (as in every player and editor), R replays from the start; a click on the track or the ruler
+// moves the playhead, , / . step it 0.25 s (Shift: 1 s). Playing or paused stays as it was.
+function seekTo(t) {
+  const a = $("#audio"); if (!a) return;
+  spanEnd = null;
+  a.currentTime = Math.max(0, Math.min(t, isFinite(a.duration) ? a.duration : t));
+  tlHead(); markWord(a.currentTime * 1000);
+}
+function stepPlayhead(dt) { const a = $("#audio"); if (a) seekTo(a.currentTime + dt); }
+function togglePlay() {
+  const a = $("#audio"); if (!a) return;
+  spanEnd = null;
+  if (!a.paused) return a.pause();
+  if (a.ended) return replay();
+  a.play();
+}
+
+function replay() {
+  spanEnd = null;
+  if (cur && cur.mixline) return playWindow();
+  const a = $("#audio"); if (a) { a.currentTime = 0; a.play(); }
+}
+
+// F / G: the first / last half second of the speech (Aegisub's "play the start / end of the selection"), for a
+// disputed word at an edge. The speech: the placed words (first start to last end), a mix line's window, else the clip.
+let spanEnd = null;
+function playEdge(which) {
+  const a = $("#audio"); if (!a || !cur) return;
+  const W = tl ? tl.words.filter(x => x.placed) : [];
+  let s, e;
+  if (cur.mixline) { s = +$("#mixStart").value; e = +$("#mixEnd").value; }
+  else if (W.length) { s = W[0].s; e = W[W.length - 1].e; }
+  else { s = 0; e = isFinite(a.duration) ? a.duration : cur.sec; }
+  const t0 = which === "first" ? s : Math.max(s, e - 0.5);
+  a.currentTime = t0; spanEnd = which === "first" ? Math.min(e, s + 0.5) : e;
+  a.play(); requestAnimationFrame(edgeTick);
+  buildState(which === "first" ? "the first half second" : "the last half second");
+}
+function edgeTick() {  // stops the half second on time (timeupdate comes only every ~250 ms)
+  const a = $("#audio");
+  if (!a || spanEnd == null || a.paused) { spanEnd = null; return; }
+  if (a.currentTime >= spanEnd) { a.pause(); spanEnd = null; return; }
+  requestAnimationFrame(edgeTick);
+}
+
+// ---------------------------------------------------------------- scene mix lines (data/mixes.tsv, mix_review.py)
+// A mix line is a window of the mix's clip: the page plays the mix from the window's start and stops at its end
+// (L loops the window). Saving marks the line reviewed and re-aligns it in the background; the word strip refreshes
+// when the aligner is done. Split: click "Split", then the word the second line starts with.
+let mixWin = null, splitMode = false, alignPoll = null;
+function mixVals() {
+  return { text: $("#typed").value.trim(), speaker: $("#mixSpeaker").value.trim(),
+           start: +$("#mixStart").value, end: +$("#mixEnd").value };
+}
+function playWindow() {
+  const a = $("#audio"); if (!a || !cur || !cur.mixline) return;
+  mixWin = { start: +$("#mixStart").value, end: +$("#mixEnd").value };
+  a.currentTime = mixWin.start; a.play();
+}
+function mixTime(a) {
+  markWord(a.currentTime * 1000);
+  if (mixWin && a.currentTime >= mixWin.end + 0.25) {
+    if (a.loop) { a.currentTime = mixWin.start; } else { a.pause(); }
+  }
+}
+function renderMix(c) {
+  const m = c.mixline;
+  splitMode = false;
+  const near = linesHtml(c.near.map(x => ({ ...x, t: `${x.start}–${x.end} s`, cls: x.reviewed ? "rev" : "" })), "timed mixnear");
+  const al = c.align || {};
+  $("#view").innerHTML = `<div class="card">
+      ${metaHtml(m.speaker, m.mix, [`line ${c.index} of ${c.count}`, `${esc(m.start)}–${esc(m.end)} s`,
+                 `<span id="alignState">${al.running ? "aligning…" : esc(al.last || "")}</span>`],
+          `<span class="badge kind">scene mix line</span>${m.reviewed ? `<span class="badge" title="reviewed">✓ ${esc(m.reviewed)}</span>` : ""}`)}
+      ${m.note ? `<div class="note">${esc(m.note)}</div>` : ""}
+      ${c.findings.length ? `<div class="note" title="From the aligner's word times">Alignment: ${esc(c.findings.join(" · "))}</div>` : ""}
+      ${c.clip == null ? '<div class="note">The mix clip is not in the index: no audio.</div>' :
+        `<audio id="audio" controls preload="auto" src="/audio/${c.clip}"></audio>`}
+      <div id="words" class="words tight"></div>
+      ${near}
+    </div>
+    <div class="card">
+      <div class="row">
+        <label class="help">Speaker <input id="mixSpeaker" list="mixSpeakers" value="${esc(m.speaker)}" size="22"></label>
+        <datalist id="mixSpeakers">${c.speakers.map(s => `<option value="${esc(s)}">`).join("")}</datalist>
+        <label class="help">Start <input id="mixStart" type="number" step="0.05" min="0" value="${esc(m.start)}" style="width:6.5em"></label>
+        <label class="help">End <input id="mixEnd" type="number" step="0.05" min="0" max="${c.sec ? c.sec.toFixed(2) : ""}" value="${esc(m.end)}" style="width:6.5em"></label>
+        <span class="help">s on the mix clock (${c.sec.toFixed(1)} s long)</span>
+        <button id="mixPlay" title="Play the window (R)">▶ Window <kbd>R</kbd></button>
+      </div>
+      <textarea id="typed" placeholder="The line as spoken (Enter saves and marks it reviewed)">${esc(m.text)}</textarea>
+      <div id="mixErr" class="note" hidden></div>
+      <div>
+        <div class="row">
+          <button class="primary" id="mixSave" title="Save text, speaker and window; marks the line reviewed and re-aligns it (Enter)">Save <kbd>Enter</kbd></button>
+          ${c.heard ? `<button id="mixHeard" title="Put the speech-to-text words into the text box: ${esc(c.heard)}">Use what was heard</button>` : ""}
+          ${c.script ? `<button id="mixScript" title="Put the shooting script's line into the text box">Use the script</button>` : ""}
+        </div>
+        <div class="row">
+          <button id="mixFit" title="Window = the aligned words (start at the first word, end 0.2 s after the last)">Fit window to words</button>
+          <button id="mixSplit" title="Then click the word the second line starts with">Split…</button>
+          <button id="mixInsert" title="An empty line after this one (for speech no line has)">Insert line after</button>
+          <button id="mixDelete" class="danger" title="Remove this line (speech that is not there)">Delete line</button>
+        </div>
+      </div>
+      ${c.heard ? `<div class="help">Heard (speech to text): ${esc(c.heard)}</div>` : ""}
+      <div class="help${c.heard ? " tight" : ""}">Words are re-aligned in the background after each save (about 20–40 s).</div>
+      ${keysHtml([["<kbd>Enter</kbd>", "save"], ["<kbd>R</kbd>", "play the window"], ["<kbd>Space</kbd>", "play / pause"],
+                  ["<kbd>,</kbd> <kbd>.</kbd>", "step"], ["<kbd>F</kbd> <kbd>G</kbd>", "first / last ½ s"], ["<kbd>L</kbd>", "loop"],
+                  ["<kbd>[</kbd> <kbd>]</kbd>", "word steps"], ["<kbd>E</kbd>", "edit the text"], ["<kbd>N</kbd> <kbd>P</kbd>", "next / back"]])}
+    </div>`;
+  foldNotes();
+  renderRecent();
+  document.querySelectorAll(".mixnear li").forEach(li => li.onclick = () => jumpToLine(+li.dataset.n));
+  $("#mixPlay").onclick = playWindow;
+  $("#mixSave").onclick = () => mixEdit("save", mixVals());
+  $("#mixFit").onclick = () => mixEdit("fit", {});
+  $("#mixInsert").onclick = () => mixEdit("insert", {});
+  $("#mixDelete").onclick = () => { if (confirm("Delete this line?")) mixEdit("delete", {}); };
+  $("#mixSplit").onclick = () => { splitMode = !splitMode; buildState(splitMode ? "split: click the word the second line starts with" : ""); };
+  if ($("#mixHeard")) $("#mixHeard").onclick = () => { $("#typed").value = sentenceOf(c.heard); $("#typed").focus(); };
+  if ($("#mixScript")) $("#mixScript").onclick = () => { $("#typed").value = c.script; $("#typed").focus(); };
+  renderMixWords();
+  const a = $("#audio");
+  if (a) {
+    a.ontimeupdate = () => mixTime(a);
+    a.onloadedmetadata = () => playWindow();
+  }
+  if (al.running || al.pending) watchAlign();
+}
+function renderMixWords() {  // the timeline (in split mode a click on a card splits before that word: tlDown)
+  renderWords();
+}
+function sentenceOf(t) { t = t.trim(); return t ? t[0].toUpperCase() + t.slice(1) + (/[.?!]$/.test(t) ? "" : ".") : t; }
+async function mixEdit(action, vals) {
+  if (!cur || !cur.mixline) return;
+  if (tl && tl.dirty && action !== "delete" && !(await tlSave())) {  // unsaved timings first (they follow the text)
+    const err = $("#mixErr");
+    if (err) { err.textContent = `Not done: your timeline changes could not be saved first (${$("#buildState").textContent})`; err.hidden = false; }
+    return;
+  }
+  const r = await (await fetch("/api/mix", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ n: cur.n, action, ...vals }) })).json();
+  const err = $("#mixErr");
+  if (r.error) {  // said where the eye is, not only in the header (a refused save looked like nothing happening)
+    buildState(r.error);
+    if (err) { err.textContent = `Not saved: ${r.error}`; err.hidden = false; }
+    return;
+  }
+  if (err) err.hidden = true;
+  buildState({ save: "saved: marked reviewed, re-aligning", fit: "window fitted to the words", split: "split in two",
+               insert: "empty line added", delete: "line deleted" }[action]);
+  loadModes(false);
+  if (r.structure) {  // line numbers moved: the shown line (a split: the new second line) takes its place in the list
+    await loadQueue(true);
+    const i = queue.indexOf(r.n); if (i >= 0) pos = i;
+    return render(r.n);   // its window plays from its start: a split line's first word
+  }
+  if (action === "save") {
+    pushRecent({ n: cur.n, id: cur.mixline.mix, who: vals.speaker, text: vals.text, why: "" });
+    const wasInQueue = inQueue();
+    back.push(cur.n); remember();
+    if (wasInQueue && !$("#done").checked) queue.splice(pos, 1), storyIndex.splice(pos, 1);
+    else if (wasInQueue) pos += 1;
+    watchAlign();
+    return showQueue();
+  }
+  return render(r.n);
+}
+function watchAlign() {  // refresh the shown mix line's words when the background alignment ends
+  clearInterval(alignPoll);
+  alignPoll = setInterval(async () => {
+    const s = await (await fetch("/api/align")).json();
+    const el = $("#alignState"); if (el) el.textContent = s.running ? "aligning…" : s.last;
+    if (!s.running && !s.pending) {
+      clearInterval(alignPoll);
+      if (cur && cur.mixline) { const keep = $("#typed") && $("#typed").value; const n = cur.n;
+        const fresh = await (await fetch("/api/item?n=" + n)).json();
+        if (cur && cur.n === n) { cur.words = fresh.words; cur.findings = fresh.findings; renderMixWords();
+          if (keep != null && $("#typed")) $("#typed").value = keep; } }
+    }
+  }, 2000);
+}
 
 function goBack() {
   if (back.length) { if (cur) fwd.push(cur.n); const n = back.pop(); remember(); return render(n); }
@@ -590,19 +1394,46 @@ function goForward() {
 document.addEventListener("keydown", (e) => {
   const inText = e.target.id === "typed";
   if (inText) {
-    if (e.key === "Enter" && !e.ctrlKey) { e.preventDefault(); saveTyped(e.shiftKey); }
+    if (e.key === "Enter" && !e.ctrlKey && cur && cur.mixline) { e.preventDefault(); mixEdit("save", mixVals()); }
+    else if (e.key === "Enter" && !e.ctrlKey) { e.preventDefault(); saveTyped(e.shiftKey); }
     else if (e.key === "Escape") { e.target.blur(); }
     else if (pendingFit) { pendingFit = null; $("#fit").style.display = "none"; }
     return;
   }
   if (["INPUT", "SELECT"].includes(e.target.tagName)) return;
+  // ? : every shortcut; while it is open only Esc / ? (close) count
+  if (e.key === "?") { e.preventDefault(); toggleKeys(); return; }
+  if ($("#keysOverlay").classList.contains("on")) { if (e.key === "Escape") { e.preventDefault(); toggleKeys(false); } return; }
+  // the timeline (see "the timeline" above): Premiere-like keys
+  if (tl && cur && !cur.movie) {
+    const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+    if (mod && k === "s") { e.preventDefault(); tlSave(); return; }
+    if (mod && k === "z" && tl.undo.length) { e.preventDefault(); tlUndo(); return; }
+    if (mod && k === "a") { e.preventDefault(); tl.sel = new Set(tl.words.map((_, i) => i)); tlLayout(); return; }
+    if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+      e.preventDefault(); tlNudge((e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 0.1 : 0.01)); return; }
+    if (!mod && k === "k") { e.preventDefault(); tlTap(); return; }
+    if (e.key === "Escape" && tl.sel.size) { tl.sel = new Set(); tlLayout(); return; }
+    if (!mod && k === "a" && !(cur.batch && cur.batch.length > 1)) { e.preventDefault(); tlSelectAfter(); return; }
+    if (!mod && k === "s" && !(cur.sentence && cur.sentence.length)) {
+      e.preventDefault(); tl.snap = !tl.snap; const c = $("#tlSnap"); if (c) c.checked = tl.snap;
+      buildState(tl.snap ? "snap on" : "snap off"); return; }
+  }
   // a movie line (story order) has no reads or clip: only moving on and the stats work there
   if (cur && cur.movie && !["n", "N", "p", "P", "ArrowRight", "ArrowLeft", "t", "T"].includes(e.key)) return;
+  // a scene mix line: moving on, playing its window, word steps, editing the text, stats
+  if (cur && cur.mixline) {
+    if (e.key === "e" || e.key === "E") { e.preventDefault(); const t = $("#typed"); t.focus(); t.setSelectionRange(t.value.length, t.value.length); return; }
+    if (!["n", "N", "p", "P", "ArrowRight", "ArrowLeft", "t", "T", " ", "r", "R", "l", "L", "d", "D", "[", "]", "w", "W", "f", "F", "g", "G"].includes(e.key)
+        && !["Comma", "Period"].includes(e.code)) return;
+  }
   const digit = /^Digit([1-9])$/.exec(e.code) || /^Numpad([1-9])$/.exec(e.code);
   if (digit && e.shiftKey) { e.preventDefault(); editOption(+digit[1] - 1); }
   else if (digit) { select(+digit[1] - 1); }
   else if (e.key === "Enter") { e.preventDefault(); if (selected >= 0) pick(selected); }
-  else if (e.key === " " || e.key === "r" || e.key === "R") { e.preventDefault(); replay(); }
+  else if (e.key === " ") { e.preventDefault(); togglePlay(); }
+  else if (e.key === "r" || e.key === "R") { e.preventDefault(); replay(); }
+  else if (e.code === "Comma" || e.code === "Period") { e.preventDefault(); stepPlayhead((e.code === "Comma" ? -1 : 1) * (e.shiftKey ? 1 : 0.25)); }
   else if (e.key === "n" || e.key === "N" || e.key === "ArrowRight") { goForward(); }
   else if (e.key === "p" || e.key === "P" || e.key === "ArrowLeft") { goBack(); }
   else if (e.key === "e" || e.key === "E") { e.preventDefault(); editOption(0); }
@@ -615,9 +1446,20 @@ document.addEventListener("keydown", (e) => {
   else if (e.key === "[") { e.preventDefault(); stepWord(-1); }
   else if (e.key === "]") { e.preventDefault(); stepWord(1); }
   else if (e.key === "w" || e.key === "W") { e.preventDefault(); toggleWords(); }
+  else if (e.key === "f" || e.key === "F") { e.preventDefault(); playEdge("first"); }
+  else if (e.key === "g" || e.key === "G") { e.preventDefault(); playEdge("last"); }
+  else if (e.key === "c" || e.key === "C") { e.preventDefault(); if (cur && cur.options) cycleReason(); }
   else if (e.key === "x" || e.key === "X") { e.preventDefault(); toggleUnsure(e.shiftKey); }
   else if (e.key === "t" || e.key === "T") { e.preventDefault(); toggleStats(); }
 });
+function toggleKeys(on) {
+  const o = $("#keysOverlay"), show = on ?? !o.classList.contains("on");
+  o.classList.toggle("on", show);
+  if (show) $("#keysClose").focus(); else if (document.activeElement) document.activeElement.blur();
+}
+$("#keysBtn").onclick = () => toggleKeys(true);
+$("#keysClose").onclick = () => toggleKeys(false);
+$("#keysOverlay").onclick = (e) => { if (e.target.id === "keysOverlay") toggleKeys(false); };  // click outside
 $("#statsBtn").onclick = toggleStats;
 $("#mode").onchange = () => { sampleButton(); loadQueue(false); };
 $("#rebuildBtn").onclick = rebuild;
@@ -625,6 +1467,34 @@ $("#done").onchange = () => loadQueue(true);
 $("#unrev").onchange = () => loadQueue(true);
 $("#storyJump").onchange = (e) => { if (e.target.value !== "") jumpToHeading(+e.target.value); e.target.value = ""; e.target.blur(); };
 let timer; $("#search").oninput = () => { clearTimeout(timer); timer = setTimeout(() => loadQueue(false), 250); };
+
+// Start and stop like a web page (the owner, 31 Oct 2026): the page says it is open every 20 s and bye when it
+// closes; started from review.cmd (--app) the tool stops itself a little after its last page closed. Stop ends it now.
+const TAB = Math.random().toString(36).slice(2);
+function stopped(why) {
+  clearInterval(aliveTimer); clearInterval(alignPoll);
+  const a = $("#audio"); if (a) a.pause();
+  document.querySelectorAll("header button, header select, header input").forEach(x => x.disabled = true);
+  $("#statsCard").style.display = "none";
+  $("#view").innerHTML = `<div class="card empty"><b>The review tool has stopped</b>${why ? ` (${esc(why)})` : ""}.<br>
+    Every save is on disk. Double-click <code>review.cmd</code> to start it again.</div>`;
+}
+async function alive() {
+  try { await fetch("/api/alive?tab=" + TAB); }
+  catch (e) { stopped("it no longer answers"); }
+}
+const aliveTimer = setInterval(alive, 20000);
+alive();
+addEventListener("pagehide", () => navigator.sendBeacon("/api/bye?tab=" + TAB));
+addEventListener("pageshow", (e) => { if (e.persisted) alive(); });  // back from the browser's page cache
+$("#stopBtn").onclick = async () => {
+  const typed = $("#typed") && $("#typed").value.trim() && !(cur && cur.mixline);
+  if ((tl && tl.dirty) || typed) { if (!confirm("Unsaved changes on this line will be lost. Stop the review tool?")) return; }
+  try { await fetch("/api/quit", { method: "POST", body: "{}" }); } catch (e) { /* it went already */ }
+  stopped("");
+};
+
+renderRecent();
 loadModes(true).then(() => loadQueue(false));
 </script>
 </body>

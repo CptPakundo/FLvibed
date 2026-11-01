@@ -259,6 +259,30 @@ Environment: `FLSubtitles/asr/` is a uv project (Python 3.13, torch 2.14.1+cu130
 - Speed: 76× realtime on short clips at batch 64 (RTX 5090, after a ~10 s one-time CUDA warm-up), so
   the whole ~13.5 h corpus takes roughly 10–15 min.
 
+**Challenger checked 29 Oct 2026: NVIDIA Nemotron-3.5-Transcribe-30B-A4B; not adopted.** On paper it is better
+(Open ASR English 4.71 % vs Qwen3-ASR-1.7B 4.94 %); it adds word timestamps of its own transcript (CTC head) and
+speaker tags, but has no forced alignment of a given text, so it cannot replace the aligner. NVIDIA's own FP8 /
+NVFP4 repositories were not public on that day; the 5090 ran AtomicChat's GGUF builds on NVIDIA's NeMo-Speech.cpp
+(native Windows CUDA build, `scripts\windows\build.ps1 -Backend cuda -Profile server -CudaArch 120`; the default
+profile lacks the speech-LLM path). Runtime, models and build logs: `<root>\research\tools\nemo-speech\`
+(git-ignored). Input must be PCM WAV: decode the MP3-in-WAV with ffmpeg first. Measured on the 1,269 clips with a
+user correction (`data/corrections.tsv`), WER of the raw output against the corrected text:
+
+| Run | WER | Exact lines |
+|---|---|---|
+| Qwen3-ASR-1.7B + glossary (`out/asr.tsv`) | **8.16 %** | 723 |
+| Nemotron AD-NVFP4, no glossary | 11.19 % | 635 |
+| Nemotron AD-NVFP4, glossary as "Vocabulary hints" instruction | 9.84 % | 707 |
+| Nemotron AD-IQ4_NL_L (22.6 GB), same instruction | 9.77 % | 706 |
+
+- Qwen also wins on the subsets not drawn from its own output (corrections that picked the script / FLSubs:
+  8.95 vs 9.46 %; typed by the user: 11.12 vs 12.12 %), so the result is not a bias of the test set.
+- Nemotron's failures: hallucinated or empty output on short radio-filtered barks (one came back in Italian),
+  "Rhineland", "A L G" for ALG; its wins: some long story lines (names, "safehouse"). The quantization is not the
+  cause (IQ4_NL_L = NVFP4 within noise). Speed: 1,269 clips in 25 s with NVFP4 (`-c 32`, 27 GB VRAM).
+- Useful anyway: its diarized run of the HD intro (`fl_intro`) heard the launch radio exchange at 49-71 s that
+  `data/movies.tsv` gives only `fl_intro_full` (six lines missing from `fl_intro`, two shortened there).
+
 ## 7. Composite chatter: design notes (user reminder, session 1)
 The game builds most space and base speech from short fragments: a ship's codename (formation
 designation + numbers), its faction, source and destination base/system, commodity and so on. One comm =

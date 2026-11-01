@@ -2,6 +2,8 @@
 
 #include "data.h"
 #include "flexe.h"
+#include "game/ini.h"
+#include "game/space.h"
 #include "log.h"
 #include "text.h"
 
@@ -43,18 +45,39 @@ Sender Lookup(u32 obj)
             getAttitude);
     }
     Sender s;
-    if (!obj || !getRep || !getAffiliation || !getShortName)
+    if (!obj)
         return s;
     int rep = 0;
-    if (getRep(obj, rep) != 0 || !rep)
+    if (getRep && getAffiliation && getShortName && getRep(obj, rep) == 0 && rep)
+    {
+        u32 group = 0, ids = 0;
+        if (getAffiliation(rep, group) == 0 && group && getShortName(group, ids) == 0)
+            s.faction = IdsText(ids);
+        const u32 player = Mem<u32>(exe::PlayerShipId);
+        int playerRep = 0;
+        if (getAttitude && player && getRep(player, playerRep) == 0 && playerRep)
+            getAttitude(rep, playerRep, s.attitude);
+        s.known = true;
         return s;
-    u32 group = 0, ids = 0;
-    if (getAffiliation(rep, group) == 0 && group && getShortName(group, ids) == 0)
-        s.faction = IdsText(ids);
-    const u32 player = Mem<u32>(exe::PlayerShipId);
-    int playerRep = 0;
-    if (getAttitude && player && getRep(player, playerRep) == 0 && playerRep)
-        getAttitude(rep, playerRep, s.attitude);
+    }
+    // multiplayer: server.dll holds no world (RemoteClient loads it empty) - the client's reputation data, as the HUD
+    // shows it (Common.dll Reputation::Vibe::GetAffiliation, Reputation::get_short_name; CEqObj::attitude_towards)
+    rep = space::RepId(obj);
+    if (!rep)
+        return s;
+    using VibeAffFn = int(__cdecl*)(const int&, u32&, bool);
+    using ShortFn = u32(__cdecl*)(u32);
+    static const HMODULE common = GetModuleHandleA("common.dll");
+    static const auto vibeAff = reinterpret_cast<VibeAffFn>(
+        common ? GetProcAddress(common, "?GetAffiliation@Vibe@Reputation@@YAHABHAAI_N@Z") : nullptr);
+    static const auto shortName =
+        reinterpret_cast<ShortFn>(common ? GetProcAddress(common, "?get_short_name@Reputation@@YAII@Z") : nullptr);
+    u32 group = 0;
+    if (vibeAff && shortName && vibeAff(rep, group, false) == 0 && group)
+        s.faction = IdsText(shortName(group));
+    float att = 0;
+    if (space::AttitudeToPlayer(obj, att))
+        s.attitude = att;
     s.known = true;
     return s;
 }
@@ -84,60 +107,39 @@ static void LoadBarNpcs(const std::string& dataDir)
     if (g_barLoaded)
         return;
     g_barLoaded = true;
-    std::ifstream f(dataDir + "MISSIONS\\mbases.ini");
-    if (!f)
+    const std::vector<ini::Section> sections = ini::Read(dataDir + "MISSIONS\\mbases.ini"); // text or BINI (SWEEP #5)
+    if (sections.empty())
     {
         Log("names: no mbases.ini under %s", dataDir.c_str());
         return;
     }
-    auto trim = [](std::string s)
+    u32 base = 0; // the [MBase] the following [GF_NPC] sections belong to
+    size_t count = 0;
+    for (const ini::Section& s : sections)
     {
-        const size_t a = s.find_first_not_of(" \t\r"), b = s.find_last_not_of(" \t\r");
-        return a == std::string::npos ? std::string() : s.substr(a, b - a + 1);
-    };
-    u32 base = 0;
-    bool npc = false, inMBase = false;
-    BarNpc cur;
-    u32 voice = 0;
-    auto flush = [&]()
-    {
+        const bool inMBase = s.type == "mbase", npc = s.type == "gf_npc";
+        BarNpc cur;
+        u32 voice = 0;
+        for (const auto& kv : s.kv)
+        {
+            const std::string& k = kv.first;
+            const std::string& v = kv.second;
+            if (inMBase && k == "nickname")
+                base = data::CreateID(v.c_str());
+            else if (npc && k == "individual_name")
+                cur.nameIds = static_cast<u32>(strtoul(v.c_str(), nullptr, 10)), ++count;
+            else if (npc && k == "affiliation")
+                cur.affiliation = v;
+            else if (npc && k == "voice")
+                voice = data::CreateID(v.c_str());
+        }
         if (npc && base && voice && cur.nameIds)
         {
             cur.voice = voice;
             g_barNpcs[(static_cast<unsigned long long>(base) << 32) | voice].push_back(cur);
             g_barByName[(static_cast<unsigned long long>(base) << 32) | cur.nameIds] = cur;
         }
-        cur = BarNpc(), voice = 0, npc = false;
-    };
-    std::string line;
-    size_t count = 0;
-    while (std::getline(f, line))
-    {
-        line = trim(line.substr(0, line.find(';')));
-        if (line.empty())
-            continue;
-        if (line[0] == '[')
-        {
-            flush();
-            const std::string sec = line;
-            inMBase = _stricmp(sec.c_str(), "[MBase]") == 0;
-            npc = _stricmp(sec.c_str(), "[GF_NPC]") == 0;
-            continue;
-        }
-        const size_t eq = line.find('=');
-        if (eq == std::string::npos)
-            continue;
-        const std::string k = trim(line.substr(0, eq)), v = trim(line.substr(eq + 1));
-        if (inMBase && _stricmp(k.c_str(), "nickname") == 0)
-            base = data::CreateID(v.c_str());
-        else if (npc && _stricmp(k.c_str(), "individual_name") == 0)
-            cur.nameIds = static_cast<u32>(strtoul(v.c_str(), nullptr, 10)), ++count;
-        else if (npc && _stricmp(k.c_str(), "affiliation") == 0)
-            cur.affiliation = v;
-        else if (npc && _stricmp(k.c_str(), "voice") == 0)
-            voice = data::CreateID(v.c_str());
     }
-    flush();
     Log("names: %zu bar characters from mbases.ini", count);
 }
 

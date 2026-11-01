@@ -3,6 +3,7 @@
 #include "host.h"
 
 #include "game/ai.h"
+#include "game/gameclock.h"
 #include "game/hitlook.h"
 #include "game/render.h"
 #include "game/space.h"
@@ -106,12 +107,8 @@ static u32 RoundSource()
     double when = 0;
     if (!space::LastRoundHit(munition, owner, dir, when))
         return 0;
-    static LARGE_INTEGER freq = {};
-    if (!freq.QuadPart)
-        QueryPerformanceFrequency(&freq);
-    LARGE_INTEGER qpc;
-    QueryPerformanceCounter(&qpc);
-    if (static_cast<double>(qpc.QuadPart) / static_cast<double>(freq.QuadPart) - when > 0.3)
+    // (`when` is game time since 30 Oct 2026, TrackRounds' clock: compared on the same clock)
+    if (gameclock::NowSec() - when > 0.3)
         return 0;
     float pos[3], rot[9];
     if (space::ObjectPose(space::PlayerShipId(), pos, rot))

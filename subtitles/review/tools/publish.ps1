@@ -13,14 +13,15 @@ param([switch]$Check, [switch]$NoStage, [switch]$Quiet)
 $ErrorActionPreference = 'Stop'
 
 $repo = (git -C $PSScriptRoot rev-parse --show-toplevel).Trim()
-$names = 'subtitles.tsv', 'movies.tsv', 'word_times.tsv'
+$names = 'subtitles.tsv', 'movies.tsv', 'mixes.tsv', 'word_times.tsv'
 $pending = @(); $written = @()
 foreach ($n in $names) {
     $src = "subtitles/review/FLSubtitles/data/$n"
     $dst = "subtitles/data/$n"
     $blob = (git -C $repo rev-parse ":$src").Trim()
-    $staged = (git -C $repo rev-parse ":$dst" 2>$null)
-    $head = (git -C $repo rev-parse "HEAD:$dst" 2>$null)
+    # --verify -q: a copy not published yet reads empty (plain rev-parse echoes an unknown name back on stdout)
+    $staged = (git -C $repo rev-parse --verify -q ":$dst" 2>$null)
+    $head = (git -C $repo rev-parse --verify -q "HEAD:$dst" 2>$null)
     $file = Join-Path $repo $dst
     $work = if (Test-Path $file) { (git -C $repo hash-object -- $dst).Trim() } else { '' }
     if ($staged -and $staged.Trim() -eq $blob -and $work -eq $blob) { continue }

@@ -16,6 +16,7 @@
 
 #include "game/promptfit.h"
 #include "game/textfit.h"
+#include "../controller/src/impl/hud2_layout.h"
 
 #include <windows.h>
 
@@ -366,6 +367,110 @@ CtxResult RunCtx(const CtxSet& s, float W, float H, int scale, Variant v)
     r.under = std::max(hold, floor) < floor - 0.01f || floor < textfit::kMinPx;
     return r;
 }
+
+// Standard's cruise prompt in the left lane (the owner, 31 Oct 2026, "Yes, move it"; UI_HUD2.md 5.21): the context lines
+// hud2.cpp builds for Standard with the cruise prompt (CtxSide: Cruise / Context / GO TO left, TARGETS / TARGET AHEAD
+// right), measured with the game's font as hud2_parts.cpp ContextWidths measures them (pad glyphs; the K&M rows with
+// the K&M frame's lanes and a bumper-wide keycap), placed by the layout core over Standard's real panels. Each prompt
+// placed at 16:9 / 21:9 / 16:10 (Standard has no pill cap: <= 3, 2 rows a lane), the cruise prompt in the left lane,
+// nothing in the bottom-centre band, no fallback line; at 4:3 / 5:4 the cruise prompt still placed (measured 31 Oct 2026:
+// at 4:3 K&M the right lane is closed and TARGETS, the last, gives way). CANCEL CRUISE's whole width against the lane is
+// printed with -v (measured: 0.204 H pad / 0.214 K&M against the 16:9 lane's 0.186 H - squeezed, its label scrolls).
+void StandardCruiseLane()
+{
+    namespace hp = uimeta::hud2p;
+    const hp::Preset& S = hp::kPresets[0];
+    struct Item
+    {
+        G g;
+        const wchar_t* label;
+        int side;
+        const wchar_t* key = nullptr; // the keyboard form's keycap (hud2kit::Keycap, promptfit::KeycapWidth), else the glyph
+    };
+    struct Line
+    {
+        const char* name;
+        bool kbm;
+        int cruise; // the cruise prompt's index
+        std::vector<Item> items;
+    };
+    const std::vector<Line> lines = {
+        {"calm, no target: CRUISE | TARGET AHEAD", false, 0, {{Face, L"CRUISE", 0}, {Face, L"TARGET AHEAD", 1}}},
+        {"travel: DOCK, CRUISE", false, 1, {{Face, L"DOCK", 0}, {Face, L"CRUISE", 0}}},
+        {"charging: CANCEL CRUISE, DOCK", false, 0, {{Face, L"CANCEL CRUISE", 0}, {Face, L"DOCK", 0}}},
+        {"calm: CRUISE, GO TO", false, 0, {{Face, L"CRUISE", 0}, {Face, L"GO TO", 0}}},
+        // K&M: the real keycaps of the in-game frame (std_cruise-213223.png: SHIFT+W cruise, F3 dock - the game's default
+        // keymap); before 5.22's fix this test modelled them as a 1.3 h bumper glyph (0.047 H) while SHIFT+W's cap is
+        // ~0.10 H, so it passed while the game scrolled ":ANCEL CRU..."
+        {"K&M calm: CRUISE, GO TO | TARGETS", true, 0,
+         {{Bumper, L"CRUISE", 0, L"SHIFT+W"}, {Bumper, L"GO TO", 0}, {Bumper, L"TARGETS", 1}}},
+        {"K&M travel: DOCK, CRUISE | TARGETS", true, 1,
+         {{Bumper, L"DOCK", 0, L"F3"}, {Bumper, L"CRUISE", 0, L"SHIFT+W"}, {Bumper, L"TARGETS", 1}}},
+        {"K&M charging: CANCEL CRUISE, DOCK", true, 0,
+         {{Bumper, L"CANCEL CRUISE", 0, L"SHIFT+W"}, {Bumper, L"DOCK", 0, L"F3"}}}};
+    for (const Display& d : kDisplays)
+        for (const Line& ln : lines)
+        {
+            hud2layout::Frame f;
+            f.W = static_cast<float>(d.w), f.H = static_cast<float>(d.h), f.kbm = ln.kbm;
+            f.target = true, f.listRows = ln.kbm ? 4 : 2;
+            const float H = f.H, k = hud2layout::Scale(f), g = 0.036f * H * k, floor = textfit::MinSize(H);
+            const int n = static_cast<int>(ln.items.size());
+            f.m.ctxMeasured = true, f.m.nCtx = n;
+            for (int i = 0; i < n; ++i)
+            {
+                const wchar_t* key = ln.items[i].key;
+                const size_t kl = key ? wcslen(key) : 0;
+                // (the context pill's keycap is the tight one since 5.22: hud2_parts.cpp DrawContext / ContextWidths)
+                const float ts = promptfit::KeycapTightNameSize(g, floor);
+                const float gw = key ? promptfit::KeycapTightWidth(TextW(key, ts, floor, 0.04f), ts) : GlyphW(ln.items[i].g, g);
+                if (key && wcscmp(key, L"SHIFT+W") == 0)
+                {
+                    // the regular cap the game drew in std_cruise-213223.png (4K: ~218 px = 0.101 H) - the measure is
+                    // the kit's own (promptfit::KeycapWidth); the tight cap is narrower by its smaller margins
+                    const float reg = promptfit::KeycapWidth(TextW(key, promptfit::KeycapNameSize(kl, g, H), floor, 0.04f), kl, g, H);
+                    if (d.w == 3840 && d.h == 2160)
+                        CHECK_NEAR(reg / H, 0.101, 0.006);
+                    CHECK(gw < reg - 0.01f * H * k);
+                }
+                const float lw = TextW(ln.items[i].label, 0.026f * H * k, floor, 0.06f);
+                f.m.glyph[i] = gw, f.m.label[i] = lw, f.m.base[i] = promptfit::ContextPromptWidth(gw, g, lw);
+                f.m.side[i] = ln.items[i].side, f.m.hold[i] = false;
+            }
+            f.m.dims.word = TextW(L"HOLD", 0.024f * H * k, floor, 0.06f), f.m.dims.gapBefore = promptfit::GapBefore(g),
+            f.m.dims.ringChord = promptfit::RingChord(g);
+            f.m.ctxGap = 0.03f * H * k, f.m.ctxWord = std::max(0.024f * H * k, floor);
+            const hud2layout::Out o = hud2layout::Compute(f, S);
+            const float aspect = f.W / f.H;
+            CHECK(o.nCtx > ln.cruise); // the cruise prompt always placed (4:3 K&M: TARGETS, the last, gives way to it)
+            if (aspect > 1.5f) // 16:9, 21:9, 16:10: the lanes, every prompt
+            {
+                CHECK(o.nCtx == n);
+                CHECK(!o.ctxFallback);
+                CHECK(o.ctxSide[ln.cruise] == 0); // the cruise prompt bottom-left, beside the ship panel
+                for (int i = 0; i < o.nCtx; ++i)
+                    CHECK(o.ctxX[i] + o.ctxW[i] <= 0.40f * f.W + 0.5f || o.ctxX[i] >= 0.60f * f.W - 0.5f);
+                // the narrower ship panel (0.31, the owner's "wasted space", UI_HUD2.md 5.22) and the pill's tight
+                // keycap: the left lane holds "[key] CANCEL CRUISE" whole - no left-lane prompt is squeezed (its label
+                // would scroll)
+                const promptfit::LaneGeom lg = promptfit::ContextLanes(f.W, H, o.k, o.ship.x1, o.loadout.x0);
+                CHECK(lg.lx1 - lg.lx0 >= f.m.base[ln.cruise] - 0.5f);
+                for (int i = 0; i < o.nCtx; ++i)
+                    if (o.ctxSide[i] == 0)
+                        CHECK(o.ctxW[i] >= f.m.base[i] - 0.5f);
+            }
+            if (g_test.verbose)
+            {
+                const promptfit::LaneGeom lg = promptfit::ContextLanes(f.W, H, o.k, o.ship.x1, o.loadout.x0);
+                printf("standard cruise lane | %s | %s | left lane %.3f H | cruise prompt %.3f H%s | rows",
+                       d.name, ln.name, (lg.lx1 - lg.lx0) / H, f.m.base[ln.cruise] / H,
+                       o.ctxFallback ? " | FALLBACK line" : "");
+                for (int i = 0; i < o.nCtx; ++i)
+                    printf(" [%d side %d y %.3f w %.3f]", i, o.ctxSide[i], o.ctxPY[i] / H, o.ctxW[i] / H);
+                printf("\n");
+            }
+        }
+}
 } // namespace
 
 void Test_promptfit()
@@ -420,6 +525,108 @@ void Test_promptfit()
         CHECK(c.n == 1 && c.above && c.y == 760.0f);
         c = promptfit::PlaceContext(nullptr, 3, 10, 1000, 1000, 1, 470, 530, 800); // typing: measures 0, nothing moves
         CHECK(c.n == 3 && !c.above);
+    }
+    // HUD 2's context lanes (the owner, 31 Oct 2026, decision 4): at 1778 x 1000, k 1, the ship panel to 489, the
+    // loadout from 1289 - the left lane 513..699.2 (ship + 0.012 gap + 0.012 pad .. 0.40 W - pad), the right 1078.8..1265
+    {
+        using promptfit::HoldStep;
+        using promptfit::LaneGeom;
+        using promptfit::LanesPlaced;
+        const float W = 1778, H = 1000, k = 1, gap = 30;
+        const LaneGeom g = promptfit::ContextLanes(W, H, k, 489, 1289);
+        CHECK_NEAR(g.lx0, 513, 1e-3);
+        CHECK_NEAR(g.lx1, 0.40f * W - 12, 1e-3);
+        CHECK_NEAR(g.rx0, 0.60f * W + 12, 1e-3);
+        CHECK_NEAR(g.rx1, 1265, 1e-3);
+        CHECK_NEAR(g.y0, 915, 1e-3);
+        CHECK_NEAR(g.pitch, 60, 1e-3);
+        CHECK(g.rows == 2);
+        // a left and a right prompt: each hugs its panel on the baseline
+        {
+            const float w[2] = {100, 100};
+            const int side[2] = {0, 1};
+            const LanesPlaced o = promptfit::PlaceLanes(w, nullptr, side, 2, gap, g, H, k);
+            CHECK(o.n == 2 && !o.none);
+            CHECK_NEAR(o.x[0], 513, 1e-3);
+            CHECK_NEAR(o.x[1] + o.w[1], 1265, 1e-3);
+            CHECK(o.y[0] == 915 && o.y[1] == 915 && o.side[0] == 0 && o.side[1] == 1 && !o.moved[0] && !o.moved[1]);
+            CHECK_NEAR(o.x0, 513 - 15, 1e-3); // the extent with the 0.015 H x k margin
+            CHECK_NEAR(o.x1, 1265 + 15, 1e-3);
+            // nothing between the lanes: every prompt left of 0.40 W or right of 0.60 W (with its 0.012 pad)
+            for (int i = 0; i < 2; ++i)
+                CHECK(o.x[i] + o.w[i] + 12 <= 0.40f * W + 1e-3f || o.x[i] - 12 >= 0.60f * W - 1e-3f);
+        }
+        // two left prompts that do not share a row: the second on the row above, hugging the ship panel too
+        {
+            const float w[2] = {100, 100};
+            const int side[2] = {0, 0};
+            const LanesPlaced o = promptfit::PlaceLanes(w, nullptr, side, 2, gap, g, H, k);
+            CHECK(o.n == 2 && o.row[0] == 0 && o.row[1] == 1);
+            CHECK_NEAR(o.x[1], 513, 1e-3);
+            CHECK_NEAR(o.y[1], 855, 1e-3);
+            const float s[2] = {60, 60}; // (two that fit: one row, 0.03 apart)
+            const LanesPlaced p = promptfit::PlaceLanes(s, nullptr, side, 2, gap, g, H, k);
+            CHECK(p.row[1] == 0);
+            CHECK_NEAR(p.x[1], 513 + 60 + 30, 1e-3);
+        }
+        // too wide for its lane: squeezed to the row's room (its label scrolls), never under its minimum
+        {
+            const float w[1] = {250}, minW[1] = {120};
+            const int side[1] = {1};
+            const LanesPlaced o = promptfit::PlaceLanes(w, minW, side, 1, gap, g, H, k);
+            CHECK(o.n == 1 && o.side[0] == 1 && o.row[0] == 0);
+            CHECK_NEAR(o.w[0], 1265 - 1078.8f, 1e-2);
+            CHECK_NEAR(o.asked[0], 250, 1e-3);
+            CHECK_NEAR(o.x[0], 1078.8f, 1e-2);
+            const float big[1] = {200}; // a minimum neither lane holds: no place at all
+            const LanesPlaced q = promptfit::PlaceLanes(w, big, side, 1, gap, g, H, k);
+            CHECK(q.n == 0 && q.none);
+        }
+        // a full lane hands its prompt to the other one (moved); the order stays the priority
+        {
+            const float w[3] = {150, 150, 150};
+            const int side[3] = {1, 1, 1};
+            const LanesPlaced o = promptfit::PlaceLanes(w, w, side, 3, gap, g, H, k);
+            CHECK(o.n == 3);
+            CHECK(o.side[0] == 1 && o.row[0] == 0 && o.side[1] == 1 && o.row[1] == 1);
+            CHECK(o.side[2] == 0 && o.moved[2] && o.row[2] == 0);
+            CHECK_NEAR(o.x[2], 513, 1e-3);
+        }
+        // a prompt with no place ends the line (the last give way first: a prefix)
+        {
+            LaneGeom t;
+            t.lx0 = 500, t.lx1 = 490, t.rx0 = 1000, t.rx1 = 1100, t.y0 = 915, t.pitch = 60, t.rows = 1;
+            const float w[3] = {50, 50, 50};
+            const int side[3] = {0, 0, 0};
+            const LanesPlaced o = promptfit::PlaceLanes(w, nullptr, side, 3, gap, t, H, k);
+            CHECK(o.n == 1 && o.side[0] == 1 && o.moved[0]);
+        }
+        // typing (no widths): every prompt kept, nothing measured
+        {
+            const LanesPlaced o = promptfit::PlaceLanes(nullptr, nullptr, nullptr, 3, gap, g, H, k);
+            CHECK(o.n == 3 && !o.none);
+        }
+        // the hold cascade in the lanes: BEFORE where it fits; else a raised word only where no prompt sits above it
+        {
+            promptfit::HoldDims d;
+            d.word = 50, d.gapBefore = promptfit::GapBefore(36), d.ringChord = promptfit::RingChord(36);
+            const float base[2] = {150, 150}, gl[2] = {36, 36}, lb[2] = {103.2f, 103.2f};
+            const bool hold[2] = {true, false};
+            const int apart[2] = {0, 1}; // the second in the right lane: nothing above the first
+            promptfit::LanesHold h = promptfit::PlaceLanesHold(base, nullptr, gl, lb, hold, apart, 2, d, gap, g, H, k, 24);
+            CHECK(h.plan.step == HoldStep::Above); // BEFORE (+ 62.6) would squeeze it; above the glyph (+ 14) fits
+            CHECK(h.c.n == 2 && h.c.w[0] == h.c.asked[0]);
+            const int stacked[2] = {0, 0}; // the second on the row above it: no raised word under it
+            h = promptfit::PlaceLanesHold(base, nullptr, gl, lb, hold, stacked, 2, d, gap, g, H, k, 24);
+            CHECK(h.c.row[1] == 1);
+            CHECK(h.plan.at[0] != promptfit::WordAt::Above && h.plan.at[0] != promptfit::WordAt::OverLabel);
+            CHECK(h.c.w[0] == h.c.asked[0]); // and never squeezed for its word
+            const float narrow[2] = {60, 60}; // BEFORE fits: the owner's first choice
+            const float nl[2] = {13.2f, 13.2f};
+            h = promptfit::PlaceLanesHold(narrow, nullptr, gl, nl, hold, apart, 2, d, gap, g, H, k, 24);
+            CHECK(h.plan.step == HoldStep::Before && h.plan.at[0] == promptfit::WordAt::Before);
+            CHECK_NEAR(h.w[0], 60 + d.gapBefore + d.word, 1e-3);
+        }
     }
     if (!LoadFont())
     {
@@ -512,4 +719,5 @@ void Test_promptfit()
         for (const auto& kv : stepCount)
             printf("- %s: %d\n", kv.first.c_str(), kv.second);
     }
+    StandardCruiseLane();
 }

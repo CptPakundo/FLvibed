@@ -20,8 +20,9 @@ Data relied on (one folder per leg run, research\\experience\\legs\\<date>_<HHMM
   FLController.log   `[HH:MM:SS.mmm] event autopilot <kind> [<sub>] key=value ... free text` = events::Push lines (the
                      controller's event stream; other lines are the harness / host logs). Clock = local wall time.
   FLMotion.tsv       10 rows / s while the autopilot flies (autopilot_frame.cpp MotionTrace), header:
-                     ms mode action speed steer throttle ab cruise slide guard clear wall wall_m target tgt_m align
-                     x y z engine fx fy fz system. ms = GetTickCount64 (uptime, not wall time); mode = autopilot Mode
+                     ms game_ms mode action speed steer throttle ab cruise slide guard clear wall wall_m target tgt_m align
+                     x y z engine fx fy fz system. ms = GetTickCount64 (uptime, not wall time); game_ms = the
+                     game clock (core/game/gameclock.h, since 30 Oct 2026: not read here yet); mode = autopilot Mode
                      enum (0 off 1 goto 2 dock 3 follow 4 formation 5 face 6 escort 7 combat 8 travel 9 hold 10 shoot,
                      -1 the player flies); speed m/s; engine 2 = cruising (charged), 1 charging, 0 off; no rows while
                      docked / in scenes (gaps). Aligned to the log clock by matching its mode changes to the log's

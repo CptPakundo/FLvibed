@@ -12,14 +12,16 @@ $py = Join-Path $root 'research\tools\ocr\.venv\Scripts\python.exe'
 $missions = Join-Path $root 'Install\Freelancer HD Edition\DATA\MISSIONS'
 $base = Join-Path $PSScriptRoot 'decision_baseline.txt'
 $now = @(& $py -I (Join-Path $PSScriptRoot 'resolver_check.py') $missions 2>&1 | ForEach-Object { "$_" })
+# a failed sweep (a traceback, no missions folder) is never compared and never written as a baseline
+if ($LASTEXITCODE -ne 0) { "resolver_check.py failed (exit $LASTEXITCODE):"; $now | Select-Object -Last 10; exit 2 }
 if ($Update -or -not (Test-Path $base)) {
     Set-Content -Path $base -Value $now -Encoding utf8
     "decision baseline written: $($now.Count) lines"
-    return
+    exit 0
 }
 $old = @(Get-Content $base -Encoding utf8)
 $diff = Compare-Object $old $now
-if (-not $diff) { "decisions unchanged ($($now.Count) lines)"; return }
+if (-not $diff) { "decisions unchanged ($($now.Count) lines)"; exit 0 }
 "DECISIONS CHANGED ($(@($diff).Count) lines; <= baseline only, => now only):"
 $diff | ForEach-Object { "$($_.SideIndicator) $($_.InputObject)" }
 exit 1

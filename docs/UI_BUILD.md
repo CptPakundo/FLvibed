@@ -148,6 +148,17 @@ pad players: 7 ms -> 0.07 ms per frame on a dealer).
 - Native row controls (ToggleButtonControl / ScrollControl) stay replicas (UI_PLAN 3.2's later refinement).
 - The Bindings screen (`edit_bindings`) is not built: the presets apply, the button shows a note. The autopilot has no
   goal queue: the goal panel's QUEUE / DO NEXT are greyed and refused with an event.
+- (Closed 29 Oct 2026, d2c26f3, verified on the virtual pad: the menus read a view of the pad with A and B exchanged
+  - controller.cpp `g_menuPad` (`Gamepad::SwappedAB`) for the free cursor, FLUF's windows, padbases / padmap and the
+  flight modals' copy, uikit through `device::ConfirmMask` / `CancelMask` - and the prompt bar and the modals' prompt
+  tokens draw the role's button (`glyphs::Menu`; `promptbar` status `A=B SELECT`); the flight bindings stay positional.
+  The picker: swap on, A = KEEP OLD, B = TARGET; the pause menu's prompts drawn swapped, A resumes. The game's own
+  screens take ENTER in five dialogs only (FREELANCER_RE "Accept / back"), so no game-side remap. Was:) **`confirm_button` does nothing** (found by the code audit of 29 Oct 2026): the row is on the page and in the ini,
+  `device::ConfirmMask()` / `CancelMask()` read it, nothing calls them - every pad screen reads A / B directly (about
+  30 input sites in `uikit.cpp`, `padbases.cpp`, `padmap.cpp`, `padmenus.cpp`, `controller.cpp`'s menu cursor) and
+  its prompts name `glyphs::A` / `B` (about 47 sites). The fix: one menu-context remap (accept / back as roles, the
+  flight bindings untouched - they are positional) plus a prompt token for the role, verified on the virtual pad over
+  every screen. Until then the row could be hidden (the owner's spec).
 - (Closed by INT-HOST, 25 Oct 2026: the ToggleButtonControl class has a signed native click path now - the equipment
   dealer's mount boxes work on the pad, verified at Manhattan; the game's arrow cursor hides while the focus drives;
   `RemoveWaypoint`, `MissionResult` (HostApi v20), `PendingLoadId`, `space::PlayerMines`, the dealer rows' projection

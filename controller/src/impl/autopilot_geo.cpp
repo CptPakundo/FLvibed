@@ -9,6 +9,27 @@ namespace autopilot
 // The autopilot's own obstacle avoidance (core\game\avoid) over a steering output: the steer point goes around what is
 // in the way (field rocks, mines, solars, ships; not `ignore`, the object being docked with or entered), and the speed
 // drops when the turn needs it (cruise / afterburner off, braking).
+bool OutOfLethalBerth(float p[3], float berth, const float toward[3], float* radius)
+{
+    bool moved = false;
+    for (const space::Obstacle& z : space::LethalZones(p, berth))
+    {
+        float away[3] = {p[0] - z.pos[0], p[1] - z.pos[1], p[2] - z.pos[2]};
+        const float dz = Len3(away);
+        if (dz >= z.radius + berth - 1.0f) // (1 m: a point put on the boundary stays there)
+            continue;
+        if (dz < 1)
+            memcpy(away, toward, sizeof(away));
+        const float al = std::max(1e-3f, Len3(away));
+        for (int i = 0; i < 3; ++i)
+            p[i] = z.pos[i] + away[i] / al * (z.radius + berth);
+        if (radius)
+            *radius = z.radius;
+        moved = true;
+    }
+    return moved;
+}
+
 bool LineClear(const float a[3], const float b[3], float radius)
 {
     float d[3] = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};

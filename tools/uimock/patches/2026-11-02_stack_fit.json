@@ -1,0 +1,10 @@
+{
+  "_about": "0.2.0 (2 Nov 2026): the missing options row stack_fit (SUBTITLES / MOTION, player tier): stacked speakers shrink together down to this factor (code: subtitles stack fit, default 0.7; CHANGELOG 0.2.0 stack fit, 72d95a04). Apply with specpatch.py to part2_data.js and docs/UI_SPEC.json.",
+  "add_rows": {
+    "subtitles/MOTION": {"after": "motion", "rows": [
+      {"key": "stack_fit", "label": "Stacked lines shrink to", "kind": "slider", "min": 0.5, "max": 1.0, "step": 0.05, "def": 0.7, "unit": "",
+       "help": "When several speakers' lines are on screen together they shrink together, down to this size, so the stack keeps about one line's height; 1 = off.",
+       "tier": "player", "needs": "live", "parent": "enabled"}
+    ]}
+  }
+}

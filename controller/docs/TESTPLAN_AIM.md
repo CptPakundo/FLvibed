@@ -2,6 +2,9 @@
 
 Written for an executing session (Sonnet) that runs it and reports numbers. Everything goes
 through the harness; never use screen coordinates. Read `CLAUDE.md` (workflow) first.
+Verified against d30a3a5 (29 Oct 2026): the pad binds are the FREELANCER preset's since 25 Oct (`docs\BINDINGS.md`) -
+the target button is RS (`Press-FLPad RS`), the D-pad holds nanobots / batteries / countermeasures / mines (pressing it
+spends them); the game starts in the background (`deploy.ps1 -Background`).
 
 ## Rules
 - PowerShell tool only for `flctl.ps1` (never dot-source it from Bash).
@@ -12,10 +15,10 @@ through the harness; never use screen coordinates. Read `CLAUDE.md` (workflow) f
 - After any failure, collect `Get-FLLog 30` and `Get-FLEvents -After <n>` and report; do not change code.
 - Wait on game state, never on fixed delays: `Wait-FLUntil { <condition from state / ship / events> } '<what>'
   <safety seconds>` (flctl.ps1). Fixed durations below are only measurement windows.
-- The game window takes focus during UI steps (`Focus-FLGame`); warn the user before starting.
+- Tests run in the background, muted (`..\..\docs\TESTING.md`); native interaction, no focus needed.
 
 ## Setup
-1. If the game is not running: `& '<FLvibed>\tools\deploy.ps1' -Restart`.
+1. If the game is not running: `& '<FLvibed>\tools\deploy.ps1' -Restart -Background`.
 2. `Start-FLCombatTest` -> expect `space`. (Godmode on, save `SaveC702.fl` next to Fort Bush,
    Liberty police hostile; hostiles arrive with the lane traffic.)
 3. Defaults (from `FLController.ini`): `aim_mode 1` (gimbal), `auto_target 0`, `fire_target 1`. All `set`
@@ -23,7 +26,7 @@ through the harness; never use screen coordinates. Read `CLAUDE.md` (workflow) f
 
 ## G. Gimbal mode (default) - run first
 1. No target (`Send-FL 'tap USER_CLEAR_TARGET'`), any stick input: `mouse` stays at the screen center.
-2. `Press-FLPad Up` (closest enemy): while the target's lead is on screen (`ship` w2s `lead=` inside the
+2. `Press-FLPad RS` (the target button: the object under the reticle, else the closest enemy): while the target's lead is on screen (`ship` w2s `lead=` inside the
    screen), `mouse` follows it within ~20 px (60 ms smoothing); off screen -> back to center.
 3. Nothing selects a target by itself for 10 s after clearing (auto_target 0).
 4. Select by firing: clear the target, run `bot fight` until its target's lead is on screen near the centre
@@ -53,8 +56,8 @@ Pass: every cursor within 3 px of expected.
 3. Repeat step 2 with `set aim_assist 0` (3 samples), then restore `0.75`.
 Pass: with assist, whenever the lead is within 0.12H of the screen center the cursor is between the
 center and the lead (pulled at least 50% when the lead is within 0.06H). Without assist the cursor
-stays at the center. With a friendly target (`attitude` > 0, select with D-pad right until one is
-found) the cursor never moves off center.
+stays at the center. With a friendly target (`attitude` > 0: pick one from `Send-FL contacts` and select it with
+`settarget`, HARNESS.md) the cursor never moves off center.
 
 ## C. Combat bot
 1. `$s = [int]([regex]::Match((Send-FL 'events 999999999'),'^last (\d+)').Groups[1].Value)`

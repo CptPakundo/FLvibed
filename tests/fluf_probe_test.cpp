@@ -116,7 +116,8 @@ void Test_fluf_probe()
     }
 
     // a context before FLUF's first NewFrame (frame 0, DisplaySize (-1, -1) or 0 x 0; A3 26 Oct 2026): nothing open, not a failure;
-    // a 0 x 0 display at a later frame still fails (below)
+    // a 0 x 0 display at a later frame (minimised; audit A2-3, 31 Oct 2026) is nothing open too; one zero side still fails
+    // (below)
     {
         const int keep = g_frame;
         g_frame = 0;
@@ -127,6 +128,10 @@ void Test_fluf_probe()
         Put<float>(g_ctx + L.ctxIO, L.ioDisplaySize, -1.0f), Put<float>(g_ctx + L.ctxIO, L.ioDisplaySize + 4, -1.0f);
         CHECK(Snap(1, z) && z.count == 0 && z.frame == 0); // ImGuiIO's constructor value
         g_frame = keep;
+        Context(2, false, 0, 0);
+        Window(0, "fluf_cmd_palette", 700, 0, 600, 400, 100);
+        Put<float>(g_ctx + L.ctxIO, L.ioDisplaySize, 0.0f), Put<float>(g_ctx + L.ctxIO, L.ioDisplaySize + 4, 0.0f);
+        CHECK(Snap(1, z) && z.count == 0 && static_cast<int>(z.frame) == g_frame); // minimised: nothing open, the frame read
     }
 
     // fails closed: every layout check broken in turn

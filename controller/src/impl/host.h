@@ -25,6 +25,10 @@ inline int HostMissionMarks(u32* out, int max) { return HostAtLeast(11) ? g_host
 inline int HostObjectiveRefs(u32* out, int max) { return HostAtLeast(11) ? g_host->ObjectiveRefs(out, max) : -1; }
 inline u32 HostObjectiveNow(ObjectiveStep* out) { return HostAtLeast(11) ? g_host->ObjectiveNow(out) : 0; }
 inline u32 HostObjectiveTitle() { return HostAtLeast(13) ? g_host->ObjectiveTitle() : 0; }
+// v34: the game loads the host has seen (0 with an older host: mission.cpp's memory then lives on as before)
+inline u32 HostGameLoads() { return HostAtLeast(34) ? g_host->GameLoads() : 0; }
+// v35: the story's checkpoint saves (sequence, 0 = none / older host: save:<ids> splits then never come; ids = the latest)
+inline u32 HostMissionSave(u32* ids) { return HostAtLeast(35) ? g_host->MissionSave(ids) : 0; }
 // v24: the current step's text as the game formats it; false (out "") with an older host or no formatter.
 inline bool HostObjectiveText(wchar_t* out, int max)
 {

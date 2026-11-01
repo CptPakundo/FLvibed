@@ -9,9 +9,14 @@ movie	start	end	speaker	text	note
 fl_intro	5.70	10.80	Narrator	It was the 23rd century. Mankind's darkest hour.	
 fl_intro	12.00	13.50	Computer	Heart rate and respiration nominal.	
 fl_intro	14.90	24.20	Computer	Life support online. Initiating cryogenic freezing.	
-fl_intro	28.80	31.40	Computer	Commencing pod lockdown.	
-fl_intro	50.00	52.80	Radio	Control, cryos complete. Main navigation systems online.	[check] the vanilla read heard "bios"
-fl_intro	53.50	55.50	Radio	Copy that. Reading green.	[check] radio chatter under music: speech to text heard different words in each intro; time placed after the line before
+fl_intro	28.80	31.85	Computer	Commencing pod lockdown.	
+fl_intro	49.10	52.80	Radio	Control, cryos complete. Bringing navigation systems online.	[check] wording of fl_intro_full (Nemotron heard "bringing" here too, 29 Oct 2026)
+fl_intro	53.60	56.20	Radio	Copy that. We're reading green across the board.	[check] wording of fl_intro_full; Nemotron heard "copy that reading green across the board"
+fl_intro	56.20	59.40	Radio	Good to hear. Bringing primary engines online.	[check] missing until 29 Oct 2026: found by Nemotron's run of this intro; wording of fl_intro_full
+fl_intro	59.40	60.60	Radio	How's it looking out there?	[check] missing until 29 Oct 2026 (Nemotron); wording of fl_intro_full
+fl_intro	63.90	66.40	Radio	Launch in T-minus ten minutes and counting.	[check] missing until 29 Oct 2026 (Nemotron); wording of fl_intro_full
+fl_intro	67.10	69.80	Radio	Control, incoming hostiles. Ten minutes out. Shall I abort?	[check] missing until 29 Oct 2026 (Nemotron); wording of fl_intro_full
+fl_intro	69.80	71.60	Radio	Negative. Launch is still a go.	[check] missing until 29 Oct 2026 (Nemotron); wording of fl_intro_full
 fl_intro	71.70	75.30	Narrator	The war had been raging for almost a hundred years.	
 fl_intro	76.00	82.30	Narrator	We had been fighting for so long, no one could remember the reason why it all started in the first place.	
 fl_intro	83.10	88.80	Narrator	All we knew is that there were two sides: the Coalition and the Alliance.	

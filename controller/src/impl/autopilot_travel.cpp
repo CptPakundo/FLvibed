@@ -5,9 +5,9 @@
 namespace autopilot
 {
 // ------------------------------------------------------------------ travel
-// When the last jump-in happened (GetTickCount64): the first 6 s after it charge the cruise at once
+// When the last jump-in happened (gameclock::NowMs64): the first 6 s after it charge the cruise at once
 static ULONGLONG g_jumpInTick = 0;
-static bool JustJumpedIn() { return g_jumpInTick && GetTickCount64() - g_jumpInTick < 6000; }
+static bool JustJumpedIn() { return g_jumpInTick && gameclock::NowMs64() - g_jumpInTick < 6000; }
 // The last airlock door line read (AirlockStage), kept across trips: each trip starts its own state, and the M12 core's
 // exit trip passes the plate before it reads its door again (passage_axis, set s11h: never applied)
 static u32 g_lastDoorId = 0;
@@ -55,7 +55,8 @@ bool RefLineAim(const fl::Kinematics& k, const float dest[3], float aim[3])
     static u32 rotSys = 0;
     static float rotCos = 1, rotSin = 0;
     static bool rotSet = false;
-    if (!g_set.refLine || !g_obj.cruiseLock)
+    // (a recorded line is speedrun knowledge: only with the knowledge scope that has it - audit A1-3)
+    if (!g_set.refLine || !g_obj.cruiseLock || !Knows(Source::Meta))
         return false;
     const u32 sys = fl::PlayerSystem();
     const RefLine* L = nullptr;
@@ -321,7 +322,7 @@ u32 RestSubject(char& why)
 {
     if (const u32 m = MissionSubject())
         return why = 'm', m;
-    if (g_subjectId && GetTickCount64() - g_subjectTick < 30000)
+    if (g_subjectId && gameclock::NowMs64() - g_subjectTick < 30000)
         return why = 's', g_subjectId;
     return why = 0, 0;
 }
@@ -813,7 +814,7 @@ static bool WaitForMissionList(State::Travel& t)
     // (in the objective mode the list belongs to the step: waited for only in the step's first 1.5 s - session 8, 23 Oct
     // 2026, M12: the lair's steps have no list, and every trip of the leg - pre-stage, airlock, script goal, leash - paused
     // 1.5 s before it planned, ~10 trips a leg)
-    if (g_obj.on && g_obj.stepAt && GetTickCount64() - g_obj.stepAt > 1500)
+    if (g_obj.on && g_obj.stepAt && gameclock::NowMs64() - g_obj.stepAt > 1500)
         return false;
     // ...nor under the cruise lock (s9j-i3, M12 core: the cell's pickup restarted the trip at 300 m/s; 1.5 s unsteered,
     // the guard's swing put the ship into the bar beside the cell, the exit run then looped 58 s)
@@ -1126,6 +1127,26 @@ void UpdateTravel(float dt, Out& out)
         {
             if (now.empty())
             {
+                // A dock / gate / hole of this system within 8 km the game plots no way to: straight to it, and the
+                // game's own dock request decides (a refusal is retried by the objective). M13 fx2-g_i3, 31 Oct 2026: the
+                // best path to the St01 hole stayed empty for 60+ s after check_cap's unlock while i1 / i2 got the jump
+                // at once - cause open; flying it direct does not depend on it.
+                fl::Kinematics k = {};
+                const space::Contact dc = t.destObject ? FindContact(t.destObject) : space::Contact{};
+                if (!t.noDock && dc.id && !dc.ship && (!t.destSystem || t.destSystem == p.system) &&
+                    (dc.type & (space::kJumpGate | space::kJumpHole | space::kTradelaneRing | 0x400u)) &&
+                    fl::PlayerKinematics(k))
+                {
+                    const float d[3] = {t.dest[0] - k.pos[0], t.dest[1] - k.pos[1], t.dest[2] - k.pos[2]};
+                    if (Len3(d) < 8000.0f)
+                    {
+                        events::Push("autopilot travel no way plotted to %u (%.0f m): straight to it, the dock request "
+                                     "decides", t.destObject, Len3(d));
+                        t.direct = true;
+                        t.phase = State::Travel::Plan;
+                        return;
+                    }
+                }
                 Stop(StopReason::NoWay);
                 return;
             }
@@ -1141,7 +1162,17 @@ void UpdateTravel(float dt, Out& out)
         const float speed = fl::PlayerKinematics(k) ? Len3(k.vel) : 0.0f;
         if (!t.hasDest && WaitForMissionList(t))
             return;
-        t.plan = route::Make(fm, p.pos, speed, space::Waypoints(), p.system, t.closedRings);
+        std::vector<space::Waypoint> wps;
+        if (t.direct) // (the one entry: the dock object itself - Await's no-way fallback)
+        {
+            space::Waypoint w;
+            memcpy(w.pos, t.dest, sizeof(w.pos));
+            w.system = p.system, w.object = t.destObject;
+            wps.push_back(w);
+        }
+        else
+            wps = space::Waypoints();
+        t.plan = route::Make(fm, p.pos, speed, wps, p.system, t.closedRings);
         // A gate / hole as the destination is gone through (sweep navigation 20 Oct 2026: the game's list ends on its
         // position without the object, the plan stopped beside the West Point gate - "Arrive" - and never jumped).
         if (t.plan.ok && !t.noDock && t.destObject && !t.plan.steps.empty() &&
@@ -1292,9 +1323,12 @@ void UpdateTravel(float dt, Out& out)
         {
             const float d[3] = {s.pos[0] - k.pos[0], s.pos[1] - k.pos[1], s.pos[2] - k.pos[2]};
             const float dist = Len3(d);
+            // (`arrive_walled_fast`: at cruise speed 2 s, not 8 - every M13 city trip ended `arrived-close dist=467-478`
+            // after a ~7.4 s orbit at 290 m/s round the arrive point: the driver's M13 log analysis, 31 Oct 2026)
+            const float window = g_set.arriveWalledFast && Len3(k.vel) > 200.0f ? 2.0f : 8.0f;
             if (dist < t.arriveBest - 50 || g.arrive.staging) // (going round a solid first is progress)
                 t.arriveBest = std::min(dist, t.arriveBest), t.arriveBestAt = g.time;
-            else if (dist < 2000 && g.time - t.arriveBestAt > 8)
+            else if (dist < 2000 && g.time - t.arriveBestAt > window)
             {
                 // only where a solid keeps us off the point (its sphere, with the planets' lethal zones, reaches within
                 // the shortfall of it); elsewhere press on (M12 22 Oct 2026: "arrived" 1371 m short of the lair's
@@ -1309,7 +1343,7 @@ void UpdateTravel(float dt, Out& out)
                 }
                 if (walled)
                 {
-                    events::Push("autopilot travel arrived-close dist=%.0f (no progress for 8 s)", dist);
+                    events::Push("autopilot travel arrived-close dist=%.0f (no progress for %.0f s)", dist, window);
                     stepDone();
                     Stop(StopReason::Arrived);
                     return;
@@ -1505,7 +1539,7 @@ void UpdateTravel(float dt, Out& out)
             // then the route again from here.
             events::Push("autopilot travel jumped system=%u at=%.1f planned-eta=%.1f", p.system, g.time - t.planStart,
                          s.eta);
-            g_jumpInTick = GetTickCount64();
+            g_jumpInTick = gameclock::NowMs64();
             if (g_obj.cruiseLock)
                 events::Push("autopilot cruise lock off (jumped)");
             g_obj.cruiseLock = false;

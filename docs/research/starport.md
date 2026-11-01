@@ -1,13 +1,37 @@
 # The Starport and the wider community: sources not on hand
 Status: current
-Checked against: FLvibed 01fcfa9 (26 Oct 2026, the step 3 short form re-confirmed: the only watched commits since, 9327f86 / 01fcfa9, are doc and handoff edits recording what this note already says); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: the FLUF line overtaken, borderless - first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 23 watched-path commits 073a665..855745b - Extended HUD 2's FREELANCER_RE sections, PADFIX, vanilla 1.1, the FLUF note; new ground again - second bullet); before: 073a665 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 5 watched-path commits abf84ac..073a665 in `docs/FREELANCER_RE.md` (the flight HUD's roots and hiding them 1ae14b0, the readers e008407, the hotspot box 08d450f, the 5.8 / 5.9 docs cec803c / bac0fb3) and `docs/kb`; nothing contradicted - second bullet); before: abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 6 watched-path commits 3cfa88c..abf84ac in `docs/FREELANCER_RE.md` (+264 lines: UI control names, the native buttons) and `docs/kb` (hud-controls.md, menu-screens.md); nothing contradicted - second bullet); before: 3cfa88c (25 Oct 2026 ~03:30: the 24 Oct refactors and the UI design docs; nothing touched)
-Dirty paths at check: none at the start (25 Oct 2026 ~23:05; during the round another session's uncommitted `controller/src/impl/padbases.cpp`, `controller/src/impl/promptbar.cpp`, `docs/UI_HUD2_EXTENDED.md` appeared - not judged); none (25 Oct 2026 ~12:15); none (25 Oct 2026 ~07:00); before: none at the start (24 Oct 2026, 1defa3f); at the end `controller/src/impl/autopilot_frame.cpp`, `controller/src/impl/autopilot_objective.cpp` (another session's uncommitted edits, appeared during the check; not judged here)
+Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 1 watched-path commit (f8e1dd31: FREELANCER_RE's engine-kill-at-cruise measurement, HDE); nothing on the public facts of section 10, the sources or the decomp states; no effect)
+Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
 Watch: docs/FREELANCER_RE.md, docs/kb, controller/docs/NPC_AI_RESEARCH.md, core/game/avoid.*, core/game/route.*, docs/MOD_COMPATIBILITY.md
-Evidence: none kept (survey only; nothing downloaded)
+Evidence: research\evidence\community_2026-10-30\ (30 Oct 2026: the READMEs, trees, sources, milestones and commit lists of Liberty, HaydnTrigg/Freelancer + delink, Freelancer-Decomp, FLStaticPatch, BwPatch, HDE, Librelancer); before: none kept (survey only, 21 Oct 2026)
 Sources: [page] the-starport.com forums, wiki and FLUF docs; [api] NodeBB, GitHub and Codeberg APIs; [page] adoxa's site (HTTP); [local] the KnowledgeBase clone's payloads
 
 ## What it means for FLvibed
 
+*New research 30 Oct 2026 (HEAD 5eb7bcb; section 10):* whether a future HDE v1.0 moves to another base is not
+publicly documented; the public alternatives to the retail binaries are Liberty, Librelancer and the decompilations.
+**None of them is a byte-matching base yet.** HaydnTrigg's matching decomp is at 12.16 % (objdiff badge; decomp.dev: 2,680 of 52,921 functions, 0 of 28
+units). Liberty is a "prototype export" with D3D8 only (no D3D9 file). Giperion's decomp is not byte-matching, and its D3D9 pipeline (RP9) is off by default. **For FLvibed:** a byte-matching rebuild is
+the one alternative base its signatures would accept unchanged (identical bytes); a non-matching rebuild such as
+Liberty or Freelancer-Decomp would need a source-level port (`freelancer-decomp.md` "Theoretical, later"). So nothing
+to do but watch (IDEAS X5). The patch tools' failure behaviour, read from their sources: FLStaticPatch stops and exits 1 on a
+bad patch, and HDE's CI then commits nothing. BwPatch prompts "Bytes differ; patch anyway?" and skips the patch on
+EOF, and still exits 0. The second matters for unattended pipelines, not for FLvibed, which patches nothing statically.
+HDE's v0.8 milestone now has a due date, 19 Dec 2026 (`hde-upstream.md`, IDEAS M8).
+*Check-up 30 Oct 2026 ~23:30 (short form, HEAD 5eb7bcb; 6 watched-path commits bf4d1d1..5eb7bcb):* no effect. The
+`FREELANCER_RE.md` save facts (a load re-sends marks only for objects that exist; a spawned solar is saved only in the
+player's system; Content.dll in Ghidra) are new ground beside the surveyed sources (the KnowledgeBase's
+`Act_MarkObj` / `Act_Save` pages, in the clone since Feb 2026, not re-read against them).
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 2 watched-path commits 7518008..067bf32):* no effect: the two
+`FREELANCER_RE.md` additions (the signature rule, ca2ef92; the dealer-room hotspot pair, 3c7dec9, found in game) touch
+no source this note surveys.
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 12 watched-path commits 01fcfa9..7518008):* the first bullet's "no prior
+art ... for a single-player autopilot" now has a multiplayer side: FLvibed's autopilot runs in multiplayer under a
+server permission (`docs\MULTIPLAYER.md`), and the prior art there is the servers' own rules and checks (automation read
+as bots or aim assistance); a server telling a client mod what it may do - FLvibed's FLHook plugin (`server\flhook\`,
+20ac2bb) and chat tag - is new ground of its own. `FREELANCER_RE.md` gained the multiplayer facts (the client-object
+readers, the modal loops, the LAN list's IPv6 bytes, the player's missing roll control) - new ground too, except the LAN
+fix itself, which is adoxa's (HDE's exe) and FLUF's. Nothing contradicted.
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 15 watched-path commits 855745b..e5c02cc):* the third bullet's
 "co-residency built in da1363f" is overtaken: FLvibed now carries a FLUF-awareness layer verified in game beside FLUF
 nightly-2026-10-16 in both load orders (`fluf.md` "FLUF in play" E, `docs\MOD_COMPATIBILITY.md` FLUF). Borderless windowed
@@ -69,7 +93,7 @@ nothing else does). Nothing else contradicted.
 | https://flhook.the-starport.com | DNS no longer resolves | dead | [page] |
 | https://lancersreactor.com (TheStarport/LancersReactor) | static mirror of The Lancers Reactor forums frozen Nov 2007 (343,088 posts); original home of Limit Breaking 101 / FL SDK threads | static | [page][api] |
 | http://adoxa.altervista.org/freelancer/ | index dated 25 Apr 2026 (HTTPS cert expired; HTTP works): JFLP 1.25 + jflp.dll 1.27 source, 26 tools, 62 plugins, info files, mods (Scenes Cut, No Story, Intros), widescreen page | 25 Apr 2026 | [page] |
-Related: Librelancer -> https://codeberg.org/Librelancer/Librelancer (GitHub archived 10 Oct 2026; no-LLM policy since 11 Jul 2026) [page]; HD Edition = GitHub org FLHDE (32 repos) [api].
+Related: Librelancer -> https://codeberg.org/Librelancer/Librelancer (GitHub archived 10 Oct 2026; no-LLM policy since 11 Jul 2026; 30 Oct 2026: 34 Codeberg commits 10-29 Oct, latest release still 2025.11) [page][api]; HD Edition = GitHub org FLHDE (32 repos) [api].
 
 ### 3. Prioritised source list
 | # | Source | URL | Adds for FLvibed | Topic | Conf. |
@@ -94,7 +118,7 @@ Related: Librelancer -> https://codeberg.org/Librelancer/Librelancer (GitHub arc
 | 18 | KB INI pages already in the clone | /wiki/ini-editing/... | voices (Voice/Sound, extend, GCS lines need voice_properties mVoiceProp), voice_properties.ini, hud (Receiver keys shut/open/delay/speaker_rotate/fly_time undescribed), cameras.ini (fovx Win 54.432, others 70; znear 2), mouse.ini, formations.ini (pl_pos = player slot), pilots_population (37 KB block descriptions), shortcut-switches (-w windowed, -s ip:port skips menu animations, -g god mode); empty: state_graph.db.md, keymap.ini.md | kb, subtitles, controller, autopilot-AI | high [local] |
 | 19 | KB Lore story pages | /wiki/lore/story/mission01a..13, freetime01..08 | community narrative summaries to cross-check docs\kb\story | kb | medium [local] |
 | 20 | Dvurechensky/Freelancer.Reverse.Runtime | https://github.com/Dvurechensky/Freelancer.Reverse.Runtime | proxy DLLs replacing/observing engine DLLs instead of memory patching (MIT, 12 stars, Aug 2026); Lizerium KB fork (https://lizerium.com/wiki, 167 pages, multilingual) | RE | low-medium [api] |
-| 21 | HaydnTrigg/Freelancer + Liberty | https://github.com/HaydnTrigg/Freelancer ; /Liberty | matching decomp of patch 1.1 (~9-12 %); Liberty reimplements dacom, flserver, rp8 (wip), soundmanager/streamer, system, x86math | RE | low-medium [api][page] |
+| 21 | HaydnTrigg/Freelancer + Liberty | https://github.com/HaydnTrigg/Freelancer ; /Liberty | matching decomp of patch 1.1 (~9-12 %); Liberty reimplements dacom, flserver, rp8 (wip), soundmanager/streamer, system, x86math. **30 Oct 2026 (re-fetched, section 10):** Freelancer matching 12.16 % (objdiff badge), last push 3 Oct 2026, no licence; Liberty (GPL-3.0, 135 commits, last push 6 Oct 2026) = "a prototype export from Excalibur" (HaydnTrigg's private tool [inference]), 33 module folders, RP8 / D3D8 only; "a new delink based matching decomp coming soon" (HaydnTrigg/delink) | RE | low-medium [api][page] |
 | 22 | BC46/FLServer | https://github.com/BC46/FLServer | FLServer.exe decompilation (MIT, 2023) | RE | low [api] |
 
 ### 4. KnowledgeBase clone vs upstream
@@ -135,3 +159,49 @@ Forum/site: https://the-starport.com/ ; /forums/api/categories ; /forums/api/rec
 the sphere door is a visible jump (`visit = 0`) to an invisible airlock (`visit = 128`); exits land on the shell's back
 side, fixed in mods by an invisible jump-hole-type airlock 600 units above the door. No mention of a camera, letterbox or
 lost control - the lockout of `..\FREELANCER_RE.md` "Control exclusion" appears undocumented in the community.
+
+### 10. Facts checked against their public sources (30 Oct 2026)
+Each one fetched from its public source (`research\evidence\community_2026-10-30\`).
+- **HDE 0.8:** milestone due 19 Dec 2026: 5 open (#337, #285, #280, #116, #90) / 8 closed; no release since 0.7.1.
+  [api]
+- **Decomps:** none matches all the binaries byte for byte:
+  - **HaydnTrigg/Freelancer:** objdiff "Matching: 12.16 %". decomp.dev (snapshot 4 Jul 2026): 8.60 % code matched,
+    2,680 of 52,921 functions, 0 of 28 units complete. The modules handed to Liberty count as done (dacom, movie,
+    readfile, rp8, soundmanager / streamer, system, x86math); Freelancer.exe, Common, Server, Content and DALib are
+    at 0 %. Last push 3 Oct 2026. [api]
+  - **Liberty** (https://github.com/HaydnTrigg/Liberty): README "This is a prototype export from Excalibur. A new
+    delink based matching decomp coming soon."
+    - Excalibur has no public page (HaydnTrigg's private tool [inference]). Delink = HaydnTrigg/delink, a
+      binary-splitting tool for decomp projects (created 15 Apr 2026, last push 16 Oct 2026).
+    - GPL-3.0, 30 stars, 11 forks, 135 commits, last push 6 Oct 2026; VS2022 + clang-cl, or Linux via msvc-wine.
+    - 33 module folders under `Code/`; the renderer is RP8 with `DX8/` and no D3D9 file. [api]
+  - **Freelancer-Decomp (Giperion):** no matching claim (behaviour "checked against the retail disassembly", a
+    deviations ledger). RP9 = a D3D9 fork of RP8 with volumetric nebulae, off by default (`FreelancerRp9=0`), outside
+    the deviations ledger. `docs/hd_edition.md` is a plan (15 Oct 2026); only Hor+ widescreen is implemented. Quiet
+    since 20 Oct 2026 (46 stars, 17 forks; PRs #5 asm-to-C++, #6 GetScannerRange open). [api]
+- **Patch tools:**
+  - **FLStaticPatch** (FLHDE, Python, MIT; last commit 27 Apr 2026 "Return status code 1 if patching failed"):
+    - Config: a `File SHA1. Base: ...` header, then `OFFSET: Type Old -> New = Explanation ~Author` lines.
+    - A hash mismatch, missing file, wrong original bytes or unknown type prints a message and exits 1 at once,
+      with no rollback of earlier writes.
+    - HDE's `.github/workflows/update.yml` copies FLHDE/OriginalFLBinaries over the checkout and runs it on every
+      push to main; a failure fails the job before the commit step.
+    - `FLDOCS\BinaryEdits.patch`: 9 file blocks (Common, Content, DALib, engbase, FLServer, Freelancer.exe, rendcomp,
+      rp8, Server), 79 active offset lines. [api]
+  - **BwPatch** (adoxa, v1.10, 2012, public domain):
+    - On mismatched bytes it prints "Bytes differ; patch anyway?" and reads stdin (asked even with `-y`); EOF skips
+      the patch.
+    - A length or past-end error goes to stderr and the line is skipped.
+    - `main` returns 0 either way (1 only for a missing patch file, 2 for parse errors), so an unattended wrong
+      patch is skipped without a failing exit code. [page]
+  - **FLPatch's `dalib.dll` +0xC00** (`research\repos\FLPatch\src\main.cpp` 69-71, a special case for that one
+    module). FLPatch adds a *file* offset to the module base, which is right only where file offset = RVA. Measured
+    on the 0.7.1 binaries' section tables:
+    - Freelancer.exe, Common, Server, Content, EngBase, rendcomp and rp8: file alignment 0x1000, delta 0 for
+      `.text` / `.rdata` / `.data`.
+    - DALib.dll: file alignment 0x200, delta 0xC00 for `.text` / `.rdata` but 0xE00 for `.data`. So the hack is
+      right for code and rdata, and a DALib `.data` patch would land 0x200 bytes off.
+    - HDE's 16 DALib edits (zlib 1.3 compatibility) are all in `.rdata`.
+    - For FLvibed: any cross-check of `BinaryEdits.patch` offsets against `flexe.h` / Ghidra addresses converts
+      DALib offsets per section; the other modules' code and data offsets are RVAs as written. [file][local]
+- **Not verified:** what Excalibur is.

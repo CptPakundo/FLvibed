@@ -26,16 +26,13 @@ int CmdFromName(const char* name)
     return -1;
 }
 
-u32 CommandFlags(int cmd)
+// Freelancer's loaded key commands: list at [exe::KeyCommands]; entry (node+8): +0 command, +4 ids_name, +8 ids_info,
+// +C event mask, +14/+18 key vector. Guarded (no C++ objects in this frame): the game rebuilds the list when the player
+// edits the controls, and this runs on every fired command (29 Oct 2026; the other walks were guarded already).
+static void ReadCommandFlags(u32* cache)
 {
-    // Freelancer's loaded key commands: list at [exe::KeyCommands]; entry (node+8):
-    // +0 command, +4 ids_name, +8 ids_info, +C event mask, +14/+18 key vector.
-    static u32 cache[CMD_COUNT];
-    static DWORD cacheTick = 0;
-    const DWORD now = GetTickCount();
-    if (!cacheTick || now - cacheTick > 2000)
+    __try
     {
-        memset(cache, 0, sizeof(cache));
         const u32 sentinel = Mem<u32>(exe::KeyCommands);
         u32 node = sentinel ? Mem<u32>(sentinel) : 0;
         for (int guard = 0; node && node != sentinel && guard < 1000; ++guard)
@@ -45,6 +42,22 @@ u32 CommandFlags(int cmd)
                 cache[id] = Mem<u32>(node + 8 + 0xC);
             node = Mem<u32>(node);
         }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+}
+
+u32 CommandFlags(int cmd)
+{
+    static u32 cache[CMD_COUNT];
+    static DWORD cacheTick = 0;
+    const DWORD now = GetTickCount();
+    if (!cacheTick || now - cacheTick > 2000)
+    {
+        memset(cache, 0, sizeof(cache));
+        if (exe::KeyCommands.ok())
+            ReadCommandFlags(cache);
         cacheTick = now;
     }
     if (cmd < 0 || cmd >= CMD_COUNT || !cache[cmd])
@@ -185,24 +198,82 @@ int TargetLeadPos(float out[3])
     return iobj ? ReadLead(iobj, out) : -1;
 }
 
+static bool ReadCameraAt(u32 cam, CameraView& out)
+{
+    __try
+    {
+        memcpy(out.rot, reinterpret_cast<const void*>(cam + 4), sizeof(out.rot));
+        memcpy(out.pos, reinterpret_cast<const void*>(cam + 0x28), sizeof(out.pos));
+        out.cx = Mem<float>(cam + 0x68), out.cy = Mem<float>(cam + 0x6C);
+        out.sx = Mem<float>(cam + 0x78), out.sy = Mem<float>(cam + 0x7C);
+        out.nearPlane = Mem<float>(cam + 0xA4);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+bool ReadCamera(CameraView& out)
+{
+    const u32 cam = CurrentCamera();
+    return cam && ReadCameraAt(cam, out);
+}
+
 bool WorldToScreen(const float world[3], float out[3])
 {
-    // Current 3D camera: +4 rotation (columns = camera axes, looks along -z), +0x28 position,
-    // +0x68/+0x6C pixel center, +0x78/+0x7C scale, +0xA4 near plane (same layout as the UI
-    // camera; Freelancer's own 0x40F4F0 path reported every point as hidden when called by us).
-    const uintptr_t cam = CurrentCamera();
-    if (!cam)
+    // the current 3D camera (fl.h CameraView; Freelancer's own 0x40F4F0 path reported every point as hidden when
+    // called by us)
+    CameraView c;
+    if (!ReadCamera(c))
         return false;
-    const float* r = reinterpret_cast<const float*>(cam + 4);
-    const float* c = reinterpret_cast<const float*>(cam + 0x28);
-    const float d[3] = {world[0] - c[0], world[1] - c[1], world[2] - c[2]};
+    const float d[3] = {world[0] - c.pos[0], world[1] - c.pos[1], world[2] - c.pos[2]};
     float v[3];
     for (int i = 0; i < 3; ++i)
-        v[i] = r[0 * 3 + i] * d[0] + r[1 * 3 + i] * d[1] + r[2 * 3 + i] * d[2];
-    if (v[2] > -Mem<float>(cam + 0xA4))
+        v[i] = c.rot[0 * 3 + i] * d[0] + c.rot[1 * 3 + i] * d[1] + c.rot[2 * 3 + i] * d[2];
+    if (v[2] > -c.nearPlane)
         return false; // behind the near plane
-    out[0] = Mem<float>(cam + 0x68) + Mem<float>(cam + 0x78) * (v[0] / -v[2]);
-    out[1] = Mem<float>(cam + 0x6C) + Mem<float>(cam + 0x7C) * (v[1] / -v[2]);
+    out[0] = c.cx + c.sx * (v[0] / -v[2]);
+    out[1] = c.cy + c.sy * (v[1] / -v[2]);
+    out[2] = -v[2];
+    return true;
+}
+
+bool FlightScreenAxes(float rot[9])
+{
+    if (TurretView())
+    {
+        Kinematics me;
+        if (!PlayerKinematics(me))
+            return false;
+        memcpy(rot, me.rot, 9 * sizeof(float));
+        return true;
+    }
+    CameraView c;
+    if (!ReadCamera(c))
+        return false;
+    memcpy(rot, c.rot, sizeof(c.rot));
+    return true;
+}
+
+bool WorldToFlightScreen(const float world[3], float out[3])
+{
+    if (!TurretView())
+        return WorldToScreen(world, out);
+    Kinematics me;
+    CameraView c;
+    if (!ReadCamera(c) || !PlayerKinematics(me))
+        return false;
+    // the ship's axes as the camera's (rot columns: +x right, +y up, looks along -z, as a camera's)
+    const float d[3] = {world[0] - me.pos[0], world[1] - me.pos[1], world[2] - me.pos[2]};
+    float v[3];
+    for (int i = 0; i < 3; ++i)
+        v[i] = me.rot[0 * 3 + i] * d[0] + me.rot[1 * 3 + i] * d[1] + me.rot[2 * 3 + i] * d[2];
+    if (v[2] > -c.nearPlane)
+        return false; // behind the ship
+    out[0] = c.cx + c.sx * (v[0] / -v[2]);
+    out[1] = c.cy + c.sy * (v[1] / -v[2]);
     out[2] = -v[2];
     return true;
 }

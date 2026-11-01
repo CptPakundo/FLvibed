@@ -592,7 +592,7 @@ function Get-FLJobOffers([uint32]$Base = 0) {
 # from the install).
 function Get-FLJobDifficulty([double]$Reward) {
     if (-not $script:FLMoneyTable) {
-        $f = Join-Path $script:FLRoot 'Install\Freelancer HD Edition\DATA\RandomMissions\diff2money.ini'
+        $f = Join-Path (Get-FLInstallDir) 'DATA\RandomMissions\diff2money.ini'
         $script:FLMoneyTable = @(Get-Content -LiteralPath $f | Where-Object { $_ -match '^\s*Diff2Money\s*=\s*([\d.]+),\s*([\d.]+)' } |
             ForEach-Object { $null = $_ -match '=\s*([\d.]+),\s*([\d.]+)'; , @([double]$Matches[1], [double]$Matches[2]) })
     }
@@ -722,7 +722,7 @@ function Get-FLWorthNeeded {
 # mission_property, and this follows). $Ship: the ship's archetype id (default: the player's, from `pilot`; no
 # reading = berths). Unknown object = no. Cached per object: the set of its sphere types.
 function Test-FLSmallShipDock([uint32]$Id, [uint32]$Ship = 0) {
-    $data = Join-Path $script:FLRoot 'Install\Freelancer HD Edition\DATA'
+    $data = Join-Path (Get-FLInstallDir) 'DATA'
     if (-not $script:FLShipDockKinds) {
         $kinds = @{}; $cur = $null
         foreach ($l in Get-Content (Join-Path $data 'SHIPS\shiparch.ini')) {
@@ -782,7 +782,7 @@ function Get-FLJobBases([double]$Need = 0, [double]$JobSec = 240, [uint32[]]$Ski
     # Checked against the boards seen after M01b: Manhattan 2013-2655 (offers 2000-2550), Navy up to 3219 (the user).
     if ($script:FLJobStage -ne $Stage) { $script:FLJobData = $null; $script:FLJobStage = $Stage }
     if (-not $script:FLJobData) {
-        $data = Join-Path $script:FLRoot 'Install\Freelancer HD Edition\DATA'
+        $data = Join-Path (Get-FLInstallDir) 'DATA'
         $money = @(Get-Content (Join-Path $data 'RandomMissions\diff2money.ini') | Where-Object { $_ -match '^Diff2Money = ([\d.]+), (\d+)' } |
                    ForEach-Object { $null = $_ -match '^Diff2Money = ([\d.]+), (\d+)'; , @([double]$Matches[1], [double]$Matches[2]) })
         $pay = {
@@ -851,7 +851,9 @@ function Get-FLJobBases([double]$Need = 0, [double]$JobSec = 240, [uint32[]]$Ski
 # Start-FLEventLog); a board of another base throws.
 function Start-FLJob([int[]]$Types = @(1)) {
     $offers = @(Get-FLJobOffers)
-    if (-not $offers.Count) { throw 'no job offers in the event log (dock or load after Start-FLEventLog)' }
+    # (a second load of the same docked save drops the board's offers - offer-gone for all - and makes none: A37 S1, 30 Oct
+    # 2026, deploy.ps1 -Save SaveC701 then Load-FLSave SaveC701; load once)
+    if (-not $offers.Count) { throw 'no job offers in the event log (dock or load after Start-FLEventLog; a second load of the same docked save leaves none)' }
     $pick = $offers | Where-Object { $_.Row -lt 5 -and $_.Type -in $Types } | Sort-Object Reward -Descending | Select-Object -First 1
     if (-not $pick) { throw "no visible job of type $($Types -join ',') ($(($offers | ForEach-Object { "$($_.Type):$($_.Reward)" }) -join ' '))" }
     if ((Send-FL 'hotspots') -notmatch 'IDS_HOTSPOT_MISSIONVENDOR') { $null = Goto-FLRoom Bar }

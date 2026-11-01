@@ -1,6 +1,6 @@
 # HUD cues: pre-attentive signals (design, 19 Oct 2026)
 
-User principles (memory hud-design-principles): know where the eyes are, minimise eye travel, keep the HUD spaced and
+User principles: know where the eyes are, minimise eye travel, keep the HUD spaced and
 logical; brief flashes / colour changes of specific form, size and duration signal state without reading. One cue =
 one meaning, flashes < 3 Hz, never colour alone, an off switch.
 
@@ -121,6 +121,40 @@ double ring; shield batteries used = blue double ring. Triggers are what the pla
 `autopilot::Active()` (objective sub-mode switches do not pulse) and drops of the nanobot / battery counts (the
 player's own presses too). Verified: debug `cue ring 0..3` frames (research\experience\shield_hits\reticle_rings.jpg);
 `ap start hold` + `ap stop` = exactly 2 pulses. Tinting the game's own reticle sprite would need its HUD element (RE).
+
+## Haptics: the pad's vibration (skeleton built 30 Oct 2026, WORK_QUEUE Q5 slice 3, IDEAS U30)
+The cue rules hold for the motors too: one meaning per effect, short (every effect under 0.5 s), never the only cue,
+an off switch (`rumble` 0). `src\impl\haptics_rules.h` (pure, unit test `haptics`) + `haptics.cpp` (the game side):
+game event -> **the effect table** (`kEffects`, one row each: category, low / high motor at full strength, attack /
+hold / release, repeats, priority, rate limit, its other cue) -> **the mixer** (4 voices; the maximum per motor; below
+the highest priority playing an effect is ducked to 0.4; a trigger inside its effect's gap merges into the next start;
+a fatigue limiter keeps the motors busy at most about half the time under sustained fire by dropping the priorities
+under 5; the master `rumble` percent last) -> **the renderer** (sends only changes, at most every 30 ms, a start and a
+stop at once, a running value refreshed every 0.25 s) -> `Gamepad::Rumble`, i.e. XInput or the SDL backend, whichever
+reads the pad. The table (levels at full strength; hits scale by their weight, `HitStrength`):
+
+| Effect | Event | Low / high | Shape | Prio, gap | The other cue |
+|---|---|---|---|---|---|
+| `hit_shield` | the shield took damage (weight = its share of the capacity) | 0.20 / 0.65 | 0.04 s + 0.10 s decay | 3, 0.2 s | the shield cue's edge, the game's shield bar and impact sound |
+| `hit_hull` | the hull took damage (its share of the hull points) | 0.85 / 0.30 | 0.06 + 0.16 s | 4, 0.2 s | the hull cue's edge, the game's hull bar, damage arcs, impact sound |
+| `shield_fail` | the shield went down | 1.00 / 0.80 | 0.10 + 0.25 s | 6, 1 s | the shield cue's failure flash, the game's collapse sound |
+| `handback` | the autopilot gave the ship back (the edge of `autopilot::Active()`, as the reticle cue) | 0.60 / 0.36 | 0.18 s flat (the pulse of before, unchanged) | 6, 0.3 s | the reticle cue's amber ring, the status line |
+| `confirm` | a box of the game's waits for the answer (PopUpDialog: the story's OK boxes; YES / NO / LATER) | 0.15 / 0.50 | two 0.08 s ticks, 0.15 s apart | 5, 1.5 s | the box itself, its prompt bar |
+
+A hit's weight -> strength: 0.25 + 3 x share, capped at 1 (a quarter of the capacity at once = the maximum). **Silence**
+(`Silence()`): nothing while `rumble` is 0, the module is off, the pad is not the game's (the one focus gate:
+`focus_gate.h`) or the keyboard and mouse are the device in use (a pad on the desk never buzzes); the world's effects and
+the hand-back only in flight (also with a NeuroNet window), never docked, in a cutscene, in the menus or paused; the
+prompt in flight or docked, **also paused** - the game's own boxes pause the game (`docs\missions\M01a.md`). A gate that
+closes stops its effects at once and drops their merged triggers; nothing silenced comes back later. Changes against
+the pulse of before: it plays only with the pad as the device in use (the K key or the bar button with the keyboard and
+mouse in use: no pulse) and only when the autopilot ends in flight (one ended by a dock or a cutscene is silent; was: by
+reading the code, a hand-back inside a dock could pulse at the next launch's first pad frame - not observed).
+Debug `haptics [status] | table | play <effect> [level] | stop` (`play` goes through the live gates); sweep section
+`pad-haptics` reads every clause back from both backends' device streams. **Not yet:** per-category sliders, trigger
+rumble / impulse triggers, DualSense effects and waveform (U31 / U32), explosions, engine / afterburner continua, missile
+lock (the rest of `docs\research\controller-input-haptics.md` section 4), the autopilot's own confirmations (not built:
+`AUTOPILOT_UX.md` 7.3; they call the same `confirm`), the feel on a real pad (the owner's attended check J8).
 
 ## Neural Net severity (subtitles, built 19 Oct 2026)
 The NN column's colour + 1-2 brightness pulses by the line's severity: subtitles\docs\DISPLAY_PLAN.md "Look and motion".

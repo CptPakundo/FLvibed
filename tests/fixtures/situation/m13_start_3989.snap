@@ -1,0 +1,26 @@
+# A37 S2 fixture, recorded 30 Oct 2026 on 63291e3 src:clean (a fresh game per save, instance 2; run a37s2_2026-10-30_0940_commit63291e3): docked, "launch": no armed flying goal; the kind is base_action by exit_base (Cnd_BaseExit -> defend_base); the ini view's two system-entry distance goals are not armed
+# Save3989.fl right after the load, a fresh game (A37 S2)
+snap v2
+obj seq=2 title=24400 marks=
+step text=24410 refs= ref_obj= nav=0 nav_pos=0,0,0 nav_system=0 verb=none job= job_rows=0
+entry text=24410 refs= ref_obj= nav=0 nav_pos=0,0,0 nav_system=0 verb=none job= job_rows=0
+script from_last=0 by_title=0 standin=0 file=M13\m13.ini next=defend_base pending= source_live=1
+objdef nick=launch type=ids script=M13\m13.ini
+inigoal kind=1 object=2771056453 name=Sinclair pos=0,0,0 dist=300 count=0 subject=player trigger=wait_for_trent_again leads=escort_sinclair file=M13\m13.ini by_entry=1 placed=0 obj_pos=0,0,0 objects=
+inigoal kind=1 object=3217613577 name=osiris pos=0,0,0 dist=1000 count=0 subject=player trigger=in_osiris_range leads=dock_with_osiris file=M13\m13.ini by_entry=1 placed=0 obj_pos=0,0,0 objects=
+nextgoal kind=1 object=2771056453 name=Sinclair pos=0,0,0 dist=300 count=0 subject=player trigger=wait_for_trent_again leads=escort_sinclair file=M13\m13.ini by_entry=1 placed=0 obj_pos=0,0,0 objects=
+nextgoal kind=1 object=3217613577 name=osiris pos=0,0,0 dist=1000 count=0 subject=player trigger=in_osiris_range leads=dock_with_osiris file=M13\m13.ini by_entry=1 placed=0 obj_pos=0,0,0 objects=
+nag has=0 pos=0 object=0 name= p=0,0,0 dist=0
+nextnag has=0 pos=0 object=0 name= p=0,0,0 dist=0
+live ok=1 reason= script=M13\m13.ini controller=11 ms=1.69379997
+livetrig id=2315264333 state=0 cond= nick=exit_base ini=cnd_baseexit leads=defend_base hops=0
+livetrig id=3053031951 state=0 cond=Cnd_SpaceEnter nick=spawnships ini=cnd_spaceenter leads=FAIL hops=2
+livetrig id=3093200843 state=0 cond=Cnd_LocEnter nick=wait_in_equipment_room ini=cnd_locenter leads= hops=-1
+place system=3086998659 base=3149903104 space=0 clock=86404.319533403177
+pilot ok=0 op=-1 locked=0 lane=0 jumping=0 cruise=0 entry=0 exit=0 leader=0 target=0 pos=0,0,0 vel=0,0,0 hull=-1 shield=-1
+holds mission=0 dock=0 grant_ms=-1 reply_seq=0 reply_ship=0 reply_kind=0 reply_resp=0 result_seq=0 result_type=0
+settings knowledge=0 script_goals=1 stale_destroy_wait=1 prestage_next=1 airlock_fly_through=1 pre_aggro=0
+exec mode=0 target=0 obj=0 survival=0 our_dock=0 spawns=0
+end
+#game-hash 0x0df6b765 step=0x35a9773a snap_ms=38.35
+#expect placeholder=none standin=none kind=base_action source=script subject=none held=docked verb=none

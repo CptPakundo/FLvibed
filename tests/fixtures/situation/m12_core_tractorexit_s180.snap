@@ -1,0 +1,46 @@
+snap v5
+obj seq=6 title=24200 marks=13 refs_obj= title_escape=0
+step text=21660 refs= ref_obj= nav=0 nav_pos=0,0,0 nav_system=0 verb=none job= job_rows=0 ref_placed=0 ref_pos=0,0,0
+entry text=21660 refs= ref_obj= nav=0 nav_pos=0,0,0 nav_system=0 verb=none job= job_rows=0 ref_placed=0 ref_pos=0,0,0
+script from_last=1 by_title=0 standin=24230 file=M12\m12.ini next=0 pending= source_live=1
+objdef nick=nn_objsoon type=ids script=M01a\m01a.ini
+objdef nick=mlog_51022 type=rep_inst script=M01b\m01b.ini
+objdef nick=nn_objsoon type=ids script=M01b\m01b.ini
+objdef nick=null type=ids script=M02\m02.ini
+objdef nick=mlog_awaiting_objective type=ids script=M03\m03.ini
+objdef nick=nn_blank type=ids script=M04\m04.ini
+objdef nick=mlog_awaiting_objective type=ids script=M05\m05.ini
+objdef nick=nn_objsoon type=ids script=M06\m06.ini
+objdef nick=mlog_awaiting_objective type=ids script=M07\m07.ini
+objdef nick=null type=ids script=M08\m08.ini
+objdef nick=mlog_awaiting_objective type=ids script=M09\m09.ini
+objdef nick=nn_blank type=ids script=M10\m10.ini
+objdef nick=mlog_awaiting_objective type=ids script=M11\m11.ini
+objdef nick=nn_blank type=ids script=M12\m12.ini
+objdef nick=null type=ids script=M13\m13.ini
+inigoal kind=2 object=0 name= pos=0,0,-950 dist=700 count=0 subject=player trigger=setnnobj_tractor_in_the_powercell leads=mlog_tractor_in_the_powercell file=M12\m12.ini by_entry=0 placed=0 obj_pos=0,0,0 objects=
+nextgoal kind=2 object=0 name= pos=0,0,-950 dist=700 count=0 subject=player trigger=setnnobj_tractor_in_the_powercell leads=mlog_tractor_in_the_powercell file=M12\m12.ini by_entry=0 placed=0 obj_pos=0,0,0 objects=
+prestage last_real=24230 next=0 next_ok=0 next_pos=0,0,0 next_text=0 stage_from=24230 stage_ok=1 stage_pos=0,0,-1566 stage_text=24240
+realnext kind=2 object=0 name= pos=0,0,-950 dist=700 count=0 subject=player trigger=setnnobj_tractor_in_the_powercell leads=mlog_tractor_in_the_powercell file=M12\m12.ini by_entry=0 placed=0 obj_pos=0,0,0 objects=
+nag has=0 pos=0 object=0 name= p=0,0,0 dist=0
+nextnag has=0 pos=0 object=0 name= p=0,0,0 dist=0
+live ok=1 reason= script=M12\m12.ini controller=11 ms=0.0328000002
+livetrig id=2466975689 state=0 cond=Cnd_Destroyed nick=king_dies ini=cnd_destroyed leads=FAIL hops=0
+livetrig id=2468953796 state=0 cond=Cnd_Destroyed nick=juni_dies ini=cnd_destroyed leads=FAIL hops=0
+livetrig id=2673486850 state=0 cond= nick=got_powercell ini=cnd_lootacquired leads=0 hops=0
+livetrig id=2909073923 state=0 cond=Cnd_Timer nick=countdown_to_jump_hole_7_min_left ini=cnd_timer leads= hops=-1
+place system=3215405891 base=0 space=1 clock=86418.150396716097 entry=0 entry_pos=0,0,0
+pilot ok=1 op=19 locked=0 lane=0 jumping=0 cruise=0 entry=0 exit=0 leader=0 target=2281279501 pos=-93.2411499,-47.9610977,-295.680298 vel=58.2901421,38.7988777,-178.388885 hull=0.80447185 shield=1 tractor=1500 system=3215405891
+holds mission=0 dock=0 grant_ms=-1 reply_seq=0 reply_ship=0 reply_kind=0 reply_resp=0 result_seq=0 result_type=0
+settings knowledge=1 script_goals=1 stale_destroy_wait=1 prestage_next=1 airlock_fly_through=1 pre_aggro=0 tractor_exit_run=0 tractor_exit_range=600 big_coast=1 survival_calm=1 survival_stage=1 survival_until_jump=1 follow_distance=1500
+exec mode=8 target=0 obj=1 survival=0 our_dock=0 spawns=0
+queue seq=6 mode=travel target=0 sub=travel sub_target=0 action=navmarker tr_dest=1 tr_object=0 tr_pos=0,0,-950 lock=2281279501 lock_have=1 lock_p2=-1.14600158,-0.43790406,-1235.35522 cruise_lock=0 leash_ship=0 leash_dist=0 last_dock=0 escort=0 bad_goal= dead_goals= script_marks= seen_alive= seen_listed= last_real=24230 arrived=0 step_age=0 escorted=0 surv_title=24200 surv_mission=0 surv_ended=0 surv_system=3215405891 survival=0 mission_leader=0 via_next=0 arrive_retries=0 tr_pass=0
+decided rule=tractor-exit mode=travel target=0 action=navmarker keep=1
+contact id=13 type=268435456 name_ids=217200 base=0 ship=0 dock=0 targetable=1 pos=0,0,-1119 dist=829.969604 health=1 attitude=0 asked=0 att_known=0 att=0 target=0 targets_player=0 max_hit=0 rep=0 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=2284101448 type=16384 name_ids=10911 base=0 ship=0 dock=0 targetable=1 pos=0,0,-1119 dist=829.969604 health=1 attitude=0 asked=0 att_known=1 att=-1 target=0 targets_player=0 max_hit=9.99999962e+35 rep=-2010865848 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=2281279501 type=1024 name_ids=10907 base=0 ship=0 dock=0 targetable=1 pos=-1,0,-1566 dist=1274.56689 health=1 attitude=0 asked=0 att_known=1 att=0 target=0 targets_player=0 max_hit=9.99999962e+35 rep=-2013687795 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=2949249546 type=1024 name_ids=10907 base=0 ship=0 dock=0 targetable=1 pos=0,0,1375 dist=1673.96741 health=1 attitude=0 asked=0 att_known=1 att=0 target=0 targets_player=0 max_hit=9.99999962e+35 rep=-1345717750 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+end
+#shadow situation shadow agree tractor-exit old=travel,0,navmarker,keep=1 new=tractor-exit mode=travel target=0 action=navmarker keep=1 text=21660 step=0x778d7014 ms=1.12 why=marked loot 13 at 830 m within the beam's 1500 m
+#game-hash 0x6024897e step=0x778d7014
+

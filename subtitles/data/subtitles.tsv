@@ -916,7 +916,7 @@ DX_M04_0190_JUNI	juni	story	script	1.00	Juni	King!
 DX_M04_0200_WALKER	walker	story	correction	2.71	Walker	Walker here! We'll take care of the battleship.
 DX_M04_0210_WALKER	walker	story	script	5.07	Walker	All hands – fire at will! I repeat: all hands fire at will!
 DX_M04_0215_UNITY	unity_voice_m04	story	correction	15.30	Battleship Unity	Code red! I repeat: Code red! This is the Battleship Unity! We are under attack and taking heavy casualties. In need of immediate assistance, all available units please approach sector Manhattan01_01, I repeat, please approach sector... [static]
-DX_M04_0217_UNITY	unity_voice_m04	story	judged: recording	6.37	Battleship Unity	All heads of abandoned ship! I'm in communication with General Walker: all ships of abandoned ship.
+DX_M04_0217_UNITY	unity_voice_m04	story	correction	6.37	Battleship Unity	All hands abandon ship! I repeat, this is a general order! All hands abandon– [static]
 DX_M04_0220_LSF_LAMBDA	pilot_f_mil_m01	story	script	4.38	LSF Lambda 1	This is Lambda 1 to all fighter groups: move to intercept remaining fighters. Over!
 DX_M04_0230_WALKER	walker	story	script	5.70	Walker	The Trade Lane is clear! Juni, Trent... get out of here! King, go with them.
 DX_M04_0240_JUNI	juni	story	script	1.42	Juni	What about you?
@@ -1923,7 +1923,7 @@ dx_s003x_0201_manhtn_bar	manhtn_bar	story	script	2.14	Manhattan Bartender	All we
 dx_s003x_0301_Trent	trent	story	script	0.94	Trent	Fine!
 dx_s003x_0401_manhtn_bar	manhtn_bar	story	script	3.06	Manhattan Bartender	Her name is Jun'ko Zane. She's a tough one...
 dx_s003x_0501_Trent	trent	story	correction	1.25	Trent	Oh, why's that?
-dx_s003x_0601_manhtn_bar	manhtn_bar	story	script	4.62	Manhattan Bartender	She's LSF. All business... if it's a job you're wanting that is.
+dx_s003x_0601_manhtn_bar	manhtn_bar	story	correction	4.62	Manhattan Bartender	She's LSF. All business... if it's a job you're wanting that is.
 dx_s003x_0602_manhtn_bar	manhtn_bar	story	script	3.55	Manhattan Bartender	On the other hand, if you're looking for something more...
 dx_s003x_0701_Trent	trent	story	script	3.13	Trent	Oh, the only thing I'm looking for right now is this drink.
 dx_s003x_0801_Trent	trent	story	correction	0.65	Trent	Ugh!
@@ -1944,9 +1944,9 @@ dx_s003x_1801_manhtn_bar	manhtn_bar	story	script	3.13	Manhattan Bartender	Becaus
 dx_s003x_1802_manhtn_bar	manhtn_bar	story	script	2.09	Manhattan Bartender	To your good fortune in Liberty, Sir!
 dx_s003x_1901_Trent	trent	story	judged: recording	1.85	Trent	Well, it can't get any worse.
 dx_s003x_2001_Trent	trent	story	asr	0.47	Trent	Hmm.
-dx_s004x_0101_juni	juni	story	form: heard	2.87	Juni	I understand what you're saying, but I don't have nearly enough people!
+dx_s004x_0101_juni	juni	story	correction	2.87	Juni	I understand what you're saying, but I don't have nearly enough people.
 dx_s004x_0201_Li_diplomt	li_diplomt	story	script	2.74	Liberty Diplomat	Juni, the environment has changed.
-dx_s004x_0202_Li_diplomt	li_diplomt	story	script	6.14	Liberty Diplomat	Oh, with groups like "The Order" taking more and more liberties – indeed now threatening our profits...
+dx_s004x_0202_Li_diplomt	li_diplomt	story	correction	6.14	Liberty Diplomat	Oh, with groups like "The Order" taking more and more liberties – indeed now threatening our profits...
 dx_s004x_0203_Li_diplomt	li_diplomt	story	correction	4.65	Liberty Diplomat	Some in the government feel that we need to increase our patrols in these areas–
 dx_s004x_0301_juni	juni	story	script	0.89	Juni	Yes?
 dx_s004x_03a01_Trent	trent	story	correction	0.89	Trent	Ahem...
@@ -2370,7 +2370,7 @@ dx_s037a_1801_Trent	trent	story	correction	2.17	Trent	Look, I hate to rush this 
 dx_s037a_1901_Tobias	tobias	story	script	2.87	Tobias	Someone's here. I'll take care of it.
 dx_s037a_2001_Tobias	tobias	story	script	4.52	Tobias	Hello, my friends. What is it I can get for you today?
 dx_s037a_2101_Rh_agent01	rh_agent01	story	form: heard	4.44	Rheinland Agent 1	We are looking for a man. We have reason to believe he's in the area.
-dx_s037a_2201_Tobias	tobias	story	script	3.13	Tobias	Nice looking chap. Sorry, haven't seen him.
+dx_s037a_2201_Tobias	tobias	story	correction	3.13	Tobias	Mmm, nice looking chap. Sorry, haven't seen him.
 dx_s037a_2301_Rh_agent01	rh_agent01	story	script	2.38	Rheinland Agent 1	He is considered an enemy of Rheinland.
 dx_s037a_2302_Rh_agent01	rh_agent01	story	script	3.50	Rheinland Agent 1	Anyone caught hiding him would face severe consequences.
 dx_s037a_2401_Tobias	tobias	story	form: heard	5.80	Tobias	Listen to me. You are not in Rheinland now, you're in my shop.
@@ -2470,9 +2470,9 @@ dx_s039x_0601_Akira	hakkera	story	script	5.49	Lord Hakkera	Please excuse me. I'v
 dx_s039x_0602_Akira	hakkera	story	script	3.32	Lord Hakkera	I will be in touch once I get access to the Proteus Tome.
 dx_s039x_0701_Trent	trent	story	script	3.37	Trent	That's it? What are we supposed to do now, wait?
 dx_s039x_0801_juni	juni	story	judged: recording	2.64	Juni	Like hell we will. I have contacts here, too.
-dx_s039x_0802_juni	juni	story	script	2.14	Juni	But to get to them we're going to have to split up for a while.
+dx_s039x_0802_juni	juni	story	correction	2.14	Juni	But to get to them we're gonna have to split up for a while.
 dx_s039x_0901_Trent	trent	story	script	2.46	Trent	What am I supposed to do around here while you're gone?
-dx_s039x_1001_juni	juni	story	script	4.47	Juni	You should try to fit in a little, maybe get some work. By the sound of things, this may take a while.
+dx_s039x_1001_juni	juni	story	correction	4.47	Juni	You should try to fit in a little, maybe get some work. By the sound of things, this may take a while.
 dx_s039x_1002_juni	juni	story	script	2.40	Juni	Don't worry, I won't be far.
 dx_s045a_0101_juni	juni	story	script	0.71	Juni	You came!
 dx_s045a_0201_Trent	trent	story	script	3.29	Trent	Yeah, I was starting to wonder if we were partners anymore.
@@ -2483,7 +2483,7 @@ dx_s045a_0304_juni	juni	story	correction	2.33	Juni	Hakkera can't help us.
 dx_s045a_0401_Trent	trent	story	script	2.22	Trent	What do you mean? That's why we came!
 dx_s045a_0501_juni	juni	story	script	3.66	Juni	You have to understand Kusari customs, Hakkera is a Lord.
 dx_s045a_0502_juni	juni	story	correction	5.49	Juni	His position gives him power, but it also limits him. There's only so much he can do before he violates his station.
-dx_s045a_0503_juni	juni	story	script	3.66	Juni	Anyway, I'm onto something, but you're going to have to trust me on this one.
+dx_s045a_0503_juni	juni	story	correction	3.66	Juni	Anyway, I'm onto something, but you're going to have to trust me on this one.
 dx_s045a_0504_juni	juni	story	script	3.06	Juni	If we do this, we do it together, understand? Are you in?
 dx_s045b_0101_Trent	trent	story	script	2.38	Trent	Why not? I've come this far, haven't I?
 dx_s045b_0201_juni	juni	story	script	0.76	Juni	Thank you.
@@ -2550,7 +2550,7 @@ dx_s046x_0703_juni	juni	story	script	3.42	Juni	He wanted for us to at least have
 dx_s046x_0704_juni	juni	story	script	5.25	Juni	Since he was from Liberty and my mother was from here, we followed his diplomatic ties to Manhattan.
 dx_s046x_0801_Trent	trent	story	script	1.96	Trent	And left all this behind!
 dx_s046x_0901_juni	juni	story	script	0.63	Juni	That's right.
-dx_s046x_1001_Ozu	ozu	story	script	3.29	Ozu	I'm afraid we have been deceived.
+dx_s046x_1001_Ozu	ozu	story	correction	3.29	Ozu	I'm afraid we have been deceived.
 dx_s046x_1002_Ozu	ozu	story	script	4.81	Ozu	This was the right shipment, but we have neither the artifacts nor Tekagi.
 dx_s046x_1003_Ozu	ozu	story	correction	4.47	Ozu	He was not on the transport as we were led to believe. Something has changed.
 dx_s046x_1101_Trent	trent	story	script	1.36	Trent	So what do we do now?
@@ -2702,7 +2702,7 @@ dx_s064x_2501_Trent	trent	story	script	3.13	Trent	So the Chancellor is a host bo
 dx_s064x_2601_Orillion	orillion	story	script	5.07	Orillion	Isn't it obvious? Now if you'll excuse me, I have a briefing to attend. Colonel Zane?
 dx_s064x_2701_juni	juni	story	script	2.38	Juni	Don't worry, Trent. No need to salute.
 dx_s067a_0101_Trent	trent	story	script	0.99	Trent	What's happening here?
-dx_s067a_0201_King	king	story	script	2.09	King	More of the same!
+dx_s067a_0201_King	king	story	correction	2.09	King	Ah, more of the same.
 dx_s067a_0301_Orillion	orillion	story	script	0.71	Orillion	Colonel Zane!
 dx_s067a_0401_juni	juni	story	script	0.52	Juni	Sir!
 dx_s067a_0501_Orillion	orillion	story	script	5.41	Orillion	We've just gotten word that President Jacobi is still alive. I need you and Colonel Trent for a mission at once.

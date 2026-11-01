@@ -94,7 +94,7 @@ for d, _, fs in os.walk(dst):
         if q not in keep: os.remove(q)
 print(len(keep))
 '@
-$pyFile = Join-Path ([IO.Path]::GetTempPath()) 'flvibed_spec_img.py'
+$pyFile = Join-Path ([IO.Path]::GetTempPath()) "flvibed_spec_img_$([guid]::NewGuid().ToString('N')).py"
 [IO.File]::WriteAllText($pyFile, $conv, $utf8)
 try { $n = & $py -I $pyFile $srcImg (Join-Path $dest 'img'); if ($LASTEXITCODE -ne 0) { throw 'export: image conversion failed' } }
 finally { Remove-Item $pyFile -ErrorAction SilentlyContinue }

@@ -13,7 +13,11 @@ namespace space
 // Archetype type bits (CSimple::get_type, FLSDK ObjectType).
 enum Type : u32
 {
-    kPlanet = 1 << 1,
+    kMoon = 1 << 0,
+    kPlanet = 1 << 1, // (moons read as this too: Li01's planet_icemoon_800, 29 Oct 2026)
+    kSun = 1 << 2,
+    kBlackHole = 1 << 3,
+    kCelestial = kMoon | kPlanet | kSun | kBlackHole,
     kDockingRing = 1 << 5,
     kJumpGate = 1 << 6,
     kTradelaneRing = 1 << 7,
@@ -30,6 +34,9 @@ struct Contact
     u32 nameIds = 0; // string id of the object's name (CEqObj::get_name), 0 if none
     u32 base = 0;    // the base a docking with it leads to (CEqObj::get_dock_target), 0 if none
     bool ship = false;
+    // ships: the client id of the player flying it (CSimple::GetOwnerPlayer), 0 = an NPC. Multiplayer: another player's
+    // ship (the game draws its name in yellow, without a faction); single player: the player's own ship only
+    u32 player = 0;
     bool dock = false;       // CEqObj::is_dock: the player can request docking with it (bases, rings, gates, lanes)
     bool targetable = false; // CEqObj::is_targetable
     float pos[3] = {};
@@ -63,6 +70,9 @@ std::wstring RepName(int rep);
 // reputation's name), else the object's own name (a base, station, planet, a named ship); "" when it has neither or is
 // not in the player's system.
 std::wstring SpeakerName(u32 id);
+// Multiplayer: a player's character name by client id from the client's own player list (exe::PlayerList); "" when
+// unknown or in single player.
+std::wstring PlayerListName(u32 clientId);
 
 // Base price of a good / equipment by archetype id (DATA\EQUIPMENT\goods.ini), 0 unknown.
 float Price(u32 archetype);
@@ -138,7 +148,7 @@ std::vector<Round> IncomingRounds(float horizon, float radius = 0, u32 shieldArc
 // (prior 0.5 until 10 rounds in the band). RoundStats() for the debug / docs.
 void TrackRounds();
 // The last round TrackRounds saw hit the player: its munition, the ship that fired it, its flight direction (world,
-// unit) and when (QueryPerformanceCounter seconds). False if none yet.
+// unit) and when (game seconds: gameclock::NowSec, core\game\gameclock.h). False if none yet.
 bool LastRoundHit(u32& munition, u32& owner, float dir[3], double& when);
 float RoundHitChance(float miss);
 std::string RoundStats();
@@ -163,6 +173,9 @@ struct Weapon
     // the munition's flight (homing launchers): lifetime (s), seeker range (m) / half-angle of view (deg) / max turn rate
     // (rad/s), motor delay / acceleration (m/s2) / burn time (s) - launch speed = ship velocity + muzzle velocity
     float lifetime = 0, seekerRange = 0, seekerFovDeg = 0, maxTurn = 0, motorDelay = 0, motorAccel = 0, motorTime = 0;
+    // its proximity fuse radius (detonation_dist, m; 0 unread): a hull within it sets the round off (FREELANCER_RE
+    // "Proximity fuse")
+    float detonationDist = 0;
     uintptr_t projArch = 0;  // the munition archetype's address (diagnostics: debug `munition`)
     char hardpoint[32] = {}; // the hardpoint it is mounted on (CExternalEquip mountedHardpoint)
     int fireSlot = 0;        // its USER_FIRE_WEAPON<n> number (hardpoint name order; 0 unknown) - player only
@@ -175,6 +188,14 @@ std::vector<Weapon> ShipWeapons(u32 id);
 // now and reach it (the game's own CEGun::CanPointAt - joint limits widened by `tolerance` rad - and GetMunitionRange).
 // Returns the number of guns, -1 unknown (counts then 0). For blind spots beside capital ships.
 int GunsCovering(u32 id, const float (*pts)[3], int n, int* counts, float tolerance = 0);
+// One volley at a point (a ship's or a solar's guns, by space id): the hull damage of every active gun that can point
+// at `pt` now and reach it (CanPointAt with `tolerance`, GetMunitionRange; homing launchers left out - their rounds
+// are modelled as missiles), and that sum over each gun's refire in `perSecond`. Returns the guns counted, -1 unknown.
+// For the survival model beside a static with turrets (M13's Nomad battleship: 15 guns, its volleys of 3.9-5.7k
+// killed us at shield 0.1-0.5 while the model counted ships only, run-judge 30 Oct 2026).
+int VolleyAt(u32 id, const float pt[3], float* volley, float* perSecond, float tolerance = 0);
+// Debug `gunpoint`: each active player gun's own verdict on a world point (CanPointAt, CanFire, reach).
+std::string GunPointReport(const float pt[3]);
 // A ship's motion and agility (any ship in the system, the player's too): velocity (the physics'), nose, the turn rate
 // it can hold (rad/s, steering torque / angular drag) and its strafe acceleration (m/s^2), from its archetype.
 struct ShipMotion
@@ -182,9 +203,15 @@ struct ShipMotion
     bool ok = false;
     float pos[3] = {}, vel[3] = {}, fwd[3] = {};
     float speed = 0, turnRate = 0, strafeAccel = 0, mass = 0;
+    float rollRate = 0; // its own top roll rate (rad/s): steering_torque z / angular_drag z
     u32 arch = 0;
 };
 bool ShipMotionOf(u32 id, ShipMotion& m);
+// The player ship's spin in its own frame (rad/s; z = about its nose axis, the game's +z points backwards) - Common.dll
+// PhySys::GetAngularVelocityOS - and a change of it (PhySys::AddToAngularVelocityOS: the player has no roll command,
+// 28 Oct 2026; the ship's physics runs on the client in both modes).
+bool PlayerSpin(float spin[3]);
+bool AddPlayerSpin(const float delta[3]);
 // The fraction of its shield at which a ship's shield fails (its generator's st_equip.ini offline_threshold), -1 unknown.
 // A shield goes offline there, not at 0 (21 Oct 2026: predictions to 0 came true 1.0-1.5 s early, every time).
 float ShipShieldThreshold(u32 id);
@@ -325,6 +352,8 @@ std::string StrictAt(const float pos[3]);
 std::string StrictAt(const float pos[3], const ZoneRules& rules);
 // A planet's docking ring (system file: the object whose dock_with names the planet's base), 0 if it has none.
 u32 PlanetDockRing(u32 planet);
+// Is the object a planet's docking ring of the player's system (one PlanetDockRing answers)?
+bool IsDockRing(u32 object);
 // The space object an objective's 'R' entry names: FmtStr::append_rep_instance (Common.dll writes kind 'R'; 'O' is
 // append_spaceobj_id), i.e. a reputation instance - small numbers for mission ships (M03 Walker = 8). Accepts a space
 // id as well (M03's dock ring arrived as one). 0 when nothing in the system matches. byId / byRep: each match.
@@ -334,14 +363,27 @@ u32 ObjectiveObject(u32 ref, const std::vector<Contact>& all, u32* byId = nullpt
 // jump_out_tunnel + jump_in_tunnel + jump_in times (fx\jumpeffect.ini, the file freelancer.ini names). 0 unknown.
 float JumpSeconds(u32 gate);
 // The attitude of an object's faction (pub::SpaceObj::GetRep of a base, station, ship) towards the player (-1 hostile
-// .. 1 friendly, pub::Reputation::GetAttitude). False if unknown.
+// .. 1 friendly, pub::Reputation::GetAttitude); in multiplayer the client's own value (CEqObj::attitude_towards). False
+// if unknown.
 bool AttitudeToPlayer(u32 id, float& att);
+// The client id of the player flying this ship (CSimple::GetOwnerPlayer), 0 = an NPC or no such object.
+u32 OwnerPlayer(u32 id);
+// A multiplayer session (Common.dll SinglePlayer() is false): the world is the remote server's; the story's scripts,
+// saves and server.dll's pub:: API are not this process's (docs\MULTIPLAYER.md).
+bool Multiplayer();
+// An object's reputation id: the server's (single player), else the client's CEqObj::get_vibe (multiplayer). 0 unknown.
+int RepId(u32 id);
 // The player ship's physical radius (m), 0 unknown.
 float PlayerRadius();
 // A space object's shield (server pub::SpaceObj::GetShieldHealth): current / max shield points, up. False if unknown.
 bool ShieldOf(u32 id, float& current, float& max, bool& up);
 // Invincible (the game's pub::SpaceObj::GetInvincible) and at its floor: guns cannot take more hull off it.
 bool AtInvincibleFloor(u32 id, float health);
+// The game's own invincibility state of a space object (server.dll pub::SpaceObj::GetInvincible(id, bool&, bool&,
+// float&) - what a mission's Act_Invulnerable = <ship>, a, b, f set): both flags as the game returns them and the float
+// (FLvibed reads it as the hull floor; LOOK_PLAN 4a: not verified for M02's Ashcroft). False when unreadable (no server.dll
+// export, not in space, the call failed or faulted).
+bool Invincible(u32 id, bool& invincible, bool& second, float& floor);
 // Test aid: take the object's shield offline (the game's pub::SpaceObj::DrainShields).
 bool DrainShields(u32 id);
 // Line of sight in the player's system through the game's physics (PhySys::FindRayCollisions, real hulls): the object

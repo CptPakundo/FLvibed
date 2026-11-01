@@ -17,6 +17,8 @@ struct TestState
     std::string install;  // the test install's folder ("" none)
     std::string baseline; // tools\decision_baseline.txt
     std::string temp;     // this run's scratch folder (deleted at the end)
+    std::string fixtures; // tests\fixtures (the recorded situation snapshots: fixtures\situation\*.snap)
+    std::string snaps;    // -snaps <dir>: more recorded snapshots to check (a run's Save-FLSituation folder)
 };
 extern TestState g_test;
 

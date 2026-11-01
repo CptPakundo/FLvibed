@@ -21,7 +21,7 @@ function Start-FLCombatTest([string]$Save = 'SaveC702.fl', [string]$Rep = 'rep l
 # ship (its other ships: the next spawns within 1 km, in the formation's `ship =` order). Returns Id, Nickname,
 # Labels, Formation, Alive (the object still exists), Spawn (position). $Mission: the mission folder (M01a, M02...).
 function Get-FLMissionShips([Parameter(Mandatory)][string]$Mission) {
-    $folder = Join-Path (Join-Path $script:FLRoot 'Install\Freelancer HD Edition\DATA\MISSIONS') $Mission
+    $folder = Join-Path (Join-Path (Get-FLInstallDir) 'DATA\MISSIONS') $Mission
     $ini = Get-ChildItem -LiteralPath $folder -Filter "$Mission.ini" -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $ini) { throw "no mission script $Mission.ini in $folder" }
     $ships = @{}; $formations = @(); $sec = $null; $cur = $null; $overrides = @()
@@ -113,6 +113,28 @@ function Start-FLAutopilot([ValidateSet('auto', 'combat', 'escort', 'follow', 'f
 }
 
 function Stop-FLAutopilot { $null = Send-FL 'ap stop'; Get-FLAutopilot }
+
+# The situation assessor's snapshot of now (A37 S1, `ap situation snap`: reads only) written to -Path as the `snap v2`
+# text (v2 since A37 S2: the story source live / ini), its last line the in-game hash of that very snapshot ("#game-hash 0x........ step=0x........ snap_ms=..").
+# -Expect adds an "#expect k=v ..." line (placeholder= standin= kind= source= subject= held= verb=) the unit test checks
+# (tests\situation_test.cpp; fixtures in tests\fixtures\situation\). Throws on a cut or failed reply. Returns Path, Hash,
+# Step, SnapMs, Bytes and the snapshot's contact ids (the load probe compares two). No profile path enters the file
+# (the scripts are written relative to DATA\MISSIONS).
+function Save-FLSituation([Parameter(Mandatory)][string]$Path, [string]$Expect = '', [string]$Note = '') {
+    $r = Send-FL 'ap situation snap' 10000
+    if ($r -notmatch '(?m)^snap v\d+' -or $r -notmatch '(?m)^end\r?$' -or $r -notmatch '#game-hash (0x[0-9a-f]{8}) step=(0x[0-9a-f]{8}) snap_ms=([\d.]+)') {
+        throw "Save-FLSituation: no whole snapshot in the reply ($($r.Length) chars): $($r.Substring(0, [Math]::Min(160, $r.Length)))"
+    }
+    $hash = $Matches[1]; $step = $Matches[2]; $ms = [double]$Matches[3]
+    $text = ($r -replace "`r", '').TrimEnd("`n") + "`n"
+    if ($Note) { $text = "# $($Note -replace "[`r`n]", ' ')`n" + $text }
+    if ($Expect) { $text += "#expect $Expect`n" }
+    $dir = Split-Path -Parent $Path
+    if ($dir -and -not (Test-Path -LiteralPath $dir)) { $null = New-Item -ItemType Directory -Path $dir }
+    [IO.File]::WriteAllText($Path, $text, [Text.UTF8Encoding]::new($false))
+    $ids = @([regex]::Matches($text, '(?m)^contact id=(\d+) ') | ForEach-Object { [uint32]$_.Groups[1].Value })
+    [pscustomobject]@{ Path = $Path; Hash = $hash; Step = $step; SnapMs = $ms; Bytes = $text.Length; ContactIds = $ids }
+}
 
 # Waits until the autopilot stops by itself (its `autopilot stop ... why=` event: no enemies left, maneuver ended,
 # leader gone, docked, ...), or -Kills are reached, the player dies or the mission fails; stops it on timeout.

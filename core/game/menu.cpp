@@ -38,7 +38,7 @@ static bool CallMain(u32 ctl, u32 id)
         const u32 parent = Mem<u32>(ctl + 4);
         if (!IsClass(parent, exe::VtMainMenu) || !Mem<u8>(ctl + 0xE6)) // +0xE6: enabled (the handler checks it too)
             return false;
-        reinterpret_cast<ScreenMsgFn>((*reinterpret_cast<void***>(parent))[0x5C / 4])(parent, 0x3004, id, 0);
+        uiclick::SendScreenMsg(parent, id); // deferred to the frame's end (Multiplayer opens a modal loop)
         return true;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)

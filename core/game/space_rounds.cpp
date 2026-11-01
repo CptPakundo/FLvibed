@@ -5,6 +5,7 @@
 
 #include "fldll.h"
 #include "flexe.h"
+#include "game/gameclock.h"
 #include "game/ini.h"
 
 #include <sstream>
@@ -78,6 +79,8 @@ std::vector<Missile> Missiles()
     // Closing speed from an earlier sample at least 30 ms old (callers in quick succession share it safely); between
     // two such samples the last closing speed stands. Was: GetTickCount (~16 ms steps) and 0 whenever the sample was
     // too fresh - at high frame rates several frames in every 50 ms read 0, dropping the missile dodge (18 Oct 2026).
+    // Timed by the game clock since 30 Oct 2026 (was QueryPerformanceCounter: at k x game speed a wall-timed difference
+    // read k times too fast): 30 ms of game time, m per game second.
     struct Sample
     {
         float distance;
@@ -85,12 +88,7 @@ std::vector<Missile> Missiles()
         float closing;
     };
     static std::unordered_map<u32, Sample> lastDist;
-    static LARGE_INTEGER freq = {};
-    if (!freq.QuadPart)
-        QueryPerformanceFrequency(&freq);
-    LARGE_INTEGER qpc;
-    QueryPerformanceCounter(&qpc);
-    const double now = static_cast<double>(qpc.QuadPart) / static_cast<double>(freq.QuadPart);
+    const double now = gameclock::NowSec();
     std::vector<void*> objs;
     Collect(a, kClassGuided, Mem<u32>(exe::PlayerSystem), objs);
     std::unordered_map<u32, Sample> seen;
@@ -244,15 +242,11 @@ std::vector<Round> IncomingRounds(float horizon, float radius, u32 shieldArch)
         reinterpret_cast<MunitionFn>(GetProcAddress(common, "?munitionarch@CBeam@@QBEPBUMunition@Archetype@@XZ"));
     if (!lastPos || !velocity || !owner || !munition)
         return out;
-    // the player's velocity from positions >= 30 ms apart (the last estimate stands in between)
+    // the player's velocity from positions >= 30 ms apart (the last estimate stands in between); game time (the game
+    // clock, since 30 Oct 2026; was QueryPerformanceCounter): 30 ms and 1 s of game time, m per game second
     static float lastMe[3] = {}, vMe[3] = {};
     static double lastT = 0;
-    static LARGE_INTEGER freq = {};
-    if (!freq.QuadPart)
-        QueryPerformanceFrequency(&freq);
-    LARGE_INTEGER qpc;
-    QueryPerformanceCounter(&qpc);
-    const double now = static_cast<double>(qpc.QuadPart) / static_cast<double>(freq.QuadPart);
+    const double now = gameclock::NowSec();
     if (lastT > 0 && now - lastT >= 0.03 && now - lastT < 1.0)
         for (int i = 0; i < 3; ++i)
             vMe[i] = static_cast<float>((me[i] - lastMe[i]) / (now - lastT));
@@ -369,12 +363,9 @@ void TrackRounds()
         float dir[3]; // flight direction (unit)
     };
     static std::unordered_map<uintptr_t, Track> live; // by CBeam pointer
-    static LARGE_INTEGER freq = {};
-    if (!freq.QuadPart)
-        QueryPerformanceFrequency(&freq);
-    LARGE_INTEGER qpc;
-    QueryPerformanceCounter(&qpc);
-    const double now = static_cast<double>(qpc.QuadPart) / static_cast<double>(freq.QuadPart);
+    // game time (the game clock, since 30 Oct 2026; was QueryPerformanceCounter): the rounds' predicted times are game
+    // seconds, and a pause no longer ages every tracked round into a miss
+    const double now = gameclock::NowSec();
     const Api& a = GetApi();
     const u32 player = InSpace() ? Mem<u32>(exe::PlayerShipId) : 0;
     if (!a.ok || !player)

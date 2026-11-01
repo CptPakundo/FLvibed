@@ -20,6 +20,12 @@ Id FromName(const char* name)
     return COUNT;
 }
 const char* Name(Id id) { return id >= 0 && id < COUNT ? kNames[id] : "?"; }
+Id Menu(Id id)
+{
+    if (uiopt::Get().confirmButton != 1)
+        return id;
+    return id == A ? B : id == B ? A : id;
+}
 const char* FamilyName(Family f)
 {
     switch (f)
@@ -78,10 +84,20 @@ static void Detect()
     g_detectedOnce = true;
 }
 
-void Update(bool realPadConnected)
+void Update(bool realPadConnected, u32 vendor)
 {
-    if (!g_detectedOnce || realPadConnected != g_realWas)
+    static u32 vendorWas = 0;
+    if (vendor)
+    {
+        // the device layer names the pad (a device-layer test pad, IDEAS T36): its vendor decides, as the HID list does
+        const Family f = vendor == 0x054C ? Family::PlayStation : vendor == 0x057E ? Family::Nintendo : Family::Xbox;
+        if (vendor != vendorWas)
+            Log("glyphs: the pad's device layer names vendor 0x%04X, family %s", vendor, FamilyName(f));
+        g_detected = f, g_vendorsSeen = vendor, g_detectedOnce = true;
+    }
+    else if (!g_detectedOnce || realPadConnected != g_realWas || vendorWas)
         Detect();
+    vendorWas = vendor;
     g_realWas = realPadConnected;
     const int style = uiopt::Get().glyphStyle;
     g_current = style == 1 ? Family::Xbox : style == 2 ? Family::PlayStation : style == 3 ? Family::Nintendo : g_detected;

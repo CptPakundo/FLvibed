@@ -75,6 +75,21 @@ static void MarkWildcards()
         if (v >= g_img.base && v < g_img.base + g_img.size)
             wild4(i);
     }
+    // The alignment padding between functions is a wildcard too (29 Oct 2026): builds differ there without differing
+    // in code (HDE's exe holds NOPs, a decrypted vanilla 1.1 exe leftover call bytes), so a signature may cross it but
+    // never depends on it. Padding = a run of NOP / INT3 filler (two or more), or filler right after a return / jump.
+    auto fill = [&](u32 k) { return k < n && (t[k] == 0x90 || t[k] == 0xCC); };
+    for (u32 i = 0; i < n; ++i)
+    {
+        if (!fill(i))
+            continue;
+        const bool run = fill(i + 1) || (i > 0 && fill(i - 1));
+        const bool afterEnd = (i >= 1 && (t[i - 1] == 0xC3 || g_wild[i - 1])) || // ret / a jmp's rel32 (wild already)
+                              (i >= 3 && t[i - 3] == 0xC2 && t[i - 1] == 0x00) ||  // ret n
+                              (i >= 2 && t[i - 2] == 0xEB);                          // jmp short
+        if (run || afterEnd)
+            g_wild[i] = 1;
+    }
 }
 
 // Literal (non-wildcard) bytes a signature needs besides the ones it may ignore: a short pattern could match some
@@ -138,6 +153,24 @@ static int Literals(const std::vector<u8>& mask)
     for (u8 m : mask)
         n += m;
     return n;
+}
+
+// Does a signature hold padding bytes as literals (`check`'s table rule, 29 Oct 2026: 28 signatures did)? A run of
+// NOP / INT3 filler (90 90, CC CC) or a return followed by filler (C3 90, C2 xx 00 90; CC likewise). Wildcards (??,
+// passed as 00) never count: `gen` writes padding as wildcards since then.
+static bool SpansPadding(const u8* b, u32 len)
+{
+    auto fill = [](u8 x) { return x == 0x90 || x == 0xCC; };
+    for (u32 i = 0; i < len; ++i)
+    {
+        if (i + 1 < len && fill(b[i]) && fill(b[i + 1]))
+            return true;
+        if (i + 1 < len && b[i] == 0xC3 && fill(b[i + 1]))
+            return true;
+        if (i + 3 < len && b[i] == 0xC2 && b[i + 2] == 0x00 && fill(b[i + 3]))
+            return true;
+    }
+    return false;
 }
 
 // Is [start, start+len) unique with [ign0, ign1) (relative) also ignored, and specific enough?
@@ -206,7 +239,14 @@ static int GenCode(u32 va, u32 minLen)
     for (u32 back = 0; back <= 24 && !(minLen && best.len && back > 0); ++back)
     {
         const u32 start = va - back;
-        const u32 len = Shortest(start, std::max<u32>({back + minLen, back + 8, 12}), 96, back, back + 8, kMinLiterals);
+        // never into another code symbol's entry (another plugin's JMP there would break this signature; UiControlAdd's
+        // ran into 0x59DC00, 29 Oct 2026)
+        u32 maxLen = 96;
+        for (hk::Sym* s : exe::kAll)
+            if (s->kind == hk::Code && s->va != va && s->va > va && s->va - start < maxLen)
+                maxLen = s->va - start;
+        const u32 minLenHere = std::max<u32>({back + minLen, back + 8, 12});
+        const u32 len = maxLen >= minLenHere ? Shortest(start, minLenHere, maxLen, back, back + 8, kMinLiterals) : 0;
         if (len && (!best.len || len < best.len))
             best = {start, len};
     }
@@ -303,7 +343,10 @@ static int Check(int argc, char** argv)
     {
         const u32 want = s->kind == hk::Code ? s->va + shift : s->va;
         if (!s->addr)
+        {
             ++missing;
+            printf("UNRESOLVED %s (%s)\n", s->name, hk::StateName(s->state));
+        }
         else if (s->addr == want)
             ++ok;
         else
@@ -313,7 +356,53 @@ static int Check(int argc, char** argv)
         }
     }
     printf("expected addresses: %d right, %d wrong, %d unresolved\n", ok, wrong, missing);
-    return wrong ? 1 : 0;
+    // the table's own rule: no signature crosses the padding between functions (wildcards never count as filler)
+    int padded = 0;
+    for (hk::Sym* s : exe::kAll)
+    {
+        std::vector<u8> b;
+        for (const char* p = s->sig; *p;)
+        {
+            while (*p == ' ')
+                ++p;
+            if (!*p)
+                break;
+            b.push_back(p[0] == '?' ? 0x00 : static_cast<u8>(strtoul(std::string(p, 2).c_str(), nullptr, 16)));
+            p += 2;
+        }
+        if (SpansPadding(b.data(), static_cast<u32>(b.size())))
+        {
+            ++padded;
+            printf("PADDING %s: \"%s\"\n", s->name, s->sig);
+        }
+    }
+    printf("signatures across padding: %d\n", padded);
+    // a detour's stolen bytes (5-10, a JMP and NOPs once a host hooked it): no other symbol's signature may cover them -
+    // a module part resolving after the host's detour finds them changed (30 Oct 2026: FpsCapF's signature began in
+    // FrameTimer's prologue; the host resolved it, the logic refused it). Every Code symbol whose signature starts at
+    // the function (off 0) is a detour candidate.
+    // (a Code symbol found at a function's start is matched through a JMP someone wrote there - hook.cpp skips it - so
+    // only data symbols and code found by an inner offset can be broken by a detour)
+    int overlap = 0;
+    for (hk::Sym* s : exe::kAll)
+    {
+        if (s->kind == hk::Code && s->off == 0)
+            continue;
+        const u32 start = s->kind == hk::Code ? s->va - static_cast<u32>(s->off) : s->site - static_cast<u32>(s->off);
+        u32 len = 0;
+        for (const char* p = s->sig; *p; ++p)
+            if (*p != ' ' && (p == s->sig || p[-1] == ' '))
+                ++len;
+        for (hk::Sym* c : exe::kAll)
+            if (c != s && c->kind == hk::Code && c->off == 0 && start < c->va + 10 && c->va < start + len)
+            {
+                ++overlap;
+                printf("HOOK-OVERLAP %s: its signature covers the first 10 bytes of %s (a detour's stolen bytes)\n", s->name,
+                       c->name);
+            }
+    }
+    printf("signatures over a detour's first bytes: %d\n", overlap);
+    return wrong || padded || overlap ? 1 : 0;
 }
 
 int main(int argc, char** argv)

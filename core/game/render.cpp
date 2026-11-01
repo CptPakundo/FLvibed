@@ -230,6 +230,16 @@ bool BuildFont(Font& font, const wchar_t* face, int px, int weight, const std::w
     bi.bmiHeader.biBitCount = 32;
     void* bits = nullptr;
     HBITMAP bmp = CreateDIBSection(dc, &bi, DIB_RGB_COLORS, &bits, nullptr, 0);
+    if (!bmp || !bits) // GDI out of resources (or a huge px): no font rather than a write through null
+    {
+        Log("render: font %ls: no glyph bitmap (CreateDIBSection failed, px %d)", face, px);
+        if (bmp)
+            DeleteObject(bmp);
+        SelectObject(dc, oldFont);
+        DeleteObject(hf);
+        DeleteDC(dc);
+        return false;
+    }
     HGDIOBJ oldBmp = SelectObject(dc, bmp);
     SetTextColor(dc, RGB(255, 255, 255));
     SetBkColor(dc, RGB(0, 0, 0));
@@ -641,6 +651,36 @@ void TextScaled(float x, float y, const std::wstring& s, u32 argb, float scale)
         }
         pen += g->advance * scale;
     }
+    g_batches.push_back({g_font->texture, g_verts.size()}); // following Text calls: point-filtered again
+}
+
+size_t ZoomBegin()
+{
+    if (!g_font || g_soft || g_batches.empty())
+        return g_verts.size();
+    if (g_batches.back().first != g_verts.size()) // the range gets its own batches (the current state carried on)
+    {
+        Batch b = g_batches.back();
+        b.first = g_verts.size();
+        g_batches.push_back(b);
+    }
+    return g_verts.size();
+}
+
+void ZoomEnd(size_t from, float s, float ox, float oy)
+{
+    if (!g_font || g_soft || !(s > 0.0f && s < 1.0f) || from >= g_verts.size())
+        return;
+    // (the vertices carry the -0.5 texel-centre shift: zoomed about o in screen pixels, the shift kept)
+    for (size_t i = from; i < g_verts.size(); ++i)
+    {
+        Vertex& v = g_verts[i];
+        v.x = ox + (v.x + 0.5f - ox) * s - 0.5f;
+        v.y = oy + (v.y + 0.5f - oy) * s - 0.5f;
+    }
+    for (Batch& b : g_batches) // (ZoomBegin split the batches at `from`)
+        if (b.first >= from)
+            b.linear = true;
     g_batches.push_back({g_font->texture, g_verts.size()}); // following Text calls: point-filtered again
 }
 

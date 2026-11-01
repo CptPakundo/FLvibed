@@ -1,8 +1,11 @@
 @echo off
 rem Starts the subtitle review tool: http://127.0.0.1:8765/ (the next free port if that one is busy).
 rem Works from any folder and by double-click. Arguments go to review_server.py:
-rem   review.cmd            start the server and open the page in the browser (owner, 26 Oct 2026; the page plays
-rem                         each clip as it is shown); Ctrl+C stops it
+rem   review.cmd            the page opens in the browser, no window stays open (owner, 31 Oct 2026: as simple to
+rem                         start and stop as a web page); started again, it shows the running tool's page. The
+rem                         page's Stop button, or closing its last page, stops it (the page plays each clip as it
+rem                         is shown). Output: FLSubtitles\out\review_server.log; a start failure: a message box
+rem   review.cmd --open     the same in this console (its output here); Ctrl+C stops it
 rem   review.cmd --no-open  start the server without opening the browser
 rem   review.cmd --check    check the prerequisites and load the data, then exit (0 = ready)
 rem   review.cmd --help     every option
@@ -29,6 +32,13 @@ if not defined PYEXE (
     set "RC=9"
     goto :end
 )
+rem no arguments: windowless (pythonw / pyw next to the Python found), the tool's --app mode; this window closes
+if defined NOARGS (
+    set "PYW=%PYEXE:python.exe=pythonw.exe%"
+    if /i "%PYEXE%"=="py" set "PYW=pyw"
+    if /i "%PYEXE%"=="python" set "PYW=pythonw"
+    goto :app
+)
 rem the browser opens by default; --no-open (taken out here), --open, --check and --help leave it to the arguments
 set "OPEN=--open"
 set "ARGS="
@@ -46,6 +56,10 @@ if /i "%~1"=="test" (
 ) else (
     "%PYEXE%" %PYARG% -I "%HERE%FLSubtitles\asr\review_server.py" %OPEN% %ARGS%
 )
+set "RC=%ERRORLEVEL%"
+goto :end
+:app
+start "" "%PYW%" %PYARG% -I "%HERE%FLSubtitles\asr\review_server.py" --app
 set "RC=%ERRORLEVEL%"
 :end
 rem double-clicked (no arguments, a console of its own): keep the window open on an error to read the message

@@ -2,6 +2,7 @@
 //   <install dir>  the Freelancer HD Edition folder (DATA\MISSIONS inside) for the data tests; else FLVIBED_INSTALL, else
 //                  the repository's Install\Freelancer HD Edition (from build\test\); absent -> those tests are skipped
 //   -v             verbose: the core's Log() lines and the data tests' details
+//   -snaps <dir>   also check every recorded situation snapshot (*.snap) in <dir> (its in-game hash = the host-free one)
 #include "test.h"
 
 #include "log.h"
@@ -14,18 +15,56 @@ void Test_flhash();
 void Test_ini();
 void Test_utf();
 void Test_textfit();
+void Test_marquee();
 void Test_movie_words();
+void Test_mix_cues();
 void Test_avoid();
 void Test_route();
 void Test_flight();
 void Test_decision_synthetic();
 void Test_decision_baseline();
+void Test_decision_forget_game();
 void Test_fluf_hooks();
 void Test_fluf_probe();
 void Test_press_gate();
+void Test_focus_gate();
+void Test_pad_slots();
+void Test_pad_backend();
+void Test_sdl_testpad();
 void Test_orig_image();
 void Test_winmode();
 void Test_promptfit();
+void Test_settings();
+void Test_settings_reset();
+void Test_mprules_tag();
+void Test_presets();
+void Test_str();
+void Test_universe();
+void Test_linebreak();
+void Test_stack_fit();
+void Test_mission_live();
+void Test_mission_live_goals();
+void Test_mission_lock_trap();
+void Test_gameclock();
+void Test_ordnance();
+void Test_haptics();
+void Test_jobs();
+void Test_objective_kinds();
+void Test_situation_io();
+void Test_situation();
+void Test_situation_rules();
+void Test_goalqueue();
+void Test_situation_exec();
+void Test_look();
+void Test_city_hold();
+void Test_strafe();
+void Test_hud2_lint();
+void Test_hud2_sim();
+void Test_hud2_preset();
+void Test_hud2_layout();
+void Test_hud2_focus();
+void Test_spawn_charge();
+void Test_ash_ride();
 
 static bool DirExists(const std::string& p)
 {
@@ -120,6 +159,8 @@ int main(int argc, char** argv)
             g_test.verbose = true;
         else if (a == "--baseline" && i + 1 < argc)
             g_test.baseline = argv[++i];
+        else if (a == "-snaps" && i + 1 < argc)
+            g_test.snaps = argv[++i];
         else if (!a.empty() && a[0] != '-')
             g_test.install = a;
     }
@@ -138,6 +179,7 @@ int main(int argc, char** argv)
     }
     if (g_test.baseline.empty())
         g_test.baseline = exeDir + "..\\..\\tools\\decision_baseline.txt";
+    g_test.fixtures = exeDir + "..\\..\\tests\\fixtures";
     char tmp[MAX_PATH] = {};
     GetTempPathA(MAX_PATH, tmp);
     g_test.temp = std::string(tmp) + "fltest_" + std::to_string(GetCurrentProcessId());
@@ -155,18 +197,56 @@ int main(int argc, char** argv)
         {"ini", Test_ini},
         {"utf", Test_utf},
         {"textfit", Test_textfit},
+        {"marquee", Test_marquee},
         {"movie_words", Test_movie_words},
+        {"mix_cues", Test_mix_cues},
         {"avoid", Test_avoid},
         {"route", Test_route},
         {"flight", Test_flight},
         {"decision_synthetic", Test_decision_synthetic},
         {"decision_baseline", Test_decision_baseline},
+        {"decision_forget_game", Test_decision_forget_game},
         {"fluf_hooks", Test_fluf_hooks},
         {"fluf_probe", Test_fluf_probe},
         {"press_gate", Test_press_gate},
+    {"focus_gate", Test_focus_gate},
+    {"pad_slots", Test_pad_slots},
+        {"pad_backend", Test_pad_backend},
+        {"sdl_testpad", Test_sdl_testpad},
         {"orig_image", Test_orig_image},
         {"winmode", Test_winmode},
+        {"settings", Test_settings},
+        {"settings_reset", Test_settings_reset},
         {"promptfit", Test_promptfit},
+        {"mprules_tag", Test_mprules_tag},
+        {"presets", Test_presets},
+        {"str", Test_str},
+        {"universe", Test_universe},
+        {"linebreak", Test_linebreak},
+        {"stack_fit", Test_stack_fit},
+        {"mission_live", Test_mission_live},
+        {"mission_live_goals", Test_mission_live_goals},
+        {"mission_lock_trap", Test_mission_lock_trap},
+        {"gameclock", Test_gameclock},
+        {"ordnance", Test_ordnance},
+        {"haptics", Test_haptics},
+        {"jobs", Test_jobs},
+        {"objective_kinds", Test_objective_kinds},
+        {"situation_io", Test_situation_io},
+        {"situation", Test_situation},
+        {"situation_rules", Test_situation_rules},
+        {"goalqueue", Test_goalqueue},
+        {"situation_exec", Test_situation_exec},
+        {"look", Test_look},
+        {"city_hold", Test_city_hold},
+        {"strafe", Test_strafe},
+        {"hud2_lint", Test_hud2_lint},
+        {"hud2_sim", Test_hud2_sim},
+        {"hud2_preset", Test_hud2_preset},
+        {"hud2_layout", Test_hud2_layout},
+        {"hud2_focus", Test_hud2_focus},
+        {"spawn_charge", Test_spawn_charge},
+        {"ash_ride", Test_ash_ride},
     };
     for (const Test& t : tests)
     {

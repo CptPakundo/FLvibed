@@ -1,7 +1,7 @@
 // The pad's flight bindings as data (docs\UI_SPEC.json `bindings`: the presets FREELANCER / ACE / ASSISTED and the
 // shared `flight_ap` situation), in the spec's own action vocabulary, and the dispatcher that turns button states into
-// tap / hold / double-tap actions (UI_PLAN.md 6.4; UI_BUILD.md HUD track). Transcribed from the spec until the PAGE
-// track's generated core\ui_meta.h carries the tables. What each action does in the game is controller.cpp's
+// tap / hold / double-tap actions (UI_PLAN.md 6.4; UI_BUILD.md HUD track). The tables are read from the spec's
+// generated core\ui_meta.h (since 29 Oct 2026; tests\presets_test.cpp). What each action does in the game is controller.cpp's
 // (RunPreset): this file knows buttons, timing and the action names only.
 #pragma once
 #include "common.h"
@@ -82,17 +82,22 @@ struct Table
 // The spec's tables as written.
 const Table& Flight(int preset);
 const Table& FlightAp(); // common.flight_ap: while the autopilot flies (every preset)
-// The flight table with the layout options applied: `autopilotPad` moves the autopilot toggle (0 hold View, 1 L3 + R3
-// chord: no hold, 2 hold Menu), `weaponGroups` (0 simple: Y hold's weapon_group drops; 2 two groups: RT / LT fire
-// group 1 / 2, afterburner moves to L3 and engine kill is unbound).
-Table Effective(int preset, int autopilotPad, int weaponGroups);
+// The flight table with the layout option applied: `weaponGroups` (0 simple: Y hold's weapon_group drops; 2 two groups:
+// RT / LT fire group 1 / 2, afterburner moves to the LS click and engine kill is unbound). The autopilot is View held in
+// every preset (the alternatives - a stick-click chord, hold Menu - removed 28 Oct 2026: never the owner's choice).
+Table Effective(int preset, int weaponGroups);
 // The button an action sits on in a table (the first match; slot 0 tap, 1 hold, 2 dbl); false when unbound.
 bool Find(const Table& t, Action a, glyphs::Id& btn, int& slot);
 
 // Timing (UI_PLAN 6.4): a hold fires at kHoldSec; a second press within kDblSec of a tap's release is a double tap; a
 // tap on a button that has a double-tap action is delivered when the window closes (or dropped for the double).
+// A held-kind tap on a button that also has a hold action (FREELANCER's RB: missile / hold torpedo) waits for the
+// threshold: released before it = the tap, held for kTapPulseSec (the game reads held commands per frame); reaching it =
+// the hold alone. Until 29 Oct 2026 the tap started on the press, so every torpedo also launched a missile (seen in
+// game: SaveC706, RB held 0.8 s - torpedo 20 -> 19 and missile 17 -> 16).
 constexpr float kHoldSec = 0.4f;
 constexpr float kDblSec = 0.3f;
+constexpr float kTapPulseSec = 0.1f;
 
 enum class Phase
 {
@@ -134,6 +139,7 @@ class Dispatcher
         float sinceRelease = 1e9f;
         bool lastWasTap = false;
         Action heldTap = Action::None, heldHold = Action::None; // held-kind actions active from this button
+        float pulse = 0; // a deferred held-kind tap still held after its release (kTapPulseSec)
     } s_[glyphs::COUNT];
     bool latch_[static_cast<int>(Action::COUNT)] = {};
     void Start(Action a, glyphs::Id btn, bool holdSlot, Phase phase, std::vector<Event>& out);

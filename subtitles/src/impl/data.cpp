@@ -1,6 +1,7 @@
 #include "data.h"
 
 #include "log.h"
+#include "str.h"
 
 #include <fstream>
 #include <unordered_map>
@@ -38,25 +39,8 @@ u32 CreateID(const char* s)
     return (h >> 2) | 0x80000000;
 }
 
-std::wstring Widen(const std::string& s)
-{
-    if (s.empty())
-        return L"";
-    const int n = MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), nullptr, 0);
-    std::wstring w(n, L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), &w[0], n);
-    return w;
-}
-
-std::string Narrow(const std::wstring& w)
-{
-    if (w.empty())
-        return "";
-    const int n = WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
-    std::string s(n, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), &s[0], n, nullptr, nullptr);
-    return s;
-}
+std::wstring Widen(const std::string& s) { return str::Widen(s); }
+std::string Narrow(const std::wstring& w) { return str::Narrow(w); }
 
 std::vector<std::string> SplitTsv(const std::string& l)
 {
@@ -91,10 +75,11 @@ bool Load(const std::string& path)
         Log("data: cannot open %s", path.c_str());
         return false;
     }
-    g_lines.clear();
-    g_byVoiceMsg.clear();
-    g_byMsg.clear();
-    g_voiceNames.clear();
+    // parsed into locals and swapped in on success: a bad `reloaddata` keeps the lines already loaded
+    decltype(g_lines) lines;
+    decltype(g_byVoiceMsg) byVoiceMsg;
+    decltype(g_byMsg) byMsg;
+    decltype(g_voiceNames) voiceNames;
     std::vector<std::string> head;
     int col[7] = {-1, -1, -1, -1, -1, -1, -1};
     const char* names[7] = {"id", "voice", "kind", "source", "sec", "speaker", "text"};
@@ -103,6 +88,8 @@ bool Load(const std::string& path)
     {
         if (!l.empty() && l.back() == '\r')
             l.pop_back();
+        if (l.compare(0, 3, "\xEF\xBB\xBF") == 0) // a UTF-8 BOM (an editor's save) must not break the header
+            l.erase(0, 3);
         if (l.empty() || l[0] == '#')
             continue;
         std::vector<std::string> f = SplitTsv(l);
@@ -135,12 +122,21 @@ bool Load(const std::string& path)
             h = (h ^ static_cast<u8>(ch)) * 0x01000193;
         ln.textFnv = h;
         const u32 msg = CreateID(ln.id.c_str()), voice = CreateID(ln.voice.c_str());
-        g_byVoiceMsg[(static_cast<unsigned long long>(voice) << 32) | msg] = g_lines.size();
-        g_byMsg.emplace(msg, g_lines.size());
+        byVoiceMsg[(static_cast<unsigned long long>(voice) << 32) | msg] = lines.size();
+        byMsg.emplace(msg, lines.size());
         if (!ln.speaker.empty() && ln.kind != Kind::Chunk)
-            g_voiceNames.emplace(voice, ln.speaker);
-        g_lines.push_back(std::move(ln));
+            voiceNames.emplace(voice, ln.speaker);
+        lines.push_back(std::move(ln));
     }
+    if (head.empty() || lines.empty())
+    {
+        Log("data: no lines in %s (%zu kept)", path.c_str(), g_lines.size());
+        return false;
+    }
+    g_lines.swap(lines);
+    g_byVoiceMsg.swap(byVoiceMsg);
+    g_byMsg.swap(byMsg);
+    g_voiceNames.swap(voiceNames);
     Log("data: %zu lines from %s", g_lines.size(), path.c_str());
     return true;
 }
@@ -160,6 +156,8 @@ void LoadWordTimes(const std::string& path)
     {
         if (!l.empty() && l.back() == '\r')
             l.pop_back();
+        if (l.compare(0, 3, "\xEF\xBB\xBF") == 0) // a UTF-8 BOM (an editor's save) must not break the header
+            l.erase(0, 3);
         if (l.empty() || l[0] == '#')
             continue;
         if (!head) // id voice text_fnv audio_sha1 end_ms starts_ms

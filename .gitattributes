@@ -1,6 +1,7 @@
 * text=auto
 *.ps1 text eol=crlf
 *.cmd text eol=crlf
+*.sh text eol=lf
 *.png binary
 *.dll binary
 
@@ -9,3 +10,7 @@
 CLAUDE.md export-ignore
 HANDOFF.txt export-ignore
 HANDOFF_history.txt export-ignore
+# the work queue (30 Oct 2026): the session-to-session order, private like the handoff
+docs/WORK_QUEUE.md export-ignore
+# the Claude Code harness of the development environment (hooks, agents, rules, skills): private like the maps
+tools/claude/ export-ignore

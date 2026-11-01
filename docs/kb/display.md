@@ -58,6 +58,10 @@ flight comms; at 1600x1200, 2560x1080, 1280x720 and 3840x2160.
   HUD row under the bar's lower right (subtitles\docs\DISPLAY_PLAN.md).
 - **Flight band (`space_position 1`):** hangs from 0.162 H (0.235 H under the objective banner), ends at 0.26-0.31 H, well above the 0.44 H
   limit; clear of the comm portrait (top left), the maneuver bar and the bottom panels in every aspect ratio.
+- **The docking letterbox** (control-exclusion 4, the player's controls taken for a dock / jump animation) lasts seconds
+  when a dock goes through and at most 78 s in a passing leg (M12's scripted entry; 1,109 leg logs, 30 Oct 2026); held
+  longer it is a hang (M13 after the SaveS409 load: the sphere entry never finished) - the harness ends it after 120 s
+  (`controller\docs\HARNESS.md`).
 - **Letterbox bars are 0.140 H each at every aspect ratio** (the game letterboxes by a fraction of the height, not to
   a cinema ratio; measured in the room-scene captures). Room scenes (base context, letterbox flag) and space cutscenes
   (cutscene camera) both place the stack with its bottom at 0.975 H:

@@ -269,7 +269,7 @@ The critique of the fix round's captures (`research\evidence\controller_ui\hud2_
 | 3 hit flash | one 0.008 H amber arc fading over 300 ms (the 0.018 H glow band under it is gone). The trigger: the damage indicator's inputs are not all damage (`docs\FREELANCER_RE.md` HUD_DamageIndicator: source reports came without any hull / shield change), so a report flashes only when the hull or the shield fell within 0.5 s of it, and never while the letterbox is up. The tunnel flash itself was not reproduced in two jumps this round (no report came in the tunnel); both guards close it (rejected reports are logged, 5 at most) |
 | 4 prompt, weapons | the autopilot's context prompt is a verb: TAKE CONTROL (was AUTOPILOT OFF; the mock-up's dock state too; the CLASSIC legend's AUTOPILOT OFF row in `UI_SPEC.json` is unchanged). Weapon rows wrap one gun per line onto a spare line (at most two lines a row, three lines above the launcher) before a name is cut: M03's "Rowlett's Revenge · Azrael" / "Lavablade Mk II · Drail". The group numeral in a cell of its own (a small rounded box) with a drawn "1" (stem, flag, foot: Agency FB's 1 is a bare stroke, ">1" read ">\|"); the active group's marker a yellow triangle left of the cell |
 | 5 polish | the throttle arc at 50..66 degrees (8 degrees clear of the hull arc's end) with its empty blocks a third as thick (`SegArc` emptyWidth) - BOOST / KILL / REV beyond it; one fight rule: the standing place line hides by the threat list's rule (hostiles near; it showed while the autopilot fought); the target card's empty faction row collapses (the distance moves onto the name's row); NEURONET (with the headline, place and info) left out during the letterbox - only the maneuver chip stays; K&M CTRL+R twice was **one binding** (USER_NEXT_ENEMY) labelled on the card's NEXT ENEMY and on the list header's NEXT: the header's NEXT is dropped in the keyboard form while the card shows; the nav scrim's edge in two ramps (0.30 -> 0.12 over 0.03 H, -> 0 over 0.05 H) |
-| also | the alerts arm 1.5 s after entering space and only on a live hull (a load read the hull as 0 for a moment: HULL CRITICAL · NO NANOBOTS on a whole ship in the first release capture); two middle dots typed as literal characters went in as cp1252 "Â·" (the wrap never found its separator) - escapes only, as the files say |
+| also | the alerts arm 1.5 s after entering space and only on a live hull (a load read the hull as 0 for a moment: HULL CRITICAL · NO NANOBOTS on a whole ship in the first release capture); two middle dots typed as literal characters went in as cp1252 "Â·" (the wrap never found its separator) - escapes only, as the files say (quoted on purpose: mojibake-ok) |
 | decided against | the bracket's own label / bars and the off-screen arrows redraw (5.9: an indicator hook, not robust enough) - the biggest centre gap stays native; a bar under the jump chip (the jump's total is not known before the sequence; the countdown stays) |
 Verification: dev build on instance 5 at 4K (SaveC705 vs Rogues: the missile alert with the missing CM slot amber, the hit-report rejections in the log; SaveC703: the Baltimore Shipyard dock - DOCKING GRANTED gone from the nav while the comm panel showed it - and the New York -> Colorado jump tunnel with the chip alone), then the release build at 4K and 1280x720 borderless. The showcase re-captured in the release build as `final_{combat,travel,cruise,dock,lane,jump,kbm,720p_combat,turret}.png` - the combat frame moving at 200 m/s with BOOST and LOCKED - plus `final_missile_alert.png` (the amber slot, the alert below the dialogue panel), `final_m03_protect.png` (M03 SaveS008: "Defend the Transport Convoy" with the convoy's hull bar beside it - **the protected-ship bar seen in game**; crops `crop_m03_protect_bar.png`, `crop_weapon_wrap.png`), the dev frames `dev_*.png`. The captures before 1f1ad28 had no wrapped row to show (SaveC705's names fit). Perf (release, 4K, a fight, 185 fps): hud2.Update 15 us + hud2.Render 63 us + OnRenderUnderHud 44 us = 0.12 ms per frame (budget 0.3 ms); the new work is per-frame arithmetic only (the slot light at 10 Hz, the bus read once per layout).
 Open after this round: the bracket's label / bars and the arrows (the indicator hook); an arrival's 5 s place line still shows in a fight (the event outranks the fight rule); the gate approach's own letterbox collapses HUD 2 a few seconds before the tunnel (as designed; `final_jump.png` is in the tunnel: the chip alone, no flash, release build); `padmap.cpp` / `glyphs.cpp` carry literal non-ASCII strings outside HUD 2 (to check).
@@ -398,3 +398,393 @@ Window, the default; 1 = FLUF's player windows; 0 = none). Without FLUF every fa
 command palette is open (its search box focused or not) or a FLUF text box has the keys, FLvibed holds all its own
 keyboard input, like a chat box; every FLUF window that takes input (by ImGui's state, not its name) gets the pad, B
 closes the focused one (`MOD_COMPATIBILITY.md` FLUF "Input", `core\fluf_rules.h`).
+
+### 5.16 The layout lint's baseline FAILs (31 Oct 2026; `docs\hud2_lint_baseline.txt`, `UI_HUD2_PRESETS.md` 6 item 3; the lint re-run in game: 0 FAIL over all 19 sim contexts, frames for the owner still due)
+- Loadout 0.15 H tall (was 0.17): its top stays at zone S1's bottom edge 0.80 H (PRESETS 2.1); rows 0.028 + 0.030 pitch, launcher at 0.122, the cross's vertical arm 0.88 d. **Owner (31 Oct 2026, A1): "mostly fine, but it's not fine for the glyphs to overlap. Consider tightening the glyphs themselves so that everything fits nicely."** - the 0.15 H panel kept, its glyphs / keycaps tightened: 5.19.
+- Cruise charging: the speed at +0.045 H (was +0.050), 0.01 H clear of the seconds at +0.083 (the centre stack's gap, PRESETS 1.3). **Owner (A2): fine, kept.**
+- The maneuver chip's object (DOCK / GOTO <target>, a lane's far end) fades out while the target card names the same object, back with the card's fade (letterbox): one value, one place (PRESETS 1.7). The same while an escort row of the ship panel names it (a formation's leader: `hud2 sim formation`). **Owner (A3): fine, kept.**
+- Lint, not layout: arcs on one centre measured with their radial ends (the ring's arcs 6-7.7 degrees apart pass), the recorder takes `SegArc`'s drawn extent, the hit flash / chevrons are overlays drawn on top (PRESETS 1.3) outside the gap rule. **Owner (A4): fine, kept.**
+- (The frames' A5, not a 5.16 item: the ship panel 0.17 H beside the 0.15 loadout, tops 0.02 H apart.) **Owner (A5): "keep these panels at identical height"** - the ship panel 0.15 H: 5.19.
+
+### 5.17 The layout core (31 Oct 2026, Q7 step 5; `UI_HUD2_PRESETS.md` 6 step 5; built; in game since the 5.18 frames, Standard bit-identical)
+- **What:** `controller\src\impl\hud2_layout.h` (pure; tests\hud2_layout_test.cpp) is the one place the frame's element
+  rectangles are computed: `Compute(Frame, preset data) -> Out`. In: the screen (W, H), `hud_scale` / `text_size` (the
+  scale k = `promptfit::Hud2Scale`, which carries the aspect factor), the device (pad / K&M), the context (combat,
+  letterbox, an alert), which elements are present (target, list and its rows, context prompts), the impure measures
+  (the context line's prompt widths and HOLD word, the alert's width) and the subtitles' dialogue rectangle. Out: the nav
+  (with its text limit), the card, the threat list's top / bottom, the ship panel, the loadout, the ring centre and
+  radius, the context line (prompts kept, baseline, hold plan, widths), the alert, the bus's ring / topFree / chatFree,
+  the elements the preset suppresses and the boxed area against the preset's cap. `hud2.cpp` ComputeLayout is its
+  impure half (measures, the HUD bus read) and copies `Out` into `Layout` for the parts; Publish takes the bus
+  rectangles from it and Update the suppression (the fades). The drawn preset is `hud2preset::Drawn` (Standard until
+  steps 6-8); `hud2 state` prints a `core` line (`suppressed=`, `boxed=`, `cap=`, `overrides=`).
+- **From the data** (`ui_meta.h` `uimeta::hud2p`, generated from `UI_SPEC.json` `hud2_presets`; `tools\ui_meta.py` now
+  writes every element's numbers per context, `Num(preset, context, element, key, fallback)`, and the shared margins,
+  alert plate and aspect factors): the margins (5 % W, 0.05 H), the ring radius (`reticleR` 0.10: `RingRadius()`), the
+  card's height (the combat full form off screen, 0.215: today's card always carries the name and distance), the
+  loadout's height (the fight form, 0.15: 5.16), the context line's baseline (0.915, now a `promptfit::PlaceContext`
+  parameter), the alert plate (0.05). A missing number falls back to today's literal (fail closed).
+- **Standard's overrides** (`hud2_layout.h` `std_ov`; the spec's Standard is the refined design, PRESETS 2.1, so these
+  stay until step 8 re-baselines Standard with the owner's frames): (1) card width 0.44 (spec 0.36); (2) the K&M card
+  0.22 (spec one height per form; +0.005 for its click footer); (3) the nav's width rule 0.25-0.62 H × k keeping 0.42 H
+  for the dialogue panel (spec w_max 0.38); (4) the nav's box (margin - 0.02 / - 0.01 H); (5) its height 0.29 / K&M 0.338
+  (spec 0.30 / 0.32); (6) its right edge = the drawn text + 0.01 H; (7) the threat list's geometry (header 0.034 + 0.044,
+  rows 0.042, "+n" 0.03, the K&M header 0.06; spec a 0.044 header and 0.032 rows); (8) the ship 0.40 × 0.17 (spec calm
+  0.30 × 0.12, fight 0.36 × 0.15); (9) the loadout 0.62 / K&M 0.66 wide (spec 0.48 / 0.36); (10) the ring's bus
+  rectangle R × 1.6; (11) topFree (0.30 H tall) and chatFree (0.30 W; the spec's comm feed x ≤ 0.469, bottom 0.76 agree
+  only at 16:9, k 1). The parts' inner geometry (rows, glyph sizes, the reticle lane's 0.692) is unchanged in the parts.
+- **Suppression** (the preset's rules beside its data): the letterbox keeps the nav's chip, the ring and the alert (the
+  card, list, ship, loadout and context line fade out, as before); a budget rule drops elements in its order while the
+  plates are over the preset's cap for the frame's case (calm no target / target, combat steady / peak = an alert or the
+  target off screen). **Standard has no budget rule**: today's HUD is over the cap in nearly every context
+  (`docs\hud2_lint_baseline.txt`: 15-19 %), dropping a part would move it; the lint keeps its WARN.
+- **Tests:** Standard against the old ComputeLayout (frozen in the test) on 576 frames (3840x2160, 1920x1080, 1280x720,
+  1600x1200, 1280x1024, 1920x1200, 2560x1080, 3840x1600, 5120x1440 × pad / K&M × 4 scale pairs × 8 states: calm, combat
+  with a hold, typing, an alert over the line, an alert under a comm panel, the alert's clear-place search, the contact
+  list, a line that loses prompts): every value bit-identical (1 px was the bound); the 4K anchors by hand; the zones
+  (the lint's own ZonesOf / InZone); the letterbox; the budget rule (order, prefix, never past its list, nothing under
+  the cap); no screen = an empty layout.
+- **Found, today's layout kept (for the driver's lint and step 8):** the pad's threat list's 2nd row plate ends at
+  0.404 H at 16:9 and wider, 0.004 H inside S2 (the live baseline ran on K&M, where the list is exempt there: `hud2
+  lint` on the pad will FAIL `zone` in combat); the context line's fallback above the panels (a first prompt that alone
+  does not fit, 4:3 / 5:4 with a wide label) sits at 0.78 H across S1's bottom edge.
+- **Open** (PRESETS 6 step 5, with the first preset that has a second form): the rectangle ease and form hysteresis,
+  combat-on-damage, the 21:9 frame, `chatFree.y1` per preset, laying out the controller-setup adaptation, the target's
+  on / off-screen state. (Focus, 5.18, brought the card's form ease, the fight lingers and its own adaptation reads.)
+
+### 5.18 Focus, "glass and edges" (31 Oct 2026, Q7 step 8's first preset after Standard; `UI_HUD2_PRESETS.md` 2.2; built; run in game 31 Oct 2026 (driver): lint 0 FAIL, frames sent)
+- **Where:** `hud_preset 1` only (the hidden advanced row: the options page shows it with `show_advanced`; no spec page,
+  no CHANGELOG until the owner's verdict). `hud2_preset.h` kBuilt[Focus]; the layout core's `RulesOf(1)` (corners 1,
+  the pad's threat rows in the card, the bottom-left unplated, the card's off-screen form, the pill cap) and
+  `FocusCorners` (every number the spec gives from `ui_meta.h`, now also the reticle's, the cruise row's and the
+  bundle's numbers: `tools\ui_meta.py`; the open ones in `focus_ns`); its reveal `hud2layout::Reveal` (pure); the parts
+  `DrawSplitArcs`, `DrawTargetCompact`, `DrawShipStrip`, `DrawFireStrip` and the lean `DrawNav` (new drawing: Standard's
+  parts cannot express split arcs, a band, a 0.095 card, free-text escorts or a 0.36 strip); the context line, the alert
+  and the keyboard form's contact list are Standard's. Debug `hud2 peek [pin|off]`, `hud2 state`'s `focus` line.
+- **Per context (vs Standard):**
+  - *Calm:* no ring - the shield (left) and hull (right) arcs, 50 degrees each at r 0.12, hidden at full, 40 % below full
+    (hull) / while recharging (shield), numbers below 40 % outside each arc; under them the band at + 0.14 H: the speed
+    (by the speed rule), BOOST / KILL / REV, the throttle tick (+ % while the lever sits partial), the cruise state
+    (`[Y] CRUISE` 45 %, `CRUISE 3.2` / `CRUISE ON` cyan), `[X] LOOT n`. Top-left: the headline on one line (0.030) with
+    `TIME 1:42` at its end, the protect bar; chip lines in a maneuver (dock / lane / jump / formation / goto + bar + ETA,
+    the dock queue / bay; the AP chip, mode and wait line); the arrival line 5 s; K&M a dim `MANEUVERS` tag. Top-right:
+    the compact card 0.34 x 0.095 (name + distance, attitude chip + class, faction, the pad's `[RS] x2 CLEAR`), else the
+    LB hints (0.026). Bottom: the context line <= 1 pill. Held back: the fire strip, the bottom-left text, the NeuroNet
+    chip, the standing place line, the info line, the K&M maneuver row. Boxed (4K pad): 2.4 % with a target, 0 without.
+  - *Combat:* all three arcs full (the power arc steady); the band adds `MSL n` (the count's one home, 1.7 pair 5); the
+    card morphs to 0.34 x 0.167 (eased 0.25 s, its 2 threat rows fade in from 80 %, the form lingers 6 s after the
+    fight), the target lane `[RS] NEXT` (+ CLEAR when the faction keeps 0.06 H); the fire strip 0.36 x 0.14 (K&M 0.40:
+    the D-pad cross / the 2 x 2 key grid, the active group's numeral + first gun, the launcher + LOCKED; opacity lingers
+    2 s); escorts as free text rows with inline bars above the hold line; <= 2 pills. Boxed (4K pad): 7.1 %, 8.6 % with
+    an alert (cap 9 %).
+  - *Lane:* the card hidden unless hostile or an objective's object. *Dock / formation / jump:* the chip lines as
+    Standard. *Autopilot:* the AP line; TAKE CONTROL is the 1 calm pill. *Letterbox:* the nav's chip, the arcs only below
+    nominal; the band, card, corners and line go.
+  - *Reveal:* a change wakes only its element for 4 s (cargo / credits -> the hold strip, a count / the group -> the fire
+    strip, an escort's hull -> its rows, a hit -> the arcs; a lit alert slot holds the strip); the peek shows everything
+    held back for 3 s, a second pins, the next ends it; one auto-peek per space entry (never in combat); `hud_reveal`
+    0 / 2 in the pure rules (Focus = 1).
+- **Tests:** `tests\hud2_focus_test.cpp` (921 checks): the 4K anchors, the morph, K&M, the 4:3 / 16:10 nav caps; 9
+  screens x pad / K&M x calm / combat x alert: the margins, no plate in the clear field (x 0.30-0.70 W, 0.30-0.82 H) or
+  the core, the pill caps, the budgets; the reveal's rules (calm, wakes, the speed, the lingers and the form ease, the
+  peek and auto-peek, levels 0 / 2, the letterbox). Standard: `hud2_layout_test` still bit-identical (576 frames).
+- **Decisions for the owner** (the spec's `open` list and what the doc leaves to the build; each the doc's default or
+  the least change). **The owner's verdicts, 31 Oct 2026 (frames `research\experience\runs\focus_frames_2026-10-31\
+  decisions_B_focus.jpg`; PRESETS 7; what changed: 5.19)** after each:
+  1. The arcs' radius 0.12 (the doc's provisional value; the lead pip's dwell radius is still to be measured).
+     **Owner (B1 with B10-B12): the calm meters like recent AAA games - each meter on its own: below full at reduced
+     opacity, full hidden completely; combat as built.** The radius kept.
+  2. The clear field's top = topFree's bottom, 0.30 H (Standard's strip, so the dialogue panel keeps its place); the
+     field stays a unit-test check (the spec's `lint: false`), not a live lint zone. **Owner: not mentioned - kept.**
+  3. No new scrim: the nav keeps its soft scrim, the band / hold / escort text the kit's navy outline - the contrast
+     frames decide. **Owner: not mentioned - kept.**
+  4. The card always draws its off-screen form (name + distance) and no bars until step 6's on / off-screen state and
+     handover; the budget case is then "peak". **Owner (B4-B7): "It is important for HUD elements inside cards to not
+     overlap, neither glyphs nor contextual data"** - the form kept, its overlaps fixed (5.19).
+  5. The compact card shows the flat icon, no 3D view; Focus requests no views at all (capital wireframes: step 6).
+     **Owner: not mentioned - kept** (inside B4-B7's no-overlap rule).
+  6. The target lane on the card's third row (`x2 CLEAR`; in a fight `NEXT` first). **Owner: not mentioned - kept**
+     (its glyph's place fixed by B4-B7).
+  7. K&M keeps Standard's contact-list block under the card (its header is the click-pinned list's toggle) plus a
+     0.034 click row for CLEAR / NEXT ENEMY: 4.2 % calm (cap 3) and 11.2 % in combat with an alert (cap 10) - the
+     lint's WARN; the spec's 4 K&M rows inside the card would need that toggle a new home. **Owner (B4-B7): no overlap
+     inside the card / list** - the faction line no longer runs over the CTRL+R / CTRL+T keycaps (the click row 0.040,
+     tight keycaps: 5.19); the block and its WARN kept.
+  8. No budget-drop rule: the pad fits; a wake or a peek is transient, like the alert. **Owner: not mentioned - kept.**
+  9. The bottom-left block 0.32 x 0.17 (3 escort rows at 0.042 over the hold line at 0.93); its line "CARGO 12/40 .
+     CREDITS 4 250". **Owner (B9): cargo hold / credits are not needed in flight** - the hold strip is gone; the block
+     (0.32 x 0.12) holds the escort rows alone (5.19).
+  10. The shield arc's "holds while recharging" = 40 % (the hull's level) while below full. **Owner (B10): per meter,
+      exactly** - built so; the hit's wake of both arcs to full removed (5.19).
+  11. The power / charge arc inside the circle (r - 0.012 H, 70-110 / 66-114 degrees): at r it would sit 0.004 H from
+      the band (the centre stack's gap is 0.01); the arcs' numbers beside their middles. **Owner (B11, with the calm
+      meters' rule): kept.**
+  12. The band on fixed anchors (centre +- 0.045 H); BOOST, not the doc's BURN (the owner's word, 26 Oct); the tick and %
+      whenever the lever sits partial in any setup (the lint's analog rule), the speed steady only for ACE / K&M; the
+      20 % change measured against at least 10 m/s; cruise counts as a throttle state. **Owner (B12, with the calm
+      meters' rule): kept.**
+  13. The cruise glyph shows until step 7's retire store; `CRUISE` off at 45 % in calm only; the charge / ON words at
+      full (state words never decay); the band hides in the letterbox. **Owner (B13): "the cruise prompt itself can live
+      at the edge of the screen rather than at the center. It's crowded."** - the prompt moved to the context line (the
+      teaching lane, bottom edge); the band keeps the state words (5.19).
+  14. The lean nav: the dock / lane / jump event (queue, bay) stays with its chip ("chip lines as Standard", though the
+      spec's value table gives `event` no Focus home); the arrival line stays 5 s (an event; HUD 2 hides the game's own);
+      the cruise-charge chip moves to the band; the 4:3 width below W / H 1.5 (16:10 keeps 0.48). **Owner (B14): fine,
+      kept.**
+  15. Until step 4 writes the bundles Focus applies its own (`hud_reveal` 1, `hud_auto_peek` 1, the 4 s wake, the 2 s /
+      6 s lingers, from the data) and does not read `hud_fade`; `hud_calm_panel` 60 has nothing to dim (the card stays
+      at 100 % as Standard's). **Owner: not mentioned - kept.**
+  16. The fire strip's group row is the active group (its first gun + "+"); no torpedo row (no reader yet); the
+      launcher's count in the strip only out of a fight. **Owner (B16): show ALL weapons incl. launchers, a smaller font
+      and adapted spacing so all fit, the active group highlighted** - built (5.19); no torpedo row still (no reader).
+  - **The known fault:** ABORT DOCK's keycap read empty on K&M - fixed (5.19).
+- **Not verified:** nothing ran in game (the driver builds, runs `tools\hud2_lint_baseline.ps1 -Preset 1` and captures
+  the frames); the band sits in the ship keep-out's top edge (0.627-0.653 H vs 0.63: the lint's WARN, the doc's own
+  place); the peek's real inputs, the retire store and the on / off-screen state are steps 6-7.
+
+### 5.19 The owner's verdicts on the Standard / Focus frames (31 Oct 2026; PRESETS 7; built; run in game (driver): lint 0 FAIL, frames sent)
+The frames `research\experience\runs\focus_frames_2026-10-31\decisions_A_standard.jpg` / `decisions_B_focus.jpg` (full-res
+`std_*.png`, `focus_*.png`). Per decision, what changed (fractions of H x k):
+- **A1** (Standard's loadout; "not fine for the glyphs to overlap ... tightening the glyphs themselves"): the 0.15 H panel
+  kept. A **tight keycap** (`hud2kit::Keycap(..., tight)`, `DrawPrompt(..., tight)`): the name at the 0.024 floor, the cap
+  1.2 x the name (0.0288; the floor-grown cap is 0.033-0.039) - used in the loadout, Focus's fire strip, the K&M maneuver
+  row and Focus's card click row; the context line, the reticle lane, the nav chip and Standard's card keep the old cap.
+  K&M with group keys: rows from 0.022 at a 0.039 pitch (0.0288 + 0.01; was 0.028 / 0.030 - the NUM 1 / 2 / 3 caps
+  overlapped each other), the launcher row 0.128, names end 0.012 before their key (was 0.008), the launcher row's texts
+  end left of the key column. The pad's rows are unchanged (0.028 / 0.030 / 0.122). Every slot (both presets) is one
+  helper, `Slot`: the count at the text floor (was 0.030 hanging over the slot's lower right edge and over the icon) at
+  the slot's right, the icon beside it (two digits' room kept: 0.0199 in Standard's 0.046 slot, was 0.0285), stacked
+  diagonally only for three digits; the up slot's count 0.018 H above the D-pad glyph (was 0.0012).
+- **A2-A4**: kept. (The K&M maneuver row's keys are tight now - their floor-grown caps sat 0.0094 H from the headline's
+  box, a panel.overlap FAIL; the row's place is unchanged.)
+- **A5** (identical heights): the ship panel 0.40 x 0.15 (`std_ov::kShipH`, was 0.17), its top on the loadout's 0.80;
+  rows: name 0.030, HOLD 0.068 (bar + 0.020), CREDITS 0.120; up to 3 escorts from 0.026 at a 0.042 pitch (was 0.05),
+  bars 0.018 under their names; the view window 0.12 (0.80 x h). The layout core's test: only the ship's 0.17 -> 0.15
+  in its frozen reference (bit-identical otherwise, 576 frames).
+- **B1 / B10 / B11 / B12** (calm meters): each meter on its own in calm - below full 40 %, full 0; a hit no longer wakes
+  both arcs to full for 4 s (`Reveal`: `wakeArcs` and `RevealIn::hit` removed); the fight's full arcs, a peek and
+  `hud_reveal` 0 unchanged (the player asked for everything there).
+- **B4-B7** (no overlap inside cards): Focus's pad card + 0.012 (`focus_ns::kCardLaneRow`: calm 0.107, fight 0.179) -
+  row 3 at 0.089 with a 0.0264 lane glyph (was 0.078 / 0.0288: its top met row 2's texts); its threat rows' icons
+  0.021 (0.024 stacked at the 0.032 pitch left 0.008). K&M: row 3 stays 0.078, the click row 0.040 (was 0.034) with
+  tight keycaps centred at y1 - 0.020 (`DrawCardIcons(..., compact)`) - the faction line ran over CTRL+R / CTRL+T.
+  K&M combat without an alert 9.9 % (cap 10). Standard's card passed the new rule unchanged (pad and K&M).
+- **B9**: the hold strip is gone (`DrawShipStrip` without it; `Reveal` without `holdSig` / `holdLine`); the bottom-left
+  block (`focus_ns::kShipH` 0.12, was 0.17) holds the escort rows alone - the last on 0.93 - in a fight, on an escort's
+  hull change, on a peek; held back otherwise.
+- **B13**: Focus's cruise prompt is a context-line pill (the teaching lane at the bottom edge, PRESETS 1.6: "CRUISE in
+  calm" is a teaching glyph): calm `[Y] CRUISE` after an actionable target's DOCK / TRACTOR, before GO TO / TARGET AHEAD
+  (with the 1-pill calm cap it shows unless DOCK / TRACTOR / DROP CRUISE leads); `[Y] CANCEL CRUISE` first while it
+  charges; `hud2 sim travel` / `cruise` likewise. The band keeps the state words (`CRUISE 3.2`, `CRUISE ON`, no glyph).
+  Standard's reticle lane unchanged.
+- **B16**: the fire strip shows every group (its numeral cell, its guns; the active lit, the others dim), the guns in no
+  group (dim) and the launcher (name, count out of a fight, LOCKED); text 0.024 (was 0.026); the rows share the 0.12
+  inner height at up to 0.040, centred (5 rows: 0.024); RT centred on the group rows, RB on the launcher's. The cross:
+  slots 0.042 at 0.044 (was 0.038 at 0.040) so each count fits beside its icon (0.016).
+- **ABORT DOCK's empty keycap**: not empty - free flight (`USER_MANEUVER_FREE_FLIGHT`) is key 192 = VK_OEM_3 in
+  `SAVE\UserKeyMap.ini`, which `GetKeyNameTextW` names "`" on a US layout: a ~0.004 H tick at the cap's top. `VkName`
+  now shows that key as "~" (its larger mark, the same 1-character cap - "TILDE" widened LEAVE FORMATION's pill to
+  0.28 H at 4K K&M, past the loadout's edge, and the context line fell back above the panels into zone S1: the
+  driver's in-game lint) and words the rarer lone marks (´ ACUTE, ^ CARET, ' QUOTE, , COMMA, . PERIOD, - MINUS, ¨
+  DIAERESIS); letter names of other layouts stay. The same key on STOP / LEAVE FORMATION / the maneuver row's first key.
+- **The driver's in-game lint (4K K&M), fixed:** the fire strip's launcher count sits in the numeral cells' column
+  (right-aligned to its edge: one column with the group digits, 0.010 H from the names; it was 0.006 H diagonally from
+  the last digit), its name left out where only a stub would fit before LOCKED; the cards' texts that end just short of
+  a neighbour row's column (Focus: the name / faction vs the class, the class vs the distance; Standard: the name vs
+  the faction row's distance) are fitted to end 0.011 H before it (`ClearRoom`; real widths "Manhattan" / "PLANET",
+  "POLICE BASE" / "Liberty Police" were 0.0088 H apart). The lint tests carry those real rectangles.
+- **The lint: `FAIL panel.overlap`** (`hud2_lint.h` PartOf / PanelItem / PanelGapPx; the gap U35 / controller_ui "HUD
+  rules" 8, "no overlap between HUD boxes, a minimum gap (proposed 0.01 H)"): two drawn texts, glyphs, keycaps or icons
+  of one part (the tag's first segment; `list` counts as the card's; each `ring.*` component its own) closer than 0.01
+  H - or overlapping at all when they are one designed unit (`hud2kit::RecUnit`, stamped by the recorder: the part
+  draws a prompt and its own label, a slot's icon + count + key, a chip's icon + word inside one scope - that is how a
+  designed pair is told) or two lines of one text column (x ranges overlapping: the line pitch spaces them). Plates,
+  bars, lines and arcs are not weighed; items under 10 % alpha neither. Before these fixes it caught, in the owner's
+  frames' cases (tests\hud2_lint_test.cpp, the old geometry): the NUM keycaps overlapping each other and 0.008 H from
+  the names (A1), a slot's icon under its count and the up slot's count 0.0012 H over the D-pad glyph (A1's pad form),
+  the K&M maneuver key 0.0094 H from the headline, the faction line under the CTRL+R keycap (B4 K&M), row 2's class
+  text under the lane glyph (B4 pad); the fixed geometry passes. Every prompt + label site was wrapped in a unit
+  (reticle lane, band, card lanes, hints, list header, context pills, alert answers, NEURONET, the maneuver chip, the
+  card's click row, slots).
+- **Tests:** `hud2_lint` 804 checks (+ the panel.overlap cases and semantics), `hud2_focus` 922 (the card's new heights,
+  per-meter arcs, no hold strip), `hud2_layout` 29142 (ship 0.15); 51 tests, 0 failures.
+- **Not verified:** nothing ran in game; the impl sources (hud2_parts / hud2 / hud2_click / hud2_kit / lint_live) are
+  not in the test build - the driver's `dev` build is their first compile. The living spec still draws the old HUD 2
+  mock (`tools\uimock\hud2_states.py`: the loadout 0.56 x 0.17, the ship 0.40 x 0.17): it must show the 0.15 ship panel
+  beside the 0.15 loadout, the slot counts at the floor beside their icons, the K&M group keys as tight caps at the
+  0.039 pitch (not published here).
+
+### 5.20 The owner's decisions, second round (31 Oct 2026; PRESETS 7; built; run in game (driver): lint 0 FAIL, frames sent)
+The owner's second verdicts on the 5.19 frames (`research\experience\runs\focus_frames_2026-10-31\after_A_standard.jpg` /
+`after_B_focus.jpg`). Per decision, what changed (fractions of H x k):
+- **1 Long names: a marquee** (the public-display pattern) instead of a permanent "...". The pure timing
+  `core\game\marquee.h` (`tests\marquee_test.cpp`): a text the fit rule would cut (it still shrinks to the floor first)
+  shows its cut form (start + ellipsis, exactly), holds **1.5 s**, scrolls at **0.05 H/s** (at the floor size; as many
+  characters a second when larger) until its end is right-aligned in the room, holds **1.5 s**, fades out **0.25 s** and
+  back in on its start, repeats. The clip opens from the cut form's prefix to the room and the ellipsis fades over the
+  last ellipsis' width, so the picture is continuous (the only jump, the reset, happens at alpha 0) and a function of
+  the time since the text first showed (frame-rate independent; sub-pixel: no x snap while it scrolls). Why: Android's
+  TextView marquee waits 1.2 s before starting and restarting and moves 30 dp/s (~0.04 H/s on a phone) [R, memory]; a
+  HUD is read in glances, hence the owner's ~1.5 s; 0.05 H/s is ~5 Agency FB capitals a second, well under reading
+  speed; the reset fades with the panels' 0.25 s ease (PRESETS 1.2 continuous motion). The kit's `hud2kit::TextMarquee`
+  (TextFit's signature) draws the full text clipped to its room by **per-glyph clipping** (each glyph quad and its UVs
+  cut to the room: D3D8 has no scissor, a viewport would split the batch), its clock keyed by string + size + room
+  (restarts after 30 unseen passes), and records ONE text whose box is the room - `panel.overlap` sees the same box at
+  every moment. Applied wherever HUD 2 fitted / cut a text: the nav (Standard's 2-line headline: its last line scrolls
+  the rest of the headline; Focus's headline; every fitted nav line), both cards' name / class / faction, the pad's
+  threat rows and the K&M list rows, the ship panel's and Focus's escort names, the loadout's and the fire strip's group
+  / ungrouped / launcher names (the launcher's word drop "JAVELIN MISSILE" -> "JAVELIN" is gone: the full name scrolls),
+  and a context pill's label where a lane squeezes it. `ClearRoom` takes a cut text's end as its room's. A text that
+  fits does not move. **Reduced motion: HUD 2 has no such option yet** - `marquee::Static` is the cut form a switch would
+  draw (WCAG 2.2.2 asks for one where motion lasts over 5 s; for the owner).
+- **2 Launchers hidden while LOCKED**: kept.
+- **3 The loadout narrowed, the consumables stacked above it**: the cross (the D-pad cross; K&M its 2 x 2 key grid) has
+  its own plate on the base panel's right end, right-aligned, 0.012 H above it; the base holds the weapons only.
+  Standard: base **0.40** (K&M **0.44**; was 0.62 / 0.66) x 0.15 (= the ship panel's height, A5), the names' room ~0.23 H
+  (was 0.25); the cross **0.20 x 0.15** (K&M 0.16 + 2 key widths x 0.13), its geometry unchanged. Focus: the fire strip
+  **0.22** (pad and K&M; the spec's 0.36 / 0.40 held the cross) x 0.14, the cross **0.16 x 0.14** (K&M 0.134 + 2 keys x
+  0.11, so K&M combat stays under its 10 % cap). `hud2_layout.h` `Out::cons` (`std_ov::kCons*`, `focus_ns::kStripW` /
+  `kCons*`; `Measures::slotKeyW` = the K&M keys' widest tight keycap, `SlotKeyWidth`), part of the Loadout element (one
+  fade, one budget entry); the base's top stays S1's 0.80 H edge; the cross lies right of S1 in the right rail's lower
+  end - the lint's S2 is split there (left of the cross as before, above it down to its top). Side effects: the K&M
+  contact list and the goal panel (`BottomPanelsTop`) stop above the cross (at 4K the list holds ~5 rows instead of ~9);
+  the bus publishes the loadout with the cross as one rectangle; `Hud2Scale`'s bottom-row cap (1.02 / 1.06 H) is
+  unchanged (conservative: Standard's k does not move).
+- **4 Prompts in the bottom corners, the centre bottom clear**: the context prompts go into two **lanes** beside the
+  bottom panels (`promptfit.h` `ContextLanes` / `PlaceLanes` / `PlaceLanesHold`; `hud2_layout.h` `PlaceContextLanes`):
+  the left from the ship panel's right edge + 0.012 gap + 0.012 pad to 0.40 W - pad, the right from 0.60 W + pad to the
+  loadout's left edge - 0.024; two rows each (the preset's baseline 0.915 and one 0.06 above it). **The rule: the
+  corners' jobs (PRESETS 1.1)** - the ship's movement and control left beside the ship panel (DOCK, GO TO, CRUISE /
+  CANCEL CRUISE, DROP CRUISE, STOP / ABORT DOCK / ABORT LANE / LEAVE FORMATION, REVERSE, TAKE CONTROL, GOALS, MAP), what
+  you fire / use / target right beside the loadout (TURRET / EXIT TURRET, TRACTOR, TARGET AHEAD, TARGETS) - `hud2.cpp`
+  `CtxSide`; within a lane the priority order, the first prompt hugging its panel. A prompt takes the first row it fits
+  whole, else an empty row squeezed (down to its glyph + 2 floor ems of label; the label then scrolls), else the other
+  lane; one with no place ends the line (a prefix). The HOLD cascade as before; a raised word only where no prompt sits
+  above it, never squeezing a prompt more than the word-less layout did. Both presets (Focus after its pill cap). Where
+  no lane has room for even the first prompt (4:3 / 5:4 with hud_scale x text_size over ~1.08: the panels reach the
+  band) the old centred line above the panels is the fallback (`ctxFallback`: across S1's bottom edge there, as 5.17
+  found; never in the band). The alert no longer pushes the line down: the prompts step aside while it meets one (the
+  lanes and the alert do not meet at any aspect). **The lint zone `bottom`** (every preset; `hud2_lint.h` `kBottom*`,
+  `Zone::texts`): FAIL `zone` for any plate, text, glyph, keycap or icon in x 0.40-0.60 W (the ship keep-out's columns,
+  PRESETS 1.3) from 0.85 H down (the owner's ~0.85; the old line's pills reached 0.889); the subtitles' panel exempt as
+  in every zone.
+- **Tests** (`build.cmd test`: 52 tests, 0 failures): `marquee` (the values, a fit stays still, the cycle, 3 cycles at
+  1 ms with no visible step and nothing past the room, 30 / 144 fps alike, sub-pixel); `promptfit` the lanes (geometry,
+  both lanes, the row above, the squeeze and its minimum, the hand-over, the prefix, typing, the cascade's raised word);
+  `hud2_layout` the frozen reference changed only for decisions 3 / 4 (576 frames otherwise bit-identical), the 4K
+  anchors of the base / cross / lanes, every pill and the cross outside S1 / S2 / core / bottom; `hud2_focus` the strip
+  and its cross, the pills outside the clear field and the band, no fallback on the matrix; `hud2_lint` the band (a
+  centred pill and its label FAIL, the lanes pass, the subtitles exempt) and the split rail.
+- **Not verified**: nothing ran in game; the impl sources are not in the test build (the driver's `dev` build is their
+  first compile). To capture: a marquee sequence (a long target name / faction on Focus's 0.34 card, a long launcher
+  name on K&M beside LOCKED; frames at 0, ~1.6, ~2.5 s and in the end hold), both presets pad + K&M in calm / combat /
+  dock / formation / ap (the lanes: DOCK left, TARGET AHEAD right; LEAVE FORMATION squeezed at 4:3), `hud2 lint` 0 FAIL
+  with the new zone.
+- **Open for the owner**: no reduced-motion switch; the launcher's full name scrolls (the word drop removed); TARGET
+  AHEAD (~0.19 H at 4K) is squeezed in the 4K right lane (~0.17 H) and scrolls - the band, the loadout's 0.40 or the
+  lanes' gaps decide that; the K&M contact list's fewer rows above the cross. The living spec mock
+  (`tools\uimock\hud2_states.py`, not edited here) must show the narrow loadout with the stacked cross, the lanes beside
+  the panels with nothing in the bottom-centre band, a long name in its cut (start) form, and (5.21) Standard's cruise
+  prompt in the left lane ([Y] CRUISE calm, [Y] CANCEL CRUISE first while charging) with only the glyph-less state word
+  under the ring, and (5.22) the ship panel 0.31 x 0.15 (icon column 0.085, texts from 0.107, values 0.014 before the
+  edge), the context pills' tight K&M keycaps, and CANCEL CRUISE whole in the wider left lane.
+
+### 5.21 Standard's cruise prompt to the left lane (31 Oct 2026; PRESETS 7; built; run in game (driver): lint 0 FAIL, frames sent)
+The owner on 5.20's open item ("Yes, move it"): Standard's ring row no longer carries the cruise prompt with its keycap
+just above the ship's nose. As Focus's did (B13), the prompt is a context-line prompt in every preset (`hud2.cpp`: the
+`focusLine` gate is gone; `CtxSide` puts `Cruise` in the left lane, the ship's movement): calm `[Y] CRUISE` after an
+actionable target's DOCK / TRACTOR, while charging `[Y] CANCEL CRUISE` first; pad and K&M alike (K&M its keycap). The
+ring row (`hud2_parts.cpp` "ring.lane") keeps only the state word without a glyph - cyan `CRUISE` while charging (the
+seconds already stand inside the ring above it, PRESETS 1.7: so not "CRUISE 3.2" as Focus's band reads, which has no
+seconds of its own), `CRUISE ON`, nothing while off - beside `[X] TRACTOR n` as before (`Model::cruiseBtn` removed).
+Standard has no pill cap (<= 3 prompts, 2 rows a lane): at 16:9 / 21:9 / 16:10 every Standard line with the cruise
+prompt places in full (DOCK + CRUISE stack in the left lane's two rows at 16:9; at 21:9 one row); at 4:3 K&M the right
+lane is closed and `TARGETS`, the line's last, gives way to CRUISE (the prefix rule); at 5:4 K&M the old centred fallback
+line as before. Measured with the game's font (`tests\promptfit_test.cpp` StandardCruiseLane, `fltest -v`): `CANCEL
+CRUISE` is 0.204 H (pad) / 0.214 H (K&M) against the 16:9 left lane's 0.186 H - it is squeezed to the lane and its label
+scrolls (the marquee, decision 1); open for the owner (a shorter label, or the lane's width). Tests: 52, 0 failures.
+Not verified: nothing ran in game; `hud2.cpp` / `hud2_parts.cpp` are not in the test build (the driver's `dev` build is
+their first compile).
+
+### 5.22 Standard's ship panel narrowed (31 Oct 2026; PRESETS 7; built; run in game (driver): the frame shows CANCEL CRUISE unscrolled after 8a3a4866)
+The owner on the frame `focus_frames_2026-10-313_standard_cruise.jpg` ("some wasted space in there. Reduce it"): the
+panel is **0.31 x 0.15** (`std_ov::kShipW`, was 0.40; the height stays the loadout's, A5). Removed (fractions of H x k):
+the icon column 0.12 (0.80 x h) -> **0.085** (`std_ov::kShipViewW`: the icon at half the panel's height, 0.075 - the
+owner's glyph rule, it was 0.0744 already - with 0.005 each side instead of 0.035 / 0.041 of air), the texts start 0.010
+after it (x 0.107, was 0.150; 0.015 from the icon), the values are right-aligned 0.014 before the edge (was 0.018); the
+text column is 0.189 (was 0.232), every row and datum unchanged (name / class, HOLD + bar, CREDITS, up to 3 escort rows
+at the 0.042 pitch, a long name's marquee). The game's wireframe window (`hud2.cpp`, `hud_wireframes`) uses the same 0.085
+column, so the wireframe draws narrower. HOLD / CREDITS labels take only the room their value leaves less 0.012
+(`TextMarquee`): an 8-9 digit credit count scrolls the label instead of overlapping it (panel.overlap); 7 digits fit.
+**The K&M keycap** (the driver's 4K K&M frame `std_cruise-213223.png` after a first 0.35 cut still scrolled ":ANCEL
+CRU..."): the test had modelled the K&M prompt's key as a 1.3 h bumper glyph (0.047 H), but the game's regular SHIFT+W
+keycap is 0.101 H (`promptfit::KeycapWidth`, now the kit's own measure; the frame ~218 px), so the real prompt was 0.268 H
+against a 0.236 lane. The context prompts now draw the **tight keycap** (`DrawContext` / `ContextWidths`, as the loadout
+and the maneuver row since A1; `promptfit::KeycapTightWidth`): `[SHIFT+W] CANCEL CRUISE` is 0.254 H (pad 0.204). The left
+lane: **0.276 H** at 16:9 (4K, 1080p, 720p), 0.249 at 16:10 (prompt 0.241), 0.484 at 21:9 - placed whole, closing 5.21's
+open item; 4:3 (0.190) / 5:4 (0.161) still squeeze K&M's. Focus's bottom-left block (0.32, free escort text with no icon
+column) has not this slack and is unchanged (its K&M pills take the tight keycap too). Tests: `promptfit`
+StandardCruiseLane measures K&M prompts with the real keycaps (SHIFT+W, F3) through the kit's formula, checks the regular
+SHIFT+W cap against the frame (0.101 H +- 0.006 at 4K) and asserts the lane holds CANCEL CRUISE with no left-lane prompt
+squeezed at 16:9 / 16:10 / 21:9 (it FAILS on the 0.35 panel with the regular cap: 11 failures); `hud2_layout` the frozen
+reference's ship width 0.31 (the 4K anchor 861.6, was 1056); 52 tests, 0 failures. Not verified: nothing ran in game;
+`hud2_parts.cpp` / `hud2_kit.cpp` / `hud2.cpp` are not in the test build (the next `dev` build is their first compile);
+the narrower wireframe window and the tight context keycaps want a frame.
+
+### 5.23 The lower centre devoid of HUD 2 (31 Oct 2026; PRESETS 7; built; run in game (driver): lint 0 FAIL, the frame shows the ship clear)
+The owner on the frame `focus_frames_2026-10-31\r5_standard_cruise.jpg` (CRUISE ON in cyan just above the ship): "The
+CRUISE ON text still hides the ship. We should really make sure the lower center of the screen is devoid of HUD elements
+(unless they're diegetic like an on-screen ship/solar being a target, etc)." The rule: **nothing HUD 2 draws lies in x
+0.40-0.60 W from the ring's lowest drawn edge + the centre stack's 0.01 H down to the screen's bottom** - both presets
+(and Speedrun / Guided, which draw as Standard), pad and K&M, every context. What moved (fractions of H x k):
+- **Standard's reticle lane is gone** (it stood at the centre + R + 0.092 = 0.692 H on the ship's nose). The cruise state
+  reads in one place, inside the ring under the speed, in the charge seconds' slot (+0.083, tag `ring.cruise`; Speedrun's
+  spec put its cruise state there already): `3.2 s` while the engine charges (the arc filling), cyan **CRUISE ON** while it
+  runs (the speed rises to +0.045 as while charging), nothing while off; the charge word CRUISE went (the arc + seconds,
+  the nav's CRUISE CHARGING and the left lane's CANCEL CRUISE say it). The power arc (68-112 degrees) yields that slot
+  while cruise charges or runs (the game takes the weapons offline while charging, FREELANCER_RE "The cruise line"; while
+  running it is this package's choice, open for the owner). The prompt stays the left lane's (5.21).
+- **[X] TRACTOR n** is a context prompt in the **right lane** (`hud2.cpp` `TractorCtx`, `CtxSide` Tractor -> right): in calm
+  after DOCK / the targeted loot's TRACTOR (whose label then carries the count: "TRACTOR 3", one value one place), in the
+  other states after their own prompts; within the line's 3 prompts and its one-prompt-per-button rule - in combat the
+  X-hold TURRET keeps the X, so TRACTOR n does not show there (it did under the ring; open for the owner). Not in Focus,
+  whose band keeps LOOT n with the tractor's glyph.
+- **Standard's throttle word** (BOOST / KILL / REV) left its place centred under the throttle arc (to R + 0.058, in the
+  lower centre): it stands right of the arc, from cx + 0.068, its box's bottom on the arc's outer edge - > 0.01 H from the
+  power / charge arcs and from CRUISE ON (centre.overlap). The throttle arc itself stays at the ring's bottom centre (the
+  owner, 26 Oct 2026) and is the ring's lowest drawn edge.
+- **Focus's band** moved from the centre + 0.14 (y 0.63-0.65, over the ship) inside the arcs' circle to **+ 0.078**
+  (`UI_SPEC.json` focus `band_dy` / `band_y` 0.565-0.591, `core\ui_meta.h` regenerated); its rows pass through the gaps
+  between the split arcs (+-25 degrees) and the bottom arc, > 0.01 H from each, the speed's top 0.018 H outside the core
+  (r 0.045). The bottom (power / charge) arc moved from R - 0.012 onto the circle R.
+- **The context line's fallback** (no lane beside the panels has room: 4:3 / 5:4 at large scales) is no longer the centred
+  line above the panels (it crossed the lower centre) but the same two lanes above the panels (`promptfit.h` `LanesAbove`:
+  margin .. 0.40 W and 0.60 W .. margin, baseline 0.04 H x k above the panels, two rows); where even they have no room,
+  no prompt.
+- **The lint zone `bottom`** (`hud2_lint.h` `ZonesOf(..., clearY0)`): x 0.40-0.60 W, from **`Out::clearY0` = cy +
+  `RingBottom` + 0.01 H** (`hud2_layout.h`: Standard's family R + 0.022 + 0.75 x 0.0065 / 2 = the throttle arc's outer
+  edge, **0.6344 H** at 16:9 k 1; Focus R + 0.0065 / 2, **0.6333 H**; it scales with k) to the screen's bottom (was 0.85
+  H). It now FAILs **any** recorded item there - plates, texts, glyphs, keycaps, icons, arcs, shapes - except the transient
+  overlays (`Item::overlay`: the 0.3 s hit flash and the missile chevrons at the threat's bearing, 1.3). Without a layout
+  the preset's circle at k 1 + 0.01 H (0.61 H, stricter). `hud2 lint` passes the drawn layout's `clearY0`. The keep-out's
+  WARN is now inside this FAIL zone's columns.
+- **Diegetic exceptions**: the game's own brackets on targets, its reticle and the 3D scene are drawn by the game, not by
+  the kit, so the recorder (`hud2kit::Record`) never sees them and the zone cannot flag them; everything HUD 2 draws goes
+  through the kit and is recorded with its component tag.
+- **Tests** (`build.cmd test`: 0 failures): `hud2_lint` - the frame's CRUISE ON as drawn (0.692 H, ~0.109 H wide: 115 px
+  of the frame's 1057 px H) FAILs `zone bottom`, with the TRACTOR row and the old centred throttle word 4 FAILs (all four
+  passed at the old 0.85 H top); the moved layout (CRUISE ON at +0.083, the speed +0.045, the word beside its arc, the
+  charge arc while charging) has no `zone` and no `centre.overlap`; an arc and a shape in the zone FAIL, a missile
+  chevron (overlay) passes; the zone's top from `clearY0` and the fallback per preset. `hud2_layout` - `clearY0` at 4K
+  and at a larger scale, the frozen reference's fallback = the lanes above the panels, no pill in the 0.40-0.60 W columns
+  across the 576-frame matrix. `hud2_focus` - `band_dy` 0.078, `clearY0`, the old band (+0.14) FAILs 3 items in the zone
+  and the new one none with no `centre.overlap` against the hull and bottom arcs; the band inside the circle and above
+  `clearY0` across the matrix.
+- **Not verified / open**: nothing ran in game; `hud2_parts.cpp` / `hud2.cpp` are not in the test build (the next `dev`
+  build is their first compile); the real CRUISE ON width inside the ring wants a frame (the geometry allows up to ~0.12
+  H). Open for the owner: the power arc hidden while cruising; TRACTOR n absent in combat (the X button's TURRET); the
+  alert card keeps its 1.3 exemption in every zone and can still fall back below the ring (`hud2_layout.h`: only when it
+  would meet the ring, 4:3 with a list or a dialogue) - not moved here; the unbuilt alert-queue design's FLARE mirror "in
+  the reticle lane" (`UI_SPEC.json` value_ids alert `second`) needs a new home. The living spec mock
+  (`tools\uimock\hud2_states.py`, not edited) must show CRUISE ON inside the ring, TRACTOR n in the right lane, the
+  throttle word beside its arc and Focus's band inside the circle.

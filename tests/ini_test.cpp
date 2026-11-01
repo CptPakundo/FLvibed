@@ -3,6 +3,7 @@
 #include "test.h"
 
 #include "game/ini.h"
+#include "str.h"
 
 void Test_ini()
 {
@@ -72,4 +73,68 @@ void Test_ini()
     // a missing file reads as nothing
     CHECK(ini::Read(TempPath("does_not_exist.ini")).empty());
     DeleteFileA(path.c_str());
+
+    // a binary ini (BINI, vanilla 1.1's DATA files) reads as the same sections (29 Oct 2026; it read as empty):
+    // [Sound] nickname = mix_s051a / file = audio\mixes\mix_s051xa.wav, [Zone] pos = -1200, 0.5, 7 / damage = 2000000
+    {
+        const std::string strings[] = {"Sound", "nickname", "mix_s051a", "file", "audio\\mixes\\mix_s051xa.wav",
+                                       "Zone", "pos", "damage"};
+        std::string table;
+        unsigned off[8];
+        for (int i = 0; i < 8; ++i)
+            off[i] = static_cast<unsigned>(table.size()), table += strings[i], table += '\0';
+        std::string b = "BINI";
+        auto u16 = [&](unsigned v) { b += static_cast<char>(v & 0xFF), b += static_cast<char>((v >> 8) & 0xFF); };
+        auto u32 = [&](unsigned v) { u16(v & 0xFFFF), u16(v >> 16); };
+        auto value = [&](int type, unsigned raw) { b += static_cast<char>(type), u32(raw); };
+        u32(1);          // version
+        u32(0);          // the string table's offset: patched below
+        u16(off[0]), u16(2);                                   // [Sound], 2 entries
+        u16(off[1]), b += '\x01', value(3, off[2]);            // nickname = "mix_s051a"
+        u16(off[3]), b += '\x01', value(3, off[4]);            // file = "audio\mixes\..."
+        u16(off[5]), u16(2);                                   // [Zone], 2 entries
+        float half = 0.5f;
+        unsigned halfRaw;
+        memcpy(&halfRaw, &half, 4);
+        u16(off[6]), b += '\x03', value(1, static_cast<unsigned>(-1200)), value(2, halfRaw), value(1, 7);
+        u16(off[7]), b += '\x01', value(1, 2000000);
+        const unsigned strOff = static_cast<unsigned>(b.size());
+        for (int i = 0; i < 4; ++i)
+            b[8 + i] = static_cast<char>((strOff >> (8 * i)) & 0xFF);
+        b += table;
+        const std::string bin = TempPath("ini_test_bini.ini");
+        CHECK(WriteTextFile(bin, b));
+        const std::vector<ini::Section> bs = ini::Read(bin);
+        CHECK(bs.size() == 2);
+        if (bs.size() == 2)
+        {
+            CHECK(bs[0].type == "sound" && bs[1].type == "zone");
+            const std::string *nick = bs[0].Get("nickname"), *file = bs[0].Get("file");
+            CHECK(nick && *nick == "mix_s051a" && file && *file == "audio\\mixes\\mix_s051xa.wav");
+            const std::string *pos = bs[1].Get("pos"), *dmg = bs[1].Get("damage");
+            CHECK(pos && *pos == "-1200, 0.5, 7" && dmg && *dmg == "2000000");
+            const std::vector<std::string> pf = pos ? ini::Fields(*pos) : std::vector<std::string>();
+            CHECK(pf.size() == 3 && atof(pf[1].c_str()) == 0.5);
+        }
+        DeleteFileA(bin.c_str());
+    }
+    // the real thing when the repository's vanilla copy is there (git-ignored research\Vanilla, beside Install\)
+    if (!g_test.install.empty())
+    {
+        const std::string vanilla = g_test.install + "\\..\\..\\research\\Vanilla\\Freelancer\\DATA\\Audio\\gf_sounds.ini";
+        if (GetFileAttributesA(vanilla.c_str()) != INVALID_FILE_ATTRIBUTES)
+        {
+            std::string file;
+            int sounds = 0;
+            for (const ini::Section& sec : ini::Read(vanilla))
+                if (sec.type == "sound")
+                {
+                    ++sounds;
+                    if (const std::string* n = sec.Get("nickname"); n && *n == "mix_s051a" && sec.Get("file"))
+                        file = *sec.Get("file");
+                }
+            CHECK(sounds > 50);
+            CHECK(str::Lower(file) == "audio\\mixes\\mix_s051xa.wav");
+        }
+    }
 }

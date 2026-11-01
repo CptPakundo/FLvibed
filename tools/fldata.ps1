@@ -42,11 +42,21 @@ function Assert-FLWillLoad([string]$ExeDir) {
 function New-FLInstance([int]$N) {
     $src = Join-Path $script:FLDataRoot 'Install\Freelancer HD Edition'
     $dst = Join-Path $script:FLDataRoot "Install\instances\$N\Freelancer HD Edition"
-    $own = '^(SAVE\\|EXE\\logs\\|EXE\\FL[^\\]*\.(dll|ini|log)$|EXE\\FLSubtitles\\|EXE\\dacom\.ini$|EXE\\[^\\]*\.log$)'
+    # the instance's own copies: everything a running game or our tools write (28 Oct 2026: EXE\FLMotion.tsv was a hard
+    # link - two multiplayer clients on instances 21 / 22 wrote their motion traces interleaved into the MAIN install's
+    # file; the EXE's .csv / .tsv / .jsonl recordings likewise). An existing instance's link to such a file is replaced by
+    # a copy on the next call.
+    $own = '^(SAVE\\|EXE\\logs\\|EXE\\FL[^\\]*\.(dll|ini|log|tsv)$|EXE\\FLSubtitles\\|EXE\\dacom\.ini$|EXE\\[^\\]*\.(log|tsv|csv|jsonl)$)'
     foreach ($f in Get-ChildItem -LiteralPath $src -Recurse -File) {
         $rel = $f.FullName.Substring($src.Length + 1)
         $to = Join-Path $dst $rel
-        if (Test-Path -LiteralPath $to) { continue }
+        if (Test-Path -LiteralPath $to) {
+            $it = Get-Item -LiteralPath $to
+            if ($rel -match $own -and $it.LinkType -eq 'HardLink') {
+                $tmp = "$to.copy"; Copy-Item -LiteralPath $to $tmp; [IO.File]::Delete($to); Move-Item -LiteralPath $tmp $to
+            }
+            continue
+        }
         $null = New-Item -ItemType Directory -Force (Split-Path $to -Parent)
         if ($rel -match $own) { Copy-Item -LiteralPath $f.FullName $to }
         else { $null = New-Item -ItemType HardLink -Path $to -Target $f.FullName }

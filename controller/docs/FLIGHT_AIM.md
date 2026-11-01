@@ -2,6 +2,8 @@
 
 Detail moved out of CLAUDE.md. Code: `src/impl/controller.cpp` (UpdateSpace, PadAim, UpdateBot,
 kOptions), `src/impl/aim.cpp`. Measured with the virtual pad and the user's Xbox Elite Series 2.
+Verified against e73fee3 (29 Oct 2026: steering, aim and bot unchanged; the pad's targeting and the open ideas brought
+to the built presets - the binds themselves: `docs\BINDINGS.md`, `..\..\docs\UI_SPEC.json`).
 
 ## Steering
 - Freelancer's mouse flight turns at `offset * 1.3 * max_rate` (max_rate = steering_torque /
@@ -24,8 +26,9 @@ kOptions), `src/impl/aim.cpp`. Measured with the virtual pad and the user's Xbox
   (`aim_cone` 90 = whole screen), smoothed (`aim_smooth` 0.06 s). No target = reticle centered.
 - aim_mode 0 "stick": reticle follows the stick (to the screen edges) + slowdown, magnetism and a
   capped rotational assist (references: CoD/Overwatch controller aim assist). Kept as an option.
-- Targeting defaults (user): no automatic selection, a selected target is never changed, D-pad up =
-  closest enemy. `fire_target` 1: with nothing targeted, firing while the reticle is over a
+- Targeting defaults (user): no automatic selection, a selected target is never changed; the target button (RS click
+  in the FREELANCER preset) picks the object inside HUD 2's reticle ring, else the closest enemy, again = the next
+  (the D-pad holds the consumables since the 25 Oct presets). `fire_target` 1: with nothing targeted, firing while the reticle is over a
   hostile/neutral ship selects it (one left click = Freelancer's click selection; cursor shapes
   `hostile`/`fire`/`neutral`/`fire_neutral`). `auto_target` 1/2 = optional automatic selection.
 - Hostile = target attitude towards the player <= -0.55 (IObjInspect vt[26]).
@@ -55,7 +58,9 @@ kOptions), `src/impl/aim.cpp`. Measured with the virtual pad and the user's Xbox
   never reload code during timed phases.
 
 ## Open ideas
-- Firm stick input could cancel autopilot (formation/goto keep weapons offline).
-- "Nearest to screen center" target selection needs an object enumeration (not available yet).
-- Pad cannot target objects outside the contact list filter (e.g. docking rings).
-- Physical-mouse handback triggers on any mouse count (no threshold yet).
+- (done) Firm stick input cancels the autopilot (`autopilot_cancel`, 0.35 of full deflection).
+- (done) "Nearest to the reticle" selection: the target button reads the objects natively (`..\..\core\game\space.*`).
+- The HUD's own next / previous target commands still walk the contact list under its filter (controller CLAUDE.md
+  "Gotchas"); native, filter-independent targeting exists for the pad UX to build on.
+- Physical-mouse handback: the device service reads one mouse report as jitter, a second within 150 ms as a move
+  (`device.cpp`); the 8-10 px threshold of `..\..\docs\UI_PLAN.md` 6.2 needs the host to report the motion's size.

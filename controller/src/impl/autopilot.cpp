@@ -1,6 +1,8 @@
 // Advanced Autopilot - core: modes, settings and personality, the state, start / stop. Part of autopilot.cpp until 21 Oct 2026; shared state and declarations in
 // autopilot_impl.h, the module API in autopilot.h.
 #include "autopilot_impl.h"
+#include "autopilot_ashride.h"
+#include "situation_exec.h"
 
 namespace autopilot
 {
@@ -162,6 +164,13 @@ float MissileGate(u32 arch)
     return it == g_missileGate.end() ? 1.5f : it->second;
 }
 
+
+// `self_burst` (gate mpb21, M13: at the sphere's last generator - radius 915 - rounds launched 557-569 m from its centre, 52-60 m
+// off its hull, were gone 0.01 s after their launch and burst on us: 2,424 (a torpedo's full damage), 2,071, then a salvo
+// that killed the ship at 94 % hull; launched from 782 m they flew 2 s and hit. The blast and flank rules saw nothing -
+// the ray test finds the hull 52 m off). Learned per target: a round of ours gone within 0.12 s of its launch = a burst at
+// the launch, and no round goes at that target again from closer to its centre than that launch + 150 m.
+std::map<u32, float> g_selfBurst;
 State g;
 
 float Dot3(const float* a, const float* b) { return geom::Dot(a, b); }
@@ -190,25 +199,30 @@ Mode Current() { return g.mode; }
 
 std::string CombatStats()
 {
-    char buf[640];
+    char buf[1024];
     sprintf_s(
         buf,
         "engaged=%.1f on-target=%.1f firing=%.1f avg-dist=%.0f hit-time=%.1f evade-time=%.1f evade-nohit=%.1f "
         "evade-on-target=%.1f lost=%.2f dealt=%.0f dps=%.1f extends=%d extend-time=%.1f incoming-missile-hits=%d "
         "incoming-missile-misses=%d gun-shots=%d gun-duty=%.2f gun-accuracy=%.2f own-missile-hits=%d "
-        "own-missile-misses=%d turns=%d turn-time=%.1f duel=%.1f they-on=%.2f we-on=%.2f both-on=%.2f turn-ratio=%.2f",
+        "own-missile-misses=%d turns=%d turn-time=%.1f duel=%.1f they-on=%.2f we-on=%.2f both-on=%.2f turn-ratio=%.2f "
+        "dealt-shield=%.0f pvp-maneuver=%.1f pvp-defend=%.1f pvp-trade=%.1f pvp-punish=%.1f pvp-break=%.1f "
+        "ord-launches=%d ord-possible=%.1f",
         g.stats.engaged, g.stats.onTarget, g.stats.firing,
         g.stats.engaged > 0 ? g.stats.distTime / g.stats.engaged : 0.0f, g.stats.hitTime, g.stats.evadeTime,
         g.stats.evadeNoHit, g.stats.evadeOnTarget, g.combat.lost, g.combat.dealt,
         g.stats.firing > 0 ? g.combat.dealt / g.stats.firing : 0.0f, g.stats.extends, g.stats.extendTime,
         g.missiles.hits, g.missiles.misses, g.stats.gunShots,
         g.stats.gunMaxShots > 0 ? g.stats.gunShots / g.stats.gunMaxShots : 0.0f,
-        g.stats.gunShotDamage > 0 ? std::max(0.0f, g.combat.dealt - g.missiles.ownMissileDealt) / g.stats.gunShotDamage
-                                  : 0.0f,
+        g.stats.gunShotDamage > 0
+            ? std::max(0.0f, g.combat.dealt + g.combat.dealtShield - g.missiles.ownMissileDealt) / g.stats.gunShotDamage
+            : 0.0f,
         g.missiles.ownMissileHits, g.missiles.ownMissileMisses, g.stats.turns, g.stats.turnTime, g.combat.duelT,
         g.combat.duelT > 0 ? g.combat.duelTheyOn / g.combat.duelT : 0.0f,
         g.combat.duelT > 0 ? g.combat.duelWeOn / g.combat.duelT : 0.0f,
-        g.combat.duelT > 0 ? g.combat.duelBoth / g.combat.duelT : 0.0f, g.combat.duelTurnRatio);
+        g.combat.duelT > 0 ? g.combat.duelBoth / g.combat.duelT : 0.0f, g.combat.duelTurnRatio, g.combat.dealtShield,
+        g.combat.pvpT[0], g.combat.pvpT[1], g.combat.pvpT[2], g.combat.pvpT[3], g.combat.pvpT[4], g.stats.ordLaunches,
+        g.stats.ordPossible);
     return buf;
 }
 
@@ -221,6 +235,9 @@ void DuelLog();
 // (ap start objective again after a docked scene keeps the stance for the same mission).
 u32 g_survivalTitle = 0;
 bool g_survivalMission = false;
+// `survival_until_jump`: the system an escape title's stance began in, and whether it ended for this title
+u32 g_survivalSystem = 0;
+bool g_survivalEnded = false;
 
 // Hands back. `cancel`: also end the running behaviour (free flight); false when the game ended it itself or a
 // game sequence (docking, a lane ride, a jump) must go on.
@@ -235,7 +252,17 @@ void StopImpl(StopReason why, bool cancel, const char* text)
     }
     if (why == StopReason::Command || why == StopReason::PlayerInput || why == StopReason::Pad ||
         why == StopReason::PlayerDied)
+    {
+        // (A37 S7, situation_arbiter - D10: the player's stop pauses with the queue kept; a death forgets it)
+        if (g_obj.on && g_set.situationArbiter)
+        {
+            if (why == StopReason::PlayerDied)
+                situation::ArbiterForgetGame();
+            else
+                situation::ArbiterPause();
+        }
         g_obj.on = false;
+    }
     if (g.mode == Mode::Off)
         return;
     events::Push("autopilot stop mode=%s why=%s kills=%u time=%.1f %s", ModeName(g.mode), text, g.combat.kills, g.time,
@@ -257,8 +284,10 @@ void StopImpl(StopReason why, bool cancel, const char* text)
         // ...nor a trip that arrived while the objective mode runs: its next step decides within a frame (session 6, M12
         // lair: each "arrived" ended the cruise and the next trip charged 5-7 s at 80 m/s again; run 3 keeps the cruise
         // across "Fly to the Core" / "Tractor" / "Exit")
+        // ...nor while `ash_ride` loops / intercepts at cruise (leaving cruise costs the 8.5 s charge at his spawn)
+        const bool ride = g_obj.on && AshRideFlying();
         const bool keep = why == StopReason::Restart || why == StopReason::PlayerInput || why == StopReason::Pad ||
-                          why == StopReason::Fled || (g_obj.on && why == StopReason::Arrived);
+                          why == StopReason::Fled || (g_obj.on && why == StopReason::Arrived) || ride;
         flight::Model fm;
         if (!keep && flight::ReadModel(fm) && fm.cruiseEngaged)
         {
@@ -272,25 +301,41 @@ void StopImpl(StopReason why, bool cancel, const char* text)
         // A fight that ended (nothing left to fight) leaves the ship at rest, not flying on at the fight's throttle
         // (user, 19 Oct 2026: after saving Beta 4 in M01b the ship flew on aimlessly).
         const bool fight = mode == Mode::Combat || mode == Mode::Escort;
-        if (why == StopReason::NoEnemiesLeft || why == StopReason::TargetDisabled ||
-            why == StopReason::TargetDestroyed || (fight && why == StopReason::Command))
+        if (!ride && (why == StopReason::NoEnemiesLeft || why == StopReason::TargetDisabled ||
+                      why == StopReason::TargetDestroyed || (fight && why == StopReason::Command)))
             fl::SetThrottle(0.0f);
     }
+    // hold_defend: the fight a Hold began is over - hold again at its point
+    if (g_holdResume.on)
+    {
+        const HoldResume r = g_holdResume;
+        g_holdResume = HoldResume();
+        if (mode == Mode::Combat && (why == StopReason::NoEnemiesLeft || why == StopReason::TargetDestroyed))
+        {
+            events::Push("autopilot hold-defend over (%s): holding again", text);
+            Start(Mode::Hold, 0, r.hasPos ? r.pos : nullptr);
+        }
+    }
 }
+
+HoldResume g_holdResume;
 
 static ULONGLONG g_ownDockAt = 0; // when the autopilot's own dock went through (Stop "docking")
 void Stop(StopReason why, const char* text)
 {
     const bool gameSequence = why == StopReason::Docked || why == StopReason::Docking || why == StopReason::LeftSpace;
     if (why == StopReason::Docking && g.mode != Mode::Off)
-        g_ownDockAt = GetTickCount64();
+        g_ownDockAt = gameclock::NowMs64();
     // (a refused dock is no dock the step still wants: M04's trade lane; was strstr(why, "refused"), which only
     // "travel: dock refused" contains)
     if (gameSequence || why == StopReason::DockRefused)
         g_obj.lastDock = 0;
     if (gameSequence || why == StopReason::PlayerDied)
         g_obj.cruiseLock = false;
-    StopImpl(why, !gameSequence, text);
+    if (gameSequence && why != StopReason::Docking && g_set.situationArbiter)
+        situation::ArbiterNoteDocked(); // (a pause fact: docked / left space while paused - A37 S7, D10)
+    // (a dead ship has no behaviour to cancel: the death camera's stop, controller.cpp)
+    StopImpl(why, !gameSequence && why != StopReason::PlayerDied, text);
 }
 
 // The module API (the controller: "player input", "pad", "docked", "left space"): its text as the reason.
@@ -298,7 +343,7 @@ void Stop(const char* why) { Stop(StopReasonOf(why), why); }
 
 bool OwnDock()
 {
-    return g_set.skipDockScene && (ObjectiveOn() || (g_ownDockAt && GetTickCount64() - g_ownDockAt < 5000));
+    return g_set.skipDockScene && (ObjectiveOn() || (g_ownDockAt && gameclock::NowMs64() - g_ownDockAt < 5000));
 }
 
 // pre_aggro's ships (SetPreHostile; was space::SetPreHostile, applied inside space::Contacts until the core audit of 24
@@ -357,6 +402,12 @@ int MissionObjectIds(u32* out, int max, const std::vector<space::Contact>& all)
 
 void ResetSituation();
 
+static bool s_adopt = false; // (StartAdopt: no free flight at the restart, the maneuver taken as started)
+static u32 s_startSeq = 0;
+u32 StartSeq()
+{
+    return s_startSeq;
+}
 bool Start(Mode m, u32 target, const float* pos)
 {
     if (ai::MissionHolds())
@@ -364,7 +415,19 @@ bool Start(Mode m, u32 target, const float* pos)
         events::Push("autopilot refused: the mission controls the ship");
         return false;
     }
-    Stop(StopReason::Restart);
+    // a multiplayer server's word (mprules.h): off = no autopilot, travel = no fight of its own (a combat start is
+    // refused; the other modes fly, evade and use repairs and countermeasures, but never shoot)
+    const mprules::Allow allow = mprules::Autopilot();
+    if (allow == mprules::Allow::Off || (allow == mprules::Allow::Travel && m == Mode::Combat))
+    {
+        events::Push("autopilot refused: %s", mprules::Source().c_str());
+        Log("autopilot: refused %s (%s)", ModeName(m), mprules::Source().c_str());
+        return false;
+    }
+    if (s_adopt)
+        StopImpl(StopReason::Restart, false); // (the game's maneuver goes on: no free flight)
+    else
+        Stop(StopReason::Restart);
     if (!g_pReady)
         BuildPersonality();
     // The ship's own behaviours (the game's Evade, Trail breaks) fly by the chosen pilot while the autopilot runs - but
@@ -399,9 +462,37 @@ bool Start(Mode m, u32 target, const float* pos)
         g.tactic = target ? Tactic::Engage : Tactic::Seek;
         g.combat.chosen = target != 0;
     }
-    events::Push("autopilot start mode=%s target=%u pilot=%s", ModeName(m), target, g_set.pilot.c_str());
+    if (s_adopt)
+        g.started = true; // (the maneuver runs already: no request)
+    events::Push("autopilot start mode=%s target=%u pilot=%s%s", ModeName(m), target, g_set.pilot.c_str(),
+                 s_adopt ? " (adopted: the game's own maneuver)" : "");
     Log("autopilot: start %s target %u", ModeName(m), target);
+    ++s_startSeq;
     return true;
+}
+
+bool StartAdopt(Mode m, u32 target)
+{
+    s_adopt = true;
+    const bool ok = Start(m, target, nullptr);
+    s_adopt = false;
+    return ok;
+}
+
+// A37 S7 (situation_arbiter): an activation - a running objective mode is paused first (its queue kept), the next
+// decision resumes (D10). Off: nothing.
+void ArbiterActivation()
+{
+    if (!g_set.situationArbiter)
+        return;
+    if (g_obj.on)
+        situation::ArbiterPause();
+    situation::ArbiterActivated();
+}
+// A new game: the goal queue and its pause forgotten (whatever the switch: nothing else reads them)
+void ArbiterForgetGame()
+{
+    situation::ArbiterForgetGame();
 }
 
 void StartForTarget()
@@ -421,6 +512,21 @@ void StartForTarget()
     const space::Contact c = FindContact(id);
     if (c.ship)
         Start(Mode::Escort, id, nullptr);
+    else if ((c.dock || (c.type & (space::kJumpGate | space::kJumpHole))) && !(c.type & space::kTradelaneRing))
+    {
+        // a base (station, planet ring), a gate or a hole: the travel there - the game's best path, the lanes when they
+        // are faster, then the dock / the jump (the plain Dock maneuver flies a straight line: the owner, 28 Oct 2026,
+        // watching a multiplayer test cruise past the lane beside its route; and it ends at once beyond the game's dock
+        // range, as on a gate 60 km away). Falls back to the game's dock when no trip can start.
+        State::Travel trip;
+        trip.destObject = id;
+        trip.hasDest = space::ObjectPos(id, trip.dest);
+        trip.phase = State::Travel::Plot;
+        if (trip.hasDest && Start(Mode::Travel, id, nullptr))
+            g.tr = trip;
+        else
+            Start(Mode::Dock, id, nullptr);
+    }
     else if (c.dock || (c.type & (space::kTradelaneRing | space::kJumpGate | space::kJumpHole)))
         Start(Mode::Dock, id, nullptr);
     else
@@ -431,6 +537,7 @@ bool StartObjective()
 {
     if (!HostAtLeast(11))
         return false;
+    ArbiterActivation(); // (A37 S7, situation_arbiter: the paused queue is resumed by the first decision)
     g_obj = ObjectiveRun();
     g_obj.on = true;
     g_obj.seq = ~0u; // decide at once

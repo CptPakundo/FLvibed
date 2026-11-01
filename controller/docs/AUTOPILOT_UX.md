@@ -13,7 +13,8 @@ harness can do), not to their internals. When a capability lands or changes, upd
 the same commit, the way the mission runbooks follow the harness.
 
 ## 1. Requirements (user, 17 Oct 2026)
-- A toggle the player can switch on at any time (today pad **LB + L3**, exists).
+- A toggle the player can switch on at any time (as built: the pad's **View held half a second**, in every preset; the LB + L3 chord this design names below was
+  replaced on 28 Oct 2026 - read "LB + L3" in this document as that toggle).
   - **No instructions:** it works out and does the sensible next thing itself: the current mission objective first,
     then threats, loot, repairs, travel / trade.
   - **Given a goal or a set of goals** (fight here, escort X, go to base Y, dock, loot, finish the mission objective,
@@ -126,7 +127,7 @@ A **preset** is a set of weights, a knowledge scope, the allowed side effects an
 scope all, every game-native side effect allowed), **competent** (the future default: scope exposed, balanced
 weights, no side effects against allies), **cautious** (risk dominates), **trader** (credits and cargo safety),
 **bounty hunter** (kills count as gains), **explorer** (nav-map discovery counts as gain, scope exposed). Every
-behaviour keeps its own setting, so presets are bundles, never new code paths (memory autopilot-ui-later). Today: `ap
+behaviour keeps its own setting, so presets are bundles, never new code paths (the owner's standing direction). Today: `ap
 preset speedrun | competent` set the scope and the hold; the weights are implicit in the behaviours' own rules.
 
 ### 2a.5 Behaviour axes (independent settings)
@@ -262,7 +263,7 @@ never confirmable-only actions without asking: section 7.3). Order:
 3. **Protect**: a friendly / mission-labelled ship nearby under attack → *Defend* (only mission-labelled or allied
    ships by default; random traffic only with `help_friendlies = 1`).
 4. **Loot**: worthwhile loot in the area (value / hold room / tractor reach, exists).
-5. **Repair / resupply**: hull below `repair_hull_at` with no nanobots, or nanobots / batteries / ammo below the
+5. **Repair / resupply**: hull below a repair threshold (design only: the `repair_hull_at` key, never read, was deleted 31 Oct 2026, AUD-A1-5) with no nanobots, or nanobots / batteries / ammo below the
    setting and a friendly base close → *Repair / resupply*.
 6. **Player's waypoint / nav plot**: the player's own waypoints (nav map Set Waypoint, the HUD's list) → *Fly to* each
    in order. This is how a player gives travel "instructions" with the game's own UI and no FLvibed menu at all.
@@ -350,6 +351,10 @@ from TASK_GLYPHS_HUD) subscribe to this service, so the whole game switches toge
   and maneuvers see it as usual.
 
 ### 5.3 Actions (device-independent) and their bindings
+(Design. As built: the toggle is View hold, the goal panel X while the autopilot flies (`flight_ap`); the key names of
+this table and of section 11 - `ap_toggle`, `ap_panel`, ... - were not built: the settings that exist are in
+`docs\SETTINGS.md`.)
+
 | Action | Pad | Keyboard / mouse |
 |---|---|---|
 | Toggle autopilot (Off ↔ Auto/Goals, Paused → resume) | **LB + L3 tap** (exists as toggle) | `ap_toggle` key (FLvibed ini; default to choose, open question 2) |
@@ -397,7 +402,9 @@ never uses it sees nothing of it (an LB + L3 hint in the pad strip only with the
   cancel), for the active device.
 - **Events**: refusals, failures and completions as short toasts using the game's own strings where they exist (NN
   lines: `info_access_denied`, `nnv_dock_denied_*`, ...). No new sounds; the game's own NN voice lines play as usual.
-  Pad rumble pulse on hand-back and on a confirmation request (setting).
+  Pad rumble pulse on hand-back (built: setting `rumble`, silent in the background) and on a confirmation request
+  (the effect `confirm` is built - haptics, `HUD_CUES.md` "Haptics", 30 Oct 2026 - and plays for the game's own boxes;
+  the autopilot's confirmations themselves are not built: 7.3).
 - **Panel content**:
   - *Actions* tab: built from context — for the current target (Attack / Escort / Follow / Formation / Dock / Fly to /
     Defend / Loot it, only the ones that apply: hostile, friendly, dockable, lane ring, gate, loot), for here (Clear
@@ -570,7 +577,7 @@ Phases 0-1 and 2 can run in parallel.
 `after_queue` (auto | off), `engage_default` per goal type (fight | evade | ignore | protect | auto; 3.4), `loot_detour` (m), `help_friendlies` (0/1),
 `focus` (story | trade | jobs | explore | patrol | hold; replaces `idle`), `routes` (official | shortcuts), `preset`
 (speedrun | competent | ...; 2a.4), `confirm` (all | important | none), `skip_dock_cutscene` (0/1), `panel_hold` (s),
-`key_toggle`, `key_panel`, `rumble` (0/1), `strip_anchor` (HUD control name). Exists in `[Autopilot]` already:
+`key_toggle`, `key_panel`, `rumble` (built as 0-100 % in `[Controller]`), `strip_anchor` (HUD control name). Exists in `[Autopilot]` already:
 `knowledge` (all | exposed; 2a.2).
 
 ## 10. Open questions for the user

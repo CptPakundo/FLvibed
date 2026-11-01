@@ -50,7 +50,7 @@ std::vector<Leaf> Leaves(const std::wstring& file)
             else
             {
                 const size_t data = dataOff + U32(b, n + 16), size = U32(b, n + 24);
-                if (data + size <= b.size())
+                if (data <= b.size() && size <= b.size() - data) // (no 32-bit wrap of data + size)
                     out.push_back({path, std::vector<u8>(b.begin() + data, b.begin() + data + size)});
             }
             const u32 next = U32(b, n);
@@ -71,7 +71,8 @@ bool DecodeTga(const std::vector<u8>& d, int& w, int& h, std::vector<u32>& argb)
     h = d[14] | (d[15] << 8);
     const bool topDown = (d[17] & 0x20) != 0;
     const int bytes = bpp / 8;
-    if ((bytes != 3 && bytes != 4) || w <= 0 || h <= 0 || 18 + idLen + static_cast<size_t>(w) * h * bytes > d.size())
+    if ((bytes != 3 && bytes != 4) || w <= 0 || h <= 0 ||
+        18ull + idLen + static_cast<unsigned long long>(w) * h * bytes > d.size()) // (64-bit: no 32-bit wrap)
         return false;
     argb.resize(static_cast<size_t>(w) * h);
     const u8* p = d.data() + 18 + idLen;

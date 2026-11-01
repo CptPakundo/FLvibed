@@ -9,6 +9,7 @@
 #include "data.h"
 #include "display.h"
 #include "feed.h"
+#include "mixcues.h"
 #include "movie.h"
 #include "names.h"
 #include "speakers.h"
@@ -55,6 +56,7 @@ static void SeedGlyphs()
     for (const data::Line& ln : data::Lines())
         add(ln.speaker), add(ln.text);
     add(speakers::Names());
+    add(mixcues::Text());
     display::SeedGlyphs(distinct);
     size_t beyond = 0;
     for (const wchar_t c : distinct)
@@ -69,6 +71,7 @@ static bool LoadData()
     if (ok)
         data::LoadWordTimes(std::string(g_host->dllDir) + "FLSubtitles\\word_times.tsv");
     speakers::Load(std::string(g_host->dllDir) + "FLSubtitles\\speaker_colors.tsv");
+    mixcues::Load(std::string(g_host->dllDir) + "FLSubtitles\\mixes.tsv"); // the scene mixes' lines (+ their word times)
     SeedGlyphs();
     return ok;
 }
@@ -152,8 +155,9 @@ static bool SeenRecently(u32 msg)
     auto it = g_recent.find(msg);
     const bool seen = it != g_recent.end() && now - it->second < 1500;
     g_recent[msg] = now;
-    if (g_recent.size() > 256)
-        g_recent.clear();
+    if (g_recent.size() > 256) // drop only the stale entries: clearing all could show a just-seen line twice
+        for (auto e = g_recent.begin(); e != g_recent.end();)
+            e = now - e->second >= 1500 ? g_recent.erase(e) : std::next(e);
     return seen;
 }
 
@@ -168,8 +172,11 @@ static u32 CommWord(const CommInfo& c, int off)
     return c.record ? *reinterpret_cast<const u32*>(static_cast<const u8*>(c.record) + off) : 0;
 }
 
+static void TrackGameLoad(); // (the entry points below)
+
 static void OnComm(const CommInfo& c)
 {
+    TrackGameLoad(); // a new game's first comm may come before its first frame: the old lines go first
     std::vector<const data::Line*> lines;
     std::ostringstream trace;
     float sec = 0;
@@ -398,6 +405,9 @@ static std::unordered_map<u32, u32> g_sceneVoice;
 
 static void OnSoundStart(u32 id, const void*, u32 caller)
 {
+    TrackGameLoad();
+    if (mixcues::OnSound(id)) // a scene mix: its lines follow on the mix's clock (mixcues.cpp)
+        return;
     const bool scene = exe::RetSceneSound.is(caller); // THN SOUND entity start (cutscenes, room and bar scenes)
     u32 voice = 0;
     if (scene)
@@ -592,7 +602,8 @@ static std::string Command(const std::string& line)
         render::ScreenSize(w, h);
         std::ostringstream o;
         o << "lines " << data::Count() << "\nframes " << g_frames << "\nscreen " << w << "x" << h << "\nplayer_ship "
-          << PlayerShip() << "\nbase " << Mem<u32>(exe::PlayerBase) << "\ntrace " << g_trace << "\nactive:\n"
+          << PlayerShip() << "\nbase " << Mem<u32>(exe::PlayerBase) << "\ntrace " << g_trace << "\nmixes "
+          << mixcues::Describe() << "\nin_scene " << room::InScene() << "\nactive:\n"
           << display::ActiveText();
         return o.str();
     }
@@ -781,6 +792,7 @@ static std::string Command(const std::string& line)
         return feed::Since(static_cast<u32>(strtoul(rest.c_str(), nullptr, 10)));
     if (cmd == "clear")
     {
+        mixcues::Stop();
         display::Clear();
         return "cleared";
     }
@@ -867,6 +879,7 @@ static void TrackMenu()
     const bool menu = !PlayerShip() && !Mem<u32>(exe::PlayerBase);
     if (menu && !inMenu)
     {
+        mixcues::Stop();
         display::Clear();
         if (g_trace)
             Log("game -> menu: display cleared");
@@ -874,11 +887,30 @@ static void TrackMenu()
     inMenu = menu;
 }
 
+// A game load (HostApi v9: the host counts Content.dll's loads) drops the previous game's lines too: a load straight
+// from flight may never show a menu frame to TrackMenu (1 Nov 2026, spec_020 run: the Fort Bush police comm stayed
+// stacked over SaveS401's first line). Read once per frame: the count only changes at the load itself.
+static void TrackGameLoad()
+{
+    if (g_host->version < 9 || !g_host->GameLoads)
+        return;
+    static u32 seen = g_host->GameLoads();
+    const u32 loads = g_host->GameLoads();
+    if (loads == seen)
+        return;
+    seen = loads;
+    mixcues::Stop();
+    display::Clear();
+    Log("game load %u: display cleared", loads);
+}
+
 static void ImplOnFrame(double dt)
 {
     ++g_frames;
     TrackMenu();
+    TrackGameLoad();
     TrackBarConversation();
+    mixcues::Tick();
     display::Update(dt);
 }
 

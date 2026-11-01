@@ -20,7 +20,7 @@
         <SplitTime name="SydMontague"><RealTime>00:01:18.8000000</RealTime></SplitTime>
         <SplitTime name="Runners best segments"><RealTime>00:00:57.2000000</RealTime></SplitTime>
       </SplitTimes>
-      <BestSegmentTime><RealTime>00:00:24.5000000</RealTime></BestSegmentTime>
+      <BestSegmentTime><RealTime>00:00:23.8000000</RealTime></BestSegmentTime>
       <SegmentHistory />
     </Segment>
     <Segment>
@@ -62,7 +62,7 @@
         <SplitTime name="SydMontague"></SplitTime>
         <SplitTime name="Runners best segments"><RealTime>00:02:41.8000000</RealTime></SplitTime>
       </SplitTimes>
-      <BestSegmentTime><RealTime>00:00:47.5000000</RealTime></BestSegmentTime>
+      <BestSegmentTime><RealTime>00:00:45.5000000</RealTime></BestSegmentTime>
       <SegmentHistory />
     </Segment>
     <Segment>
@@ -90,7 +90,7 @@
         <SplitTime name="SydMontague"><RealTime>00:04:32.2000000</RealTime></SplitTime>
         <SplitTime name="Runners best segments"><RealTime>00:04:04.8000000</RealTime></SplitTime>
       </SplitTimes>
-      <BestSegmentTime><RealTime>00:00:46.1000000</RealTime></BestSegmentTime>
+      <BestSegmentTime><RealTime>00:00:40.9000000</RealTime></BestSegmentTime>
       <SegmentHistory />
     </Segment>
     <Segment>
@@ -104,7 +104,7 @@
         <SplitTime name="SydMontague"><RealTime>00:04:53.2000000</RealTime></SplitTime>
         <SplitTime name="Runners best segments"><RealTime>00:04:18.8000000</RealTime></SplitTime>
       </SplitTimes>
-      <BestSegmentTime><RealTime>00:00:34.1000000</RealTime></BestSegmentTime>
+      <BestSegmentTime><RealTime>00:00:33.3000000</RealTime></BestSegmentTime>
       <SegmentHistory />
     </Segment>
     <Segment>
@@ -118,7 +118,7 @@
         <SplitTime name="SydMontague"><RealTime>00:05:34.2000000</RealTime></SplitTime>
         <SplitTime name="Runners best segments"><RealTime>00:04:59.8000000</RealTime></SplitTime>
       </SplitTimes>
-      <BestSegmentTime><RealTime>00:01:02.6000000</RealTime></BestSegmentTime>
+      <BestSegmentTime><RealTime>00:00:58.9000000</RealTime></BestSegmentTime>
       <SegmentHistory />
     </Segment>
     <Segment>
@@ -230,7 +230,7 @@
         <SplitTime name="SydMontague"><RealTime>00:14:09.2000000</RealTime></SplitTime>
         <SplitTime name="Runners best segments"><RealTime>00:12:31.3000000</RealTime></SplitTime>
       </SplitTimes>
-      <BestSegmentTime><RealTime>00:00:57.3000000</RealTime></BestSegmentTime>
+      <BestSegmentTime><RealTime>00:00:57.2000000</RealTime></BestSegmentTime>
       <SegmentHistory />
     </Segment>
     <Segment>

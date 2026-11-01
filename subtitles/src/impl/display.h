@@ -82,7 +82,7 @@ struct Settings
     // 1 = a speaker hostile to the player gets the HUD contact list's red triangle before the name (21 Oct 2026). Off
     // by default since 22 Oct 2026 (user: keep hostility to the name colour, "without adding that triangle. It may have
     // confusing connotations"). DISPLAY_PLAN.md "Speaker colours".
-    bool hostileMarker = false;
+    bool hostileMarker = true; // on since 0.2.0 (every feature on by default: the owner, 1 Nov 2026)
     // In flight the off-screen target arrows (current target, non-selected, waypoint, loot, player) are pushed in from
     // the screen edge, along their direction from the centre, until clear of the HUD's panels, the maneuver bar, the
     // NeuroNet box and the subtitles (user, 21 Oct 2026: "dynamically confined between the static HUD elements"); 0 =
@@ -103,6 +103,10 @@ struct Settings
     // Pages turn on the speaker's words (the review's forced alignment, word_times.tsv). 0 = pages spread over the time
     // on screen (the estimate), and no pop.
     bool wordTiming = true;
+    // Stack fit (the owner, 1 Nov 2026, for 0.2.0): two or more speakers' blocks on screen shrink together, smoothly, so
+    // the stack keeps about one block's height - never below this share of their size; 1 = off. At 4:3 and in letterboxed
+    // story scenes (M01's Donau) a two-speaker stack covered a large part of the picture. stack_fit.h, DISPLAY_PLAN.md.
+    float stackFit = 0.7f;
     // The chat log's NPC lines ("name · faction") on narrow screens (4:3, 5:4): 1 = a header row with the name and the
     // faction, the dialogue under it at full width (user, 22 Oct 2026: kept after an in-game comparison with the column); 0 = the column
     // layout as elsewhere (the name over the faction, the dialogue beside them).

@@ -15,15 +15,27 @@ $script:FLSceneCatalogue = Join-Path $script:FLRoot 'docs\missions\scene_saves.t
 # (the fitness columns since 24 Oct 2026: the ship's state at the save and the first run's verdict - Leg.ps1 CpSave /
 # SAVE-FIT; every writer of the catalogue must keep them, so they are part of the header here)
 $script:FLSceneHead = 'name', 'mission', 'step', 'label', 'source', 'objective', 'place', 'build', 'commit', 'date',
-                      'speed', 'cruise', 'hull', 'shield', 'nanobots', 'batteries', 'objective_text', 'fit', 'fit_note', 'fit_date'
+                      'speed', 'cruise', 'hull', 'shield', 'nanobots', 'batteries', 'objective_text', 'fit', 'fit_note', 'fit_date', 'marks'
 function Get-FLGameBuild {
-    $i = Join-Path $script:FLRoot 'Install\Freelancer HD Edition'
+    $i = Get-FLInstallDir   # this instance's (a hard-linked mirror: the same files)
     (Get-FileHash (Join-Path $i 'EXE\Freelancer.exe')).Hash.Substring(0, 8) + '-' +
         (Get-FileHash (Join-Path $i 'DLLS\BIN\Content.dll')).Hash.Substring(0, 8)
 }
 function Get-FLScenes {
     if (-not (Test-Path $script:FLSceneCatalogue)) { return @() }
     @(Import-Csv $script:FLSceneCatalogue -Delimiter "`t")
+}
+# Parallel legs read-modify-write the catalogue (Save-FLScene at a leg's end, Leg.ps1's SAVE-FIT): every read + write
+# pair runs under one machine-wide lock (29 Oct 2026; before, one instance could drop another's row). A lock taken
+# over from a dead process counts as held; after 30 s the writer goes on unlocked rather than stall the leg.
+function Enter-FLSceneLock {
+    $mx = [System.Threading.Mutex]::new($false, 'Global\FLvibedSceneCatalogue')
+    try { $null = $mx.WaitOne(30000) } catch [System.Threading.AbandonedMutexException] { }
+    $mx
+}
+function Exit-FLSceneLock($Lock) {
+    try { $Lock.ReleaseMutex() } catch { }   # not owned (the 30 s fallback)
+    $Lock.Dispose()
 }
 function Set-FLScenes($Rows) {
     $lines = @($script:FLSceneHead -join "`t") + @($Rows | Sort-Object mission, step, label | ForEach-Object {
@@ -59,6 +71,9 @@ function Save-FLScene([string]$Mission, [string]$Step, [string]$Label, [string]$
         $p = Get-FLPilot
         $place = if ($p) { "space $($p.System) $([int]$p.Pos[0]),$([int]$p.Pos[1]),$([int]$p.Pos[2])" } else { "docked" }
     }
+    $commit = (& git -C $script:FLRoot rev-parse --short HEAD 2>$null)
+    $lock = Enter-FLSceneLock
+    try {
     $rows = @(Get-FLScenes)
     $old = $rows | Where-Object { $_.mission -eq $Mission -and $_.step -eq $Step -and $_.label -eq $Label } | Select-Object -First 1
     $name = if ($old) { $old.name } else {
@@ -67,11 +82,11 @@ function Save-FLScene([string]$Mission, [string]$Step, [string]$Label, [string]$
     }
     $null = New-Item -ItemType Directory -Force $script:FLSceneDir
     Copy-Item -LiteralPath $File (Join-Path $script:FLSceneDir $name) -Force
-    $commit = (& git -C $script:FLRoot rev-parse --short HEAD 2>$null)
     $row = [pscustomobject]@{ name = $name; mission = $Mission; step = $Step; label = $Label; source = $Source
                               objective = $objId; place = $place; build = (Get-FLGameBuild); commit = "$commit"
                               date = (Get-Date -Format 'yyyy-MM-dd HH:mm') }
     Set-FLScenes (@($rows | Where-Object { $_.name -ne $name }) + $row)
+    } finally { Exit-FLSceneLock $lock }
     Write-Host ("{0:HH:mm:ss} scene save {1} {2} step {3} {4} ({5}) objective {6}" -f (Get-Date), $name, $Mission, $Step, $Label, $Source, $objId)
     $row
 }
@@ -92,6 +107,32 @@ function Get-FLSavePlace([string]$File) {
     }
     Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
     $place
+}
+# The story scripts' [MsnSolar]s by space id (CreateID of the nickname = the id the game spawns them with, the log's
+# `spawn-solar id=`): @{ <id> = @{ nick; systems = CreateID of each definition's `system =`, 0 without one } } - one
+# nickname can be defined by several scripts (osiris: M12 and M13), so every definition's system is kept. A save keeps a
+# spawned mission solar ([MsnSolarSave]) only when its system is the player's at the save; any other is not re-created
+# by the load, and its mark never comes back (docs\FREELANCER_RE.md "Saves", S416: M09's generators have no `system =`).
+# Read once per session.
+function Get-FLMissionSolars {
+    if ($script:FLMissionSolars) { return $script:FLMissionSolars }
+    $map = @{}
+    foreach ($f in Get-ChildItem (Join-Path (Get-FLInstallDir) 'DATA\MISSIONS') -Filter '*.ini' -Recurse -ErrorAction SilentlyContinue) {
+        $in = $false; $nick = ''; $sys = 0
+        foreach ($l in (Get-Content -LiteralPath $f.FullName) + '[end]') {
+            if ($l -match '^\s*\[') {
+                if ($in -and $nick) {
+                    $id = "$([uint32](Get-FLHash $nick))"
+                    if (-not $map.ContainsKey($id)) { $map[$id] = @{ nick = $nick; systems = [Collections.Generic.List[uint32]]::new() } }
+                    $map[$id].systems.Add($sys)
+                }
+                $in = $l -match '^\s*\[MsnSolar\]'; $nick = ''; $sys = 0
+            } elseif ($in -and $l -match '^\s*nickname\s*=\s*(\S+)') { $nick = $Matches[1].ToLower() }
+            elseif ($in -and $l -match '^\s*system\s*=\s*(\S+)') { $sys = [uint32](Get-FLHash $Matches[1].ToLower()) }
+        }
+    }
+    $script:FLMissionSolars = $map
+    $map
 }
 
 # The mission's own checkpoint saves (Act_Save) written during a run (events after $After): each archived as a scene
@@ -135,7 +176,9 @@ function Start-FLScene([string]$Mission, [string]$Step, [string]$Label) {
     if ($row.objective -and $st.obj -ne $row.objective) { $why += "objective $($st.obj), recorded $($row.objective)" }
     if (-not $row.objective -and $st.obj -and -not $why.Count) {
         # recorded without its objective (made by an older harness): the first verified load fills it in
-        $rows = @(Get-FLScenes); ($rows | Where-Object { $_.name -eq $row.name }).objective = $st.obj; Set-FLScenes $rows
+        $lock = Enter-FLSceneLock
+        try { $rows = @(Get-FLScenes); ($rows | Where-Object { $_.name -eq $row.name }).objective = $st.obj; Set-FLScenes $rows }
+        finally { Exit-FLSceneLock $lock }
         $row.objective = $st.obj
     }
     $row | Add-Member Valid ($why.Count -eq 0) -Force
@@ -169,6 +212,9 @@ function Load-FLSave([string]$Save, [int]$TimeoutSec = 60, [switch]$Watch) {
         } elseif ((Send-FL 'uiitems') -match '(?m)^LoadSavegameButton\s') {
             $null = Send-FL 'click LoadSavegameButton'   # death / mission failure dialog
         } else {
+            # a box of the game's (a tutorial box, a mission popup) blocks the pause menu: dismissed first, even with
+            # -Watch (the load replaces the scene anyway)
+            for ($i = 0; $i -lt 3 -and (Step-FLPopups -Now); $i++) { $null = Wait-FLFramesPassed 5 }
             $null = Wait-FLUntil { $r = Send-FL 'pause'; if ($r -match 'open') { return $true }; $false } 'pause menu' 10
             $null = Wait-FLUntil { (Send-FL 'pausecodes') -notmatch 'not open' } 'pause menu' 10
             $r = Send-FL 'pauseload'; if ($r -notmatch '^clicked') { throw "pause menu: $r" }

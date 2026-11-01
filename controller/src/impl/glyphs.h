@@ -43,11 +43,17 @@ enum class Family
 
 Id FromName(const char* name); // "A" .. "MENU" (the spec's names); COUNT if unknown
 const char* Name(Id id);
+// The menu grammar's button for a prompt written as A (accept) / B (back): the same, or exchanged when confirm_button
+// is 1 (the right button accepts: the Nintendo habit; device.h ConfirmMask). Every other id is returned as it is.
+// Flight bindings are positional and never go through this (UI_BUILD.md 5, 29 Oct 2026).
+Id Menu(Id id);
 Family Current();
 const char* FamilyName(Family f);
 
-// Once per frame (cheap): applies glyph_style, re-detects the family when a real pad appears or leaves.
-void Update(bool realPadConnected);
+// Once per frame (cheap): applies glyph_style, re-detects the family when a real pad appears or leaves. `vendor`: the
+// pad's USB vendor id when its device layer names it (Gamepad::Vendor: a device-layer test pad, or the SDL backend's pad by
+// its SDL_GamepadType: pad_backend.h VendorForType), else 0 = the HID list.
+void Update(bool realPadConnected, u32 vendor = 0);
 // The D3D device the atlases are built on (render::SetDevice's; a new device rebuilds them).
 void SetDevice(void* device);
 

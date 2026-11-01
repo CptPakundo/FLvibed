@@ -16,6 +16,7 @@
 !/tools/
 !/controller/
 !/subtitles/
+!/server/
 !/tests/
 !/.clang-format
 

@@ -121,12 +121,35 @@ bool LaneLinks(u32 ring, u32& next, u32& prev)
     {
         // (ring, next, prev): order verified in game (Li01 ring 177: next 178, prev 176 - debug `lanelinks`)
         const int rc = fn(ring, next, prev);
-        return rc == 0 && (next || prev);
+        if (rc == 0 && (next || prev))
+            return true;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        return false;
     }
+    // multiplayer (server.dll holds no world): the client's ring knows its neighbours (CSolar::get_next_trade_ring /
+    // get_prev_trade_ring, Common.dll)
+    typedef u32(__fastcall * RingFn)(const void*, void*);
+    static const HMODULE common = GetModuleHandleA("common.dll");
+    static const auto nextRing =
+        reinterpret_cast<RingFn>(common ? GetProcAddress(common, "?get_next_trade_ring@CSolar@@QBEIXZ") : nullptr);
+    static const auto prevRing =
+        reinterpret_cast<RingFn>(common ? GetProcAddress(common, "?get_prev_trade_ring@CSolar@@QBEIXZ") : nullptr);
+    const Api& a = GetApi();
+    void* o = nextRing && prevRing ? ClientFind(a, ring) : nullptr;
+    if (!o)
+        return false;
+    __try
+    {
+        next = nextRing(o, nullptr);
+        prev = prevRing(o, nullptr);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        next = prev = 0;
+    }
+    ClientRelease(a, o);
+    return next || prev;
 }
 
 float DockRange()

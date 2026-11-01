@@ -16,6 +16,7 @@ namespace space
 constexpr u32 kClassSolar = 0x303;
 constexpr u32 kClassShip = 0x503;
 constexpr u32 kClassLoot = 0x803; // CLoot: a CSimple, not a CEqObj (no dock / targetable / CEqObj name)
+constexpr u32 kClassAsteroid = 0x1003; // CAsteroid (FLSDK CObject::Class)
 constexpr u32 kObjSystem = 0x50;  // CObject +0x50: the system id the object is in
 
 // CBeam (gun rounds: space_rounds.cpp)
@@ -54,13 +55,36 @@ struct Api
     u32(__fastcall* archId)(const void* arch, void* edx) = nullptr;                // Archetype::Root::get_id
     int(__fastcall* cargoFits)(void* ship, void* edx, const void* arch) = nullptr; // CShip::get_space_for_cargo_type
     float(__fastcall* maxHit)(void* self, void* edx) = nullptr;                    // CSimple::get_max_hit_pts
+    u32(__fastcall* ownerPlayer)(void* self, void* edx) = nullptr; // CSimple::GetOwnerPlayer (+0xB4: client id, 0 NPC)
     u32(__cdecl* createId)(const char* nickname) = nullptr;                        // CreateID
     const void*(__cdecl* goodByArch)(u32 archetype) = nullptr; // GoodList::find_by_archetype (the loaded goods)
     // A ship's motion and agility (ShipMotionOf): PhySys::GetVelocity (Vector by value: hidden pointer first) and the
     // ship's archetype (CShip::shiparch)
     float*(__cdecl* velocity)(float* out, const void* cobject) = nullptr;
     const u8*(__fastcall* shipArch)(const void* ship, void* edx) = nullptr;
+    // The client's own objects (multiplayer, 28 Oct 2026): server.dll's pub:: API answers only for the in-process
+    // single-player server - in multiplayer its world is empty (GetLocation returned code != 0 with zeros: every
+    // contact read 0 m). Common.dll's CObject registry is the client's world in both modes: CObject::Find (adds a
+    // reference: Release after), EngineObject::get_position / get_orientation, CEqObj::attitude_towards (the
+    // attitude the client was told), SinglePlayer().
+    void*(__cdecl* find)(const u32& id, u32 cls) = nullptr;
+    u32(__fastcall* release)(void* self, void* edx) = nullptr;
+    const float*(__fastcall* enginePos)(const void* self, void* edx) = nullptr;
+    const float*(__fastcall* engineRot)(const void* self, void* edx) = nullptr;
+    float(__fastcall* attitudeTowards)(const void* self, void* edx, const void* other) = nullptr;
+    bool(__cdecl* singlePlayer)() = nullptr;
+    int(__fastcall* getVibe)(const void* self, void* edx) = nullptr; // CEqObj::get_vibe: the object's reputation id
 };
+
+// An object's reputation id: server.dll pub::SpaceObj::GetRep where the server holds the world, else the client's
+// CEqObj::get_vibe (multiplayer: the pilot's name record the server sent - the HUD's names come from it). `obj` = the
+// client object when the caller has it (else found by id). 0 unknown.
+int RepOf(const Api& a, u32 id, const void* obj = nullptr);
+
+// The client object with this id (ship, solar, loot, asteroid ... whichever class has it) with a reference held:
+// ClientRelease after use. Null when none.
+void* ClientFind(const Api& a, u32 id, bool eqObj = false); // eqObj: ships and solars only (CEqObj methods)
+void ClientRelease(const Api& a, void* obj);
 
 // Objects, equipment and archetypes of Common.dll: fields through its exported accessors where it has them
 // (CObject::get_archetype, CProjectile::get_owner, CEquip::GetID / EquipArch, CELauncher::ProjectileArch - each the
@@ -84,6 +108,9 @@ constexpr u32 kMunitionHullDamage = 0x80, kMunitionSeeker = 0x90, kMunitionCruis
 // lifetime +0x10.
 constexpr u32 kProjLifetime = 0x70, kMunitionMotor = 0x8C, kMunitionSeekerRange = 0x98, kMunitionSeekerFov = 0x9C,
               kMunitionMaxTurn = 0xA0, kMotorDelay = 0x8, kMotorAccel = 0xC, kMotorLifetime = 0x10;
+// Munition detonationDist +0xA4 (FLHookSDK Munition.hpp field 41), stored SQUARED by Archetype::Munition::read (Common.dll
+// 0x062f7090, decompiled 30 Oct 2026; FREELANCER_RE "Proximity fuse"; not verified in game: the launch-site log prints it)
+constexpr u32 kMunitionDetonationSq = 0xA4;
 
 // Equipment (FLSDK CEquip / CELauncher / Archetype::Launcher): CEqObj equipManager +0xE4 (the ship is checked to be a
 // CShip); CEquip isActive +0x10, CELauncher refireDelayElapsed +0x50 (no accessor: behind the launcher class check);

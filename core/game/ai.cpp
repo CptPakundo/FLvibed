@@ -2,6 +2,7 @@
 
 #include "fldll.h"
 #include "flexe.h"
+#include "game/ini.h"
 #include "game/space.h"
 #include "log.h"
 #include "str.h"
@@ -187,8 +188,6 @@ static const uintptr_t kEquipManager = 0xE4, kArchNanobots = 0x140, kArchBatteri
 static const u32 kEquipShield = 1u << 8, kEquipShieldGenerator = 1u << 9,
                  kEquipTractor = 1u << 20; // FLHookSDK EquipmentClass
 
-static std::string Trim(std::string s);
-
 // [Tractor] max_length of every tractor in DATA\EQUIPMENT\*.ini, by archetype id (CreateID of its nickname).
 static float TractorRange(const Api& a, u32 archetype)
 {
@@ -201,34 +200,17 @@ static float TractorRange(const Api& a, u32 archetype)
         WIN32_FIND_DATAA fd;
         HANDLE h = FindFirstFileA((dir + "*.ini").c_str(), &fd);
         for (BOOL more = h != INVALID_HANDLE_VALUE; more; more = FindNextFileA(h, &fd))
-        {
-            std::ifstream in(dir + fd.cFileName);
-            std::string line, nick;
-            bool tractor = false;
-            while (std::getline(in, line))
+            for (const ini::Section& s : ini::Read(dir + fd.cFileName)) // text or BINI (vanilla 1.1: SWEEP #5)
             {
-                const size_t semi = line.find(';');
-                if (semi != std::string::npos)
-                    line.erase(semi);
-                const std::string l = Trim(line);
-                if (l.empty())
+                if (s.type != "tractor")
                     continue;
-                if (l[0] == '[')
-                {
-                    tractor = _stricmp(l.c_str(), "[Tractor]") == 0;
-                    nick.clear();
-                    continue;
-                }
-                const size_t eq = l.find('=');
-                if (!tractor || eq == std::string::npos)
-                    continue;
-                const std::string k = Trim(l.substr(0, eq)), v = Trim(l.substr(eq + 1));
-                if (_stricmp(k.c_str(), "nickname") == 0)
-                    nick = v;
-                else if (_stricmp(k.c_str(), "max_length") == 0 && !nick.empty())
-                    ranges[a.createId(nick.c_str())] = static_cast<float>(atof(v.c_str()));
+                std::string nick;
+                for (const auto& kv : s.kv)
+                    if (kv.first == "nickname")
+                        nick = kv.second;
+                    else if (kv.first == "max_length" && !nick.empty())
+                        ranges[a.createId(nick.c_str())] = static_cast<float>(atof(kv.second.c_str()));
             }
-        }
         if (h != INVALID_HANDLE_VALUE)
             FindClose(h);
     }
@@ -1145,31 +1127,16 @@ static void LoadPilotFiles()
     g_pilotIniLoaded = true;
     const std::string dir = DllDir() + "..\\DATA\\MISSIONS\\";
     for (const char* file : {"pilots_population.ini", "pilots_story.ini"})
-    {
-        std::ifstream in(dir + file);
-        std::string line;
-        Section* cur = nullptr;
-        while (std::getline(in, line))
+        for (const ini::Section& s : ini::Read(dir + file)) // text or BINI (vanilla 1.1: SWEEP #5)
         {
-            line = Trim(line.substr(0, line.find(';')));
-            if (line.empty())
-                continue;
-            if (line[0] == '[')
-            {
-                g_pilotIni.push_back({Lower(line.substr(1, line.find(']') - 1)), "", {}});
-                cur = &g_pilotIni.back();
-                continue;
-            }
-            const size_t eq = line.find('=');
-            if (!cur || eq == std::string::npos)
-                continue;
-            const std::string k = Lower(Trim(line.substr(0, eq))), v = Trim(line.substr(eq + 1));
-            if (k == "nickname")
-                cur->nick = Lower(v);
-            else
-                cur->kv.push_back({k, v});
+            g_pilotIni.push_back({s.type, "", {}});
+            Section& cur = g_pilotIni.back();
+            for (const auto& kv : s.kv)
+                if (kv.first == "nickname")
+                    cur.nick = Lower(kv.second);
+                else
+                    cur.kv.push_back(kv);
         }
-    }
     Log("ai: %u sections from the pilot files", static_cast<unsigned>(g_pilotIni.size()));
 }
 

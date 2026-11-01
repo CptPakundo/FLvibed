@@ -2,6 +2,7 @@
 
 #include "flhash.h"
 #include "ini.h"
+#include "str.h"
 #include "log.h"
 #include "utf.h"
 
@@ -12,11 +13,7 @@
 
 namespace hitlook
 {
-static std::string Lower(std::string s)
-{
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(tolower(c)); });
-    return s;
-}
+using str::Lower;
 static std::wstring Wide(const std::string& s) { return std::wstring(s.begin(), s.end()); }
 
 // (in-tree, bit-identical to Common.dll's export: core\game\flhash.h)

@@ -7,7 +7,8 @@ What can be fought, how hard it is, and what decides whether the autopilot shoul
 | Kind | How to tell (game data) | Notes |
 |---|---|---|
 | Ships | CShip; `type` FIGHTER / FREIGHTER / GUNBOAT / CRUISER / CAPITAL... in shiparch `[gen]` ships.tsv | attitude from the faction (pub::Reputation); toughness = hit_pts (li_elite 1600) |
-| Weapon platforms | solar `type = WEAPONS_PLATFORM`, hit_pts 1600 (M01b's `wplatform_m01b` 3000), radius 300, guns from the loadout `[gen]` solararch.tsv | targetable and destroyable with guns |
+| Armed mission statics | an MsnSolar with turrets, e.g. M13's Nomad battleship `nomadcap` (15 guns, 697 hull damage a round, refire 1 s) `[game]` | a static, not a ship: its guns are read through the same CEGun traversal as a ship's (`space::GunsCovering` / `VolleyAt`; FREELANCER_RE "Statics' guns") - readers of hostile ships only miss them; one volley of 3.9-5.7k killed us on a low shield (Q4, 30 Oct 2026) |
+| Weapon platforms | solar `type = WEAPONS_PLATFORM`, hit_pts 1600 (M01b's `wplatform_m01b` 3000), radius 300, guns from the loadout `[gen]` solararch.tsv; the live type bit `1 << 12` (FLHookSDK Enums.hpp ObjectType WeaponPlatform). M13's city: 15 `dyson_city_platform` (hit_pts 150000, 8 `nomad_dyson_turret01` each: 530 hull a round, refire 0.5 s, 1,500 m/s x 2 s = 3 km reach; loadouts.ini / weapon_equip.ini), three per `final_generator` ~1.56-1.6 km out, none on the city-centre side (m13.ini 889-1106) `[gen]` | targetable and destroyable with guns; `city_hold_side` holds on the side away from them (AUTOPILOT.md) |
 | Destroyable stations | solar `type = STATION` with finite hit_pts: 4 archetypes (o_osiris 100000, d_depot 400000, ...) `[gen]` | story targets; guns alone are too slow - torpedoes / the mission's own means |
 | DESTROYABLE_DEPOT | 26 archetypes, all hit_pts 1e36 `[gen]` | `[assumed]` destroyed through parts (collision groups) or by script, not by hull damage - verify when a mission needs it |
 | Indestructible solars | hit_pts 1e36: planets, docking rings, most stations, gates `[gen]` | never targets |
@@ -90,4 +91,8 @@ Duel geometry per fight (`they-on` / `we-on`: noses within 15 deg inside 900 m):
   nanobots kept (c0010). Inside the Dyson sphere: straight to the city through the fighters, the generators rushed
   (user: "bumrush the generators and ignore the fighters completely").
 - **Own torpedoes**: a launch with a solid in the way or along the nose bursts beside the ship (M12, the lair lattice:
-  dead at 93 % hull) - launches need a clear line through the real hulls.
+  dead at 93 % hull) - launches need a clear line through the real hulls. A guided round holds the whole target object
+  (no part can be chosen) and bursts at the first hull on its way: 5,299 hits on M13's Nomad battleship ended a median
+  7 m from its hull (FREELANCER_RE "Missiles in flight") - a safe burst is chosen by where we launch from (M13-MIMIC,
+  31 Oct 2026; at a "214 m" firing site the path's first hull lay 46-66 m ahead). Exposure at that battleship: 361 shield
+  + hull points a second crawling within 700 m of its centre, 169 moving (248 traces, docs\research\runners\M13.md Plan 4).

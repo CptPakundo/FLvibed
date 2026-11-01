@@ -9,6 +9,9 @@
 #include "../fl.h"
 #include "game/ai.h"
 #include "game/flight.h"
+#include "game/gameclock.h"
+#include "game/geom.h"
+#include "game/mission.h" // ForgetGame at a game load (host v34)
 #include "game/render.h" // OnDeviceLost: the shared renderer's state block before a Reset
 #include "game/room.h"
 #include "game/space.h"
@@ -19,12 +22,14 @@
 #include "device.h"
 #include "gamepad.h"
 #include "glyphs.h"
+#include "haptics.h" // the pad's vibration: events -> effect table -> mixer -> the two motors (IDEAS U30)
 #include "goals.h"  // phase D flight modals (the D-FLIGHT track): the goal panel,
 #include "picker.h" // the target picker,
 #include "wheel.h"  // the action wheel
 #include "host.h"
 #include "padhud.h"
 #include "hud2.h" // HUD 2: FLvibed's own flight HUD (docs\UI_HUD2.md; the HUD2 track)
+#include "mprules.h"
 #include "flufaware.h" // FLUF's windows: keep-outs, the pad on them, the keys' yield (docs\MOD_COMPATIBILITY.md FLUF)
 // D-MENUS (25 Oct 2026): the menu screens on the pad, the New Game prompt, speedrun mode (clock, splits, LiveSplit)
 // and the HUD timer (padmenus.h / newgame.h / livesplit.h / runtimer.h)
@@ -113,7 +118,6 @@ struct Options
     int padPreset = 0;             // 0 FREELANCER, 1 ACE, 2 ASSISTED, 3 CUSTOM (ui_meta.h kControllerPresets)
     int weaponGroups = 1;          // 0 simple (one fire button), 1 cycle on Y hold, 2 two groups on the triggers
     bool holdsAsToggles = false;   // afterburner, reverse, drift, rear view as press-once / press-again
-    int autopilotPad = 0;          // 0 hold View, 1 L3 + R3, 2 hold Menu
     int rumble = 60;               // vibration strength in percent (0 = off)
     int padCursor = 2;             // 0 off, 1 rooms and maps, 2 everywhere (the owner's decision 15, 25 Oct 2026)
     int cursorMagnet = 60;         // the pad cursor's slow-down / pull over clickable elements, percent
@@ -121,7 +125,7 @@ struct Options
     int borderless = 1;            // borderless: 0 off, 1 auto (only when nothing else provides it), 2 always; the host reads it at the start (winmode.h)
     int flufWindows = 2;           // fluf_windows: FLUF's windows 0 ignored, 1 player windows (keep-outs, the pad drives them), 2 all (default: the owner, 26 Oct 2026)
     int worldPrompts = 0;          // 0 contextual, 1 off
-    bool apHints = false;          // the autopilot's prompts / status shown before it was ever used
+    bool apHints = true;           // the autopilot's prompts / status shown before it was ever used (on since 0.2.0)
     int textSize = 100;            // FLvibed's own UI text, percent (80..150)
     bool hudGlyphs = true;         // glyph badges on the HUD's own elements in pad mode
     int buttonLegend = 0;          // 0 on, 1 off (the contextual button legend)
@@ -134,14 +138,19 @@ struct Options
     std::string autopilotKey = "K"; // the keyboard key that toggles the autopilot (UI_PLAN.md 2: K is unbound)
     bool maneuverButton = true;    // the fifth maneuver-bar button
     // HUD 2 (docs\UI_HUD2.md 5.3; the codings: kOptions)
-    int hudStyle = 1, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0;
+    int hudStyle = 2, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0;
     bool hudThreats = true, hudAlerts = true, hudInfo = true, hudWireframes = true;
     int hudTransition = 120;
-    int uiStyle = 0; // ui_style: the non-flight windows' look, 0 CLASSIC, 1 HUD 2 (uiskin.*, uistrip.*)
+    int hudPreset = 0; // hud_preset: HUD 2's layout preset (UI_HUD2_PRESETS.md 6 step 4; registry-only until step 5)
+    int uiStyle = 1; // ui_style: the non-flight windows' look, 0 CLASSIC, 1 HUD 2 (uiskin.*, uistrip.*); only with HUD 2 on
 };
 static Options g_opt;
 
 static Gamepad g_pad;
+// The menus' view of the pad: g_pad, with A and B exchanged when confirm_button is 1 (the right button accepts). Every
+// menu-grammar consumer reads it (the free cursor, FLUF's windows, padbases / padmap, the flight modals' copy); the
+// flight bindings read g_pad, positional (UI_BUILD.md 5, 29 Oct 2026). Refreshed right after g_pad.Update.
+static Gamepad g_menuPad;
 static void LoadConfig();
 static Mode g_mode = Mode::Menu;
 static u32 g_frame = 0;
@@ -156,15 +165,6 @@ static int g_weaponGroup = 1;     // the active weapon group as the pad last set
 static bool g_turret = false;     // turret view toggled on by the pad (USER_AUTO_TURRET, the game's H)
 static float g_turretAimX = 0, g_turretAimY = 0; // turret view: the look commands' duty accumulators (stick -> share of frames)
 static bool g_apUsed = false;     // the player has used the autopilot this session (its prompts may show)
-static bool g_chordFired = false; // autopilot_pad 1: the L3 + R3 chord fired for this press
-
-// A rumble pulse scaled by `rumble` (0 = off): the autopilot's hand-back, a confirmation request. Never the only cue.
-static void RumblePulse(float strength, float seconds)
-{
-    const float k = uiopt::Get().rumble / 100.0f;
-    if (k > 0)
-        g_pad.Rumble(strength * k, strength * k * 0.6f, seconds);
-}
 
 // ---------------------------------------------------------------- command helpers
 // Commands currently held by the pad (so we can release them on mode change), with the
@@ -392,8 +392,11 @@ static void UpdateUiNav(float dt)
     const float mx = static_cast<float>(fl::MouseX()), my = static_cast<float>(fl::MouseY());
 
     // A window holding keyboard focus (pause menu, save dialog, message boxes...) is modal:
-    // keep D-pad focus inside it.
-    const uintptr_t modal = ui::ModalRoot(items);
+    // keep D-pad focus inside it. So is a menu's modal loop without the keyboard focus (padmenus::ModalRoot: the
+    // multiplayer LAN / INTERNET prompt).
+    uintptr_t modal = ui::ModalRoot(items);
+    if (!modal)
+        modal = padmenus::ModalRoot();
     if (modal)
         items.erase(
             std::remove_if(items.begin(), items.end(), [modal](const ui::Item& it) { return it.root != modal; }),
@@ -562,13 +565,13 @@ static void UpdateUiNav(float dt)
 // the pad on FLUF's windows, the menu / window cursor. Inputs = the buttons in glyph order plus the sticks (LS / RS
 // deflected past their dead zone).
 static PressGate<glyphs::COUNT> g_gateFlight, g_gateFluf, g_gateUi;
-static void PadInputs(bool in[glyphs::COUNT]);
+static void PadInputs(bool in[glyphs::COUNT], const Gamepad& pad = g_pad);
 
 // ---------------------------------------------------------------- free cursor (menus, bases, windows)
 static void UpdateFreeCursor(float dt)
 {
     bool in[glyphs::COUNT];
-    PadInputs(in);
+    PadInputs(in, g_menuPad);
     g_gateUi.Take(in); // a press another consumer owns (flight's held A, the B that closed a pad menu) is no click here
     const PadState& p = g_pad.Cur();
     const float mag = in[glyphs::LS] ? sqrtf(p.lx * p.lx + p.ly * p.ly) : 0.0f;
@@ -600,7 +603,7 @@ static void UpdateFreeCursor(float dt)
     else
         g_wheelAccum = 0;
 
-    if (g_pad.Pressed(XINPUT_GAMEPAD_B) && !padbases::Owns(XINPUT_GAMEPAD_B))
+    if (g_menuPad.Pressed(XINPUT_GAMEPAD_B) && !padbases::Owns(XINPUT_GAMEPAD_B))
         fl::TapKey(VK_ESCAPE);
 }
 
@@ -659,7 +662,7 @@ static void UpdateFlufPad(float dt)
 {
     g_flufPad = true;
     bool in[glyphs::COUNT];
-    PadInputs(in);
+    PadInputs(in, g_menuPad);
     g_gateFluf.Take(in); // a press flight / a popup owns (A held for formation, the stick flying) is not FLUF's
     if (g_flufClose.step) // a close by the button runs: the pad waits for it (a few frames)
     {
@@ -680,7 +683,7 @@ static void UpdateFlufPad(float dt)
             fl::TapKey(VK_UP);
         if (g_pad.Pressed(XINPUT_GAMEPAD_DPAD_DOWN))
             fl::TapKey(VK_DOWN);
-        if (g_pad.Pressed(XINPUT_GAMEPAD_A))
+        if (g_menuPad.Pressed(XINPUT_GAMEPAD_A))
             fl::TapKey(VK_RETURN);
         dimouse::SetButton(0, false);
     }
@@ -699,7 +702,7 @@ static void UpdateFlufPad(float dt)
     }
     else
         g_wheelAccum = 0;
-    if (g_pad.Pressed(XINPUT_GAMEPAD_B))
+    if (g_menuPad.Pressed(XINPUT_GAMEPAD_B))
     {
         bool byEscape = true;
         float fx = -1, fy = -1;
@@ -921,6 +924,7 @@ struct PursuitOut
     bool aligned = false; // the cursor sits on the lead cross near the nose: the guns hit
     float offset = 2.0f;  // lead cross distance from the screen centre (half-screen units); 2 = off screen
     bool reverse = false, burn = false;
+    bool screenFrame = false; // sx / sy from the flight screen's offsets (its axes: fl::FlightScreenAxes), else the ship's
 };
 
 // ---------------------------------------------------------------- test bot
@@ -975,6 +979,7 @@ static PursuitOut Pursue(const aim::Target& t, float dt, Pursuit& p, float close
         const float steerX = ox + r * cosf(p.phase), steerY = oy + r * sinf(p.phase);
         o.sx = Clampf(steerX * 1.5f, -g_opt.steerScale, g_opt.steerScale);
         o.sy = Clampf(steerY * 1.5f, -g_opt.steerScale, g_opt.steerScale);
+        o.screenFrame = true;
         o.ax = t.screenX;
         o.ay = t.screenY;
         aim::ClampToSafeArea(o.ax, o.ay);
@@ -1287,6 +1292,48 @@ static void GimbalAim(float& x, float& y)
 }
 
 // Runs the autopilot (autopilot.cpp decides, this applies its outputs). Returns true while it flies the ship.
+// Turret view's look (the owner, 26 Oct 2026), the same whether the player or the autopilot flies: the reticle stays at
+// the screen centre - gimbal mode's lock-on there as in flight (aim_mode 1: onto a hostile's lead cross inside the cone)
+// - and the right stick turns the camera itself through the game's own look commands (USER_LOOK_ROTATE_CAMERA_*, held =
+// the turret camera turns at its rate; 0x51A7D0 turns it by the cursor only while mouse flight is engaged, else by
+// these - 0x51AC20 sets its yaw / pitch input). The commands are on / off: the stick's deflection is the share of frames
+// they are held (an accumulator per axis), the camera's own smoothing (0x51AA47) evens it out. Out of turret view the
+// look commands are let go (no-ops when not held). True = turret view (the cursor is placed). The steering is the
+// caller's (the player's flight lets it go, the autopilot keeps steering).
+static bool TurretLook(const PadState& p)
+{
+    static const int kLook[] = {fl::USER_LOOK_ROTATE_CAMERA_LEFT, fl::USER_LOOK_ROTATE_CAMERA_RIGHT,
+                                fl::USER_LOOK_ROTATE_CAMERA_UP, fl::USER_LOOK_ROTATE_CAMERA_DOWN};
+    if (!g_turret)
+    {
+        for (int c : kLook)
+            Hold(c, false);
+        return false;
+    }
+    auto pulse = [](float& acc, float v)
+    {
+        acc += fabsf(v);
+        if (acc < 1)
+            return false;
+        acc -= 1;
+        return true;
+    };
+    const bool onX = pulse(g_turretAimX, p.rx), onY = pulse(g_turretAimY, p.ry);
+    if (p.rx == 0)
+        g_turretAimX = 0;
+    if (p.ry == 0)
+        g_turretAimY = 0;
+    Hold(fl::USER_LOOK_ROTATE_CAMERA_LEFT, onX && p.rx < 0);
+    Hold(fl::USER_LOOK_ROTATE_CAMERA_RIGHT, onX && p.rx > 0);
+    Hold(fl::USER_LOOK_ROTATE_CAMERA_UP, onY && p.ry > 0);
+    Hold(fl::USER_LOOK_ROTATE_CAMERA_DOWN, onY && p.ry < 0);
+    float x = fl::ScreenWidth() * 0.5f, y = fl::ScreenHeight() * 0.5f;
+    if (g_opt.aimMode == 1)
+        GimbalAim(x, y);
+    dimouse::MoveTo(x, y);
+    return true;
+}
+
 static bool UpdateAutopilot(float dt)
 {
     // When it stops, everything it held goes back first (was: pad flight re-holds only its own commands, so a slide
@@ -1296,8 +1343,9 @@ static bool UpdateAutopilot(float dt)
     {
         if (flew)
         {
-            ReleaseAll();
-            RumblePulse(0.6f, 0.18f); // the hand-back pulse (UI_SPEC rumble; never the only cue: the reticle cue too)
+            ReleaseAll(); // (the hand-back pulse: haptics.cpp, on the autopilot's end in flight)
+            if (HostAtLeast(28) && g_host->SetGunAim)
+                g_host->SetGunAim(false, nullptr); // the guns back to the player's cursor
         }
         flew = wasFiring = false;
         return false;
@@ -1330,11 +1378,70 @@ static bool UpdateAutopilot(float dt)
     static Pursuit pursuit;
     static float fireHold = 0; // keeps the guns going through a one-frame loss of alignment
     bool fire = o.fire, reverse = false;
-    if (o.pursue)
+    // The coast (`big_coast`; the owner, 29 Oct 2026: "Killing the engine when in cruise engine only works when NO
+    // additional engine-related input is sent ... no stopping, no throttle action. Just engine kill"): the steering
+    // alone - no throttle, reverse, afterburner, slide or cruise toggle while it lasts (all released below)
+    if (o.coast)
     {
-        // Lead pursuit (the bot's flight): the nose and the reticle on the lead cross; the guns fire on it.
-        const aim::Target t = aim::Current();
-        const PursuitOut po = Pursue(t, dt, pursuit, o.pursueBand, o.fireCone, o.gunRange, o.weave, o.weaveRadius);
+        pursuit = Pursuit();
+        float sx = 0, sy = 0;
+        aim::SteerTowards(o.steerPos, g_opt.steerScale, 0.35f, sx, sy);
+        float cam[9];
+        if (o.steerLevel)
+            aim::LevelSteer(sx, sy, nullptr, o.steerLevel == 2 && fl::FlightScreenAxes(cam) ? cam : nullptr);
+        SetSteer(sx, sy);
+        dimouse::MoveTo(fl::ScreenWidth() * 0.5f, fl::ScreenHeight() * 0.5f);
+        o.afterburn = false, o.slide = 0, o.dodgeSlide = 0, o.cruise = -1;
+    }
+    else if (o.pursue)
+    {
+        // Lead pursuit (the bot's flight): the nose and the reticle on the lead cross; the guns fire on it. In the ship's
+        // own frame (aim::Current(true)): the same flight whatever camera the player looks through.
+        const aim::Target t = aim::Current(true);
+        // the head-on pass's predictive turn: the nose at the point ahead of the target (the guns keep the lead
+        // through the autopilot's gunAim / SetGunAim)
+        aim::Target ts = t;
+        float sp[3];
+        if (o.steerAhead && fl::WorldToFlightScreen(o.steerAheadPos, sp))
+        {
+            ts.screenX = sp[0], ts.screenY = sp[1];
+            ts.onScreen = sp[0] >= 0 && sp[1] >= 0 && sp[0] < fl::ScreenWidth() && sp[1] < fl::ScreenHeight();
+            memcpy(ts.world, o.steerAheadPos, sizeof(ts.world));
+        }
+        PursuitOut po = Pursue(ts, dt, pursuit, o.pursueBand, o.fireCone, o.gunRange, o.weave, o.weaveRadius);
+        float axes[9];
+        const bool haveAxes = fl::FlightScreenAxes(axes);
+        // (Pursue steers along the flight screen's axes - the camera's, or the ship's off screen; restated into the frame the
+        // game turns in: `steer_level` 1 the level frame, 2 the camera's - measured in fights: the turn followed the screen)
+        if (o.steerLevel)
+            aim::LevelSteer(po.sx, po.sy, po.screenFrame && haveAxes ? axes : nullptr,
+                            o.steerLevel == 2 && haveAxes ? axes : nullptr);
+        // (debug `steer_check`: where the lead sits round the nose in the ship's frame vs where the nose turns, every
+        // 0.25 s while it is 5+ deg off - the steering's frame measured in a fight)
+        static DWORD checkAt = 0;
+        fl::Kinematics kc = {};
+        if (o.steerCheck && haveAxes && gameclock::NowMs() >= checkAt && fl::PlayerKinematics(kc))
+        {
+            checkAt = gameclock::NowMs() + 250;
+            const float w[3] = {ts.world[0] - kc.pos[0], ts.world[1] - kc.pos[1], ts.world[2] - kc.pos[2]};
+            float d[3];
+            for (int i = 0; i < 3; ++i)
+                d[i] = kc.rot[0 * 3 + i] * w[0] + kc.rot[1 * 3 + i] * w[1] + kc.rot[2 * 3 + i] * w[2];
+            const float len = sqrtf(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+            const float off = len > 1 ? acosf(Clampf(-d[2] / len, -1, 1)) * 57.3f : 0;
+            float spin[3] = {};
+            if (off > 5 && space::PlayerSpin(spin))
+            {
+                // the camera's up in the ship's frame: its roll against the ship's
+                const float cu[3] = {axes[0 * 3 + 1], axes[1 * 3 + 1], axes[2 * 3 + 1]};
+                const float cx = kc.rot[0] * cu[0] + kc.rot[3] * cu[1] + kc.rot[6] * cu[2];
+                const float cy = kc.rot[1] * cu[0] + kc.rot[4] * cu[1] + kc.rot[7] * cu[2];
+                events::Push("autopilot steer-check off=%.0f phi=%.0f turn=%.0f w=%.2f bank=%.0f camroll=%.0f screen=%d level=%d", off,
+                        atan2f(d[0], d[1]) * 57.3f, atan2f(-spin[1], spin[0]) * 57.3f,
+                        sqrtf(spin[0] * spin[0] + spin[1] * spin[1]), geom::RollDeg(kc.rot), atan2f(cx, cy) * 57.3f,
+                        po.screenFrame ? 1 : 0, o.steerLevel);
+            }
+        }
         SetSteer(po.sx, po.sy);
         g_lastSteerX = po.sx;
         g_lastSteerY = po.sy;
@@ -1383,6 +1490,9 @@ static bool UpdateAutopilot(float dt)
             aim::SteerTowards(o.steerPos, g_opt.steerScale, o.steerFullAngle, sx, sy); // navigation: calm
         else
             aim::TurnTowards(o.steerPos, g_opt.steerScale, sx, sy);
+        float cam[9];
+        if (o.steerLevel) // (the ship's frame restated into the game's turn frame)
+            aim::LevelSteer(sx, sy, nullptr, o.steerLevel == 2 && fl::FlightScreenAxes(cam) ? cam : nullptr);
         SetSteer(sx, sy);
         dimouse::MoveTo(fl::ScreenWidth() * 0.5f, fl::ScreenHeight() * 0.5f);
         fl::SetThrottle(o.steerThrottle);
@@ -1409,9 +1519,40 @@ static bool UpdateAutopilot(float dt)
         GimbalAim(ax, ay);
         dimouse::MoveTo(ax, ay);
     }
-    // ASSISTED / turret view: the right stick is the player's aim while the autopilot flies (the reticle follows the
-    // stick from the screen centre; the autopilot's gimbal aim yields while the stick is deflected)
-    if (rightAims && (p.rx != 0 || p.ry != 0))
+    // Turret view while the autopilot flies: the right stick turns the camera and the reticle stays centred, as in the
+    // player's own flight (was: the cursor followed the stick - the turret block sat after this function's early
+    // return, so the camera never turned and a look command held at the start stayed held). ASSISTED: the right stick
+    // is the player's aim (the reticle follows the stick from the screen centre; the autopilot's gimbal aim yields
+    // while the stick is deflected).
+    const bool turret = TurretLook(p);
+    // The guns in turret view (the owner, 28 Oct 2026: the player may look around while the autopilot keeps full
+    // control): the game aims every gun along the cursor's ray through the current camera, which is now the player's -
+    // so the autopilot hands the guns its own world point instead (host v28): the target's lead cross (aim::Current: the
+    // game's lead when in range), else straight ahead of the nose. Out of turret view the game's own aim, by the cursor.
+    if (HostAtLeast(28) && g_host->SetGunAim)
+    {
+        if (turret)
+        {
+            const aim::Target t = aim::Current(true);
+            fl::Kinematics k = {};
+            float ahead[3];
+            const float* world = nullptr;
+            if (t.valid && t.inRange)
+                world = t.world;
+            else if (fl::PlayerKinematics(k))
+            {
+                for (int i = 0; i < 3; ++i)
+                    ahead[i] = k.pos[i] - k.rot[i * 3 + 2] * 1000.0f; // -z = forward (the rot's third column)
+                world = ahead;
+            }
+            g_host->SetGunAim(world != nullptr, world);
+        }
+        else if (o.gunAim && fire) // the autopilot fires off the nose at a point some gun can reach (`fire_covering`)
+            g_host->SetGunAim(true, o.gunAimPos);
+        else
+            g_host->SetGunAim(false, nullptr);
+    }
+    if (!turret && rightAims && (p.rx != 0 || p.ry != 0))
     {
         float ax = fl::ScreenWidth() * 0.5f + p.rx * fl::ScreenWidth() * 0.5f;
         float ay = fl::ScreenHeight() * 0.5f - p.ry * fl::ScreenHeight() * 0.5f;
@@ -1489,6 +1630,8 @@ static bool UpdateAutopilot(float dt)
         Tap(fl::USER_LAUNCH_TORPEDOS);
     if (o.mine)
         Tap(fl::USER_LAUNCH_MINES);
+    if (o.engineKill)
+        Tap(fl::USER_MANEUVER_ENGINEKILL);
     if (o.cm)
         Tap(fl::USER_LAUNCH_COUNTERMEASURES);
     if (o.closestEnemy)
@@ -1501,7 +1644,7 @@ static bool UpdateAutopilot(float dt)
     // toggle only when it differs from what the autopilot wants, and not again before the game has run a few frames
     // since the last toggle (it shows in the engine's state by then).
     static u32 cruiseTapFrame = 0;
-    if (o.cruise >= 0 && g_frame >= cruiseTapFrame + 3)
+    if (o.cruise >= 0 && !o.coast && g_frame >= cruiseTapFrame + 3)
     {
         flight::Model fm;
         if (flight::ReadModel(fm) && fm.cruiseEngaged != (o.cruise == 1))
@@ -1552,9 +1695,12 @@ static void PadButtons(bool down[glyphs::COUNT])
 }
 
 // The press gates' inputs: the buttons, and the sticks as "down" while deflected (gamepad.cpp's dead zone gives 0).
-static void PadInputs(bool in[glyphs::COUNT])
+// `pad`: g_pad (positional: flight), or g_menuPad (the menus' view: A / B as accept / back).
+static void PadInputs(bool in[glyphs::COUNT], const Gamepad& pad)
 {
     PadButtons(in);
+    in[glyphs::A] = pad.Down(XINPUT_GAMEPAD_A);
+    in[glyphs::B] = pad.Down(XINPUT_GAMEPAD_B);
     const PadState& p = g_pad.Cur();
     in[glyphs::LS] = p.lx != 0 || p.ly != 0;
     in[glyphs::RS] = p.rx != 0 || p.ry != 0;
@@ -1591,6 +1737,9 @@ static void ToggleAutopilot(const char* why)
 }
 
 void MarkAutopilotUsed() { g_apUsed = true; }
+float StickDeadzone() { return g_pad.stickDeadzone; }
+int PadBackend() { return g_pad.padBackend; }
+bool FocusOnly() { return g_opt.focusOnly; }
 
 // `context` (A): whatever applies to the target - dock / lane / jump when it is dockable (the game's dock maneuver,
 // a toggle: a second press cancels a running dock), tractor when it is loot or loot lies in the tractor's reach,
@@ -1831,13 +1980,7 @@ static void UpdateSpace(float dt)
     g_dispatch.toggles = o.holdsAsToggles;
     // The situation's table: the preset's flight table, or the shared flight_ap one while the autopilot flies.
     const bool apFlying = autopilot::Active();
-    g_table = apFlying ? presets::FlightAp() : presets::Effective(preset, o.autopilotPad, o.weaponGroups);
-    if (apFlying && o.autopilotPad != 0) // the autopilot toggle follows autopilot_pad in the ap situation too
-    {
-        g_table.b[glyphs::VIEW].hold = presets::Action::None;
-        if (o.autopilotPad == 2)
-            g_table.b[glyphs::MENU].hold = presets::Action::Autopilot;
-    }
+    g_table = apFlying ? presets::FlightAp() : presets::Effective(preset, o.weaponGroups);
     // Press ownership: what another consumer had when it went down (the B that closed FLUF's window, the A that closed a
     // popup, the stick that moved FLUF's cursor) stays hidden from the flight dispatch until released; a hold of the
     // dispatcher's own interrupted by another consumer is cancelled (no tap on its release).
@@ -1868,9 +2011,14 @@ static void UpdateSpace(float dt)
             const glyphs::Id id = static_cast<glyphs::Id>(i);
             owned[i] = picker::OwnsButton(id) || wheel::OwnsButton(id) || goals::OwnsButton(id);
         }
-        picker::Update(dt, down);
-        wheel::Update(dt, down, p.rx, p.ry);
-        goals::Update(dt, down);
+        // the modals are menus: A / B as accept / back (confirm_button; both are owned alike, so the swallow below
+        // stays positional and right)
+        bool menu[glyphs::COUNT];
+        memcpy(menu, down, sizeof(menu));
+        menu[glyphs::A] = down[glyphs::Menu(glyphs::A)], menu[glyphs::B] = down[glyphs::Menu(glyphs::B)];
+        picker::Update(dt, menu);
+        wheel::Update(dt, menu, p.rx, p.ry);
+        goals::Update(dt, menu);
         for (int i = 0; i < glyphs::COUNT; ++i)
         {
             if (down[i] && owned[i])
@@ -1892,23 +2040,6 @@ static void UpdateSpace(float dt)
             fl::SetThrottle(Clampf(fl::GetThrottle() + (p.rt - p.lt) * g_opt.throttleRate * dt, 0.0f, 1.0f));
         aceBurn = p.rt > 0.95f;
         aceReverse = p.lt > 0.95f;
-    }
-    // autopilot_pad 1: the L3 + R3 chord (the stick clicks' own taps are swallowed by it)
-    if (o.autopilotPad == 1)
-    {
-        if (down[glyphs::L3] && down[glyphs::R3])
-        {
-            if (!g_chordFired)
-            {
-                g_chordFired = true;
-                g_dispatch.Cancel(glyphs::L3);
-                g_dispatch.Cancel(glyphs::R3);
-                ToggleAutopilot("pad");
-            }
-            down[glyphs::L3] = down[glyphs::R3] = false;
-        }
-        else if (!down[glyphs::L3] && !down[glyphs::R3])
-            g_chordFired = false;
     }
     static std::vector<presets::Event> events;
     events.clear();
@@ -1935,40 +2066,9 @@ static void UpdateSpace(float dt)
     const bool rsOwned = wheel::IsOpen(); // the open action wheel owns the right stick (it picks the slot)
     const float srx = steerStick > 0 ? (rsOwned ? 0.0f : p.rx) : steerStick < 0 ? p.lx : 0.0f;
     const float sry = steerStick > 0 ? (rsOwned ? 0.0f : p.ry) : steerStick < 0 ? p.ly : 0.0f;
-    if (!g_turret) // turret view's camera drag ends with it (no-ops when not held)
-        for (int c : {fl::USER_LOOK_ROTATE_CAMERA_LEFT, fl::USER_LOOK_ROTATE_CAMERA_RIGHT, fl::USER_LOOK_ROTATE_CAMERA_UP,
-                      fl::USER_LOOK_ROTATE_CAMERA_DOWN})
-            Hold(c, false);
-    if (g_turret)
+    if (TurretLook(p)) // turret view: the camera turns, the reticle stays centred, the ship flies straight on
     {
-        // Turret view (the owner, 26 Oct 2026): the reticle stays at the screen centre - gimbal mode's lock-on there as in
-        // flight (aim_mode 1: onto a hostile's lead cross inside the cone) - and the right stick turns the camera itself
-        // through the game's own look commands (USER_LOOK_ROTATE_CAMERA_*, held = the turret camera turns at its rate;
-        // 0x51A7D0 turns it by the cursor only while mouse flight is engaged, else by these - 0x51AC20 sets its yaw /
-        // pitch input). The commands are on / off: the stick's deflection is the share of frames they are held
-        // (an accumulator per axis), the camera's own smoothing (0x51AA47) evens it out.
         ReleaseSteer();
-        auto pulse = [](float& acc, float v)
-        {
-            acc += fabsf(v);
-            if (acc < 1)
-                return false;
-            acc -= 1;
-            return true;
-        };
-        const bool onX = pulse(g_turretAimX, p.rx), onY = pulse(g_turretAimY, p.ry);
-        if (p.rx == 0)
-            g_turretAimX = 0;
-        if (p.ry == 0)
-            g_turretAimY = 0;
-        Hold(fl::USER_LOOK_ROTATE_CAMERA_LEFT, onX && p.rx < 0);
-        Hold(fl::USER_LOOK_ROTATE_CAMERA_RIGHT, onX && p.rx > 0);
-        Hold(fl::USER_LOOK_ROTATE_CAMERA_UP, onY && p.ry > 0);
-        Hold(fl::USER_LOOK_ROTATE_CAMERA_DOWN, onY && p.ry < 0);
-        float x = fl::ScreenWidth() * 0.5f, y = fl::ScreenHeight() * 0.5f;
-        if (g_opt.aimMode == 1)
-            GimbalAim(x, y);
-        dimouse::MoveTo(x, y);
         g_lastSteerX = g_lastSteerY = 0;
     }
     else if (steerStick == 0)
@@ -2041,7 +2141,7 @@ void Shutdown()
     SetHudSuppression(false);
     CloseModals();
     ReleaseAll();
-    g_pad.Rumble(0, 0, 0);
+    haptics::Stop(g_pad); // the motors off (a hot reload mid-effect)
     // render.cpp is compiled into this logic: its D3D textures go with it (every hot reload leaked the previous
     // logic's objects until 24 Oct 2026)
     shieldcue::Shutdown();
@@ -2125,8 +2225,54 @@ void OnDeviceLost()
 }
 void OnDeviceReset() {}
 
+// A frame-rate cap for test games (the owner, 29 Oct 2026: "limit each instance to no more than 60 fps for now" - three
+// background games at ~140 fps each): debug command `fpscap <fps>` (0 = off, the default; never a player setting). Waits
+// at the start of the frame until 1 / fps has passed since the last one - a high-resolution waitable timer where Windows
+// has one (Windows 10 1803+), else Sleep(0) spins on the performance counter.
+static int g_fpsCap = 0;
+int FpsCap(int fps)
+{
+    if (fps >= 0)
+        g_fpsCap = fps > 0 ? std::max(10, std::min(fps, 1000)) : 0;
+    return g_fpsCap;
+}
+static void CapFrame()
+{
+    static LARGE_INTEGER freq = {}, last = {};
+    if (!freq.QuadPart)
+        QueryPerformanceFrequency(&freq);
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    if (g_fpsCap > 0 && last.QuadPart)
+    {
+        const LONGLONG period = freq.QuadPart / g_fpsCap;
+        const LONGLONG due = last.QuadPart + period;
+        static HANDLE timer = CreateWaitableTimerExW(nullptr, nullptr, 0x00000002 /* HIGH_RESOLUTION */, TIMER_ALL_ACCESS);
+        const LONGLONG left = due - now.QuadPart;
+        if (left > 0 && timer)
+        {
+            // (the timer in 100 ns units, negative = relative; 0.5 ms short, the rest spun)
+            LARGE_INTEGER rel;
+            rel.QuadPart = -std::max<LONGLONG>(0, left * 10000000 / freq.QuadPart - 5000);
+            if (rel.QuadPart < 0 && SetWaitableTimer(timer, &rel, 0, nullptr, nullptr, FALSE))
+                WaitForSingleObject(timer, 100);
+        }
+        for (QueryPerformanceCounter(&now); now.QuadPart < due; QueryPerformanceCounter(&now))
+            Sleep(0);
+        // (a frame that ran long resets the schedule: no catching up with short frames)
+        last.QuadPart = now.QuadPart - due > period ? now.QuadPart : due;
+        return;
+    }
+    last = now;
+}
+
 void OnFrame(double dtd)
 {
+    // The game clock (core\game\gameclock.h): the frame's game dt as the game passes it, before this function's own
+    // clamp - 0 while paused (the dt getter returns 0 then), 1/fps under the debug `fixeddt`; first, so every reader
+    // this frame sees this frame's time. (The host's modal-loop frames pass a wall dt of at most 0.25 s.)
+    gameclock::Advance(dtd);
+    CapFrame();
     perf::NewFrame();
     perf::Scope perfFrame("OnFrame");
     barbutton::Update(); // the bar's autopilot button state to the host (the HOST track)
@@ -2138,20 +2284,41 @@ void OnFrame(double dtd)
         ~EndMemo() { space::EndFrame(); }
     } endMemo;
     ++g_frame;
+    // A new game (host v34: a save load, New Game, the load after a death - each loads a fresh Content.dll): mission.cpp's
+    // memory of the last script / objective and the shown objectives was the game before's (A37 S1: M07's stood in for
+    // M12's "Awaiting" after SaveS208 -> SaveS182). Before anything this frame asks it. A logic (re)start forgets nothing:
+    // its mission.cpp memory starts empty.
+    {
+        static bool seen = false;
+        static u32 lastLoads = 0;
+        const u32 loads = HostGameLoads();
+        if (seen && loads != lastLoads)
+        {
+            mission::ForgetGame();
+            autopilot::ArbiterForgetGame(); // (A37 S7: the goal queue's story memory is the game's too)
+            events::Push("game-load %u: mission memory forgotten", loads);
+        }
+        seen = true;
+        lastLoads = loads;
+    }
     const float dt = Clampf(static_cast<float>(dtd), 0.0f, 0.25f);
     g_frameDt = dt;
 
-    // focus_only: the physical pad acts only while the game is the foreground window (the user may be using it in
-    // another program); everything else (modes, the bot, the autopilot, the virtual pad) goes on out of focus.
-    const bool focused = GetForegroundWindow() == fl::MainWindow();
-    g_pad.ignoreReal = g_opt.focusOnly && !focused;
+    // focus_only: the physical pad acts only while the game is in front (the user may be using it in another program) -
+    // the one gate the menus' reader asks too (focus_gate.h); everything else (modes, the bot, the autopilot, the
+    // virtual pad) goes on out of focus.
+    g_pad.ignoreReal = Gamepad::IgnoreRealNow(g_opt.focusOnly);
     g_pad.Update(dt);
+    g_menuPad = uiopt::Get().confirmButton == 1 ? g_pad.SwappedAB() : g_pad;
     {
-        bool in[glyphs::COUNT];
+        // each gate in its consumer's view (the menu gates see A / B as accept / back)
+        bool in[glyphs::COUNT], menu[glyphs::COUNT];
         PadInputs(in);
-        g_gateFlight.Observe(in), g_gateFluf.Observe(in), g_gateUi.Observe(in);
+        PadInputs(menu, g_menuPad);
+        g_gateFlight.Observe(in), g_gateFluf.Observe(menu), g_gateUi.Observe(menu);
     }
     TickSteerRelease();
+    mprules::Update(); // multiplayer: the server's word on the autopilot (new chat lines only)
     ai::Update();
     spawn::CheckClearAt(ai::PlayerHealth()); // `spawn clearat`: test spawns go at a hull threshold (no harness lag)
     space::InvalidateFrame();                // that may have despawned ships (spawn.cpp knows nothing of the memo)
@@ -2162,6 +2329,18 @@ void OnFrame(double dtd)
     flufaware::Update(dt, g_opt.flufWindows); // FLUF's windows from the HUD bus (no FLUF: nothing), before every reader
     shieldcue::Update(dt, g_mode == Mode::Space || g_mode == Mode::SpaceUi);
     reticlecue::Update(dt, g_mode == Mode::Space || g_mode == Mode::SpaceUi, autopilot::Active());
+    {
+        // the pad's vibration (haptics.h): before the enabled check below, so turning the module off silences it
+        haptics::Frame hf;
+        hf.where = g_mode == Mode::Space || g_mode == Mode::SpaceUi ? haptics::Where::Flight
+                   : g_mode == Mode::Cutscene                       ? haptics::Where::Cutscene
+                   : g_mode == Mode::Docked                         ? haptics::Where::Docked
+                                                                    : haptics::Where::Menu;
+        hf.enabled = g_opt.enabled;
+        hf.paused = fl::GamePaused();
+        hf.autopilot = autopilot::Active();
+        haptics::Update(hf, g_pad);
+    }
     if (g_mode == Mode::Space || g_mode == Mode::SpaceUi)
         space::TrackRounds(); // learns which incoming rounds hit (the damage model's hit chance)
     HostSetKeepRunning(g_opt.runInBackground);
@@ -2179,14 +2358,14 @@ void OnFrame(double dtd)
         u.inputMode = g_opt.inputMode, u.glyphStyle = g_opt.glyphStyle, u.confirmButton = g_opt.confirmButton;
         u.pauseOnDisconnect = g_opt.pauseOnDisconnect, u.padPreset = g_opt.padPreset;
         u.weaponGroups = g_opt.weaponGroups, u.holdsAsToggles = g_opt.holdsAsToggles;
-        u.autopilotPad = g_opt.autopilotPad, u.rumble = g_opt.rumble, u.padCursor = g_opt.padCursor;
+        u.rumble = g_opt.rumble, u.padCursor = g_opt.padCursor;
         u.cursorMagnet = g_opt.cursorMagnet, u.promptBar = g_opt.promptBar, u.worldPrompts = g_opt.worldPrompts;
         u.apHints = g_opt.apHints, u.textSize = g_opt.textSize, u.hudGlyphs = g_opt.hudGlyphs;
         u.buttonLegend = g_opt.buttonLegend, u.apStatusLine = g_opt.apStatusLine;
         u.hudStyle = g_opt.hudStyle, u.hudFade = g_opt.hudFade, u.hudOpacity = g_opt.hudOpacity;
         u.hudScale = g_opt.hudScale, u.hudNumbers = g_opt.hudNumbers, u.hudThreats = g_opt.hudThreats;
         u.hudContext = g_opt.hudContext, u.hudAlerts = g_opt.hudAlerts, u.hudInfo = g_opt.hudInfo;
-        u.hudWireframes = g_opt.hudWireframes, u.hudTransition = g_opt.hudTransition;
+        u.hudWireframes = g_opt.hudWireframes, u.hudTransition = g_opt.hudTransition, u.hudPreset = g_opt.hudPreset;
     }
     device::Update(dt, g_pad, g_mode == Mode::Space);
     // A new flight - the player ship appeared or changed: a launch, or a save load, also one started from inside a
@@ -2216,7 +2395,7 @@ void OnFrame(double dtd)
             events::Push("turret view %s (the game's camera)", on ? "on" : "off");
         }
     }
-    glyphs::Update(g_pad.HasRealController());
+    glyphs::Update(g_pad.HasRealController(), g_pad.Vendor());
     const bool padOwns = device::Pad();
     if (device::TakeDisconnectPause() && !fl::GamePaused())
         Tap(fl::USER_PAUSE); // pause_on_disconnect: the game's own pause menu
@@ -2226,6 +2405,7 @@ void OnFrame(double dtd)
     // Only while Freelancer is the foreground window (capturing fails otherwise), and rate
     // limited so a failing capture cannot run every frame.
     static u32 lastCaptureTry = 0;
+    const bool focused = GetForegroundWindow() == fl::MainWindow(); // the main window itself (not an owned popup)
     if (g_pad.AnyInput() && !dimouse::IsCaptured() && focused && now - lastCaptureTry > 500)
     {
         lastCaptureTry = now;
@@ -2244,6 +2424,9 @@ void OnFrame(double dtd)
         {
             events::Push("player-death");
             StopBot("player-death");
+            // the autopilot's own hull-0 stop normally came a frame earlier (autopilot_frame.cpp); this one ends the
+            // objective mode on a death whatever the hull read (a no-op when it is off already)
+            autopilot::Stop("player died");
         }
         dead = nowDead;
     }
@@ -2361,14 +2544,16 @@ void OnFrame(double dtd)
     // The goal panel, every device (its keyboard + mouse form's keys, clicks and click box; after HUD 2, which stood its
     // own click box down while the panel is open)
     goals::Tick(dt);
-    // Extended HUD 2 (docs\UI_HUD2_EXTENDED.md 10): the skin's switch and the docked overlay's - every frame
+    // HUD 2 over the menus and rooms (formerly "Extended HUD 2", docs\UI_HUD2_EXTENDED.md 10; part of HUD 2 since
+    // 0.2.0): the skin's switch and the docked overlay's - every frame. Classic (hud_style 0) is classic everywhere.
     {
+        const int uiStyle = g_opt.hudStyle != 0 ? g_opt.uiStyle : 0;
         uiskin::Context sc;
-        sc.style = g_opt.uiStyle;
+        sc.style = uiStyle;
         sc.pad = padOwns;
         sc.enabled = g_opt.enabled;
         uiskin::Update(dt, sc);
-        uistrip::Update(dt, g_opt.enabled && g_opt.uiStyle == 1 && g_mode == Mode::Docked);
+        uistrip::Update(dt, g_opt.enabled && uiStyle == 1 && g_mode == Mode::Docked);
     }
     // The open options page owns the pad and the keys: no flight / menu pad dispatch. Its ownership outlasts its close
     // until every button is up: the press that closed it (B, A on CANCEL / CLOSE) reached the menu and base code in
@@ -2389,7 +2574,7 @@ void OnFrame(double dtd)
         pageLatch = false;
     }
     // Start opens/closes the game menu (Freelancer's pause menu, F1 by default); in flight the preset's MENU binding
-    // does it (a tap; autopilot_pad 2 puts the autopilot on its hold). Not while a D-MENUS screen owns the pad (the
+    // does it (a tap). Not while a D-MENUS screen owns the pad (the
     // OSK's Menu = done, the New Game prompt).
     if (g_mode != Mode::Space && g_pad.Pressed(XINPUT_GAMEPAD_START) && !padmenus::OwnsInput())
         Tap(fl::USER_PAUSE);
@@ -2480,7 +2665,7 @@ void OnFrame(double dtd)
         ReleaseSteer();
         // (D-BASES) the pad screens of bases, dealers, NeuroNet windows and the nav map: they take their buttons first
         // (padbases::Owns gates the generic focus / cursor code below)
-        padbases::Update(dt, g_pad,
+        padbases::Update(dt, g_menuPad,
                          g_mode == Mode::Docked    ? padbases::Where::Docked
                          : g_mode == Mode::SpaceUi ? padbases::Where::SpaceUi
                                                    : padbases::Where::Menu);
@@ -2518,7 +2703,10 @@ std::string DescribeState()
       << " paused=" << fl::GamePaused() << " throttle=" << fl::GetThrottle() << "\n";
     o << "pad connected=" << p.connected << " real=" << g_pad.HasRealController() << " buttons=0x" << std::hex
       << p.buttons << std::dec << " L=(" << p.lx << "," << p.ly << ") R=(" << p.rx << "," << p.ry << ") LT=" << p.lt
-      << " RT=" << p.rt << "\n";
+      << " RT=" << p.rt << " slot=" << g_pad.ActiveIndex() << " dev=" << Gamepad::DevActive() << " vendor=0x"
+      << std::hex << g_pad.Vendor() << std::dec << " ignore_real=" << g_pad.ignoreReal << "\n";
+    if (const std::string b = g_pad.BackendStatus(); !b.empty()) // (pad_backend 0 with SDL never started: no line)
+        o << b << "\n";
     o << "dimouse: " << dimouse::Stats() << "\n";
     o << "foreground=" << (GetForegroundWindow() == fl::MainWindow())
       << " background_run=" << ((g_opt.runInBackground || BackgroundTestStart()) && HostAtLeast(7))
@@ -2547,7 +2735,8 @@ static const settings::Def kOptions[] = {
      "gimbal: lock-on cone half-angle in degrees (90 = whole screen)"},
     {"aim_smooth", settings::Float, &g_opt.aimSmooth, 0, 1, "reticle smoothing time constant in seconds (0 = off)"},
     {"auto_target", settings::Int, &g_opt.autoTarget, 0, 2,
-     "0 = off (default): you pick targets (D-pad up = closest enemy) and a selected target is never "
+     "0 = off (default): you pick targets (the target button: what is under the reticle, else the closest enemy) "
+     "and a selected target is never "
      "changed; 1 = select the closest enemy when the current one is destroyed; 2 = also when nothing is "
      "targeted (paused for 10 s after you clear the target yourself)"},
     {"fire_target", settings::Bool, &g_opt.fireTarget, 0, 1,
@@ -2558,6 +2747,10 @@ static const settings::Def kOptions[] = {
     {"invert_y", settings::Bool, &g_opt.invertY, 0, 1, "1 = stick up turns the nose down"},
     {"stick_deadzone", settings::Float, &g_pad.stickDeadzone, 0, 0.9f, "radial stick deadzone (0..1)"},
     {"trigger_threshold", settings::Float, &g_pad.triggerThreshold, 0, 0.9f, "trigger deadzone (0..1)"},
+    {"pad_backend", settings::Int, &g_pad.padBackend, 0, 1,
+     "how the controller is read: 0 XInput (default; Xbox pads and pads that act as one), 1 SDL3 (experimental, not "
+     "yet verified with real PlayStation or Switch pads: meant to read them too, the button prompts from the pad's "
+     "type; starts on its own thread in a few milliseconds, XInput reads the pad meanwhile and if SDL cannot start)"},
     {"throttle_rate", settings::Float, &g_opt.throttleRate, 0.1f, 5,
      "throttle lever change per second at full left stick"},
     {"cursor_speed", settings::Float, &g_opt.cursorSpeed, 0.1f, 5, "menu cursor speed, screen heights per second"},
@@ -2570,7 +2763,9 @@ static const settings::Def kOptions[] = {
     {"aim_slowdown", settings::Float, &g_opt.aimSlowdown, 0, 1, "aim_mode 0: steering slowdown at the cross"},
     {"aim_rotation", settings::Float, &g_opt.aimRotation, 0, 1, "aim_mode 0: rotational assist strength"},
     {"aim_rotation_max", settings::Float, &g_opt.aimRotationMax, 0, 1, "aim_mode 0: rotational assist cap"},
-    {"focus_only", settings::Bool, &g_opt.focusOnly, 0, 1, "ignore the controller while the game is in the background"},
+    {"focus_only", settings::Bool, &g_opt.focusOnly, 0, 1,
+     "ignore the controller while the game is in the background, in flight and menus alike (a button held when the "
+     "game comes back is ignored until it is released)"},
     {"run_in_background", settings::Bool, &g_opt.runInBackground, 0, 1,
      "1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back "
      "to Windows meanwhile"},
@@ -2611,14 +2806,13 @@ static const settings::Def kOptions[] = {
      "decide), 3 Custom"},
     {"weapon_groups", settings::Int, &g_opt.weaponGroups, 0, 2,
      "0 simple: RT fires the active group; 1 cycle: Y held flips to the next group (Y tap stays cruise); 2 two "
-     "groups: RT fires group 1 and LT group 2 (afterburner moves to L3). Launchers fire only on their own buttons"},
+     "groups: RT fires group 1 and LT group 2 (afterburner moves to the LS click). Launchers fire only on their own buttons"},
     {"holds_as_toggles", settings::Bool, &g_opt.holdsAsToggles, 0, 1,
      "afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons"},
-    {"autopilot_pad", settings::Int, &g_opt.autopilotPad, 0, 2,
-     "how the pad switches the autopilot: 0 hold View half a second, 1 L3 + R3, 2 hold Menu; any stick input hands "
-     "the ship back"},
     {"rumble", settings::Int, &g_opt.rumble, 0, 100,
-     "vibration strength in percent: hits, the autopilot's hand-back, a confirmation request; 0 = off"},
+     "vibration strength in percent (0 = off): hits on your ship by their weight, your shield failing, the "
+     "autopilot's hand-back pulse and the game's boxes that wait for your answer; only while the controller is in use "
+     "and the game is in front, never in cutscenes or the menus, and the world's effects never while paused"},
     {"pad_cursor", settings::Int, &g_opt.padCursor, 0, 2,
      "a cursor on the left stick where pointing is natural: 0 off, 1 rooms and maps, 2 everywhere; it slows over "
      "targets, the D-pad hides it"},
@@ -2668,8 +2862,9 @@ static const settings::Def kOptions[] = {
      "the keyboard key that toggles the autopilot (a key name: K, F10, Insert); a key the game binds is refused"},
     // HUD 2 (docs\UI_HUD2.md 5.3; the options page's CONTROLLER tab, section HUD)
     {"hud_style", settings::Int, &g_opt.hudStyle, 0, 2,
-     "the flight HUD: 0 classic (the game's HUD; on the pad with the glyph badges and the legend), 1 HUD 2 on the "
-     "pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always"},
+     "the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 1 HUD 2 on the "
+     "pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always (default); HUD 2 includes its look over the menus "
+     "and rooms (ui_style)"},
     {"hud_fade", settings::Int, &g_opt.hudFade, 0, 2,
      "HUD 2 in calm flight: 0 always full, 1 calm dims (the ring and the side panels fade back), 2 minimal (calm "
      "flight hides the side panels and the ring; anything that changes brings its part back for a few seconds)"},
@@ -2689,12 +2884,20 @@ static const settings::Def kOptions[] = {
      "the game's wireframe views in the target card and the ship panel where they can be kept (else flat icons)"},
     {"hud_transition", settings::Int, &g_opt.hudTransition, 0, 400,
      "advanced: how long HUD 2 takes to fade in when you switch to the controller, in milliseconds"},
+    // HUD 2's layout presets (docs\UI_HUD2_PRESETS.md 6 step 4, the plumbing): not in UI_SPEC.json's rows yet, so the
+    // options page lists it only with show_advanced (raw, CONTROLLER tab) until the presets are released (the owner's
+    // frames per preset first: 6 step 8). 0.2.0 caps it at 1: Speedrun (2) and Guided (3) are not built and drew as
+    // Standard; raise the cap as each preset's layout lands (hud2_preset.h keeps their ids)
+    {"hud_preset", settings::Int, &g_opt.hudPreset, 0, 1,
+     "experimental: HUD 2's layout preset - 0 Standard (default: today's HUD 2), 1 Focus (a calmer HUD that shows less "
+     "until it matters); Speedrun and Guided are planned"},
     {"maneuver_button", settings::Bool, &g_opt.maneuverButton, 0, 1,
      "the fifth button on the maneuver bar (keyboard and mouse HUD) toggles the autopilot"},
-    // Extended HUD 2 (docs\UI_HUD2_EXTENDED.md 9-10; the SKIN track): 0 CLASSIC (default), 1 HUD 2
+    // HUD 2 over the menus (formerly Extended HUD 2, docs\UI_HUD2_EXTENDED.md 9-10; folded into HUD 2 in 0.2.0): 1 HUD 2
+    // (default), 0 CLASSIC; applies only while hud_style is not 0
     {"ui_style", settings::Int, &g_opt.uiStyle, 0, 1,
-     "The look of the menus, rooms and dialogs: Classic = the game's own; HUD 2 = FLvibed's HUD 2 skin over the same "
-     "screens (the game's controls stay as they are)"},
+     "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (default; the "
+     "game's controls stay as they are); Classic = the game's own"},
 };
 
 static const size_t kOptionCount = sizeof(kOptions) / sizeof(kOptions[0]);
@@ -2794,7 +2997,8 @@ std::string SetOption(std::istream& in)
         return "unknown option " + name;
     if (value.empty())
         return name + "=" + settings::Value(*d);
-    settings::Apply(*d, value);
+    if (!settings::Apply(*d, value))
+        return "bad value for " + name + ": " + value + " (kept " + settings::Value(*d) + ")";
     return "ok " + name + "=" + settings::Value(*d) + " (live; 'config save' to keep)";
 }
 

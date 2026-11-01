@@ -36,6 +36,14 @@ call the previous pointer (CLAUDE.md "Hooks chain"), and every address it uses i
 (core\flexe.h), so a patched spot fails closed instead of crashing. Exception handled since 25 Oct 2026: a hooker that removes and re-writes its own jump on every call (FLUF,
 below) would erase a jump chained after it, so FLvibed hooks that hooker's handler instead (either load order).
 
+## Mods that replace game recordings (29 Oct 2026)
+The subtitles recognise what plays by the file, not only by its name: the intro movies by duration and size
+(`subtitles\src\impl\movie.cpp`), the scene mixes by the size of the file a `gf_sounds.ini` nickname resolves to
+(`mixcues.cpp` CheckFiles: the 21 vanilla `mix_*` recordings, identical in HD Edition 0.7.1). A mod's own recording
+under a vanilla name (Crossfire ships its own mixes) gets no subtitles instead of the wrong ones; the FLSubtitles log
+names it. Note the nickname is not the file name (`mix_s051a` plays `mix_s051xa.wav`). Vanilla 1.1's binary (BINI)
+`gf_sounds.ini` is decoded too (core's ini reader, 29 Oct 2026: all 19 judged on instance vanilla11).
+
 ## Plugins that change what FLvibed reads or plans
 
 | Plugin (adoxa) | What it changes (from its source) | FLvibed |
@@ -49,6 +57,7 @@ below) would erase a jump chained after it, so FLvibed hooks that hooker's handl
 | Console | single-player command console (HDE loads it) | the harness uses it (Send-FLConsole) |
 | Damage Per Fire, Critical Hit, Healing, Random Damage | how damage is dealt | the combat model's damage numbers would need the same rules (not modelled) |
 | Lane / jump / dock plugins (Trade Lane Fail, Jump Out Point, Random Jumps, Dock Key) | lane failures, jump exits, locked docks | travel re-plans on disruption and after jumps; a failed lane looks like a disruption (not tested) |
+| The multiplayer LAN list's IPv6 fix (HD Edition's exe, FLUF's ClientPatches) | the list skips hosts whose address is not IPv4 (Freelancer.exe 0x5ACF6A) | FLvibed ships the same fix (the owner, 28 Oct 2026) and writes it only over vanilla 1.1's own bytes: HDE's exe, FLUF (either load order: the same 13 bytes) or any other content at that spot is left as it is and logged ("LAN list: ... left alone"); verified on a vanilla 1.1 client (it connected) |
 
 ## FLUF (Freelancer Universal Framework, The Starport) - tested build nightly-2026-10-16-03-03: verified in game in both load orders (A3, 26 Oct 2026), with recorded FLUF conflicts
 Full analysis, sources and the test plan: `docs\research\fluf.md` "FLUF in play" (the nightly = FLUF 627ea2c, FLSDK
@@ -70,8 +79,9 @@ evidence: `research\experience\runs\fluf_nightly_2026-10-25\TABLE.md`. In brief:
 | FLUF's own effects (recorded) | its first run sets the resolution to the screen size (#111); its always-on camera fixes make the chase camera follow more loosely (the ship leaves the frame in hard turns) | same |
 
 Step 2 (26 Oct 2026, TABLE.md "Step 2"): the lane law read in both orders (no ride needed: `lanelaw`); the hit cues'
-`hitlook: 0 effects` is vanilla 1.1's binary (BINI) DATA inis, with or without FLUF (FLvibed's ini reader reads text
-only; HDE ships text) - a vanilla gap, not FLUF's. Not reached: FLUF's toasts, the mission briefing's map. Recorded: the
+`hitlook: 0 effects` is vanilla 1.1's binary (BINI) DATA inis, with or without FLUF (FLvibed's ini reader read text
+only then; HDE ships text) - a vanilla gap, not FLUF's. Since 29 Oct 2026 the reader decodes BINI (`core\game\ini.cpp`):
+the gap should be closed - not yet seen in a vanilla fight. Not reached: FLUF's toasts, the mission briefing's map. Recorded: the
 game's own target label at the screen's top-left corner in A3 frames where FLUF's camera showed no own ship (not
 FLvibed's drawing; not reproduced).
 
@@ -295,6 +305,7 @@ byte patch on the instance's exe copy (file 0x1B16CC = 0; the same bytes as HDE'
 | Feature | Verdict | Why / evidence |
 |---|---|---|
 | Startup | works | both modules up, symbols 187 / 187 v1.1 (0 by search, 0 unresolved), nothing refused except the maneuver bar shift ("no HudShift relocation": HudShift is HDE's) |
+| The autopilot's universe tables (minefields, damage zones, lethal planet / sun cores, dock rings, encounter levels) | works (since 8c5c9a3, 29 Oct 2026; before: empty on vanilla - the BINI system files read as nothing) | instance vanilla11c, build a08c223, SaveC705 in space: debug `obstacles 60000` lists 4 lethal zones, `area` a zone's level 2; host-free: tests\universe_test.cpp reads 53 vanilla systems (115 lethal spheres). **The M01a leg on vanilla: PASS 484 s** (HDE's best 479; HDE's start save Save7e1c.fl loads on vanilla; the lethal guard steered off Pittsburgh's 1,600 m core as on HDE; `flleg.ps1 -Instance vanilla11c`, 29 Oct 2026) |
 | Startup movies: skip, fit | works | skipped natively; `fl_intro_vanilla` recognised (226.8 s), fitted 1280x528 in 1280x960 |
 | Intro movie subtitles | works (since FIX-VIEWS, 25 Oct 2026) | was: lines active, overlay window present, no text seen - not reproduced in the follow-up (the first run already showed them, with the FIX-TEXT font loader in the build); now drawn in a child window of the game window (window capture and the taskbar thumbnail show them), transitions at the display rate (`subtitles\docs\DISPLAY_PLAN.md` "Movies"; `research\experience\runs\fix_views_2026-10-25\movie_vanilla`) |
 | Main menu, pad prompts | works | "A SELECT" pill (`01_mainmenu_pad`) |

@@ -1,6 +1,6 @@
 # User-verified subtitle text (listened in game / to the clip). Highest priority in the merge.
 # id is matched case-insensitively; voice "*" = every copy of the line (some lines exist as a bank entry and a story sound).
-id	voice	text	source	note
+id	voice	text	source	note	when	by
 $BGCS_Base_Run_By	rvp003	a Bretonia Armed Forces Battleship	user picked: Draft (matches other characters)	
 $BGCS_Trent_D02cP02_2	trent_voice	I thought I'd take another look around.	user picked: Speech to text	
 $BGCS_Trent_D02eP02_1	trent_voice	Mm-hmm. I'm Trent.	user picked: Speech to text	
@@ -281,6 +281,7 @@ DX_M04_0120_ROGUE_LEADER	*	This is the Liberty Navy! Cut your engines and prepar
 DX_M04_0165_JUNI	*	The Unity is blocking the entrance! We're surrounded!	user picked: Draft (judged: script)	
 DX_M04_0200_WALKER	*	Walker here! We'll take care of the battleship.	user picked: Draft (recording wording)	
 DX_M04_0215_UNITY	*	Code red! I repeat: Code red! This is the Battleship Unity! We are under attack and taking heavy casualties. In need of immediate assistance, all available units please approach sector Manhattan01_01, I repeat, please approach sector... [static]	user typed	
+DX_M04_0217_UNITY	*	All hands abandon ship! I repeat, this is a general order! All hands abandon– [static]	user typed	kept exactly as typed	2026-11-01T00:07:43	user
 DX_M04_0340_KING	*	Liberty Cruisers on an intercept course. Range: 10000m and closing. Projected intercept: 30 seconds.	user picked: Draft (judged: script)	
 DX_M04_0354_JUNI	*	We made it! The Badlands will shield us from their scanners. I don't think the Navy will follow us in here.	user picked: Draft (recording wording)	
 DX_M04_0360_KING	*	Damn it! That was close. I think we managed to shake 'em.	user typed	
@@ -472,7 +473,10 @@ DX_M13_0970_JUNI	*	All right, it's up to us.	user picked: Conventions applied
 DX_M13_1040_KING	*	Good shot, Trent! Damn it, no effect yet. Take out another one!	user picked: Draft (recording wording)	
 DX_M13_1060_ORILLION	*	Trent! I'm picking up an energy surge from your ship! Seven hundred rels and rising!	user picked: Draft (judged: script)	
 dx_s003x_0501_Trent	*	Oh, why's that?	user picked: Script (by line id)	
+dx_s003x_0601_manhtn_bar	*	She's LSF. All business... if it's a job you're wanting that is.	user picked: Draft (script)		2026-11-01T00:01:33	user
 dx_s003x_0801_Trent	*	Ugh!	user picked: Draft (merged)	
+dx_s004x_0101_juni	*	I understand what you're saying, but I don't have nearly enough people.	user typed		2026-11-01T00:02:01	user
+dx_s004x_0202_Li_diplomt	*	Oh, with groups like "The Order" taking more and more liberties – indeed now threatening our profits...	user picked: Draft (script)		2026-11-01T00:02:22	user
 dx_s004x_0203_Li_diplomt	*	Some in the government feel that we need to increase our patrols in these areas–	user typed	spelling/punctuation conventions (data/style_rules.tsv)
 dx_s004x_03a01_Trent	trent	Ahem...	user picked: Script (by line id)	
 dx_s005a_0401_juni	*	Well, I found this ship for you. It's very basic and you won't have jump access yet, but this should be good enough for now.	user picked: Speech to text	
@@ -538,6 +542,7 @@ dx_s037a_0901_Trent	*	Uh-huh. And let me tell you, he's a tough old bird. He nea
 dx_s037a_1101_sinclair	*	Damn it! I am mad as hell at you. What happened? Where have you been?	user picked: Draft (recording wording)	
 dx_s037a_1202_Quintaine	*	Not long after you made your discovery, things... began to happen.	user picked: Draft (recording wording)	
 dx_s037a_1801_Trent	*	Look, I hate to rush this reunion along...	user picked: Draft (script)	
+dx_s037a_2201_Tobias	*	Mmm, nice looking chap. Sorry, haven't seen him.	user typed		2026-11-01T00:02:43	user
 dx_s037a_2402_Tobias	*	I've already told you the man you're looking for isn't here. So unless you'd like an education in foreign policy	user picked: Draft (your earlier pick)	
 dx_s037c_0301_Tobias	*	Trent, you can't stay here.	user picked: Draft (judged: script)	
 dx_s038x_0501_Quintaine	*	Quiet! We just need to find Kress.	user picked: Draft (recording wording)	
@@ -551,12 +556,16 @@ dx_s038x_3501_juni	*	If that's so, then why all of the attacks?	user picked: Dra
 dx_s038x_3701_Kress	*	For now, please accept my hospitality in the spirit in which it is offered.	user picked: Draft (judged: script)	
 dx_s038x_3801_Quintaine	*	Well, if I'm right, there's something we've overlooked. We need the Proteus Tome.	user picked: Draft (judged: script)	
 dx_s038x_4001_sinclair	*	It's a piece of parchment that rests in the Natural History Museum in Kusari. You see, the Artifact and the Panels have given us a lot of	user picked: Draft (recording wording)	
+dx_s039x_0802_juni	*	But to get to them we're gonna have to split up for a while.	user typed		2026-11-01T00:03:02	user
+dx_s039x_1001_juni	*	You should try to fit in a little, maybe get some work. By the sound of things, this may take a while.	user picked: Draft (script) = Script		2026-11-01T00:03:22	user
 dx_s045a_0301_juni	*	I just had to dig a little deeper than I thought.	user picked: Draft (script)	
 dx_s045a_0302_juni	*	Trent, I heard from Lord Hakkera. He says that the Proteus Tome and	user picked: Draft (your earlier pick)	
 dx_s045a_0304_juni	*	Hakkera can't help us.	user picked: Draft (judged: script)	
 dx_s045a_0502_juni	*	His position gives him power, but it also limits him. There's only so much he can do before he violates his station.	user typed	
+dx_s045a_0503_juni	*	Anyway, I'm onto something, but you're going to have to trust me on this one.	user picked: Draft (script) = Script		2026-11-01T00:03:48	user
 dx_s045d_0501_juni	*	So you're saying you're ready to trust me now?	user picked: Speech to text	
 dx_s046x_0702_juni	*	Ozu is living proof of that. My father knew this.	user picked: Draft (script)	
+dx_s046x_1001_Ozu	*	I'm afraid we have been deceived.	user picked: Draft (script) = Script		2026-11-01T00:05:01	user
 dx_s046x_1003_Ozu	*	He was not on the transport as we were led to believe. Something has changed.	user picked: Speech to text	
 dx_s050a_0201_Ozu	*	As we feared, Governor Tekagi is indeed alive. I am told that he has secretly left the palace	user picked: Draft (recording wording)	
 dx_s050d_0101_Ozu	*	I must say, I am surprised to see you again.	user picked: Speech to text	
@@ -582,6 +591,7 @@ dx_s064x_0101_juni	*	Impressive, isn't it?	user picked: Draft (script)
 dx_s064x_0902_vonclaussn	*	He is a fine addition to your group. Thank you again.	user picked: Speech to text	
 dx_s064x_1001_juni	*	Come on. It's time I reacquainted you with an old friend.	user picked: Draft (recording wording)	
 dx_s064x_2101_Orillion	*	That's right. They've been taking over human beings for some time now; controlling them.	user picked: Draft (judged: recording)	
+dx_s067a_0201_King	*	Ah, more of the same.	user picked: Speech to text		2026-11-01T00:05:27	user
 dx_s067b_0202_Orillion	*	and have been monitoring the President since her abduction. She's being held in the Alaska System.	user picked: Draft (recording wording)	
 dx_s067b_0701_juni	*	What's her status?	user picked: Draft (script)	
 dx_s068x_0601_juni	*	C'mon, let's get to work.	user typed	

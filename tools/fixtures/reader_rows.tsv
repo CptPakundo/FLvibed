@@ -1,0 +1,9 @@
+date	label	save	outcome	secs	boot	fps	commit	instance	detail	want_full	want_stopat	why
+2026-10-31 02:59	M13-pr1-b	Save3989.fl	PASS	779	14	161	bb236f71	2	SUCCESS total 779 s	1	0	a full leg on a numbered HDE mirror
+2026-10-31 03:00	M13-x	Save3989.fl	PASS	790	14	161	bb236f71		SUCCESS total 790 s	1	0	the main HDE install (empty instance)
+2026-10-31 02:34	M13-tr0-b	SaveS415.fl	PASS	83	12	193	cfe09fd	1	UNTIL total 83 s	0	1	a stop-at run is never a full leg (78752d8 / d9f445a: M13's 135 s 'best')
+2026-10-30 12:00	M13-st	Save3989.fl	PASS	135	12	190	abc1234	3	UNTIL total 135 s	0	1	a stop-at run from the leg's start save, the q3s2 case
+2026-10-31 02:37	M13-ab9-b	Save3989.fl	FAIL	105	13	88	cfe09fd	2	FAILED (FAILED: 688 7358921 player-death) total 105 s; mode=menu	0	0	a death
+2026-10-30 12:00	M13-v	Save3989.fl	PASS	700	12	190	abc1234	vanilla11c	SUCCESS total 700 s	0	0	vanilla 1.1 is another game build (hde_row)
+2026-10-22 11:46	M13-from-st03	M13_ck_st03.fl	STOPPED	0	0	0	661a511	5	stopped by the user (no result)	0	0	stopped by the user
+2026-10-30 12:00	M13-f	Save3989.fl	FAIL	700	12	190	abc1234	1	SUCCESS total 700 s	0	0	outcome decides: a SUCCESS detail on a FAIL row is no pass

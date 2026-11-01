@@ -1,0 +1,407 @@
+{
+ "_about": "Q7 step 1 (docs/UI_HUD2_PRESETS.md 6 step 1): the HUD 2 presets' layout data as a top-level spec key. Apply to docs/UI_SPEC.json and to the artifact's ui/spec document with specpatch.py (op 'top'); the mock-up's JS needs none of it (the page carries unknown top-level keys through applySpec and saves them back).",
+ "top": {
+  "hud2_presets": {
+   "_about": "HUD 2's four layout presets as docs/UI_HUD2_PRESETS.md revision 2 decides them (the owner, 29-30 Oct 2026; NOT built: section 6 step 8). Units: fractions of screen height H at 16:9, k = 1, from the top-left (the screen is 1.778 H wide, centre 0.889, 0.50); a field ending _w is a fraction of W; d* fields are offsets from the screen centre; a budget is a fraction of the screen's area ('boxed' = plates only), *_area in H squared. Every number's 'src' names its section of docs/UI_HUD2_PRESETS.md ('PRESETS <section>'); a value from another doc says so. 'open' lists what the doc leaves open (null fields = not given). Generated into core/ui_meta.h (namespace uimeta::hud2p) by tools/ui_meta.py: the shared numbers, each preset's complete zones ('lint': true), boxed-budget caps, prompt caps, the value ids; the lint (controller/src/impl/hud2_lint.h) reads Standard's from there.",
+   "doc": "docs/UI_HUD2_PRESETS.md revision 2 (29 Oct 2026; section 7 answered 29-30 Oct 2026)",
+   "shared": {
+    "screen": {"w": 1.778, "cx": 0.889, "cy": 0.5, "k": 1, "src": "PRESETS top (units)"},
+    "margins": {"side_w": 0.05, "top": 0.05, "bottom": 0.05, "src": "PRESETS 1.1"},
+    "corners": {"top_left": "where you are going", "top_right": "what you look at", "bottom_left": "your ship", "bottom_right": "what you fire", "src": "PRESETS 1.1"},
+    "native_untouched": ["reticle", "lead pip", "target brackets with their name / distance label and bars", "missile lock", "damage arcs", "off-screen arrows"],
+    "native_untouched_src": "PRESETS 1.1",
+    "lb_hints": {"alpha_calm": 0.45, "alpha_combat": 1.0, "when": "no target selected", "decay": false, "src": "PRESETS 1.1"},
+    "text": {"floor": 0.024, "floor_px": 14, "unplated_min": 0.026, "row_pad": 0.008, "row_rule": "row height = max(k x design row, clamped text + 0.008)", "src": "PRESETS 1.2 Text"},
+    "arc_thickness": {"min": 0.0065, "per_k": 0.007, "rule": "max(0.0065, 0.007 x k)", "src": "PRESETS 1.2 Text"},
+    "glyphs": {"prompt_h_min": 0.032, "prompt_h_max": 0.036, "badge": "about half the element's height", "badge_min": 0.032, "badge_min_beside_h": 0.030, "src": "PRESETS 1.2 Glyphs"},
+    "motion": {"panel_tau_s": 0.25, "card_tau_s": 0.12, "alert_tau_s": 0.15, "rows_fade_in_at": 0.8, "crossfade": false, "src": "PRESETS 1.2 Continuous motion"},
+    "cues": {"flash_max_hz": 3, "readout_max_hz": 4, "src": "PRESETS 1.2 Cues"},
+    "hysteresis": {"opacity_linger_s": 2, "form_linger_s": 6, "enter_km": [2, 4], "leave_km": [2.4, 4.5], "farther_hostile": "grows only the card", "src": "PRESETS 1.2 Hysteresis"},
+    "combat_entry": {"on": ["hostile in range", "real hull or shield hit (the hit-flash test)", "inbound missile"], "src": "PRESETS 1.2 Combat entry"},
+    "zone_exempt": ["alert", "peek", "subtitles.dialogue", "subtitles.nametab"],
+    "zone_exempt_note": "component names: the alert card (<= 3 s), a peek, the subtitles' dialogue panel and name-tab body (drawn by the subtitles, not HUD 2's kit); the K&M click-pinned contact list ('list') only in S2 (a zone's exempt_kbm)",
+    "zone_exempt_alert_max_s": 3,
+    "zone_exempt_src": "PRESETS 1.3 Exemptions by name",
+    "native_s1": {"occupants": ["bracket label", "objective banner"], "src": "PRESETS 1.3 Native S1 occupants"},
+    "core": {"r": 0.045, "rule": "inside only native markers", "src": "PRESETS 1.3 Centre stack"},
+    "speed": {"dy": 0.058, "h": 0.030, "src": "PRESETS 1.3 Centre stack"},
+    "ship_sector": {"at": "6 o'clock", "half_deg": 55, "ship_top": [0.667, 0.685], "chevrons": "draw on top; the crossed text dims", "text_dim": 0.3, "hit_flash": "above the throttle arc", "src": "PRESETS 1.3 Centre stack"},
+    "keep_out": {"x0_w": 0.40, "x1_w": 0.60, "y0": 0.63, "y1": 0.92, "applies_to": "new text", "sev": "WARN", "src": "PRESETS 1.3 Ship keep-out"},
+    "pick_radius_rule": {"rule": "the RS-click pick radius = the radius the preset draws (RingRadius(), also TARGET AHEAD)", "src": "PRESETS 1.3"},
+    "title_safe": {"frac": 0.90, "sev": "WARN", "src": "PRESETS 6 step 3 (title-safe 90 % as WARN; the rule: docs/research/controller_ui.md 'HUD rules' 1 / IDEAS U35)"},
+    "centre_gap": {"min": 0.01, "src": "PRESETS 6 step 3 (centre-stack overlaps); the 0.01 H gap: docs/research/controller_ui.md 'HUD rules' 8 / IDEAS U35"},
+    "budget_default": {"frac": 0.10, "src": "PRESETS 6 step 3 (WARN: budgets); the cap where a preset names none for a context: docs/research/controller_ui.md 'HUD rules' 8 / IDEAS U35 (~10 %)"},
+    "today": {"boxed_calm": 0.097, "boxed_combat": 0.186, "src": "PRESETS top, 3"},
+    "functional_floor": {
+     "rows": [
+      {"gap": "capital sub-target", "fix": "card row 'PART <name> . bar . 40 %' while a part is selected (+0x534), else 'n PARTS'; pad: contextual TARGET PART wheel entry (USER_NEXT_SUBTARGET, wraps), no default button; K&M: Ctrl+S / Shift+S, a click on the row; capital targets keep their wireframe; a fitted torpedo gets its own loadout row"},
+      {"gap": "protected ship", "fix": "first row of the escort list (yellow diamond, hull %); alert PROTECT <name> 50 % / 25 %; threat rows attacking it carry a diamond"},
+      {"gap": "mission timer", "fix": "own field on the headline line 'TIME 1:42', amber under 30 s plus the word; never merged or paused", "amber_under_s": 30},
+      {"gap": "objective change mid-fight", "fix": "the native banner announces it; the headline takes the new text when the banner ends + pill TARGET OBJECTIVE for 6 s", "pill_s": 6},
+      {"gap": "autopilot hand-back", "fix": "hud_ap_cue: reticle-lane state word 'YOU HAVE CONTROL . <reason>' 2 s, 'AUTOPILOT' 1 s on engage", "handback_s": 2, "engage_s": 1},
+      {"gap": "turret / rear view", "fix": "TURRET VIEW chip + EXIT TURRET (an answer); 'REAR VIEW' state word while latched"},
+      {"gap": "pad combat with no target", "fix": "the threat block alone in the card slot, LB hints merged, 2 rows + '+n', attacking-you first then distance; a bearing arrow only where no native arrow points", "rows": 2, "arrow_h": 0.020},
+      {"gap": "abort under fire", "fix": "combat context line by priority: hand-back / EXIT TURRET > the maneuver's abort > REVERSE > TURRET"},
+      {"gap": "looting", "fix": "reticle lane '[X] TRACTOR 3 . ROOM 2' (ROOM amber when short); 'CARGO FULL . 3 ITEMS' amber, no glyph"},
+      {"gap": "lane / cruise disruption", "fix": "'LANE DISRUPTED' from the lane's result code, answer CRUISE with its glyph", "verified": false}
+     ],
+     "fight_form_rule": "everything a fight needs lives in the fight form (hold room with loot in reach, launcher + torpedo ammo, CM / battery / nanobot counts, the sub-target row); the peek works in combat but is never required",
+     "src": "PRESETS 1.4"
+    },
+    "alerts": {"priority": ["HULL CRITICAL", "MISSILE INCOMING", "SHIELD FAILING", "PROTECT", "CRUISE / LANE DISRUPTED", "CARGO FULL"], "queue_hz": 10, "second_line_h": 0.034, "show_s": 3, "lit_while_condition": true, "plate_w": 0.50, "plate_h": 0.05, "budget_area": 0.025, "second_channels": [{"state": "MISSILE INCOMING", "channel": "the FLARE answer in the reticle lane (no count)"}, {"state": "HULL CRITICAL", "channel": "the hull flash"}], "letterbox": {"show": ["HULL CRITICAL", "MISSILE INCOMING"], "where": "the lower bar", "queue": 2, "revalidate_after": true}, "wake": "an alert wakes the panel holding its answer", "src": "PRESETS 1.5"},
+    "prompts": {
+     "kinds": [
+      {"kind": "state", "what": "what is happening now", "decays": false, "glyph": false, "where": "at the instrument it describes"},
+      {"kind": "answer", "what": "the input that resolves a live situation (FLARE, TAKE CONTROL, EXIT TURRET, a maneuver's ABORT in combat, CRUISE after a disruption, the LB hints)", "decays": false, "where": "the reticle lane or the alert plate"},
+      {"kind": "teaching", "what": "this button does that here (DOCK, LANE, JUMP, TRACTOR, CRUISE in calm, FORMATION, GOAL PANEL, TARGET PART)", "decays": true, "where": "the context line or a badge on its element"}
+     ],
+     "lanes": ["reticle lane (answers, cruise, tractor)", "context line (bottom centre; teaching)", "target lane (LB hints with no target, 'RS NEXT . x2 CLEAR' with one)", "alert answers", "peek legend (Guided)"],
+     "retire_key": "label @ context @ device family",
+     "returns": {"stall_example": "a dock target in range, < 20 m/s for 10 s, no dock started", "stall_speed_ms": 20, "stall_s": 10, "never_stalls": ["lanes", "queues", "formation", "jump", "autopilot", "cruise", "letterbox", "dialogue"], "device_switch_after_s": 60, "device_switch_hold_s": 1, "days_without_play": 14, "also": ["first device switch in a session", "a rebind of that action", "a peek", "Show all hints again"]},
+     "store": "a small Install\\ file, written on dock, undock and exit only",
+     "src": "PRESETS 1.6"
+    },
+    "reveal": {"wake_s": 4, "peek_s": 3, "peek_pin": "a second peek inside the window pins it until the next", "peek_pad": "VIEW double-tap (every controller preset; the hub opens 0.3 s later)", "peek_pad_delay_s": 0.3, "peek_pad_wheel": "SHOW HUD wheel entry", "peek_dualsense": "Create", "peek_kbm": "USER_MINIMIZE_HUD (Backspace by default)", "objective_kbm": "DISPLAY CURRENT OBJECTIVE (N)", "hover_dwell_s": 0.35, "hover_when": "free cursor only (mouse flight off), never while throttle or fire input is active", "auto_wake": ["a hit -> the arcs", "credits / cargo change -> the hold strip", "ammo / count change or a consumable press -> that slot", "weapon-group switch -> the group row", "new target -> the card", "maneuver start / end -> the chip", "new objective -> the banner, then the headline", "device switch -> the context's teaching glyphs", "space entry -> one auto-peek, never in combat"], "hud_reveal": {"0": "always full (nothing hidden by context)", "1": "context + peek", "2": "peek only"}, "src": "PRESETS 1.6 Reveal"},
+    "no_duplication": {
+     "rule": "one value, one place at a time; a value may move (handover), never show twice; the only exception is a declared second channel of a critical state",
+     "pairs": [
+      {"pair": 1, "what": "target card vs the native bracket label + bars", "decision": "A: the native bracket is the only home of name, distance and bars while the target is on screen; off screen they hand over to the card's top line by a morph", "owner": "answer 3: A"},
+      {"pair": 2, "what": "nav headline vs the native objective banner", "decision": "the banner owns the event, the headline the standing home (old text at 30 % while the banner shows, then the morph); no NEW OBJECTIVE alert", "headline_dim": 0.3},
+      {"pair": 3, "what": "off-screen direction", "decision": "the native off-screen arrows only; a threat row's bearing arrow only where no native arrow points; no ellipse"},
+      {"pair": 4, "what": "own ship", "decision": "exact values only in the ring / arcs (numbers below 40 %); the ship panel never shows own bars; hit direction = an arc segment at the bearing, outside the keep-out"},
+      {"pair": 5, "what": "ammo", "decision": "one home per count; Focus moves the active launcher's count to the aim point ('MSL 12'); the FLARE mirror carries no count"},
+      {"pair": 6, "what": "Speedrun's flank", "decision": "TGT distance only while the target is off screen; on screen the closing rate"}
+     ],
+     "src": "PRESETS 1.7"
+    },
+    "aspect": {
+     "4:3": {"k": 0.8, "rows_per": 1.2, "text": "clamped at the floor", "hold_cascade": true, "s1_half": "the gap from the centre to the card's left edge - 0.01", "s1_card_gap": 0.01},
+     "5:4": {"k": 0.8, "rows_per": 1.2, "text": "clamped at the floor", "hold_cascade": true, "s1_half": "the gap from the centre to the card's left edge - 0.01", "s1_card_gap": 0.01},
+     "16:10": {"k": 0.9},
+     "21:9": {"hud_frame": 1, "frame": "the corners anchor to a centred 16:9 frame", "frame_half": 0.80, "bus": "the frame and chatFree on the HUD bus (no HostApi bump)", "chat": "chatFree.y1 pinned per preset; the comm feed grows upward from the bottom"},
+     "32:9": {"hud_frame": 1, "frame": "the corners anchor to a centred 16:9 frame", "frame_half": 0.80},
+     "src": "PRESETS 1.8"
+    },
+    "kbm": {"contact_list": {"header": true, "filters": 5, "rows_max": 10, "zone": "S2"}, "contact_key": "mirrors the wheel action", "maneuver_row": "stays reachable (a row, or a dim MANEUVERS tag)", "keycaps": "from the game's keymap", "retire_per": "device family", "peek": "USER_MINIMIZE_HUD", "src": "PRESETS 1.8"},
+    "verification": {"display_matrix": ["1920x1080", "3840x2160", "1920x1200", "1600x1200", "1280x1024", "2560x1080", "3840x1600", "5120x1440"], "scale_text_max": 1.18, "contrast_min": 4.5, "contrast_frames": ["M03 nebula", "a bright planet", "sun glare"], "cost_ms_max": 0.3, "cost_ms_today": 0.12, "src": "PRESETS 6 Verification"}
+   },
+   "presets": [
+    {
+     "id": "standard", "index": 0, "name": "Standard", "tagline": "the data ring", "default": true,
+     "identity": "today's HUD 2, refined: a segmented ring (shield left, hull right, power and throttle below, speed inside); the corners have a compact calm form and a designed fight form",
+     "src": "PRESETS 2.1",
+     "reticle": {"kind": "data ring", "ring_r": 0.10, "arc_w": 0.007, "pick_r": 0.10, "numbers": "below 40 %", "calm_ring_alpha": 0.40, "calm_speed_alpha": 0.60, "hold_full_calm_when": ["the shield recharges", "hull < 35 %"], "offline_shield": "the dim track fills back as it rebuilds", "cruise_charge": "speed and charge seconds show", "src": "PRESETS 2.1 Reticle; 3 pick radius"},
+     "cruise_row": {"place": "reticle lane", "y": 0.692, "state_word": "always (CRUISE CHARGING 3.2 / CRUISE)", "glyph": "teaching", "retire_after": 3, "returns_as_answer": "after LANE / CRUISE DISRUPTED", "src": "PRESETS 2.1 Cruise prompt; 7 answer 4"},
+     "zones": [
+      {"id": "S1", "lint": true, "shape": "rect", "anchor": "centre_to_card", "x0": 0.469, "y0": 0.20, "x1": 1.309, "y1": 0.80, "half_max": 0.42, "card_gap": 0.02, "card_gap_narrow": 0.01, "rule": "cx +- min(half_max, the card's left edge - cx - card_gap); narrower than 16:9 card_gap_narrow; wider: the 16:9 frame keeps 0.42", "note": "y0 0.20 allows the dialogue panel", "src": "PRESETS 2.1 Zones; 1.8 (4:3, 21:9)"},
+      {"id": "S2", "lint": true, "shape": "rect", "anchor": "rail", "x0": 1.309, "y0": 0.40, "x1": 1.689, "y1": 0.78, "rule": "from S1's right edge to the card's right edge; empty", "exempt_kbm": ["list"], "src": "PRESETS 2.1 Zones; 1.3 (the K&M list, S2 only)"},
+      {"id": "core", "lint": true, "shape": "circle", "anchor": "centre", "r": 0.045, "src": "PRESETS 1.3"}
+     ],
+     "contexts": {
+      "calm": {
+       "elements": [
+        {"id": "nav", "x": 0.089, "y": 0.05, "w_max": 0.38, "h_max": 0.30, "h_max_kbm": 0.32, "headline_h": 0.032, "what": "free text", "src": "PRESETS 2.1 Calm"},
+        {"id": "card", "form": "compact", "x0": 1.329, "x1": 1.689, "y0": 0.05, "w": 0.36, "h_on_screen": 0.085, "h_off_screen": 0.12, "rows_on_screen": ["class . faction . rep", "PART"], "rows_off_screen_add": ["name . distance"], "src": "PRESETS 2.1 Calm; 1.7 pair 1"},
+        {"id": "hints", "where": "the card's top line, right-aligned", "glyph_h": 0.032, "alpha": 0.45, "src": "PRESETS 2.1 Calm"},
+        {"id": "ring", "where": "centre", "r": 0.10, "alpha_ring": 0.40, "alpha_speed": 0.60, "src": "PRESETS 2.1 Calm"},
+        {"id": "ring.lane", "y": 0.692, "what": "cruise row, [X] TRACTOR n . ROOM", "src": "PRESETS 2.1 Calm"},
+        {"id": "comm", "x_max": 0.469, "bottom": 0.76, "line_h": 0.034, "what": "the comm feed, left rail", "src": "PRESETS 2.1 Calm"},
+        {"id": "context", "y": 0.915, "pill_h": 0.044, "pills_max": 3, "src": "PRESETS 2.1 Calm"},
+        {"id": "ship", "form": "compact", "x0": 0.089, "x1": 0.389, "y0": 0.83, "y1": 0.95, "w": 0.30, "h": 0.12, "thumb": 0.10, "thumb_formation": 0.16, "src": "PRESETS 2.1 Calm"},
+        {"id": "loadout", "form": "compact", "x0": 1.329, "x1": 1.689, "y0": 0.82, "y1": 0.95, "w": 0.36, "h": 0.13, "cross": 0.11, "src": "PRESETS 2.1 Calm"}
+       ]
+      },
+      "combat": {
+       "morph": "PRESETS 1.2 (rectangle morph, form hysteresis)",
+       "elements": [
+        {"id": "card", "form": "full", "x0": 1.329, "w": 0.36, "h_on_screen": 0.165, "h_off_screen": 0.215, "grows": "down only, same left edge", "src": "PRESETS 2.1 Combat"},
+        {"id": "threats", "where": "under the card", "w": 0.36, "h": 0.11, "header_h": 0.044, "header": "target lane + filter", "rows": 2, "rows_kbm": 3, "row_h": 0.032, "more": "+n", "src": "PRESETS 2.1 Combat"},
+        {"id": "ship", "form": "fight", "w": 0.36, "h": 0.15, "what": "view, escorts with the protected ship first", "src": "PRESETS 2.1 Combat"},
+        {"id": "loadout", "form": "fight", "w": 0.48, "h": 0.15, "what": "cross, RT groups, RB launcher, torpedo row", "src": "PRESETS 2.1 Combat"},
+        {"id": "nav", "what": "1 line + the timer field", "src": "PRESETS 2.1 Combat"},
+        {"id": "context", "pills_max": 2, "order": "by priority (1.4 abort row)", "src": "PRESETS 2.1 Combat; 1.4"}
+       ]
+      },
+      "cruise": {"same_as": "calm", "elements": [{"id": "ring.lane", "y": 0.692, "what": "CRUISE CHARGING 3.2 / CRUISE state word; the glyph a teaching glyph", "src": "PRESETS 2.1 Cruise prompt"}, {"id": "ring", "what": "speed and charge seconds during a charge", "src": "PRESETS 2.1 Reticle"}]},
+      "lane": {"elements": [{"id": "nav", "what": "chip + bar + ETA"}, {"id": "card", "scale": 0.75}, {"id": "context", "what": "ABORT LANE"}], "src": "PRESETS 2.1 Other contexts"},
+      "dock": {"elements": [{"id": "nav", "what": "chip + queue / bay"}, {"id": "context", "what": "ABORT DOCK"}], "src": "PRESETS 2.1 Other contexts"},
+      "formation": {"elements": [{"id": "nav", "what": "member list"}], "src": "PRESETS 2.1 Other contexts"},
+      "jump": {"elements": [{"id": "nav", "what": "countdown on the chip (the letterbox keeps it)"}], "src": "PRESETS 2.1 Other contexts"},
+      "autopilot": {"same_as": "calm", "elements": [{"id": "context", "what": "TAKE CONTROL pinned"}], "note": "travel counts as calm", "src": "PRESETS 2.1 Other contexts"},
+      "comms": {"elements": [{"id": "nav", "what": "the event part of the nav line yields to a comm line; TIME and FORMATION stay"}], "src": "PRESETS 2.1 Other contexts"},
+      "letterbox": {"elements": [{"id": "nav", "what": "the jump countdown chip stays"}, {"id": "alert", "what": "only HULL CRITICAL / MISSILE INCOMING, in the lower bar"}], "src": "PRESETS 2.1 Other contexts; 1.5"}
+     },
+     "budgets": {
+      "calm": {"pad": {"no_target": 0.059, "on_screen": 0.076, "off_screen": 0.083}, "kbm": {"no_target": 0.062, "on_screen": 0.079, "off_screen": 0.086, "note": "the threat header folded into the card"}, "cap": null},
+      "combat": {"pad": {"steady": 0.135, "steady_area": 0.240, "peak": 0.159, "cap_peak": 0.16}, "kbm": {"peak": 0.169, "cap_peak": 0.17}},
+      "subtarget_row": 0.006,
+      "note": "steady = target on screen; peak = target off screen + an alert (3)",
+      "src": "PRESETS 2.1 Budgets; 3"
+     },
+     "prompts": {"calm": {"pills": 3, "pairs": 5}, "combat": {"pills": 2, "pairs": 6}, "plus": "answers", "retire_after": 3, "src": "PRESETS 2.1 Prompts and reveal"},
+     "reveal": {"hud_reveal": 1, "peek": true, "wheel_peek_s": 0.3, "wheel_peek_in": ["calm", "travel"], "src": "PRESETS 2.1 Prompts and reveal"},
+     "open": [
+      "combat: the ship (0.36 x 0.15) and loadout (0.48 x 0.15) fight forms' anchors (the doc gives sizes only; corners by job, 1.1)",
+      "combat: the threat block's exact y (under the card) and the nav's one-line height",
+      "lane: the chip / bar / ETA geometry; the card at 75 % = scale or alpha",
+      "dock / formation / jump / comms: the chip's rows' geometry",
+      "letterbox: what else stays besides the jump chip and the two alerts",
+      "calm: no boxed-budget cap (only the design values 5.9 / 7.6 / 8.3 %): the lint uses the shared budget_default"
+     ]
+    },
+    {
+     "id": "focus", "index": 1, "name": "Focus", "tagline": "glass and edges",
+     "identity": "in calm the screen belongs to space: no ring, two thin split arcs, a bare centre; instruments at the rim; one input brings everything back",
+     "src": "PRESETS 2.2",
+     "reticle": {"kind": "split arcs", "arc_r": 0.12, "arc_deg": 50, "arcs": ["shield left", "hull right"], "pick_r": 0.12, "band_dy": 0.14, "band_y": [0.63, 0.65], "band": ["throttle word (BURN / KILL / REV)", "speed", "cruise state", "LOOT n", "combat: the active launcher's count 'MSL 12'"], "chevron_r": [0.15, 0.17], "hit": "a segment on the arc circle at the hit bearing", "hull_alpha_below_full": 0.40, "speed_shows_s": 3, "speed_change_frac": 0.20, "speed_change_hold_s": 0.5, "throttle_tick_segments": 3, "speed_continuous_in": ["protect", "formation", "dock", "goto", "lever resting 1-99 % (K&M, ACE)"], "power_arc": "steady through combat; in calm only during a cruise charge", "radius_rule": "from data: log the lead pip's screen radius in hud2 sim combat fights; keep the arcs off where it dwells", "src": "PRESETS 2.2 Reticle; 1.7 pair 5"},
+     "cruise_row": {"place": "under-arc band", "alpha_calm": 0.45, "retire_after": 2, "state_word": "stays", "src": "PRESETS 2.2 Cruise prompt"},
+     "zones": [
+      {"id": "core", "lint": true, "shape": "circle", "anchor": "centre", "r": 0.045, "src": "PRESETS 1.3 (every preset)"},
+      {"id": "clear", "lint": false, "shape": "rect", "anchor": "width_frac", "x0_w": 0.30, "x1_w": 0.70, "y0": null, "y0_rule": "topFree (the published top strip's bottom, live)", "y1": 0.82, "src": "PRESETS 2.2 Zones"}
+     ],
+     "contexts": {
+      "calm": {
+       "elements": [
+        {"id": "nav", "x": 0.089, "y": 0.05, "w_max": 0.48, "w_max_4_3": 0.36, "text_h": 0.030, "h": 0.08, "what": "headline 1 line + timer", "src": "PRESETS 2.2 Calm"},
+        {"id": "card", "form": "compact", "where": "top-right", "w": 0.34, "h_on_screen": 0.065, "h_off_screen": 0.095, "src": "PRESETS 2.2 Calm"},
+        {"id": "hints", "where": "top-right", "text_h": 0.026, "src": "PRESETS 2.2 Calm"},
+        {"id": "hold", "x": 0.089, "y": 0.93, "text_h": 0.026, "wakes_s": 4, "what": "hold strip", "src": "PRESETS 2.2 Calm"},
+        {"id": "loadout", "form": "fire strip", "where": "bottom-right", "hidden": true, "wakes": "on a change and on any lit alert slot", "src": "PRESETS 2.2 Calm"},
+        {"id": "context", "y": 0.915, "pills_max": 1, "src": "PRESETS 2.2 Calm"},
+        {"id": "comm", "where": "left", "chat_free_x1_w": 0.30, "src": "PRESETS 2.2 Calm"},
+        {"id": "maneuvers_tag", "device": "kbm", "what": "a dim MANEUVERS tag", "src": "PRESETS 2.2 Zones"}
+       ]
+      },
+      "combat": {
+       "elements": [
+        {"id": "reticle", "what": "arcs at full, numbers below 40 %"},
+        {"id": "card", "where": "top-right", "w": 0.34, "h_on_screen": 0.127, "h_off_screen": 0.167, "what": "card + 2 threat rows, the target lane on the first row", "rows_kbm": 4},
+        {"id": "loadout", "form": "fire strip", "where": "bottom-right", "w": 0.36, "w_kbm": 0.40, "h": 0.14, "cross": 0.12, "slot": 0.04, "icon": 0.02, "what": "active group as numeral + short name; launcher name and lock, torpedo"},
+        {"id": "ship", "where": "bottom-left", "row_h": 0.042, "what": "escorts as free text, inline bars; the hold line appended 4 s on a pickup"},
+        {"id": "context", "pills_max": 2}
+       ],
+       "src": "PRESETS 2.2 Combat"
+      },
+      "cruise": {"same_as": "calm", "elements": [{"id": "ring.band", "what": "the cruise state in the under-arc band, 45 % in calm"}], "src": "PRESETS 2.2 Cruise prompt"},
+      "lane": {"elements": [{"id": "nav", "what": "chip + bar + ETA"}, {"id": "card", "what": "hidden unless hostile or a mission object"}], "src": "PRESETS 2.2 Other contexts"},
+      "dock": {"elements": [{"id": "nav", "what": "chip lines as Standard"}], "src": "PRESETS 2.2 Other contexts"},
+      "formation": {"elements": [{"id": "nav", "what": "chip lines as Standard"}], "src": "PRESETS 2.2 Other contexts"},
+      "jump": {"elements": [{"id": "nav", "what": "chip lines as Standard"}], "src": "PRESETS 2.2 Other contexts"},
+      "autopilot": {"elements": [{"id": "context", "what": "TAKE CONTROL until learned, then 3 s at each engage", "show_s": 3}], "src": "PRESETS 2.2 Other contexts"},
+      "letterbox": {"elements": [{"id": "nav", "what": "the chip"}, {"id": "reticle", "what": "arcs only below nominal"}], "note": "only what changed wakes", "src": "PRESETS 2.2 Other contexts"}
+     },
+     "budgets": {
+      "calm": {"pad": {"no_target": 0.0, "on_screen": 0.016, "off_screen": 0.022, "cap_target": 0.03}},
+      "combat": {"pad": {"steady": 0.060, "steady_area": 0.106, "peak": 0.082, "cap_steady": 0.07, "cap_peak": 0.09}, "kbm": {"steady": 0.076, "peak": 0.098, "cap_steady": 0.085, "cap_peak": 0.10, "note": "4 rows, the 0.40 strip"}},
+      "src": "PRESETS 2.2 Budgets; 3 (no target ~0)"
+     },
+     "prompts": {"calm": {"pills": 1, "pairs": 3}, "combat": {"pills": 2, "pairs": 3}, "plus": "answers", "retire_after": 2, "src": "PRESETS 2.2 Prompts and reveal; 2.2 Calm / Combat (pills)"},
+     "reveal": {"hud_reveal": 1, "peek": true, "src": "PRESETS 2.2 Prompts and reveal"},
+     "open": [
+      "the arcs' radius: 0.12 is provisional, decided from the lead pip's measured dwell radius (2.2, 6 step 8)",
+      "the clear field's top edge = topFree (live), so it is not a fixed zone; no S1 / S2 given",
+      "the card / hints / fire strip exact anchors (top-right, bottom-right: corners by job, 1.1)",
+      "the hold strip's width; the ship's calm form (hud_ship 2 'strip on change')",
+      "combat bottom-left escort block: height / row count",
+      "lane / dock / formation / jump chip geometry ('as Standard', itself open)",
+      "Focus's scrim: decided by the contrast frames (6 Verification)"
+     ]
+    },
+    {
+     "id": "speedrun", "index": 2, "name": "Speedrun", "tagline": "telemetry",
+     "identity": "a flat numeric dash: tabular digits, flat icons (capital targets keep their wireframe), hardly any prose; two flanks beside the ring - how far on the left, how long and how late on the right",
+     "src": "PRESETS 2.3",
+     "reticle": {"kind": "telemetry", "ring_r": 0.10, "pick_r": 0.10, "calm_ring_alpha": 0.60, "numbers": "when not full (hud_numbers 2)", "speed_dy": 0.058, "tabular": true, "cruise_dy": 0.083, "pip_12": false, "ink_ahead": "-", "amber_behind": "+", "green_red": "only inside the timer strip", "src": "PRESETS 2.3 Reticle; 3"},
+     "flanks": {"dx": [0.20, 0.32], "text": "free text", "left": ["OBJ / DOCK / LANE distance", "TGT distance off screen, else the closing rate", "ESC 42 % while a protected ship is under 50 %"], "right": ["ETA", "the delta"], "fade_over_marker_alpha": 0.25, "fade_hold_s": 0.5, "rate_hz": 4, "eta_ema_s": 1, "eta_whole_s_above": 10, "eta_none_off_deg": 90, "collapse": ["jump", "formation without a destination"], "keep_obj_in_combat_without_hostile_target": true, "protect_under": 0.50, "src": "PRESETS 2.3 Reticle; 1.7 pair 6"},
+     "cruise_row": {"place": "in ring", "dy": 0.083, "what": "flat cruise icon + '3.2'", "starts_learned": true, "glyph": "only on a stall or as the answer after a disruption", "src": "PRESETS 2.3 Reticle"},
+     "zones": [
+      {"id": "core", "lint": true, "shape": "circle", "anchor": "centre", "r": 0.045, "src": "PRESETS 1.3 (every preset)"}
+     ],
+     "contexts": {
+      "calm": {
+       "elements": [
+        {"id": "nav", "x": 0.089, "y": 0.05, "w_max": 0.45, "headline_h": 0.028, "place_h": 0.024, "what": "headline + standing place line", "src": "PRESETS 2.3 Calm"},
+        {"id": "timer", "where": "top-right", "boxed": false, "scrim": "gradient", "run_time_h": 0.034, "lines": ["run time", "split name", "delta to PB or PAR (par anonymised, no runner names)"], "src": "PRESETS 2.3 Calm; 7 answer 6"},
+        {"id": "hints", "where": "under the timer strip", "src": "PRESETS 2.3 Calm"},
+        {"id": "loadout", "form": "compact", "x0": 1.429, "x1": 1.689, "y0": 0.76, "y1": 0.95, "w": 0.26, "h": 0.19, "src": "PRESETS 2.3 Calm"},
+        {"id": "ship", "where": "bottom-left", "what": "empty; escort rows / 4 s hold line as free text", "src": "PRESETS 2.3 Calm"},
+        {"id": "context", "pills_max": 1, "pill_h": 0.026, "what": "one stall pill", "src": "PRESETS 2.3 Calm"},
+        {"id": "comm", "chat_free_y1": 0.82, "src": "PRESETS 2.3 Calm"},
+        {"id": "list_toggle", "device": "kbm", "size": 0.035, "boxed": false, "what": "always-visible list-toggle icon + the contact-list key", "src": "PRESETS 2.3 Calm"}
+       ]
+      },
+      "combat": {
+       "elements": [
+        {"id": "card", "form": "flat", "w": 0.36, "h_on_screen": 0.115, "h_off_screen": 0.15, "what": "bars beside the name only off screen; the target lane at the row's right end"},
+        {"id": "threats", "where": "under the card", "text": "free text", "rows": 2, "rows_kbm": 4},
+        {"id": "loadout", "w": 0.40, "h": 0.17, "what": "launcher ammo here"},
+        {"id": "context", "pills_max": 0, "what": "no standing prompts"},
+        {"id": "timer", "what": "the mission timer only on the strip"}
+       ],
+       "src": "PRESETS 2.3 Combat"
+      },
+      "cruise": {"same_as": "calm", "elements": [{"id": "ring.cruise", "dy": 0.083, "what": "flat cruise icon + seconds"}], "src": "PRESETS 2.3 Reticle"},
+      "lane": {"elements": [{"id": "flanks", "what": "carry the goal"}], "src": "PRESETS 2.3 Other contexts"},
+      "dock": {"elements": [{"id": "flanks", "what": "carry the goal; QUEUE 2 while queued"}, {"id": "context", "what": "the DOCK stall suppressed while a request is pending, queued or refused"}], "src": "PRESETS 2.3 Other contexts"},
+      "autopilot": {"elements": [{"id": "flanks", "what": "carry the goal"}, {"id": "context", "what": "TAKE CONTROL once per session"}], "src": "PRESETS 2.3 Other contexts; Prompts"},
+      "letterbox": {"elements": [{"id": "timer", "what": "run time + delta in the top bar"}], "src": "PRESETS 2.3 Other contexts"}
+     },
+     "budgets": {
+      "calm": {"pad": {"no_target": 0.028, "on_screen": 0.051, "off_screen": 0.058, "cap_no_target": 0.03, "cap_target": 0.06}},
+      "combat": {"pad": {"steady": 0.061, "steady_area": 0.109, "peak": 0.083, "cap_peak": 0.10}, "kbm": {"steady": 0.066, "cap_peak": null}},
+      "src": "PRESETS 2.3 Budgets"
+     },
+     "prompts": {"calm": {"pills": 1, "pairs": 2}, "combat": {"pills": 0, "pairs": 2}, "plus": "answers and LB hints", "retire_after": "starts learned (hud_prompt_learn 6)", "stall_s": 3, "src": "PRESETS 2.3 Prompts and reveal; 2.3 Calm / Combat (pills)"},
+     "reveal": {"hud_reveal": 1, "peek": true, "auto_peek": "only the first space entry in a session", "src": "PRESETS 2.3 Prompts and reveal"},
+     "open": [
+      "zones: none given beyond the shared core and keep-out (no S1 / S2 / clear field)",
+      "the target's off-screen distance: the card's top line (1.7 pair 1) or the left flank (1.7 pair 6) - one home must be picked",
+      "'ESC 42 %' on the left flank vs the bottom-left escort rows (one value, one place)",
+      "the flanks' y and text height; the timer strip's width / lines 2-3 heights",
+      "combat: the card / loadout anchors; the K&M combat budget's cap (only 6.6 % given)",
+      "lane / dock / autopilot: the nav's form (the flanks carry the goal; the AP line in the nav per 4)"
+     ]
+    },
+    {
+     "id": "guided", "index": 3, "name": "Guided", "tagline": "the annotated cockpit",
+     "identity": "a flight instructor in the co-pilot seat: every instrument labelled, every value with a unit, two state rows (what and why), prompts for as long as their action is available, text about 17 % larger, the ring's upper half bare; opt-in, the first-run guided setup's choice, suggested for ASSISTED; ap_hints 1",
+     "src": "PRESETS 2.4; 7 answer 5",
+     "reticle": {"kind": "labelled", "ring_r": 0.10, "arc_w": 0.0075, "pick_r": 0.10, "labels": {"shield": "SHIELD 82 at 125 deg", "hull": "HULL 100 at 55 deg", "r": 0.12, "baseline_dy_min": 0.10, "words_alpha": 0.70, "low_at": 0.25}, "speed": {"dy": 0.058, "text": "82 m/s"}, "throttle_word_dy": 0.146, "throttle_words": ["AFTERBURNER", "ENGINE KILLED", "REVERSE"], "throttle_pct": "THROTTLE 64 % while the lever rests between 1 and 99 %", "power_low_under": 0.25, "power_low_hold_s": 2, "calm_ring_alpha": 0.65, "calm_panel_alpha": 0.70, "src": "PRESETS 2.4 Reticle; Zones"},
+     "cruise_row": {"place": "reticle lane", "dy": 0.19, "words": ["[Y] CRUISE whenever cruise is possible", "[Y] CANCEL CRUISE . CHARGING while charging"], "retire_after": 0, "also": ["[X] TRACTOR 3 ITEMS . ROOM 2", "combat: HOLD [RS] LOOK BACK while a threat is behind"], "src": "PRESETS 2.4 Reticle; 7 answer 4"},
+     "zones": [
+      {"id": "core", "lint": true, "shape": "circle", "anchor": "centre", "r": 0.045, "src": "PRESETS 1.3 (every preset)"},
+      {"id": "Z1", "lint": true, "shape": "circle", "anchor": "centre", "r": 0.085, "src": "PRESETS 2.4 Zones"},
+      {"id": "Z2L", "lint": true, "shape": "rect", "anchor": "centre_offset", "dx0": -0.62, "dx1": -0.15, "dy0": -0.08, "dy1": 0.08, "rule": "horizon band |dy| <= 0.08 for 0.15 <= |dx| <= 0.62 (left half)", "src": "PRESETS 2.4 Zones"},
+      {"id": "Z2R", "lint": true, "shape": "rect", "anchor": "centre_offset", "dx0": 0.15, "dx1": 0.62, "dy0": -0.08, "dy1": 0.08, "rule": "horizon band (right half)", "src": "PRESETS 2.4 Zones"},
+      {"id": "Z3", "lint": false, "shape": "rect", "anchor": null, "rule": "forward-upper band (no numbers)", "src": "PRESETS 2.4 Zones"},
+      {"id": "Z4", "lint": false, "shape": "rect", "anchor": null, "w_min": 0.42, "rule": "dialogue >= 0.42 wide (no position)", "src": "PRESETS 2.4 Zones"}
+     ],
+     "contexts": {
+      "calm": {
+       "row_text_h": 0.028,
+       "elements": [
+        {"id": "nav", "x": 0.089, "y": 0.05, "w_max": 0.50, "h_max": 0.24, "h_max_kbm": 0.30, "sentence_chars_max": 40, "what": "chip; headline + TIME; maneuver row; reason row 'FREE FLIGHT . New York . Badlands . 3 HOSTILES 6.2 km'; K&M maneuver buttons", "src": "PRESETS 2.4 Calm"},
+        {"id": "card", "form": "labelled", "where": "top-right", "w": 0.42, "h_on_screen": 0.15, "h_off_screen": 0.21, "rows_on_screen": ["CLASS", "FACTION . REPUTATION in words", "PART", "HOLD [LB] HAIL . SCAN . MORE"], "rows_off_screen_add": ["NAME", "DISTANCE"], "clear": "a corner badge", "src": "PRESETS 2.4 Calm"},
+        {"id": "hints", "where": "2 right-aligned lines inside 0.42", "text_h": 0.028, "glyph_h": 0.036, "src": "PRESETS 2.4 Calm"},
+        {"id": "ship", "form": "strip", "x": 0.089, "bottom": 0.95, "w": 0.34, "h": 0.12, "what": "ship, CARGO, CREDITS", "src": "PRESETS 2.4 Calm"},
+        {"id": "loadout", "form": "2x2 grid", "where": "bottom-right", "w": 0.40, "h": 0.15, "what": "glyph + word + count (the K&M parity shape)", "src": "PRESETS 2.4 Calm"},
+        {"id": "context", "y": 0.915, "pills_max": 4, "widths": "measured", "src": "PRESETS 2.4 Calm"},
+        {"id": "comm", "where": "left", "y0": 0.60, "y1": 0.78, "src": "PRESETS 2.4 Calm"}
+       ]
+      },
+      "combat": {
+       "elements": [
+        {"id": "card", "form": "merged", "w": 0.42, "h_on_screen": 0.24, "h_off_screen": 0.30, "header": "THREATS 3 . [RS] NEXT", "row_slots": 2, "rows_kbm": 3, "rows": "ATTACKING YOU", "note": "2 reserved row slots: the edge never jumps"},
+        {"id": "loadout", "w": 0.48, "h": 0.17, "what": "grid + weapons"},
+        {"id": "ship", "w": 0.34, "h": 0.15, "what": "wingmen, protected ship first"},
+        {"id": "nav", "what": "reason row 'COMBAT . hostile targeting you, 3.2 km'; the maneuver row and its exit pill stay"},
+        {"id": "context", "pills_max": 2, "what": "REVERSE, HOLD [X] TURRET; an abort outranks TURRET"}
+       ],
+       "src": "PRESETS 2.4 Combat"
+      },
+      "cruise": {"same_as": "calm", "elements": [{"id": "ring.lane", "dy": 0.19, "what": "[Y] CANCEL CRUISE . CHARGING"}], "src": "PRESETS 2.4 Reticle"},
+      "lane": {"elements": [{"id": "nav", "what": "TRADE LANE -> <ring> + bar + ETA"}], "src": "PRESETS 2.4 Other contexts"},
+      "arrival": {"elements": [{"id": "nav", "what": "ARRIVED: <system . zone>", "show_s": 3}], "src": "PRESETS 2.4 Other contexts"},
+      "autopilot": {"elements": [{"id": "nav", "what": "AUTOPILOT FLYING . <mode> . waiting: <reason>; after a hand-back YOU HAVE CONTROL . <reason> 4 s", "handback_s": 4}], "src": "PRESETS 2.4 Other contexts"},
+      "turret": {"elements": [{"id": "nav", "what": "TURRET VIEW . RS aims . the ship holds course"}], "src": "PRESETS 2.4 Other contexts"}
+     },
+     "budgets": {
+      "calm": {"pad": {"no_target": 0.057, "on_screen": 0.092, "off_screen": 0.106, "cap_no_target": 0.06, "cap_target": 0.11, "pills_add": 0.014}},
+      "combat": {"pad": {"steady": 0.132, "steady_area": 0.234, "peak": 0.177, "cap_steady": 0.15, "cap_peak": 0.18}, "kbm": {"steady": 0.143, "cap_steady": 0.165, "note": "3 rows"}},
+      "src": "PRESETS 2.4 Budgets"
+     },
+     "prompts": {"calm": {"pills": 4, "pairs": 8}, "combat": {"pills": 2, "pairs": 8}, "plus": "answers", "retire_after": 0, "retire_note": "nothing retires", "src": "PRESETS 2.4 Prompts and reveal; Calm / Combat (pills)"},
+     "reveal": {"hud_reveal": 0, "peek": "ALL CONTROLS NOW", "peek_w": 0.42, "peek_rows_max": 8, "peek_where": "a right column from the card's bottom to the loadout's top", "peek_renderer": "the classic button_legend", "peek_inputs": ["View double-tap", "MINIMIZE HUD", "a wheel entry"], "src": "PRESETS 2.4 Prompts and reveal"},
+     "text": {"floor": 0.028, "floor_4_3": 0.026, "scale": 1.17, "fit_ceiling": 1.18, "rule": "text_size x hud_text_scale clamped at the fit ceiling", "src": "PRESETS 2.4 Budgets; 5 hud_text_scale 117"},
+     "open": [
+      "Z3 (forward-upper band) and Z4 (the dialogue zone) have no numbers",
+      "the card / loadout / combat ship anchors (top-right / bottom-right: corners by job, 1.1)",
+      "the K&M combat cap 16.5 % is given against the 14.3 % steady value; a K&M peak cap is not given",
+      "the state rows' strings come from docs/kb-verified facts (6 step 8)",
+      "dock / formation / jump / letterbox contexts are not described"
+     ]
+    }
+   ],
+   "value_ids": {
+    "_about": "One id per HUD value with its home element per preset (home = while the target is on screen / always; home_off = while off screen, if it differs), the declared second channels (PRESETS 1.7: only for a critical state) and 'live' = the HUD 2 model field the lint matches drawn text against today (hud2_lint_live.cpp ValueOf; null = not matched yet). Homes are component names (hud2_kit tags: nav, card, hints, list, ship, loadout, context, alert, ring.*) or native.* for the game's own draw; null = the doc does not place it.",
+    "ids": [
+     {"id": "objective", "live": "objective", "home": {"standard": "nav", "focus": "nav", "speedrun": "nav", "guided": "nav"}, "event_home": "native.banner", "src": "PRESETS 1.7 pair 2; 2.1-2.4 Calm"},
+     {"id": "maneuver", "live": "manName", "home": {"standard": "nav", "focus": "nav", "speedrun": "nav", "guided": "nav"}, "src": "PRESETS 2.1 Other contexts (chip); 2.2 'chip lines as Standard'; 2.4 Calm (maneuver row)"},
+     {"id": "maneuver.dest", "live": "manDest", "home": {"standard": "nav", "focus": "nav", "speedrun": "flank.left", "guided": "nav"}, "src": "PRESETS 2.1 Other contexts; 2.3 'the flanks carry the goal'"},
+     {"id": "eta", "live": "eta", "home": {"standard": "nav", "focus": "nav", "speedrun": "flank.right", "guided": "nav"}, "src": "PRESETS 2.1 lane 'chip + bar + ETA'; 2.3 Flanks (right: ETA); 2.4 lane"},
+     {"id": "ap.mode", "live": "apMode", "home": {"standard": "nav", "focus": "nav", "speedrun": "nav", "guided": "nav"}, "src": "PRESETS 4 (the AP line in the nav); 2.4 Other contexts"},
+     {"id": "ap.wait", "live": "wait", "home": {"standard": "nav", "focus": "nav", "speedrun": "nav", "guided": "nav"}, "src": "PRESETS 4 (mode . goal . waiting reason); 2.4 Other contexts"},
+     {"id": "info", "live": "info", "home": {"standard": "nav", "focus": null, "speedrun": null, "guided": "nav"}, "src": "PRESETS 2.1 Calm (nav free text); 2.4 reason row"},
+     {"id": "event", "live": "event", "home": {"standard": "nav", "focus": null, "speedrun": null, "guided": "nav"}, "src": "PRESETS 2.1 comms (the event part of the nav line)"},
+     {"id": "place", "live": "place", "home": {"standard": "nav", "focus": null, "speedrun": "nav", "guided": "nav"}, "src": "PRESETS 5 hud_place; 2.3 standing place line; 2.4 reason row"},
+     {"id": "where", "live": "where", "home": {"standard": "nav", "focus": null, "speedrun": "nav", "guided": "nav"}, "src": "PRESETS 5 hud_place; 2.3; 2.4 reason row"},
+     {"id": "target.name", "live": "tName", "home": {"standard": "native.bracket", "focus": "native.bracket", "speedrun": "native.bracket", "guided": "native.bracket"}, "home_off": {"standard": "card", "focus": "card", "speedrun": "card", "guided": "card"}, "src": "PRESETS 1.7 pair 1 (A, 7 answer 3)"},
+     {"id": "target.distance", "live": "tDist", "home": {"standard": "native.bracket", "focus": "native.bracket", "speedrun": "native.bracket", "guided": "native.bracket"}, "home_off": {"standard": "card", "focus": "card", "speedrun": null, "guided": "card"}, "src": "PRESETS 1.7 pairs 1 and 6 (Speedrun open: card or flank.left)"},
+     {"id": "target.bars", "live": null, "home": {"standard": "native.bracket", "focus": "native.bracket", "speedrun": "native.bracket", "guided": "native.bracket"}, "home_off": {"standard": "card", "focus": "card", "speedrun": "card", "guided": "card"}, "src": "PRESETS 1.7 pair 1; 2.3 Combat (bars beside the name only off screen)"},
+     {"id": "target.closing", "live": null, "home": {"standard": null, "focus": null, "speedrun": "flank.left", "guided": null}, "src": "PRESETS 1.7 pair 6; 2.3 Flanks"},
+     {"id": "target.faction", "live": "tFaction", "home": {"standard": "card", "focus": "card", "speedrun": "card", "guided": "card"}, "src": "PRESETS 1.7 pair 1 (the card keeps class, faction and reputation)"},
+     {"id": "target.class", "live": "tClass", "home": {"standard": "card", "focus": "card", "speedrun": "card", "guided": "card"}, "src": "PRESETS 1.7 pair 1"},
+     {"id": "target.part", "live": null, "home": {"standard": "card", "focus": "card", "speedrun": "card", "guided": "card"}, "src": "PRESETS 1.4 (the card row PART)"},
+     {"id": "threats", "live": null, "home": {"standard": "list", "focus": "card", "speedrun": "list", "guided": "card"}, "src": "PRESETS 2.1 Combat (threat block); 2.2 Combat (card + 2 threat rows); 2.3; 2.4 (card merged)"},
+     {"id": "ship.name", "live": "shipName", "home": {"standard": "ship", "focus": null, "speedrun": null, "guided": "ship"}, "src": "PRESETS 2.4 ship strip; Standard: today's ship panel (2.1 'today's HUD 2, refined')"},
+     {"id": "ship.class", "live": "shipClass", "home": {"standard": "ship", "focus": null, "speedrun": null, "guided": "ship"}, "src": "as ship.name"},
+     {"id": "ship.shield", "live": null, "home": {"standard": "ring.shield", "focus": "ring.shield", "speedrun": "ring.shield", "guided": "ring.shield"}, "src": "PRESETS 1.7 pair 4 (never in the ship panel)"},
+     {"id": "ship.hull", "live": null, "home": {"standard": "ring.hull", "focus": "ring.hull", "speedrun": "ring.hull", "guided": "ring.hull"}, "src": "PRESETS 1.7 pair 4"},
+     {"id": "speed", "live": null, "home": {"standard": "ring.speed", "focus": "ring.band", "speedrun": "ring.speed", "guided": "ring.speed"}, "src": "PRESETS 1.3; 2.2 under-arc band; 2.3; 2.4"},
+     {"id": "throttle", "live": null, "home": {"standard": "ring.throttle", "focus": "ring.band", "speedrun": "ring.throttle", "guided": "ring.throttle"}, "src": "PRESETS 2.1 identity; 2.2 band; 4 compatibility (Speedrun: throttle % beside the speed)"},
+     {"id": "cruise", "live": null, "home": {"standard": "ring.lane", "focus": "ring.band", "speedrun": "ring.cruise", "guided": "ring.lane"}, "src": "PRESETS 2.1-2.4 Cruise prompt; 5 hud_cruise_row"},
+     {"id": "loot", "live": null, "home": {"standard": "ring.lane", "focus": "ring.band", "speedrun": "ring.lane", "guided": "ring.lane"}, "src": "PRESETS 1.4 looting; 2.2 band 'LOOT n'; 2.3 'the tractor slot'"},
+     {"id": "launcher", "live": "launcher", "home": {"standard": "loadout", "focus": "loadout", "speedrun": "loadout", "guided": "loadout"}, "src": "PRESETS 1.7 pair 5; 2.2 fire strip (launcher name and lock)"},
+     {"id": "launcher.count", "live": null, "home": {"standard": "loadout", "focus": "ring.band", "speedrun": "loadout", "guided": "loadout"}, "src": "PRESETS 1.7 pair 5 (Focus: the active launcher's count at the aim point)"},
+     {"id": "hold", "live": null, "home": {"standard": "ship", "focus": "hold", "speedrun": "ship", "guided": "ship"}, "src": "PRESETS 2.2 hold strip; 2.3 4 s hold line; 2.4 ship strip CARGO"},
+     {"id": "credits", "live": null, "home": {"standard": "ship", "focus": "hold", "speedrun": null, "guided": "ship"}, "src": "PRESETS 1.6 (credits change -> the hold strip); 2.4 ship strip CREDITS"},
+     {"id": "timer.mission", "live": null, "home": {"standard": "nav", "focus": "nav", "speedrun": "timer", "guided": "nav"}, "src": "PRESETS 1.4 (TIME field on the headline line); 2.3 Combat (only on the strip)"},
+     {"id": "run.time", "live": null, "home": {"standard": null, "focus": null, "speedrun": "timer", "guided": null}, "src": "PRESETS 2.3 Calm (timer strip)"},
+     {"id": "run.delta", "live": null, "home": {"standard": null, "focus": null, "speedrun": "timer", "guided": null}, "src": "PRESETS 2.3 Calm; Flanks (right: the delta)"},
+     {"id": "escort", "live": null, "home": {"standard": "ship", "focus": "ship", "speedrun": "ship", "guided": "ship"}, "src": "PRESETS 1.4 protected ship; 2.1-2.4 Combat (Speedrun's 'ESC 42 %' flank: open)"},
+     {"id": "alert", "live": "alert", "home": {"standard": "alert", "focus": "alert", "speedrun": "alert", "guided": "alert"}, "second": ["ring.lane", "ring.hull"], "second_note": "the critical states' second channels: the FLARE answer mirrored in the reticle lane while MISSILE INCOMING holds (no count); the hull flash beside HULL CRITICAL (its component taken as ring.hull: to check against HUD_CUES when the alert queue is built)", "src": "PRESETS 1.5; 1.7 rule"},
+     {"id": "alert.none", "live": "alertNone", "home": {"standard": "alert", "focus": "alert", "speedrun": "alert", "guided": "alert"}, "src": "PRESETS 1.5 (the answer's words in the alert plate)"}
+    ]
+   },
+   "controller_setups": {
+    "rules": ["never block a combination: the HUD preset decides where and how, the controller setup what must be there", "glyphs from the live table per frame (preset + weapon_groups + toggles + stick layout); layouts never mirror", "standard pad first: every required input on a plain Xbox pad, the DualSense (Create = View) and K&M", "a needed reading or prompt never disappears behind a preset's quietness"],
+    "requires": [
+     {"setup": "FREELANCER / CUSTOM", "requires": ["the throttle word on change (the lever is used binary)", "KILL while engine kill holds"]},
+     {"setup": "ACE", "requires": ["a continuous throttle reading (tick + %) while the lever rests between 1 and 99 %", "CM's answer shows LB", "cruise's glyph D-pad left"]},
+     {"setup": "ASSISTED", "requires": ["the autopilot's line (mode . goal . waiting reason) as an answer-kind line while it flies", "TAKE CONTROL (B) never retires", "the reticle always shown (RS aims)"]},
+     {"setup": "weapon_groups 2", "requires": ["the two group rows with RT / LT badges in the fight form", "the afterburner glyph on LS click"]},
+     {"setup": "holds_as_toggles", "requires": ["a state word for every latched action (AFTERBURNER, REVERSE, REAR VIEW) while latched"]},
+     {"setup": "K&M", "requires": ["keycaps from the keymap", "the click-pinned contact list", "the maneuver row or its tag", "MINIMIZE HUD as the peek"]}
+    ],
+    "lever_partial": [0.01, 0.99],
+    "compat": {
+     "standard": {"FREELANCER / CUSTOM": "fine (suggested)", "ACE": "fine: the ring's throttle arc is the reading (suggested)", "ASSISTED": "adapts: the AP line pinned in the nav", "K&M": "fine (suggested)"},
+     "focus": {"FREELANCER / CUSTOM": "fine", "ACE": "adapts: throttle tick + % in the under-arc band while partial", "ASSISTED": "discouraged: the AP line is pinned whenever the autopilot flies; Guided or Standard offered", "K&M": "adapts: the throttle tick while partial, MANEUVERS tag"},
+     "speedrun": {"FREELANCER / CUSTOM": "fine", "ACE": "adapts: throttle % beside the speed (tabular) while partial", "ASSISTED": "adapts: the flanks carry the autopilot's goal, the AP line in the nav", "K&M": "adapts: the list-toggle icon"},
+     "guided": {"FREELANCER / CUSTOM": "fine", "ACE": "fine: THROTTLE 64 % is already a label", "ASSISTED": "fine (suggested)", "K&M": "fine"}
+    },
+    "suggested": {"FREELANCER": "standard", "CUSTOM": "standard", "ACE": "standard", "ASSISTED": "guided", "K&M": "standard"},
+    "adaptation_budget": "every adaptation is unplated free text (<= 0.026, in a band or nav the preset already has): no boxed budget change",
+    "adaptation_text_max": 0.026,
+    "gap": "ACE binds no action wheel: the wheel goes on ACE's RB hold (7 answer 2)",
+    "src": "PRESETS 4; 7 answers 2 and 5"
+   },
+   "bundles": {
+    "_about": "Each preset's settings bundle (PRESETS 5; the new keys are not in core/settings.h yet: step 4). Order: standard, focus, speedrun, guided.",
+    "existing": {"hud_fade": [1, 2, 1, 1], "hud_numbers": [0, 0, 2, 1], "hud_threats": [1, 1, 1, 1], "hud_context": [0, 0, 0, 0], "hud_alerts": [1, 1, 1, 1], "hud_info": [1, 1, 1, 1], "hud_wireframes": [1, 1, 0, 0], "ap_hints": [0, 0, 0, 1], "shield_cue": [0, 0, 0, 1], "hull_cue_pattern": [2, 2, 2, 2], "reticle_cue": [0, 0, 0, 1]},
+    "new": {"hud_reticle": [0, 1, 2, 3], "hud_calm_ring": [40, 0, 60, 65], "hud_calm_panel": [60, 60, 60, 70], "hud_card": [1, 2, 2, 0], "hud_ship": [1, 2, 2, 1], "hud_loadout": [1, 2, 1, 3], "hud_fight_forms": [1, 1, 1, 1], "hud_threat_rows": [3, 4, 4, 3], "hud_nav": [0, 1, 1, 0], "hud_place": [0, 0, 1, 1], "hud_cruise_row": [0, 1, 2, 0], "hud_context_len": [3, 1, 1, 4], "hud_context_combat": [2, 2, 1, 2], "hud_prompt_learn": [3, 2, 6, 0], "hud_prompt_recall_s": [10, 10, 3, null], "hud_prompt_return_days": [14, 14, 14, null], "hud_reveal": [1, 1, 1, 0], "hud_peek": [1, 1, 1, 1], "hud_auto_peek": [1, 1, 1, 0], "hud_wake_s": [4, 4, 4, 4], "hud_hold_nominal": [1, 1, 1, 1], "hud_combat_linger_ms": [2000, 2000, 2000, 2000], "hud_form_linger_s": [6, 6, 6, 6], "hud_frame": [1, 1, 1, 1], "hud_ap_cue": [1, 1, 1, 1], "hud_labels": [0, 0, 0, 1], "hud_explain": [0, 0, 0, 1], "hud_text_scale": [100, 100, 100, 117], "speedrun_compare": [0, 0, 2, 0]},
+    "never_written": ["text_size", "hud_scale", "hud_opacity", "hud_transition", "glyph_style", "glyph_look", "hud_style", "ui_style", "aim_*", "fluf_windows", "speedrun_timer", "button_legend", "world_prompts", "prompt_bar", "hud_glyphs", "ap_status_line", "every subtitles key", "every controller binding"],
+    "hud_preset": {"0": "Standard (default)", "1": "Focus", "2": "Speedrun", "3": "Guided", "4": "Custom (shown, never picked)"},
+    "src": "PRESETS 5"
+   },
+   "open": [
+    "every preset: the fight forms' and corner panels' anchors where the doc gives sizes only (corners by job, 1.1)",
+    "Focus's arc radius (from the lead pip's dwell radius), Focus's scrim (contrast frames)",
+    "Speedrun: no zones beyond the shared core / keep-out; the target's off-screen distance home (card or flank); ESC flank vs escort rows",
+    "Guided: Z3 / Z4 without numbers",
+    "the unverified game facts of 6: the native bracket label's text height at 4K / 720p (decides 1.7 pair 1 A vs B), the objective banner's duration and visibility, USER_MINIMIZE_HUD's native effect under HUD 2, USER_NEXT_SUBTARGET with the target panel hidden, the DualSense Create button under Steam Input, the lane-disrupted result code, the order of space::Contacts, the dialogue panel's real height, the compact forms' scale headroom",
+    "the lint's action-reach rule needs a prompt catalogue (controller_setups here is the requirements half)"
+   ]
+  }
+ }
+}

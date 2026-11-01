@@ -1,12 +1,16 @@
 @echo off
 rem Builds FLvibed (32-bit, static C runtime: players need no Visual C++ redistributable).
-rem Usage: build.cmd [dev|impl|release]
+rem Usage: build.cmd [dev|impl|release|sigtool|test|setup]
 rem   dev      (default) build\dev\: FLvibed.dll (the modules' hosts: hooks, debug channels) plus the modules'
 rem            logic as FLSubtitlesImpl.dll and FLControllerImpl.dll, which hot-reload in the running game
 rem            (tools\deploy.ps1 -Impl)
 rem   impl     only the two logic DLLs of the dev build
 rem   release  build\release\FLvibed.dll: everything in one DLL (FLV_STATIC: logic linked in, no reload)
 rem   sigtool  build\sigtool\sigtool.exe: Freelancer.exe signatures for core\flexe.h (tools\sigtool\sigtool.cpp)
+rem   flhook   build\flhook\flvibed_server.dll: the FLHook 4.0 plugin a server installs to tell FLvibed's clients what it
+rem            allows the autopilot (server\flhook\README.md)
+rem   mptest   build\mptest\flmptest.dll + flmplaunch.exe: TEST-ONLY helpers for the local multiplayer setup (tools\mptest\README.md);
+rem            never shipped
 rem   test     build\test\fltest.exe: the host-free unit tests (tests\*.cpp + the pure core sources, compiled plain with
 rem            tests\space_stub.cpp for the game), then runs them; exit code = the tests'. `build.cmd test "<install>"`
 rem            names the install for the data tests (else FLVIBED_INSTALL, else Install\Freelancer HD Edition; absent =
@@ -34,21 +38,31 @@ cd /d "%~dp0"
 set CFLAGS=/nologo /MP /std:c++17 /O2 /MT /EHsc /W4 /Zi /D_CRT_SECURE_NO_WARNINGS /Icore
 set LFLAGS=/DLL /DEBUG /OPT:REF /OPT:ICF
 set LIBS=user32.lib kernel32.lib gdi32.lib gdiplus.lib ole32.lib ws2_32.lib
+rem SDL3 (WORK_QUEUE Q5: the opt-in gamepad backend `pad_backend` 1, controller\src\host\sdlpad.cpp): a static library in
+rem the controller HOST only (its wrappers define FLV_SDL3, core\pre.h), built once per version by tools\sdl3\build_sdl3.cmd
+rem into build\sdl3\<version>\ (cached; the source: tools\sdl3\fetch_sdl3.ps1). Its headers are external (no warnings).
+set SDL3_VER=3.4.18
+set SDL3_DIR=build\sdl3\%SDL3_VER%
+set SDL3_CFLAGS=/external:I %SDL3_DIR%\include /external:W0
+set SDL3_LIBS=%SDL3_DIR%\lib\SDL3-static.lib winmm.lib setupapi.lib shell32.lib advapi32.lib oleaut32.lib version.lib imm32.lib uuid.lib
 
 if /i "%TARGET%"=="release" goto release
 if /i "%TARGET%"=="sigtool" goto sigtool
+if /i "%TARGET%"=="mptest" goto mptest
+if /i "%TARGET%"=="flhook" goto flhook
 if /i "%TARGET%"=="setup" goto setup
 if /i "%TARGET%"=="test" goto test
 if /i "%TARGET%"=="impl" goto impl
 if /i not "%TARGET%"=="dev" (
-  echo unknown target %TARGET%: dev, impl or release
+  echo unknown target %TARGET%: dev, impl, release, sigtool, flhook, mptest, test or setup
   exit /b 1
 )
 
 rem ---------------------------------------------------------------- dev
+call tools\sdl3\build_sdl3.cmd %SDL3_VER% || exit /b 1
 call :clean dev
 call :wrap dev flv_subtitles_host "subtitles\src\host\*.cpp core\hook.cpp core\log.cpp core\text.cpp"
-call :wrap dev flv_controller_host "controller\src\host\*.cpp core\hook.cpp core\log.cpp core\text.cpp"
+call :wrap dev flv_controller_host "controller\src\host\*.cpp core\hook.cpp core\log.cpp core\text.cpp" FLV_SDL3
 call :link dev "" || exit /b 1
 :impl
 call :logic subtitles FLSubtitlesImpl || exit /b 1
@@ -57,15 +71,31 @@ exit /b 0
 
 rem ---------------------------------------------------------------- release
 :release
+call tools\sdl3\build_sdl3.cmd %SDL3_VER% || exit /b 1
 call :clean release
 call :wrap release flv_subtitles_host "subtitles\src\host\*.cpp core\hook.cpp core\log.cpp core\text.cpp"
 call :wrap release flv_subtitles_impl "subtitles\src\impl\*.cpp core\hook.cpp core\log.cpp core\text.cpp core\game\*.cpp"
-call :wrap release flv_controller_host "controller\src\host\*.cpp core\hook.cpp core\log.cpp core\text.cpp"
+call :wrap release flv_controller_host "controller\src\host\*.cpp core\hook.cpp core\log.cpp core\text.cpp" FLV_SDL3
 call :wrap release flv_controller_impl "controller\src\impl\*.cpp core\hook.cpp core\log.cpp core\text.cpp core\game\*.cpp"
 call :link release "/DFLV_STATIC" || exit /b 1
 exit /b 0
 
 rem ---------------------------------------------------------------- sigtool
+:flhook
+if not exist build\flhook\obj mkdir build\flhook\obj
+lib /nologo /def:server\flhook\FLHook.def /machine:x86 /out:build\flhook\obj\FLHook.lib >nul || exit /b 1
+cl %CFLAGS% /Fo:build\flhook\obj\ /Fd:build\flhook\obj\ server\flhook\flvibed_server.cpp ^
+   /link %LFLAGS% /OUT:build\flhook\flvibed_server.dll /PDB:build\flhook\flvibed_server.pdb %LIBS% build\flhook\obj\FLHook.lib || exit /b 1
+exit /b 0
+
+:mptest
+if not exist build\mptest\obj mkdir build\mptest\obj
+cl %CFLAGS% /Fo:build\mptest\obj\ /Fd:build\mptest\obj\ tools\mptest\flmptest.cpp ^
+   /link %LFLAGS% /OUT:build\mptest\flmptest.dll /PDB:build\mptest\flmptest.pdb %LIBS% advapi32.lib || exit /b 1
+cl %CFLAGS% /Fo:build\mptest\obj\ /Fd:build\mptest\obj\ tools\mptest\flmplaunch.cpp ^
+   /link /DEBUG /OUT:build\mptest\flmplaunch.exe /PDB:build\mptest\flmplaunch.pdb %LIBS% || exit /b 1
+exit /b 0
+
 :sigtool
 if not exist build\sigtool\obj mkdir build\sigtool\obj
 cl %CFLAGS% /Fo:build\sigtool\obj\ /Fd:build\sigtool\obj\ tools\sigtool\sigtool.cpp core\hook.cpp core\log.cpp ^
@@ -90,10 +120,16 @@ exit /b 0
 rem ---------------------------------------------------------------- test
 :test
 rem The tests and the core sources they exercise, plain (no namespace wrapper, no pre.h): mission (its CreateID is in-tree,
-rem core\game\flhash.cpp), ini, utf, avoid, route, flight; tests\space_stub.cpp stands in for space.cpp (the game).
+rem core\game\flhash.cpp), mission_live (its walk over a fake memory), ini, utf, avoid, route, flight, the pad presets;
+rem tests\space_stub.cpp stands in for space.cpp (the game), tests\presets_test.cpp for the glyph names; the situation
+rem assessor (A37 S1: situation.cpp, the job table core\game\jobs.cpp) over the recorded snapshots tests\fixtures\situation,
+rem the arbiter's rules (A37 S3: situation_rules.cpp), the goal queue (A37 S6: goalqueue.cpp), the executor's pure half
+rem (A37 S7: situation_exec.cpp), LOOK's pure verdict (L0: lookahead.cpp), ASH-RIDE's pure half (ash_ride.cpp).
 if not exist build\test\obj mkdir build\test\obj
-cl %CFLAGS% /Fo:build\test\obj\ /Fd:build\test\obj\ tests\*.cpp core\game\flhash.cpp core\game\mission.cpp core\game\ini.cpp ^
-   core\game\utf.cpp core\game\avoid.cpp core\game\route.cpp core\game\flight.cpp core\hook.cpp core\log.cpp core\fluf.cpp ^
+cl %CFLAGS% /Fo:build\test\obj\ /Fd:build\test\obj\ tests\*.cpp core\game\flhash.cpp core\game\mission.cpp core\game\mission_live.cpp core\game\ini.cpp core\game\universe_data.cpp ^
+   core\game\utf.cpp core\game\avoid.cpp core\game\route.cpp core\game\flight.cpp core\game\jobs.cpp core\hook.cpp core\log.cpp core\fluf.cpp ^
+   controller\src\impl\presets.cpp controller\src\impl\situation.cpp controller\src\impl\situation_rules.cpp controller\src\impl\goalqueue.cpp controller\src\impl\situation_exec.cpp controller\src\impl\lookahead.cpp controller\src\impl\ash_ride.cpp ^
+   subtitles\src\impl\linebreak.cpp ^
    /link /DEBUG /OUT:build\test\fltest.exe /PDB:build\test\fltest.pdb %LIBS% || exit /b 1
 build\test\fltest.exe %2
 exit /b %ERRORLEVEL%
@@ -106,9 +142,10 @@ mkdir build\%1\wrap
 mkdir build\%1\obj\flvibed
 exit /b 0
 
-:wrap <config> <namespace> <sources>
+:wrap <config> <namespace> <sources> [<macro defined before pre.h: FLV_SDL3 = the SDL3 headers>]
 for %%f in (%~3) do (
   > "build\%1\wrap\%2_%%~nf.cpp" (
+    if not "%~4"=="" echo #define %~4 1
     echo #include "../../../core/pre.h"
     echo namespace %2 {
     echo #include "%%~ff"
@@ -120,8 +157,8 @@ exit /b 0
 :link <config> <defines>
 rem the version resource (core\flvibed.rc from core\version.h) goes into FLvibed.dll
 rc /nologo /Icore /fo build\%1\obj\flvibed\flvibed.res core\flvibed.rc || exit /b 1
-cl %CFLAGS% %~2 /Fo:build\%1\obj\flvibed\ /Fd:build\%1\obj\flvibed\ core\flvibed.cpp core\settings_bus.cpp core\hud_bus.cpp core\fluf.cpp build\%1\wrap\*.cpp ^
-   build\%1\obj\flvibed\flvibed.res /link %LFLAGS% /OUT:build\%1\FLvibed.dll /PDB:build\%1\FLvibed.pdb %LIBS% || exit /b 1
+cl %CFLAGS% %SDL3_CFLAGS% %~2 /Fo:build\%1\obj\flvibed\ /Fd:build\%1\obj\flvibed\ core\flvibed.cpp core\settings_bus.cpp core\hud_bus.cpp core\fluf.cpp build\%1\wrap\*.cpp ^
+   build\%1\obj\flvibed\flvibed.res /link %LFLAGS% /OUT:build\%1\FLvibed.dll /PDB:build\%1\FLvibed.pdb %LIBS% %SDL3_LIBS% || exit /b 1
 exit /b 0
 
 :logic <module> <dll name>

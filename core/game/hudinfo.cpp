@@ -10,6 +10,7 @@
 #include "flexe.h"
 #include "game/ai.h"
 #include "game/flhash.h"
+#include "game/geom.h"
 #include "game/ini.h"
 #include "game/space.h"
 #include "log.h"
@@ -59,6 +60,12 @@ struct Fns
     int(__cdecl* inZones)(u32, const float*, float, u32*, u32, u32&) = nullptr; // pub::System::InZones
     int(__cdecl* jumpTarget)(const u32&, u32&, u32&) = nullptr;                 // pub::SpaceObj::GetJumpTarget
     int(__cdecl* repRank)(const int&, float&) = nullptr;                        // pub::Reputation::GetRank
+    // the client's own answers (multiplayer: server.dll is loaded by RemoteClient.dll but holds no world - its pub::
+    // calls return codes != 0; 28 Oct 2026): Common.dll
+    int(__thiscall* getVibe)(const void*) = nullptr;                     // CEqObj::get_vibe (the object's rep id)
+    int(__cdecl* vibeAffiliation)(const int&, u32&, bool) = nullptr;     // Reputation::Vibe::GetAffiliation
+    u32(__cdecl* groupShortName)(u32) = nullptr;                         // Reputation::get_short_name (ids)
+    u32(__thiscall* destSystem)(const void*) = nullptr;                  // CSolar::get_dest_system (a gate's / hole's)
 };
 
 template <class T> void Get(T& p, HMODULE m, const char* name) { p = reinterpret_cast<T>(GetProcAddress(m, name)); }
@@ -70,8 +77,12 @@ const Fns& F()
         return f;
     HMODULE c = GetModuleHandleA("common.dll"), s = GetModuleHandleA("server.dll");
     if (!c || !s)
-        return f; // not loaded yet: try again later
+        return f; // not loaded yet: try again later (server.dll: single player, and RemoteClient's import in multiplayer)
     f.tried = true;
+    Get(f.getVibe, c, "?get_vibe@CEqObj@@QBEHXZ");
+    Get(f.vibeAffiliation, c, "?GetAffiliation@Vibe@Reputation@@YAHABHAAI_N@Z");
+    Get(f.groupShortName, c, "?get_short_name@Reputation@@YAII@Z");
+    Get(f.destSystem, c, "?get_dest_system@CSolar@@QBEIXZ");
     Get(f.getEquipment, c, "?GetEquipment@Archetype@@YAPAUEquipment@1@I@Z");
     Get(f.getSystem, c, "?get_system@Universe@@YAPBUISystem@1@I@Z");
     Get(f.findObj, c, "?Find@CObject@@SAPAU1@ABIW4Class@1@@Z");
@@ -304,37 +315,73 @@ bool ObjectType(u32 id, u32& type, u32& cls)
     return false;
 }
 
+// A client object's u32 answer (CObject::Find in the ship / solar classes, the reference released after).
+static u32 ClientObjU32(u32 id, u32(__thiscall* fn)(const void*), const u32* classes, int n)
+{
+    const Fns& f = F();
+    if (!id || !fn || !f.findObj || !f.releaseObj)
+        return 0;
+    __try
+    {
+        for (int i = 0; i < n; ++i)
+            if (void* o = f.findObj(id, classes[i]))
+            {
+                const u32 v = fn(o);
+                f.releaseObj(o);
+                return v;
+            }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+    return 0;
+}
+
 int RepOf(u32 id)
 {
     const Fns& f = F();
     int rep = 0;
-    if (!id || !f.getRep)
+    if (!id)
         return 0;
     __try
     {
-        if (f.getRep(id, rep) != 0)
+        if (!f.getRep || f.getRep(id, rep) != 0)
             rep = 0;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
         rep = 0;
     }
+    if (!rep && f.getVibe) // multiplayer: the client's vibe of the object
+    {
+        static const u32 classes[] = {kClassShip, kClassSolar};
+        rep = static_cast<int>(
+            ClientObjU32(id, reinterpret_cast<u32(__thiscall*)(const void*)>(f.getVibe), classes, 2));
+    }
     return rep;
 }
 
-// The reputation's group and that group's short name (ids); false when unknown
+// The reputation's group and that group's short name (ids); false when unknown. The server's answer, else the
+// client's (Reputation::Vibe::GetAffiliation + Reputation::get_short_name: multiplayer).
 bool AffiliationIds(int rep, u32& group, u32& ids, bool wantName)
 {
     const Fns& f = F();
     group = ids = 0;
-    if (!rep || !f.getAffiliation || !f.getShortName)
+    if (!rep)
         return false;
     __try
     {
-        if (f.getAffiliation(rep, group) != 0 || !group)
+        if (f.getAffiliation && f.getShortName && f.getAffiliation(rep, group) == 0 && group)
+        {
+            if (wantName && f.getShortName(group, ids) != 0)
+                ids = 0;
+            return true;
+        }
+        group = 0;
+        if (!f.vibeAffiliation || f.vibeAffiliation(rep, group, false) != 0 || !group)
             return false;
-        if (wantName && f.getShortName(group, ids) != 0)
-            ids = 0;
+        if (wantName && f.groupShortName)
+            ids = f.groupShortName(group);
         return true;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
@@ -380,16 +427,19 @@ u32 JumpTargetSystem(u32 gate)
 {
     const Fns& f = F();
     u32 system = 0, object = 0;
-    if (!gate || !f.jumpTarget)
+    if (!gate)
         return 0;
     __try
     {
-        return f.jumpTarget(gate, system, object) == 0 ? system : 0;
+        if (f.jumpTarget && f.jumpTarget(gate, system, object) == 0 && system)
+            return system;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        return 0;
     }
+    // multiplayer: the client's solar knows its destination (CSolar::get_dest_system)
+    static const u32 classes[] = {kClassSolar};
+    return ClientObjU32(gate, f.destSystem, classes, 1);
 }
 
 int FollowersOf(void* ship, u32* ids, int max)
@@ -593,45 +643,29 @@ const SystemData& SystemOf(u32 system)
     if (sd.loaded || !f.createId)
         return sd;
     sd.loaded = true;
+    // ini::Read: HD Edition's text inis and vanilla 1.1's BINI alike (29 Oct 2026; the text parser here saw nothing on
+    // vanilla: SWEEP_2026-10-29 #5)
     if (!universeRead)
     {
         universeRead = true;
-        std::ifstream in(DataDir() + "UNIVERSE\\universe.ini");
-        std::string line, nick, file;
-        bool sys = false;
-        auto flush = [&]()
+        for (const ini::Section& s : ini::Read(DataDir() + "UNIVERSE\\universe.ini"))
         {
-            if (sys && !nick.empty() && !file.empty())
+            if (s.type != "system")
+                continue;
+            std::string nick, file;
+            for (const auto& kv : s.kv)
+                if (kv.first == "nickname")
+                    nick = kv.second;
+                else if (kv.first == "file")
+                    file = kv.second;
+            if (!nick.empty() && !file.empty())
                 files[f.createId(nick.c_str())] = file;
-            nick.clear(), file.clear();
-        };
-        while (std::getline(in, line))
-        {
-            line = IniLine(line);
-            if (line.empty())
-                continue;
-            if (line[0] == '[')
-            {
-                flush();
-                sys = _stricmp(line.c_str(), "[system]") == 0;
-                continue;
-            }
-            const size_t eq = line.find('=');
-            if (eq == std::string::npos)
-                continue;
-            const std::string k = str::Trim(line.substr(0, eq)), v = str::Trim(line.substr(eq + 1));
-            if (_stricmp(k.c_str(), "nickname") == 0)
-                nick = v;
-            else if (_stricmp(k.c_str(), "file") == 0)
-                file = v;
         }
-        flush();
     }
     const auto it = files.find(system);
     if (it == files.end())
         return sd;
-    std::ifstream in(DataDir() + "UNIVERSE\\" + it->second);
-    std::string line, nick, shape;
+    std::string nick, shape;
     u32 ids = 0, laneName = 0;
     float size[3] = {0, 0, 0};
     int nsize = 0;
@@ -663,45 +697,34 @@ const SystemData& SystemOf(u32 system)
         }
         nick.clear(), shape.clear(), ids = 0, laneName = 0, nsize = 0;
     };
-    while (std::getline(in, line))
+    for (const ini::Section& s : ini::Read(DataDir() + "UNIVERSE\\" + it->second))
     {
-        line = IniLine(line);
-        if (line.empty())
+        sec = s.type == "zone" ? kZone : s.type == "object" ? kObject : kOther;
+        if (sec == kOther)
             continue;
-        if (line[0] == '[')
+        for (const auto& kv : s.kv)
         {
-            flush();
-            sec = _stricmp(line.c_str(), "[zone]") == 0     ? kZone
-                  : _stricmp(line.c_str(), "[object]") == 0 ? kObject
-                                                            : kOther;
-            continue;
+            const std::string& k = kv.first;
+            const std::string& v = kv.second;
+            if (k == "nickname")
+                nick = v;
+            else if (sec == kZone && k == "ids_name")
+                ids = static_cast<u32>(strtoul(v.c_str(), nullptr, 10));
+            else if (sec == kZone && k == "shape")
+                shape = v;
+            else if (sec == kZone && k == "size")
+                nsize = sscanf_s(v.c_str(), "%f , %f , %f", &size[0], &size[1], &size[2]);
+            else if (sec == kObject && k == "tradelane_space_name")
+                laneName = static_cast<u32>(strtoul(v.c_str(), nullptr, 10));
         }
-        const size_t eq = line.find('=');
-        if (eq == std::string::npos || sec == kOther)
-            continue;
-        const std::string k = str::Trim(line.substr(0, eq)), v = str::Trim(line.substr(eq + 1));
-        if (_stricmp(k.c_str(), "nickname") == 0)
-            nick = v;
-        else if (sec == kZone && _stricmp(k.c_str(), "ids_name") == 0)
-            ids = static_cast<u32>(strtoul(v.c_str(), nullptr, 10));
-        else if (sec == kZone && _stricmp(k.c_str(), "shape") == 0)
-            shape = v;
-        else if (sec == kZone && _stricmp(k.c_str(), "size") == 0)
-            nsize = sscanf_s(v.c_str(), "%f , %f , %f", &size[0], &size[1], &size[2]);
-        else if (sec == kObject && _stricmp(k.c_str(), "tradelane_space_name") == 0)
-            laneName = static_cast<u32>(strtoul(v.c_str(), nullptr, 10));
+        flush();
     }
-    flush();
     Log("hudinfo: system %u (%s): %zu named zones, %zu lane names", system, it->second.c_str(), sd.zones.size(),
         sd.laneNames.size());
     return sd;
 }
 
-float Dist(const float a[3], const float b[3])
-{
-    const float d[3] = {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
-    return std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
-}
+using geom::Dist;
 
 struct P3
 {
@@ -1194,11 +1217,12 @@ bool EngineKilled()
 long long Credits()
 {
     const Fns& f = F();
-    if (!f.inspectCash)
-        return -1;
     const u32 client = 1; // single player
     int cash = 0;
-    return f.inspectCash(client, cash) == 0 ? cash : -1;
+    if (f.inspectCash && f.inspectCash(client, cash) == 0)
+        return cash;
+    // multiplayer (no server world here): the client's own copy, as the dealers read it
+    return exe::PlayerCash.ok() ? Mem<int>(exe::PlayerCash) : -1;
 }
 
 bool TractorActive()
@@ -1539,8 +1563,9 @@ std::string Status()
     o << "system \"" << u8s(SystemName()) << "\" zone \"" << u8s(ZoneName()) << "\"\n";
     space::Pilot p;
     const u32 target = space::ReadPilot(p) ? p.target : 0;
-    sprintf_s(b, "target %u \"%s\" faction \"%s\" class \"%s\" level %d\n", target, u8s(DisplayName(target)).c_str(),
-              u8s(FactionName(target)).c_str(), u8s(ClassName(target)).c_str(), Level(target));
+    sprintf_s(b, "target %u \"%s\" faction \"%s\" class \"%s\" level %d player %u\n", target,
+              u8s(DisplayName(target)).c_str(), u8s(FactionName(target)).c_str(), u8s(ClassName(target)).c_str(),
+              Level(target), target ? space::OwnerPlayer(target) : 0);
     o << b;
     sprintf_s(b, "afterburner %d engine_killed %d credits %lld tractor %d loot_in_reach %d\n", AfterburnerOn() ? 1 : 0,
               EngineKilled() ? 1 : 0, Credits(), TractorActive() ? 1 : 0, LootInReach());

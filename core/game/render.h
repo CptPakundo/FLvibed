@@ -84,6 +84,12 @@ void TextScaled(float x, float y, const std::wstring& s, u32 argb, float scale);
 void Sprite(const Image& img, float cx, float cy, float w, float h, float angle, u32 argb, bool additive);
 // A textured quad with its four corners given (xy, uv: corner 0..3 in order around it) and a colour per corner.
 void Quad(const Image& img, const float xy[8], const float uv[8], const u32 argb[4], bool additive);
+// A zoom over a range of what was drawn (the subtitles' stack fit): ZoomBegin starts a new batch at the current vertex
+// and returns its index; ZoomEnd(from, s, ox, oy) moves every vertex drawn since to o + (v - o) * s and draws those
+// batches linearly filtered (Text drawn after it is point-filtered again, as after TextScaled). s >= 1 (or <= 0): nothing.
+// Direct3D target only (the software target - movies - draws unzoomed). Not nested.
+size_t ZoomBegin();
+void ZoomEnd(size_t from, float s, float ox, float oy);
 // ownScene: wrap the draw in BeginScene/EndScene (from Present); false inside the game's scene.
 void End(bool ownScene);
 } // namespace render

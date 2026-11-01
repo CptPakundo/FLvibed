@@ -44,6 +44,11 @@ struct Fns
     const void*(__cdecl* getEquip)(u32) = nullptr;    // Archetype::GetEquipment
     u32(__thiscall* rootId)(const void*) = nullptr;   // Archetype::Root::get_id
     const void*(__cdecl* getExplosion)(const u32*) = nullptr; // Archetype::GetExplosion(ID_String)
+    // Common.dll: the client's own data (multiplayer: server.dll holds no world - docs\MULTIPLAYER.md)
+    const u8*(__cdecl* getBase)(u32) = nullptr;                    // Universe::get_base
+    float(__thiscall* listOccupied)(const void*) = nullptr;        // EquipDescList::get_cargo_space_occupied
+    void*(__cdecl* baseDataList)() = nullptr;                      // BaseDataList_get
+    const u8*(__thiscall* baseData)(const void*, u32) = nullptr;   // BaseDataList::get_base_data
 };
 
 template <class T> void Get(T& p, HMODULE m, const char* name) { p = reinterpret_cast<T>(GetProcAddress(m, name)); }
@@ -73,6 +78,10 @@ const Fns& F()
     Get(f.getEquip, c, "?GetEquipment@Archetype@@YAPAUEquipment@1@I@Z");
     Get(f.rootId, c, "?get_id@Root@Archetype@@QBEIXZ");
     Get(f.getExplosion, c, "?GetExplosion@Archetype@@YAPAUExplosion@1@ABUID_String@@@Z");
+    Get(f.getBase, c, "?get_base@Universe@@YAPAUIBase@1@I@Z");
+    Get(f.listOccupied, c, "?get_cargo_space_occupied@EquipDescList@@QBEMXZ");
+    Get(f.baseDataList, c, "?BaseDataList_get@@YAPAVBaseDataList@@XZ");
+    Get(f.baseData, c, "?get_base_data@BaseDataList@@QBEPAVBaseData@@I@Z");
     Log("baseinfo: strid=%p loc=%p ship=%p hold=%p price=%p rep=%p cargo=%p sites deal=%d/%d hint=%d ship=%d/%d/%d char=%d",
         f.getBaseStrid, f.location, f.shipId, f.holdLeft, f.price, f.feeling, f.enumCargo, exe::DealMarkBuy.ok(),
         exe::DealMarkSell.ok(), exe::ControlHintSet.ok(), exe::ShipTraderStatus.ok(), exe::ShipTraderLevel.ok(),
@@ -224,7 +233,7 @@ int Attitude(const std::wstring& faction)
     return a;
 }
 
-u32 BaseStrid(u32 base)
+u32 ServerBaseStrid(u32 base)
 {
     const Fns& f = F();
     if (!f.getBaseStrid)
@@ -257,7 +266,7 @@ u32 SystemStrid(u32 sys)
     }
 }
 
-float HoldLeft()
+float ServerHoldLeft()
 {
     const Fns& f = F();
     if (!f.holdLeft)
@@ -274,7 +283,7 @@ float HoldLeft()
     }
 }
 
-float MarketPrice(u32 base, u32 good)
+float ServerPrice(u32 base, u32 good)
 {
     const Fns& f = F();
     if (!f.price || !base || !good)
@@ -288,6 +297,130 @@ float MarketPrice(u32 base, u32 good)
     {
         return -1;
     }
+}
+
+// ---- the client's own copies (both modes; multiplayer has nothing else: server.dll holds no world, 28 Oct 2026)
+// A base's name: Common.dll's universe data (IBase +4 the id, +0xC strid_name; FLHookSDK Universe::IBase).
+u32 ClientBaseStrid(u32 base)
+{
+    const Fns& f = F();
+    if (!f.getBase || !base)
+        return 0;
+    __try
+    {
+        const u8* b = f.getBase(base);
+        return b && *reinterpret_cast<const u32*>(b + 4) == base ? *reinterpret_cast<const u32*>(b + 0xC) : 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return 0;
+    }
+}
+// The player's ship archetype: Freelancer.exe's client copy (exe::PlayerShipArch, the server's SETSHIPARCH), 0 unknown.
+u32 ClientShipArch() { return exe::PlayerShipArch.ok() ? Mem<u32>(exe::PlayerShipArch) : 0; }
+// The hold used: the client's equipment list (exe::PlayerEquipList - 4 is its EquipDescList) through the game's own
+// EquipDescList::get_cargo_space_occupied; -1 unknown.
+float ClientHoldUsed()
+{
+    const Fns& f = F();
+    if (!f.listOccupied || !exe::PlayerEquipList.ok())
+        return -1;
+    __try
+    {
+        const void* list = reinterpret_cast<const void*>(exe::PlayerEquipList.get() - 4);
+        const float v = Mem<u32>(exe::PlayerEquipList) ? f.listOccupied(list) : -1.0f;
+        return v >= 0 && v < 1e6f ? v : -1.0f;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return -1;
+    }
+}
+float ClientHoldLeft()
+{
+    const uintptr_t ship = Arch(F().getShip, ClientShipArch());
+    const float cap = ship ? F32(ship + 0x100) : -1.0f, used = ClientHoldUsed();
+    return cap > 0 && used >= 0 && used <= cap + 0.5f ? cap - used : -1.0f;
+}
+// A good's price at a base: Common.dll's market data (BaseDataList_get -> get_base_data: BaseData +0x10 the market map,
+// its head at +0x14 - MSVCP60 _Tree as exe::PlayerList; node +0xC the good id, +0x10 MarketGoodInfo {+0 good, +4
+// price}; FLHookSDK BaseData / MarketGoodInfo); -1 unknown.
+float ClientPrice(u32 base, u32 good)
+{
+    const Fns& f = F();
+    if (!f.baseDataList || !f.baseData || !base || !good)
+        return -1;
+    __try
+    {
+        const void* list = f.baseDataList();
+        const u8* bd = list ? f.baseData(list, base) : nullptr;
+        if (!bd)
+            return -1;
+        const uintptr_t head = *reinterpret_cast<const uintptr_t*>(bd + 0x14);
+        uintptr_t node = head ? *reinterpret_cast<const uintptr_t*>(head + 4) : 0;
+        for (int depth = 0; node && depth < 64 && *reinterpret_cast<const uintptr_t*>(node) != 0; ++depth)
+        {
+            const u32 key = *reinterpret_cast<const u32*>(node + 0xC);
+            if (key == good)
+            {
+                const float p = *reinterpret_cast<const float*>(node + 0x14);
+                return *reinterpret_cast<const u32*>(node + 0x10) == good && p >= 0 && p < 1e9f ? p : -1.0f;
+            }
+            node = *reinterpret_cast<const uintptr_t*>(node + (good < key ? 0 : 8));
+        }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+    return -1;
+}
+
+// The readers: the client's copy first (one path for both modes), the in-process server's answer where it has none.
+u32 BaseStrid(u32 base)
+{
+    const u32 c = ClientBaseStrid(base);
+    return c ? c : ServerBaseStrid(base);
+}
+float HoldLeft()
+{
+    const float c = ClientHoldLeft();
+    return c >= 0 ? c : ServerHoldLeft();
+}
+float MarketPrice(u32 base, u32 good)
+{
+    const float c = ClientPrice(base, good);
+    return c >= 0 ? c : ServerPrice(base, good);
+}
+
+std::string CompareSourcesImpl()
+{
+    std::ostringstream o;
+    const u32 base = Docked() ? Mem<u32>(exe::PlayerBase) : 0;
+    u32 sArch = 0;
+    CallU(F().shipId, sArch);
+    o << "base " << base << " strid client " << ClientBaseStrid(base) << " server " << ServerBaseStrid(base) << "\n";
+    o << "ship arch client " << ClientShipArch() << " server " << sArch << "\n";
+    o << "hold left client " << ClientHoldLeft() << " (used " << ClientHoldUsed() << ") server " << ServerHoldLeft()
+      << "\n";
+    int same = 0, differ = 0, clientOnly = 0, serverOnly = 0;
+    for (const Item& it : Equipment())
+    {
+        const float c = ClientPrice(base, it.arch), s = ServerPrice(base, it.arch);
+        if (c >= 0 && s >= 0 && fabsf(c - s) < 0.5f)
+            ++same;
+        else if (c >= 0 && s >= 0)
+        {
+            ++differ;
+            o << "  price " << it.arch << " client " << c << " server " << s << "\n";
+        }
+        else if (c >= 0)
+            ++clientOnly;
+        else if (s >= 0)
+            ++serverOnly;
+    }
+    o << "prices of the held goods at this base: same " << same << " differ " << differ << " client-only " << clientOnly
+      << " server-only " << serverOnly;
+    return o.str();
 }
 
 float ExplosionDamage(u32 id)
@@ -306,6 +439,8 @@ float ExplosionDamage(u32 id)
     }
 }
 } // namespace
+
+std::string CompareSources() { return CompareSourcesImpl(); }
 
 // ================= the context strip
 bool Docked() { return exe::PlayerBase.ok() && Mem<u32>(exe::PlayerBase) != 0; }
@@ -383,8 +518,10 @@ std::wstring SystemName()
 
 std::wstring ShipName()
 {
-    u32 arch = 0;
-    return CallU(F().shipId, arch) == 0 && arch ? shipname::Name(arch) : L"";
+    u32 arch = ClientShipArch(); // (the client's copy first: multiplayer too)
+    if (!arch && CallU(F().shipId, arch) != 0)
+        arch = 0;
+    return arch ? shipname::Name(arch) : L"";
 }
 
 long long Credits() { return hudinfo::Credits(); }
@@ -393,8 +530,10 @@ bool Cargo(int& used, int& capacity)
 {
     used = capacity = -1;
     const Fns& f = F();
-    u32 arch = 0;
-    if (CallU(f.shipId, arch) != 0 || !arch || !f.holdLeft)
+    u32 arch = ClientShipArch(); // (the client's copy first: multiplayer too)
+    if (!arch && CallU(f.shipId, arch) != 0)
+        arch = 0;
+    if (!arch)
         return false;
     const uintptr_t ship = Arch(f.getShip, arch);
     if (!ship)
@@ -591,7 +730,39 @@ bool GunOf(u32 arch, Gun& out)
     return true;
 }
 
+// An equipment list's items (MSVCP60 list of EquipDesc: node +8 the desc - +0xC archetype, +0x10 hardpoint, +0x14 mounted,
+// +0x1C count from the node), bounded
+static void WalkEquipment(u32 head, std::vector<Item>& out)
+{
+    int n = 0;
+    for (u32 node = U32(head); node && node != head && n < 256; node = U32(node), ++n)
+    {
+        Item it;
+        it.arch = U32(node + 0x0C);
+        it.count = static_cast<int>(U32(node + 0x1C));
+        u8 m = 0;
+        Read(node + 0x14, &m, 1);
+        it.mounted = m != 0;
+        char hp[33] = {};
+        if (const u32 p = U32(node + 0x10))
+            if (Read(p, hp, 32))
+                hp[32] = 0, it.hardpoint = hp;
+        out.push_back(it);
+    }
+}
+
+std::vector<Item> ServerEquipment();
+// The client's copy first (exe::PlayerEquipList: both modes), the in-process server's list where it has none
 std::vector<Item> Equipment()
+{
+    std::vector<Item> out;
+    if (exe::PlayerEquipList.ok())
+        if (const u32 head = Mem<u32>(exe::PlayerEquipList))
+            WalkEquipment(head, out);
+    return out.empty() ? ServerEquipment() : out;
+}
+
+std::vector<Item> ServerEquipment()
 {
     std::vector<Item> out;
     const Fns& f = F();
@@ -625,22 +796,7 @@ std::vector<Item> Equipment()
     const u32 arr = U32(U32(reinterpret_cast<uintptr_t>(fn) + 0x20));
     if (!arr || kClient - 1 >= count || !U32(arr + (kClient - 1) * 0x418 + 0x348))
         return out;
-    const u32 head = U32(arr + kClient * 0x418 - 0x1A0 + 4);
-    int n = 0;
-    for (u32 node = U32(head); node && node != head && n < 256; node = U32(node), ++n)
-    {
-        Item it;
-        it.arch = U32(node + 0x0C);
-        it.count = static_cast<int>(U32(node + 0x1C));
-        u8 m = 0;
-        Read(node + 0x14, &m, 1);
-        it.mounted = m != 0;
-        char hp[33] = {};
-        if (const u32 p = U32(node + 0x10))
-            if (Read(p, hp, 32))
-                hp[32] = 0, it.hardpoint = hp;
-        out.push_back(it);
-    }
+    WalkEquipment(U32(arr + kClient * 0x418 - 0x1A0 + 4), out);
     return out;
 }
 

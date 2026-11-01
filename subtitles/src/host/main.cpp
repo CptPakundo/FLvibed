@@ -464,7 +464,8 @@ static long __cdecl PlayMovieHook(HWND hwnd, bool b, const char* path)
     const long r = g_origPlayMovie(hwnd, b, path);
     g_moviePlaying = r >= 0;
     Log("PlayMovie(%s) -> %ld", path ? path : "", r);
-    GuardedMovie(0, hwnd, path);
+    if (r >= 0) // a movie that failed to start never plays: no start event (the logic would keep it as current)
+        GuardedMovie(0, hwnd, path);
     return r;
 }
 
@@ -662,10 +663,13 @@ static HRESULT WINAPI CreateDeviceHook(void* d3d, UINT adapter, DWORD type, HWND
             g_impl->OnDeviceLost();
         g_d3dDevice = *outDevice;
         void** vt = *static_cast<void***>(g_d3dDevice);
+        // (a refused patch returns null: the previous pointer stays for a hook already installed elsewhere)
         if (vt[d3d8idx::Dev_Reset] != ResetHook)
-            g_origReset = static_cast<ResetFn>(hk::PatchVtable(vt, d3d8idx::Dev_Reset, ResetHook));
+            if (void* o = hk::PatchVtable(vt, d3d8idx::Dev_Reset, ResetHook))
+                g_origReset = static_cast<ResetFn>(o);
         if (vt[d3d8idx::Dev_Present] != PresentHook)
-            g_origPresent = static_cast<PresentFn>(hk::PatchVtable(vt, d3d8idx::Dev_Present, PresentHook));
+            if (void* o = hk::PatchVtable(vt, d3d8idx::Dev_Present, PresentHook))
+                g_origPresent = static_cast<PresentFn>(o);
         if (ImplOk())
             g_impl->OnDeviceReset();
     }
@@ -680,8 +684,8 @@ static void* WINAPI Direct3DCreate8Hook(UINT sdk)
     {
         void** vt = *static_cast<void***>(d3d);
         if (vt[d3d8idx::D3D_CreateDevice] != CreateDeviceHook)
-            g_origCreateDevice =
-                static_cast<CreateDeviceFn>(hk::PatchVtable(vt, d3d8idx::D3D_CreateDevice, CreateDeviceHook));
+            if (void* o = hk::PatchVtable(vt, d3d8idx::D3D_CreateDevice, CreateDeviceHook))
+                g_origCreateDevice = static_cast<CreateDeviceFn>(o);
     }
     return d3d;
 }
@@ -782,6 +786,44 @@ static bool HostShiftCommWindow(float dy)
     return ok;
 }
 
+// ------------------------------------------------------------------ game loads (HostApi v9)
+// Every game load loads a fresh Content.dll: its loader notification (ntdll LdrRegisterDllNotification, the controller
+// host's events.cpp ContentModuleLoaded does the same) counts one. The logic compares the count once per frame and drops
+// the previous game's lines (a load straight from flight never passes the menu state the logic's TrackMenu sees: the
+// Fort Bush police line stayed over SaveS401's first line, 1 Nov 2026).
+struct LdrUStr
+{
+    USHORT length, maxLength;
+    const wchar_t* buffer;
+};
+struct LdrNotifyData
+{
+    ULONG flags;
+    const LdrUStr* fullName;
+    const LdrUStr* baseName;
+    void* base;
+    ULONG size;
+};
+static volatile LONG g_gameLoads = 0;
+static VOID CALLBACK ContentModuleLoaded(ULONG reason, const LdrNotifyData* d, void*)
+{
+    static const wchar_t kName[] = L"content.dll";
+    const size_t len = sizeof(kName) / sizeof(kName[0]) - 1;
+    if (reason != 1 || !d || !d->baseName || !d->baseName->buffer || d->baseName->length / sizeof(wchar_t) != len ||
+        _wcsnicmp(d->baseName->buffer, kName, len) != 0)
+        return;
+    InterlockedIncrement(&g_gameLoads);
+}
+static u32 HostGameLoads() { return static_cast<u32>(g_gameLoads); }
+static void WatchGameLoads()
+{
+    typedef LONG(NTAPI * RegisterFn)(ULONG, void*, void*, void**);
+    static void* cookie = nullptr;
+    auto reg = reinterpret_cast<RegisterFn>(GetProcAddress(GetModuleHandleA("ntdll.dll"), "LdrRegisterDllNotification"));
+    Log("game load watch (Content.dll loads) %s",
+        reg && reg(0, reinterpret_cast<void*>(ContentModuleLoaded), nullptr, &cookie) == 0 ? "on" : "FAILED");
+}
+
 // ------------------------------------------------------------------ init
 static void Init(HMODULE self)
 {
@@ -805,6 +847,8 @@ static void Init(HMODULE self)
     g_host.GetSettingsBus = flv_settings_bus; // v6: the bus in FLvibed.dll (core\settings_bus.cpp)
     g_host.SetIntroOverride = HostSetIntroOverride; // v7
     g_host.GetHudBus = flv_hud_bus;                 // v8: core\hud_bus.cpp
+    g_host.GameLoads = HostGameLoads;               // v9
+    WatchGameLoads();
 
     // FrameUpdate: push ecx; push ebp; push esi; xor ebp,ebp (5 bytes)
     g_origFrameUpdate =
@@ -825,11 +869,13 @@ static void Init(HMODULE self)
         exe::HudDrawPart, reinterpret_cast<void*>(HudDrawPartEntry), 8, "off-screen arrows kept clear of the HUD"));
     // PlayArch: push ebx; mov ebx,[esp+8] (5 bytes)
     g_origPlayArch = static_cast<PlayArchFn>(hk::Detour(exe::PlayArch, PlayArchHook, 5, "voice line subtitles"));
-    // CharCtor / CharDtor: push -1; push <SEH handler> (7 bytes). Both or neither (the list must stay consistent).
+    // CharCtor / CharDtor: push -1; push <SEH handler> (7 bytes). Both or neither (the list must stay consistent):
+    // the destructor first and the constructor only once it is in (a list without its removals keeps freed pointers).
     if (exe::CharCtor.ok() && exe::CharDtor.ok())
     {
-        g_origCharCtor = static_cast<CharCtorFn>(hk::Detour(exe::CharCtor, CharCtorHook, 7, "room characters"));
         g_origCharDtor = static_cast<CharDtorFn>(hk::Detour(exe::CharDtor, CharDtorHook, 7, "room characters"));
+        if (g_origCharDtor)
+            g_origCharCtor = static_cast<CharCtorFn>(hk::Detour(exe::CharCtor, CharCtorHook, 7, "room characters"));
     }
     else
         Log("Hooks CharCtor/CharDtor NOT installed: signature mismatch - room characters off");

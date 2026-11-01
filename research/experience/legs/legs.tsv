@@ -758,3 +758,576 @@ date	label	save	outcome	secs	boot	fps	commit	instance	detail
 2026-10-24 23:52	M04-s13b-padr	Save6380.fl	FAIL	784	11	152	34ba88f+dirty	2	FAILED (FAILED: 4454 69280328 mission-message type=FAILURE text=22780 "Mission Failed. You failed to fly to Mactan Base.") total 784 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: LoadSavegameButton; offers: none; last story event: 205 68594234 autopilot objective decide reason=objec
 2026-10-24 23:55	M04-s13b-padr	Save6380.fl	PASS	990	11	156	34ba88f+dirty	3	SUCCESS total 990 s
 2026-10-24 23:55	M04-s13b-padr	Save6380.fl	PASS	1026	11	159	34ba88f+dirty	1	SUCCESS total 1026 s
+2026-10-28 16:34	M06-gate-mpb0	Save33fa.fl	PASS	699	16	122	35f8632	3	SUCCESS total 699 s
+2026-10-28 16:41	M10-gate-mpb0	Save7b39.fl	PASS	1161	15	119	35f8632	2	SUCCESS total 1161 s
+2026-10-28 16:44	M11-gate-mpb0	Save08f9.fl	FAIL	616	11	117	35f8632+dirty	3	FAILED (FAILED: 979 20305843 player-death) total 616 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 979 20305843 player-death
+2026-10-28 16:50	M07-gate-mpb0	Save766f.fl	PASS	1677	14	126	35f8632	1	SUCCESS total 1677 s
+2026-10-28 16:54	M13-gate-mpb0	Save3989.fl	FAIL	730	11	127	35f8632+dirty	2	FAILED (FAILED: 1602 20880781 player-death) total 730 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1344 20806312 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-28 17:00	M04-gate-mpb0	Save6380.fl	FAIL	362	11	129	35f8632+dirty	2	FAILED (FAIL STATE (CHECKPOINT M04.benfordland not reached: segment over 58 s, par 12.5 s - dock at Benford)) total 362 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 675 20993281 autopilot objective decide reason=objective text=21660 verb=3 ref=0 tar
+2026-10-28 17:04	M02-gate-mpb0	Save05c7.fl	PASS	1160	12	130	35f8632+dirty	3	SUCCESS total 1160 s
+2026-10-28 17:11	M05-gate-mpb0	Save1d87.fl	PASS	1242	11	117	35f8632+dirty	1	SUCCESS total 1242 s
+2026-10-28 17:12	M08-gate-mpb0	Save3a48.fl	PASS	695	12	118	35f8632+dirty	2	SUCCESS total 695 s
+2026-10-28 17:16	M09-gate-mpb0	Save4686.fl	PASS	744	12	123	35f8632+dirty	3	SUCCESS total 744 s
+2026-10-28 17:18	M12-gate-mpb0	Save5e67.fl	PASS	387	12	138	35f8632+dirty	2	SUCCESS total 387 s
+2026-10-28 17:26	M03-gate-mpb0	Save1e7d.fl	PASS	906	12	162	35f8632+dirty	1	SUCCESS total 906 s
+2026-10-28 17:28	M01b-gate-mpb0	Save5f61.fl	PASS	704	12	174	35f8632+dirty	3	SUCCESS total 704 s
+2026-10-28 17:35	M01a-gate-mpb0	Save7e1c.fl	PASS	511	11	143	35f8632+dirty	1	SUCCESS total 511 s
+2026-10-28 17:41	M06-gate-mpb1	Save33fa.fl	PASS	721	11	122	9212cc3+dirty	3	SUCCESS total 721 s
+2026-10-28 17:48	M10-gate-mpb1	Save7b39.fl	PASS	1157	12	115	9212cc3+dirty	2	SUCCESS total 1157 s
+2026-10-28 18:11	M06-gate-mpb2	Save33fa.fl	PASS	719	13	111	0689c29+dirty	3	SUCCESS total 719 s
+2026-10-28 18:19	M11-gate-mpb2	Save08f9.fl	FAIL	461	12	116	a372482+dirty	3	FAILED (FAILED: 677 26014203 player-death) total 461 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 677 26014203 player-death
+2026-10-28 18:20	M10-gate-mpb2	Save7b39.fl	PASS	1228	13	109	0689c29+dirty	2	SUCCESS total 1228 s
+2026-10-28 18:28	M07-gate-mpb2	Save766f.fl	PASS	1729	12	121	0689c29+dirty	1	SUCCESS total 1729 s
+2026-10-28 18:29	M13-gate-mpb2	Save3989.fl	FAIL	519	11	130	a372482+dirty	2	FAILED (FAILED: 1177 26581296 player-death) total 519 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1177 26581296 player-death
+2026-10-28 18:35	M04-gate-mpb2	Save6380.fl	FAIL	367	11	138	a372482+dirty	2	FAILED (FAIL STATE (CHECKPOINT M04.benfordland not reached: segment over 58 s, par 12.5 s - dock at Benford)) total 367 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 92 26651953 autopilot objective decide reason=objective text=21660 verb=0 ref=0 targ
+2026-10-28 18:41	M02-gate-mpb2	Save05c7.fl	PASS	1290	12	124	a372482+dirty	3	SUCCESS total 1290 s
+2026-10-28 18:47	M08-gate-mpb2	Save3a48.fl	PASS	698	11	144	a372482+dirty	2	SUCCESS total 698 s
+2026-10-28 18:49	M05-gate-mpb2	Save1d87.fl	PASS	1222	12	142	a372482+dirty	1	SUCCESS total 1222 s
+2026-10-28 18:53	M12-gate-mpb2	Save5e67.fl	PASS	387	12	127	a372482+dirty	2	SUCCESS total 387 s
+2026-10-28 18:55	M09-gate-mpb2	Save4686.fl	PASS	815	11	137	a372482+dirty	3	SUCCESS total 815 s
+2026-10-28 19:05	M03-gate-mpb2	Save1e7d.fl	PASS	943	12	153	a372482+dirty	1	SUCCESS total 943 s
+2026-10-28 19:06	M01b-gate-mpb2	Save5f61.fl	PASS	679	11	162	a372482+dirty	3	SUCCESS total 679 s
+2026-10-28 19:14	M01a-gate-mpb2	Save7e1c.fl	PASS	532	11	148	a372482+dirty	1	SUCCESS total 532 s
+2026-10-28 19:24	M13-oddsab-a	Save3989.fl	PASS	909	13	118	f72304f+dirty	2	SUCCESS total 909 s
+2026-10-28 19:27	M09-oddsab-a	Save4686.fl	PASS	798	13	119	f72304f+dirty	1	SUCCESS total 798 s
+2026-10-28 19:29	M11-oddsab-b	Save08f9.fl	FAIL	1194	14	122	f72304f+dirty	3	FAILED (FAILED: 2171 30212343 player-death) total 1194 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 911 29660250 autopilot objective decide reason=objective text=24070 verb=3 ref=0 target=0 nav=0
+2026-10-28 19:37	M11-oddsab-a	Save08f9.fl	FAIL	489	11	123	c118129+dirty	3	FAILED (FAILED: 840 30715781 player-death) total 489 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 840 30715781 player-death
+2026-10-28 19:40	M13-oddsab-b	Save3989.fl	PASS	927	11	127	c118129+dirty	2	SUCCESS total 927 s
+2026-10-28 19:40	M09-oddsab-b	Save4686.fl	PASS	767	12	128	c118129+dirty	1	SUCCESS total 767 s
+2026-10-28 19:42	M13-oddsab-a	Save3989.fl	FAIL	112	11	149	c118129+dirty	2	FAILED (FAILED: 354 30993046 player-death) total 112 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 354 30993046 player-death
+2026-10-28 19:48	M11-oddsab-b	Save08f9.fl	FAIL	607	11	144	c118129+dirty	3	FAILED (FAILED: 1008 31336875 player-death) total 607 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 954 31310062 autopilot objective decide reason=objective text=24065 verb=0 ref=2293678337 target=2293678337 nav=0
+2026-10-28 19:53	M09-oddsab-a	Save4686.fl	PASS	739	12	141	c118129+dirty	1	SUCCESS total 739 s
+2026-10-28 19:58	M13-oddsab-b	Save3989.fl	PASS	949	10	134	c118129+dirty	2	SUCCESS total 949 s
+2026-10-28 20:00	M11-oddsab-a	Save08f9.fl	FAIL	708	11	137	c118129+dirty	3	FAILED (FAILED: 1129 32059531 player-death) total 708 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 984 32001406 autopilot objective decide reason=objective text=24070 verb=3 ref=0 target=0 nav=0
+2026-10-28 20:02	M13-fcov-a	M13_ck_st03.fl	PASS	214	18	149	c118129+dirty	4	UNTIL total 214 s
+2026-10-28 20:06	M13-fcov-b	M13_ck_st03.fl	PASS	235	11	164	c118129+dirty	4	UNTIL total 235 s
+2026-10-28 20:06	M09-oddsab-b	Save4686.fl	PASS	785	12	148	c118129+dirty	1	SUCCESS total 785 s
+2026-10-28 20:10	M13-gens-fix	M13_ck_st03.fl	PASS	167	13	169	c118129+dirty	3	UNTIL total 167 s
+2026-10-28 20:10	M13-gens-fix	M13_ck_st03.fl	PASS	179	13	170	c118129+dirty	2	UNTIL total 179 s
+2026-10-28 20:42	M07-gate-mpb6	Save766f.fl	FAIL	412	14	96	33b093f+dirty	1	FAILED (FAIL STATE (CHECKPOINT M07.gate not reached: segment over 164 s, par 61.0 s - the blockade (the cruiser from 150-450 m: no hull loss))) total 412 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 478 34571343 autopilot objective decide reason=obj
+2026-10-28 21:32	M06-gate-mpb16	Save33fa.fl	FAIL	217	15	122	cc5c887+dirty	3	FAILED (FAIL STATE (CHECKPOINT M06.racedone not reached by 217 s into the leg, par 150.0 s)) total 217 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 316 37561687 objective-client seq=23 obj=1 " " steps=1
+2026-10-28 21:32	M10-gate-mpb16	Save7b39.fl	FAIL	230	15	119	cc5c887+dirty	2	FAILED (FAIL STATE (CHECKPOINT M10.breakoff not reached by 230 s into the leg, par 155.5 s)) total 230 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 267 37507046 autopilot objective leash hakkera 6000 m: ship (named) (kept)
+2026-10-28 21:33	M07-gate-mpb16	Save766f.fl	FAIL	306	15	120	cc5c887+dirty	1	FAILED (FAILED: 365 37657906 mission-message type=FAILURE text=23350 "Mission Failed. You failed to dock with the Trade Lane.") total 306 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 371 37657921 autopilot objective decide reason=objective text
+2026-10-28 21:49	M06-gate-mpb18	Save33fa.fl	FAIL	280	16	119	6605005+dirty	3	FAILED (FAIL STATE (CHECKPOINT M06.hoodout not reached: segment over 71 s, par 16.0 s - dock the Hood, base stop, launch)) total 280 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 395 38540343 autopilot objective decide reason=objective text=23146 ver
+2026-10-28 22:01	M10-gate-mpb18	Save7b39.fl	FAIL	988	15	111	6605005+dirty	2	FAILED (FAILED: 2581 39319484 player-death) total 988 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 2581 39319484 player-death
+2026-10-28 22:02	M11-gate-mpb18	Save08f9.fl	FAIL	764	11	131	6605005+dirty	3	FAILED (FAILED: 1579 39391734 player-death) total 764 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1010 39074656 autopilot objective decide reason=objective text=24140 verb=3 ref=0 target=0 nav=0
+2026-10-28 22:11	M07-gate-mpb19	Save766f.fl	FAIL	299	15	121	ac96f7c+dirty	1	FAILED (FAIL STATE (CHECKPOINT M07.blockade not reached: segment over 100 s, par 61.0 s - lanes to the Tau-31 gate)) total 299 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 426 39917703 autopilot objective decide reason=objective text=21660 verb=0 re
+2026-10-28 22:36	M06-gate-mpb21	Save33fa.fl	PASS	681	14	116	c8b70fa+dirty	3	SUCCESS total 681 s
+2026-10-28 22:44	M10-gate-mpb21	Save7b39.fl	PASS	1151	14	112	c8b70fa+dirty	2	SUCCESS total 1151 s
+2026-10-28 22:46	M11-gate-mpb21	Save08f9.fl	FAIL	616	12	114	29c4d7c+dirty	3	FAILED (FAILED: 1325 42039765 player-death) total 616 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1246 41953328 autopilot objective decide reason=objective text=24060 verb=0 ref=0 target=0 nav=1
+2026-10-28 22:53	M07-gate-mpb21	Save766f.fl	PASS	1693	14	122	c8b70fa+dirty	1	SUCCESS total 1693 s
+2026-10-28 22:57	M13-gate-mpb21	Save3989.fl	FAIL	794	11	131	29c4d7c+dirty	2	FAILED (FAILED: 2451 42687515 player-death) total 794 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1677 42490968 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-28 23:05	M02-gate-mpb21	Save05c7.fl	PASS	1128	12	142	29c4d7c+dirty	3	SUCCESS total 1128 s
+2026-10-28 23:13	M05-gate-mpb21	Save1d87.fl	PASS	1221	13	142	29c4d7c+dirty	1	SUCCESS total 1221 s
+2026-10-28 23:14	M04-gate-mpb21	Save6380.fl	PASS	988	12	142	29c4d7c+dirty	2	SUCCESS total 988 s
+2026-10-28 23:18	M09-gate-mpb21	Save4686.fl	PASS	734	11	141	29c4d7c+dirty	3	SUCCESS total 734 s
+2026-10-28 23:25	M08-gate-mpb21	Save3a48.fl	PASS	663	12	143	29c4d7c+dirty	2	SUCCESS total 663 s
+2026-10-28 23:28	M03-gate-mpb21	Save1e7d.fl	PASS	893	12	143	29c4d7c+dirty	1	SUCCESS total 893 s
+2026-10-28 23:29	M01b-gate-mpb21	Save5f61.fl	PASS	674	11	148	29c4d7c+dirty	3	SUCCESS total 674 s
+2026-10-28 23:32	M12-gate-mpb21	Save5e67.fl	PASS	394	12	152	29c4d7c+dirty	2	SUCCESS total 394 s
+2026-10-28 23:37	M01a-gate-mpb21	Save7e1c.fl	PASS	509	12	181	29c4d7c+dirty	1	SUCCESS total 509 s
+2026-10-29 01:00	M06-gate-mpb22	Save33fa.fl	PASS	694	16	113	0332ec1	3	SUCCESS total 694 s
+2026-10-29 01:07	M10-gate-mpb22	Save7b39.fl	PASS	1142	16	112	0332ec1	2	SUCCESS total 1142 s
+2026-10-29 01:10	M13-gate-mpb22	Save3989.fl	FAIL	121	12	126	0332ec1+dirty	2	FAILED (FAILED: 557 50647000 player-death) total 121 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 557 50647000 player-death
+2026-10-29 01:17	M07-gate-mpb22	Save766f.fl	PASS	1700	16	122	0332ec1	1	SUCCESS total 1700 s
+2026-10-29 01:21	M11-gate-mpb22	Save08f9.fl	PASS	1236	12	123	0332ec1+dirty	3	SUCCESS total 1236 s
+2026-10-29 01:27	M04-gate-mpb22	Save6380.fl	PASS	1029	11	124	0332ec1+dirty	2	SUCCESS total 1029 s
+2026-10-29 01:37	M05-gate-mpb22	Save1d87.fl	PASS	1225	12	122	0332ec1+dirty	1	SUCCESS total 1225 s
+2026-10-29 01:38	M08-gate-mpb22	Save3a48.fl	PASS	656	12	133	0332ec1+dirty	2	SUCCESS total 656 s
+2026-10-29 01:40	M02-gate-mpb22	Save05c7.fl	PASS	1157	12	130	0332ec1+dirty	3	SUCCESS total 1157 s
+2026-10-29 01:45	M12-gate-mpb22	Save5e67.fl	PASS	398	12	141	0332ec1+dirty	2	SUCCESS total 398 s
+2026-10-29 01:53	M03-gate-mpb22	Save1e7d.fl	PASS	911	12	159	0332ec1+dirty	1	SUCCESS total 911 s
+2026-10-29 01:53	M09-gate-mpb22	Save4686.fl	PASS	736	11	162	0332ec1+dirty	3	SUCCESS total 736 s
+2026-10-29 02:02	M01a-gate-mpb22	Save7e1c.fl	PASS	516	11	178	0332ec1+dirty	1	SUCCESS total 516 s
+2026-10-29 02:04	M01b-gate-mpb22	Save5f61.fl	PASS	676	10	180	0332ec1+dirty	3	SUCCESS total 676 s
+2026-10-29 02:15	M04-ver-mpb22b	Save6380.fl	FAIL	376	14	114	0332ec1+dirty	2	FAILED (FAIL STATE (CHECKPOINT M04.benfordland not reached: segment over 58 s, par 12.5 s - dock at Benford)) total 376 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 421 54269421 autopilot objective decide reason=objective text=21660 verb=3 ref=0 tar
+2026-10-29 02:21	M13-ver-mpb22b	Save3989.fl	FAIL	772	13	125	0332ec1+dirty	1	FAILED (FAILED: 2551 54942593 player-death) total 772 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1968 54830140 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-29 02:37	M13city-jink50-a	M13_ck_city.fl	PASS	132	14	120	2097d8f+dirty	2	SUCCESS total 132 s
+2026-10-29 02:37	M13city-jink0-a	M13_ck_city.fl	PASS	132	14	121	2097d8f+dirty	3	SUCCESS total 132 s
+2026-10-29 02:45	M13city-gap200-d	M13_ck_city.fl	FAIL	71	12	124	2097d8f+dirty	2	FAILED (FAILED: 276 56357187 player-death) total 71 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 276 56357187 player-death
+2026-10-29 02:46	M13city-gap0-d	M13_ck_city.fl	PASS	134	12	123	2097d8f+dirty	3	SUCCESS total 134 s
+2026-10-29 02:47	M13city-gap200-e	M13_ck_city.fl	FAIL	119	12	119	2097d8f+dirty	2	FAILED (FAILED: 356 56495703 player-death) total 119 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 356 56495703 player-death
+2026-10-29 02:48	M13city-gap0-e	M13_ck_city.fl	PASS	140	11	115	2097d8f+dirty	3	SUCCESS total 140 s
+2026-10-29 02:51	M04-calm-a	Save6380.fl	PASS	1004	13	135	2097d8f+dirty	1	SUCCESS total 1004 s
+2026-10-29 02:54	M13city-pass-f	M13_ck_city.fl	PASS	307	14	142	2097d8f+dirty	2	SUCCESS total 307 s
+2026-10-29 02:58	M13city-pass-g	M13_ck_city.fl	PASS	236	11	151	2097d8f+dirty	2	SUCCESS total 236 s
+2026-10-29 02:59	M13city-coast-h	M13_ck_city.fl	PASS	133	14	143	2097d8f+dirty	3	SUCCESS total 133 s
+2026-10-29 03:00	M13city-coast-j	M13_ck_city.fl	FAIL	71	13	176	2097d8f+dirty	3	FAILED (FAILED: 219 57284015 player-death) total 71 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 219 57284015 player-death
+2026-10-29 03:02	M13city-coast-k	M13_ck_city.fl	FAIL	64	11	169	2097d8f+dirty	3	FAILED (FAILED: 236 57366625 player-death) total 64 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 236 57366625 player-death
+2026-10-29 03:07	M13city-stand2-l	M13_ck_city.fl	FAIL	72	14	138	2097d8f+dirty	2	FAILED (FAILED: 244 57711187 player-death) total 72 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 244 57711187 player-death
+2026-10-29 03:08	M13city-stand-l	M13_ck_city.fl	FAIL	107	14	141	2097d8f+dirty	3	FAILED (FAILED: 381 57745359 player-death) total 107 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 381 57745359 player-death
+2026-10-29 03:10	M13city-coast3-n	M13_ck_city.fl	FAIL	62	14	146	2097d8f+dirty	3	FAILED (FAILED: 163 57883968 player-death) total 62 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 163 57883968 player-death
+2026-10-29 03:13	M13city-coast4-p	M13_ck_city.fl	FAIL	75	14	139	2097d8f+dirty	2	FAILED (FAILED: 254 58029937 player-death) total 75 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 254 58029937 player-death
+2026-10-29 03:13	M13city-coast4-p	M13_ck_city.fl	FAIL	92	14	143	2097d8f+dirty	3	FAILED (FAILED: 279 58046656 player-death) total 92 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 279 58046656 player-death
+2026-10-29 03:15	M13city-coast4-q	M13_ck_city.fl	FAIL	76	11	145	2097d8f+dirty	3	FAILED (FAILED: 231 58141140 player-death) total 76 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 231 58141140 player-death
+2026-10-29 03:15	M13city-coast4-q	M13_ck_city.fl	FAIL	97	11	144	2097d8f+dirty	2	FAILED (FAILED: 296 58146140 player-death) total 97 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 296 58146140 player-death
+2026-10-29 03:17	M13city-coast5-r	M13_ck_city.fl	FAIL	64	14	144	2097d8f+dirty	3	FAILED (FAILED: 163 58310640 player-death) total 64 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 163 58310640 player-death
+2026-10-29 03:18	M13city-coast5-r	M13_ck_city.fl	FAIL	101	14	141	2097d8f+dirty	2	FAILED (FAILED: 318 58347828 player-death) total 101 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 318 58347828 player-death
+2026-10-29 03:20	M04-stage-a	Save6380.fl	PASS	1018	13	145	2097d8f+dirty	5	SUCCESS total 1018 s
+2026-10-29 03:21	M13city-coast6-t	M13_ck_city.fl	FAIL	88	14	174	2097d8f+dirty	2	FAILED (FAILED: 263 58504515 player-death) total 88 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 263 58504515 player-death
+2026-10-29 03:21	M13city-coast6-t	M13_ck_city.fl	FAIL	98	14	174	2097d8f+dirty	3	FAILED (FAILED: 328 58514437 player-death) total 98 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 328 58514437 player-death
+2026-10-29 03:24	M13city-coast8-x	M13_ck_city.fl	FAIL	76	13	181	2097d8f+dirty	3	FAILED (FAILED: 272 58699062 player-death) total 76 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 272 58699062 player-death
+2026-10-29 03:24	M13city-coast8-x	M13_ck_city.fl	FAIL	81	13	179	2097d8f+dirty	2	FAILED (FAILED: 312 58703765 player-death) total 81 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 312 58703765 player-death
+2026-10-29 03:25	M13city-coast8-y	M13_ck_city.fl	FAIL	65	11	175	2097d8f+dirty	2	FAILED (FAILED: 217 58787015 player-death) total 65 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 217 58787015 player-death
+2026-10-29 03:26	M13city-coast8-y	M13_ck_city.fl	FAIL	84	11	175	2097d8f+dirty	3	FAILED (FAILED: 353 58801453 player-death) total 84 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 353 58801453 player-death
+2026-10-29 03:30	M13city-coast9-z1	M13_ck_city.fl	FAIL	77	13	173	2097d8f+dirty	2	FAILED (FAILED: 329 59061562 player-death) total 77 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 329 59061562 player-death
+2026-10-29 03:30	M13city-coast9-z1	M13_ck_city.fl	FAIL	83	13	172	2097d8f+dirty	3	FAILED (FAILED: 335 59067406 player-death) total 83 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 335 59067406 player-death
+2026-10-29 03:32	M13city-coast9-z2	M13_ck_city.fl	FAIL	84	11	171	2097d8f+dirty	3	FAILED (FAILED: 345 59169500 player-death) total 84 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 345 59169500 player-death
+2026-10-29 03:34	M13city-coast10-a1	M13_ck_city.fl	FAIL	64	14	176	2097d8f+dirty	3	FAILED (FAILED: 211 59299562 player-death) total 64 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 211 59299562 player-death
+2026-10-29 03:34	M13city-coast10-a1	M13_ck_city.fl	FAIL	80	13	177	2097d8f+dirty	2	FAILED (FAILED: 315 59316218 player-death) total 80 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 315 59316218 player-death
+2026-10-29 03:35	M13city-coast10-a2	M13_ck_city.fl	FAIL	69	11	175	2097d8f+dirty	3	FAILED (FAILED: 269 59387000 player-death) total 69 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 269 59387000 player-death
+2026-10-29 03:39	M13city-coastclose-b1	M13_ck_city.fl	PASS	131	12	171	2097d8f+dirty	2	SUCCESS total 131 s
+2026-10-29 03:39	M13city-coastclose-b1	M13_ck_city.fl	PASS	136	12	171	2097d8f+dirty	3	SUCCESS total 136 s
+2026-10-29 03:41	M13city-coastclose-b2	M13_ck_city.fl	PASS	129	11	172	2097d8f+dirty	2	SUCCESS total 129 s
+2026-10-29 03:41	M13city-coastclose-b2	M13_ck_city.fl	PASS	126	10	173	2097d8f+dirty	3	SUCCESS total 126 s
+2026-10-29 06:58	M01a-afk29-harness	Save7e1c.fl	PASS	511	13	184	ca6e675	1	SUCCESS total 511 s
+2026-10-29 07:52	M01a-afk29-guarded3	Save7e1c.fl	PASS	479	11	190	538761f	2	SUCCESS total 479 s
+2026-10-29 12:47	M06-gate-mpb23	Save33fa.fl	PASS	730	18	142	8c5c9a3	3	SUCCESS total 730 s
+2026-10-29 12:53	M10-gate-mpb23	Save7b39.fl	PASS	1115	18	138	8c5c9a3	2	SUCCESS total 1115 s
+2026-10-29 13:03	M07-gate-mpb23	Save766f.fl	PASS	1705	18	140	8c5c9a3	1	SUCCESS total 1705 s
+2026-10-29 13:06	M11-gate-mpb23	Save08f9.fl	FAIL	1147	12	138	8c5c9a3	3	FAILED (FAILED: 2796 93622515 player-death) total 1147 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1170 93015625 autopilot objective decide reason=objective text=24065 verb=0 ref=2293678337 target=2293678337 nav=0
+2026-10-29 13:08	M13-gate-mpb23	Save3989.fl	PASS	892	11	137	8c5c9a3	2	SUCCESS total 892 s
+2026-10-29 13:22	M05-gate-mpb23	Save1d87.fl	PASS	1118	12	139	8c5c9a3	1	SUCCESS total 1118 s
+2026-10-29 13:25	M02-gate-mpb23	Save05c7.fl	PASS	1109	12	142	8c5c9a3	3	SUCCESS total 1109 s
+2026-10-29 13:25	M04-gate-mpb23	Save6380.fl	PASS	998	12	140	8c5c9a3	2	SUCCESS total 998 s
+2026-10-29 13:36	M08-gate-mpb23	Save3a48.fl	PASS	670	12	146	8c5c9a3	2	SUCCESS total 670 s
+2026-10-29 13:37	M09-gate-mpb23	Save4686.fl	PASS	747	12	145	8c5c9a3	3	SUCCESS total 747 s
+2026-10-29 13:38	M03-gate-mpb23	Save1e7d.fl	PASS	963	12	143	8c5c9a3	1	SUCCESS total 963 s
+2026-10-29 13:40	M01b-gate-mpb23	Save5f61.fl	FAIL	135	12	140	8c5c9a3	3	FAILED (FAILED: 139 95657343 player-death) total 135 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 139 95657343 player-death
+2026-10-29 13:43	M12-gate-mpb23	Save5e67.fl	PASS	399	12	153	8c5c9a3	2	SUCCESS total 399 s
+2026-10-29 13:46	M01a-gate-mpb23	Save7e1c.fl	PASS	493	12	160	8c5c9a3	1	SUCCESS total 493 s
+2026-10-29 13:59	M01a-vanilla	Save7e1c.fl	PASS	484	10	160	a08c223	vanilla11c	SUCCESS total 484 s
+2026-10-29 14:00	M01b-fixcoast	Save5f61.fl	PASS	660	14	171	aaca862	3	SUCCESS total 660 s
+2026-10-29 14:04	M03-recheck	Save1e7d.fl	PASS	933	14	176	aaca862	1	SUCCESS total 933 s
+2026-10-29 14:23	M03-followavoid	Save1e7d.fl	PASS	872	11	190	6bf605f	1	SUCCESS total 872 s
+2026-10-29 14:48	M06-gate-mpb24	Save33fa.fl	PASS	681	12	147	6bf605f	3	SUCCESS total 681 s
+2026-10-29 14:56	M10-gate-mpb24	Save7b39.fl	PASS	1133	13	144	6bf605f	2	SUCCESS total 1133 s
+2026-10-29 14:58	M13-gate-mpb24	Save3989.fl	FAIL	112	11	149	6bf605f	2	FAILED (FAILED: 920 100324796 player-death) total 112 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 920 100324796 player-death
+2026-10-29 15:05	M07-gate-mpb24	Save766f.fl	PASS	1681	12	147	6bf605f	1	SUCCESS total 1681 s
+2026-10-29 15:09	M11-gate-mpb24	Save08f9.fl	PASS	1219	12	145	6bf605f	3	SUCCESS total 1219 s
+2026-10-29 15:14	M04-gate-mpb24	Save6380.fl	PASS	992	12	146	6bf605f	2	SUCCESS total 992 s
+2026-10-29 15:23	M05-gate-mpb24	Save1d87.fl	PASS	1112	12	146	6bf605f	1	SUCCESS total 1112 s
+2026-10-29 15:26	M08-gate-mpb24	Save3a48.fl	PASS	680	12	146	6bf605f	2	SUCCESS total 680 s
+2026-10-29 15:27	M02-gate-mpb24	Save05c7.fl	PASS	1110	12	152	6bf605f	3	SUCCESS total 1110 s
+2026-10-29 15:33	M12-gate-mpb24	Save5e67.fl	PASS	424	12	141	6bf605f	2	SUCCESS total 424 s
+2026-10-29 15:38	M03-gate-mpb24	Save1e7d.fl	PASS	869	12	154	6bf605f	1	SUCCESS total 869 s
+2026-10-29 15:40	M09-gate-mpb24	Save4686.fl	PASS	724	12	160	6bf605f	3	SUCCESS total 724 s
+2026-10-29 15:47	M01a-gate-mpb24	Save7e1c.fl	PASS	495	12	177	6bf605f	1	SUCCESS total 495 s
+2026-10-29 15:51	M01b-gate-mpb24	Save5f61.fl	PASS	664	11	182	6bf605f	3	SUCCESS total 664 s
+2026-10-29 17:43	M13-burstprobe-1	Save3989.fl	FAIL	114	12	152	9f1374f+dirty	1	FAILED (FAILED: 598 3455281 player-death) total 114 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 598 3455281 player-death
+2026-10-29 17:44	M13-burstprobe-3	Save3989.fl	PASS	161	13	156	9f1374f+dirty	3	UNTIL total 161 s
+2026-10-29 17:44	M13-burstprobe-2	Save3989.fl	PASS	165	13	157	9f1374f+dirty	2	UNTIL total 165 s
+2026-10-29 17:49	M13-burstprobe2-1	Save3989.fl	FAIL	106	12	156	79ff8e7+dirty	1	FAILED (FAILED: 573 3771843 player-death) total 106 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 573 3771843 player-death
+2026-10-29 17:49	M13-burstprobe2-2	Save3989.fl	PASS	143	11	155	79ff8e7+dirty	2	UNTIL total 143 s
+2026-10-29 17:50	M13-burstprobe2-3	Save3989.fl	PASS	156	11	155	79ff8e7+dirty	3	UNTIL total 156 s
+2026-10-29 18:06	M13-burstprobe3-2	Save3989.fl	PASS	145	11	142	03c8ba1+dirty	2	UNTIL total 145 s
+2026-10-29 18:06	M13-burstprobe3-1	Save3989.fl	PASS	154	12	146	03c8ba1+dirty	1	UNTIL total 154 s
+2026-10-29 18:06	M13-burstprobe3-3	Save3989.fl	PASS	158	11	145	03c8ba1+dirty	3	UNTIL total 158 s
+2026-10-29 18:09	M13-burstprobe4-1	Save3989.fl	FAIL	113	11	152	03c8ba1+dirty	1	FAILED (FAILED: 600 4987578 player-death) total 113 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 600 4987578 player-death
+2026-10-29 18:09	M13-burstprobe4-3	Save3989.fl	PASS	140	12	156	03c8ba1+dirty	3	UNTIL total 140 s
+2026-10-29 18:10	M13-burstprobe4-2	Save3989.fl	PASS	149	11	154	03c8ba1+dirty	2	UNTIL total 149 s
+2026-10-29 18:41	M13-rush-2-1	Save3989.fl	PASS	176	11	140	97dabbc	2	UNTIL total 176 s
+2026-10-29 18:41	M13-rush-3-1	Save3989.fl	PASS	181	11	141	97dabbc	3	UNTIL total 181 s
+2026-10-29 18:41	M13-rush-1-1	Save3989.fl	PASS	186	12	140	97dabbc	1	UNTIL total 186 s
+2026-10-29 18:44	M13-rush-1-2	Save3989.fl	PASS	181	10	137	97dabbc	1	UNTIL total 181 s
+2026-10-29 18:44	M13-rush-3-2	Save3989.fl	PASS	185	10	140	97dabbc	3	UNTIL total 185 s
+2026-10-29 18:44	M13-rush-2-2	Save3989.fl	PASS	195	11	141	97dabbc	2	UNTIL total 195 s
+2026-10-29 18:47	M13-rush-1-3	Save3989.fl	PASS	177	10	139	97dabbc	1	UNTIL total 177 s
+2026-10-29 18:47	M13-rush-2-3	Save3989.fl	PASS	171	10	143	97dabbc	2	UNTIL total 171 s
+2026-10-29 18:47	M13-rush-3-3	Save3989.fl	PASS	185	10	138	97dabbc	3	UNTIL total 185 s
+2026-10-29 18:50	M13-rush-3-4	Save3989.fl	PASS	149	10	137	97dabbc	3	UNTIL total 149 s
+2026-10-29 18:50	M13-rush-2-4	Save3989.fl	PASS	181	11	145	97dabbc	2	UNTIL total 181 s
+2026-10-29 18:51	M13-rush-1-4	Save3989.fl	FAIL	203	11	141	97dabbc	1	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached: segment over 130 s, par 45.0 s - the battleship at 0 m (battery bursts))) total 203 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 538 7359421 autopilot objective decide reason=objective text=2442
+2026-10-29 19:12	M13-split-1-1	Save3989.fl	FAIL	124	12	148	eb30dcb	1	FAILED (FAILED: 673 8761046 player-death) total 124 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 673 8761046 player-death
+2026-10-29 19:13	M13-split-3-1	Save3989.fl	PASS	166	11	146	eb30dcb	3	UNTIL total 166 s
+2026-10-29 19:13	M13-split-2-1	Save3989.fl	PASS	169	11	148	eb30dcb	2	UNTIL total 169 s
+2026-10-29 19:18	M13-split60-1-1	Save3989.fl	PASS	162	12	64	5234017	1	UNTIL total 162 s
+2026-10-29 19:18	M13-split60-2-1	Save3989.fl	PASS	172	11	63	5234017	2	UNTIL total 172 s
+2026-10-29 19:18	M13-split60-3-1	Save3989.fl	PASS	190	11	63	5234017	3	UNTIL total 190 s
+2026-10-29 19:20	M13-shape60-1-1	Save3989.fl	PASS	160	11	63	5234017	1	UNTIL total 160 s
+2026-10-29 19:21	M13-shape60-2-1	Save3989.fl	PASS	186	11	62	5234017	2	UNTIL total 186 s
+2026-10-29 19:22	M13-shape60-3-1	Save3989.fl	PASS	192	10	63	5234017	3	UNTIL total 192 s
+2026-10-29 19:24	M13-split60-1-2	Save3989.fl	PASS	170	11	63	5234017	1	UNTIL total 170 s
+2026-10-29 19:24	M13-split60-3-2	Save3989.fl	PASS	160	10	63	5234017	3	UNTIL total 160 s
+2026-10-29 19:25	M13-split60-2-2	Save3989.fl	PASS	192	11	63	5234017	2	UNTIL total 192 s
+2026-10-29 21:06	M13-refusal-3	Save3989.fl	PASS	162	12	134	a7d3c31	3	UNTIL total 162 s
+2026-10-29 21:06	M13-refusal-1	Save3989.fl	PASS	168	12	141	a7d3c31	1	UNTIL total 168 s
+2026-10-29 21:07	M13-refusal-2	Save3989.fl	PASS	182	12	141	a7d3c31	2	UNTIL total 182 s
+2026-10-29 21:10	M13-gap55-3-1	Save3989.fl	FAIL	102	11	150	d7807f1	3	FAILED (FAILED: 392 15869156 player-death) total 102 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 392 15869156 player-death
+2026-10-29 21:11	M13-gap55-2-1	Save3989.fl	PASS	135	11	142	d7807f1	2	UNTIL total 135 s
+2026-10-29 21:11	M13-gap55-1-1	Save3989.fl	PASS	150	12	142	d7807f1	1	UNTIL total 150 s
+2026-10-29 21:13	M13-gap55-3-2	Save3989.fl	PASS	159	10	132	d7807f1	3	UNTIL total 159 s
+2026-10-29 21:14	M13-gap55-2-2	Save3989.fl	PASS	166	10	141	d7807f1	2	UNTIL total 166 s
+2026-10-29 21:14	M13-gap55-1-2	Save3989.fl	PASS	174	10	137	d7807f1	1	UNTIL total 174 s
+2026-10-29 21:16	M13-gap55-3-3	Save3989.fl	PASS	171	10	138	d7807f1	3	UNTIL total 171 s
+2026-10-29 21:17	M13-gap55-2-3	Save3989.fl	PASS	163	10	144	d7807f1	2	UNTIL total 163 s
+2026-10-29 21:17	M13-gap55-1-3	Save3989.fl	PASS	151	10	150	d7807f1	1	UNTIL total 151 s
+2026-10-30 01:34	M13-dt60b-2-1	Save3989.fl	PASS	141	14	63	b877605+dirty	2	UNTIL total 141 s
+2026-10-30 01:34	M13-dt60a-1-1	Save3989.fl	PASS	156	12	62	b877605+dirty	1	UNTIL total 156 s
+2026-10-30 01:35	M13-dt60a-3-1	Save3989.fl	PASS	170	13	63	b877605+dirty	3	UNTIL total 170 s
+2026-10-30 01:37	M13-dt60b-1-1	Save3989.fl	FAIL	121	10	65	b877605+dirty	1	FAILED (FAILED: 628 3798500 player-death) total 121 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 628 3798500 player-death
+2026-10-30 01:37	M13-dt60a-2-1	Save3989.fl	PASS	178	10	63	b877605+dirty	2	UNTIL total 178 s
+2026-10-30 01:38	M13-dt60b-3-1	Save3989.fl	PASS	163	10	63	b877605+dirty	3	UNTIL total 163 s
+2026-10-30 02:17	M07-gate-q3s2	Save766f.fl	FAIL	625	14	146	ee25e00	1	FAILED (FAILED: 1411 6214625 mission-message type=FAILURE text=23350 "Mission Failed. You failed to dock with the Trade Lane.") total 625 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 757 5905671 autopilot objective pre-stage-next 23240 -> 23349
+2026-10-30 02:19	M06-gate-q3s2	Save33fa.fl	PASS	723	14	146	ee25e00	3	SUCCESS total 723 s
+2026-10-30 02:25	M10-gate-q3s2	Save7b39.fl	PASS	1095	14	143	ee25e00	2	SUCCESS total 1095 s
+2026-10-30 02:30	M11-gate-q3s2	Save08f9.fl	FAIL	693	12	147	ee25e00	3	FAILED (FAILED: 1650 7018531 player-death) total 693 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1133 6793109 autopilot objective decide reason=objective text=24140 verb=3 ref=0 target=0 nav=0
+2026-10-30 02:35	M05-gate-q3s2	Save1d87.fl	PASS	1084	12	149	ee25e00	1	SUCCESS total 1084 s
+2026-10-30 02:38	M13-gate-q3s2	Save3989.fl	FAIL	794	11	151	ee25e00	2	FAILED (FAILED: 3078 7491531 player-death) total 794 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 2133 7281062 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-30 02:49	M02-gate-q3s2	Save05c7.fl	PASS	1123	12	157	ee25e00	3	SUCCESS total 1123 s
+2026-10-30 02:50	M03-gate-q3s2	Save1e7d.fl	PASS	877	12	154	ee25e00	1	SUCCESS total 877 s
+2026-10-30 02:55	M04-gate-q3s2	Save6380.fl	PASS	1002	11	151	ee25e00	2	SUCCESS total 1002 s
+2026-10-30 02:59	M01a-gate-q3s2	Save7e1c.fl	PASS	520	12	148	ee25e00	1	SUCCESS total 520 s
+2026-10-30 03:03	M09-gate-q3s2	Save4686.fl	PASS	779	12	151	ee25e00	3	SUCCESS total 779 s
+2026-10-30 03:06	M08-gate-q3s2	Save3a48.fl	PASS	657	12	162	ee25e00	2	SUCCESS total 657 s
+2026-10-30 03:13	M12-gate-q3s2	Save5e67.fl	PASS	386	11	141	ee25e00	2	SUCCESS total 386 s
+2026-10-30 03:14	M01b-gate-q3s2	Save5f61.fl	PASS	668	12	161	ee25e00	3	SUCCESS total 668 s
+2026-10-30 03:14	M07-guardfix-a	SaveS208.fl	FAIL	301	14	158	4c4fb6f	1	FAILED (FAIL STATE (CHECKPOINT M07.sinclair not reached: segment over 301 s, par 91.2 s - Tau-31 lanes)) total 301 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 156 9604640 autopilot objective pre-stage-next 23250 -> mlog_take_the_tradelane_to_the_ta
+2026-10-30 03:33	M07-guardfix2-3	Save766f.fl	FAIL	1106	12	145	4c4fb6f	3	FAILED (FAILED: 1950 10804859 player-death) total 1106 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1950 10804859 player-death
+2026-10-30 03:43	M07-guardfix2-2	Save766f.fl	PASS	1648	12	153	4c4fb6f	2	SUCCESS total 1648 s
+2026-10-30 03:43	M07-guardfix2-1	Save766f.fl	PASS	1683	12	154	4c4fb6f	1	SUCCESS total 1683 s
+2026-10-30 04:00	M13-q4s1p-1	Save3989.fl	FAIL	111	13	148	217a972	1	FAILED (FAILED: 570 12367703 player-death) total 111 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 570 12367703 player-death
+2026-10-30 04:00	M13-q4s1p-2	Save3989.fl	PASS	152	12	141	217a972	2	UNTIL total 152 s
+2026-10-30 04:00	M13-q4s1p-3	Save3989.fl	PASS	159	12	147	217a972	3	UNTIL total 159 s
+2026-10-30 04:05	M13-q4s1-a	Save3989.fl	PASS	149	11	144	217a972	3	UNTIL total 149 s
+2026-10-30 04:05	M13-q4s1-b	Save3989.fl	PASS	157	12	146	217a972	2	UNTIL total 157 s
+2026-10-30 04:05	M13-q4s1-a	Save3989.fl	PASS	158	11	143	217a972	1	UNTIL total 158 s
+2026-10-30 04:07	M13-q4s1-b	Save3989.fl	FAIL	120	11	147	217a972	3	FAILED (FAILED: 660 12805875 player-death) total 120 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 660 12805875 player-death
+2026-10-30 04:07	M13-q4s1-a	Save3989.fl	FAIL	124	11	146	217a972	2	FAILED (FAILED: 720 12817687 player-death) total 124 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 720 12817687 player-death
+2026-10-30 04:08	M13-q4s1-b	Save3989.fl	PASS	160	11	142	217a972	1	UNTIL total 160 s
+2026-10-30 04:09	M13-q4s1-a	Save3989.fl	FAIL	126	12	149	217a972	3	FAILED (FAILED: 671 12947000 player-death) total 126 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 671 12947000 player-death
+2026-10-30 04:10	M13-q4s1-b	Save3989.fl	PASS	180	11	134	217a972	2	UNTIL total 180 s
+2026-10-30 04:11	M13-q4s1-a	Save3989.fl	PASS	165	12	136	217a972	1	UNTIL total 165 s
+2026-10-30 04:12	M13-q4s1-b	Save3989.fl	PASS	159	12	132	217a972	3	UNTIL total 159 s
+2026-10-30 04:12	M13-q4s1-b	Save3989.fl	FAIL	96	12	139	217a972	1	FAILED (FAILED: 411 13143828 player-death) total 96 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 411 13143828 player-death
+2026-10-30 04:13	M13-q4s1-a	Save3989.fl	PASS	154	12	142	217a972	2	UNTIL total 154 s
+2026-10-30 04:14	M13-q4s1-a	Save3989.fl	FAIL	91	11	156	217a972	1	FAILED (FAILED: 608 13249453 player-death) total 91 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 608 13249453 player-death
+2026-10-30 04:15	M13-q4s1-a	Save3989.fl	PASS	178	11	150	217a972	3	UNTIL total 178 s
+2026-10-30 04:16	M13-q4s1-b	Save3989.fl	PASS	156	11	143	217a972	2	UNTIL total 156 s
+2026-10-30 04:17	M13-q4s1-b	Save3989.fl	PASS	168	11	138	217a972	1	UNTIL total 168 s
+2026-10-30 04:18	M13-q4s1-a	Save3989.fl	FAIL	106	11	146	217a972	2	FAILED (FAILED: 633 13467265 player-death) total 106 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 633 13467265 player-death
+2026-10-30 04:19	M13-q4s1-b	Save3989.fl	PASS	190	11	144	217a972	3	UNTIL total 190 s
+2026-10-30 04:20	M13-q4s1-a	Save3989.fl	PASS	156	11	150	217a972	1	UNTIL total 156 s
+2026-10-30 04:21	M13-q4s1-b	Save3989.fl	PASS	161	11	144	217a972	2	UNTIL total 161 s
+2026-10-30 04:21	M13-q4s1-a	Save3989.fl	PASS	144	11	148	217a972	3	UNTIL total 144 s
+2026-10-30 04:23	M13-q4s1-b	Save3989.fl	PASS	137	11	152	217a972	1	UNTIL total 137 s
+2026-10-30 04:23	M13-q4s1-a	Save3989.fl	FAIL	98	11	157	217a972	2	FAILED (FAILED: 602 13757125 player-death) total 98 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 602 13757125 player-death
+2026-10-30 04:24	M13-q4s1-b	Save3989.fl	PASS	146	11	171	217a972	3	UNTIL total 146 s
+2026-10-30 04:41	M13-q4s2-b	Save3989.fl	FAIL	128	13	147	7609f06	1	FAILED (FAILED: 717 14876703 player-death) total 128 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 717 14876703 player-death
+2026-10-30 04:41	M13-q4s2-b	Save3989.fl	PASS	133	13	148	7609f06	3	UNTIL total 133 s
+2026-10-30 04:42	M13-q4s2-a	Save3989.fl	PASS	171	13	151	7609f06	2	UNTIL total 171 s
+2026-10-30 04:44	M13-q4s2-a	Save3989.fl	PASS	140	11	143	7609f06	1	UNTIL total 140 s
+2026-10-30 04:44	M13-q4s2-a	Save3989.fl	PASS	157	11	148	7609f06	3	UNTIL total 157 s
+2026-10-30 04:45	M13-q4s2-b	Save3989.fl	PASS	143	11	149	7609f06	2	UNTIL total 143 s
+2026-10-30 04:47	M13-q4s2-b	Save3989.fl	PASS	167	11	149	7609f06	1	UNTIL total 167 s
+2026-10-30 04:48	M13-q4s2-b	Save3989.fl	PASS	197	11	144	7609f06	3	UNTIL total 197 s
+2026-10-30 04:48	M13-q4s2-a	Save3989.fl	PASS	179	11	146	7609f06	2	UNTIL total 179 s
+2026-10-30 04:50	M13-q4s2-a	Save3989.fl	PASS	155	11	148	7609f06	1	UNTIL total 155 s
+2026-10-30 04:51	M13-q4s2-b	Save3989.fl	PASS	147	11	147	7609f06	2	UNTIL total 147 s
+2026-10-30 04:51	M13-q4s2-a	Save3989.fl	PASS	168	11	150	7609f06	3	UNTIL total 168 s
+2026-10-30 04:52	M13-q4s2-b	Save3989.fl	PASS	154	11	145	7609f06	1	UNTIL total 154 s
+2026-10-30 04:53	M13-q4s2-b	Save3989.fl	FAIL	118	11	148	7609f06	3	FAILED (FAILED: 1016 15573171 player-death) total 118 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1016 15573171 player-death
+2026-10-30 04:53	M13-q4s2-a	Save3989.fl	PASS	160	11	151	7609f06	2	UNTIL total 160 s
+2026-10-30 04:55	M13-q4s2-a	Save3989.fl	FAIL	119	11	149	7609f06	1	FAILED (FAILED: 657 15679046 player-death) total 119 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 657 15679046 player-death
+2026-10-30 04:56	M13-q4s2-a	Save3989.fl	PASS	152	11	144	7609f06	3	UNTIL total 152 s
+2026-10-30 04:56	M13-q4s2-b	Save3989.fl	PASS	155	11	144	7609f06	2	UNTIL total 155 s
+2026-10-30 04:57	M13-q4s2-b	Save3989.fl	FAIL	112	12	150	7609f06	1	FAILED (FAILED: 639 15810203 player-death) total 112 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 639 15810203 player-death
+2026-10-30 04:57	M13-q4s2-b	Save3989.fl	FAIL	66	11	158	7609f06	3	FAILED (FAILED: 460 15823015 player-death) total 66 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 460 15823015 player-death
+2026-10-30 04:59	M13-q4s2-a	Save3989.fl	PASS	156	11	147	7609f06	2	UNTIL total 156 s
+2026-10-30 05:00	M13-q4s2-a	Save3989.fl	PASS	139	11	153	7609f06	3	UNTIL total 139 s
+2026-10-30 05:00	M13-q4s2-a	Save3989.fl	FAIL	202	11	155	7609f06	1	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached: segment over 130 s, par 45.0 s - the battleship at 0 m (battery bursts))) total 202 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 423 15891203 autopilot objective decide reason=objective text=244
+2026-10-30 05:02	M13-q4s2-b	Save3989.fl	PASS	152	11	178	7609f06	2	UNTIL total 152 s
+2026-10-30 05:12	M13-q4s3-a	Save3989.fl	PASS	160	12	144	7609f06	3	UNTIL total 160 s
+2026-10-30 05:12	M13-q4s3-a	Save3989.fl	PASS	169	12	146	7609f06	1	UNTIL total 169 s
+2026-10-30 05:12	M13-q4s3-b	Save3989.fl	PASS	184	12	141	7609f06	2	UNTIL total 184 s
+2026-10-30 05:14	M13-q4s3-b	Save3989.fl	FAIL	114	11	150	7609f06	3	FAILED (FAILED: 717 16821234 player-death) total 114 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 717 16821234 player-death
+2026-10-30 05:15	M13-q4s3-b	Save3989.fl	PASS	171	11	145	7609f06	1	UNTIL total 171 s
+2026-10-30 05:16	M13-q4s3-a	Save3989.fl	FAIL	201	11	144	7609f06	2	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached: segment over 130 s, par 45.0 s - the battleship at 0 m (battery bursts))) total 201 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 307 16798625 autopilot objective decide reason=objective text=244
+2026-10-30 05:17	M13-q4s3-a	Save3989.fl	PASS	166	11	144	7609f06	3	UNTIL total 166 s
+2026-10-30 05:18	M13-q4s3-a	Save3989.fl	PASS	165	11	150	7609f06	1	UNTIL total 165 s
+2026-10-30 05:19	M13-q4s3-b	Save3989.fl	PASS	179	11	148	7609f06	2	UNTIL total 179 s
+2026-10-30 05:20	M13-q4s3-b	Save3989.fl	FAIL	202	11	145	7609f06	3	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached: segment over 130 s, par 45.0 s - the battleship at 0 m (battery bursts))) total 202 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 756 17081406 autopilot objective decide reason=objective text=244
+2026-10-30 05:21	M13-q4s3-b	Save3989.fl	PASS	160	11	145	7609f06	1	UNTIL total 160 s
+2026-10-30 05:21	M13-q4s3-a	Save3989.fl	FAIL	115	11	147	7609f06	2	FAILED (FAILED: 592 17253796 player-death) total 115 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 592 17253796 player-death
+2026-10-30 05:23	M13-q4s3-a	Save3989.fl	PASS	147	11	147	7609f06	1	UNTIL total 147 s
+2026-10-30 05:23	M13-q4s3-a	Save3989.fl	PASS	172	11	142	7609f06	3	UNTIL total 172 s
+2026-10-30 05:24	M13-q4s3-b	Save3989.fl	PASS	164	11	143	7609f06	2	UNTIL total 164 s
+2026-10-30 05:25	M13-q4s3-b	Save3989.fl	FAIL	55	11	162	7609f06	3	FAILED (FAILED: 274 17470546 player-death) total 55 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 274 17470546 player-death
+2026-10-30 05:26	M13-q4s3-b	Save3989.fl	PASS	143	11	154	7609f06	1	UNTIL total 143 s
+2026-10-30 05:27	M13-q4s3-a	Save3989.fl	PASS	160	11	149	7609f06	2	UNTIL total 160 s
+2026-10-30 05:28	M13-q4s3-a	Save3989.fl	PASS	169	12	147	7609f06	3	UNTIL total 169 s
+2026-10-30 05:29	M13-q4s3-a	Save3989.fl	PASS	144	11	154	7609f06	1	UNTIL total 144 s
+2026-10-30 05:30	M13-q4s3-b	Save3989.fl	PASS	176	11	146	7609f06	2	UNTIL total 176 s
+2026-10-30 05:30	M13-q4s3-b	Save3989.fl	PASS	140	11	150	7609f06	3	UNTIL total 140 s
+2026-10-30 05:32	M13-q4s3-b	Save3989.fl	PASS	171	11	157	7609f06	1	UNTIL total 171 s
+2026-10-30 05:33	M13-q4s3-a	Save3989.fl	PASS	149	11	181	7609f06	2	UNTIL total 149 s
+2026-10-30 05:42	M13-dtg60-3	Save3989.fl	FAIL	115	12	164	1404880	3	FAILED (FAIL STATE (CHECKPOINT M13.battleship not reached by 108 s into the leg, par 68.8 s)) total 115 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: none
+2026-10-30 05:42	M13-dtg60-2	Save3989.fl	FAIL	118	12	166	1404880	2	FAILED (FAIL STATE (CHECKPOINT M13.battleship not reached by 108 s into the leg, par 68.8 s)) total 118 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: none
+2026-10-30 05:42	M13-dtg60-1	Save3989.fl	FAIL	129	13	168	1404880	1	FAILED (FAIL STATE (CHECKPOINT M13.battleship not reached by 108 s into the leg, par 68.8 s)) total 129 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: none
+2026-10-30 05:47	M13-t3a-1-0	Save3989.fl	PASS	149	13	63	e0e291e	1	UNTIL total 149 s
+2026-10-30 05:47	M13-t3a-3-0	Save3989.fl	PASS	152	13	63	e0e291e	3	UNTIL total 152 s
+2026-10-30 05:48	M13-t3b-2-0	Save3989.fl	PASS	172	13	63	e0e291e	2	UNTIL total 172 s
+2026-10-30 05:50	M13-t3b-3-1	Save3989.fl	PASS	139	10	64	e0e291e	3	UNTIL total 139 s
+2026-10-30 05:50	M13-t3a-2-1	Save3989.fl	FAIL	121	10	65	e0e291e	2	FAILED (FAILED: 811 18993671 player-death) total 121 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 811 18993671 player-death
+2026-10-30 05:50	M13-t3b-1-1	Save3989.fl	PASS	150	10	64	e0e291e	1	UNTIL total 150 s
+2026-10-30 05:52	M13-t3a-3-2	Save3989.fl	FAIL	136	10	64	e0e291e	3	FAILED (FAILED: 811 19140328 player-death) total 136 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 811 19140328 player-death
+2026-10-30 05:53	M13-t3b-2-2	Save3989.fl	PASS	165	10	63	e0e291e	2	UNTIL total 165 s
+2026-10-30 05:53	M13-t3a-1-2	Save3989.fl	PASS	176	10	63	e0e291e	1	UNTIL total 176 s
+2026-10-30 05:55	M13-t3b-3-3	Save3989.fl	PASS	166	10	63	e0e291e	3	UNTIL total 166 s
+2026-10-30 05:55	M13-t3a-2-3	Save3989.fl	PASS	141	10	64	e0e291e	2	UNTIL total 141 s
+2026-10-30 05:56	M13-t3b-1-3	Save3989.fl	PASS	161	10	63	e0e291e	1	UNTIL total 161 s
+2026-10-30 09:16	M13-loadfix-1	Save3989.fl	FAIL	118	12	148	d488fbd	1	FAILED (FAILED: 644 31358296 player-death) total 118 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 644 31358296 player-death
+2026-10-30 09:17	M13-loadfix-3	Save3989.fl	PASS	149	12	153	d488fbd	3	UNTIL total 149 s
+2026-10-30 09:17	M13-loadfix-2	Save3989.fl	PASS	172	11	156	d488fbd	2	UNTIL total 172 s
+2026-10-30 11:39	M06-gate-s5shadow	Save33fa.fl	PASS	685	12	148	d0715f7	3	SUCCESS total 685 s
+2026-10-30 11:46	M10-gate-s5shadow	Save7b39.fl	PASS	1093	12	142	d0715f7	2	SUCCESS total 1093 s
+2026-10-30 11:49	M13-gate-s5shadow	Save3989.fl	FAIL	162	11	158	d0715f7	2	FAILED (FAILED: 887 40541265 player-death) total 162 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 872 40539906 autopilot objective decide reason=objective text=24420 verb=3 ref=43 target=2264245635 nav=1
+2026-10-30 11:56	M07-gate-s5shadow	Save766f.fl	PASS	1669	12	144	d0715f7	1	SUCCESS total 1669 s
+2026-10-30 11:56	M11-gate-s5shadow	Save08f9.fl	FAIL	975	12	148	d0715f7	3	FAILED (FAILED: 2519 40947234 player-death) total 975 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 823 40391656 autopilot objective decide reason=objective text=24140 verb=3 ref=0 target=0 nav=0
+2026-10-30 12:07	M04-gate-s5shadow	Save6380.fl	PASS	1036	12	145	d0715f7	2	SUCCESS total 1036 s
+2026-10-30 12:07	M05-gate-s5shadow	Save1d87.fl	FAIL	665	11	137	d0715f7	1	FAILED (FAIL STATE (CHECKPOINT M05.cambholein not reached: segment over 90 s, par 37.0 s - to the Cambridge hole)) total 665 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1434 41574296 autopilot objective decide reason=objective text=22870 verb=0 ref
+2026-10-30 12:15	M02-gate-s5shadow	Save05c7.fl	PASS	1109	12	150	d0715f7	3	SUCCESS total 1109 s
+2026-10-30 12:18	M08-gate-s5shadow	Save3a48.fl	PASS	676	12	138	d0715f7	2	SUCCESS total 676 s
+2026-10-30 12:22	M03-gate-s5shadow	Save1e7d.fl	PASS	870	11	151	d0715f7	1	SUCCESS total 870 s
+2026-10-30 12:25	M12-gate-s5shadow	Save5e67.fl	PASS	393	12	148	d0715f7	2	SUCCESS total 393 s
+2026-10-30 12:27	M09-gate-s5shadow	Save4686.fl	PASS	731	12	153	d0715f7	3	SUCCESS total 731 s
+2026-10-30 12:31	M01a-gate-s5shadow	Save7e1c.fl	PASS	507	12	172	d0715f7	1	SUCCESS total 507 s
+2026-10-30 12:38	M01b-gate-s5shadow	Save5f61.fl	PASS	666	11	185	d0715f7	3	SUCCESS total 666 s
+2026-10-30 12:57	M06-gate-s7arb	Save33fa.fl	PASS	697	13	143	d8c498f	3	SUCCESS total 697 s
+2026-10-30 13:04	M10-gate-s7arb	Save7b39.fl	PASS	1090	13	150	d8c498f	2	SUCCESS total 1090 s
+2026-10-30 13:13	M07-gate-s7arb	Save766f.fl	PASS	1672	14	143	d8c498f	1	SUCCESS total 1672 s
+2026-10-30 13:16	M11-gate-s7arb	Save08f9.fl	FAIL	1118	17	145	d8c498f	3	FAILED (FAILED: 2863 45761875 player-death) total 1118 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1140 45108031 autopilot objective trip kept: the new destination lies 0 m from the running one's
+2026-10-30 13:19	M13-gate-s7arb	Save3989.fl	PASS	879	13	141	d8c498f	2	SUCCESS total 879 s
+2026-10-30 13:32	M05-gate-s7arb	Save1d87.fl	PASS	1088	13	149	d8c498f	1	SUCCESS total 1088 s
+2026-10-30 13:35	M04-gate-s7arb	Save6380.fl	PASS	990	11	149	d8c498f	2	SUCCESS total 990 s
+2026-10-30 13:35	M02-gate-s7arb	Save05c7.fl	PASS	1138	13	152	d8c498f	3	SUCCESS total 1138 s
+2026-10-30 13:47	M03-gate-s7arb	Save1e7d.fl	PASS	873	12	145	d8c498f	1	SUCCESS total 873 s
+2026-10-30 13:47	M08-gate-s7arb	Save3a48.fl	PASS	684	11	147	d8c498f	2	SUCCESS total 684 s
+2026-10-30 13:48	M09-gate-s7arb	Save4686.fl	PASS	732	12	144	d8c498f	3	SUCCESS total 732 s
+2026-10-30 13:54	M12-gate-s7arb	Save5e67.fl	PASS	422	12	145	d8c498f	2	SUCCESS total 422 s
+2026-10-30 13:55	M01a-gate-s7arb	Save7e1c.fl	PASS	507	12	157	d8c498f	1	SUCCESS total 507 s
+2026-10-30 13:59	M01b-gate-s7arb	Save5f61.fl	PASS	669	11	168	d8c498f	3	SUCCESS total 669 s
+2026-10-30 14:21	M06-gate-s7arb2	Save33fa.fl	PASS	691	13	148	b63c1ad	3	SUCCESS total 691 s
+2026-10-30 14:28	M10-gate-s7arb2	Save7b39.fl	PASS	1123	13	146	b63c1ad	2	SUCCESS total 1123 s
+2026-10-30 14:28	M11-gate-s7arb2	Save08f9.fl	FAIL	428	12	147	b63c1ad	3	FAILED (FAILED: 981 50096140 player-death) total 428 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 981 50096140 player-death
+2026-10-30 14:31	M13-gate-s7arb2	Save3989.fl	FAIL	175	11	142	b63c1ad	2	FAILED (FAILED: 1002 50274671 player-death) total 175 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 808 50241906 autopilot objective decide reason=objective text=0 verb=0 ref=0 target=29 nav=0
+2026-10-30 14:37	M07-gate-s7arb2	Save766f.fl	PASS	1676	13	148	b63c1ad	1	SUCCESS total 1676 s
+2026-10-30 14:48	M02-gate-s7arb2	Save05c7.fl	PASS	1140	12	150	b63c1ad	3	SUCCESS total 1140 s
+2026-10-30 14:48	M04-gate-s7arb2	Save6380.fl	PASS	1001	12	149	b63c1ad	2	SUCCESS total 1001 s
+2026-10-30 14:56	M05-gate-s7arb2	Save1d87.fl	PASS	1099	12	149	b63c1ad	1	SUCCESS total 1099 s
+2026-10-30 15:00	M08-gate-s7arb2	Save3a48.fl	PASS	673	11	145	b63c1ad	2	SUCCESS total 673 s
+2026-10-30 15:00	M09-gate-s7arb2	Save4686.fl	PASS	733	12	146	b63c1ad	3	SUCCESS total 733 s
+2026-10-30 15:07	M12-gate-s7arb2	Save5e67.fl	PASS	410	12	144	b63c1ad	2	SUCCESS total 410 s
+2026-10-30 15:10	M03-gate-s7arb2	Save1e7d.fl	PASS	861	12	155	b63c1ad	1	SUCCESS total 861 s
+2026-10-30 15:11	M01b-gate-s7arb2	Save5f61.fl	PASS	634	11	162	b63c1ad	3	SUCCESS total 634 s
+2026-10-30 15:19	M01a-gate-s7arb2	Save7e1c.fl	PASS	506	11	190	b63c1ad	1	SUCCESS total 506 s
+2026-10-30 15:25	M13-s7snap-2	SaveS349.fl	PASS	121	12	190	dfaa5ef	2	UNTIL total 121 s
+2026-10-30 15:33	M13-s7snap-3	SaveS349.fl	PASS	110	12	190	4eef991	2	UNTIL total 110 s
+2026-10-30 15:50	M06-gate-s7arb3	Save33fa.fl	PASS	697	12	149	4eef991	3	SUCCESS total 697 s
+2026-10-30 15:56	M10-gate-s7arb3	Save7b39.fl	PASS	1079	12	147	4eef991	2	SUCCESS total 1079 s
+2026-10-30 16:06	M07-gate-s7arb3	Save766f.fl	PASS	1673	12	150	4eef991	1	SUCCESS total 1673 s
+2026-10-30 16:10	M11-gate-s7arb3	Save08f9.fl	FAIL	1173	12	151	4eef991	3	FAILED (FAILED: 3018 56177921 player-death) total 1173 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1311 55574734 autopilot objective decide reason=ended text=24060 verb=0 ref=0 target=0 nav=1
+2026-10-30 16:11	M13-gate-s7arb3	Save3989.fl	PASS	893	11	150	4eef991	2	SUCCESS total 893 s
+2026-10-30 16:26	M05-gate-s7arb3	Save1d87.fl	PASS	1145	12	147	4eef991	1	SUCCESS total 1145 s
+2026-10-30 16:28	M04-gate-s7arb3	Save6380.fl	PASS	976	12	146	4eef991	2	SUCCESS total 976 s
+2026-10-30 16:28	M02-gate-s7arb3	Save05c7.fl	PASS	1099	12	148	4eef991	3	SUCCESS total 1099 s
+2026-10-30 16:39	M08-gate-s7arb3	Save3a48.fl	PASS	655	13	144	4eef991	2	SUCCESS total 655 s
+2026-10-30 16:40	M03-gate-s7arb3	Save1e7d.fl	PASS	876	12	145	4eef991	1	SUCCESS total 876 s
+2026-10-30 16:41	M09-gate-s7arb3	Save4686.fl	PASS	757	12	147	4eef991	3	SUCCESS total 757 s
+2026-10-30 16:46	M12-gate-s7arb3	Save5e67.fl	PASS	414	12	156	4eef991	2	SUCCESS total 414 s
+2026-10-30 16:49	M01a-gate-s7arb3	Save7e1c.fl	PASS	501	12	166	4eef991	1	SUCCESS total 501 s
+2026-10-30 16:52	M01b-gate-s7arb3	Save5f61.fl	PASS	635	12	173	4eef991	3	SUCCESS total 635 s
+2026-10-30 17:30	M09-kcs-a	Save4686.fl	PASS	739	13	92	51fd767	3	SUCCESS total 739 s
+2026-10-30 17:32	M07-jrs-a	SaveS210.fl	PASS	946	13	106	51fd767	1	SUCCESS total 946 s
+2026-10-30 17:32	M07-jrs-b	SaveS210.fl	PASS	963	13	107	51fd767	2	SUCCESS total 963 s
+2026-10-30 17:32	M13-kcs-a	Save3989.fl	PASS	864	14	96	51fd767	5	SUCCESS total 864 s
+2026-10-30 17:38	M11-kcs-a	Save08f9.fl	PASS	1187	14	115	51fd767	4	SUCCESS total 1187 s
+2026-10-30 19:17	M13-look0	Save3989.fl	FAIL	196	12	86	51fd767	5	FAILED (FAILED: 968 67391625 player-death) total 196 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 843 67366843 autopilot objective decide reason=objective text=24420 verb=3 ref=46 target=2264245635 nav=1
+2026-10-30 19:26	M09-look0	Save4686.fl	PASS	737	13	101	51fd767	4	SUCCESS total 737 s
+2026-10-30 19:30	M04-look0	Save6380.fl	PASS	1036	12	109	51fd767	3	SUCCESS total 1036 s
+2026-10-30 19:32	M05-look0	Save1d87.fl	PASS	1130	12	112	51fd767	2	SUCCESS total 1130 s
+2026-10-30 19:32	M02-look0	Save05c7.fl	PASS	1140	13	117	51fd767	1	SUCCESS total 1140 s
+2026-10-30 19:33	M04-look0b-a	SaveS417.fl	FAIL	11	12	162	487c20c	3	FAILED (HARNESS unfit save: objective 22670 -> 21660 (Awaiting) after the load) total 11 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 38 68387250 autopilot objective survival text=21660 title=22602 (no free fights: attackers within 1200 m only)
+2026-10-30 19:35	M13-look0b-a	SaveS415.fl	PASS	79	13	103	487c20c	5	UNTIL total 79 s
+2026-10-30 19:35	M02-look0b-a	SaveS419.fl	PASS	140	14	110	487c20c	1	UNTIL total 140 s
+2026-10-30 19:36	M05-look0b-a	SaveS422.fl	PASS	171	12	101	487c20c	2	SUCCESS total 171 s
+2026-10-30 19:36	M09-look0b-a	SaveS416.fl	FAIL	161	13	101	487c20c	4	FAILED (FAIL STATE (CHECKPOINT M09.tekagi not reached: segment over 161 s, par 52.5 s - 4 generators by hold-and-salvo (runners 36-40 s), dock at Tekagi's base)) total 161 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 37 68404390 autopilot objective 
+2026-10-30 19:36	M13-look0b-a	SaveS415.fl	PASS	77	14	91	487c20c	5	UNTIL total 77 s
+2026-10-30 19:38	M02-look0b-a	SaveS419.fl	PASS	145	13	128	487c20c	1	UNTIL total 145 s
+2026-10-30 19:39	M05-look0b-a	SaveS422.fl	PASS	171	13	144	487c20c	2	SUCCESS total 171 s
+2026-10-30 19:53	M02-look0c	Save05c7.fl	PASS	1112	13	169	487c20c	3	SUCCESS total 1112 s
+2026-10-30 21:17	M13-td1-b	SaveS415.fl	FAIL	40	19	123	da3e794	2	FAILED (FAILED: 274 74642578 player-death) total 40 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 274 74642578 player-death
+2026-10-30 21:19	M13-td1-a	SaveS415.fl	PASS	139	19	125	da3e794	1	UNTIL total 139 s
+2026-10-30 21:20	M13-td1-a	SaveS415.fl	PASS	138	13	133	da3e794	2	UNTIL total 138 s
+2026-10-30 21:21	M13-td1-b	SaveS415.fl	PASS	111	13	152	da3e794	1	UNTIL total 111 s
+2026-10-30 21:24	M13-td1-b	SaveS415.fl	PASS	108	12	114	da3e794	2	UNTIL total 108 s
+2026-10-30 21:24	M13-td1-a	SaveS415.fl	PASS	159	12	119	da3e794	1	UNTIL total 159 s
+2026-10-30 21:26	M13-td1-b	SaveS415.fl	PASS	103	13	90	da3e794	1	UNTIL total 103 s
+2026-10-30 21:50	M13-td1full-b	Save3989.fl	FAIL	833	12	179	da3e794	1	FAILED (FAILED: 3095 76619828 player-death) total 833 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1906 76357203 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-30 22:27	M13-mm1-b	SaveS415.fl	FAIL	244	20	127	45a7653	2	FAILED (FAILED: 1088 78797093 mission-message type=FAILURE text=23198 "Mission Failed. You failed to fly to the waypoint.") total 244 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 522 78670875 autopilot objective escort-by-place 24440 -> in_osir
+2026-10-30 22:27	M13-mm1-a	SaveS415.fl	FAIL	279	20	129	45a7653	3	FAILED (FAILED: 1361 78832109 mission-message type=FAILURE text=23198 "Mission Failed. You failed to fly to the waypoint.") total 279 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 578 78669562 objective count=1 title=24400 "MISSION 13" text=2440
+2026-10-30 22:28	M13-mm1-a	SaveS415.fl	FAIL	307	20	133	45a7653	1	FAILED (FAILED: 1014 78860406 mission-message type=FAILURE text=23198 "Mission Failed. You failed to fly to the waypoint.") total 307 s; mode=space; room: hotspots 0 busy: ui-flag 67DCC8; dialogs: none; offers: none; last story event: 540 78669343 autopilot objective decide reason=objective text=244
+2026-10-30 22:35	M13-mm2-b	SaveS415.fl	PASS	215	12	133	a72d86b	2	UNTIL total 215 s
+2026-10-30 22:35	M13-mm2-a	SaveS415.fl	PASS	240	12	135	a72d86b	3	UNTIL total 240 s
+2026-10-30 22:35	M13-mm2-a	SaveS415.fl	PASS	241	13	137	a72d86b	1	UNTIL total 241 s
+2026-10-30 22:36	M13-mm2-b	SaveS415.fl	FAIL	41	12	135	a72d86b	3	FAILED (FAILED: 281 79368968 player-death) total 41 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 281 79368968 player-death
+2026-10-30 22:39	M13-mm2-b	SaveS415.fl	PASS	216	13	159	a72d86b	1	UNTIL total 216 s
+2026-10-30 22:39	M13-mm2-a	SaveS415.fl	PASS	252	12	161	a72d86b	2	UNTIL total 252 s
+2026-10-30 22:42	M13-mm2-b	SaveS415.fl	FAIL	40	11	183	a72d86b	1	FAILED (FAILED: 261 79701859 player-death) total 40 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 261 79701859 player-death
+2026-10-30 22:43	M13-mm3-b	SaveS415.fl	PASS	105	12	137	a72d86b	2	UNTIL total 105 s
+2026-10-30 22:43	M13-mm3-b	SaveS415.fl	PASS	105	12	143	a72d86b	3	UNTIL total 105 s
+2026-10-30 22:45	M13-mm3-b	SaveS415.fl	PASS	100	12	170	a72d86b	2	UNTIL total 100 s
+2026-10-30 22:46	M13-mm2-b	SaveS415.fl	PASS	221	12	163	a72d86b	1	UNTIL total 221 s
+2026-10-30 23:20	M13-mm4-b	SaveS415.fl	FAIL	41	15	137	bb34216	2	FAILED (FAILED: 270 81976796 player-death) total 41 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 270 81976796 player-death
+2026-10-30 23:31	M13-mm4-a	SaveS415.fl	PASS	709	15	131	bb34216	3	SUCCESS total 709 s
+2026-10-30 23:31	M13-mm4-a	SaveS415.fl	PASS	725	15	130	bb34216	1	SUCCESS total 725 s
+2026-10-30 23:32	M13-mm4-b	SaveS415.fl	FAIL	48	13	144	bb34216	3	FAILED (FAILED: 336 82708703 player-death) total 48 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 336 82708703 player-death
+2026-10-30 23:32	M13-mm4-a	SaveS415.fl	PASS	740	13	132	bb34216	2	SUCCESS total 740 s
+2026-10-30 23:36	M13-mm5-b	SaveS415.fl	PASS	97	14	144	192f8d0	3	UNTIL total 97 s
+2026-10-30 23:36	M13-mm4-b	SaveS415.fl	FAIL	293	12	153	bb34216	1	FAILED (STALL no progress 60 s (0|0|104|formation)) total 293 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 529 82785984 objective-client seq=7 obj=24440 "Escort Sinclair to the Battleship Osiris" steps=1
+2026-10-30 23:37	M13-mm5-b	SaveS415.fl	PASS	101	79	141	192f8d0	2	UNTIL total 101 s
+2026-10-30 23:38	M13-mm5-b	SaveS415.fl	PASS	101	12	146	192f8d0	3	UNTIL total 101 s
+2026-10-30 23:39	M13-mm5-b	SaveS415.fl	PASS	100	12	151	192f8d0	2	UNTIL total 100 s
+2026-10-30 23:40	M13-mm5-b	SaveS415.fl	PASS	99	11	155	192f8d0	3	UNTIL total 99 s
+2026-10-30 23:41	M13-mm5-b	SaveS415.fl	PASS	101	12	155	192f8d0	2	UNTIL total 101 s
+2026-10-30 23:42	M13-mm5-b	SaveS415.fl	PASS	94	12	159	192f8d0	3	UNTIL total 94 s
+2026-10-30 23:43	M13-mm5-b	SaveS415.fl	PASS	89	12	153	192f8d0	2	UNTIL total 89 s
+2026-10-30 23:44	M13-mm5-b	SaveS415.fl	PASS	102	12	151	192f8d0	3	UNTIL total 102 s
+2026-10-30 23:45	M13-mm5-b	SaveS415.fl	PASS	92	12	153	192f8d0	2	UNTIL total 92 s
+2026-10-30 23:46	M13-mm5-b	SaveS415.fl	PASS	100	12	161	192f8d0	3	UNTIL total 100 s
+2026-10-30 23:46	M13-mm5-b	SaveS415.fl	PASS	87	12	171	192f8d0	2	UNTIL total 87 s
+2026-10-30 23:49	M13-mm6-b	SaveS415.fl	FAIL	44	14	130	95b2527	3	FAILED (FAILED: 297 83726328 player-death) total 44 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 297 83726328 player-death
+2026-10-30 23:51	M13-mm7-b	SaveS415.fl	PASS	94	12	124	95b2527	3	UNTIL total 94 s
+2026-10-30 23:53	M13-mm7-b	SaveS415.fl	PASS	82	12	130	95b2527	3	UNTIL total 82 s
+2026-10-30 23:55	M13-mm7-b	SaveS415.fl	PASS	103	12	124	95b2527	3	UNTIL total 103 s
+2026-10-30 23:58	M13-mm8-b	SaveS415.fl	PASS	82	12	129	95b2527	3	UNTIL total 82 s
+2026-10-30 23:59	M13-mm8-b	SaveS415.fl	PASS	79	12	136	95b2527	3	UNTIL total 79 s
+2026-10-31 00:00	M13-mm6-b	SaveS415.fl	PASS	704	14	136	95b2527	2	SUCCESS total 704 s
+2026-10-31 00:00	M13-mm6-b	SaveS415.fl	PASS	717	14	136	95b2527	1	SUCCESS total 717 s
+2026-10-31 00:01	M13-mm8-b	SaveS415.fl	PASS	82	12	170	95b2527	3	UNTIL total 82 s
+2026-10-31 00:03	M13-mm8-b	SaveS415.fl	PASS	78	12	157	95b2527	1	UNTIL total 78 s
+2026-10-31 00:03	M13-mm8-b	SaveS415.fl	PASS	89	12	156	95b2527	2	UNTIL total 89 s
+2026-10-31 00:04	M13-mm8-b	SaveS415.fl	PASS	77	12	163	95b2527	1	UNTIL total 77 s
+2026-10-31 00:05	M13-mm8-b	SaveS415.fl	PASS	95	11	158	95b2527	2	UNTIL total 95 s
+2026-10-31 00:06	M13-mm8-b	SaveS415.fl	PASS	77	11	162	95b2527	1	UNTIL total 77 s
+2026-10-31 00:06	M13-mm8-b	SaveS415.fl	PASS	78	12	165	95b2527	2	UNTIL total 78 s
+2026-10-31 00:19	M13-mm9-b	SaveS415.fl	FAIL	680	14	130	adcea3f	1	FAILED (FAILED: 2085 85547968 player-death) total 680 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1118 85318234 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-31 00:19	M13-mm9-b	SaveS415.fl	PASS	683	14	130	adcea3f	2	SUCCESS total 683 s
+2026-10-31 00:20	M13-mm9-b	SaveS415.fl	PASS	703	14	131	adcea3f	3	SUCCESS total 703 s
+2026-10-31 01:11	M13-ab2-b	Save3989.fl	FAIL	192	13	83	131f881	4	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached: segment over 119 s, par 45.0 s - the battleship at 0 m (battery bursts))) total 192 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 458 2076453 autopilot objective decide reason=objective text=2442
+2026-10-31 01:11	M13-ab2-b	Save3989.fl	FAIL	191	14	82	131f881	2	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached: segment over 119 s, par 45.0 s - the battleship at 0 m (battery bursts))) total 191 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 839 2182359 autopilot objective decide reason=condition-met text=
+2026-10-31 01:11	M13-ab2-b	Save3989.fl	FAIL	192	14	80	131f881	5	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached: segment over 119 s, par 45.0 s - the battleship at 0 m (battery bursts))) total 192 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 355 2077406 autopilot objective decide reason=objective text=2442
+2026-10-31 01:16	M13-ab2-b	Save3989.fl	FAIL	456	14	112	131f881	1	FAILED (FAILED: 1357 2465578 player-death) total 456 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1357 2465578 player-death
+2026-10-31 01:19	M13-ab2-b	Save3989.fl	FAIL	668	14	106	131f881	3	FAILED (FAILED: 1957 2677281 player-death) total 668 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1477 2585531 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-31 01:22	M13-ab3-b	Save3989.fl	FAIL	492	13	95	95a9a4a	5	FAILED (FAILED: 1839 2868968 player-death) total 492 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1839 2868968 player-death
+2026-10-31 01:27	M13-ab3-b	Save3989.fl	PASS	785	13	92	95a9a4a	4	SUCCESS total 785 s
+2026-10-31 01:28	M13-ab3-b	Save3989.fl	PASS	829	13	91	95a9a4a	2	SUCCESS total 829 s
+2026-10-31 01:33	M13-ab4-b	Save3989.fl	PASS	801	13	95	cd9fcd9	1	SUCCESS total 801 s
+2026-10-31 01:34	M13-ab4-b	Save3989.fl	PASS	802	11	93	cd9fcd9	3	SUCCESS total 802 s
+2026-10-31 01:36	M13-ab5-b	Save3989.fl	FAIL	701	13	94	fcfa83b	5	FAILED (FAILED: 2309 3660109 player-death) total 701 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1617 3498156 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-31 01:42	M13-ab6-b	Save3989.fl	PASS	783	12	93	f85b9d8	4	SUCCESS total 783 s
+2026-10-31 01:46	M13-ab7-b	Save3989.fl	PASS	830	13	86	62c0730	2	SUCCESS total 830 s
+2026-10-31 01:47	M13-ab7-b	Save3989.fl	PASS	793	12	87	62c0730	1	SUCCESS total 793 s
+2026-10-31 01:48	M13-ab7-b	Save3989.fl	PASS	786	12	85	62c0730	3	SUCCESS total 786 s
+2026-10-31 01:50	M13-ab7-b	Save3989.fl	FAIL	727	12	81	62c0730	5	FAILED (FAILED: 2483 4557265 player-death) total 727 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1708 4384156 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-31 02:01	M13-ab8-b	Save3989.fl	FAIL	106	15	84	ae78f55	5	FAILED (FAILED: 559 5207421 player-death) total 106 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 559 5207421 player-death
+2026-10-31 02:06	M13-ab8-b	Save3989.fl	FAIL	402	15	103	ae78f55	2	FAILED (FAILED: 1577 5503796 player-death) total 402 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1577 5503796 player-death
+2026-10-31 02:12	M13-ab8-b	Save3989.fl	PASS	756	15	119	ae78f55	1	SUCCESS total 756 s
+2026-10-31 02:12	M13-ab8-b	Save3989.fl	PASS	763	15	118	ae78f55	4	SUCCESS total 763 s
+2026-10-31 02:13	M13-ab8-b	Save3989.fl	PASS	800	15	120	ae78f55	3	SUCCESS total 800 s
+2026-10-31 02:16	M13-bsc0-b	SaveS415.fl	FAIL	38	12	203	0982383	1	FAILED (FAILED: 253 6083968 player-death) total 38 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 253 6083968 player-death
+2026-10-31 02:34	M13-tr0-b	SaveS415.fl	PASS	83	12	193	cfe09fd	1	UNTIL total 83 s
+2026-10-31 02:37	M13-ab9-b	Save3989.fl	FAIL	105	13	88	cfe09fd	2	FAILED (FAILED: 688 7358921 player-death) total 105 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 688 7358921 player-death
+2026-10-31 02:48	M13-ab9-b	Save3989.fl	PASS	761	13	98	cfe09fd	4	SUCCESS total 761 s
+2026-10-31 02:48	M13-ab9-b	Save3989.fl	PASS	780	13	98	cfe09fd	3	SUCCESS total 780 s
+2026-10-31 02:49	M13-ab9-b	Save3989.fl	PASS	805	13	98	cfe09fd	1	SUCCESS total 805 s
+2026-10-31 02:49	M13-ab9-b	Save3989.fl	PASS	807	13	99	cfe09fd	5	SUCCESS total 807 s
+2026-10-31 02:59	M13-pr1-b	Save3989.fl	PASS	779	14	161	bb236f71	2	SUCCESS total 779 s
+2026-10-31 03:21	M13-ab11-b	Save3989.fl	FAIL	688	13	81	3f40b195	3	FAILED (FAILED: 2220 9974906 player-death) total 688 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1493 9808984 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-31 03:21	M13-ab11-b	Save3989.fl	FAIL	717	13	82	3f40b195	1	FAILED (FAILED: 2433 10003640 player-death) total 717 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1562 9832093 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-10-31 03:22	M13-ab11-b	Save3989.fl	PASS	760	13	84	3f40b195	4	SUCCESS total 760 s
+2026-10-31 03:22	M13-ab11-b	Save3989.fl	PASS	789	13	88	3f40b195	2	SUCCESS total 789 s
+2026-10-31 03:24	M13-ab11-b	Save3989.fl	FAIL	883	12	98	3f40b195	5	FAILED (FAIL STATE (CHECKPOINT M13.end not reached: segment over 258 s, par 129.0 s - into the sphere, the city generators, the final cutscene)) total 883 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1513 9821843 autopilot objective leash St03_dyson
+2026-10-31 04:10	M13-ch1-b	Save3989.fl	PASS	779	12	186	fc379a32	1	SUCCESS total 779 s
+2026-10-31 04:38	M13-ch2-b	Save3989.fl	PASS	778	13	136	19cf6932	3	SUCCESS total 778 s
+2026-10-31 04:38	M13-ch2-b	Save3989.fl	PASS	783	13	137	19cf6932	1	SUCCESS total 783 s
+2026-10-31 04:38	M13-ch2-b	Save3989.fl	PASS	789	14	138	19cf6932	2	SUCCESS total 789 s
+2026-10-31 04:48	M13-ch3-b	Save3989.fl	FAIL	96	13	173	2ff77132	1	FAILED (FAILED: 544 15221437 player-death) total 96 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 544 15221437 player-death
+2026-10-31 04:59	M13-ch4-b	Save3989.fl	FAIL	435	13	127	aa79f7dd	1	FAILED (FAILED: 1308 15847625 player-death) total 435 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1308 15847625 player-death
+2026-10-31 05:00	M13-ch3-b	Save3989.fl	PASS	800	13	145	2ff77132	2	SUCCESS total 800 s
+2026-10-31 05:05	M13-ch4-b	Save3989.fl	PASS	801	13	121	aa79f7dd	3	SUCCESS total 801 s
+2026-10-31 05:13	M13-ab12-b	Save3989.fl	PASS	746	15	82	136ef81e	1	SUCCESS total 746 s
+2026-10-31 05:14	M13-ab12-b	Save3989.fl	PASS	777	16	84	136ef81e	4	SUCCESS total 777 s
+2026-10-31 05:14	M13-ab12-b	Save3989.fl	PASS	805	15	83	136ef81e	5	SUCCESS total 805 s
+2026-10-31 05:15	M13-ab12-b	Save3989.fl	PASS	815	15	83	136ef81e	2	SUCCESS total 815 s
+2026-10-31 05:16	M13-kb1-s	SaveS415.fl	PASS	91	14	117	136ef81e	1	UNTIL total 91 s
+2026-10-31 05:17	M13-kb1-s	SaveS415.fl	PASS	76	13	83	136ef81e	2	UNTIL total 76 s
+2026-10-31 05:17	M13-kb1-m	SaveS415.fl	PASS	83	14	81	136ef81e	5	UNTIL total 83 s
+2026-10-31 05:17	M13-kb1-m	SaveS415.fl	PASS	91	14	81	136ef81e	4	UNTIL total 91 s
+2026-10-31 05:17	M13-kb1-s	SaveS415.fl	PASS	97	13	81	136ef81e	1	UNTIL total 97 s
+2026-10-31 05:19	M13-ab12-b	Save3989.fl	PASS	773	14	86	136ef81e	3	SUCCESS total 773 s
+2026-10-31 05:19	M13-kb1-m	SaveS415.fl	PASS	98	12	91	136ef81e	4	UNTIL total 98 s
+2026-10-31 05:19	M13-kb1-s	SaveS415.fl	PASS	114	13	90	136ef81e	2	UNTIL total 114 s
+2026-10-31 05:19	M13-kb1-m	SaveS415.fl	FAIL	118	12	97	136ef81e	5	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached: segment over 118 s, par 45.0 s - the battleship at 0 m (battery bursts))) total 118 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 443 17053531 autopilot objective timer-destroy 0 -> stage why=nex
+2026-10-31 05:30	M13-kb2-s	SaveS415.fl	PASS	75	13	174	81a6eb23	1	UNTIL total 75 s
+2026-10-31 05:30	M13-kb2-s	SaveS415.fl	PASS	78	13	169	81a6eb23	2	UNTIL total 78 s
+2026-10-31 05:33	M13-kb3-s	SaveS415.fl	PASS	70	15	106	f1ae6d75	2	UNTIL total 70 s
+2026-10-31 05:33	M13-kb3-s	SaveS415.fl	PASS	76	15	109	f1ae6d75	1	UNTIL total 76 s
+2026-10-31 05:34	M13-kb3-s	SaveS415.fl	FAIL	47	12	81	f1ae6d75	2	FAILED (FAILED: 377 17976812 player-death) total 47 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 377 17976812 player-death
+2026-10-31 05:35	M13-kb3-s	SaveS415.fl	PASS	75	12	87	f1ae6d75	1	UNTIL total 75 s
+2026-10-31 05:35	M13-ch5-b	Save3989.fl	FAIL	171	14	93	f1ae6d75	3	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached by 171 s into the leg, par 113.8 s)) total 171 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 434 17910890 autopilot objective decide reason=objective text=24425 verb=3 ref=33 target=2212950529 nav
+2026-10-31 05:37	M13-kb4-m	SaveS415.fl	FAIL	83	12	94	f1ae6d75	1	FAILED (FAILED: 483 18133812 player-death) total 83 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 483 18133812 player-death
+2026-10-31 05:37	M13-kb4-m	SaveS415.fl	PASS	113	12	102	f1ae6d75	2	UNTIL total 113 s
+2026-10-31 05:37	M13-kb4-m	SaveS415.fl	FAIL	81	13	91	f1ae6d75	3	FAILED (FAILED: 511 18159625 player-death) total 81 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 511 18159625 player-death
+2026-10-31 05:39	M13-ch5-b	Save3989.fl	FAIL	444	14	109	f1ae6d75	5	FAILED (FAILED: 1363 18287390 player-death) total 444 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1363 18287390 player-death
+2026-10-31 05:40	M13-ch5-b	Save3989.fl	FAIL	424	80	109	f1ae6d75	4	FAILED (FAILED: 1352 18333718 player-death) total 424 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1352 18333718 player-death
+2026-10-31 05:55	M13-ch6-b	Save3989.fl	PASS	783	13	87	f1ae6d75	4	SUCCESS total 783 s
+2026-10-31 05:57	M02-as0-a	Save05c7.fl	PASS	1103	14	94	f1ae6d75	1	SUCCESS total 1103 s
+2026-10-31 05:57	M02-as0-a	Save05c7.fl	PASS	1122	14	94	f1ae6d75	2	SUCCESS total 1122 s
+2026-10-31 05:57	M02-as0-a	Save05c7.fl	PASS	1126	14	96	f1ae6d75	3	SUCCESS total 1126 s
+2026-10-31 05:58	M02-as0-a	Save05c7.fl	PASS	1099	13	101	f1ae6d75	5	SUCCESS total 1099 s
+2026-10-31 06:13	M02-as2-b	SaveS418.fl	FAIL	107	15	93	334bdea5	4	FAILED (STALL no progress 60 s (0|0|0|rest)) total 107 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 184 20219796 autopilot objective leash Li01_03 3000 m: ship (kept)
+2026-10-31 06:18	M02-as1-a	Save05c7.fl	PASS	1112	14	124	f1ae6d75	2	SUCCESS total 1112 s
+2026-10-31 06:18	M02-as1-a	Save05c7.fl	PASS	1113	13	123	f1ae6d75	1	SUCCESS total 1113 s
+2026-10-31 06:18	M02-as1-a	Save05c7.fl	PASS	1120	13	125	f1ae6d75	3	SUCCESS total 1120 s
+2026-10-31 06:30	M02-as2-b	Save05c7.fl	PASS	1159	15	109	334bdea5	5	SUCCESS total 1159 s
+2026-10-31 06:30	M13-ak1-b	SaveS415.fl	PASS	458	15	92	830cbb52	2	UNTIL total 458 s
+2026-10-31 06:32	M13-ak1-b	SaveS415.fl	FAIL	547	15	94	830cbb52	3	FAILED (FAIL STATE (CHECKPOINT M13.barrier not reached: segment over 222 s, par 89.2 s - fight at the Nomad gate, through it)) total 547 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1108 21391328 autopilot objective decide reason=ended text=24465 ve
+2026-10-31 06:32	M13-ak1-b	SaveS415.fl	FAIL	555	15	96	830cbb52	1	FAILED (FAIL STATE (CHECKPOINT M13.barrier not reached: segment over 222 s, par 89.2 s - fight at the Nomad gate, through it)) total 555 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1130 21383640 autopilot objective decide reason=ended text=24465 ve
+2026-10-31 06:34	M02-as3-b	Save05c7.fl	PASS	1179	13	116	334bdea5	4	SUCCESS total 1179 s
+2026-10-31 06:42	M13-ak2-b	SaveS415.fl	PASS	456	13	93	3744fb41	3	UNTIL total 456 s
+2026-10-31 06:42	M13-ak2-b	SaveS415.fl	PASS	468	13	95	3744fb41	1	UNTIL total 468 s
+2026-10-31 06:45	M13-ak2-b	SaveS415.fl	FAIL	539	13	98	3744fb41	4	FAILED (FAIL STATE (CHECKPOINT M13.barrier not reached: segment over 222 s, par 89.2 s - fight at the Nomad gate, through it)) total 539 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 1030 22181703 autopilot objective decide reason=ended text=24465 ve
+2026-10-31 06:51	M02-as4-b	Save05c7.fl	PASS	1115	12	102	e83af45b	2	SUCCESS total 1115 s
+2026-10-31 06:51	M02-as4-b	Save05c7.fl	PASS	1146	14	103	e83af45b	5	SUCCESS total 1146 s
+2026-10-31 06:56	M13-ak3-b	SaveS415.fl	PASS	490	16	87	14afc899	4	UNTIL total 490 s
+2026-10-31 06:57	M13-ab13-b	Save3989.fl	PASS	823	14	88	3744fb41	3	SUCCESS total 823 s
+2026-10-31 06:57	M13-ab13-b	Save3989.fl	PASS	827	14	89	3744fb41	1	SUCCESS total 827 s
+2026-10-31 06:59	M13-ab13-b	Save3989.fl	FAIL	53	15	87	3e1e27ef	3	FAILED (FAILED: 388 23066390 player-death) total 53 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 388 23066390 player-death
+2026-10-31 07:05	M13-ak4-b	SaveS415.fl	PASS	460	16	96	3e1e27ef	4	UNTIL total 460 s
+2026-10-31 07:05	M13-ab13-b	Save3989.fl	PASS	800	14	94	14afc899	5	SUCCESS total 800 s
+2026-10-31 07:06	M13-ab13-b	Save3989.fl	PASS	828	15	94	14afc899	2	SUCCESS total 828 s
+2026-10-31 07:12	M13-ab13-b	Save3989.fl	PASS	806	15	129	3e1e27ef	1	SUCCESS total 806 s
+2026-10-31 14:54	M13-sp1-s	SaveS415.fl	PASS	88	18	152	bd5d7af6	1	UNTIL total 88 s
+2026-10-31 14:54	M13-sp1-s	SaveS415.fl	PASS	105	18	155	bd5d7af6	2	UNTIL total 105 s
+2026-10-31 14:55	M13-sp1-f	Save3989.fl	FAIL	171	17	150	bd5d7af6	3	FAILED (FAIL STATE (CHECKPOINT M13.bsdown not reached by 171 s into the leg, par 113.8 s)) total 171 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 447 800750 autopilot objective ally-kill 24425 data: watcher=cap_dies any-killer=1 unlocks=2439394048 n
+2026-10-31 14:56	M13-sp1-s	SaveS415.fl	PASS	101	11	159	bd5d7af6	1	UNTIL total 101 s
+2026-10-31 14:56	M13-sp1-s	SaveS415.fl	PASS	105	11	164	bd5d7af6	2	UNTIL total 105 s
+2026-10-31 15:01	M13-fx1-g	SaveS450.fl	PASS	178	12	151	bd5d7af6	1	UNTIL total 178 s
+2026-10-31 15:02	M13-fx1-g	SaveS450.fl	FAIL	243	12	161	bd5d7af6	2	FAILED (STALL no progress 60 s (0|0|0|jump)) total 243 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 423 1307046 autopilot objective decide reason=ended text=24465 verb=1 ref=2926433351 target=2926433351 nav=1
+2026-10-31 15:03	M13-fx1-g	SaveS450.fl	FAIL	258	12	162	bd5d7af6	3	FAILED (STALL no progress 60 s (0|0|0|jump)) total 258 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 408 1329984 autopilot objective decide reason=ended text=24465 verb=1 ref=2926433351 target=2926433351 nav=1
+2026-10-31 15:09	M13-fx2-g	SaveS450.fl	PASS	176	13	163	44659916+dirty	1	UNTIL total 176 s
+2026-10-31 15:09	M13-fx2-g	SaveS450.fl	PASS	183	14	147	44659916+dirty	2	UNTIL total 183 s
+2026-10-31 15:09	M13-fx2-g	SaveS450.fl	FAIL	187	13	147	44659916+dirty	3	FAILED (STALL no progress 60 s (0|0|0|dock-wait)) total 187 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 365 1755687 autopilot objective dock 2926433351: no way (locked gate?) - again in 4 s (try 14, resting meanwhile)
+2026-10-31 15:48	M02-sc1-c	Save05c7.fl	PASS	814	13	188	f12b1dca+dirty	1	UNTIL total 814 s
+2026-10-31 15:55	M13-fx3-g	SaveS450.fl	PASS	167	13	139	4e962485+dirty	2	UNTIL total 167 s
+2026-10-31 15:55	M13-fx3-g	SaveS450.fl	PASS	169	14	159	4e962485+dirty	1	UNTIL total 169 s
+2026-10-31 15:55	M13-fx3-g	SaveS450.fl	PASS	182	14	143	4e962485+dirty	3	UNTIL total 182 s
+2026-10-31 16:07	M02-sc2-c	Save05c7.fl	FAIL	589	13	190	c8f1aaf0+dirty	1	FAILED (FAIL STATE (CHECKPOINT M02.marked not reached: segment over 154 s, par 74.0 s - Pueblo defence)) total 589 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 689 5186500 autopilot objective decide reason=objective text=21660 verb=0 ref=0 target=13
+2026-10-31 16:22	M02-sc3-c	Save05c7.fl	PASS	785	13	174	8ed2e45c	2	UNTIL total 785 s
+2026-10-31 16:22	M02-sc3-c	Save05c7.fl	PASS	817	13	173	8ed2e45c	1	UNTIL total 817 s
+2026-10-31 16:44	M02-sc4-c	Save05c7.fl	PASS	805	14	149	c0f77a43	2	UNTIL total 805 s
+2026-10-31 16:44	M02-sc4-c	Save05c7.fl	PASS	842	14	150	c0f77a43	1	UNTIL total 842 s
+2026-10-31 16:44	M02-sc4-c	Save05c7.fl	PASS	771	87	161	c0f77a43	3	UNTIL total 771 s
+2026-10-31 17:50	M02-ar1-c	Save05c7.fl	PASS	763	13	177	06f9f68a	1	UNTIL total 763 s
+2026-10-31 17:50	M02-ar1-c	Save05c7.fl	PASS	783	13	175	06f9f68a	2	UNTIL total 783 s

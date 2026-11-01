@@ -6,8 +6,9 @@
 
 // Host API version: v1 = initial, v2 adds GetRoomCharacters, v3 adds GetMovieGraph, v4 adds ShiftManeuverBar, v5 adds
 // ShiftCommWindow, v6 adds GetSettingsBus (the UI build, 25 Oct 2026), v7 SetIntroOverride (the movie_intro row), v8
-// GetHudBus (HUD 2: core\hud_bus.h). A logic DLL must check `version` before using later additions.
-constexpr u32 kHostApiVersion = 8;
+// GetHudBus (HUD 2: core\hud_bus.h), v9 GameLoads (2 Nov 2026). A logic DLL must check `version` before using later
+// additions.
+constexpr u32 kHostApiVersion = 9;
 
 struct SettingsBus;
 struct HudBus;
@@ -45,6 +46,10 @@ struct HostApi
     // v8: the HUD bus (core\hud_bus.h): where HUD 2 (the controller logic) draws, so the dialogue panel, the chat
     // column, the objective banner and the arrows keep clear; the logic answers with where its panel landed.
     const HudBus* (*GetHudBus)();
+    // v9: how many games were loaded since the start: every game load (a save, New Game, the load after a death) loads
+    // a fresh Content.dll (docs\FREELANCER_RE.md "The client's copy of the objectives and save loads"); its loader
+    // notification counts one. The first game after the start reuses the Content.dll loaded at the start (no count).
+    u32 (*GameLoads)();
 };
 
 // A comm (radio message) as Freelancer.exe receives it at 0x4CE000: a voice and up to 16 line ids.

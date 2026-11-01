@@ -9,13 +9,13 @@
 One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller support with a controller-first interface, dialogue subtitles with speaker names, and better movie handling - in a single DLL.
 
 <p>
-<a href="../../releases/latest/download/FLvibed-0.1.0-Setup.exe"><img alt="Download FLvibed 0.1.0 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.1.0-5865f2?style=for-the-badge"></a>
+<a href="../../releases/latest/download/FLvibed-0.2.0-Setup.exe"><img alt="Download FLvibed 0.2.0 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.2.0-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.1.0.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.2.0.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.1.0 preview" src="https://img.shields.io/badge/version-0.1.0_preview-5865f2?style=for-the-badge">
+<img alt="Version 0.2.0 preview" src="https://img.shields.io/badge/version-0.2.0_preview-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -27,13 +27,88 @@ One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller
 </div>
 
 > **Made with AI ("vibe coded").** The code, the tools and the documentation were written by an AI (Claude, by
-> Anthropic) under the owner's direction and tested in game. It comes with no warranty.
+> Anthropic) under the author's direction and tested in game. It comes with no warranty.
+
+## 🆕 New in 0.2.0
+
+**Hello, and welcome.** FLvibed is a free mod for Freelancer (2003) and Freelancer: HD Edition that lets you play the
+whole game with a controller (or keep your keyboard and mouse), read every spoken line as a subtitle, and see the
+movies fitted to your screen - one file in the game folder, nothing else to install. 0.2.0 is the second preview, and
+the best moment to try it: more is on by default, the HUD got a tidy-up, and the Advanced Autopilot learned a lot.
+
+**🛰️ HUD 2, everywhere**
+- HUD 2 is now the default with the pad **and** with keyboard and mouse, and its look carries over the menus, bases,
+  dealers and dialogs. `hud_style = 0` brings the game's own HUD and screens back.
+- The bottom of the HUD was rearranged: the lower centre stays clear so your ship is never covered, button prompts sit
+  in two lanes (bottom left and right), a name too long for its room scrolls like a public display, and CRUISE ON and
+  the cruise countdown show inside the ring.
+- Nothing overlaps inside a panel or card any more; the ship and loadout panels share one height.
+- Closer to the edges: 3 % margins instead of 5 %, so more of the view is yours.
+- 🧪 **Focus layout** (experimental, among the options page's advanced rows): in calm flight no ring, two thin shield
+  and hull arcs and the instruments at the screen's edges.
+
+**💥 Feel and feedback**
+- Hit effects are on by default: screen-edge cues in your shield's and hull's look when you are hit, and crosshair
+  pulses for the autopilot and consumables. Each can be switched off.
+- 📳 Rumble on the pad: a hit (the hull heavier than the shield), a failing shield, and two ticks when one of the game's
+  boxes waits for you. Strength under **Rumble**, 0 = off; only while you play with the pad and the game is in front.
+  *(Verified by the test harness so far, not on a real pad yet.)*
+- The autopilot's hints for players who have not used it yet are on by default.
+
+**💬 Subtitles and story**
+- Every dialogue line was reviewed by ear against the recordings: names, words and the bracketed sound cues.
+- The 19 room scenes recorded as one track (the landing at Manhattan, Lonnigan on the pad, Tekagi's garden ...) are now
+  subtitled, with speaker names and word-timed pages. *(Still under review: a few lines may differ slightly.)*
+- Stacked speakers shrink smoothly (to 70 % at most) so the stack keeps about one line's height - no big covered
+  parts of the picture at 4:3 or in story scenes.
+- A red marker before a hostile speaker's name (can be turned off).
+- The HD Edition intro now subtitles its opening radio exchange, five lines that were missing.
+- With mods that replace a scene's recording (Crossfire ships some), the original scene's lines no longer show over it.
+
+**🎮 Controller**
+- **Confirm with** works: set it to the right button (Nintendo layout) and every menu, list, picker and popup accepts
+  with it and goes back with the bottom one, prompts included.
+- Holding RB for a torpedo no longer also launches a missile; a tap launches the missiles on release.
+- Hold X to look around from the turret camera while the autopilot keeps flying and fighting.
+- Dealers: B on the BUY / SELL button or the quantity slider steps back to the item instead of closing the dealer.
+- The pad drives the main menu, the multiplayer LAN / INTERNET question and the death dialog directly, plus the
+  multiplayer server and character lists (D-pad to pick, A to connect, Y for a new character).
+- 🧪 **SDL3 backend** (opt-in, `pad_backend = 1`): meant to read PlayStation and Switch pads directly, with their own
+  prompts. Not tested with those pads yet; XInput stays the default.
+- With another window in front, the pad is ignored in menus and flight alike and does not vibrate.
+
+**🤖 Autopilot** *(work in progress)*
+- Fights for time on target: it finishes the enemy it is on, handles head-on passes, learns the best standoff distance
+  per pair of ships and leads its missiles. Every gun fires on stations and generators.
+- It rolls toward more guns and steers true when the ship is banked; follows and escorts without the flicker, and a Hold
+  now defends itself.
+- Smarter in the details: escapes flown as escapes, huge targets (the Dyson city's generators) approached in a coast,
+  fewer missiles bursting on yourself, a fast dock that no longer rams the bay, fight odds that count shield damage.
+- A plain start on a targeted base, gate or hole travels there by the game's best path, lanes included.
+- On the original Freelancer 1.1 it now knows the minefields, dangerous zones and planets' docking rings.
+
+**🌐 Multiplayer and compatibility**
+- 🧪 **Multiplayer** works, tested on a local HD Edition server: HUD 2, targeting, subtitle speaker names, missions and
+  job boards, and the autopilot - as far as the server allows (`[flvibed autopilot=on|travel|off]`, else the setting
+  `mp_autopilot`). Online it leans to survival. Server hosts get an FLHook plugin (`server/flhook/`).
+- **Windows 7 SP1 and up**: no function newer than Windows 7 is imported any more. *(Checked, not yet played there.)*
+- The original game's LAN list connects to local servers; the chat never shows an unfilled name template.
+- The game no longer stops drawing for seconds to minutes.
+
+**🔧 Under the hood**
+- FLvibed's code is now licensed GPL-3.0, like the subtitle data.
+- Reads more of the game's data from its binary files, so the original 1.1 gets the same zone names, prices and pilots.
+- The autopilot no longer writes a flight trace into the game folder (`motion_log = 1` is the debugging aid).
+
+**⬆️ Updating from 0.1.0:** on its first start 0.2.0 puts every FLvibed setting back to its default, so you get the new
+defaults. Your old files are kept beside the new ones as `FLvibed.ini.before-0.2.0` (and the same for
+`FLController.ini` and `FLSubtitles.ini`). Your per-save game modes and speedrun bests stay.
 
 ## 🌟 See everything in the living spec
 
 <div align="center">
 
-<a href="https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN"><img src="docs/images/spec_preview.webp" width="820" alt="The living spec's Menus and bases section: drag sliders comparing a base room and a bar in the game's look and in Extended HUD 2"></a>
+<a href="https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN"><img src="docs/images/spec_preview.webp" width="820" alt="The living spec's Menus and bases section: drag sliders comparing a base room and a bar in the game's look and in HUD 2"></a>
 
 <a href="https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN"><img alt="Open the living spec" src="https://img.shields.io/badge/%F0%9F%8C%9F_Open_the_living_spec-f5c518?style=for-the-badge&labelColor=f5c518&color=f5c518"></a>
 
@@ -55,24 +130,27 @@ needs no network).
   game's own interface is back. Keyboard and mouse keep working exactly as before.
 - 🎯 **Gimbal aim.** The right stick steers through the game's own mouse flight; the reticle locks onto your target's
   lead by itself (or follows the stick, with aim assists). The ship is never steered for you.
-- 🛰️ **HUD 2.** An optional flight HUD of FLvibed's own, in Freelancer's art: shield, hull and power on a ring around
-  the reticle, only the actions that apply now. On by default with the pad; keyboard and mouse players can opt in. The
-  classic HUD stays available, with glyph badges on its buttons and a short list of what you can do now.
+- 🛰️ **HUD 2.** FLvibed's own HUD, in Freelancer's art: shield, hull and power on a ring around the reticle, only the
+  actions that apply now - and the same look over the menus, bases, dealers and dialogs (every window, row and button
+  stays the game's own). On by default with the pad and with keyboard and mouse. The classic HUD stays one setting
+  away (`hud_style = 0`), with glyph badges on its buttons and a short list of what you can do now.
 - 💬 **Dialogue subtitles.** Story scenes, mission comms, bars and the Neural Net, with the speaker's name in their
   colour and their portrait, timed on the speaker's words. Story lines stay on screen until they are spoken; radio
   chatter and lines from NPCs without a portrait go to the game's chat window.
 - 🎬 **Better movies.** The startup movies fit the screen with their aspect kept, and the intros (HD, original 2003,
-  full Bonus DVD cut) are subtitled.
+  full Bonus DVD cut) are subtitled. Every dialogue line is reviewed by ear, and the 19 room-scene mixes are subtitled
+  since 0.2.0.
 - ⚙️ **An options page in the game.** Every setting on a **FLVIBED** page inside the game's own Options screen: five
   tabs, changes apply at once, works with mouse, keyboard and pad.
 - 🏁 **New Game modes.** Normal, Assisted (the autopilot ready from the first mission) or Speedrun mode (an in-game
   timer, a split per story checkpoint, LiveSplit fed automatically).
 - 🤖 **The Advanced Autopilot** 🧪 *(work in progress).* Hand it the ship and it plays: missions, jobs, travel,
   docking and fights, by one set of rules - [all about it below](#-the-advanced-autopilot).
-- 🖼️ **Extended HUD 2** 🧪 *(optional, off by default).* HUD 2's look over the menus, bases, dealers and dialogs.
-  Every window, row and button stays the game's own.
-- 💥 **Hit effects** *(optional, off by default).* Screen-edge cues in your own shield's and hull's look when you are
-  hit, and reticle pulses for the autopilot and consumables.
+- 💥 **Hit effects and rumble.** Screen-edge cues in your own shield's and hull's look when you are hit, reticle pulses
+  for the autopilot and consumables, and pad vibration on hits (on by default; `shield_cue` / `reticle_cue = 0` and
+  `rumble = 0` turn them off).
+- 🌐 **Multiplayer** 🧪 *(since 0.2.0).* HUD 2, targeting, subtitles and the autopilot on a server, as far as the server
+  allows ([Compatibility](#-compatibility)).
 - 🖥️ **Any screen.** Any resolution, aspect ratio and Windows DPI scaling; Borderless Windowed is the main mode.
 - 🪶 **One file, nothing else.** `FLvibed.dll` with a static C runtime: no loader, no launcher, no Visual C++
   redistributable. Each part (controller, subtitles) can be switched off on its own, and no game file is changed.
@@ -85,7 +163,7 @@ needs no network).
 <td width="50%"><img src="docs/spec/img/cap/f_combat_cl.webp" alt="The game's classic HUD with controller glyph badges on its buttons and a COMBAT list of what each button does now"><br><sub>🎮 <b>Classic HUD on the pad:</b> glyph badges on the game's own buttons, the actions that apply now</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/spec/img/cap/x_commodity_h2.webp" alt="A commodity dealer in Extended HUD 2's look with controller prompts"><br><sub>🖼️ <b>Extended HUD 2:</b> a dealer in HUD 2's look, driven by the pad</sub></td>
+<td width="50%"><img src="docs/spec/img/cap/x_commodity_h2.webp" alt="A commodity dealer in HUD 2's look with controller prompts"><br><sub>🖼️ <b>HUD 2 in bases:</b> a dealer in HUD 2's look, driven by the pad</sub></td>
 <td width="50%"><img src="docs/spec/img/cap/o_4k_max.webp" alt="The FLVIBED page in the game's Options screen with five tabs"><br><sub>⚙️ <b>The options page:</b> inside the game's own Options screen</sub></td>
 </tr>
 </table>
@@ -153,7 +231,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | | Today | Headed for |
 |---|---|---|
 | 🎮 **Controller** | Every screen on the pad, three layouts, glyphs for three pad families; flight and combat proven on a real Elite pad | A bindings editor for your own layout, nav map objects as pad controls, every screen proven on real pads |
-| 🛰️ **HUD 2** | FLvibed's own flight HUD; Extended HUD 2 over menus and bases as an option | Refined from real play; Extended HUD 2 kept or reworked from feedback |
+| 🛰️ **HUD 2** | FLvibed's own HUD, in flight and over menus and bases (the default) | Refined from real play; more layouts (Focus experimental, Speedrun and Guided planned) |
 | 💬 **Subtitles** | Every spoken line, timed on the words, with names, colours and portraits | Every line reviewed by ear against the audio |
 | 🤖 **Autopilot** | Plays missions, jobs, travel, docking and fights | Speedrun-grade, zero-input, alongside you (above) |
 | 🖥️ **Display** | Borderless windowed and windowed at any size and DPI | Exclusive fullscreen verified too |
@@ -161,23 +239,25 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | 🧩 **Compatibility** | HD Edition 0.7.1, the original 1.1, FLUF beside it | Newer HD Edition releases, more mods |
 
 > [!IMPORTANT]
-> 🧪 **0.1.0 is an early preview - expect rough edges and change.**
+> 🧪 **0.2.0 is an early preview - expect rough edges and change.**
 > - **Some features are incomplete:** the Advanced Autopilot is work in progress, a few screens and controls are not
 >   built yet, and some are proven only by the test harness so far.
-> - **Design choices are still subject to change:** button layouts, HUD 2's and Extended HUD 2's look, setting names
+> - **Design choices are still subject to change:** button layouts, HUD 2's look, setting names
 >   and defaults, and how the autopilot behaves may all change in later versions.
 >
 > What is missing right now: [Known limits](#-known-limits).
 
 ## 📋 Requirements
 
-- 🪟 **Windows 10 or 11.**
+- 🪟 **Windows 10 or 11** (tested). **Windows 7 SP1, 8 and 8.1** since 0.2.0: every release is checked to use nothing
+  newer than Windows 7, but it has not been played there yet (0.1.0 did not load on Windows 7).
 - 🚀 **Freelancer: HD Edition 0.7.1** - the base FLvibed is built and tested on. It brings everything else needed.
 - 💿 Or **the original Freelancer 1.1 with a decrypted `Freelancer.exe`** (the CD's exe is SafeDisc-protected, and
   SafeDisc does not run on Windows 10 / 11). Verified in game through the first mission and a full regression pass.
-- 🎮 **An XInput controller** (any Xbox pad) - or none: keyboard and mouse work too. FLvibed reads pads through XInput
-  only: a PlayStation, Nintendo or other pad works when a layer such as Steam Input or DS4Windows presents it as an
-  Xbox pad (the button prompts then follow the real pad's family, or pick it in `glyph_style`).
+- 🎮 **An XInput controller** (any Xbox pad) - or none: keyboard and mouse work too. By default FLvibed reads pads
+  through XInput: a PlayStation, Nintendo or other pad works when a layer such as Steam Input or DS4Windows presents it
+  as an Xbox pad (the button prompts then follow the real pad's family, or pick it in `glyph_style`). An experimental
+  SDL3 backend (`pad_backend = 1`) is meant to read those pads directly; it is not yet tested with them.
 - You supply your own copy of the game. FLvibed ships no game files and no audio.
 
 ## 🚀 Getting started
@@ -190,7 +270,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 **2. Install FLvibed** - one click
 
-1. ⬇️ Download **[FLvibed-0.1.0-Setup.exe](../../releases/latest/download/FLvibed-0.1.0-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.2.0-Setup.exe](../../releases/latest/download/FLvibed-0.2.0-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders - else you pick the folder):
    choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -201,7 +281,7 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.1.0.zip](../../releases/latest/download/FLvibed-0.1.0.zip)** and unpack it.
+1. Download **[FLvibed-0.2.0.zip](../../releases/latest/download/FLvibed-0.2.0.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
    `FLvibed.dll`, `FLvibed.ini`, `FLSubtitles\` and `FLvibed\` land in `EXE\`.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins
@@ -262,13 +342,15 @@ ones most players touch:
 |---|---|---|
 | `pad_preset` | 0 | flight layout: 0 Freelancer, 1 Ace (left stick steers, triggers throttle), 2 Assisted |
 | `aim_mode` | 1 | 1 gimbal (reticle locks onto the target's lead), 0 the reticle follows the right stick |
-| `hud_style` | 1 | 0 classic HUD, 1 HUD 2 on the pad, 2 HUD 2 always |
-| `ui_style` | 0 | menus and rooms: 0 the game's look, 1 HUD 2's look (Extended HUD 2) |
+| `hud_style` | 2 | 0 classic HUD and screens, 1 HUD 2 on the pad, 2 HUD 2 always (flight, menus and bases) |
+| `ui_style` | 1 | menus and rooms while HUD 2 is on: 1 HUD 2's look, 0 the game's look |
 | `glyph_style` | 0 | button prompts: 0 automatic, 1 Xbox, 2 PlayStation, 3 Nintendo |
 | `input_mode` | 0 | 0 automatic (the last device used wins), 1 controller, 2 keyboard and mouse |
-| `autopilot_pad` | 0 | autopilot on the pad: 0 hold View, 1 both stick clicks, 2 hold Menu |
-| `shield_cue` | 0 | hit effects at the screen edges |
+| `shield_cue` | 1 | hit effects at the screen edges (`reticle_cue`: the crosshair pulses, also on) |
 | `borderless` | 1 | 0 off, 1 only where nothing else provides it (HD Edition does), 2 always |
+| `rumble` | 60 | vibration strength in percent on hits, a failing shield and the game's waiting boxes (0 = off) |
+| `confirm_button` | 0 | menus accept with 0 the bottom face button (A / cross), 1 the right one (Nintendo) |
+| `mp_autopilot` | 1 | multiplayer, when the server says nothing: 0 no autopilot, 1 travel only, 2 everything |
 | `enabled` (Subtitles) | 1 | subtitles on |
 | `size` (Subtitles) | 1 | text size, 0 small to 4 huge |
 | `speaker_names` | 0 | 0 the name on its own row, 1 inline, 2 off |
@@ -285,28 +367,35 @@ ones most players touch:
 | ✅ **The original Freelancer 1.1** (decrypted exe) | Runs the whole mod; verified in game through the first mission and in a regression pass (flight, both HUDs, a base and a dealer, comms with subtitles, the autopilot). Without HDE's plugins: no zone arrival lines in HUD 2 and no maneuver-bar shift. |
 | 🧪 **FLUF** (The Starport's framework) | Tested with FLUF nightly-2026-10-16 on the original game: FLUF's windows stay on top, FLvibed's HUD fades under them, the pad drives them. That FLUF build has its own issues (details in [docs/MOD_COMPATIBILITY.md](docs/MOD_COMPATIBILITY.md)); other FLUF builds get co-residency only. FLUF does not load on HD Edition. |
 | 🧪 **Borderless windowed** | HD Edition provides it and FLvibed stays out. On the original game FLvibed runs the game as a borderless window covering its monitor - sharp at high DPI scaling only with a DPI-aware exe. In any borderless window that covers its monitor the mouse stays in the game at the screen edges, as in fullscreen. |
+| 🧪 **Multiplayer** (since 0.2.0) | Tested on a local HD Edition server (FLServer + FLHook): the pad, HUD 2, targeting, subtitles and the chat work, and so does the Advanced Autopilot - **as far as the server allows**: a server line `[flvibed autopilot=on]`, `=travel` (flying and docking, no shooting) or `=off` decides - server hosts can send it with the FLHook plugin in `server/flhook/` - else the setting `mp_autopilot` (default: travel only). Missions, splits and speedrun mode are single player. Not tested yet: internet servers, modded servers (Discovery ...), the original game as client. Details: [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md). |
 | ❔ **Exclusive fullscreen** | Not verified - use borderless or windowed. |
 | ❔ **Other mods** (Discovery, Crossfire ...) | Not tested. Every game address FLvibed uses is verified by signature, so a spot another mod changed is refused (and logged) instead of crashing. |
 
 ## 🚧 Known limits
 
-What 0.1.0 does not do yet, or does only in part. Anything here - and the design around it - may still change.
+What 0.2.0 does not do yet, or does only in part. Anything here - and the design around it - may still change.
 
 - 📦 **Unsigned setup:** Windows SmartScreen may warn before the setup runs (*More info > Run anyway*).
-- 🎮 **XInput only:** no DirectInput or native PlayStation / Nintendo support; those pads need an XInput layer (Steam
-  Input, DS4Windows ...).
+- 🎮 **XInput by default:** no DirectInput support; PlayStation / Nintendo pads need an XInput layer (Steam Input,
+  DS4Windows ...) unless you try the experimental SDL3 backend (`pad_backend = 1`), not yet tested with those pads.
+- ⚙️ **The FLVIBED options page belongs to the controller module:** with `controller = 0` in `FLvibed.ini` the page is
+  gone; the subtitle settings are then changed in `EXE\FLSubtitles.ini`.
+- 📳 **Rumble** (new in 0.2.0) and **ignoring the pad while the game is in the background** are verified by the test
+  harness only so far, not yet on a real pad.
 - 🤖 **The Advanced Autopilot is work in progress:** it still fails some runs, its goal queue (QUEUE / DO NEXT) is
   not built, and how it shares control with a player on the guns is not designed yet ([details](#-the-advanced-autopilot)).
 - 🎮 **Real pads:** flight and combat are verified on a real Xbox Elite pad; the menus, bases, dealers and on-screen
   keyboard so far on a virtual pad only.
+- 🎯 **HUD 2 and the game's target label:** when a target sits behind HUD 2's target card on screen, the game's own
+  name and health label for it can draw over the card.
 - 🖱️ **Pad-only pieces:** the target picker and the action wheel have no mouse version yet (keyboard and mouse target
   through the game's contact list).
 - 🧱 **Not built yet:** a bindings editor (the three layouts apply; CUSTOM = FREELANCER), nav map objects as pad
   controls, the inventory's jettison hold and the equipment compare line.
 - 🖥️ **Exclusive fullscreen** is not verified, nor the movie subtitle overlay in it. OBS Game Capture cannot see the
   movies or their subtitles (use Window or Display Capture).
-- 💬 **Subtitle text:** speech-to-text checked against transcripts; the line-by-line review is still in progress, so a
-  few lines may differ slightly from what is spoken.
+- 💬 **Subtitle text:** the dialogue lines are reviewed line by line; the room scenes recorded as one track (the 19
+  scene mixes) are still under review, so a few of their lines may differ slightly from what is spoken.
 - 🧪 **Beside FLUF**, and **FLvibed's borderless window** by a player (Alt+Tab, Alt+Enter, the cursor at the screen
   edges): verified by the test harness only so far.
 
@@ -368,7 +457,12 @@ of **FLSubs** by Lorash, **Freelancer Subtitles** by L@Zar0 and the Russian edit
 **wedge009.net** mission transcripts (CC BY-SA 4.0) and the other transcript sites they cite. The subtitle data is
 therefore licensed **GPL-3.0** ([LICENSES/GPL-3.0.txt](LICENSES/GPL-3.0.txt)), with thanks to everyone who contributed.
 
-**Code licence:** not decided yet by the owner. Until it is, no licence is granted for the code.
+**Code:** FLvibed's source code is licensed **GPL-3.0** ([LICENSES/GPL-3.0.txt](LICENSES/GPL-3.0.txt)), like the
+subtitle data. It links the third-party libraries named below under their own licences.
+
+**SDL** (Simple DirectMedia Layer, https://libsdl.org/) 3.4.18 is linked into FLvibed.dll for the optional SDL3
+controller backend (`pad_backend = 1`). SDL is © 1997-2026 Sam Lantinga and is used under the **zlib licence**
+([LICENSES/SDL3-zlib.txt](LICENSES/SDL3-zlib.txt)); it is built unmodified from the official release source.
 
 🙏 **Thanks** to Jason Hood (adoxa) for his Freelancer plugins and their sources, the Freelancer: HD Edition team, The
 Starport (FLUF, FLSubs) and the Freelancer community's documentation and transcripts.

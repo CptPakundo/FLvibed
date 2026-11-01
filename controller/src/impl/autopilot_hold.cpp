@@ -2,6 +2,7 @@
 // clear of a base's lanes and of lethal zones, the scenic point, the look. Split from UpdateModes (autopilot_frame.cpp) on
 // 24 Oct 2026, the case's body as it was (its switch-level `break`s now `return`s): the behaviour is unchanged.
 #include "autopilot_impl.h"
+#include "mprules.h"
 
 namespace autopilot
 {
@@ -24,6 +25,25 @@ void UpdateHold(float dt, Out& out, int op)
     // old one - start over: stop, then rest where the ship arrived. While jumping there is no point at all (the
     // repro, 21 Oct 2026: a hold begun in the jump kept its start point from the old system's coordinates and flew
     // at it 30 s in the new one - the system had already switched on its first frame).
+    // hold_defend: a Hold the player started (the objective mode decides its own fights) answers attackers - hostile ships
+    // within 3 km that have us targeted (Assess) - with a fight where the server allows one, then holds again here
+    if (g_set.holdDefend && !g_obj.on && g_sit.attackers > 0 && mprules::Autopilot() == mprules::Allow::Full &&
+        !(havePilot && (pi.jumping || pi.lane)))
+    {
+        HoldResume r;
+        r.hasPos = g.hasPos || haveKin;
+        if (g.hasPos)
+            memcpy(r.pos, g.pos, sizeof(r.pos));
+        else if (haveKin)
+            memcpy(r.pos, k.pos, sizeof(r.pos));
+        events::Push("autopilot hold-defend attackers=%d: fight, then hold again", g_sit.attackers);
+        if (Start(Mode::Combat, 0, nullptr))
+        {
+            r.on = true;
+            g_holdResume = r;
+        }
+        return;
+    }
     if (havePilot && pi.jumping)
     {
         g.hasPos = false;

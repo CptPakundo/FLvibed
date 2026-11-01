@@ -12,8 +12,9 @@
 
 # an atomic write's temporary file (tsvio.py), left only if the process was killed mid-write
 *.tmp
-# the review tool's one-server-per-corrections-file lock (review_server.py hold_lock)
+# the review tool's one-server-per-corrections-file lock (review_server.py hold_lock) and its address (url_file)
 *.tsv.lock
+*.tsv.url
 
 # build output and generated data
 /FLSubtitles/build/

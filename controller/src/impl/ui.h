@@ -29,6 +29,10 @@ uintptr_t ModalRoot(const std::vector<Item>& items);
 
 // Index of the best item in direction (dx, dy) from point (fx, fy), or -1.
 int FindInDirection(const std::vector<Item>& items, float fx, float fy, float dx, float dy, uintptr_t exclude);
+// TEST ONLY (debug `navplant <ctl hex> | off`): a planted dead end - this control is never a D-pad target, so the focus
+// crawler (controller\tools\flcrawl.ps1) must report it unreachable. 0 = none (the default; never set by the game).
+void SetNavPlant(uintptr_t ctl);
+uintptr_t NavPlant();
 
 // Index of the item containing (x, y), or -1.
 int FindAt(const std::vector<Item>& items, float x, float y);

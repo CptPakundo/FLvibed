@@ -7,7 +7,7 @@
 #   `*_danger_objects`, `DAMAGING`), minus the field's [Exclusion Zones] (gate and lane corridors through it),
 #   or any zone with `damage` > 0 (radiation, planet and sun cores).
 
-$script:FLData = Join-Path $script:FLRoot 'Install\Freelancer HD Edition\DATA'
+$script:FLData = Join-Path (Get-FLInstallDir) 'DATA'
 $script:FLSystemCache = @{}
 
 # Sections of a Freelancer ini file: list of @{ Type = 'zone'; Keys = @{ key = @(values...) } } (keys lowercase).

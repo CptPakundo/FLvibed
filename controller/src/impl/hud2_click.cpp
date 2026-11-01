@@ -286,7 +286,10 @@ float DrawManeuverRow(const Model& m, const Layout& L, float x, float y, float a
         const bool lit = i < 4 ? m.manRun == i : m.ap;
         const bool hov = HotHovered() == kHotMan + i;
         const u32 col = lit ? kActive : hov ? kInk : kChrome;
-        const float kw = DrawPrompt(m.manBtn[i], 0, 0, kh, 0, true);
+        const RecUnit unit; // (the maneuver's icon and its key)
+        // (tight keycaps: the floor-grown 0.033 H cap, 0.006 H below the row, came 0.0094 H from the headline's box under
+        // the row - the lint's panel.overlap; the owner's A1 "tightening the glyphs themselves", 31 Oct 2026)
+        const float kw = DrawPrompt(m.manBtn[i], 0, 0, kh, 0, true, true);
         const float w = g + (kw > 0 ? kw + 0.004f * H * k : 0);
         if (hov)
             Plate(cx - 0.004f * H * k, y - g * 0.62f, cx + w + 0.004f * H * k, y + g * 0.62f, 0.004f * H * k,
@@ -299,7 +302,7 @@ float DrawManeuverRow(const Model& m, const Layout& L, float x, float y, float a
         else
             AutopilotGlyph(cx + g / 2, y, g, Argb(col, 1));
         if (kw > 0)
-            DrawPrompt(m.manBtn[i], cx + g + 0.004f * H * k + kw / 2, y + g * 0.18f, kh, Argb(kChrome, 0.9f));
+            DrawPrompt(m.manBtn[i], cx + g + 0.004f * H * k + kw / 2, y + g * 0.18f, kh, Argb(kChrome, 0.9f), false, true);
         HotRect(kHotMan + i, cx - 0.004f * H * k, y - g * 0.62f, cx + w + 0.004f * H * k, y + g * 0.62f);
         right = cx + w + 0.004f * H * k;
         cx += w + gap;
@@ -307,18 +310,21 @@ float DrawManeuverRow(const Model& m, const Layout& L, float x, float y, float a
     return 0.048f * H * k;
 }
 
-void DrawCardIcons(const Model& m, const Layout& L, float a)
+void DrawCardIcons(const Model& m, const Layout& L, float a, bool compact)
 {
     if (!m.target)
         return;
     SetAlpha(a);
-    // a row at the card's foot (the card is taller in the keyboard form), right-aligned: [key] icon NEXT  [key] x CLEAR
+    // a row at the card's foot (the card is taller in the keyboard form), right-aligned: [key] icon NEXT  [key] x CLEAR.
+    // `compact` = Focus's card (its click row 0.040 under its rows, hud2_layout.h focus_ns::kCardFooterKbm): tight
+    // keycaps centred in the row, right of its 0.046 icon column - the faction line ran over the CTRL+R / CTRL+T keycaps
+    // there (the owner, 31 Oct 2026, B4-B7: "It is important for HUD elements inside cards to not overlap")
     const float H = L.H, k = L.k, s = 0.028f * H * k, kh = 0.026f * H * k, T = 0.024f * H * k;
-    const float y = L.tgtY1 - 0.026f * H * k;
-    float x = L.tgtX1 - 0.018f * H * k; // right to left: clear, then next enemy
+    const float y = L.tgtY1 - (compact ? 0.020f : 0.026f) * H * k;
+    float x = L.tgtX1 - (compact ? 0.016f : 0.018f) * H * k; // right to left: clear, then next enemy
     // the row stays right of the view's column (the round 3 bug: NEXT ENEMY's keycap sat in the view): the long labels
     // when they fit, else the short ones, else the icons and keys alone
-    const float minX = L.tgtX0 + 0.13f * H * k + 0.03f * H * k;
+    const float minX = L.tgtX0 + (compact ? 0.068f : 0.13f + 0.03f) * H * k;
     static const wchar_t* kLabels[3][2] = {{L"CLEAR", L"NEXT ENEMY"}, {L"CLEAR", L"NEXT"}, {L"", L""}};
     int form = 0;
     for (; form < 2; ++form)
@@ -326,7 +332,8 @@ void DrawCardIcons(const Model& m, const Layout& L, float a)
         float w = 0;
         for (int i = 0; i < 2; ++i)
             w += TextWidth(kLabels[form][i], T, 0.08f) + 0.006f * H * k + s +
-                 DrawPrompt(i == 0 ? m.clearBtn : m.nextEnemyBtn, 0, 0, kh, 0, true) + 0.006f * H * k + 0.024f * H * k;
+                 DrawPrompt(i == 0 ? m.clearBtn : m.nextEnemyBtn, 0, 0, kh, 0, true, compact) + 0.006f * H * k +
+                 0.024f * H * k;
         if (x - w >= minX)
             break;
     }
@@ -338,6 +345,7 @@ void DrawCardIcons(const Model& m, const Layout& L, float a)
         const bool hov = HotHovered() == slot;
         const u32 col = Argb(hov ? kInk : kChrome, 1);
         const float x1 = x, lw0 = TextWidth(label, T, 0.08f);
+        const RecUnit unit; // (the key, its icon and its label: one click)
         Text(x1, y, label, T, col, Right, 0.08f);
         const float cx = x1 - lw0 - 0.006f * H * k - s / 2;
         if (i == 0)
@@ -349,10 +357,10 @@ void DrawCardIcons(const Model& m, const Layout& L, float a)
         else if (!Icon(flicons::Next, cx, y, s, col))
             Ring(cx, y, s * 0.3f, 2, col);
         float x0 = cx - s / 2;
-        const float kw = DrawPrompt(p, 0, 0, kh, 0, true);
+        const float kw = DrawPrompt(p, 0, 0, kh, 0, true, compact);
         if (kw > 0)
         {
-            DrawPrompt(p, x0 - 0.006f * H * k - kw / 2, y, kh, Argb(kChrome, 0.9f));
+            DrawPrompt(p, x0 - 0.006f * H * k - kw / 2, y, kh, Argb(kChrome, 0.9f), false, compact);
             x0 -= kw + 0.006f * H * k;
         }
         if (hov)
@@ -375,6 +383,7 @@ void DrawList(const Model& m, const Layout& L, float a)
     {
         const bool hov = HotHovered() == kHotListHead;
         const float s = 0.028f * H * k;
+        const RecUnit unit; // (the list toggle's icon and its word)
         if (!Icon(flicons::List, gx + s / 2, yy, s, Argb(m.list ? kActive : hov ? kInk : kChrome, 1)))
             Ring(gx + s / 2, yy, s * 0.3f, 2, Argb(m.list ? kActive : kChrome, 1));
         float hx1 = gx + s;
@@ -398,21 +407,25 @@ void DrawList(const Model& m, const Layout& L, float a)
     {
         // the threat list in combat: LB TARGETS, R3 NEXT, the filter (the keyboard: its keys)
         const float w1 = DrawPrompt(m.threatsBtn, 0, 0, g, 0, true);
-        DrawPrompt(m.threatsBtn, gx + w1 / 2, yy, g, Argb(kChrome, 1));
-        gx += w1 + g * 0.3f;
-        if (w1 > 0) // (the keyboard has no key for the picker: no TARGETS label without its button)
-            gx += Text(gx, yy, L"TARGETS", T, Argb(kChrome, 1), Left, 0.08f) + 0.03f * H * k;
-        else if (!m.kbm)
-            gx = x0;
+        {
+            const RecUnit unit; // (the prompt and its own label)
+            DrawPrompt(m.threatsBtn, gx + w1 / 2, yy, g, Argb(kChrome, 1));
+            gx += w1 + g * 0.3f;
+            if (w1 > 0) // (the keyboard has no key for the picker: no TARGETS label without its button)
+                gx += Text(gx, yy, L"TARGETS", T, Argb(kChrome, 1), Left, 0.08f) + 0.03f * H * k;
+            else if (!m.kbm)
+                gx = x0;
+        }
         // NEXT: not in the keyboard form while the card shows its NEXT ENEMY icon - the same command and key (the round 4
         // critique saw CTRL+R twice: one binding, USER_NEXT_ENEMY, labelled in two places - not a duplicate binding)
         if (!(m.kbm && m.target))
         {
             const float w2 = DrawPrompt(m.nextBtn, 0, 0, g, 0, true);
+            const RecUnit unit; // (the prompt and its own label)
             DrawPrompt(m.nextBtn, gx + w2 / 2, yy, g, Argb(kChrome, 1));
             // (fit to the room left of the filter word: at 4:3 "NEXT" ran into "HOSTILES" - the fit rule)
             const float fw = TextWidth(m.filter, T, 0.08f) + 0.012f * H * k;
-            TextFit(gx + w2 + g * 0.35f, yy, L"NEXT", T, right - fw - (gx + w2 + g * 0.35f), Argb(kChrome, 1), Left, 0.08f);
+            TextMarquee(gx + w2 + g * 0.35f, yy, L"NEXT", T, right - fw - (gx + w2 + g * 0.35f), Argb(kChrome, 1), Left, 0.08f);
         }
         Text(right, yy, m.filter, T, Argb(kDim, 1), Right, 0.08f);
     }
@@ -424,7 +437,7 @@ void DrawList(const Model& m, const Layout& L, float a)
         if (!Icon(m.threats[i].icon, x0 + 0.024f * H * k, yy, 0.028f * H * k, Argb(m.threats[i].col, 1)))
             Disc(x0 + 0.024f * H * k, yy, 0.006f * H * k, Argb(m.threats[i].col, 1));
         const float dw = TextWidth(m.threats[i].dist, 0.026f * H * k);
-        TextFit(x0 + 0.05f * H * k, yy, m.threats[i].name, 0.026f * H * k, right - dw - 0.02f * H * k - (x0 + 0.05f * H * k),
+        TextMarquee(x0 + 0.05f * H * k, yy, m.threats[i].name, 0.026f * H * k, right - dw - 0.02f * H * k - (x0 + 0.05f * H * k),
                 Argb(tgt ? kActive : kInk, 1));
         Text(right, yy, m.threats[i].dist, 0.026f * H * k, Argb(kInk, 1), Right);
         HotRect(kHotRow + i, x0, yy - 0.019f * H * k, x1, yy + 0.019f * H * k);

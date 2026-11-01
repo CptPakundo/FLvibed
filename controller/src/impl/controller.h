@@ -18,11 +18,20 @@ void OnRenderUnderHud();
 void OnDeviceLost();
 void OnDeviceReset();
 std::string DescribeState();
+int FpsCap(int fps); // test games: frame-rate cap (fps 0 = off, < 0 = read only); returns the cap now
 float LastSteerX(); // steering sent to the host this frame (diagnostics)
 float LastSteerY();
 // The player used the autopilot this session (a pad start, the goal panel's DoNow): the AUTOPILOT legend row and the
 // autopilot prompts may show from now on (UI_PLAN 6.3; D-FLIGHT's request, 25 Oct 2026).
 void MarkAutopilotUsed();
+// The player's stick deadzone (`stick_deadzone`): every pad reader applies it, not only the flight pad's (the options
+// page has its own reader, uikit.cpp).
+float StickDeadzone();
+// `pad_backend` (0 XInput, 1 SDL3): every pad reader reads through the same backend (the options page's reader too).
+int PadBackend();
+// `focus_only`: the physical pad is ignored while the game is in the background - flight and menus alike, one gate
+// (focus_gate.h; the owner, 29 Oct 2026); 0 lets it act in the background in both.
+bool FocusOnly();
 // "set <name> <value>" from the debug channel; returns a message.
 std::string SetOption(std::istream& in);
 std::string BotCommand(std::istream& in);       // debug: bot fight|off|status

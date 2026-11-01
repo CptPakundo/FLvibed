@@ -1025,7 +1025,8 @@ def main() -> None:
     corr, exact = {}, set()
     for r in tsv(Path(a.corrections)):
         corr[(r["id"].lower(), r["voice"].lower())] = r["text"]
-        if r.get("note", "") == "kept exactly as typed":  # Shift+Enter in the review tool
+        # Shift+Enter in the review tool; the note is "; "-separated parts (a "reason: ..." may follow)
+        if "kept exactly as typed" in r.get("note", "").split("; "):
             exact.add((r["id"].lower(), r["text"]))  # every voice that saved these exact words
 
     rows, stats, rereview, take_text, rule_why = [], {}, {}, [], []

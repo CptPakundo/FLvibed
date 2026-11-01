@@ -151,10 +151,12 @@ inline bool Dockable(const space::Contact& c)
     return c.dock || (c.type & (space::kTradelaneRing | space::kJumpGate | space::kJumpHole | space::kDockingRing)) != 0;
 }
 
+// A glyph inside a modal's prompt text ("{A} TARGET"): the modals are menus, so A / B name the accept / back button
+// (glyphs::Menu: exchanged with confirm_button 1).
 inline std::wstring GlyphToken(glyphs::Id id)
 {
     std::wstring s = L"{";
-    for (const char* p = glyphs::Name(id); *p; ++p)
+    for (const char* p = glyphs::Name(glyphs::Menu(id)); *p; ++p)
         s += static_cast<wchar_t>(*p);
     return s + L"}";
 }

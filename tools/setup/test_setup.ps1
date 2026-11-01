@@ -9,9 +9,16 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $setup = Join-Path $root 'build\setup\FLvibed-Setup.exe'
 if (-not (Test-Path $setup)) { throw 'build\setup\FLvibed-Setup.exe missing: build.cmd release, then build.cmd setup' }
-if (-not $Work) { $Work = Join-Path $root 'build\setup\test' }
-if (Test-Path $Work) { Remove-Item $Work -Recurse -Force }
+$defaultWork = Join-Path $root 'build\setup\test'
+if (-not $Work) { $Work = $defaultWork }
+# only the default folder or one this test made (its marker file) is ever wiped: a real install passed by mistake is refused
+$marker = '.flvibed_setup_test'
+if (Test-Path $Work) {
+    if ($Work -ne $defaultWork -and -not (Test-Path (Join-Path $Work $marker))) { throw "$Work exists and is not this test's folder (no $marker): refused" }
+    Remove-Item $Work -Recurse -Force
+}
 New-Item -ItemType Directory -Force $Work | Out-Null
+New-Item -ItemType File (Join-Path $Work $marker) | Out-Null
 
 $script:fails = 0
 function Check([bool]$ok, [string]$what) {
@@ -30,7 +37,7 @@ function NewGame([string]$name, [string]$dacomFrom) {
     [IO.File]::WriteAllText((Join-Path $g 'EXE\dacom.ini'), ($lines -join ''))
     return $g
 }
-$payload = 'FLvibed.dll', 'FLvibed.ini', 'FLSubtitles\subtitles.tsv', 'FLSubtitles\movies.tsv', 'FLSubtitles\movie_frames.tsv',
+$payload = 'FLvibed.dll', 'FLvibed.ini', 'FLSubtitles\subtitles.tsv', 'FLSubtitles\movies.tsv', 'FLSubtitles\mixes.tsv', 'FLSubtitles\movie_frames.tsv',
     'FLSubtitles\speaker_colors.tsv', 'FLSubtitles\word_times.tsv', 'FLvibed\autopilot.3db', 'FLvibed\Uninstall FLvibed.exe'
 $entriesBefore = (EntryKeys).Count
 
@@ -141,8 +148,25 @@ foreach ($keep in $false, $true) {
     Check (-not (Test-Path (Join-Path $vs 'FLController.log')) -and -not (Test-Path (Join-Path $vs 'FLSubtitles.log'))) 'VirtualStore logs removed'
     $kept = (Test-Path (Join-Path $vs 'FLController.ini')) -and (Test-Path (Join-Path $vs 'FLvibed\saves.ini'))
     if ($keep) { Check $kept 'VirtualStore settings kept on request' } else { Check (-not $kept -and -not (Test-Path (Join-Path $vs 'FLSubtitles.ini'))) 'VirtualStore settings removed' }
-    $root = Join-Path $env:LOCALAPPDATA ('VirtualStore\' + (Resolve-Path $Work).Path.Substring(3))
-    if (Test-Path $root) { [IO.Directory]::Delete($root, $true) }   # the test's own VirtualStore files only
+    $vsSuffix = (Resolve-Path $Work).Path.Substring(3)
+    if (-not $vsSuffix) { throw 'the work folder is a drive root: refusing to clear the VirtualStore' }
+    $vsRoot = Join-Path $env:LOCALAPPDATA ('VirtualStore\' + $vsSuffix)
+    if (Test-Path $vsRoot) { [IO.Directory]::Delete($vsRoot, $true) }   # the test's own VirtualStore files only
+}
+
+# a line the player wrote by hand (".\FLvibed.dll ; mine") is FLvibed's own: no second line, and the uninstall takes it out
+if (Test-Path $sources['hde']) {
+    $g = NewGame 'game_handline' $sources['hde']
+    $di = "$g\EXE\dacom.ini"
+    $t = [IO.File]::ReadAllText($di)
+    $k = $t.IndexOf("[Libraries]`r`n")
+    if ($k -ge 0) {
+        [IO.File]::WriteAllText($di, $t.Insert($k + "[Libraries]`r`n".Length, ".\FLvibed.dll ; mine`r`n"))
+        Check ((Run '/install', "`"$g`"", '/quiet') -eq 0) 'install over a hand-written .\FLvibed.dll line'
+        Check (@([IO.File]::ReadAllLines($di) | Where-Object { $_ -match 'FLvibed\.dll' }).Count -eq 1) 'the hand-written line is not doubled'
+        Check ((Run '/uninstall', "`"$g`"", '/quiet') -eq 0) 'uninstall after it'
+        Check (@([IO.File]::ReadAllLines($di) | Where-Object { $_ -match 'FLvibed\.dll' }).Count -eq 0) 'the hand-written line is removed'
+    } else { "skip game_handline (no CRLF [Libraries] line)" }
 }
 
 $g = NewGame 'game_nolib' $sources['hde']

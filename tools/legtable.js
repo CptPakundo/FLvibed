@@ -25,7 +25,13 @@ const rows = (file) => {
   return lines.slice(1).map((l) => Object.fromEntries(l.split('\t').map((v, i) => [head[i], v])));
 };
 const ref = rows(refPath);
-const hist = fs.existsSync(histPath) ? rows(histPath).filter((r) => r.outcome === 'PASS' && +r.secs > 0) : [];
+// (HD Edition runs only: a named instance - vanilla11c, vanilla 1.1 - is another game build; splits.py hde_row)
+// (and only a leg that finished - detail 'SUCCESS total ...', never a stop-at 'UNTIL' run: M13's 135 s "personal best"
+// of 29 Oct 2026 was one, against a par of 686. The three tests = splits.py full_pass_row, the one definition;
+// `splits.py bestcheck` (drift_check leg-bests) compares this table with it)
+const hist = fs.existsSync(histPath)
+  ? rows(histPath).filter((r) => r.outcome === 'PASS' && +r.secs > 0 && /^\d*$/.test(r.instance || '') &&
+    (r.detail || '').startsWith('SUCCESS')) : [];
 const bestBy = (pred) => hist.filter(pred).reduce((b, r) => (!b || +r.secs < +b.secs ? r : b), null);
 
 const out = [];

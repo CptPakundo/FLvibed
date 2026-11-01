@@ -32,8 +32,9 @@ EXTS = ("md", "ps1", "py", "js", "tsv", "json", "cpp", "h", "txt", "cmd", "html"
 NAMED = ("md", "ps1", "py", "js", "tsv", "json", "cpp", "h", "cmd")  # bare file names judged
 LOCAL = ("research", "Install", "build")
 LOCAL_POOL = ("research", "subtitles/review/FLSubtitles", "docs/kb/generated", "../.claude", "Install/instances")
-# docs\research: its own check-up round; SUBTITLE_WORKFLOW.md: a proposal naming files that do not exist yet
-SKIP_DOCS = ("docs/research/", "subtitles/review/docs/SUBTITLE_WORKFLOW.md")
+# docs\research: its own check-up round; SUBTITLE_WORKFLOW.md and controller\docs\A37_PLAN.md (Q6's slices): plans
+# naming files that do not exist yet
+SKIP_DOCS = ("docs/research/", "subtitles/review/docs/SUBTITLE_WORKFLOW.md", "controller/docs/A37_PLAN.md")
 SKIP_TOKEN = re.compile(r"[<>{}|=]|YYYY|Mxx|nnn|%|\$|afk\.flag|\w\.\.\w|^R\d[\\/]|^https?:|://|^[A-Z]:\\|\.\.\.|^_|^\.\w|^/|(^|[\\/])EXE[\\/]")
 GAME = re.compile(r"^(DATA|EQUIPMENT|SHIPS|MISSIONS|UNIVERSE|AUDIO|FX|AI|SAVE|FLDOCS|AppData|Interface"
                   r"|MaterialAnim|VMesh\w*|Cons|Cmpnd)[\\/]", re.I)

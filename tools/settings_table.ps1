@@ -11,7 +11,9 @@ if (-not $Out) { $Out = Join-Path $root 'docs\SETTINGS.md' }
 # module -> (registry source, ini section, the files that hold the struct initialisers, the two hand-written word keys)
 $modules = @(
     @{ Name = 'Controller'; Ini = 'EXE\FLController.ini [Controller]'; Source = 'controller\src\impl\controller.cpp'
-       Defaults = @('controller\src\impl\controller.cpp', 'controller\src\impl\gamepad.h', 'controller\src\impl\shieldcue.h', 'controller\src\impl\shieldcue.cpp', 'controller\src\impl\reticlecue.h', 'controller\src\impl\reticlecue.cpp', 'controller\src\impl\uiopt.h')
+       # the cue headers first: their `bool on = true` is shield_cue's / reticle_cue's default, while controller.cpp
+       # holds other `on =` fields (the test bot's) that were read as theirs until 1 Nov 2026
+       Defaults = @('controller\src\impl\shieldcue.h', 'controller\src\impl\shieldcue.cpp', 'controller\src\impl\reticlecue.h', 'controller\src\impl\reticlecue.cpp', 'controller\src\impl\controller.cpp', 'controller\src\impl\gamepad.h', 'controller\src\impl\uiopt.h')
        Extra = @() }
     @{ Name = 'Autopilot'; Ini = 'EXE\FLController.ini [Autopilot]'; Source = 'controller\src\impl\autopilot_settings.cpp'
        Defaults = @('controller\src\impl\autopilot_impl.h')

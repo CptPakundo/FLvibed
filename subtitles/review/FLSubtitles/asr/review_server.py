@@ -35,13 +35,20 @@ import merge  # noqa: E402
 import story_order  # noqa: E402
 import tsvio  # noqa: E402
 from align import DX, sort_key  # noqa: E402
+import mix_review  # noqa: E402
+import word_overrides  # noqa: E402
 
-LOCK = threading.Lock()
+# every save, and the whole of a rebuild (re-entrant: the rebuild calls code that takes it). Before 29 Oct 2026 the
+# rebuild ran unlocked: a save landing while merge.py ran went into the old data, which the swap then dropped -
+# and the next save rewrote the corrections without it.
+LOCK = threading.RLock()
 # who saves (the corrections file's `by` column): --reviewer, else $FLVIBED_REVIEWER, else "user"
 REVIEWER = os.environ.get("FLVIBED_REVIEWER") or "user"
 # the Bonus DVD shooting script (name_audit.py's reference), in FLvibed's git-ignored research folder
 SCRIPT = merge.REPO_ROOT / "research" / "BonusDVD" / "extra_bonus_assets" / "docs" / \
     "story_scripts(shooting)" / "shooting_script.txt"
+# a console program started by the tool (ffmpeg, the aligner) opens no window when the tool runs windowless (--app)
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
 def clean(text: str) -> str:
@@ -110,7 +117,7 @@ GROUPS = [
     ("agreed", "Chatter/base: FLSubs and speech to text agreed"),
     ("gamenames", "Game names (text from the game files: spot-check only)"),
     ("screams", "Screams (style decision pending)"),
-    ("mixes", "Scene mixes (need timed cues: later stage)"),
+    ("mixes", "Scene mixes: their lines (drafted from the script + speech to text)"),
     ("orphans", "Orphan clips (no INI uses them, no copy in use: probably unused)"),
 ]
 # fragments whose text is the game's own name for the object (bases, systems, factions, goods, ship
@@ -357,6 +364,12 @@ class Data:
         self.rank_suspects()
         self.load_story_order(story_order.OUT_FILE)  # game data (generated, committed), not per corrections file
         self.load_unsure()
+        # hand-placed word timings (the timeline; word_overrides.py), next to the corrections
+        self.overrides = word_overrides.Overrides(corrections.parent / "word_overrides.tsv")
+        # the scene mixes' lines (data/mixes.tsv next to the corrections; mix_review.py): items MIX_BASE - k
+        self.mixes = mix_review.MixLines(corrections.parent / "mixes.tsv", out,
+                                         {ln["id"].lower(): ln for ln in self.lines if ln["voice"] == "mixes"}, LOCK,
+                                         self.overrides, self.load_word_times)
 
     # ---------------------------------------------------------------- corrections file
     def load_corrections(self):
@@ -540,9 +553,11 @@ class Data:
 
     def save_correction(self, ln, text, source, note):
         # re-review: keeping the earlier text against the conventions is a decision: it is kept exactly
+        # (a note is "; "-separated parts; the page's optional "reason: ..." does not count as one)
         now = self.rereview_now.get(self.rr_key(ln))
-        if now and now[1] != now[0] and clean(text) == clean(now[0]) and not note:
-            note = "kept exactly as typed"
+        if now and now[1] != now[0] and clean(text) == clean(now[0]) and \
+                not [p for p in note.split("; ") if p and not p.startswith("reason: ")]:
+            note = "; ".join(["kept exactly as typed"] + ([note] if note else []))
         # story/mission lines (DX ids) are the same words in every copy; chatter differs per voice,
         # but one actor's takes of a repeated line read the same (user, session 1)
         if self.rr_key(ln):
@@ -648,12 +663,15 @@ class Data:
                     out.append(n)
                     continue
                 ln = self.lines[n]
-                if unrev and (self.decided(ln) or ln["voice"] == "mixes"):
-                    continue
+                if unrev and (ln["voice"] == "mixes" and not self.mixes.queue(False, mix=ln["id"])
+                              or ln["voice"] != "mixes" and self.decided(ln)):
+                    continue  # a mix: while one of its lines is unreviewed
                 if search and search not in ln["id"].lower() and search not in ln["voice"].lower()                         and search not in ln["draft"].lower() and search not in r["section"].lower():
                     continue
                 out.append(n)
             return out
+        if mode == "mixes":  # the scene mixes' lines, by mix and time (mix_review.py)
+            return self.mixes.queue(show_done, search)
         if mode.startswith("sample:"):  # a list's random sample, in its own order
             for r, ln in self.sample_rows(mode[7:]):
                 if show_done or self.correction_for(ln) is None:
@@ -739,9 +757,11 @@ class Data:
                 st = self.sample_status(k)
                 groups.append({"mode": "sample:" + k, "label": f"   ↳ sample: {st['done']}/{st['size']} checked, "
                                f"{st['wrong']} wrong", "count": st["size"] - st["done"]})
-        later = {"screams", "mixes", "orphans", "gamenames"}
+        later = {"screams", "orphans", "gamenames"}
         for g in groups:
             g["section"] = "later" if g["mode"].split(":")[-1] in later else "review"
+            if g["mode"] == "mixes":  # counted in mix lines, not in the 19 mix clips
+                g["count"], g["can_sample"] = self.mixes.open_count(), False
         return ([{"mode": "rereview", "label": "Re-review (your lines changed by rules)", "count": rr,
                   "section": "review"}] +
                 [{"mode": "pick:" + k, "label": "Picked: " + k, "section": "review",
@@ -779,7 +799,7 @@ class Data:
                             starts.append(-1)
                     self.word_times[(r["id"].lower(), r["voice"].lower())] = {
                         "fnv": r.get("text_fnv", ""), "end_ms": int(number(r.get("end_ms"))), "starts": starts,
-                        "collapsed": int(number(r.get("collapsed")))}
+                        "ends": mix_review.ms_list(r.get("ends_ms")), "collapsed": int(number(r.get("collapsed")))}
                 break  # the cache holds every row; the shipped file only when there is no cache
         fp = self.out / "word_times_failed.tsv"
         if fp.exists():
@@ -789,12 +809,44 @@ class Data:
         """The line's words with their start (ms; -1 = not placed) as the aligner timed the text it has now."""
         k = (ln["id"].lower(), ln["voice"].lower())
         words, row = ln["draft"].split(), self.word_times.get(k)
+        f = ln.get("_fnv")
+        if f is None:  # the text's hash, fixed for a build
+            f = ln["_fnv"] = fnv1a(ln["draft"])
+        o = self.overrides.get(ln["id"], ln["voice"], ln["draft"], f) if hasattr(self, "overrides") else None
+        if o:  # hand-placed on the timeline (word_overrides.py)
+            return mix_review.timing(words, o["starts"], o["ends"], o["end_ms"], "manual", o["realign"])
         if row is None:
-            return {"state": "failed" if k in self.align_failed else "none", "end_ms": 0, "collapsed": 0,
-                    "words": [{"w": w, "ms": -1} for w in words]}
-        current = row["fnv"] == fnv1a(ln["draft"]) and len(row["starts"]) == len(words)
-        return {"state": "current" if current else "stale", "end_ms": row["end_ms"], "collapsed": row["collapsed"],
-                "words": [{"w": w, "ms": row["starts"][i] if current else -1} for i, w in enumerate(words)]}
+            w = mix_review.timing(words, [-1] * len(words), [], 0, "failed" if k in self.align_failed else "none")
+            w["collapsed"] = 0
+            return w
+        current = row["fnv"] == f and len(row["starts"]) == len(words)
+        w = mix_review.timing(words, row["starts"] if current else [-1] * len(words), row["ends"] if current else [],
+                              row["end_ms"], "current" if current else "stale")
+        w["collapsed"] = row["collapsed"]
+        return w
+
+    def save_timing(self, n: int, body: dict, who: str):
+        """The timeline's save (POST /api/words): {n, starts, ends} (ms per word, -1 = not placed) or {n, reset}."""
+        if self.mixes.is_item(n):
+            r = self.mixes.row(n)
+            if r is None:
+                return {"error": "no such mix line"}
+            key = (r["mix"], "mix", r["text"])
+        elif 0 <= n < len(self.lines):
+            ln = self.lines[n]
+            key = (ln["id"], ln["voice"], ln["draft"])
+        else:
+            return {"error": "this line has no timeline"}
+        with LOCK:
+            if body.get("reset"):
+                self.overrides.drop(*key)
+            else:
+                try:
+                    self.overrides.put(*key, [int(x) for x in body["starts"]], [int(x) for x in body["ends"]], who)
+                except (ValueError, KeyError) as e:
+                    return {"error": f"not saved: {e}"}
+        self.mixes.aligner.request("overrides")  # data/word_times.tsv ships them
+        return {"ok": True, "words": self.item(n)["words"]}
 
     def rank_suspects(self):
         """Lines whose text may not be what the recording says, scored (most suspicious first): words the aligner
@@ -917,11 +969,16 @@ class Data:
             ln = self.lines[x["n"]]
             cur = self.correction_for(ln)
             mix = ln["voice"] == "mixes"
+            nmix = len(self.mixes.of_mix(ln["id"])) if mix else 0
             near.append({"n": x["n"], "speaker": ln["speaker"] or ln["voice"], "id": ln["id"],
-                         "text": "(scene mix: no subtitles yet)" if mix else (cur[2] if cur else ln["draft"]),
+                         "text": f"(scene mix: {nmix} lines)" if mix else (cur[2] if cur else ln["draft"]),
                          "section": x["section"], "play": x["play"], "current": j == i})
-        return {**r, "index": i, "rows": len(self.story_rows), "near": near,
-                "mix": n >= 0 and self.lines[n]["voice"] == "mixes", "placed": r["mission"] != story_order.NOT_PLACED}
+        mix = n >= 0 and self.lines[n]["voice"] == "mixes"
+        # a scene mix: its lines (data/mixes.tsv), each opens as its own item
+        lines = [{"n": self.mixes.n_of(k), "start": x["start"], "speaker": x["speaker"], "text": x["text"],
+                  "reviewed": bool(x["reviewed"])} for k, x in self.mixes.of_mix(self.lines[n]["id"])] if mix else []
+        return {**r, "index": i, "rows": len(self.story_rows), "near": near, "mix": mix, "mixlines": lines,
+                "placed": r["mission"] != story_order.NOT_PLACED}
 
     def movie_item(self, n):
         """A movie line of the story order (read-only here: data/movies.tsv holds it, on the movie clock)."""
@@ -954,10 +1011,13 @@ class Data:
             timing[s] = timing.get(s, 0) + 1
         return {"lines": len(self.lines), "reviewed": len(self.corr), "kinds": kinds, "decided": how,
                 "word_timings": timing, "suspects": len(self.suspects), "unsure": len(self.unsure),
+                "mix_lines": {"lines": len(self.mixes.rows), "reviewed": len(self.mixes.rows) - self.mixes.open_count()},
                 "lists": {m["mode"]: m["count"] for m in self.modes() if m.get("count") is not None},
                 "unbuilt_saves": self.unbuilt, "input_problems": [list(p) for p in tsvio.PROBLEMS[:50]]}
 
     def item(self, n):
+        if self.mixes.is_item(n):
+            return self.mixes.item(n)
         if n < 0:
             return self.movie_item(n)
         ln = self.lines[n]
@@ -1170,7 +1230,14 @@ class Data:
     def line_kind(self, ln):
         """story: a whole subtitle, kept as written (story, campaign and unique mission dialogue, and
         their vanilla copies); nnvoice: the Neural Net's whole messages; chunk: a generic piece the
-        runtime joins into a sentence and types out (user, session 2)."""
+        runtime joins into a sentence and types out (user, session 2). Fixed for a build: kept on the line (the lists
+        and stats ask it ~30,000 times per call; 29 Oct 2026, measured: half of /api/modes' 0.5 s)."""
+        k = ln.get("_kind")
+        if k is None:
+            k = ln["_kind"] = self._line_kind(ln)
+        return k
+
+    def _line_kind(self, ln):
         if any(DX.match(x["id"]) for x in ln.get("copies", [ln])):
             return "story"
         if ln["voice"] == "nnvoice":
@@ -1334,13 +1401,26 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
-    def send(self, code, body: bytes, ctype: str):
+    def send(self, code, body: bytes, ctype: str, headers=()):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        for k, v in headers:
+            self.send_header(k, v)
         self.end_headers()
         self.wfile.write(body)
+
+    def send_media(self, body: bytes, ctype: str):
+        """A clip, with byte ranges: a browser seeks in audio only when the server answers a Range request (206);
+        served whole, every seek - the player's bar, the timeline, a word - falls back to the start (owner, 1 Nov 2026)."""
+        r = byte_range(self.headers.get("Range", ""), len(body))
+        if r is None:
+            return self.send(200, body, ctype, [("Accept-Ranges", "bytes")])
+        if r == "unsatisfiable":
+            return self.send(416, b"", ctype, [("Content-Range", f"bytes */{len(body)}")])
+        a, b = r
+        self.send(206, body[a:b + 1], ctype, [("Accept-Ranges", "bytes"), ("Content-Range", f"bytes {a}-{b}/{len(body)}")])
 
     def js(self, obj, code=200):
         self.send(code, json.dumps(obj, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
@@ -1383,6 +1463,18 @@ class Handler(BaseHTTPRequestHandler):
                          "story_file": d.story_file.exists()} if q.get("mode") == "storyorder" else {})})
         elif u.path == "/api/item":
             self.js(d.item(int(q["n"])))
+        elif u.path == "/api/alive":  # an open page says so every 20 s (--app stops the tool once none is left)
+            PAGES.seen(q.get("tab", ""))
+            self.js({"ok": True, "app": bool(getattr(Handler.args, "app", False))})
+        elif u.path == "/api/align":  # the mix lines' background alignment (mix_review.Aligner)
+            self.js(d.mixes.aligner.status())
+        elif u.path == "/api/peaks":  # the timeline's waveform of line n's clip (an envelope, not sound)
+            f = Path(d.lines[int(q["n"])]["file"])
+            if not f.is_absolute():
+                f = (HERE / f).resolve()
+            if not f.exists():
+                return self.js({"error": f"clip not found: {f}"}, 404)
+            self.js(peaks(f))
         elif u.path.startswith("/audio/"):
             if getattr(Handler.args, "no_audio", False):  # tests: the page loads, nothing can play
                 return self.send(404, b"audio off (--no-audio)", "text/plain")
@@ -1393,14 +1485,28 @@ class Handler(BaseHTTPRequestHandler):
             if not f.exists():
                 return self.send(404, f"clip not found: {f}".encode(), "text/plain")
             body, ctype = audio(f)
-            self.send(200, body, ctype)
+            self.send_media(body, ctype)
         else:
             self.send(404, b"not found", "text/plain")
 
     def post(self):
+        # only the tool's own page writes: another site open in the browser (a cross-site POST) or a rebound DNS name
+        # must not change review decisions
+        local = ("127.0.0.1", "localhost", "[::1]")
+        host = (self.headers.get("Host") or "").rsplit(":", 1)[0].lower()
+        origin = self.headers.get("Origin")
+        if host not in local or (origin and urlparse(origin).hostname not in ("127.0.0.1", "localhost", "::1")):
+            return self.js({"error": "refused: not the review tool's own page"}, 403)
         u = urlparse(self.path)
         body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
         d = self.data
+        if u.path == "/api/bye":  # a page closing (navigator.sendBeacon on pagehide); a reload says alive again
+            PAGES.gone(parse_qs(u.query).get("tab", [""])[0])
+            return self.js({"ok": True})
+        if u.path == "/api/quit":  # the page's Stop button: answer, then stop once no save or rebuild is running
+            self.js({"ok": True})
+            threading.Thread(target=stop_server, args=("the page's Stop button",), daemon=True).start()
+            return
         if u.path == "/api/save":
             d.undo.append({})  # one undo step per save, batch included
             # a same-text batch: the clips the reviewer kept ticked (always the shown one)
@@ -1408,6 +1514,12 @@ class Handler(BaseHTTPRequestHandler):
                 d.save_correction(d.lines[n], body["text"], body.get("source", "user"), body.get("note", ""))
             d.unbuilt += 1
             return self.js({"ok": True, "reviewed": len(d.corr), "unbuilt": d.unbuilt})
+        if u.path == "/api/words":  # the timeline: {n, starts, ends} or {n, reset} (word_overrides.py)
+            res = d.save_timing(int(body["n"]), body, REVIEWER)
+            return self.js(res, 200 if res.get("ok") else 409)
+        if u.path == "/api/mix":  # {n, action: save|fit|split|insert|delete, ...}: a scene mix line (mix_review.py)
+            res = d.mixes.edit(int(body["n"]), body, REVIEWER)
+            return self.js(res, 200 if res.get("ok") else 409)
         if u.path == "/api/fit":  # POST: the typed text stays out of the URL
             text, changes = d.fit(d.lines[int(body["n"])], body.get("text", ""))
             return self.js({"text": text, "changes": changes})
@@ -1466,18 +1578,73 @@ def rebuild():
     if not REBUILD.acquire(blocking=False):
         return {"error": "a rebuild is already running"}, 409
     try:
-        run = subprocess.run([sys.executable, "-I", str(HERE / "merge.py"), "--out", a.out, "--corrections",
-                              a.corrections, "--glossary", a.glossary], capture_output=True, text=True,
-                             encoding="utf-8")
-        if run.returncode:
-            return {"error": run.stderr[-2000:]}, 500
-        audit_note = refresh_name_audit(a)  # the "names the game doesn't know" list follows the new draft
-        Handler.data = Data(Path(a.out), Path(a.corrections), Path(a.glossary))
-        keep = ("subtitles.tsv:", "re-review:")
-        summary = [l for l in run.stdout.splitlines() if l.startswith(keep) or l.startswith("  ")][:14]
-        return {"ok": True, "summary": summary + [audit_note]}, 200
+        with LOCK:  # saves wait for the rebuild (seconds): none can land between merge.py's read and the swap
+            return _rebuild(a)
     finally:
         REBUILD.release()
+
+
+def _rebuild(a):
+    """rebuild()'s work, under LOCK: merge.py, the fresh Data, the timings carried, the swap."""
+    run = subprocess.run([sys.executable, "-I", str(HERE / "merge.py"), "--out", a.out, "--corrections",
+                          a.corrections, "--glossary", a.glossary], capture_output=True, text=True,
+                         encoding="utf-8")
+    if run.returncode:
+        return {"error": run.stderr[-2000:]}, 500
+    audit_note = refresh_name_audit(a)  # the "names the game doesn't know" list follows the new draft
+    old = Handler.data
+    Handler.data = new = Data(Path(a.out), Path(a.corrections), Path(a.glossary))
+    # a line's text the rebuild changed: its hand-placed timings follow (kept words stay, changed ones re-align)
+    carried = 0
+    for (lid, voice, _), r in list(new.overrides.rows.items()):
+        before = old.by_key.get((lid, voice)) if old else None
+        after = new.by_key.get((lid, voice))
+        if before and after and before["draft"] != after["draft"] and \
+                word_overrides.fnv1a(before["draft"]) == r["text_fnv"]:
+            carried += new.overrides.retext(r["id"], r["voice"], before["draft"], after["draft"], REVIEWER)
+    if carried:
+        new.mixes.aligner.request("overrides")
+    keep = ("subtitles.tsv:", "re-review:")
+    summary = [l for l in run.stdout.splitlines() if l.startswith(keep) or l.startswith("  ")][:14]
+    return {"ok": True, "summary": summary + [audit_note]}, 200
+
+
+PEAKS, PEAK_RATE = {}, 200  # the timeline's waveform: peaks per second, cached per clip (path + mtime)
+
+
+def peaks(path: Path) -> dict:
+    """The clip's loudness envelope for the timeline (no sound is played): the peak of each 5 ms, 0-255 against the
+    clip's loudest, base64. Decoded once with ffmpeg (8 kHz mono), then cached."""
+    key = (str(path), path.stat().st_mtime)
+    if key not in PEAKS:
+        import base64
+        import numpy as np
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-nostdin", "-i", str(path), "-ac", "1", "-ar", "8000",
+                              "-f", "s16le", "-"], capture_output=True, check=True, creationflags=NO_WINDOW).stdout
+        a = np.abs(np.frombuffer(raw, dtype=np.int16).astype(np.float32))
+        step = 8000 // PEAK_RATE
+        n = len(a) // step
+        p = a[:n * step].reshape(n, step).max(axis=1) if n else np.zeros(0)
+        top = float(p.max()) if n else 1.0
+        q = np.sqrt(p / (top or 1.0)) * 255  # square root: quiet speech stays visible next to shouts
+        if len(PEAKS) > 64:
+            PEAKS.clear()
+        PEAKS[key] = {"rate": PEAK_RATE, "peaks": base64.b64encode(q.astype(np.uint8).tobytes()).decode()}
+    return PEAKS[key]
+
+
+def byte_range(header: str, n: int):
+    """An HTTP Range header ("bytes=a-b", "bytes=a-", "bytes=-k") on a body of n bytes: (first, last) inclusive,
+    "unsatisfiable", or None (no range, or one this server does not split: several ranges - the whole body is sent)."""
+    m = re.fullmatch(r"\s*bytes=(\d*)-(\d*)\s*", header or "")
+    if not m or not (m.group(1) or m.group(2)):
+        return None
+    if m.group(1):
+        a = int(m.group(1))
+        b = min(int(m.group(2)), n - 1) if m.group(2) else n - 1
+    else:  # the last k bytes
+        a, b = max(0, n - int(m.group(2))), n - 1
+    return "unsatisfiable" if a >= n or a > b else (a, b)
 
 
 def audio(path: Path):
@@ -1586,8 +1753,95 @@ def review_tool_at(port: int) -> bool:
         return False
 
 
+class Pages:
+    """The open pages (each tab a random id): a page says alive every 20 s and bye when it closes. A hidden tab's
+    timers may slow to once a minute (browser throttling), so a page counts as open for 3 minutes after its last
+    word; a bye (closed, or reloading - the reload says alive again at once) ends it after a short grace."""
+    TIMEOUT, GRACE, NO_PAGE = 180.0, 15.0, 600.0
+
+    def __init__(self):
+        self.lock, self.tabs, self.started, self.ever = threading.Lock(), {}, time.time(), False
+
+    def seen(self, tab: str):
+        with self.lock:
+            self.tabs[tab], self.ever = time.time(), True
+
+    def gone(self, tab: str):
+        with self.lock:
+            if tab in self.tabs:  # kept briefly: a reload's alive replaces it
+                self.tabs[tab] = min(self.tabs[tab], time.time() - self.TIMEOUT + self.GRACE)
+
+    def none_open(self) -> bool:
+        now = time.time()
+        with self.lock:
+            self.tabs = {t: s for t, s in self.tabs.items() if now - s < self.TIMEOUT}
+            if self.tabs:
+                return False
+            # no page ever came (the browser did not open): give up after 10 minutes
+            return self.ever or now - self.started > self.NO_PAGE
+
+
+PAGES = Pages()
+SERVER = None  # the running Server (stop_server)
+
+
+def stop_server(why: str):
+    """Stop serving, once no save and no rebuild is running (every save is on disk the moment it returns). The lock
+    stays taken until the process ends: a save that arrives meanwhile waits and dies with it, unwritten."""
+    LOCK.acquire()
+    print(f"stopping ({why})...", flush=True)
+    if SERVER is not None:
+        SERVER.shutdown()  # serve_forever returns in main(); called from another thread than the server loop
+
+
+def auto_stop(data_ref):
+    """--app: the tool stops itself a little after its last page closed (never during a rebuild or an alignment)."""
+    while True:
+        time.sleep(5)
+        al = data_ref().mixes.aligner.status() if data_ref() else {}
+        if PAGES.none_open() and not REBUILD.locked() and not al.get("running") and not al.get("pending"):
+            return stop_server("its last page closed")
+
+
+def url_file(corrections: Path) -> Path:
+    """Where a running server writes its address, so a second start opens that page (review.cmd double-clicked
+    again) instead of failing; next to the lock, git-ignored."""
+    return corrections.with_name(corrections.name + ".url")
+
+
+def running_url(corrections: Path):
+    """The address of the server that holds this corrections file, when it answers."""
+    try:
+        url = url_file(corrections).read_text(encoding="utf-8").strip()
+        port = int(urlparse(url).port or 0)
+    except (OSError, ValueError):
+        return None
+    return url if port and review_tool_at(port) else None
+
+
+def app_output(out: Path):
+    """--app runs windowless (pythonw: no console, sys.stdout is None): the output goes to out/review_server.log,
+    appended (a second start, which only opens the running tool's page, must not wipe that one's log); a new log
+    once it passes 1 MB."""
+    log = out / "review_server.log"
+    try:
+        f = open(log, "w" if log.exists() and log.stat().st_size > 1 << 20 else "a", encoding="utf-8", buffering=1)
+    except OSError:
+        f = open(os.devnull, "w", encoding="utf-8")
+    sys.stdout = sys.stderr = f
+    print(f"--- {datetime.now():%Y-%m-%d %H:%M:%S} review_server.py --app (pid {os.getpid()})", flush=True)
+
+
+def tell(text: str):
+    """--app: a message the reviewer must see (no console window): a Windows message box, else the log."""
+    print(text, flush=True)
+    if os.name == "nt":
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(None, text, "Subtitle review", 0x10)
+
+
 def main():
-    global REVIEWER
+    global REVIEWER, SERVER
     ap = argparse.ArgumentParser(description="Subtitle review tool (local web page on 127.0.0.1). Paths default "
                                              "to this repository's own folders, from any working directory.")
     ap.add_argument("--out", default=str(HERE.parent / "out"), help="pipeline output folder (FLSubtitles/out)")
@@ -1603,25 +1857,43 @@ def main():
     ap.add_argument("--script", default=str(SCRIPT), help="shooting_script.txt (name audit)")
     ap.add_argument("--flsubs", help="FLSubs subtitles.xml for the name audit (default: the draft's FLSubs column)")
     ap.add_argument("--reviewer", default=REVIEWER, help="written to the corrections file's `by` column")
+    ap.add_argument("--app", action="store_true", help="what a double-click on review.cmd runs: no console window, "
+                    "the page opens (the running tool's page when one already runs), the page's Stop button or "
+                    "closing the last page stops it; output in out/review_server.log, a start failure in a "
+                    "message box")
     a = ap.parse_args()
     REVIEWER = a.reviewer
     Handler.args = a
+    if a.app:
+        a.open = True
+        app_output(Path(a.out))
+    say = tell if a.app else (lambda t: print(t, flush=True))
     problems = preflight(a)
     if problems:
-        print("The review tool cannot start:\n" + "\n".join("  - " + p for p in problems), flush=True)
+        say("The review tool cannot start:\n" + "\n".join("  - " + p for p in problems))
         return 2
     srv = None
     if not a.check:  # the port first: a busy one is said at once (requests wait in the queue while loading)
         lock = hold_lock(Path(a.corrections))
         if lock is None:
-            print(f"another review tool already works on {a.corrections}: two would overwrite each other's saves."
-                  f"\n  Use the one that runs (http://127.0.0.1:{a.port}/ or the port its window shows), or stop it "
-                  "first (Ctrl+C in its window).", flush=True)
+            url = running_url(Path(a.corrections))
+            if url and a.open:  # started again (review.cmd double-clicked twice): show the running one
+                import webbrowser
+                webbrowser.open(url)
+                print(f"the review tool already runs: {url} (opened)", flush=True)
+                return 0
+            say(f"another review tool already works on {a.corrections}: two would overwrite each other's saves."
+                f"\n  Use the one that runs ({url or 'http://127.0.0.1:%d/ or the port its window shows' % a.port}),"
+                " or stop it first (its page's Stop button, or Ctrl+C in its window).")
             return 3
         Handler.lock = lock  # held until the process ends
         srv = bind(a.port)
         if srv is None:
+            if a.app:
+                say(f"The review tool found no free port from {a.port} on (see {Path(a.out) / 'review_server.log'}).")
             return 3
+        with contextlib.suppress(OSError):
+            url_file(Path(a.corrections)).write_text(f"http://127.0.0.1:{srv.server_address[1]}/\n", encoding="utf-8")
     if name_audit_stale(a):  # the "Names the game doesn't know" list follows the current draft
         print(refresh_name_audit(a), flush=True)
     t0 = time.time()
@@ -1633,10 +1905,14 @@ def main():
         print("ready", flush=True)
         return 0
     url = f"http://127.0.0.1:{srv.server_address[1]}/"
-    print(f"review tool: {url}   (Ctrl+C stops it)", flush=True)
+    print(f"review tool: {url}   ({'the page Stop button or closing its last page' if a.app else 'Ctrl+C'} "
+          "stops it)", flush=True)
+    SERVER = srv
     if a.open:
         import webbrowser
         webbrowser.open(url)
+    if a.app:
+        threading.Thread(target=auto_stop, args=(lambda: Handler.data,), daemon=True).start()
     if hasattr(signal, "SIGBREAK"):  # Ctrl+Break and a closed console window stop it like Ctrl+C
         def stop(*_):
             raise KeyboardInterrupt
@@ -1647,11 +1923,14 @@ def main():
         print("stopping...", flush=True)
     finally:
         srv.server_close()
+        with contextlib.suppress(OSError):
+            url_file(Path(a.corrections)).unlink()
     print("stopped (every save was already written)", flush=True)
     return 0
 
 
 if __name__ == "__main__":
-    sys.stdout.reconfigure(encoding="utf-8")
-    sys.stderr.reconfigure(encoding="utf-8")
+    for stream in (sys.stdout, sys.stderr):  # None under pythonw (--app sets its own output)
+        if stream is not None:
+            stream.reconfigure(encoding="utf-8")
     sys.exit(main())

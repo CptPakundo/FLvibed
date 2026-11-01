@@ -1,8 +1,8 @@
 #include "ui.h"
 
 #include "../fl.h"
-#include "debug.h"
 #include "log.h"
+#include "safemem.h"
 
 namespace ui
 {
@@ -28,7 +28,7 @@ bool Project(float x, float y, float z, float& sx, float& sy)
     return true;
 }
 
-static bool Read(uintptr_t a, void* out, size_t n) { return debug::SafeRead(a, out, n); }
+static bool Read(uintptr_t a, void* out, size_t n) { return safemem::Read(a, out, n); }
 
 // Control classes (by vtable) that are hit-testable but never clickable.
 static bool IsPassiveClass(u32 vt)
@@ -131,9 +131,14 @@ std::vector<Item> Collect()
 {
     std::vector<Item> out;
     int budget = 6000;
-    u32 node = Mem<u32>(exe::UiControls);
+    // the list is a ring with a sentinel head: start after it, stop on it (29 Oct 2026: the walk started at the head
+    // and lapped the ring until the count cap, every root again on each lap; core\game\menu.cpp walks it the same way)
+    const u32 head = Mem<u32>(exe::UiControls);
+    u32 node = 0;
+    if (head && !Read(head + 4, &node, 4))
+        node = 0;
     int seen = 0;
-    while (node && seen++ < 20000)
+    while (node && node != head && seen++ < 20000)
     {
         u32 next = 0, ctl = 0, parent = 1;
         if (!Read(node + 4, &next, 4) || !Read(node + 8, &ctl, 4))
@@ -188,6 +193,10 @@ int FindAt(const std::vector<Item>& items, float x, float y)
     return best;
 }
 
+static uintptr_t g_navPlant = 0;
+void SetNavPlant(uintptr_t ctl) { g_navPlant = ctl; }
+uintptr_t NavPlant() { return g_navPlant; }
+
 int FindInDirection(const std::vector<Item>& items, float fx, float fy, float dx, float dy, uintptr_t exclude)
 {
     // Spatial navigation on rectangles: measure to the nearest point of each control (large
@@ -203,7 +212,7 @@ int FindInDirection(const std::vector<Item>& items, float fx, float fy, float dx
     for (size_t i = 0; i < items.size(); ++i)
     {
         const Item& it = items[i];
-        if (it.ctl == exclude)
+        if (it.ctl == exclude || (g_navPlant && it.ctl == g_navPlant))
             continue;
         if ((it.x - fx) * dx + (it.y - fy) * dy < 4.0f)
             continue; // center not ahead

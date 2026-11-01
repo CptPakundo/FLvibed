@@ -1,13 +1,40 @@
 # Discovery Freelancer 5.3: a patched 1.1 client under FLUF and a closed hook
 Status: current
-Checked against: FLvibed 77d8655 (26 Oct 2026, coordinator short form before the export: the watched commits since - d89f88c / 79e2bcc smart start + K&M goal panel, 7632ced job objective text, 77d8655 objective-named loot shot, 9ff7fe7 handoff - are autopilot / UI internals; no statement of this note changes; not re-read in depth); before: FLvibed 01fcfa9 (26 Oct 2026, the step 3 short form re-confirmed: the only watched commits since, 9327f86 / 01fcfa9, are doc and handoff edits recording what this note already says); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: 202 / 202 on Discovery's exe, the FLUF layer's unknown-build rule - first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 16 watched-path commits 073a665..855745b - Extended HUD 2's host hooks and 36 new `flexe.h` symbols (195), the vanilla 1.1 support 4042c7d..0d0bcb7 with the 13 padding signatures re-cut (68755f1), the FLUF co-residency da1363f; the signature regression re-measured on Discovery's exe: 195 / 195 - second bullet); before: 073a665 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 5 watched-path commits abf84ac..073a665 in `core/flexe.h` (+8 symbols, 159), `controller/src/host` (the HUD 2 hotspot box, ToolTip / NeuroNet window handling) and the HUD bus 2ae3bbd; the signature regression re-measured - second bullet); before: abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 6 watched-path commits 3cfa88c..abf84ac in `core/flexe.h` (+24 symbols), `controller/src/host` (the UI hooks) and `core/game/menu.*` (New Game / load-screen reads); nothing contradicted - the hooks keep the chainable form, second bullet); before: 3cfa88c (25 Oct 2026 ~03:30: the 24 Oct refactors and the UI design docs; nothing touched)
-Dirty paths at check: none (25 Oct 2026 ~23:05); none (25 Oct 2026 ~12:15); none (25 Oct 2026 ~07:00); before: none at the start (24 Oct 2026, 1defa3f); at the end `controller/src/impl/autopilot_frame.cpp`, `controller/src/impl/autopilot_objective.cpp` (another session's uncommitted edits, appeared during the check; not judged here)
+Checked against: FLvibed 4338909 (31 Oct 2026 ~05:10, short form: 1 watched-path commit: the audit robustness bundle 55d42263 (PatchVtable / PatchImport fail closed on a non-writable slot, the D3D Reset / Present / CreateDevice re-patch keeps the previous pointer on a refusal, room-character hook order, subtitle loaders parse-then-swap); `core/flexe.h` unchanged since 5eb7bcb; no new hook site; no effect)
+Dirty paths at check: none (working tree clean at 4338909, 31 Oct 2026 ~05:10)
 Watch: core/flexe.h, core/hook.*, build.cmd, docs/MOD_COMPATIBILITY.md, controller/src/host, core/game/menu.*
 Evidence: research\evidence\discovery\ (two Freelancer.exe builds for signature regressions, sigcheck.py + sigcheck.txt, patchlist.xml, notes.yml, module strings); the five patch archives (318 MB) and the cloned repos stayed in the session scratchpad (IDEAS X3)
 Sources: [file] official patch server archives, MD5-verified; [file] DiscoveryGC repositories; [page] the-starport FLUF docs, flserver.de; discoverygc.com and ModDB were unreadable (Cloudflare / 403)
 
 ## What it means for FLvibed
 
+*Check-up 30 Oct 2026 ~01:50 (short form, HEAD 4ca36df; 1 watched-path commit 12e7942..4ca36df):* 4ca36df adds six
+symbols (the frame timer 0x42D770 detour and its data, 217) - **217 / 217 statically on Discovery's hotfix exe**, HDE
+0.7.1, the upstream exe and vanilla 1.1, 0 across padding (`sigcheck_4ca36df.txt`, `padspan_4ca36df.txt`). The
+`fixeddt` detour is a TEST-ONLY debug command in single player; a client in Discovery's multiplayer never runs it.
+No effect.
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 2 watched-path commits 7518008..067bf32):* **C1 is done**
+(ca2ef92): `sigtool gen` writes inter-function padding as wildcards, code windows stop before the next code entry, and
+`sigtool check` (run by `drift_check`) fails on a table signature holding padding as literals; the 28 counted below
+plus 3 more were re-cut. Re-measured here: **211 / 211 on Discovery's hotfix exe, HDE 0.7.1, the upstream exe and
+vanilla 1.1, and 0 signatures span padding** (`research\evidence\discovery\sigcheck_067bf32.txt`,
+`padspan_067bf32.txt`; `PendingLoadId` keeps one literal NOP, outside `padspan.py`'s patterns, `FREELANCER_RE.md`
+"Signatures"). The "match only because the four exes agree there" caveat below is closed. 4c1fc70 changes only the
+unit-test build. The rest of this section stands.
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 17 watched-path commits 77d8655..7518008):* **211 of 211 signatures
+match on Discovery's 22 Aug 2026 hotfix exe** (and on HDE 0.7.1's, the upstream exe and vanilla 1.1's;
+`research\evidence\discovery\sigcheck_7518008.txt`). The 9 new since e5c02cc: the turret view's `GunAimPoint`,
+`PlayerFlightState`, `CamTurret` and the multiplayer readers `PlayerCash`, `PlayerShipArch`, `PlayerEquipList`,
+`PlayerList`, `TableClick`, `LanHostFilter`. Padding spans grew from 21 to 28 (`padspan_7518008.txt`; new: CamTurret,
+GunAimPoint, NNManager, PlayerCash, PlayerShipArch, TableClick, TransitionRunning) - C1's rule is still not applied to
+new signatures *(fixed 29 Oct 2026, ca2ef92: 0 spans at 067bf32, line above)*. **Multiplayer changes this note's weight:** Discovery is a multiplayer-only mod (Findings 1.1), FLvibed
+now runs in multiplayer with a server permission for the autopilot (`docs\MULTIPLAYER.md`), and the owner wants it
+working "with any variation of an FL install" - "a low-value test target" (M5) holds for single player only. Two facts
+here bear on the design: DSAce took server commands embedded in hidden chat messages (3.5) - the channel of FLvibed's
+chat tag `[flvibed autopilot=...]`, which on Discovery its admins would have to send; and Discovery's FLHook is its own
+fork ("FLHook Discovery 3.1.0", 3.6), so the FLHook plugin `server\flhook\` (built against FLHDE/FLHook's 4.0 plugin
+API) needs its own build there (IDEAS M11). Discovery also runs FLUF, whose payloads the owner named as the structured
+channel (`fluf.md`, IDEAS M10). A modded server has not been run (MULTIPLAYER.md "Not working yet / not verified").
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; watched-path commits 855745b..e5c02cc):* **202 of 202
 signatures match on Discovery's 22 Aug 2026 hotfix exe** (7 new: the NeuroNet window manager / close / transition reads of
 the dealer close f52815b, and `SetupScreen`, `WindowStyle`, `WindowedStyle`, `DisplaySettings` of the borderless window

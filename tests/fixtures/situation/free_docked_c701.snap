@@ -1,0 +1,17 @@
+# A37 S2 fixture, recorded 30 Oct 2026 on 63291e3 src:clean (a fresh game per save, instance 2; run a37s2_2026-10-30_0940_commit63291e3): free roam docked at Manhattan: the ini view (fallback)
+# SaveC701.fl right after the load, a fresh game (A37 S2)
+snap v2
+obj seq=0 title=0 marks=
+step text=0 refs= ref_obj= nav=0 nav_pos=0,0,0 nav_system=0 verb=none job= job_rows=0
+script from_last=0 by_title=0 standin=0 file= next= pending= source_live=0
+nag has=0 pos=0 object=0 name= p=0,0,0 dist=0
+nextnag has=0 pos=0 object=0 name= p=0,0,0 dist=0
+live ok=0 reason=no%20story%20mission%20(story%20id%200:%20none%20started%20since%20Content.dll%20loaded) script= controller=0 ms=1.70480001
+place system=2208796239 base=2804956685 space=0 clock=86404.809486003549
+pilot ok=0 op=-1 locked=0 lane=0 jumping=0 cruise=0 entry=0 exit=0 leader=0 target=0 pos=0,0,0 vel=0,0,0 hull=-1 shield=-1
+holds mission=0 dock=0 grant_ms=-1 reply_seq=0 reply_ship=0 reply_kind=0 reply_resp=0 result_seq=0 result_type=0
+settings knowledge=0 script_goals=1 stale_destroy_wait=1 prestage_next=1 airlock_fly_through=1 pre_aggro=0
+exec mode=0 target=0 obj=0 survival=0 our_dock=0 spawns=0
+end
+#game-hash 0xd02d3cfb step=0x00000000 snap_ms=37.91
+#expect placeholder=no_objective standin=none kind=none source=none subject=none held=docked verb=none

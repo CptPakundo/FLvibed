@@ -1,0 +1,11 @@
+{
+  "_about": "U38 (the owner, 29 Oct 2026: a game in the background ignores pad input, as is standard): one focus gate for flight and menus, focus_only the opt-out for both, a button held across the return ignored until released; U30's hand-back: the rumble help names only what is sent (the autopilot's hand-back pulse).",
+  "rows": {
+    "focus_only": {
+      "help": "Ignore the controller while the game is in the background, in flight and in menus. A button held when you come back is ignored until you release it."
+    },
+    "rumble": {
+      "help": "Vibration strength for the autopilot's hand-back pulse (the only vibration so far). 0 = off. Never the only cue; silent while the game is in the background."
+    }
+  }
+}

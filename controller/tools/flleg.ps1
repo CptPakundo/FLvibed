@@ -3,28 +3,40 @@
 # the transcript and the game's logs in research\experience\legs\<time>_<label>_i<n>\, one line in research\experience\legs\legs.tsv
 # (the leg history: label, save, outcome, seconds, fps, commit). Several at once = one pwsh per instance (-Parallel
 # runs in docs\LEGS.md). Build once before (deploy.ps1 -NoStart); never build while legs run.
-param([Parameter(Mandatory)][int]$Instance, [Parameter(Mandatory)][string]$Save, [Parameter(Mandatory)][string]$Label,
+# -Instance: a number or a named instance folder (Install\instances\vanilla11c: vanilla 1.1; deploy.ps1 -Instance)
+param([Parameter(Mandatory)][string]$Instance, [Parameter(Mandatory)][string]$Save, [Parameter(Mandatory)][string]$Label,
       [int]$TimeoutSec = 3600, [double]$BudgetSec = 0, [switch]$KeepGame, [switch]$Chain,
       # autopilot switches for this leg, sent after the boot ('ring_request 10'): a change set's A/B in one build
       # (docs\TESTING.md "The test loop" 3); the transcript records them
       [string[]]$ApSet = @(),
+      # debug commands sent after the switches ('godmode on' for a probe that must survive); the transcript records them
+      [string[]]$Cmd = @(),
       # segment practice (Leg.ps1): saves at these checkpoints / a run from such a save / stop at a checkpoint
       [string[]]$SaveAt = @(), [string]$StartCp = '', [string]$StopAt = '',
       # -NoTables: no docs\LEGS.md (legtable.js) and no splits.py update after this leg (its splits.txt is still written);
       # the set drivers (tools\flset / flarms / flgate.ps1) pass it and regenerate both once after their loop
-      [switch]$NoTables)
+      [switch]$NoTables,
+      # -GameClock: Leg.ps1 times the checkpoints, splits and the total in game seconds (with -Cmd 'fixeddt 60': the
+      # legs.tsv secs are then game seconds - name it in the label; WORK_QUEUE Q3 probe 4)
+      [switch]$GameClock)
 $fl = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
 . (Join-Path $fl 'controller\tools\flctl.ps1')
 # the catalogue's save-fit columns kept by the leg-end save below (missions\Leg.ps1 writes them; Set-FLScenes writes
 # $script:FLSceneHead)
 $script:FLSceneHead = @(@($script:FLSceneHead) + @('speed', 'cruise', 'hull', 'shield', 'nanobots', 'batteries', 'objective_text',
-                                                   'fit', 'fit_note', 'fit_date') | Select-Object -Unique)
+                                                   'fit', 'fit_note', 'fit_date', 'marks') | Select-Object -Unique)
 $dir = Join-Path $fl ("research\experience\legs\{0:yyyy-MM-dd_HHmm}_{1}_i{2}" -f (Get-Date), $Label, $Instance)
 $null = New-Item -ItemType Directory -Force $dir
 Start-Transcript -LiteralPath (Join-Path $dir 'transcript.txt') | Out-Null
-$commit = (git -C $fl rev-parse --short HEAD) + $(if (git -C $fl status --porcelain) { '+dirty' } else { '' })
-"leg $Label instance $Instance save $Save commit $commit"
+# the build this leg deploys (-NoBuild: build\dev as tools\buildlock.ps1 stamped it: HEAD, "+dirty" only when the
+# build's own inputs had uncommitted changes, their hash); without a stamp, HEAD + the build inputs' git status
+$buildInfo = Join-Path $fl 'build\dev\build_info.txt'
+$buildStamp = if (Test-Path $buildInfo) { "$(Get-Content $buildInfo -TotalCount 1)" } else { '' }
+$commit = if ($buildStamp) { $buildStamp.Split(' ')[0] } else {
+    (git -C $fl rev-parse --short HEAD) + $(if (git -C $fl status --porcelain -- core controller/src subtitles/src build.cmd) { '+dirty' } else { '' })
+}
+"leg $Label instance $Instance save $Save commit $commit$(if ($buildStamp) { " (build $buildStamp)" })"
 $tBoot = Get-Date
 if ($Save -eq 'newgame') {
     # the campaign run from the main menu (the golden run's start, LEGS.md L00): New Game, its intro movie skipped
@@ -37,11 +49,13 @@ if ($Save -eq 'newgame') {
 } else {
     # a path, else a BC46 start save, else a leg checkpoint (research\saves\legs\: M13_ck_st03.fl ... - by name only it
     # resolved while the instance still had a copy of its own, 23 Oct 2026)
+    # (and the scene / checkpoint saves of docs\missions\scene_saves.tsv, research\saves\scenes\: SaveS349.fl by name
+    # booted twice into "shared memory not found" before 30 Oct 2026 - a missing save now stops the leg at once)
     $path = if (Test-Path -LiteralPath $Save) { $Save } else {
-        @('bc46-all-missions', 'legs') | ForEach-Object { Join-Path $fl "research\saves\$_\$Save" } |
+        @('bc46-all-missions', 'legs', 'scenes') | ForEach-Object { Join-Path $fl "research\saves\$_\$Save" } |
             Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
     }
-    if (-not $path) { $path = Join-Path $fl "research\saves\bc46-all-missions\$Save" } # (deploy names it in its error)
+    if (-not $path) { throw "save not found: $Save (a path, or a name in research\saves\bc46-all-missions, legs or scenes)" }
     # (-ReplaceSave: an instance's saves are test data - a game-written checkpoint may share a BC46 file name)
     # A boot whose game never answers is retried once (session 11, twice in a day: the game did not come up, the next
     # harness call threw "shared memory not found" and ended the whole set / gate queue)
@@ -70,6 +84,11 @@ foreach ($s in $ApSet) {
     if ($r -match '^unknown|failed') { throw "ap set ${s}: $r" }
     "ap set $s -> $r"
 }
+foreach ($c in $Cmd) {
+    $r = Send-FL $c
+    if ($r -match '^unknown|failed|unresolved') { throw "${c}: $r" }
+    "$c -> $r"
+}
 # A full leg (from the leg's start save, docs\legs_reference.tsv) is judged against the cumulative checkpoint limits too
 # (docs\TESTING.md "Speedrun splits"); a part run (a checkpoint save) by its segments only.
 $legName = if ($Label -match '^(M\d\d[ab]?)') { $Matches[1] } else { '' }
@@ -79,7 +98,7 @@ $full = [bool](Import-Csv (Join-Path $fl 'docs\legs_reference.tsv') -Delimiter "
 $f0 = Get-FLFrame; $sw = [Diagnostics.Stopwatch]::StartNew()
 $res = & (Join-Path $fl 'controller\tools\missions\Leg.ps1') -Label $Label -TimeoutSec $TimeoutSec -BudgetSec $BudgetSec `
          -Out (Join-Path $dir 'phases.tsv') -Chain:$Chain -Full:$full -SaveAt $SaveAt -StartCp $StartCp -StopAt $StopAt `
-         -StartSave $(if ($StartCp) { Split-Path $path -Leaf } else { '' }) *>&1 |
+         -StartSave $(if ($StartCp) { Split-Path $path -Leaf } else { '' }) -GameClock:$GameClock *>&1 |
        ForEach-Object { "$_" }
 $res
 $fps = try { [int]((Get-FLFrame - $f0) / $sw.Elapsed.TotalSeconds) } catch { 0 }
@@ -147,11 +166,16 @@ if ($outcome -ne 'PASS') {
             Set-Content $list (($segs | Select-Object -Last 2 | ForEach-Object { "file '$($_.FullName -replace "'", "'\''")'" }) -join "`n")
             $tail = Join-Path $dir 'end_tail.mkv'
             & ffmpeg -v error -y -f concat -safe 0 -i $list -c copy $tail
+            $joined = $LASTEXITCODE -eq 0
             Remove-Item -LiteralPath $list -ErrorAction SilentlyContinue
-            $d = [double](& ffprobe -v error -show_entries format=duration -of csv=p=0 $tail)
-            $sheet = & (Join-Path $fl 'tools\vidsheet.ps1') $tail -From ([Math]::Max(0, $d - 15)) -Fps 5 -Cols 5 -Rows 15 `
-                       -TileWidth 384 -Out (Join-Path $dir 'end_sheet.jpg')
-            "end frames: $sheet ($('{0:0.0}' -f $d) s of video in end_tail.mkv)"
+            $d = 0.0
+            # an unreadable duration would make the sheet show the first 15 s instead of the last (29 Oct 2026)
+            if ($joined -and [double]::TryParse("$(& ffprobe -v error -show_entries format=duration -of csv=p=0 $tail)",
+                    [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$d) -and $d -gt 0) {
+                $sheet = & (Join-Path $fl 'tools\vidsheet.ps1') $tail -From ([Math]::Max(0, $d - 15)) -Fps 5 -Cols 5 -Rows 15 `
+                           -TileWidth 384 -Out (Join-Path $dir 'end_sheet.jpg')
+                "end frames: $sheet ($('{0:0.0}' -f $d) s of video in end_tail.mkv)"
+            } else { "end frames: none - joining or reading end_tail.mkv failed (ffmpeg exit $LASTEXITCODE)" }
         } else { "end frames: no recording found for instance $Instance" }
     } catch { "end frames failed: $_" }
 }
