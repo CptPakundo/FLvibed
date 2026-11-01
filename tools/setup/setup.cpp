@@ -44,10 +44,13 @@ static const Payload kPayload[] = {
     {105, L"FLSubtitles\\speaker_colors.tsv"},
     {106, L"FLSubtitles\\word_times.tsv"},
     {107, L"FLvibed\\autopilot.3db"},
+    {108, L"FLSubtitles\\mixes.tsv"},
 };
-// Files FLvibed writes in EXE\ while it runs: its settings (kept on request) and its logs (always removed).
-static const wchar_t* kSettings[] = {L"FLvibed.ini", L"FLController.ini", L"FLSubtitles.ini", L"FLvibed\\saves.ini"};
-static const wchar_t* kLogs[] = {L"FLController.log", L"FLSubtitles.log"};
+// Files FLvibed writes in EXE\ while it runs: its settings and the speedrun timer's bests (kept on request) and its logs
+// and traces (always removed; FLMotion.tsv is the autopilot's motion trace, on by default, also for the player's flight).
+static const wchar_t* kSettings[] = {L"FLvibed.ini", L"FLController.ini", L"FLSubtitles.ini", L"FLvibed\\saves.ini",
+                                     L"FLvibed\\splits_best.ini"};
+static const wchar_t* kLogs[] = {L"FLController.log", L"FLSubtitles.log", L"FLMotion.tsv", L"FLController_ui.txt"};
 
 static bool g_quiet = false;
 static FILE* g_log = nullptr;
@@ -301,9 +304,16 @@ static std::string TrimA(const std::string& s)
     return s.substr(a, s.find_last_not_of(" \t") - a + 1);
 }
 
+// FLvibed's [Libraries] line, also as a player may have written it by hand: ".\FLvibed.dll", "FLvibed.dll ; note"
 static bool IsOurLine(const std::string& line)
 {
-    std::string t = TrimA(line);
+    std::string t = line;
+    size_t c = t.find(';');
+    if (c != std::string::npos)
+        t.resize(c);
+    t = TrimA(t);
+    if (t.size() > 2 && t[0] == '.' && (t[1] == '\\' || t[1] == '/'))
+        t = t.substr(2);
     return _stricmp(t.c_str(), "FLvibed.dll") == 0;
 }
 
@@ -548,7 +558,8 @@ static Result Install(const std::wstring& game)
     }
     if (!FileExists(exe + L"FLvibed.ini"))
     {
-        const char ini[] = "[Modules]\r\nsubtitles = 1\r\ncontroller = 1\r\n";
+        // with the settings stamp (core\settings_reset.h kVersion): a new install's defaults are current, no reset
+        const char ini[] = "[Modules]\r\nsubtitles = 1\r\ncontroller = 1\r\n[FLvibed]\r\nsettings_version = 2\r\n";
         if (DWORD e = WriteBytes(exe + L"FLvibed.ini", ini, sizeof(ini) - 1))
             return fail(e, L"write " + exe + L"FLvibed.ini");
         Log(L"wrote " + exe + L"FLvibed.ini");
@@ -772,6 +783,8 @@ static int DoInstall(const std::wstring& game)
                 {{100, L"Try again as administrator"}}, TDCBF_CANCEL_BUTTON, TD_SHIELD_ICON) != 100)
             return 2;
         int code = RunElevated(L"/install \"" + game + L"\"");
+        if (code == 0)
+            RegisterEntry(game); // this player's installed-apps entry (the elevated run may be another account)
         return code < 0 ? 2 : code;
     }
     if (r.err)

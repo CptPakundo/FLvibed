@@ -18,6 +18,15 @@ function Goto-FLRoom([string]$Label, [int]$TimeoutSec = 15, [switch]$NoWait, [sw
     $sw = [Diagnostics.Stopwatch]::StartNew()
     if (-not $Watch) { $null = Skip-FLAnimation }   # a transition still running would swallow the click
     $before = Send-FL 'hotspots'
+    # Already there? A dealer room's button hotspot is IDS_HOTSPOT_<X>_ROOM and inside that room IDS_HOTSPOT_<X> is a
+    # hotspot (verified 29 Oct 2026 for Equipment, Trader, ShipDealer on Li01). Before, the click went out, the room did
+    # not change and the wait ran out its 15 s - at every M01a start (its save starts in Equipment).
+    $rows = @(($before -split "`n") | ForEach-Object { , ($_.Trim() -split '\s+') } | Where-Object { $_.Count -ge 3 })
+    $button = $rows | Where-Object { $_[0] -ieq $Label -and $_[1] -like 'ButtonControl*' } | Select-Object -First 1
+    if ($button -and $button[2] -match '^(IDS_HOTSPOT_\w+)_ROOM$') {
+        $own = $Matches[1]
+        if ($rows | Where-Object { $_[1] -like 'RoomControl*' -and $_[2] -eq $own }) { return "already in $Label ($own here)" }
+    }
     do {
         $r = Send-FL "goto $Label"
         if ($r -match '^clicked') { break }

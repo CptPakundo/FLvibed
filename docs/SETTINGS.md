@@ -5,20 +5,21 @@ in the source and regenerate.** `set <name> <value>` / `ap set` change a value l
 help lines; `config settings` / `ap settings` / `settings` list them in the game. Behaviour, measurements and the why of
 each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, `controller\docs\HUD_CUES.md`.
 
-## [Controller] - EXE\FLController.ini [Controller] (68 keys; source `controller\src\impl\controller.cpp`)
+## [Controller] - EXE\FLController.ini [Controller] (69 keys; source `controller\src\impl\controller.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
 | `aim_mode` | int | 0 .. 1 | 1 | 1 = gimbal: the right stick only steers, the reticle locks onto the selected hostile target's lead cross while it is on screen; 0 = the reticle follows the right stick (with the aim assists below) |
 | `aim_cone` | float | 0 .. 90 | 90.0 | gimbal: lock-on cone half-angle in degrees (90 = whole screen) |
 | `aim_smooth` | float | 0 .. 1 | 0.06 | reticle smoothing time constant in seconds (0 = off) |
-| `auto_target` | int | 0 .. 2 | 0 | 0 = off (default): you pick targets (D-pad up = closest enemy) and a selected target is never changed; 1 = select the closest enemy when the current one is destroyed; 2 = also when nothing is targeted (paused for 10 s after you clear the target yourself) |
+| `auto_target` | int | 0 .. 2 | 0 | 0 = off (default): you pick targets (the target button: what is under the reticle, else the closest enemy) and a selected target is never changed; 1 = select the closest enemy when the current one is destroyed; 2 = also when nothing is targeted (paused for 10 s after you clear the target yourself) |
 | `fire_target` | bool | 0 \| 1 | true | 1 = with nothing targeted, firing at a hostile or neutral ship under the reticle selects it |
 | `steer_expo` | float | 1 .. 4 | 1.5 | steering response curve exponent (1 = linear) |
 | `steer_scale` | float | 0.1f .. 1 | 0.77 | full stick = this mouse-flight offset; 0.77 = the ship's maximum turn rate |
 | `invert_y` | bool | 0 \| 1 | false | 1 = stick up turns the nose down |
 | `stick_deadzone` | float | 0 .. 0.9f | 0.24 | radial stick deadzone (0..1) |
 | `trigger_threshold` | float | 0 .. 0.9f | 0.12 | trigger deadzone (0..1) |
+| `pad_backend` | int | 0 .. 1 | 0 | how the controller is read: 0 XInput (default; Xbox pads and pads that act as one), 1 SDL3 (experimental, not yet verified with real PlayStation or Switch pads: meant to read them too, the button prompts from the pad's type; starts on its own thread in a few milliseconds, XInput reads the pad meanwhile and if SDL cannot start) |
 | `throttle_rate` | float | 0.1f .. 5 | 0.9 | throttle lever change per second at full left stick |
 | `cursor_speed` | float | 0.1f .. 5 | 1.1 | menu cursor speed, screen heights per second |
 | `wheel_rate` | float | 1 .. 50 | 10.0 | right stick scrolling, notches per second |
@@ -29,13 +30,13 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `aim_slowdown` | float | 0 .. 1 | 0.35 | aim_mode 0: steering slowdown at the cross |
 | `aim_rotation` | float | 0 .. 1 | 0.6 | aim_mode 0: rotational assist strength |
 | `aim_rotation_max` | float | 0 .. 1 | 0.15 | aim_mode 0: rotational assist cap |
-| `focus_only` | bool | 0 \| 1 | true | ignore the controller while the game is in the background |
+| `focus_only` | bool | 0 \| 1 | true | ignore the controller while the game is in the background, in flight and menus alike (a button held when the game comes back is ignored until it is released) |
 | `run_in_background` | bool | 0 \| 1 | false | 1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back to Windows meanwhile |
-| `shield_cue` | bool | 0 \| 1 | false | screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it fails |
+| `shield_cue` | bool | 0 \| 1 | true | screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it fails |
 | `shield_cue_intensity` | float | 0 .. 2 | 1.0 | shield_cue strength (alpha and size) |
 | `hull_cue` | bool | 0 \| 1 | true | with shield_cue: hull hits show your ship's own hull hit effect at the screen edge, and while the hull is damaged the edges carry your ship's damage effects (sparks, fire, smoke) as the game lights them |
 | `hull_cue_pattern` | int | 0 .. 2 | 2 | pattern of the hull damage edge, so it never reads as a shield hit: 0 none, 1 armour plates, 2 hexagons (default) |
-| `reticle_cue` | bool | 0 \| 1 | false | a ring pulse at the crosshair: autopilot on (cyan, outward), handed back (amber, inward), nanobots (green) / batteries (blue) used (double ring) |
+| `reticle_cue` | bool | 0 \| 1 | true | a ring pulse at the crosshair: autopilot on (cyan, outward), handed back (amber, inward), nanobots (green) / batteries (blue) used (double ring) |
 | `autopilot_cancel` | float | 0 .. 1 | 0.35 | Advanced Autopilot (the pad hold, the key or the bar button starts it): stick deflection that hands the ship back to you (0 = never). Its own settings (pilot, engage rules, weapons, personality fields p.<name>) are in the [Autopilot] section |
 | `input_mode` | int | 0 .. 2 | 0 | input device: 0 automatic (the last device used wins, the UI follows in one frame), 1 controller, 2 keyboard and mouse |
 | `glyph_style` | int | 0 .. 3 | 0 | button prompts: 0 automatic (the connected pad's family), 1 Xbox, 2 PlayStation, 3 Nintendo |
@@ -43,17 +44,16 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `confirm_button` | int | 0 .. 1 | 0 | which face button accepts in menus: 0 the bottom one (A / cross / B), 1 the right one (Nintendo) |
 | `pause_on_disconnect` | bool | 0 \| 1 | true | a pad that drops out mid-flight pauses the game; in menus the UI switches to the keyboard |
 | `pad_preset` | int | 0 .. 3 | 0 | the flight layout: 0 Freelancer (targets and weapons on the fingers, consumables on the D-pad), 1 Ace (arcade flight: the left stick steers, the triggers are the throttle), 2 Assisted (the autopilot flies, you aim and decide), 3 Custom |
-| `weapon_groups` | int | 0 .. 2 | 1 | 0 simple: RT fires the active group; 1 cycle: Y held flips to the next group (Y tap stays cruise); 2 two groups: RT fires group 1 and LT group 2 (afterburner moves to L3). Launchers fire only on their own buttons |
+| `weapon_groups` | int | 0 .. 2 | 1 | 0 simple: RT fires the active group; 1 cycle: Y held flips to the next group (Y tap stays cruise); 2 two groups: RT fires group 1 and LT group 2 (afterburner moves to the LS click). Launchers fire only on their own buttons |
 | `holds_as_toggles` | bool | 0 \| 1 | false | afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons |
-| `autopilot_pad` | int | 0 .. 2 | 0 | how the pad switches the autopilot: 0 hold View half a second, 1 L3 + R3, 2 hold Menu; any stick input hands the ship back |
-| `rumble` | int | 0 .. 100 | 60 | vibration strength in percent: hits, the autopilot's hand-back, a confirmation request; 0 = off |
+| `rumble` | int | 0 .. 100 | 60 | vibration strength in percent (0 = off): hits on your ship by their weight, your shield failing, the autopilot's hand-back pulse and the game's boxes that wait for your answer; only while the controller is in use and the game is in front, never in cutscenes or the menus, and the world's effects never while paused |
 | `pad_cursor` | int | 0 .. 2 | 2 | a cursor on the left stick where pointing is natural: 0 off, 1 rooms and maps, 2 everywhere; it slows over targets, the D-pad hides it |
 | `cursor_magnet` | int | 0 .. 100 | 60 | how strongly the pad cursor slows over and pulls toward a clickable element, percent |
 | `prompt_bar` | int | 0 .. 2 | 0 | the bottom-right row of button prompts on controller screens: 0 contextual (a pending decision, a new screen), 1 always, 2 off |
 | `fluf_windows` | int | 0 .. 2 | 2 | with FLUF installed: 0 ignore its windows (co-residency only; FLvibed's keys still pass to FLUF while its palette is open or its text box has the keys), 1 its player windows (palette, options, map, toasts) are keep-outs: FLvibed's HUD parts and strip fade under them, prompts and subtitles step away, the pad drives them, 2 (default) also its developer windows (the Debug Window); FLUF's windows stay on top; no effect without FLUF |
 | `borderless` | int | 0 .. 2 | 1 | borderless windowed, read at the game's start: 0 off (the game's own window mode), 1 (default) only when nothing else provides it (not with HDE: its exe and its Direct3D wrapper do), 2 always; while FLvibed provides it the game runs as a window without frame covering its monitor at the monitor's resolution (never exclusive fullscreen; sharp at high DPI scaling only when the exe is DPI-aware), and FLUF's Alt+Enter toggles it with the bordered window |
 | `world_prompts` | int | 0 .. 1 | 0 | a prompt by the target when something unusual is possible now (dock in range, loot in reach): 0 contextual, 1 off |
-| `ap_hints` | bool | 0 \| 1 | false | show the autopilot's prompts and status before it was ever used; 0 = nothing about it shows until you switch it on once |
+| `ap_hints` | bool | 0 \| 1 | true | show the autopilot's prompts and status before it was ever used; 0 = nothing about it shows until you switch it on once |
 | `text_size` | int | 80 .. 150 | 100 | size of FLvibed's own UI text (prompts, panels, the status line) in percent; the subtitles have their own |
 | `hud_glyphs` | bool | 0 \| 1 | true | in pad mode the HUD's own buttons carry the glyph of the button that acts on them |
 | `button_legend` | int | 0 .. 1 | 0 | the contextual list of the actions available now with their buttons, right-middle of the screen: 0 = on, 1 = off (the row's order: ON / OFF) |
@@ -64,7 +64,7 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `livesplit_port` | int | 1024 .. 65535 | 16834 | LiveSplit Server's port (default 16834) |
 | `livesplit_gametime` | bool | 0 \| 1 | true | pause LiveSplit's game time during loads (a loadless comparison); real time keeps running |
 | `autopilot_key` | string | - | K | the keyboard key that toggles the autopilot (a key name: K, F10, Insert); a key the game binds is refused |
-| `hud_style` | int | 0 .. 2 | 1 | the flight HUD: 0 classic (the game's HUD; on the pad with the glyph badges and the legend), 1 HUD 2 on the pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always |
+| `hud_style` | int | 0 .. 2 | 2 | the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 1 HUD 2 on the pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always (default); HUD 2 includes its look over the menus and rooms (ui_style) |
 | `hud_fade` | int | 0 .. 2 | 1 | HUD 2 in calm flight: 0 always full, 1 calm dims (the ring and the side panels fade back), 2 minimal (calm flight hides the side panels and the ring; anything that changes brings its part back for a few seconds) |
 | `hud_opacity` | int | 40 .. 100 | 100 | HUD 2's overall opacity in percent |
 | `hud_scale` | int | 80 .. 130 | 100 | HUD 2's size in percent |
@@ -75,10 +75,11 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `hud_info` | bool | 0 \| 1 | true | extra information when it matters: docking queue, jump countdown, mission timers, formation, tractor |
 | `hud_wireframes` | bool | 0 \| 1 | true | the game's wireframe views in the target card and the ship panel where they can be kept (else flat icons) |
 | `hud_transition` | int | 0 .. 400 | 120 | advanced: how long HUD 2 takes to fade in when you switch to the controller, in milliseconds |
+| `hud_preset` | int | 0 .. 1 | 0 | experimental: HUD 2's layout preset - 0 Standard (default: today's HUD 2), 1 Focus (a calmer HUD that shows less until it matters); Speedrun and Guided are planned |
 | `maneuver_button` | bool | 0 \| 1 | true | the fifth button on the maneuver bar (keyboard and mouse HUD) toggles the autopilot |
-| `ui_style` | int | 0 .. 1 | 0 | The look of the menus, rooms and dialogs: Classic = the game's own; HUD 2 = FLvibed's HUD 2 skin over the same screens (the game's controls stay as they are) |
+| `ui_style` | int | 0 .. 1 | 1 | The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (default; the game's controls stay as they are); Classic = the game's own |
 
-## [Autopilot] - EXE\FLController.ini [Autopilot] (88 keys; source `controller\src\impl\autopilot_settings.cpp`)
+## [Autopilot] - EXE\FLController.ini [Autopilot] (165 keys; source `controller\src\impl\autopilot_settings.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -95,6 +96,30 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `dodge_window` | float | - | 0.6 | no countermeasure possible: dodge (slide + afterburner) this long before impact (s) |
 | `evade` | bool | 0 \| 1 | true | dodge and break by the personality; 0 = pure pursuit |
 | `fire_cone` | float | - | 0.5 | fire while the lead cross is within this offset from the screen centre (half-screens) |
+| `roll_guns` | bool | 0 \| 1 | true | roll the ship toward the angle where more guns can point at the target (the game's own gun test, 8 angles) |
+| `roll_flair` | bool | 0 \| 1 | true | a barrel roll with a sideways slide, when no roll angle loses a gun |
+| `roll_bank` | bool | 0 \| 1 | false | bank into turns (travel, docks, races: the aim rolled toward the ship's up; needs steer_level) |
+| `roll_test` | float | - | 0 | debug: hold this roll rate (rad/s about the nose) while flying |
+| `roll_commit` | bool | 0 \| 1 | true | roll_guns: fly the chosen angle to its end (measured), drop it only when it stops paying; 0 = re-choose every 0.25 s |
+| `follow_own` | bool | 0 \| 1 | true | follow / escort: once the game ends a re-issued follow within 1 s, fly the follow ourselves (no free-flight flicker) |
+| `survival_calm` | bool | 0 \| 1 | true | survival stance (an escape / survive mission): pursue nothing - stay with the lead, fight only ships shooting at us |
+| `survival_until_jump` | bool | 0 \| 1 | true | an escape mission's survival stance ends at its first jump out of the starting system (kills matter from there) |
+| `follow_defend` | bool | 0 \| 1 | true | a follow you started becomes an escort of its leader when ships attack you; the leader gone under attack: fight on |
+| `survival_stage` | bool | 0 \| 1 | true | speedrun knowledge: under the survival stance wait at the mission's next place (the next lane), fighting only what attacks |
+| `prestage_next` | bool | 0 \| 1 | true | speedrun knowledge: while the script talks before the next objective, fly to that objective's goal already |
+| `big_coast_lead` | float | 0 .. 6000 | 1500 | big_coast: the engine is killed in cruise this far beyond gun reach of the hull (m) |
+| `big_coast` | bool | 0 \| 1 | true | a huge static target: cruise in, engine kill outside gun reach and coast in firing everything; passes once fire comes in |
+| `big_coast_own` | bool | 0 \| 1 | false | big_coast only at a static the current fight, a "Destroy ..." objective's marks or the trip itself names - never a capital ship that happens to lie ahead on another step (M13's escort to the Osiris). 0 = any static ahead |
+| `self_burst` | bool | 0 \| 1 | true | learn per target where our rounds burst at their launch (gone within 0.12 s) and launch only from 150 m further out |
+| `steer_check` | bool | 0 \| 1 | false | debug: log the lead round the nose vs the turn every 0.25 s in a fight |
+| `steer_level` | int | 0 .. 2 | 2 | restate the steering into the frame the game turns in: 0 off, 1 the level frame (the system's up), 2 the camera's |
+| `standoff` | bool | 0 \| 1 | true | keep far enough off a ship that its crossing never outruns our turn (1.3 x its speed / our turn rate) |
+| `headon_reverse` | bool | 0 \| 1 | true | a ship flying at us: reverse thrust and a predictive turn toward where it flies, the guns on its lead |
+| `headon_shield` | float | 0 .. 1 | 0.25 | the head-on pass holds under fire (no extend / break / evade) while the shield is above this fraction |
+| `missile_lead` | bool | 0 \| 1 | true | missiles at a moving ship: aimed at where it will be at impact, launched out of an afterburner run (>= 0.4 s) |
+| `finish_target` | bool | 0 \| 1 | true | finish the current enemy ship before switching to another (unless the hull is under 35 % or it ran beyond 1 km) |
+| `lof_caution` | float | 0 .. 1 | 0.35 | friendly-fire caution: scales the corridors that hold fire for a friendly in the line (1 = widest, as before 28 Oct) |
+| `fire_covering` | bool | 0 \| 1 | true | also fire, aimed at the lead, whenever any gun can point at it (off the nose: orbits, evasion) |
 | `follow_distance` | float | - | 1500 | follow / escort: the game's follow max distance (m) |
 | `escort_radius` | float | - | 2500 | escort: fight hostiles within this distance of the escorted ship (m) |
 | `hold_radius` | float | - | 300 | hold: the leash - farther from the hold point, fly back (m) |
@@ -106,19 +131,13 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `big_ships` | bool | 0 \| 1 | false | also pick gunboats, cruisers, capital ships and transports while fighters are around |
 | `caution` | int | - | 1 | 0 never leave a fight early; 1 leave when clearly outmatched below 60 % hull; 2 leave sooner |
 | `retreat_odds` | float | - | 0.05 | free roam: leave a fight whose measured race is lost this badly (0.05 = 20:1); 0 = off |
+| `odds_shield` | bool | 0 \| 1 | true | the fight estimates count shield points dealt and left (off: hull only, as before 28 Oct 2026) |
 | `repair` | int | - | 1 | nanobots / batteries: 0 never; 1 only when needed (the player's way); 2 at the personality's thresholds |
-| `repair_shield_at` | float | - | 0.25 | repair 1: never a battery above this shield fraction (declared; the repair rule does not read it yet) |
-| `repair_hull_at` | float | - | 0.6 | repair 1: nanobots below this hull fraction while being hit (declared; the repair rule does not read it yet) |
 | `battery_horizon` | float | - | 0.6 | repair 1: a battery when the shield left is below the loss rate x this (s) |
 | `loot` | bool | 0 \| 1 | true | collect the loot near the fight once no enemy is left, the most valuable first |
 | `dodge` | int | - | 1 | how to dodge: 1 slide bursts with the nose on the target, 2 the game's Evade behaviour |
 | `loot_min_value` | float | - | 0 | leave loot worth less than this (credits at the base price) |
 | `evade_scale` | float | - | 0.06 | evasion: this fraction of shield + hull lost in 2 s = full evasion |
-| `extend` | bool | 0 \| 1 | false | extend under sustained fire (afterburner away, jinking) and resume when the hits stop |
-| `extend_quiet` | float | - | 1.5 | extend: resume after this long without a hit (s) |
-| `extend_max` | float | - | 8.0 | extend: at most this long (s) |
-| `extend_jink` | float | - | 40.0 | extend: jink offset from straight away (degrees) |
-| `extend_patience` | float | - | 3.0 | extend: still hit after this long = futile, fight instead (s) |
 | `stagger` | bool | 0 \| 1 | true | staggered gun fire: the guns started one by one over their refire cycle |
 | `weave_radius` | float | - | 0.75 | evasion: corkscrew radius at full evasion, as a fraction of fire_cone |
 | `slide_time` | float | - | 0.5 | evasion: length of each slide burst (s); 0 = weave only |
@@ -127,10 +146,20 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `adaptive` | bool | 0 \| 1 | true | ship-adaptive duel: close turn / wide turn / slash by agility and the measured exchange; 0 = close turn |
 | `duel` | int | -1 .. 2 | -1 | force a duel option (A/B): 0 close turn, 1 wide turn, 2 slash; -1 adaptive |
 | `start_smart` | int | 0 .. 1 | 1 | the autopilot key / button: 1 = the mission objective first, else the waypoints, else the target; 0 = the target alone |
+| `mp_autopilot` | int | 0 .. 2 | 1 | multiplayer, when the server says nothing about FLvibed: 0 = no autopilot, 1 = travel only (fly, dock, lanes, gates; no combat), 2 = everything; a server's own word (a server chat line [flvibed autopilot=on\|travel\|off]) always wins |
+| `pvp_duel` | int | 0 .. 2 | 0 | the duel flight in a fight with another player: jink hard while their guns are on you, trade fire sliding out of their line, punish when you have the angle, break off before a collision (experimental); 0 off, 1 against players, 2 against every ship |
+| `pvp_min_dist` | float | 0 .. no cap | 120.0 | the duel flight's break-off distance (m) |
+| `pvp_range` | float | 50 .. no cap | 300.0 | the duel flight's stand-off distance (m; at most 0.8 x the gun range): the pursuit holds it instead of closing in |
+| `mp_caution` | int | 0 .. 2 | 2 | multiplayer: caution on a server (no reload there, a lost ship is lost): 0 never leave a fight early; 1 leave when clearly outmatched below 60 % hull; 2 leave sooner |
+| `mp_flee` | float | -1 .. 1 | 0.4 | multiplayer: leave combat below this hull fraction on a server; -1 = as in single player (flee) |
+| `hold_defend` | bool | 0 \| 1 | true | a Hold you started fights back when attacked (where fighting is allowed), then holds again at its point |
 | `skip_dock_scene` | bool | 0 \| 1 | true | the autopilot's own dock skips its docking / landing cutscene |
 | `fast_dock` | bool | 0 \| 1 | false | player-style docks: full speed to the bay's approach point, the request just before it |
-| `dock_regain` | bool | 0 \| 1 | false | a fast dock whose request is lost to a moving target (crawling 4 s after the grant) hands over to the game's dock |
+| `dock_regain` | bool | 0 \| 1 | true | a fast dock whose request is lost to a moving target (crawling 4 s after the grant) hands over to the game's dock |
 | `dock_request_distance` | float | - | 5 | fast dock: where to request, along the bay's axis from its approach point (m; negative = past it) |
+| `bay_arrive` | bool | 0 \| 1 | true | fast dock at a bay: brake so the arrival leaves 2 s to the hull ahead (at least 1.25 x the engine's top speed) |
+| `shortcut_rush` | bool | 0 \| 1 | true | fast dock at a gate / hole with a ship going in first: rush to the entrance and take the queue shortcut (formation on the locked-in ship); 0 = request at the usual point at speed, the game's queue decides |
+| `bay_request_lined` | bool | 0 \| 1 | false | experimental: fast dock at a bay requests only within 40 m of the bay's axis, flying on at its entrance until then (100 m past it the request goes anyway). 0 = request at the axis distance wherever we are beside it |
 | `dock_arrive_speed` | float | - | 0 | fast dock: brake to this speed before the request point (m/s); 0 = no braking |
 | `ring_request` | float | - | 0 | fast dock at a planet ring, straight in: request this far from the approach point (m); 0 = ~1.4 s out |
 | `airlock_charge_at` | float | - | 0 | an airlock run's cruise charge timed so this share of it is done at the transit; 0 = 0.5 s before |
@@ -151,6 +180,7 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `static_pass` | bool | 0 \| 1 | true | a static target may be fought by attack passes (the hold's fallback) |
 | `static_hold` | bool | 0 \| 1 | true | a static target is fought by hold-and-salvo near its hull (the speedrunners' way) |
 | `static_hold_gap` | float | 10 .. no cap | 20 | the hold point's distance from the target's real hull (m, at least 10) |
+| `static_hold_guns` | bool | 0 \| 1 | true | the hold backs off (20 m steps) until every gun can point at the target |
 | `static_hold_lateral` | float | 0 .. no cap | 35 | the hold's lateral run speed along the hull (m/s); 0 = slide by static_hold_slide |
 | `target_dwell` | float | 0 .. no cap | 6 | a live combat target is kept at least this long before the ranking may switch (s) |
 | `static_hold_slide` | float | 0 .. no cap | 5 | the hold slid round the target at this rate (deg/s); 0 = still |
@@ -158,9 +188,57 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `static_hold_mine_gap` | float | 0 .. no cap | 40 | mines at the hold only within this hull gap (m) |
 | `static_hop` | bool | 0 \| 1 | true | the way to a static target's hold goes through real geometry, by cruise when faster |
 | `script_goals` | bool | 0 \| 1 | true | a step's flying condition read from the mission script is travelled to (objectives are triggers) |
+| `situation_shadow` | bool | 0 \| 1 | false | measurement only (A37): the new arbiter's rules run beside the objective mode's decisions and log whether they agree (situation shadow events); decides nothing. 0 = nothing runs |
+| `situation_arbiter` | bool | 0 \| 1 | false | experimental (A37): the objective mode decides by the new arbiter over the goal queue, every start checked against the game first; the player's stop pauses the queue and the next start resumes it. 0 = today's decisions |
+| `look_log` | bool | 0 \| 1 | false | debug (LOOK L0): at each objective decision log what the look-ahead would do - fight a later step's target now or fly to the least-cost armed goal - with every safety check that would block it (autopilot look events); changes nothing the ship does |
+| `timer_destroy` | bool | 0 \| 1 | false | experimental: a "Destroy ..." step the mission script ends on its own timer or dialogue (whatever is killed) is not fought - with speedrun knowledge the ship flies to the next step's place and fights only what shoots at it; otherwise it fights while that is safe (hull and shield batteries). 0 = today's fight |
+| `ally_kill` | bool | 0 \| 1 | false | experimental (speedrun knowledge): a step the mission script ends on a mission target's death by anyone, whose kill unlocks the next step's dock, is not fought - the ship waits at that dock, answers only what shoots at it and docks on the unlock; it fights as before when nothing friendly wears the target down. 0 = today's fight |
+| `escort_by_place` | bool | 0 \| 1 | false | experimental (speedrun knowledge): an escort step that the mission script ends when the player reaches a place - with no distance leash and no failure if the escorted ship dies - is flown straight to that place instead of in formation. 0 = today's escort |
+| `td_window` | bool | 0 \| 1 | false | experimental, with timer_destroy: that rule from the kill before the step on (the gap with no objective shown), and dock the moment the mission script accepts the dock instead of waiting for the dock objective. 0 = off |
+| `place_dock` | bool | 0 \| 1 | false | experimental, with escort_by_place: when the place that ends the step is the next step's dock, the trip docks there at once (flown through the place at speed). 0 = stop at the place, then dock |
+| `kill_ahead` | bool | 0 \| 1 | false | experimental (speedrun knowledge): a step with no place of its own whose mission script waits on targets a later step marks flies to the nearest of them at once and fights it the moment the script allows the kill (no trigger on the way to the next objective is switched off by it); fighters on the way are not chased. 0 = today's wait |
+| `chase_kill` | bool | 0 \| 1 | false | experimental (speedrun knowledge): a ship a later step of the mission script asks to destroy is fought the moment it is alive, hostile and targetable, in a step that asks no fight of its own ("Follow ..."); a target faster than the engine is chased in cruise and fired on by engine-kill coasts at cruise speed; no missile at it under half hull. 0 = today's trip behind it |
+| `spawn_stage` | bool | 0 \| 1 | false | experimental (speedrun knowledge, with chase_kill): while a fight's last kill is pending and the script spawns a later step's fleeing target when it dies, the ship waits beside that spawn inside the fight's distance nag and fights the last one there; 25 s there without the kill: the fight as before. 0 = today's fight |
+| `spawn_charge` | bool | 0 \| 1 | false | experimental (speedrun knowledge, with spawn_stage and chase_kill): the wait point lies just behind the fleeing target's spawn on his line and inside every distance leash, the last one is fought without leaving that point, and the cruise chase starts the moment he spawns; no missile at him beyond 600 m while he runs. 0 = spawn_stage as is |
+| `ash_ride` | bool | 0 \| 1 | false | experimental (speedrun knowledge, with spawn_charge, spawn_stage and chase_kill): the last one is left to the allies once its shield is down and its hull at 60 % or less, the ship cruises a loop near the fleeing target's spawn, meets him at cruise behind him as he reaches cruise speed and kills the engine only at equal speed with him dead ahead 90-220 m off; the last one still alive 35 s later: back to it. 0 = spawn_charge as is |
+| `leash_live` | bool | 0 \| 1 | false | experimental (speedrun knowledge): only the distance leashes the mission has armed right now (the game's live trigger list) keep the ship near their ship or object; a leash the script arms only later is not kept yet. 0 = every leash the mission lists |
+| `lock_trap` | bool | 0 \| 1 | false | experimental (speedrun knowledge): while the mission script waits for the player near a ship or place to lock a dock it unlocks later (M13: near Orillion, then the Nomad gate), the ship first flies there so the lock comes before the unlock - met after it, the lock would close that dock for good. 0 = today's trip |
+| `battery_budget` | bool | 0 \| 1 | false | experimental (speedrun knowledge): shield batteries and nanobots split over the big fights the mission script still holds before the next base - a big target gets its share, fighters none unless death is near or the hull is under half; the share weighs the kills each fight needs, refills come in bursts on a failing shield while fights lie ahead, and a failing shield under fire at a big target is always refilled. 0 = today's reserve |
+| `static_full_dps` | bool | 0 \| 1 | false | experimental: at a static target a missile is held back as overkill only when the rounds already homing will destroy it (every launcher at its refire). 0 = the guns over the new round's flight count too |
+| `bs_approach` | bool | 0 \| 1 | false | experimental (speedrun knowledge): to a big target's blind spot at afterburner speed down to the braking distance, and the spots scored by the clear line from them to its centre (our rounds burst clear of us). 0 = the crawl |
+| `torp_reach` | float | 0 .. 400 | 0 | experimental: no torpedo at a big or static target unless the hull along the line of fire and the nose is at least this far (m), outside our own torpedo's reach. 0 = the blast rule alone |
+| `missile_reach` | float | 0 .. 400 | 0 | experimental: no missile at a big or static target unless the hull along the line of fire and the nose is at least this far (m). 0 = the blast rule alone |
+| `static_site_check` | bool | 0 \| 1 | false | experimental: at a static target's hold no torpedo with any hull within its blast reach beside us. 0 = the blast rules alone |
+| `self_burst_near` | bool | 0 \| 1 | false | experimental: self_burst learns its no-launch distance only from rounds launched within 400 m. 0 = from any |
+| `missile_keep_big` | bool | 0 \| 1 | false | experimental (speedrun knowledge, with battery_budget): while big fights lie ahead, cheap missiles are fired freely only at big or static targets - fighters get one only when the fight needs it. 0 = free use at any target |
+| `arrive_walled_fast` | bool | 0 \| 1 | false | experimental: a travel close to its point with no progress counts as arrived after 2 s at cruise speed. 0 = 8 s |
+| `blind_site_check` | bool | 0 \| 1 | false | experimental: at a big target's blind spot no torpedo with any hull - the target's too - within its blast reach beside us. 0 = the blast rules alone |
+| `big_cruise_in` | bool | 0 \| 1 | false | experimental (speedrun knowledge): the cruise in to a huge static target goes on under fire, fighters around it ignored, until gun range of its hull. 0 = the cruise only while not under fire |
+| `bs_approach_gap` | float | 0 .. 400 | 100 | bs_approach: the clear line a spot needs to the target's centre (m) |
+| `resume_silent_s` | float | 0 .. no cap | 30 | situation_arbiter: a pause up to this long resumes the queue silently (s); longer re-plans it |
+| `resume_moved_m` | float | 0 .. no cap | 5000 | situation_arbiter: flying farther than this while paused re-plans the queue (m) |
 | `geometry_guard` | bool | 0 \| 1 | true | close-quarter flight in every mode: the way ahead tested against real hulls |
-| `motion_trace` | bool | 0 \| 1 | true | FLMotion.tsv: 10 rows / s of the flight while the autopilot flies |
+| `level_off` | bool | 0 \| 1 | true | a travel's straight run levels a banked ship (the game's own Goto for a moment): the camera stays level |
+| `motion_log` | bool | 0 \| 1 | false | FLMotion.tsv: 10 rows / s of the flight while the autopilot flies (a debugging aid; tests turn it on) |
 | `blind_shelter` | bool | 0 \| 1 | true | among a target's blind spots prefer one the other hostiles have no clear line to |
+| `rush_hold_fire` | bool | 0 \| 1 | false | no missile or torpedo launch while the rush (blind_site_check / bs_approach) closes on the spot (the rounds end where we fly to) |
+| `self_burst_damage` | bool | 0 \| 1 | false | self_burst learns only from a round end that cost us at least 70 % of its damage, not from its distance |
+| `blind_contact` | bool | 0 \| 1 | false | blind spots at hull contact too (0 m), and a held spot is kept unless it costs 5 % a second |
+| `blind_contact_gap` | float | 0 .. 300 | 55 | blind_contact: how far off the hull its spots lie (m) - outside our own torpedo's blast |
+| `battery_reserve` | bool | 0 \| 1 | false | a marked big static target ahead: 70 % of the batteries kept until its hold is reached |
+| `launch_site_check` | bool | 0 \| 1 | false | a missile or torpedo at a static or big target only when its simulated round bursts at least its blast + our radius + launch_site_margin from where we will be then (self_burst and rush_hold_fire are skipped there) |
+| `launch_site_margin` | float | 0 .. 200 | 20 | launch_site_check / ordnance_keepout: metres beyond the blast radius + our radius |
+| `ordnance_keepout` | bool | 0 \| 1 | false | the movement goal is bent out of our own live rounds' impact spheres |
+| `ordnance_site` | bool | 0 \| 1 | false | at a blind spot: a firing position ordnance_standoff off the hull, held while a launcher's refire is due by the time we are there, else the guns spot |
+| `ordnance_standoff` | float | 0 .. 600 | 150 | ordnance_site: the firing position's hull gap (m) |
+| `blind_no_pass` | bool | 0 \| 1 | false | no attack pass (the afterburner exit run) at a target whose blind-spot scan found 4+ turrets |
+| `standoff_hold` | bool | 0 \| 1 | false | experimental: at a big target with turrets, guns and launchers fire from one position ordnance_standoff off the hull (outside our own blast reach), reached at full speed and held with a slow slide round it, the nose on the target. 0 = the blind-spot hold |
+| `hold_shelter` | bool | 0 \| 1 | false | experimental: the static hold prefers a point the surrounding structure shelters (fewer open lines of fire within 400 m), with every gun still on the target. 0 = today's choice |
+| `hold_guns_hull` | bool | 0 \| 1 | false | experimental: the static hold's every-gun test counts the guns that can point at the hull point they fire at (not at the target's centre, which on a huge target lies far behind its hull). 0 = at the centre |
+| `city_hold_side` | bool | 0 \| 1 | false | experimental: at a static target that hostile weapons platforms guard, the hold sits on the side facing away from them (within 45 deg) at a 120-130 m hull gap and never re-anchors closer than 100 m or off that side; missiles, torpedoes and mines only with their burst and the nearest hull at least 100 m from us; the target's height kept unless a deeper point is clearly less covered by the platforms' guns. 0 = today's hold |
+| `standoff_slide` | float | 0 .. 300 | 60 | standoff_hold: the slide's radius round the firing position (m); 0 = held still |
+| `standoff_slide_speed` | float | 0 .. 100 | 20 | standoff_hold: the slide's speed (m/s) |
+| `strafe_pass` | bool | 0 \| 1 | false | experimental (speedrun knowledge): at a big armed hull (the battleship class) no hold - lengthwise passes along its long axis 150-250 m off the hull, afterburner pulses, the nose and every launcher on the hull ahead, a turn ~1 km out at each end; a hull the ray test cannot read falls back to today's fight. 0 = the holds |
 | `dock_stage` | float | - | 250 | fast dock: coming from the side or behind, line up this far out on the bay's axis (m) |
 | `lane_request_distance` | float | - | 15 | fast lane entry: request when the stop would end within this of the aim point (m) |
 | `fast_thrust` | int | - | 0 | fast dock / lane run: 0 as planned, 1 burner, 2 cruise (verification runs) |
@@ -171,7 +249,7 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `consumables` | word | needed | never | needed | sets missiles, repair and countermeasures together (user, 18 Oct 2026) |
 | `p.<field>` | string | - | - | a personality field of the [Pilot] by its ini name (e.g. p.trail_distance = 200) |
 
-## [Subtitles] - EXE\FLSubtitles.ini [Subtitles] (40 keys; source `subtitles\src\impl\display.cpp`)
+## [Subtitles] - EXE\FLSubtitles.ini [Subtitles] (41 keys; source `subtitles\src\impl\display.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -201,13 +279,14 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `retire_delay_cinematic` | float | 0 .. 5 | 0.75 | letterboxed scenes: the extra fade delay of a line kicked up by the next (s) |
 | `letterbox_mode` | int | 0 .. 1 | 0 | letterboxed scenes: 0 inside the lower bar (inline name, no backing), 1 on the bar's top edge in the picture |
 | `cinematic_single_speaker` | bool | 0 \| 1 | true | letterboxed scenes show one speaker at a time |
-| `hostile_marker` | bool | 0 \| 1 | false | a hostile speaker gets the HUD's red triangle before the name |
+| `hostile_marker` | bool | 0 \| 1 | true | a hostile speaker gets the HUD's red triangle before the name |
 | `hud_arrows` | bool | 0 \| 1 | true | in flight the off-screen target arrows are kept clear of the HUD panels and the subtitles |
 | `space_narrow` | int | 0 .. 5 | 5 | narrow screens (4:3, 5:4) with the top panel: 0-5 layouts, 5 = the name tab with the rows below the top HUD row |
 | `comm_portrait` | bool | 0 \| 1 | true | in flight the game's comm window sits in a slot inside the subtitle panel |
 | `fade_with_channel` | bool | 0 \| 1 | true | a comm's line fades right after the game closes its comm window (never before its reading minimum) |
 | `word_pop` | bool | 0 \| 1 | true | the word being spoken grows slightly (lines with word timings) |
 | `word_timing` | bool | 0 \| 1 | true | pages turn on the speaker's words (forced alignment); 0 = spread over the time on screen |
+| `stack_fit` | float | 0.5f .. 1 | 0.7 | stacked speakers' lines shrink together (down to this size) so the stack keeps about one line's height; 1 = off |
 | `chat_layout_narrow` | int | 0 .. 1 | 1 | chat log NPC lines on narrow screens: 1 a header row with name and faction, 0 the column layout |
 | `chat_layout_wide` | int | 0 .. 1 | 1 | the same on wider screens |
 | `speaker_colors` | bool | 0 \| 1 | true | story speakers' names in their own colours; 0 = every name by the speaker's relation to you |

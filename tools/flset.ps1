@@ -10,11 +10,18 @@
 # names its fit_note - unless -Force; fit=unverified (or none recorded) runs with a warning: its first run judges it.
 # The tables (docs\LEGS.md by legtable.js, splits.py update) are regenerated once after the loop, not after every leg
 # (flleg.ps1 -NoTables; "The test loop" 4); -NoTables skips them here too (flarms.ps1 regenerates after its own rounds).
+# -Sprt (opt-in; WORK_QUEUE H2, IDEAS T1 - the default is the owner's D1): the two-instance form of a set (one flset
+#   per variant, each on its own instance). After every third run of this flset the split history is refreshed and
+#   tools\splits.py sprt judges -SprtA (the reference variant) against -SprtB (default: this -Variant; when this flset
+#   IS the reference, -SprtB names the other side) on -SprtSeg <checkpoint> or the leg total; a final verdict (KEEP /
+#   REVERT / INCONCLUSIVE / NODATA) ends the set, -Runs stays the cap. Both sides judge the same pair from the shared
+#   history, so both stop at the same verdict (flarms.ps1 -Sprt is the one-instance multi-arm form).
 param([Parameter(Mandatory)][int]$Instance, [Parameter(Mandatory)][string]$Leg, [Parameter(Mandatory)][string]$Set,
       [Parameter(Mandatory)][string]$Variant, [int]$Runs = 2, [string[]]$ApSet = @(),
       [string]$Save = '', [string]$StartCp = '', [string]$StopAt = '', [string[]]$SaveAt = @(), [switch]$NoTables,
-      [switch]$Force)
+      [switch]$Force, [switch]$Sprt, [string]$SprtA = '', [string]$SprtB = '', [string]$SprtSeg = '', [switch]$FlyA)
 $root = Split-Path $PSScriptRoot -Parent
+. (Join-Path $PSScriptRoot 'fllegrun.ps1')   # Invoke-FLLegGuarded
 if ($StartCp) {
     # the newest leg-checkpoint save of that checkpoint, or the catalogue row of the -Save given
     $rows = @(Import-Csv (Join-Path $root 'docs\missions\scene_saves.tsv') -Delimiter "`t" |
@@ -44,6 +51,23 @@ $sets = & $split $ApSet
 $saveAt = & $split $SaveAt
 $label = "$Leg-$Set-$Variant"
 $log = Join-Path $root "research\experience\legs\sets\$label`_i$Instance.log"
+if ($Sprt) {
+    if (-not $SprtA) { throw "flset -Sprt: name the reference variant with -SprtA" }
+    if (-not $SprtB) { $SprtB = $Variant }
+    if ($SprtA -eq $SprtB) { throw "flset -Sprt: -SprtA $SprtA is this variant - name the other side with -SprtB" }
+    if ($Variant -ne $SprtA -and $Variant -ne $SprtB) { throw "flset -Sprt: -Variant $Variant is neither -SprtA $SprtA nor -SprtB $SprtB" }
+    # the gate as a harvest (WORK_QUEUE H18 (1); enforced since the audit of 30 Oct 2026 evening - never used before):
+    # the reference arm is not flown when a gate on this build already harvested A samples of this leg - the B arm alone
+    # against them (splits.py sprt --a-samples <file>); -FlyA flies it anyway (say why in the command)
+    if ($Variant -eq $SprtA -and -not $FlyA) {
+        $stamp = "$(Get-Content -LiteralPath (Join-Path $root 'build\dev\build_info.txt') -ErrorAction SilentlyContinue)".Split(' ')[0]
+        $have = @(Get-ChildItem -LiteralPath (Join-Path $root 'research\experience\legs\sets') -Filter 'gate_*_A.tsv' -ErrorAction SilentlyContinue |
+                  Where-Object { @(Import-Csv -LiteralPath $_.FullName -Delimiter "`t" | Where-Object { $_.leg -eq $Leg -and $_.build -eq $stamp }).Count })
+        if ($have.Count) { throw "flset -Sprt: the A arm ($SprtA) of $Leg on build $stamp is already harvested by a gate ($($have.Name -join ', ')): fly only -Variant $SprtB and judge with splits.py sprt --a-samples <that file> <set B>; -FlyA flies A anyway" }
+    }
+}
+$py = Join-Path $root 'research\tools\ocr\.venv\Scripts\python.exe'
+$sp = Join-Path $root 'tools\splits.py'
 for ($i = 1; $i -le $Runs; $i++) {
     if ($row -and $i -gt 1 -and -not $Force -and "$($row.fit)" -ne 'fit') {
         # an unverified save judged by this set's first run: an unfit verdict ends the set here (tables still regenerated)
@@ -56,9 +80,24 @@ for ($i = 1; $i -le $Runs; $i++) {
         }
     }
     "$(Get-Date -Format 'HH:mm:ss') run $i/$Runs $label i$Instance save $Save$(if ($StartCp) { " from $StartCp" })$(if ($StopAt) { " to $StopAt" }) ap set: $($sets -join '; ')" | Add-Content $log
-    $res = & (Join-Path $root 'controller\tools\flleg.ps1') -Instance $Instance -Save $Save -Label $label -ApSet $sets `
-             -SaveAt $saveAt -StartCp $StartCp -StopAt $StopAt -NoTables 2>&1 | ForEach-Object { "$_" }
+    # under the wall-clock watchdog (tools\fllegrun.ps1): a hung leg no longer stalls the set
+    $res = Invoke-FLLegGuarded @{ Instance = $Instance; Save = $Save; Label = $label; ApSet = $sets; SaveAt = $saveAt
+                                  StartCp = $StartCp; StopAt = $StopAt; NoTables = $true }
     "$(Get-Date -Format 'HH:mm:ss') $($res | Where-Object { $_ -match '^RESULT ' } | Select-Object -Last 1)" | Add-Content $log
+    if ($Sprt -and $i % 3 -eq 0 -and $i -lt $Runs) {
+        $null = & $py -I $sp update 2>&1
+        $re = { param($v) "^$([regex]::Escape("$Leg-$Set-$v"))$" }
+        $args2 = @('-I', $sp, 'sprt', (& $re $SprtA), (& $re $SprtB)) + $(if ($SprtSeg) { @('--seg', $SprtSeg) } else { @() })
+        $out = @(& $py @args2 2>&1 | ForEach-Object { "$_" })
+        $line = $out | Where-Object { $_ -match '^SPRT (\w+)' } | Select-Object -First 1
+        $verdict = if ($line -match '^SPRT (\w+)') { $Matches[1] } else { 'ERROR' }
+        "$(Get-Date -Format 'HH:mm:ss') sprt after run $i/${Runs}: $SprtB vs $SprtA -> $(if ($line) { $line } else { "ERROR: $($out -join ' | ')" })" | Add-Content $log
+        if ($verdict -ne 'CONTINUE') {
+            # ERROR too ends the set: a verdict step that cannot judge must not let the set run blind to its cap
+            "$(Get-Date -Format 'HH:mm:ss') sprt: $verdict - the set ends after run $i/$Runs" | Add-Content $log
+            break
+        }
+    }
 }
 # the tables once per set: the same two commands flleg.ps1 runs after a single leg (docs\LEGS.md from the history; the
 # split history, PBs, golds, limits, docs\SPLITS.md and the LiveSplit files)

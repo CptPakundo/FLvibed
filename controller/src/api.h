@@ -38,9 +38,15 @@ struct SpawnRec
 // keyboard-and-mouse clicks, 25 Oct 2026), v23 UiGeneration (Extended HUD 2, 25 Oct 2026: windows opened / closed without
 // polling), v24 ObjectiveText (HUD 2's objective line as the game formats it, 25 Oct 2026), v25 ObjectiveReread (the
 // objective a save load restores without an objective event, 25 Oct 2026), v26 WindowMode (who provides borderless
-// windowed, 26 Oct 2026: controller\src\host\winmode.h), v27 RealMouseWheel (the options page's wheel, 26 Oct 2026). A
-// logic DLL must check `version` before using functions added in later versions.
-constexpr u32 kHostApiVersion = 27;
+// windowed, 26 Oct 2026: controller\src\host\winmode.h), v27 RealMouseWheel (the options page's wheel, 26 Oct 2026), v28 SetGunAim (the autopilot's
+// gunnery decoupled from the camera and the cursor, 28 Oct 2026), v29 DeferToFrameEnd (the front end's clicks out of the
+// logic's stack; modal-loop frames, 28 Oct 2026), v30 ChatLineAt (a multiplayer server's permission, 28 Oct 2026), v31
+// ServerTag (the server's word kept across logic reloads, 28 Oct 2026), v32 FixedDt (TEST ONLY: fixed dt, 30 Oct 2026), v33
+// SdlPad + SdlPadRumble (the opt-in SDL3 gamepad backend, WORK_QUEUE Q5 slice 1, 30 Oct 2026), v34 GameLoads (what the
+// host and mission.cpp keep per game starts over at a load: the A37 S1 finding, 30 Oct 2026), v35 MissionSave (the story's
+// checkpoint saves for the speedrun splits' save:<ids> rows: M01b.end at GAME SAVED, CP-M01b, 30 Oct 2026). A logic DLL
+// must check `version` before using functions added in later versions.
+constexpr u32 kHostApiVersion = 35;
 // Logic DLL API version, checked by the host when loading the logic DLL (exact match): v2 adds OnRenderUnderHud, v3
 // adds OnUiButton and OnRawKey (the UI build).
 constexpr u32 kImplApiVersion = 3;
@@ -64,6 +70,24 @@ struct HudHotspot
 {
     float x0, y0, x1, y1;
     int shown;
+};
+
+// v33: the SDL3 gamepad backend's newest read (HostApi::SdlPad; controller\src\host\sdlpad.*, the values
+// controller\src\pad_backend.h). The pad in use is the first gamepad SDL lists, kept while it stays connected.
+struct SdlPadState
+{
+    int status;         // padbackend::kSdlFailed / kSdlOff / kSdlStarting / kSdlRunning
+    int connected;      // a gamepad is open and answering
+    u32 seq;            // the host thread's reads so far (grows with every read)
+    u32 buttons;        // XINPUT_GAMEPAD_* bits (SDL's positional buttons: padbackend::kXiButtonForSdl)
+    int lt, rt;         // 0..255 (XInput's scale)
+    int lx, ly, rx, ry; // -32768..32767, +y = up (XInput's sign)
+    int type;           // SDL_GamepadType (padbackend::SdlType)
+    u32 vendor, product; // USB ids as SDL reports them (0 unknown)
+    int count;          // the gamepads SDL lists
+    float initMs;       // SDL_Init's duration on the host thread (0 before it ran)
+    char name[64];      // SDL's name of the pad (UTF-8), "" none
+    char error[96];     // SDL_GetError() of a failed start, else ""
 };
 
 struct SettingsBus;
@@ -254,6 +278,46 @@ struct HostApi
     // v27: the physical mouse wheel's whole notches since the last call (+ = up; the virtual mouse's excluded) - the
     // options page's scrolling (the owner, 26 Oct 2026: its scroll bars did not take the mouse).
     int (*RealMouseWheel)();
+    // v28: the world point every player gun aims at, set by the logic instead of the game's cursor ray (exe::GunAimPoint:
+    // the getter CEGun::SetTargetPoint's caller and the HUD read): the autopilot's lead while it flies in turret view,
+    // so its gunnery does not depend on the player's camera or cursor (the owner, 28 Oct 2026). on = false: the game's
+    // own point again. False when the getter is not hooked (symbol unverified / detour refused: the game's aim stays).
+    bool (*SetGunAim)(bool on, const float* world);
+    // v29: runs fn(ctx) at the end of this frame's logic update, with no logic call on the stack (the host's frame,
+    // after OnFrame). The front end's button clicks go through it: some open a dialog that runs its own modal loop
+    // (the Multiplayer button's LAN / INTERNET prompt, the connection dialogs), where the host keeps the logic's frames
+    // running from the render (modal frames) - which it may only do when no logic call is on the stack (28 Oct 2026).
+    void (*DeferToFrameEnd)(void (*fn)(void* ctx), void* ctx);
+    // v30: the chat window's lines as they arrived (exe::ChatFlush): line n (1-based) - its sender id and the text of its
+    // RDL text nodes; returns the number of lines seen so far (call with n = 0 for just that). Only the last 32 are
+    // kept. A multiplayer server says what it allows FLvibed in a server line (docs\MULTIPLAYER.md, 28 Oct 2026).
+    u32 (*ChatLineAt)(u32 n, u32* sender, wchar_t* text, int max);
+    // v31: the current multiplayer session's last tag-only server line (core\mprules_tag.h): its chat serial (0 = none
+    // this session), sender and text. The host keeps it apart from the 32-line ring, so a logic reload still knows the
+    // server's word (the tag comes once, at login); a change of mode forgets it.
+    u32 (*ServerTag)(u32* sender, wchar_t* text, int max);
+    // v32 (TEST ONLY): fixed dt - the frame timer's outputs replaced by 1/fps (main.cpp FrameTimerHook, IDEAS T2). fps >
+    // 0 sets it (-1 = refused: multiplayer, unverified symbols, outside 10..1000), 0 = off, < 0 = read. Returns the fps.
+    int (*FixedDt)(int fps);
+    // v33: the SDL3 gamepad backend (`pad_backend` 1; controller\src\host\sdlpad.*). SDL runs only on a host thread of its
+    // own (never the game thread: its helper and HIDAPI discovery windows pump that thread's messages,
+    // research\evidence\sdl3\probe_report.md "Threading"), started by the first call with on != 0 (SDL_Init there, not
+    // under the loader lock) and stopped by a call with on = 0 (SDL_Quit, joined; a retry after a failed start = off, then
+    // on). With on: wakes the thread for a fresh read and waits for it at most 2 ms (none while a read is still running),
+    // then copies the newest state into `out` (may be null). Returns the status (padbackend::kSdl*).
+    int (*SdlPad)(int on, SdlPadState* out);
+    // v33: a vibration on the SDL backend's pad (0..65535 per motor for `ms` milliseconds; 0, 0 stops), sent by the host
+    // thread at its next read. Nothing without a running backend and an open pad.
+    void (*SdlPadRumble)(u16 low, u16 high, u32 ms);
+    // v34: the game loads seen since the host started (a save, New Game, the load after a death: each loads a fresh
+    // Content.dll - its loader notification, before the new game marks or sets anything). At each the host forgets the
+    // mission title (ObjectiveTitle), the marks (MissionMarks) and the comms heard (CommHeardAt); the logic forgets
+    // mission.cpp's memory when the count moves (controller.cpp OnFrame). 0 = none seen yet.
+    u32 (*GameLoads)();
+    // v35: the mission checkpoint saves (pub::Save from the story script: the game shows "GAME SAVED" with it) since the
+    // host started: a growing sequence (0 none yet); `ids` (may be null) = the latest save's description id. The speedrun
+    // split detector's save:<ids> checkpoints (livesplit.cpp; M01b.end = 32120, the runners' end at GAME SAVED).
+    u32 (*MissionSave)(u32* ids);
 };
 
 struct ImplApi

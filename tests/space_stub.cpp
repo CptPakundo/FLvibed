@@ -119,7 +119,10 @@ std::vector<Contact> Contacts() { return {}; }
 bool ReadPilot(Pilot&) { return false; }
 float PlayerRadius() { return 10; }
 u32 PlanetDockRing(u32) { return 0; }
+bool IsDockRing(u32) { return false; }
 bool AttitudeToPlayer(u32, float&) { return false; }
+bool Multiplayer() { return false; }
+int RepId(u32) { return 0; }
 std::vector<Waypoint> Waypoints() { return {}; }
 bool TargetLaneStart(float*, float*, u32&) { return false; }
 int TargetLaneSide() { return -1; }

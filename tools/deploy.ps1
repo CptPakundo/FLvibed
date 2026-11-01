@@ -17,24 +17,32 @@
 #   deploy.ps1 -Instance <n>   parallel test games (n >= 1): Install\instances\<n> (a hard-linked mirror, made when
 #                              missing), its own saves / logs / screenshots; the game and the tools of this process
 #                              use channel <n> (FLVIBED_INSTANCE, tools\fldata.ps1). Build once first (-NoBuild here).
+#                              Or a prepared folder's name (Install\instances\vanilla11c: the vanilla 1.1 install).
+#   deploy.ps1 -GameArgs <s>   test-only: Freelancer.exe's command line, e.g. `-s127.0.0.1:2302` (the game's own direct
+#                              connect to a server - the vanilla 1.1 client lists LAN servers by IPv6 link-local only);
+#                              needs a fresh pwsh (the FLVWin type of an older deploy has no arguments overload)
 param([switch]$Impl, [switch]$Release, [switch]$Restart, [switch]$NoStart, [switch]$Intro, [string]$Save = '',
       [string[]]$Modules = @('subtitles', 'controller'), [switch]$Background, [switch]$ReplaceSave, [switch]$NoBuild,
-      [int]$Instance = 0)
+      [string]$Instance = '', [string]$GameArgs = '')
 $ErrorActionPreference = 'Stop'
+# -Instance: a number (a hard-linked mirror, made when missing) or the name of a prepared instance folder
+# (Install\instances\vanilla11c: its own install, e.g. vanilla 1.1; 29 Oct 2026). '' / 0 = the main install.
+$hasInst = $Instance -and $Instance -ne '0'
 
 $root = Split-Path $PSScriptRoot -Parent                       # FLvibed
 # Parse every harness script first: one syntax slip ("$name:" in a string, twice on 20 Oct 2026) broke the whole
 # dot-sourced harness and surfaced only as "Get-FLGameProcess is not recognized" inside a test.
-foreach ($ps in Get-ChildItem (Join-Path $root 'tools'), (Join-Path $root 'controller\tools'), (Join-Path $root 'subtitles\tools') -Filter *.ps1) {
+foreach ($ps in Get-ChildItem (Join-Path $root 'tools'), (Join-Path $root 'controller\tools'), (Join-Path $root 'subtitles\tools') -Filter *.ps1 -Recurse) {
     $perr = $null
     $null = [Management.Automation.Language.Parser]::ParseFile($ps.FullName, [ref]$null, [ref]$perr)
     if ($perr) { throw "harness script does not parse: $($ps.Name) line $($perr[0].Extent.StartLineNumber): $($perr[0].Message)" }
 }
-if ($Instance -gt 0) { $env:FLVIBED_INSTANCE = "$Instance" }
+if ($hasInst) { $env:FLVIBED_INSTANCE = "$Instance" }
 . (Join-Path $root 'subtitles\tools\flsub.ps1')
 . (Join-Path $root 'controller\tools\flctl.ps1')
-if ($Instance -gt 0 -and -not (Test-Path (Join-Path (Get-FLInstallDir) 'EXE\Freelancer.exe'))) {
-    "instance ${Instance}: mirror -> " + (New-FLInstance $Instance)
+if ($hasInst -and -not (Test-Path (Join-Path (Get-FLInstallDir) 'EXE\Freelancer.exe'))) {
+    if ($Instance -notmatch '^\d+$') { throw "instance ${Instance}: no install at $(Get-FLInstallDir) (named instances are prepared by hand)" }
+    "instance ${Instance}: mirror -> " + (New-FLInstance ([int]$Instance))
 }
 $exeDir = Join-Path (Get-FLInstallDir) 'EXE'
 # The test install's game data stays in the install (user, 18 Oct 2026: nothing of this project's game in the places a
@@ -49,10 +57,9 @@ $build = Join-Path $root "build\$config"
 if ($NoBuild) {
     if (-not (Test-Path (Join-Path $build 'FLvibed.dll'))) { throw "-NoBuild: no $config build in $build" }
 } else {
-    $out = & cmd /c "`"$root\build.cmd`" $target" 2>&1
-    if ($LASTEXITCODE -ne 0) { $out | Where-Object { $_ -match 'error|warning' } | Select-Object -First 40; throw "build failed" }
-    $warn = $out | Where-Object { $_ -match ': warning' }
-    if ($warn) { $warn | Select-Object -First 20 }
+    # through the machine-wide build lock: a deploy beside another session's build breaks both build\ folders
+    & (Join-Path $PSScriptRoot 'buildlock.ps1') $target
+    if ($LASTEXITCODE -ne 0) { throw "build failed" }
 }
 
 # ---------------------------------------------------------------- install configuration
@@ -64,7 +71,8 @@ foreach ($old in 'FLSubtitles.dll', 'FLController.dll') {
     for ($k = $lines.Count - 1; $k -ge 0; $k--) { if ($lines[$k] -match "^\s*$([regex]::Escape($old))\s*$") { $lines.RemoveAt($k); $changed = $true } }
 }
 if (-not ($lines | Where-Object { $_ -match '^\s*FLvibed\.dll\b' })) {
-    $i = $lines.IndexOf('[Libraries]')
+    $i = $lines.FindIndex({ param($l) $l.Trim() -ieq '[Libraries]' })
+    if ($i -lt 0) { throw "dacom.ini has no [Libraries] section: $dacom" }
     $j = $i + 1
     while ($j -lt $lines.Count -and $lines[$j] -notmatch '^\s*\[') { $j++ }
     while ($j -gt $i + 1 -and $lines[$j - 1].Trim() -eq '') { $j-- }
@@ -76,10 +84,31 @@ if ($changed) { Set-Content $dacom $lines -Encoding ascii; 'dacom.ini: FLvibed.d
 # FLvibed.ini: enabled modules (read once at game start)
 $known = 'subtitles', 'controller'
 foreach ($m in $Modules) { if ($known -notcontains $m) { throw "unknown module $m (known: $($known -join ', '))" } }
-$ini = "[Modules]`r`n" + (($known | ForEach-Object { "$_ = $([int]($Modules -contains $_))" }) -join "`r`n") + "`r`n"
+# + the settings stamp (core\settings_reset.h kVersion): a test start never runs the release's settings reset
+$ini = "[Modules]`r`n" + (($known | ForEach-Object { "$_ = $([int]($Modules -contains $_))" }) -join "`r`n") + "`r`n" +
+    "[FLvibed]`r`nsettings_version = 2`r`n"
 $iniPath = Join-Path $exeDir 'FLvibed.ini'
 $iniChanged = -not (Test-Path $iniPath) -or ((Get-Content $iniPath -Raw) -ne $ini)
 if ($iniChanged) { [IO.File]::WriteAllText($iniPath, $ini) }
+
+# A numbered test instance plays the main install's settings: its FLController.ini / FLSubtitles.ini (written by the
+# options page or `config save` in an instance game, not hard links) are made the main install's again before the
+# start, the old one kept beside it as <name>.<time>.bak. Why: instance 3 flew M13 for days with its own 25 Oct
+# [Autopilot] values (static_hold_gap 10, ring_request 10, ...) while 1 and 2 had none - a confound in every set that
+# rotates arms over instances (run-judge, Q4 probe, 30 Oct 2026). A setting under test goes through flleg -ApSet.
+$iniSynced = $false
+if ($hasInst -and $Instance -match '^\d+$') {
+    $mainExe = Join-Path $root 'Install\Freelancer HD Edition\EXE'
+    foreach ($n in 'FLController.ini', 'FLSubtitles.ini') {
+        $mine = Join-Path $exeDir $n; $theirs = Join-Path $mainExe $n
+        $same = if (Test-Path $theirs) { (Test-Path $mine) -and (Get-FileHash $mine).Hash -eq (Get-FileHash $theirs).Hash } else { -not (Test-Path $mine) }
+        if ($same) { continue }
+        if (Test-Path $mine) { [IO.File]::Move($mine, "$mine.$(Get-Date -Format yyyyMMdd_HHmmss).bak") }
+        if (Test-Path $theirs) { [IO.File]::Copy($theirs, $mine) }
+        "instance ${Instance}: $n set to the main install's (the old one kept as .bak)"
+        $iniSynced = $true
+    }
+}
 
 # ---------------------------------------------------------------- restart decision
 $running = Get-FLGameProcess | Where-Object { -not $_.HasExited }   # this instance's game only; a game being killed is not running
@@ -88,7 +117,7 @@ if (-not $Impl) {
     $deployed = Join-Path $exeDir 'FLvibed.dll'
     $hostChanged = -not (Test-Path $deployed) -or ((Get-FileHash $deployed).Hash -ne (Get-FileHash (Join-Path $build 'FLvibed.dll')).Hash)
 }
-if ($Restart -or (($hostChanged -or $iniChanged) -and $running)) {
+if ($Restart -or (($hostChanged -or $iniChanged -or $iniSynced) -and $running)) {
     if ($running) {
         $running | Stop-Process -Force
         $running | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
@@ -119,7 +148,7 @@ function Copy-Retry([string]$from, [string]$to) {
     }
 }
 New-Item -ItemType Directory -Force (Join-Path $exeDir 'FLSubtitles') | Out-Null
-foreach ($f in 'subtitles.tsv', 'movies.tsv', 'movie_frames.tsv', 'speaker_colors.tsv', 'word_times.tsv') {
+foreach ($f in 'subtitles.tsv', 'movies.tsv', 'mixes.tsv', 'movie_frames.tsv', 'speaker_colors.tsv', 'word_times.tsv') {
     $src = Join-Path $root "subtitles\data\$f"
     if (Test-Path $src) { Copy-Item $src (Join-Path $exeDir "FLSubtitles\$f") -Force }
 }
@@ -131,6 +160,9 @@ foreach ($f in 'autopilot.3db') {
     if (Test-Path $src) { Copy-Item $src (Join-Path $exeDir "FLvibed\$f") -Force }
 }
 if (-not $Impl) { Copy-Retry (Join-Path $build 'FLvibed.dll') (Join-Path $exeDir 'FLvibed.dll') }
+# what the build was built from (buildlock.ps1 Write-FLBuildInfo; flleg.ps1 records it per run)
+$info = Join-Path $build 'build_info.txt'
+if (Test-Path $info) { Copy-Item $info (Join-Path $exeDir 'FLvibed.build.txt') -Force }
 $logic = 'FLSubtitlesImpl.dll', 'FLControllerImpl.dll'
 foreach ($f in $logic + 'FLSubtitles.dll', 'FLController.dll') {
     $p = Join-Path $exeDir $f
@@ -212,10 +244,11 @@ public static class FLVWin {
     ref STARTUPINFO si, out PROCESS_INFORMATION pi);
   [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
   // Starts a program with its first window shown inactive (SW_SHOWNOACTIVATE): it does not take the focus.
-  public static int StartInactive(string exe, string dir) {
+  public static int StartInactive(string exe, string dir) { return StartInactive(exe, dir, null); }
+  public static int StartInactive(string exe, string dir, string args) {
     var si = new STARTUPINFO(); si.cb = Marshal.SizeOf(si); si.flags = 1; si.show = 4;
     PROCESS_INFORMATION pi;
-    if (!CreateProcess(exe, null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, dir, ref si, out pi))
+    if (!CreateProcess(exe, string.IsNullOrEmpty(args) ? null : "\"" + exe + "\" " + args, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, dir, ref si, out pi))
       throw new System.ComponentModel.Win32Exception();
     CloseHandle(pi.hp); CloseHandle(pi.ht); return pi.pid;
   }
@@ -268,17 +301,17 @@ if ($Background) {
     # are unaffected): the controller host keeps it running out of focus, keeps its window from taking the focus and
     # mutes its sound in the Windows mixer (inside the game all sound runs as always). Plus an inactive first window.
     $env:FLVIBED_BACKGROUND = '1'
-    try { $proc = Get-Process -Id ([FLVWin]::StartInactive($flExe, $exeDir)) } finally { Remove-Item Env:FLVIBED_BACKGROUND }
+    try { $proc = Get-Process -Id ($(if ($GameArgs) { [FLVWin]::StartInactive($flExe, $exeDir, $GameArgs) } else { [FLVWin]::StartInactive($flExe, $exeDir) })) } finally { Remove-Item Env:FLVIBED_BACKGROUND }
     # Standing order (user, 19 Oct 2026): every unattended test runs the screenshot sampler (tools\flshots.ps1), one per
     # game session (a sampler left from the last session is stopped: two captured the same window), into
     # research\experience\shots\<time>; kept, frames and videos (user, 20 Oct 2026: no pruning for now - size warning above).
     $shotRoot = Join-Path $root 'research\experience\shots'
     # this instance's sampler only (parallel test games: one sampler per game, -Instance in its command line)
-    $mine = if ($Instance -gt 0) { "-Instance $Instance(\s|$)" } else { '^(?!.*-Instance [1-9])' }
+    $mine = if ($hasInst) { "-Instance $([regex]::Escape($Instance))(\s|$)" } else { '^(?!.*-Instance [1-9a-zA-Z])' }
     $samplers = @(Get-CimInstance Win32_Process -Filter "Name='pwsh.exe'" | Where-Object { $_.CommandLine -match 'flshots\.ps1' -and $_.CommandLine -match $mine })
     if ($samplers.Count) {   # asked to stop (its video file finished), killed only if it has not ended within 10 s
         $null = New-Item -ItemType Directory -Force $shotRoot
-        $stopFile = Join-Path $shotRoot $(if ($Instance -gt 0) { "sampler$Instance.stop" } else { 'sampler.stop' })
+        $stopFile = Join-Path $shotRoot $(if ($hasInst) { "sampler$Instance.stop" } else { 'sampler.stop' })
         [IO.File]::WriteAllText($stopFile, 'stop')
         $sw = [Diagnostics.Stopwatch]::StartNew()
         while ($sw.Elapsed.TotalSeconds -lt 10 -and @($samplers | Where-Object { Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }).Count) {
@@ -287,11 +320,16 @@ if ($Background) {
         $samplers | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
         [IO.File]::Delete($stopFile)
     }
-    $shotDir = Join-Path $shotRoot $(if ($Instance -gt 0) { "${stamp}_i$Instance" } else { $stamp })
+    # a stop request left from an interrupted deploy would end the new sampler at once (instance 3: none from 24 to 28
+    # Oct 2026); the sampler also ignores one older than itself
+    $leftover = Join-Path $shotRoot $(if ($hasInst) { "sampler$Instance.stop" } else { 'sampler.stop' })
+    if ([IO.File]::Exists($leftover)) { [IO.File]::Delete($leftover) }
+    $shotDir = Join-Path $shotRoot $(if ($hasInst) { "${stamp}_i$Instance" } else { $stamp })
     Start-Process pwsh -WindowStyle Hidden -ArgumentList (@('-NoProfile', '-File', ('"' + (Join-Path $PSScriptRoot 'flshots.ps1') + '"'),
-        '-Dir', ('"' + $shotDir + '"')) + $(if ($Instance -gt 0) { @('-Instance', "$Instance") } else { @() })) # quoted: spaces
+        '-Dir', ('"' + $shotDir + '"')) + $(if ($hasInst) { @('-Instance', "$Instance") } else { @() })) # quoted: spaces
 } else {
-    $proc = Start-Process -FilePath $flExe -WorkingDirectory $exeDir -PassThru
+    $proc = if ($GameArgs) { Start-Process -FilePath $flExe -WorkingDirectory $exeDir -ArgumentList $GameArgs -PassThru }
+            else { Start-Process -FilePath $flExe -WorkingDirectory $exeDir -PassThru }
 }
 # Skips the playing startup movie natively: the subtitles host reports it finished to the game's movie loop
 # (`movieskip`; no key input, works out of focus). Without the subtitles module (no movie hooks): one Escape message.
@@ -315,19 +353,24 @@ function Get-Frames {
 # -Intro each movie is skipped (Skip-Movie), only while a movie window exists.
 $sw = [Diagnostics.Stopwatch]::StartNew()
 $escaped = 0
+$ready = $false
 while ($sw.Elapsed.TotalSeconds -lt 300) {
     try {
-        if ($Intro -and $on.subtitles -and (Send-FLS 'ping' 300) -eq 'pong') { "game started, subtitles responding after {0:n1}s" -f $sw.Elapsed.TotalSeconds; break }
-        if ($on.subtitles -and (Get-Frames) -gt 0) { "main menu after {0:n1}s ($escaped movies skipped)" -f $sw.Elapsed.TotalSeconds; break }
-        if (-not $on.subtitles -and $on.controller -and (Send-FL 'ping' 300) -eq 'pong') { "main menu after {0:n1}s ($escaped movies skipped)" -f $sw.Elapsed.TotalSeconds; break }
+        if ($Intro -and $on.subtitles -and (Send-FLS 'ping' 300) -eq 'pong') { "game started, subtitles responding after {0:n1}s" -f $sw.Elapsed.TotalSeconds; $ready = $true; break }
+        if ($on.subtitles -and (Get-Frames) -gt 0) { "main menu after {0:n1}s ($escaped movies skipped)" -f $sw.Elapsed.TotalSeconds; $ready = $true; break }
+        if (-not $on.subtitles -and $on.controller -and (Send-FL 'ping' 300) -eq 'pong') { "main menu after {0:n1}s ($escaped movies skipped)" -f $sw.Elapsed.TotalSeconds; $ready = $true; break }
     } catch {}
     $proc.Refresh()
+    if ($proc.HasExited) { throw "the game exited during its start (exit code $(try { $proc.ExitCode } catch { '?' })) - see EXE\FLSubtitles.log / FLController.log" }
     if (-not $Intro -and $proc.MainWindowHandle -ne [IntPtr]::Zero -and [FLVWin]::MoviePlaying($proc.MainWindowHandle)) {
         Skip-Movie; $escaped++
         while ([FLVWin]::MoviePlaying($proc.MainWindowHandle) -and $sw.Elapsed.TotalSeconds -lt 300) { Start-Sleep -Milliseconds 50 }
     }
     Start-Sleep -Milliseconds 50
 }
+# fail closed (29 Oct 2026: the loop ran out silently and the next step failed on a game that never got ready; no
+# module on = nothing to ask, the old pass-through)
+if (-not $ready -and ($on.subtitles -or $on.controller)) { throw "the game did not reach the main menu in 300 s (no module answered)" }
 if (-not $Intro -and $on.subtitles) {
     # Safety net (state, not time): once the menu has run 30 frames, any input posted during the movies has been
     # handled; an Exit dialog then would be ours (ExitButtonBox1 = No, clicked natively).

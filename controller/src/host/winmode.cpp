@@ -252,13 +252,19 @@ void Command(const char* args, char* reply, size_t len)
         style = GetWindowLongA(wnd, GWL_STYLE);
         MonitorOf(wnd, mon);
     }
+    // GetDpiForWindow is Windows 10 1607+: resolved at run time, never imported (an import of it kept the whole DLL from
+    // loading on Windows 7 - a player report, 28 Oct 2026)
+    typedef UINT(WINAPI * DpiForWindowFn)(HWND);
+    static const auto dpiForWindow =
+        SimWin7() ? nullptr
+                  : reinterpret_cast<DpiForWindowFn>(GetProcAddress(GetModuleHandleA("user32.dll"), "GetDpiForWindow"));
     sprintf_s(reply, len,
               "winmode: setting %d provider %s%s%s\ngame windowed style 0x%08X (%s)\ndpi start %d now %d (window %u)\n"
               "state: %s, %s; setups %u rewrites %u toggles %u styled %u\n"
               "window (%d,%d %dx%d) client %dx%d style 0x%08X; monitor (%d,%d %dx%d); render %dx%d",
               g_setting, ProviderName(g_provider), g_provider == Provider::Wrapper ? ": " : "",
               g_provider == Provider::Wrapper ? g_wrapper : "", g_gameStyle, g_styleKnown ? "verified" : "unverified",
-              g_dpiStart, g_dpiNow, wnd ? GetDpiForWindow(wnd) : 0, g_started ? "started" : "not started",
+              g_dpiStart, g_dpiNow, wnd && dpiForWindow ? dpiForWindow(wnd) : 0, g_started ? "started" : "not started",
               g_bordered ? "bordered" : (g_borderless ? "borderless" : "game's"), g_setups, g_rewrites, g_toggles,
               g_styled, static_cast<int>(wr.left), static_cast<int>(wr.top), static_cast<int>(wr.right - wr.left),
               static_cast<int>(wr.bottom - wr.top), static_cast<int>(cr.right), static_cast<int>(cr.bottom),

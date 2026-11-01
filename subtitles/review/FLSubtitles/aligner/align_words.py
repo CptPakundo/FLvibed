@@ -2,9 +2,15 @@
 
     .venv\\Scripts\\python -I align_words.py [--all] [--check] [--batch 32] [--retry-suspects]
     .venv\\Scripts\\python -I align_words.py --movies-only [--fix-windows] [--movie-dir <DATA\\MOVIES>]
+    (any of them: --no-second-opinion = Qwen's timings only, without the CTC check below)
 
-The intro movies (data/movies.tsv) are aligned in every run when their audio is at hand (out/movies/<movie>.wav,
-extracted once from the install's .wmv; never played): see "the intro movies" below. A line with 2+ words unplaced
+Every aligned line gets the second opinion (SecondOpinion, 1 Nov 2026): two CTC aligners correct the words where both
+agree and Qwen is far off, then every word gets a minimum length. How good the timings are is measured, not assumed:
+bench_words.py (against the owner's hand-placed timings) and health_words.py (symptoms on every line).
+
+The intro movies (data/movies.tsv) and the scene mixes (data/mixes.tsv) are aligned in every run when their audio is at
+hand (out/movies/<movie>.wav, extracted once from the install's .wmv; out/mixes/<mix>.wav from the mix's clip; never
+played): see "the intro movies" below. A line with 2+ words unplaced
 gets the padded retry (place_retry: the consensus of the clip as is and padded with silence).
 
 Why (user, 22 Oct 2026): pages of a long line were timed by a character estimate (King's 15 s M01 briefing ran
@@ -17,7 +23,8 @@ alignment re-run"). The pre-commit hook runs this whenever data/subtitles.tsv is
 the runtime also ignores a row whose text hash no longer matches its line. --check only reports stale rows (exit 1).
 
 Row: id, voice, text_fnv (hex), audio_sha1, end_ms (end of the last word), starts_ms (one per whitespace-separated
-word of the text, comma-separated; -1 = a word the aligner could not place), collapsed (how many: piled at the clip's
+word of the text, comma-separated; -1 = a word the aligner could not place), ends_ms (last column, one per word: where
+a measured pause cuts it, else the next word's start - word_ends; the runtime reads columns 1-6), collapsed (how many: piled at the clip's
 very end, or sharing one start with no time to share; >= 2 lists the line in out/word_times_suspect.tsv - garble on
 purpose, a text that says more than the recording, or the aligner's weakness on a line's last words). A line keeps its
 placed words (pages turn on them; user, 22 Oct 2026: the Order ship's "Schultzky is a traitor!" page came too late on
@@ -46,7 +53,12 @@ os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 RATE = 16000
 MODEL_ID = "Qwen/Qwen3-ForcedAligner-0.6B"
-HEADER = ["id", "voice", "text_fnv", "audio_sha1", "end_ms", "starts_ms", "collapsed"]
+HEADER = ["id", "voice", "text_fnv", "audio_sha1", "end_ms", "starts_ms", "collapsed", "ends_ms"]
+
+
+def cell(row, h):
+    """A row's field as written: empty numbers as 0, except ends_ms (empty = not measured: a word runs to the next)."""
+    return row.get(h) or ("" if h == "ends_ms" else "0")
 
 
 def fnv1a(s: str) -> str:
@@ -286,6 +298,169 @@ def place_retry(model, auds, texts):
     return first
 
 
+# The second opinion (1 Nov 2026; the owner: "some words get almost no time at all, others get too much or start too
+# early or too late"; measured by bench_words.py / health_words.py, docs/REVIEW_PROCESS.md "Word timings"). Qwen's
+# aligner has failures no post-processing fixes: a line's last word put on the clip's very end (15 % of all lines had a
+# last word without length), words out of order ("attack." before "We are under"), words unplaced. Two CTC character
+# aligners of a different kind (MMS-300m forced aligner - ctc-forced-aligner's / torchaudio MMS_FA's model - and
+# wav2vec2-base-960h, WhisperX's English default) align the same text; where the two agree within SO_AGREE and Qwen's
+# start is more than SO_FAR away (or unplaced), the word takes their mean. Everywhere else Qwen's start stays (on the
+# owner's hand-placed lines it is the closest of all). Then every word gets at least SO_MIN (in order) and the last word
+# an end after its start. Lines with symptoms 24 % -> 8.5 %; the owner's lines: mean start error 80 -> 71 ms.
+SO_MODELS = ("MahmoudAshraf/mms-300m-1130-forced-aligner", "facebook/wav2vec2-base-960h")
+SO_AGREE, SO_FAR, SO_MIN = 0.12, 0.2, 0.06
+
+
+def ctc_path(logp, tokens, blank):
+    """CTC forced alignment (Viterbi over the blank-interleaved tokens): per token index its (first, last) frame."""
+    import numpy as np
+    T, S = logp.shape[0], 2 * len(tokens) + 1
+    ext = np.full(S, blank)
+    ext[1::2] = tokens
+    neg = -1e30
+    dp = np.full(S, neg)
+    dp[0] = logp[0, blank]
+    dp[1] = logp[0, ext[1]]
+    back = np.zeros((T, S), dtype=np.int8)  # 0 stay, 1 from s-1, 2 from s-2
+    skip = np.zeros(S, dtype=bool)
+    skip[3::2] = ext[3::2] != ext[1:-2:2]  # a token may skip the blank before it unless it repeats the last token
+    for t in range(1, T):
+        prev = np.stack([dp, np.concatenate([[neg], dp[:-1]]), np.where(skip, np.concatenate([[neg, neg], dp[:-2]]), neg)])
+        arg = prev.argmax(0)
+        dp = prev[arg, np.arange(S)] + logp[t, ext]
+        back[t] = arg
+    s = S - 1 if dp[S - 1] >= dp[S - 2] else S - 2
+    spans = {}
+    for t in range(T - 1, -1, -1):
+        if s % 2:
+            f, l = spans.get(s // 2, (t, t))
+            spans[s // 2] = (min(f, t), max(l, t))
+        s -= int(back[t, s])
+    return spans
+
+
+class SecondOpinion:
+    """The two CTC aligners (loaded on first use, CUDA, fp16; transformers from the Qwen environment, the models in
+    .cache/hf). ok = False when they cannot load: the lines keep Qwen's timings (fail closed, said once)."""
+
+    def __init__(self):
+        self.models, self.ok = None, True
+
+    def load(self):
+        if self.models is None and self.ok:
+            try:
+                import torch
+                from transformers import AutoProcessor, Wav2Vec2ForCTC
+                self.models = [(AutoProcessor.from_pretrained(m), Wav2Vec2ForCTC.from_pretrained(m).to("cuda").eval().half())
+                               for m in SO_MODELS]
+            except Exception as e:  # noqa: BLE001 - any load failure: no second opinion this run
+                print(f"second opinion off: {e}")
+                self.ok = False
+        return self.ok
+
+    def words(self, audio, text):
+        """Per model, per word of text: (start, end) in seconds on the audio's clock, or None (not placed)."""
+        import re
+        import numpy as np
+        import torch
+        words, out = text.split(), []
+        for proc, model in self.models:
+            vocab = proc.tokenizer.get_vocab()
+            blank, upper, sep = vocab.get("<pad>", 0), "A" in vocab, vocab.get("|")
+            toks, owner = [], []
+            for i, w in enumerate(words):
+                t = re.sub(r"[^a-z' ]", "", spoken(w).lower().replace("-", " "))
+                chars = [ch for ch in (t.upper() if upper else t) if ch != " " and ch in vocab]
+                if chars and toks and sep is not None:
+                    toks.append(sep); owner.append(-1)
+                for ch in chars:
+                    toks.append(vocab[ch]); owner.append(i)
+            got = [None] * len(words)
+            if toks and len(audio) > RATE // 10:
+                x = proc(audio, sampling_rate=RATE, return_tensors="pt").input_values.to("cuda").half()
+                with torch.no_grad():
+                    logp = torch.log_softmax(model(x).logits[0].float(), -1).cpu().numpy()
+                if logp.shape[0] >= len(toks):
+                    fps = logp.shape[0] / (len(audio) / RATE)
+                    for k, (f, l) in ctc_path(logp, np.array(toks), blank).items():
+                        i = owner[k]
+                        if i >= 0:
+                            s0, e0 = got[i] or (f / fps, (l + 1) / fps)
+                            got[i] = (min(s0, f / fps), max(e0, (l + 1) / fps))
+            out.append(got)
+        return out
+
+    def apply(self, audio, text, m, off=0.0):
+        """Qwen's (starts, end, collapsed) on the line's clock -> the same with the second opinion; audio[0] is at off
+        on that clock. Unchanged when the models are off or the result is None."""
+        if m is None or not self.load():
+            return m
+        starts, end, _ = m
+        starts = list(starts)
+        clip_end = off + len(audio) / RATE
+        a, b = self.words(audio, text)
+        for i in range(len(starts)):
+            if a[i] and b[i] and abs(a[i][0] - b[i][0]) <= SO_AGREE:
+                c = off + (a[i][0] + b[i][0]) / 2
+                if starts[i] < 0 or abs(starts[i] - c) > SO_FAR:
+                    starts[i] = round(c, 3)
+        last = None
+        for i, s in enumerate(starts):  # in order, each word at least SO_MIN
+            if s < 0:
+                continue
+            if last is not None and s < last + SO_MIN:
+                starts[i] = s = round(last + SO_MIN, 3)
+            last = s
+        if starts and starts[-1] >= 0 and end < starts[-1] + SO_MIN:  # the last word ends after its start
+            ce = [off + x[-1][1] for x in (a, b) if x[-1]]
+            end = min(max([starts[-1] + SO_MIN] + ce), max(clip_end, starts[-1] + SO_MIN))
+        return starts, end, sum(1 for s in starts if s < 0)
+
+
+# Word ends (1 Nov 2026; the owner: words "get too much" time). Rows store starts (the runtime turns pages on them); the
+# review tool's timeline drew a word up to the next one, so a pause between sentences looked like a long last word.
+# Column ends_ms (the runtime reads columns 1-6 only) ends a word where a measured pause (pauses(): the clip's noise
+# floor + 8 dB, >= 0.15 s) begins that runs up to the next word - when that leaves the word END_PER_LETTER per letter
+# (in a noisy scene mix a soft word passes as "pause": "Officially" would have kept 80 ms) and a gap of END_GAP; else up
+# to the next word. Only the audio decides (no model): on 400 random lines 206 pauses shown (median 0.28 s), "long"
+# words halved; rows aligned before get theirs on the next full run (fill_ends).
+END_PER_LETTER, END_GAP = 0.05, 0.1
+
+
+def word_ends(text, starts, end, gaps, off=0.0):
+    """Per word its end (s, the starts' clock; -1 = unplaced); gaps: pauses() of audio that begins at off."""
+    words, out = text.split(), []
+    for i, s in enumerate(starts):
+        if s < 0:
+            out.append(-0.001)
+            continue
+        n = next((x for x in starts[i + 1:] if x >= 0), None)
+        e = end if n is None else n
+        if n is not None:
+            least = max(SO_MIN, END_PER_LETTER * len(norm(spoken(words[i]))))
+            for p0, p1 in gaps:
+                p0, p1 = p0 + off, p1 + off
+                if s + least <= p0 <= n - END_GAP and p1 >= n - 0.1:
+                    e = p0
+                    break
+        out.append(max(e, s))
+    return out
+
+
+def ends_field(ends):
+    return ",".join(str(round(e * 1000)) if e >= 0 else "-1" for e in ends)
+
+
+def fill_ends(row, text, audio, off=0.0):
+    """Adds ends_ms to an aligned row that has none (rows aligned before 1 Nov 2026), from its audio."""
+    if row.get("ends_ms") or audio is None:
+        return row
+    starts = [int(x) / 1000 if int(x) >= 0 else -0.001 for x in row["starts_ms"].split(",")]
+    if len(starts) != len(text.split()):
+        return row
+    return dict(row, ends_ms=ends_field(word_ends(text, starts, int(row["end_ms"] or 0) / 1000, pauses(audio), off)))
+
+
 # ------------------------------------------------------------------ the intro movies (data/movies.tsv)
 # Movie mode (26 Oct 2026, the owner: "run the forced alignment on the intros"). The narration runs over music without
 # pauses, so each line is aligned inside its own window: movies.tsv start - MOVIE_PAD .. end + MOVIE_PAD of the movie's
@@ -294,17 +469,39 @@ def place_retry(model, auds, texts):
 # hash, so a changed text keeps its estimate), audio_sha1 = SHA-1 of the window's samples + bounds (a moved window is
 # aligned again), end_ms / starts_ms on the MOVIE clock (ms from the movie's start). The window check (suspects, and
 # --fix-windows) works on these rows: out/movie_word_times_suspect.tsv, out/movie_window_changes.tsv.
+#
+# The scene mixes (data/mixes.tsv, asr/mix_align.py; 29 Oct 2026) are the same kind of table: lines on a track's own
+# clock (the mix's), aligned the same way in their windows, rows with id = the mix and voice MIX_VOICE; their audio is
+# the mix's clip from out/index.tsv, decoded once into out/mixes/<mix>.wav. Each table is a Track.
 MOVIE_VOICE = "movie"
+MIX_VOICE = "mix"
 MOVIE_PADS = (0.4, 0.75, 1.25)  # the three windows of a line (seconds either side of its start / end)
 MOVIE_PAD = max(MOVIE_PADS)
 EDGE = 0.06
-MOVIES_HEADER = ["movie", "start", "end", "speaker", "text", "note"]
 
 
-def read_movies():
-    """data/movies.tsv: (comment lines, rows as dicts in file order)."""
+class Track:
+    """A table of lines on a track's own clock: data/<name>.tsv with the track id in column `col`, word-time rows with
+    voice `voice`, its side products out/<prefix>_word_times_suspect.tsv and out/<prefix>_window_changes.tsv."""
+
+    def __init__(self, name, col, voice, prefix, extra=()):
+        self.name, self.col, self.voice, self.prefix = name, col, voice, prefix
+        self.path = ROOT / "data" / f"{name}.tsv"
+        self.header = [col, "start", "end", "speaker", "text", "note", *extra]
+
+
+MOVIES = Track("movies", "movie", MOVIE_VOICE, "movie")
+MIXES = Track("mixes", "mix", MIX_VOICE, "mix", ("reviewed",))  # reviewed: the review tool's mark (mix_review.py)
+TRACKS = (MOVIES, MIXES)
+MOVIES_HEADER = MOVIES.header
+
+
+def read_movies(track=MOVIES):
+    """data/<track>.tsv: (comment lines, rows as dicts in file order); the track id is also under "movie"."""
     comments, rows, head = [], [], None
-    with open(ROOT / "data" / "movies.tsv", encoding="utf-8", newline="") as f:
+    if not track.path.exists():
+        return comments, rows
+    with open(track.path, encoding="utf-8", newline="") as f:
         for raw in f:
             raw = raw.rstrip("\r\n")
             if raw.startswith("#"):
@@ -316,17 +513,22 @@ def read_movies():
             if head is None:
                 head = p
                 continue
-            rows.append(dict(zip(head, p + [""] * (len(head) - len(p)))))
+            r = dict(zip(head, p + [""] * (len(head) - len(p))))
+            r["movie"] = r.get(track.col, "")
+            rows.append(r)
     return comments, rows
 
 
-def movie_audio(movie, movie_dir):
-    """The movie's audio track, 16 kHz mono, extracted once into out/movies/ (git-ignored); None when neither the
-    extract nor the movie file exists."""
-    wav = ROOT / "out" / "movies" / f"{movie}.wav"
+def movie_audio(movie, movie_dir, track=MOVIES, index=None):
+    """The track's audio, 16 kHz mono, extracted once into out/<track>/ (git-ignored): a movie's from its .wmv in
+    movie_dir, a mix's from its clip (index: {(id, voice): path}); None when neither the extract nor the source exists."""
+    wav = ROOT / "out" / track.name / f"{movie}.wav"
     if not wav.exists():
-        src = Path(movie_dir) / f"{movie}.wmv"
-        if not src.exists():
+        if track is MIXES:
+            src = Path((index or {}).get((movie, "mixes"), ""))
+        else:
+            src = Path(movie_dir) / f"{movie}.wmv"
+        if not src.is_file():
             return None
         wav.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(["ffmpeg", "-v", "error", "-nostdin", "-y", "-i", str(src), "-vn", "-ac", "1", "-ar",
@@ -414,23 +616,24 @@ def fix_windows(rows, aligned):
     return log
 
 
-def write_movies(comments, rows):
-    with replace_on_close(ROOT / "data" / "movies.tsv") as f:
+def write_movies(comments, rows, track=MOVIES):
+    with replace_on_close(track.path) as f:
         for c in comments:
             f.write(c + "\n")
-        f.write("\t".join(MOVIES_HEADER) + "\n")
+        f.write("\t".join(track.header) + "\n")
         for r in rows:
-            f.write("\t".join(r.get(h, "") for h in MOVIES_HEADER) + "\n")
+            f.write("\t".join(r.get(h, "") for h in track.header) + "\n")
 
 
-def align_movies(model_get, have, movie_dir, batch):
-    """Every movie line aligned in its window (incremental by text + window). have: earlier movie rows keyed
-    (movie, text_fnv). Returns (rows by line index, lines, movies without audio)."""
-    _, rows = read_movies()
+def align_movies(model_get, have, movie_dir, batch, track=MOVIES, index=None, so=None):
+    """Every line of a track table aligned in its window (incremental by text + window). have: earlier rows of the
+    track's voice keyed (track id, text_fnv); so: the second opinion (None = off), on the line's window +-0.1 s.
+    Returns (rows by line index, lines, tracks without audio)."""
+    _, rows = read_movies(track)
     audio, missing = {}, set()
     for r in rows:
         if r["movie"] not in audio and r["movie"] not in missing:
-            a = movie_audio(r["movie"], movie_dir)
+            a = movie_audio(r["movie"], movie_dir, track, index)
             if a is None:
                 missing.add(r["movie"])
             else:
@@ -447,7 +650,8 @@ def align_movies(model_get, have, movie_dir, batch):
         w0, clip, sig = movie_window(r, audio[r["movie"]])
         old = have.get(key)
         if old and old["audio_sha1"] == sig:
-            out[i] = old
+            v0, vclip, _ = movie_window(r, audio[r["movie"]], 0.1)
+            out[i] = fill_ends(old, r["text"], vclip, v0)
         else:
             todo.append((i, r, w0, clip, sig))
     if todo:
@@ -467,15 +671,120 @@ def align_movies(model_get, have, movie_dir, batch):
                     None if m[1] > len(w[1]) / RATE - EDGE else w[0] + m[1], m[2]) for w, m in zip(wins, res)])
             for j, (i, r, w0, clip, sig) in enumerate(chunk):
                 m = consensus([run[j] for run in runs])
+                v0, vclip, _ = movie_window(r, audio[r["movie"]], 0.1)
+                if m is not None and so is not None:
+                    m = so.apply(vclip, r["text"], m, v0)
                 if m is None:
                     continue
                 starts, end, collapsed = m
-                out[i] = {"id": r["movie"], "voice": MOVIE_VOICE, "text_fnv": fnv1a(r["text"]), "audio_sha1": sig,
+                out[i] = {"id": r["movie"], "voice": track.voice, "text_fnv": fnv1a(r["text"]), "audio_sha1": sig,
                           "end_ms": str(round(end * 1000)),
                           "starts_ms": ",".join(str(round(s * 1000)) if s >= 0 else "-1" for s in starts),
-                          "collapsed": str(collapsed)}
-    print(f"movies: {len(rows)} lines, {len(out)} aligned ({len(todo)} new), no audio: {sorted(missing) or 'none'}")
+                          "collapsed": str(collapsed),
+                          "ends_ms": ends_field(word_ends(r["text"], starts, end, pauses(vclip), v0))}
+    print(f"{track.name}: {len(rows)} lines, {len(out)} aligned ({len(todo)} new), no audio: {sorted(missing) or 'none'}")
     return out, rows, missing
+
+
+# ------------------------------------------------------------------ hand-placed timings (data/word_overrides.tsv)
+# The review tool's timeline (asr/word_overrides.py; 29 Oct 2026) stores a line's word starts by hand for one text
+# (text_fnv): data/word_times.tsv ships them in place of the aligner's row; the cache keeps the aligner's own.
+def read_overrides():
+    path, out = ROOT / "data" / "word_overrides.tsv", {}
+    if path.exists():
+        with open(path, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader((l for l in f if not l.startswith("#")), delimiter="\t"):
+                out[(r["id"].lower(), r["voice"].lower(), r["text_fnv"])] = r
+    return out
+
+
+OVERRIDE_HEADER = ["id", "voice", "text_fnv", "starts_ms", "ends_ms", "end_ms", "by", "when", "text", "realign"]
+
+
+def realign_overrides(model_get, overrides, index, movie_dir):
+    """Places the words an edit changed in a hand-timed line (column realign, asr/word_overrides.py carry()): each run of
+    them is force-aligned inside the gap between its kept neighbours (their end .. the next one's start), so the words
+    the reviewer placed stay where they are. A word the aligner cannot place keeps its estimate. Rewrites the file."""
+    todo = [r for r in overrides.values() if (r.get("realign") or "").strip()]
+    if not todo:
+        return 0
+    model, done = model_get(), 0
+    tracks = {t.voice: t for t in TRACKS}
+    audio_of = {}
+    for r in todo:
+        words = r["text"].split()
+        starts = [int(x) for x in r["starts_ms"].split(",")]
+        ends = [int(x) for x in r["ends_ms"].split(",")]
+        pend = sorted({int(x) for x in r["realign"].split(",") if x.strip().isdigit() and int(x) < len(words)})
+        key = (r["id"], r["voice"])
+        if key not in audio_of:
+            t = tracks.get(r["voice"].lower())
+            if t:
+                audio_of[key] = movie_audio(r["id"], movie_dir, t, index)
+            else:
+                f = next((p for (i, v), p in index.items() if i.lower() == r["id"].lower() and v.lower() == r["voice"].lower()), None)
+                audio_of[key] = decode(f) if f else None
+        audio = audio_of[key]
+        if audio is None:
+            continue
+        total = len(audio) / RATE * 1000
+        runs, cur = [], []
+        for j in pend:
+            if cur and j != cur[-1] + 1:
+                runs.append(cur); cur = []
+            cur.append(j)
+        if cur:
+            runs.append(cur)
+        for run in runs:
+            j1, j2 = run[0], run[-1]
+            g0 = next((ends[j] for j in range(j1 - 1, -1, -1) if starts[j] >= 0 and j not in pend), None)
+            g1 = next((starts[j] for j in range(j2 + 1, len(words)) if starts[j] >= 0 and j not in pend), None)
+            est = [starts[j] for j in run if starts[j] >= 0] + [ends[j] for j in run if ends[j] >= 0]
+            g0 = g0 if g0 is not None else max(0, (min(est) if est else 0) - 1000)
+            g1 = g1 if g1 is not None else min(total, (max(est) if est else total) + 1000)
+            if g1 - g0 < 60:
+                continue
+            w0 = max(0.0, g0 / 1000 - 0.05)
+            clip = audio[int(w0 * RATE):int(min(total, g1 + 50) / 1000 * RATE)]
+            res = place_retry(model, [clip], [" ".join(words[j] for j in run)])[0]
+            if res is None:
+                continue
+            got, end, _ = res
+            for k, j in enumerate(run):  # inside the gap: never over the kept words around it
+                if got[k] >= 0:
+                    starts[j] = int(min(max((w0 + got[k]) * 1000, g0), g1 - 40))
+            for k, j in enumerate(run):  # a word ends where the next starts; the run's last at the aligner's end
+                if k < len(run) - 1:
+                    if starts[run[k + 1]] >= 0:
+                        ends[j] = starts[run[k + 1]]
+                else:
+                    ends[j] = min(int((w0 + end) * 1000), int(g1))
+                if ends[j] <= starts[j]:
+                    ends[j] = starts[j] + 40
+        r["starts_ms"] = ",".join(map(str, starts))
+        r["ends_ms"] = ",".join(map(str, ends))
+        r["end_ms"] = str(max([e for s, e in zip(starts, ends) if s >= 0] or [int(r["end_ms"] or 0)]))
+        r["realign"] = ""
+        done += 1
+    path = ROOT / "data" / "word_overrides.tsv"
+    head = [l for l in path.read_text(encoding="utf-8").splitlines() if l.startswith("#")]
+    with replace_on_close(path) as f:
+        for l in head:
+            f.write(l + "\n")
+        f.write("\t".join(OVERRIDE_HEADER) + "\n")
+        for _, r in sorted(overrides.items()):
+            f.write("\t".join(r.get(h) or "" for h in OVERRIDE_HEADER) + "\n")
+    print(f"hand-placed timings: {done} edited lines' changed words placed in their gaps")
+    return done
+
+
+def shipped(lid, voice, text, row, overrides):
+    """The row data/word_times.tsv ships for a line: its override's timings when there is one for this text."""
+    o = overrides.get((lid.lower(), voice.lower(), fnv1a(text)))
+    if o is None:
+        return row
+    return {"id": lid, "voice": voice, "text_fnv": fnv1a(text), "audio_sha1": (row or {}).get("audio_sha1", "manual"),
+            "end_ms": o["end_ms"], "starts_ms": o["starts_ms"], "collapsed": "0", "ends_ms": o.get("ends_ms") or ""}
 
 
 def main():
@@ -485,9 +794,15 @@ def main():
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--retry-suspects", action="store_true",
                     help="align again the current lines with 2+ words unplaced (the padded retry)")
-    ap.add_argument("--movies-only", action="store_true", help="the intro movies only (data/movies.tsv)")
+    ap.add_argument("--movies-only", action="store_true",
+                    help="the intro movies and scene mixes only (data/movies.tsv, data/mixes.tsv)")
     ap.add_argument("--fix-windows", action="store_true",
-                    help="movies: correct the windows the alignment places unambiguously (logged), then align again")
+                    help="movies, mixes: correct the windows the alignment places unambiguously (logged), then align again")
+    ap.add_argument("--overrides-only", action="store_true",
+                    help="only the hand-placed timings (data/word_overrides.tsv): place the words edits changed in them "
+                         "(the model loads only then), rewrite data/word_times.tsv with them")
+    ap.add_argument("--no-second-opinion", action="store_true",
+                    help="Qwen's timings only (no CTC second opinion: SecondOpinion)")
     ap.add_argument("--movie-dir", default=str(ROOT.parents[2] / "Install" / "Freelancer HD Edition" / "DATA" / "MOVIES"),
                     help="where <movie>.wmv is found when out/movies/<movie>.wav is not extracted yet")
     a = ap.parse_args()
@@ -501,6 +816,7 @@ def main():
             _model.append(Qwen3ForcedAligner.from_pretrained(MODEL_ID, dtype=torch.bfloat16, device_map="cuda:0"))
         return _model[0]
 
+    so = None if a.no_second_opinion else SecondOpinion()
     index = {}
     with open(ROOT / "out" / "index.tsv", encoding="utf-8") as f:
         for r in csv.DictReader(f, delimiter="\t"):
@@ -523,19 +839,19 @@ def main():
                 lines.append(r)
     out_path = ROOT / "data" / "word_times.tsv"
     cache_path = ROOT / "out" / "word_times_cache.tsv"  # every aligned row, suspects included (local)
-    have, have_movies = {}, {}
+    have, have_tracks = {}, {t.voice: {} for t in TRACKS}
     src = cache_path if cache_path.exists() else out_path
     if src.exists() and not a.all:
         with open(src, encoding="utf-8", newline="") as f:
             for r in csv.DictReader((l for l in f if not l.startswith("#")), delimiter="\t"):
-                if r["voice"] == MOVIE_VOICE:
-                    have_movies[(r["id"], r["text_fnv"])] = r
+                if r["voice"] in have_tracks:
+                    have_tracks[r["voice"]][(r["id"], r["text_fnv"])] = r
                 else:
                     have[(r["id"], r["voice"])] = r
 
     t0 = time.time()
     todo, keep, failed = [], {}, []
-    if a.movies_only:
+    if a.movies_only or a.overrides_only:
         keep = have
     else:
         with ThreadPoolExecutor(16) as pool:
@@ -561,7 +877,9 @@ def main():
                 chunk = todo[b : b + a.batch]
                 auds = list(pool.map(lambda x: decode(index[(x[0]["id"], x[0]["voice"])]), chunk))
                 res = place_retry(model, auds, [r["text"] for r, _ in chunk])
-                for (r, sig), m in zip(chunk, res):
+                if so is not None:
+                    res = [so.apply(au, r["text"], m) for au, (r, _), m in zip(auds, chunk, res)]
+                for au, (r, sig), m in zip(auds, chunk, res):
                     key = (r["id"], r["voice"])
                     if m is None:
                         failed.append(r)
@@ -571,69 +889,96 @@ def main():
                     keep[key] = {"id": r["id"], "voice": r["voice"], "text_fnv": fnv1a(r["text"]), "audio_sha1": sig,
                                  "end_ms": str(round(end * 1000)),
                                  "starts_ms": ",".join(str(round(s * 1000)) for s in starts),
-                                 "collapsed": str(collapsed)}
+                                 "collapsed": str(collapsed),
+                                 "ends_ms": ends_field(word_ends(r["text"], starts, end, pauses(au)))}
                 if (b // a.batch) % 50 == 0:
                     print(f"  {b + len(chunk)}/{len(todo)} ({time.time() - t0:.0f}s)", flush=True)
+    if not (a.movies_only or a.overrides_only):  # rows aligned before word ends existed: theirs from the audio
+        bare = [r for r in lines if not keep.get((r["id"], r["voice"]), {"ends_ms": "-"}).get("ends_ms")]
+        if bare:
+            with ThreadPoolExecutor(16) as pool:
+                rows = pool.map(lambda r: fill_ends(keep[(r["id"], r["voice"])], r["text"],
+                                                    decode(index[(r["id"], r["voice"])])), bare)
+                for r, row in zip(bare, rows):
+                    keep[(r["id"], r["voice"])] = row
+            print(f"word ends measured for {len(bare)} rows aligned before ({time.time() - t0:.0f}s)")
 
-    # the intro movies: aligned when their audio is here, else their earlier rows stay (text hash still matching)
-    movie_rows, mlines, _ = align_movies(model_get, have_movies, a.movie_dir, a.batch)
-    if a.fix_windows:
-        comments, rows = read_movies()
-        changes = fix_windows(rows, movie_rows)
-        if changes:
-            write_movies(comments, rows)
-            log_path = ROOT / "out" / "movie_window_changes.tsv"  # appended: every correction pass stays logged
-            new_log = not log_path.exists()
-            with open(log_path, "a", encoding="utf-8", newline="") as f:
-                if new_log:
-                    f.write("when\tmovie\tstart\tend\tnew_start\tnew_end\twhy\ttext\tnote\n")
-                stamp = time.strftime("%Y-%m-%d %H:%M")
-                for c in changes:
-                    f.write(stamp + "\t")
-                    f.write("\t".join(c) + "\n")
-            print(f"movies: {len(changes)} windows corrected (out/movie_window_changes.tsv); aligning them again")
-            have_movies.update({(r["id"], r["text_fnv"]): r for r in movie_rows.values()})
-            movie_rows, mlines, _ = align_movies(model_get, have_movies, a.movie_dir, a.batch)
-        else:
-            print("movies: no window to correct")
-    msus = []
-    for i, r in enumerate(mlines):
-        if not r["text"].strip() or not r["start"]:
+    # the intro movies and the scene mixes: aligned when their audio is here, else their earlier rows stay (text hash
+    # still matching)
+    movie_out = []
+    for track in TRACKS:
+        have_t = have_tracks[track.voice]
+        if a.overrides_only:  # the earlier rows of the current lines, as they are
+            _, mlines = read_movies(track)
+            movie_out += [(r, have_t[(r["movie"], fnv1a(r["text"]))]) for r in mlines
+                          if r["text"].strip() and (r["movie"], fnv1a(r["text"])) in have_t]
             continue
-        found, _ = movie_findings(r, movie_rows.get(i))
-        if found:
-            msus.append([r["movie"], r["start"], r["end"], "; ".join(found), r["text"], r.get("note", "")])
-    with replace_on_close(ROOT / "out" / "movie_word_times_suspect.tsv") as f:
-        f.write("movie\tstart\tend\twhy\ttext\tnote\n")
-        for s in msus:
-            f.write("\t".join(s) + "\n")
-    print(f"movies: {len(msus)} suspect lines (out/movie_word_times_suspect.tsv)")
-    movie_out = [(r, movie_rows[i]) for i, r in enumerate(mlines) if i in movie_rows]
+        movie_rows, mlines, _ = align_movies(model_get, have_t, a.movie_dir, a.batch, track, index, so)
+        if a.fix_windows:
+            comments, rows = read_movies(track)
+            changes = fix_windows(rows, movie_rows)
+            if changes:
+                write_movies(comments, rows, track)
+                log_path = ROOT / "out" / f"{track.prefix}_window_changes.tsv"  # appended: every pass stays logged
+                new_log = not log_path.exists()
+                with open(log_path, "a", encoding="utf-8", newline="") as f:
+                    if new_log:
+                        f.write(f"when\t{track.col}\tstart\tend\tnew_start\tnew_end\twhy\ttext\tnote\n")
+                    stamp = time.strftime("%Y-%m-%d %H:%M")
+                    for c in changes:
+                        f.write(stamp + "\t")
+                        f.write("\t".join(c) + "\n")
+                print(f"{track.name}: {len(changes)} windows corrected (out/{log_path.name}); aligning them again")
+                have_t.update({(r["id"], r["text_fnv"]): r for r in movie_rows.values()})
+                movie_rows, mlines, _ = align_movies(model_get, have_t, a.movie_dir, a.batch, track, index, so)
+            else:
+                print(f"{track.name}: no window to correct")
+        msus = []
+        for i, r in enumerate(mlines):
+            if not r["text"].strip() or not r["start"]:
+                continue
+            found, _ = movie_findings(r, movie_rows.get(i))
+            if found:
+                msus.append([r["movie"], r["start"], r["end"], "; ".join(found), r["text"], r.get("note", "")])
+        sus = ROOT / "out" / f"{track.prefix}_word_times_suspect.tsv"
+        with replace_on_close(sus) as f:
+            f.write(f"{track.col}\tstart\tend\twhy\ttext\tnote\n")
+            for s in msus:
+                f.write("\t".join(s) + "\n")
+        print(f"{track.name}: {len(msus)} suspect lines (out/{sus.name})")
+        movie_out += [(r, movie_rows[i]) for i, r in enumerate(mlines) if i in movie_rows]
 
+    overrides = read_overrides()
+    realign_overrides(model_get, overrides, index, a.movie_dir)  # edited hand-timed lines: their changed words
     with replace_on_close(out_path) as f:
         f.write("# Word starts of each subtitle line in its recording (FLSubtitles/aligner/align_words.py, "
-                "Qwen3-ForcedAligner-0.6B). Generated, do not edit.\n")
+                "Qwen3-ForcedAligner-0.6B; hand-placed timings from data/word_overrides.tsv). Generated, do not edit.\n")
         f.write("\t".join(HEADER) + "\n")
         for r in lines:
-            row = keep.get((r["id"], r["voice"]))
+            row = shipped(r["id"], r["voice"], r["text"], keep.get((r["id"], r["voice"])), overrides)
             # a line with most of its words unplaced (garbled or noisy on purpose, or a text to check) ships no
             # timings: the runtime keeps its estimate (fail closed; user, 22 Oct 2026: "some lines definitely have
             # noise and/or garbled voices on purpose"); fewer unplaced words ship as -1 (the rest still turn pages).
             # Every row stays in the cache below for the incremental run.
             if row and int(row.get("collapsed") or 0) * 2 <= len(r["text"].split()):
-                f.write("\t".join(row.get(h) or "0" for h in HEADER) + "\n")
-        # the intro movies' lines (voice "movie", times on the movie clock; data.cpp skips them, movie.cpp reads them)
+                f.write("\t".join(cell(row, h) for h in HEADER) + "\n")
+        # the intro movies' and scene mixes' lines (voice "movie" / "mix", times on the track's clock; data.cpp skips
+        # them - no line has that voice -, movie.cpp reads the movies')
         for r, row in movie_out:
+            row = shipped(row["id"], row["voice"], r["text"], row, overrides)
             if int(row.get("collapsed") or 0) * 2 <= len(r["text"].split()):
-                f.write("\t".join(row.get(h) or "0" for h in HEADER) + "\n")
+                f.write("\t".join(cell(row, h) for h in HEADER) + "\n")
+    if a.overrides_only:  # the cache and the side lists stay as the last aligning run wrote them
+        print(f"done: data/word_times.tsv with {len(overrides)} hand-placed timings")
+        return
     with replace_on_close(cache_path) as f:
         f.write("\t".join(HEADER) + "\n")
         for r in lines:
             row = keep.get((r["id"], r["voice"]))
             if row:
-                f.write("\t".join(row.get(h) or "0" for h in HEADER) + "\n")
+                f.write("\t".join(cell(row, h) for h in HEADER) + "\n")
         for r, row in movie_out:
-            f.write("\t".join(row.get(h) or "0" for h in HEADER) + "\n")
+            f.write("\t".join(cell(row, h) for h in HEADER) + "\n")
     if a.movies_only:  # the dialogue's side products stay as the last full run wrote them
         print(f"done in {time.time() - t0:.0f}s (movies only)")
         return

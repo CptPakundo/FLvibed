@@ -1,5 +1,7 @@
 #include "text.h"
 
+#include "str.h"
+
 #include <vector>
 
 namespace text
@@ -42,16 +44,7 @@ std::wstring Ids(u32 ids)
     return n > 0 ? std::wstring(w, n) : L"";
 }
 
-std::string Utf8(const std::wstring& w)
-{
-    if (w.empty())
-        return "";
-    const int n = WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
-    std::string s(n > 0 ? n : 0, '\0');
-    if (n > 0)
-        WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), &s[0], n, nullptr, nullptr);
-    return s;
-}
+std::string Utf8(const std::wstring& w) { return str::Narrow(w); }
 
 std::string IdsUtf8(u32 ids) { return Utf8(Ids(ids)); }
 } // namespace text

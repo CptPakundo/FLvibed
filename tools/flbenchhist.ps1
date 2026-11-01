@@ -9,7 +9,7 @@
 #   outcome   PASS / FAIL, won / died / retreated, SUCCESS / FAILED
 #   seconds   time to completion
 #   stats     key=value extras (kills, lost, dps, turns, odds ...)
-# Usage (dot-source):  . tools\flbench.ps1
+# Usage (dot-source):  . tools\flbenchhist.ps1
 #   Add-FLBench -Suite fights -Case heavy_d12_x2 -Context c705 -Outcome won -Seconds 95 -Stats 'kills=2'
 #   Import-FLBenchHistory          # backfill from research\experience\runs (fights_*.tsv, sweep_*.txt); idempotent
 #   Show-FLBench [-Suite fights] [-Last 1] [-Threshold 0.15]

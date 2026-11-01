@@ -149,6 +149,7 @@ static int g_qtyPos = -1, g_qtyMax = -1; // the quantity slider as last read (th
 static int g_side = 1;                   // 1 dealer, 2 the player's side (as last seen under the focus)
 static float g_enterSnap = 0;            // a dealer just opened: put the focus on its first row (retried this long)
 static float g_closeHeld = 0;            // B came during the window's open / close slide: clicked when it ends (s left)
+static u32 g_lastRow = 0;                // the dealers: the list row the focus was last on (B from the transfer panel)
 constexpr float kCloseHoldSec = 2.0f;    // the slides take ~0.5 s each (measured at 190 fps and in vanilla 1.1)
 
 static const char* kFilters[4] = {"Filter_Weapons", "Filter_Ammo", "Filter_Equipment", "Filter_CargoBay"};
@@ -552,6 +553,13 @@ static void LeaveChars()
 // ---------------------------------------------------------------- the frame
 // The screen's prompts (UI_SPEC.json `prompts`, confirm first, at most five) into the shared prompt bar (promptbar.*,
 // D-MENUS's component: a decision pending keeps it up under CONTEXTUAL).
+// A dealer's focus on its transfer panel (the buy / sell button, the quantity slider) with a row to go back to: B = BACK
+static bool PanelFocus(const char* focusName)
+{
+    return (g_screen == Screen::Commodity || g_screen == Screen::Equipment) && g_lastRow && Vis("BuySellTradeButton") &&
+           (Starts(focusName, "BuySell") || Starts(focusName, "QuantitySlider"));
+}
+
 static void Prompts(const Gamepad& pad)
 {
     using promptbar::Prompt;
@@ -640,7 +648,7 @@ static void Prompts(const Gamepad& pad)
             add(Id::LT, L"QUANTITY", false, Id::RT);
         add(Id::A, eq ? (g_side == 2 ? L"MOUNT" : L"BUY") : (g_side == 2 ? L"SELL" : L"BUY"));
         add(Id::Y, L"MAX");
-        add(Id::B, L"CLOSE");
+        add(Id::B, PanelFocus(ui::ControlName(Focused())) ? L"BACK" : L"CLOSE");
         decision = buy;
         break;
     }
@@ -998,6 +1006,8 @@ static void UpdateWindow(const Gamepad& pad)
         const int side = IsRow(hname) ? SideOf(hovered, true) : 0;
         if (side)
             g_side = side;
+        if (IsRow(hname))
+            g_lastRow = hovered;
         if (const u32 bar = Vis("Inventory_Scroll"))
         {
             float lo, hi;
@@ -1008,19 +1018,26 @@ static void UpdateWindow(const Gamepad& pad)
         }
         ReadQuantity();
     }
+    else
+        g_lastRow = 0;
     if (reselect && g_closeHeld <= 0 && uiclick::Click(hovered))
         events::Push("pad %s: selected %s", ScreenName(g_screen), hname);
 
-    // B = the window's close button, natively
+    // B = back (UI_PLAN: "B back"): in a dealer with the focus on the transfer panel (its buy / sell button, the quantity
+    // slider: the selected row's panel, which has no close of its own), back to that row - the window stays; anywhere
+    // else the window's close button, natively (the panel is up whenever a row is selected, so a B on a row closes)
     const char* close = CloseName();
     const bool haveClose = *close && Vis(close);
-    if (haveClose)
+    const bool panelBack = hovered && PanelFocus(hname);
+    if (haveClose || panelBack)
         g_owned |= XINPUT_GAMEPAD_B;
     if (g_screen == Screen::Offer)
         g_owned |= XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_B;
     if (pad.Pressed(XINPUT_GAMEPAD_B))
     {
-        if (g_screen == Screen::Offer)
+        if (panelBack && Snap(g_lastRow))
+            events::Push("pad %s: back from the transfer panel to %s", ScreenName(g_screen), ui::ControlName(g_lastRow));
+        else if (g_screen == Screen::Offer)
             ClickName(Vis("OfferDialogAcceptButton") ? "OfferDialogDeclineButton" : "OfferDialogClose2Button", "offer");
         else if (haveClose && room::NNWindowBusy())
         {

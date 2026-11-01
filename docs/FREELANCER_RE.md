@@ -35,7 +35,16 @@ in it (`hk::Sym`, `core\hook.h`).
   sigtool`): bytes that look like addresses (a value inside the image, the rel32 of E8 / E9 / 0F 8x) become
   wildcards, so a relinked build still matches; the shortest window with at least 12 literal bytes that is unique in
   `.text` wins; code signatures stay unique with their first 8 bytes ignored (a foreign JMP there), data signatures
-  avoid the first 8 bytes of every code symbol (FLvibed's own detours overwrite them).
+  avoid the first 8 bytes of every code symbol already in the table (FLvibed's own detours overwrite them: add a new
+  detour's code symbol and rebuild sigtool BEFORE generating data symbols inside that function - 30 Oct 2026, FpsCapF;
+  `sigtool check` now fails a data / inner-offset signature over any detour candidate's first 10 bytes,
+  HOOK-OVERLAP), code signatures stop before
+  the next code symbol's entry. **Since 29 Oct 2026 `sigtool gen` writes the alignment padding as wildcards** (a
+  NOP / INT3 run, or filler right after `ret` / `ret n` / `jmp`), so a signature may cross it without depending on it,
+  and `sigtool check` fails on any table signature that holds padding as literals (`tools\drift_check.ps1`
+  "signatures"); the 28 that did (research C1) were re-cut: 211 / 211 on HDE 0.7.1, upstream HDE, vanilla 1.1 and
+  Discovery's hotfix exe, also `--scan --shift 16 --hooked`. One single literal NOP stays in `PendingLoadId` (between a
+  jump table and code; wildcarding it leaves 11 literal bytes, under the 12 minimum).
   **Never span the alignment padding between functions** (25 Oct 2026): builds differ there without differing in
   code - HDE's exe holds NOPs, a decrypted vanilla 1.1 exe leftover `E8 rel32` / `FF 15` call bytes after the `ret`
   (1,285 of the 1,322 differing byte runs of the two `.text` sections). `sigtool gen` picks the shortest unique window
@@ -80,6 +89,7 @@ in it (`hk::Sym`, `core\hook.h`).
 |---|---|
 | 0x5B2890 | `void __cdecl FrameUpdate(double dt)` — prologue `51 55 56 33 ED 57` (detour 5 bytes) |
 | 0x42D740 | `bool __cdecl GamePaused()` |
+| 0x42D770 | `void __cdecl FrameTimer()` (`exe::FrameTimer`): spins until dt >= 1 / [0x610A0C], then 0x667D40 = min(dt, 1 / [0x610A08]) (double, `exe::FrameDt`: the dt FrameUpdate, the getter 0x42D680's ~90 callers and Server.dll's `ElapseTime` take), 0x667D48 = the raw dt, 0x667D38 += it (the sum). 0x610A0C = float 200.0 in HDE 0.7.1 (the frame-rate cap; reset on state entry 0x558A14 / 0x558A57), 0x610A08 = 1.0 (dt at most 1 s). **Verified in game 30 Oct 2026** (instance 1, SaveC702, debug `timing`): dt 0.005 at the 200 cap; with dt forced to 1/60 and the cap lifted (debug `fixeddt 60`, TEST ONLY) the game ran 264 fps, game time x4.40 of wall time; `fpscap 60` + `fixeddt 60` x1.00. Static reads: `research\evidence\timing\probe_report.md` |
 | 0x54BAF0 | `IObjRW* __cdecl GetPlayerIObj()` (null when not in space) |
 | 0x673354 / 0x673358 | player system id / base id (base != 0 ⇒ docked) |
 | 0x67337C / 0x673378 | ship archetype id / ship id |
@@ -160,6 +170,23 @@ in it (`hk::Sym`, `core\hook.h`).
   the game menu is `USER_PAUSE` (F1). Commands with no key bound can still be fired via HandleKey.
 - Send injected commands with their keymap event mask: keydown-only commands toggle twice if they
   also receive the key-up.
+- **Accept / back (from decompiled code, Ghidra 29 Oct 2026; not verified in game):** there is no single accept /
+  cancel routine. Command ids (the name table 0x614DD8): USER_CANCEL 0x0F (keymap key 27), USER_ENTER 0x11 (key 13),
+  USER_NO 0x12, USER_YES 0x13 (all in `IDR_ALWAYS_PRESENT`). Each screen registers a key-handler object per command it
+  wants (the registering member 0x5760D0, its destructor 0x576010; ~50 constructors call it); HandleKey 0x576410 asks
+  them (vt[0](cmd), focus-restricted for category 1) until one returns true; an untaken USER_CANCEL pops the top of a
+  stack at 0x67C270 and calls it with 0x10. The pause menu (`PauseInitElements` 0x4A6BA0) registers 0x11, 0x0F and
+  0x14 (handler 0x4A7070: back to the game on any of them); the NN offer dialog registers 0x0F (0x4A6600). Buttons are
+  activated by their mouse handlers (IconButtonClick / TextButtonClick / FrontButtonClick / MainMenuButtonClick in
+  flexe.h), not by a key. So the one game-side place to swap accept / back would be HandleKey (cmd 0x0F <-> 0x11) -
+  which would also swap flight's USER_CANCEL and the scene skip: FLvibed's `confirm_button` stays a pad-side role
+  remap (docs\UI_BUILD.md 5). **Who registers what** (the 52 calls of 0x5760D0 and their pushed command, 29 Oct 2026):
+  USER_ENTER only in five screens - the exit (Alt+F4) dialog 0x471810 (`ExitFrame`, YES / NO / CANCEL / ENTER), a
+  second exit-window variant 0x472230 (CANCEL / ENTER), the error dialog 0x4725B0 ("Freelancer Encountered an Error",
+  CANCEL / ENTER), the delete-save confirm 0x4883B0 (`Confirm_deleteBox`, YES / NO / CANCEL / ENTER) and the pause
+  menu; the text prompt dialog 0x472AB0 (`PromptFrame`) takes YES / NO / CANCEL; about twenty other screens take
+  USER_CANCEL alone. So Enter is no general "accept" in the game: the main menu, dealers, Options and the NeuroNet
+  windows act on mouse clicks only (a probe of HandleKey(17) per screen would confirm it in game).
 
 ## Flight
 | Address | Meaning |
@@ -184,6 +211,18 @@ in it (`hk::Sym`, `core\hook.h`).
   mouse players cannot steer or aim through the HUD.
 - Guns fire at the cursor (aim circle), not along the nose: with the chase camera the screen center is
   not the nose direction. Aiming = putting the cursor on the lead ("prediction") cross.
+- **The guns' aim point** (verified 28 Oct 2026): every frame 0x51D163 reads one world point through **0x4F1DA0**
+  (`Vector* thiscall(this = [0x674B70], Vector* out) ret 4`, returns `[this+0x91C]`; exe::GunAimPoint) and hands it to
+  every gun of the player's ship (`CEGun::SetTargetPoint`, 0x51D1BB); the HUD reads the same getter (0x4DC226 ff.). It
+  is the cursor's ray through the **current** camera, so in turret view it follows the turret camera. FLvibed's host
+  (v28 SetGunAim) returns the autopilot's lead instead while it flies in turret view: the guns follow the autopilot,
+  not the player's camera. Sampled in game: it tracks the selected fighter / its lead within metres.
+- **Turret view locks the steering** (verified 28 Oct 2026): mouse-flight steering (0x4C7CB0) hands a ship-frame
+  direction to `IBehaviorManager::update_current_behavior_direction` (camera-free), but skips it (0x4C7ECD) while
+  `[[0x674AA0]+0x5B9]` (exe::PlayerFlightState; +0x5BA the same gate) is set - 1 in turret view, 0 otherwise (sampled):
+  the ship flies straight. FLvibed's steering hook lifts the lock for its own call while the autopilot flies, and the
+  autopilot projects in the ship's frame there (`fl::WorldToFlightScreen`): measured on M01's fight, turret view with
+  the camera swinging = the baseline (on target 20.7 / 19.2 s, gun shots 244 / 249).
 - Cursor over a space HUD button (maneuver bar etc.) switches the cursor to `arrow`; held fire there
   clicks the button (e.g. Cruise).
 
@@ -249,6 +288,11 @@ in it (`hk::Sym`, `core\hook.h`).
   the client's (`CEqObj::get_dock_target` of the player ship) nor the server's (`pub::SpaceObj::GetDockingTarget`)
   dock target changes on a request. The key is refused (not handled) while the ship is still leaving a dock after a
   launch. The base just left can be docked again at once (2.5 s).
+  A bay's request granted **off its axis** costs the game's own approach to p2 [M 31 Oct 2026, M13 Battleship Osiris, a
+  ship with 6 dock points, sets mm9 / ab4 / ab7]: requested ~300 m beside p2 at 70 m/s -> the docking scene 10 s later;
+  requested at rest 460-622 m from p2 -> ~15-20 s; requested 12 m from p2 at 65 m/s on the axis -> the port assigned
+  0.5 s later (autopilot `bay_request_lined`). Approaches from the side (way-in 94-108 deg to the bay's axis) are common
+  at the Osiris, which moves.
 - **Docking geometry and where the cutscene starts (research 18 Oct 2026, user idea: the player's fast dock).**
   Common.dll `IObjInspect::get_dock_hardpoints(int index, TERMINAL_TYPE*, Transform* mount, Transform* p1, Transform*
   p2, float* radius)` (virtual, by name: core\fldll.h; Transform = 3x3 rotation then position; debug `dockpoints` on
@@ -351,14 +395,68 @@ in it (`hk::Sym`, `core\hook.h`).
 - **Munition flight (live archetype, matches weapon_equip.ini, 18 Oct 2026):** Projectile lifeTime +0x70 (13.75);
   Munition motorId +0x8C, seeker +0x90, seekerRange +0x98 (1000), **seeker_fov_deg stored as its cosine** +0x9C
   (35 -> 0.819152: a half-angle), maxAngularVelocity +0xA0 (2.90333); Common.dll `?GetMotor@Archetype@@YAPBUMotorData
-  @1@I@Z` (motor id) -> delay +8, accel +0xC (22), lifetime +0x10 (2.75).
+  @1@I@Z` (motor id) -> delay +8, accel +0xC (22), lifetime +0x10 (2.75). **Against a fleeing ship** (game data +
+  ordnance::FlightTime, game-facts 31 Oct 2026; not measured in game): the HDE missile01_mark01-03 (identical flight data:
+  muzzle 30.3, motor 22.04 m/s2 for 2.75 s, ammo lifetime 13.75 s) launched from a ship at ~290 m/s catches a target at
+  270-300 m/s 150-250 m ahead in 2.1-4.1 s - inside its lifetime and 1 km seeker range.
 - **Munitions:** Archetype::Munition hull_damage +0x80, seeker +0x90 (0 none, 1 dumb, 2 seeker), cruise_disruptor
   +0xAC (byte); Archetype::Root explosionArchId +0x24 -> Common.dll `?GetExplosion@Archetype@@YAPAUExplosion@1@ABUID_
   String@@@Z` -> Explosion radius +0x4, hull_damage +0xC (missiles carry their damage there: missile01_mark01 489,
   radius 16; offsets from FLSDK, the explosion read is not yet confirmed in game).
+- **Explosion damage (Server.dll, from decompiled code 29 Oct 2026, Ghidra; not verified in game):** who is hit -
+  `FUN_06d0b260` calls `PhySys::FindSphereCollisions(system, explosion centre, Explosion radius, out, 60)` and hands
+  every root object found (skipping the collision group the round struck) to its explosion-hit virtual (ServerGameObject
+  slot 0x184; ships and solars `0x06ce9500`: the shield, hull, part and energy handlers at slots 0x204 / 0x1fc / 0x200 /
+  0x208). How much - the vanilla falloff in thirds of the distance from the centre to the object's sphere
+  (d^2 = |centre - sphere centre|^2 - sphere radius^2; full inside R/3, 2/3 inside 2R/3, 1/3 inside R, else none:
+  `process_all_explosion_damage` 0x06ceeb80, the physical radius; `0x06ce9550` over `CEqObj::
+  get_explosion_dmg_bounding_sphere`). **HD Edition 0.7.1 patches the latter's first band test** (Server.dll file offset
+  0x960C `7A 0C` -> `7A 00`, HDE `FLDOCS\BinaryEdits.patch` line 135, ~M0tah: "explosions not dealing full damage to
+  large ships and bases"): every object it is called for takes the explosion's full hull_damage x its
+  explosion_resistance, whatever the distance. Measured beside it (M13 burst probe, controller\docs\AUTOPILOT.md): our
+  own torpedo cost us exactly its 2,424 at its impact on the Nomad battleship with its last live position 80-95 m from
+  our centre - farther than its 25 m sphere should reach; the real explosion centre is not read yet (the HUD's
+  explosion feed 0x5363F2 -> 0x4D6F00, "an explosion within its radius of the player, its centre", gives it).
+- **Proximity fuse (detonation_dist; data + decompiled code 30 Oct 2026, Ghidra; not verified in game):** HDE 0.7.1
+  `DATA\EQUIPMENT\weapon_equip.ini` [Munition] `detonation_dist`: missile01-03 (all marks) and the capital ships'
+  missile turrets 4 m, torpedo01_mark01 / 02 6.25 m (explosion radius 25, hull_damage 2,424), cruise_disruptor01 12.5,
+  nomad_cruise_disruptor01 6.25. `Archetype::Munition::read` (Common.dll 0x062f7090) stores it **squared** at
+  Munition +0xA4 (FLHookSDK `Munition.hpp` field 41 = 0xA4; FLvibed `kMunitionDetonationSq`, `space::Weapon::
+  detonationDist`). Its only runtime user found, Server.dll 0x06cf4310 (reached through a vtable slot at 0x06d666f8),
+  builds `PhySys::PhantomParms` with the round's collision group, `PhySys::CreatePhantom(parms, sqrt(+0xA4))` and
+  `PhySys::AttachPhantom(round, phantom)`: the fuse is a physics sphere of radius detonation_dist that travels with the
+  round, tested against collision shapes - **not** a distance to the target's centre or radius (the arming path never
+  reads the target). Which objects set it off (the contact callback and its collision-group filter) is not read yet;
+  missiles and torpedoes carry no `owner_safe_time` (only mines, 4 s). So a round bursts once a hull comes within
+  detonation_dist of it (FLvibed's model: `core\game\ordnance.h` RoundImpact stretches each ray segment by it). Open:
+  the M13 muzzle bursts (pairs gone 0.01-0.18 s after launch 6-8 m from us, the hull 55 m away, `controller\docs\
+  AUTOPILOT.md`) are NOT explained by a 4 m sphere touching the hull - candidates: the phantom touching our own ship or
+  the pair's other missile, or a hull part the rays miss; probe: log the objects within ~12 m of each round at its end,
+  a single round vs a pair at 81-86 m, and decompile the phantom's contact consumer.
+  **Seen in game 30 Oct 2026 (Q4 probe, `research\experience\legs\2026-10-30_0357_M13-q4s1p-1_i1`, 03:59:48):** two
+  of our torpedoes (launched 2.48 s and 0.45 s before) ended together 21 / 15 m from us, 1,000 m short of the target, for
+  4,547 damage - while we sped up 61 -> 80 m/s behind them. torpedo01_mark01 leaves at muzzle_velocity 16.7 m/s with a
+  motor of 4.4444 m/s2 for 7.5 s (`kb\generated\guns.tsv`) and has hit_pts 2: a ship that accelerates after a launch
+  keeps its own torpedo a few tens of metres ahead for seconds, and something set the pair off there (our guns' fire
+  through it, the second torpedo, or the phantom touching our ship - not read). Rare: 23 of 2,284 own rounds in two
+  days of M13 runs ended within 60 m of us and 300+ m from the target.
+- **Statics' guns (Common.dll CEquipManager, verified in game 30 Oct 2026):** a CSolar carries guns in the same
+  equipment manager as a CShip (CEqObj +`kEqObjEquipManager`): the CEGun traversal, `CanPointAt`, `GetTurretOrigin`,
+  `GetMunitionRange` and the munition archetype's damage read the same for both (`space::GunsCovering`, `VolleyAt`).
+  M13's Nomad battleship `nomadcap` is such a static (an MsnSolar, M13 runbook step 2), not a CShip: anything that
+  reads hostile SHIPS only (the contact list's `ship` flag, `ShipWeapons`) misses its 15 turrets (697 hull damage a
+  round, refire 1 s); `VolleyAt` read 1.4-4.2k of them on us in one volley at 50-500 m (set q4s2), and single ticks of
+  3.9-5.7k killed us (set q4s1).
 - **Missiles in flight:** CObject class CGUIDED_OBJECT 0xA7 (FindFirst/FindNext like ships); CGuided::get_target
   (`?get_target@CGuided@@QBEPAUIObjRW@@XZ`, IObjRW vt[8] = get_id), CProjectile owner +0xE4, archetype CObject +0x88;
   position by pub::SpaceObj::GetLocation. Police missiles homing on the player read as seeker 2 (homing).
+  **The target is a whole object** (Common.dll 0x062868c0 `CGuided::set_target(IObjRW*)` stores its Watchable at
+  CGuided +0xF0 when the munition's seeker field +0x90 is set; no sub-object id is passed or kept - decompiled, 31 Oct
+  2026, M13-MIMIC): a round cannot be aimed at a part of a ship or solar. Against M13's Nomad battleship (a single
+  `.3db` mesh, no [CollisionGroup]) our rounds **burst at the first hull on their way** [M]: 5,299 logged hits ended a
+  median 7 m from its hull (missile-outcome `closest`, measured to the real hull by ray for a solar), p95 63 m - so where
+  a round bursts is chosen by where the launcher sits (the line its path takes), not by the aim. The seeker's per-frame
+  aim point (centre vs nearest part) is not located.
 - **Countermeasures** (DATA): [CounterMeasure] range 1000 m, diversion_pctg 70, lifetime 3 s; dropper refire 0.25 s.
   They divert homing munitions within their range by chance (data meaning; mines not verified). Cruise disruptors:
   seeker range 2.5-3 km, detonation 12.5 m, motor 0.9 s at 523 m/s2. (HDE ge_s_cm_03: range 1000 m, diversion 90 %.)
@@ -370,7 +468,14 @@ in it (`hk::Sym`, `core\hook.h`).
   velocity: v = v_ship + muzzle (30) + motor accel x t (22 m/s2 for 2.75 s), then constant (no drag): at rest 32 ->
   91 m/s; launched at 116 m/s 149 -> 207-212 m/s (116 + 30 + 60.6 = 206.6).
 - **Engine kill (USER_MANEUVER_ENGINEKILL, measured 18 Oct 2026):** no drag while the engine is killed - the speed
-  is held (120 m/s after the afterburner: 110-124 for ~8 s; 106 m/s from cruise: 104-108); engine back on at zero
+  is held (120 m/s after the afterburner: 110-124 for ~8 s; 106 m/s from cruise: 104-108; **at full cruise speed it holds
+  too: 300 -> 287 m/s over 6.8 s, HDE, the `big_coast_own` coast of M13-ab12-b_i1 05:02:39-46, measured 31 Oct 2026**);
+  **and the engine back on after it does NOT resume cruise: within 0.5 s the speed falls to the throttle's ~90 m/s,
+  cruise stays off - a new press (the ~8.5 s charge) is needed** (HDE, measured 31 Oct 2026: SaveS419, cruise to 300,
+  USER_MANEUVER_ENGINEKILL 2 s - cruise=0 at once, ~300 m/s held -, the toggle again: 300 -> 96 m/s in 0.7 s, cruise=0;
+  the same in vanilla per the owner, 31 Oct 2026: **while the engine is killed the velocity cannot be redirected** - the
+  ship coasts on its velocity vector, turning the nose changes the aim, not the travel; a data-pass claim that vanilla
+  keeps cruise through short "taps" was an OCR inference, withdrawn); engine back on at zero
   throttle: 0 within ~0.5 s. Cruise ends (cruise=False). **Engine kill and the cruise charge (measured 23 Oct 2026, M12
   ship after the Osiris launch, motion trace 0.5 s, the user's disrupted-cruise idea):** after the afterburner (160-200
   m/s), engine kill holds ~93-100 m/s; a cruise press then turns the engine back on - 89 -> 80 m/s within 0.5 s, the
@@ -489,6 +594,19 @@ in it (`hk::Sym`, `core\hook.h`).
   (0 -> 2500 in 8 s, 10 km; 174 -> 173 6.68 s); full speed 7.5 km in 3.00 s; the last segment slows linearly with
   distance 2500 -> 400 (6.52 s, model L / 2100 x ln 6.25 = 6.55 s); then 0.87 s to free flight, 213 m past the end
   ring. Ride 23 s vs ~100 s by cruise. `get_tradelane_exit_ring` = the next ring ahead (not the lane's end).
+  **The ride and the cruise charge (from decompiled code, Ghidra 29 Oct 2026; not verified in game):** no LaneAction
+  code touches the engine's cruise state. Start (go_tradelane 0x062B1960 -> 0x062C1220 -> 0x062C1490): CShip +0x2BC =
+  1, state 1 (ramp) / 2 / 3, collisions off, `CEqObj::set_control_exclusion(3)` (+0x190), the PhySys controller
+  registered. The update 0x062C19D0 moves the ship by position at ramp x 2500 m/s and calls set_tradelane_speed; it
+  never reads or writes the CEEngine. The charge clock is `CEEngine::Update` 0x06295FA0's (+0x54 engaged, +0x50 the
+  clock, counting up to the archetype's charge time +0x80 while engaged; a negative = disrupted clock counts up to 0)
+  and it does not read the exclusion; inside Common.dll only `CEEngine::Activate(false)` calls EngageCruise. End
+  0x062C2350 (state 5; `stop_tradelane` passes 1): exclusion 0, collisions on, then (normal end only) the ship's
+  second-base vt +0x68 and slot 0 (1.0) - implemented outside Common.dll, unresolved (probably not the cruise toggle,
+  which is slot +0x50 there: ThrustManager::engage_cruise 0x062E90A0). So by the code a charge running into the ride
+  keeps counting and cruise stays engaged through it - unless Freelancer.exe's dock request or those end calls cancel
+  it. Probe: log `is_cruise_active` + `GetCruiseChargeTimeElapsed` per frame (flight.cpp reads both) from a dock
+  request with a charge running, through the ride, to 3 s after the exit.
 - **Lane entry geometry and the fast entry (18 Oct 2026, Li01 rings 177 / 178, autopilot fast_dock on a ring):** a ride
   starts at a ring hardpoint, `HpLeftLane` / `HpRightLane` (254 m below / 252 m above the ring's centre on Li01, one
   track per direction): `IObjInspect::get_lane_start(ring, next&, start&, dir&)` called on the PLAYER ship (on the ring
@@ -596,6 +714,18 @@ in it (`hk::Sym`, `core\hook.h`).
   cause not confirmed: the harness places the ship itself, `Move-FLShipNear`). Source: research\repos\Console.
 
 ## AI on the player ship (verified in game 17 Oct 2026; code core\game\ai.*, research controller\docs\NPC_AI_RESEARCH.md)
+- **Roll / levelling (verified in game 28 Oct 2026, SaveC702):** the player has no roll control - USER_Z_ROTATE /
+  USER_Z_UNROTATE (commands 60 / 61) are polled by nothing (IsCmdHeld's 5 callers ask 0x85-0x88 and 0xC7) and fire as
+  "not handled". **Mouse flight does not turn in the ship's own frame** (measured 29 Oct 2026, instance 5, SaveC705):
+  0x4C7CB0 hands (cursor x, cursor y, 0) to `update_current_behavior_direction` (Common 0x62D3690), whose target
+  orientation is built with an up reference ([this+0x134], initialised to (0, 1, 0), [+0x140] the same) - with the ship
+  rolled b by PhySys spin the nose turned b off a steering computed in the ship's frame (b -25 -> 8 deg, -73 -> 90,
+  -113 -> 118); restated into the level frame or the chase camera's it follows (FLvibed `steer_level`). Mouse flight
+  (also FLvibed's steering, which feeds it) never levels: a -56 deg bank after a turn stayed
+  (0.3 deg/s back). USER_TOGGLE_AUTO_LEVEL (62, no default key) flips the byte 0x612700 (1 at the start) and calls
+  0x4C79A0 = GetBehaviorManager(player)->update_current_behavior_auto_level(byte) (Common.dll 0x62D3CF0); in free flight
+  it changed nothing either way. The game's Goto maneuver levels the ship (-22 -> -6 -> -1 deg in 2 s, the NPC AI's
+  up reference): FLvibed's `level_off` uses that.
 - **Maneuver dispatcher** 0x4D8E20 `bool thiscall(PlayerManeuvers = *(0x674A58), int op, bool flag)`, ret 8, ops
   -1..19 (jump table). Works on the current target, reports to the server like the maneuver bar. Verified: **Trail 3**
   (holds full speed toward the target; dogfights a hostile fighter at 40-150 m; a cruising patrol cannot be caught),
@@ -931,6 +1061,9 @@ subtitles' `background_style 1` reproduces it (subtitles\docs\DISPLAY_PLAN.md "B
   the ..."). The game shows the child after a delay (bits |= 3) and deletes the control when the line has run; it waits
   while a comm window shows; the objective banner's code (0x4BC990) waits while the child is shown (bit 1) - hide the
   parent, not the child.
+- **The control list is a ring with a sentinel head** (every walker in core / the modules relies on it; two that did
+  not lapped it to their count cap until 29 Oct 2026): `head = [exe::UiControls]`, the first node `[head + 4]`, each next
+  `[node + 4]`, stop on `node == head`; the head's own +8 is not a control.
 - **More top-level controls (the game's control list `exe::UiControls` 0x67DBE8: nodes {+4 next, +8 control}; HUD 2's
   fix round, 25 Oct 2026, instance 5, SaveC705, debug `hud2 tree roots`):** `MsgWin` (chat, vt 0x5CFFC4), `CTID` (the chat
   input, top-level, vt 0x5CFEC4, state bit 1 while open), `ToolTip` (vt 0x5D5F7C: the mouse-over box "Police Base /
@@ -1000,6 +1133,23 @@ subtitles' `background_style 1` reproduces it (subtitles\docs\DISPLAY_PLAN.md "B
   +0x2F8 hovered flag), slot 11 = 0x445BE0 hover-leave, slot 12 = 0x445C10 click. Cursor strings
   at 0x5CBB6C.. (`talk_story`, `talk_mission`, `talk_rumor`, `talk_bribe`, `talk_blowoff`).
 - Open: the room object container / picking loop that enumerates characters.
+- **The current room (from decompiled code, Ghidra 29 Oct 2026; +0x34 / +0x38 / +0x40 VERIFIED IN GAME the same day,
+  Manhattan, SaveC701, instance 4: the base id 0xA7303E0D constant; +0x38 Cityscape 0xBCADD8CD (the start room), Bar
+  0xA2AB334F, Trader 0x968378C9, Equipment 0x9228C24D, ShipDealer 0xA2609144 - a new id on every switch, the same one
+  back in Cityscape; +0x40 a distinct RoomData per room. The +0xC nickname not yet read back in game - the probe's
+  string read came back empty: research\tools\probes_2026-10-29\probe_room.ps1):** the location controller is
+  the static object at 0x668708 (flexe.h `RoomInfoOwner`; its error strings name the game's source file
+  Gf\LocationController.cpp): +0x34 the
+  base id, **+0x38 the current room's location id** (0 outside a base; `MakeLocationID(base, room nickname)`), +0x3C
+  the base record, +0x40 the room's RoomData. Written by the set-location routine 0x43B6B0 (thiscall(0x668708, room
+  id): `BaseDataList::get_unloaded_room_data`, "Could not find location %d"), cleared by 0x43B3E0 on leaving;
+  `RoomInfo` 0x43A460 keys on +0x38. The hotspot builder 0x43F2E0 compares each hotspot's `room_switch` with the char*
+  at RoomData +0xC - the room's nickname (Bar, Trader, Equipment, ShipDealer, Cityscape, Deck, ...; the same function
+  compares that char* with the literal "Cityscape" at ~0x43F600, re-read 29 Oct 2026): a direct answer to
+  "which room" in place of the hotspot-naming rule below (Goto-FLRoom). NavBar +0x370 / +0x374 (a std::string, compared
+  with "Trader" / "Equipment" / "ShipDealer" at 0x441700, 0x43E700) is another candidate, writer not found. Probe: in
+  each Manhattan room log +0x34, +0x38, the RoomData +0xC string; +0x38 must equal MakeLocationID(+0x34, name) and
+  change on every room switch.
 - **Identity and conversation (verified in game 22 Oct 2026, Manhattan bar, byte diffs idle / talking / after):** +0x160
   u32 = the character's mbases.ini `individual_name` (bartender 244609, officers 220010-220012; patrons without one 0 or
   1); byte +0x36C = 1 on the player's conversation partner while the conversation runs, 0 after (one character at a
@@ -1036,6 +1186,11 @@ subtitles' `background_style 1` reproduces it (subtitles\docs\DISPLAY_PLAN.md "B
   +8 virtual room (`Deck` / `Planetscape` special-cased), +0x10 behaviour (1 room switch, 2 news, 3 mission vendor,
   6 dealer front desk, 7 ship dealer, 12 repair). Clicking the record's control natively (button click, UI
   section) does what the hotspot does. FLController / FLSubtitles debug `hotspots` / `goto <label>` use it.
+  **Which room the player is in** (verified in game 29 Oct 2026, Li01 Manhattan: Equipment, Trader, ShipDealer): a
+  dealer room's NavBar button carries the hotspot `IDS_HOTSPOT_<X>_ROOM` and inside that room `IDS_HOTSPOT_<X>` is a
+  RoomControl hotspot (behaviour 8 equipment dealer, 5 commodity trader, 7 ship dealer); the current room's own
+  button stays listed and clickable (a click does nothing). The Bar has no such pair (its RoomControls are the news
+  and mission vendors). `Goto-FLRoom` returns "already in <room>" by this rule.
 - **Launch** is a separate record labelled `IDS_HOTSPOT_LAUNCH` (no hotspot data, behaviour 0) in the room with the
   ship (planet: Cityscape, which has `[PlayerShipPlacement] launching_script`; stations: Deck). It exists only while
   launching is allowed: absent in story mission 1 before Juni's job is accepted. Clicking it natively launches
@@ -1341,12 +1496,61 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
   and load normally. **But not every moment loads true** (session 11, 24 Oct 2026, M12): a save written while the story
   waits (at rest before a banner) does; one written **at** a trigger's moment (a generator's kill) loads stuck on the old
   objective with the target gone; and after any mid-mission load the objective reads "Awaiting" until the script sets
-  the next one. The file lists the live triggers (`[TriggerSave] trigger = <CreateID>` + their condition state). A native
+  the next one. The file lists the live triggers (`[TriggerSave] trigger = <CreateID>` + their condition state; read at
+  run time by `mission::LiveTriggers`, "The live trigger table" below - a load restarts every saved timer). A native
   save in flight costs ~120 ms of the harness's wall time, the game drawing on (~150-190 fps: no stall).
+  **A load re-sends the saved marks of every object that exists, and drops the mission solars the save did not keep**
+  (observed in game 30 Oct 2026, MARKS-LOAD probe, `research\experience\runs\marksload_probe_2026-10-30\`: the
+  re-marks and the missing generators below; the mechanism decompiled, not verified in game: Content.dll in Ghidra,
+  `research\evidence\saves\marks_load_facts.md`). The save's `[MarkObj]` is a
+  list of nicknames (the mission's `std::list` at mission +0x144, size +0x148, node +0xC the name; [MsnSolarSave]
+  +0x138, [Invulnerables] +0x150, [Decloaked] +0x15C the same shape); the load reads it back and sends no mark by
+  itself - a mark goes out when an object of that name is created (the mission message 0x1010 for ships, the solar
+  spawner after CreateSolar), so a name with no object stays silent. SaveS418 (M02 "Destroy the Enemy Rogues"): King
+  and three rogues re-marked 40-60 ms after the objective; SaveS416 (M09 "Destroy the Generators", `[MarkObj]` = Ozu,
+  7 fighters, generator_1..4): only Ozu (id 15). **A spawned [MsnSolar] is saved ([MsnSolarSave], re-created at the
+  load) only when its `system =` is the player's system at the save** (the writer FUN_06f130b0 compares def +0x450 with
+  the player's system and needs the spawned flag def +4; decompiled; data check: all 33 `solar_name` lines of the
+  catalogue's saves have a `system =` equal to the save's system, 0 against). A definition without the key never
+  matches (def +0x450's default is unread - inferred from the saves: M09's S400 / S402 / S416, made with the generators
+  up, have no [MsnSolarSave]). Without the key - M09 generator_1..4 and tekagi_defense_wing_battleship1 (Musashi);
+  by the same rule, data only, not tried in game: M07 sluthammer1 and rh_battleship_force_wing2, M03 harmony and
+  nav_buoy0..4 - or with another system (M05 rh_battleship `system = bw01`, fought in Br03; data only) the solar is not
+  saved: after S416's load the 4 generator ids (CreateID of the nickname: generator_1 = 2936703366) are listed nowhere
+  (`objobj` 0, no `spawn-solar`), while first_generator_dies / last_generator_dies stay armed - the step cannot finish
+  from such a save (a player's own load should meet the same - inferred, no player-path run; the game's own, FLvibed
+  changes no game logic). A mission's key save brings them
+  back by its own script (M09 `key_save_at_ryuku`, Cnd_SpaceEnter Ku07, spawns them again). The controller's forgetting
+  at the load (d488fbd) loses nothing: the re-sent marks come after it. The harness marks a save unfit at once when a
+  marked mission solar it would not keep is up (`controller\tools\missions\Leg.ps1` LostSolars). A save during a step
+  that is "Awaiting" (21660) loads story-unfit too (S404 / S405 / S417). **`GetInvincible` during M02 "Follow Ashcroft"** (30 Oct 2026,
+  `look_log`): Ashcroft reads (0, 1, 0.50) - first flag 0, second 1, floor 0.50 - both after loading SaveS419 and live in
+  a full leg (M02-look0c, 19:46:13 and again at "Destroy Ashcroft's Ship"), although `start_stage4_attack` sets
+  `Act_Invulnerable = Ashcroft, true, true, 0.5`: the load changes nothing. **No 0.5 hull floor against the player**
+  (verified in game 30 Oct 2026, LOOK L2 probe, `research\experience\runs\look2probe\`: SaveS419, the ship put beside
+  him by console `pos`, the autopilot's combat mode on him): during "Follow Ashcroft" (22262) his hull fell under our
+  fire (1.000 -> 0.986 before the destroy banner, ~83 s into the probe; 0.972 / 0.967 just after it; King's and the police's attacks never moved it in the A runs: 1.00 at the destroy banner); after
+  "Destroy Ashcroft's Ship" (22263) it went 0.926 -> 0.609 -> 0.519 -> 0.433 and he died (pod, `ashcroft_dead`) with
+  `GetInvincible` still (0, 1, 0.500) - and no script line between the two steps touches his invulnerability (m02.ini
+  1612 is the only `Act_Invulnerable` on him). So the floor of `Act_Invulnerable = <ship>, true, true, f` does not stop
+  the player's damage (inferred, not read in the code: the second `true` reads back as the 1 and means player damage
+  allowed); NPC damage left him at 1.00.
+  **The follow is a tail chase at equal speed:** Ashcroft charges cruise for ~8 s (75 m/s at 0.8 s, 294 m/s at 9 s),
+  cruises at ~300 m/s (our cruise speed: `flight::Model` 300) along `start_run1` for ~79 s and stops at his run point
+  (-22099, 0, 75896) ~88 s after the follow starts; our ship starts 4.6 km (full leg) / 6.2 km (S419) behind at rest and
+  arrives ~107 s, so no follow-time fight can begin before his stop (A runs look0b-a: FLMotion.tsv at 300 m/s throughout).
 - **Act_NagDistTowards** (session 11, M09 / M07 scripts): `OBJ, <name>, <nagger>, <object>, <fail ids>` or `POS, <name>,
   <nagger>, x, y, z, <fail ids>[, <dist>][, NAG_ALWAYS]`, set together with an objective: the player not closing on the
   target draws the nagger's lines (~20 s apart in M09) and then fails the mission with the ids (M09: "You failed to fly to
   the Blood Dragon Hideout" after ~63 s held in a fight). `core\game\mission.cpp` TowardsNagOf / NextStepGoals.
+  *Decompiled, not verified in game (30 Oct 2026, `controller\docs\LOOK_PLAN.md` 4a):* the default distance is 4000 m
+  and the default flag NAG_OUT_OF_COMBAT (its combat test applies only when the target is a ship); a 20 s sample timer;
+  "closing" = 900 m nearer than the last sample, or inside the radius (both reset a 4-strike counter); each missed sample
+  plays a line, the 4th fails the mission (>= ~80 s - the M09 ~63 s above is not reconciled). Content.dll parse
+  0x06ecba90, logic 0x06ecf5d0. **Cnd_TetherBroke** = `shipA, shipB, dist, secs[, inner]` (Content.dll 0x06ec11c0 /
+  0x06ec1330): time outside `dist` accrues on the mission clock and is **never reset on rejoin**; inside the 5th field's
+  radius it accrues only while not closing; fires at accrued >= secs. **Cnd_Destroyed** = `label|nick, count[, kind]`:
+  N = the N-th matching death, -1 = all of the label.
 - **The load screen lists at most 256 saves** (verified 20 Oct 2026: 261 files in the folder, `saves` = 256, the
   requested one missing). Test runs keep adding the missions' own key saves (`Act_Save`), so `deploy.ps1` moves the
   oldest SaveXXXX files to `SAVE\overflow\` above 240 (never deletes).
@@ -1377,13 +1581,70 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
   that surface is the bounding sphere or the real hull is not yet checked in game. The vanilla HUD's left bottom box
   is the thruster / afterburner energy gauge (drains on the afterburner, refills at rest), not the throttle.
 
+## The live trigger table (verified in game 29-30 Oct 2026, HDE 0.7.1, instance 9; code `core\game\mission_live.*`, debug `mission live [raw]`; IDEAS A39)
+The story mission's live triggers - what `[TriggerSave]` writes - read from Content.dll at run time. Static reading and
+its critic: `research\evidence\triggers\` (`probe_report.md`, `probe_critic.json`); in-game evidence:
+`research\experience\runs\a39_live_triggers_2026-10-29\`. RVAs are Freelancer 1.1's Content.dll / Server.dll (vanilla 1.1
+and HDE 0.7.1 / upstream: same TimeDateStamp 0x3ECBB142, same RVAs; v1.0's differ, its signatures still match once).
+- **Root:** Content.dll RVA **0x12EE14** = the story mission's controller id (u32), the return of
+  `pub::Controller::Create("Content.dll", "Mission_xx")` stored by the story's load path (0x6900, store 0x6A42), start
+  path (0x6BA0, store 0x6C41) and 0x6280 (store 0x637D, Mission_01b). **New Game writes it through the load path**
+  (hardware write watch: the one writer at RVA 0x6A42 - newplayer.fl's `[StoryInfo] Mission = Mission_01a`; verified in
+  game 30 Oct). A free-roam save (`No_Mission`) never calls Create; it reloads Content.dll, so the global reads 0
+  (SaveC701: "story id 0"). **Never cleared**: after the story controller dies (the player's death, M12, 29 Oct) the global
+  still holds the old id (11) - the id must be checked against Server.dll's list every time.
+- **Server.dll's controller list** (std::list, head pointer at RVA **0xAF644**; lookup RVA 0x63600): node +0x08 the
+  instance (IDLL*), +0x0C the HMODULE, +0x18 the id. The story mission = the node with that id and Content.dll's
+  module; its instance +4 holds the same id (IDLL base constructor).
+- **Mission object:** +0x1C4 the active list (std::list, head pointer **+0x1C8**, size +0x1CC; node value at +8 = a
+  trigger-map node), map at +0x1B0. **Trigger-map node:** +0xC id (CreateID of the nickname), +0x10 state (0 armed /
+  ACTIVE, 1 inactive, 2 complete), +0x14 Condition*. **Condition:** +0 vtable, **+4 its mission** (every condition of
+  M12, M01a and M01b pointed back - the reader requires it), +0xC / +0x10 per type: Cnd_Timer elapsed / duration
+  (floats), Cnd_Destroyed the count.
+- **Signatures** (each unique in v1.0, v1.1, HDE 0.7.1; operands from the game's code, resolved once per Content.dll /
+  Server.dll load, a missing one cached as missing):
+  - writer (Content.dll RVA 0x1AD8F): `8B 83 ?? ?? ?? ?? 8B 38 83 C4 0C 3B F8 74 ?? 8B FF 68 ?? ?? ?? ?? 56 FF D5 8B 47
+    08 8B 48 0C 51 68 ?? ?? ?? ?? 56 FF D5 8B 47 08 83 C0 10 8B 40 04 8B 10 83 C4 14 56 8B C8 FF 52 14` - +2 the list head
+    offset (u32 0x1C8), +27 the list value (8), +30 the id (0xC), +45 the record = state (0x10), +48 the Condition in the
+    record (4).
+  - story id store (Content.dll RVA 0x6C2F): `FF 15 ?? ?? ?? ?? 6A 00 68 00 10 00 00 68 ?? ?? ?? ?? A3 ?? ?? ?? ?? E8 ??
+    ?? ?? ?? 8B 4C 24 38` - +19 the global's address.
+  - controller lookup (Server.dll RVA 0x63600): `8B 15 ?? ?? ?? ?? 8B 0A 56 33 C0 3B CA 57 8B 7C 24 0C 74 16 8B 37 39 71
+    18` - +2 the list head's address, +24 the id offset (0x18).
+- **The live list = the save's list, exactly:** SaveS182 (M12.hole) loaded -> the same 10 ids, all armed; a native save
+  (`save`) between two reads wrote the same 10 `[TriggerSave]` ids **in the live list's order** with the same condition
+  values (Cnd_Destroyed = 2, Cnd_Timer = 39.066414 vs live 39.07). The key save SaveS022 (M01b, Act_Save) -> its one
+  trigger `space_enter` (Cnd_SpaceEnter). The list is in activation order and the save writes it so: after a load in
+  ascending id order (message 0x1000 walks the pending set, an ordered set - SaveS182's file order was another), each
+  trigger armed later appended; compare a save with a live read as sets.
+- **A load restarts every saved condition:** SaveS182 saved Cnd_Timer = 5.266663 for three timers; 0.57 s after the load
+  all three read 0.57 (in-session reload: 0.43) and ran 1:1 with the clock - activation (RVA 0x182C0) resets each re-armed
+  condition after the loader restored it (the critic's static reading, confirmed). The saved timer / kill-count state is
+  dead data: `tr_to_st01` (10 s) fires 10 s after the load, not 4.7 s; `decloak_vc_wing_3` counts kills from 0 again.
+- **Activation fired nothing at once on SaveS182** (live set = saved set); then the chain ran as m12.ini says:
+  `tr_to_st01` fired at 10 s and armed `land_on_base` (Cnd_BaseEnter), `decloak_vc_wing_2` fired at 30 s and armed
+  `decloak_vc_wing_4`. New Game: M01a's prologue chain (`tr_fp7_cam_end` Cnd_Timer 68.5 = the 68.5 s Freeport 7 scene),
+  at Manhattan `rtcd_cityscape` / `lce_bar` / `chs_juni_bar`. The "Awaiting" (21660) after an M12 mid-mission load: the
+  objective setter `timer_setNNObj_assist_von_claussen` (Cnd_CommComplete = dx_m12_0470_von_claussen) is armed and
+  waits for a comm that is not replayed - the live table shows it.
+- **Condition vtables** (RVAs, Freelancer 1.1): verified in game by the trigger's ini condition - Cnd_BaseEnter
+  0x115770, Cnd_CharSelect 0x1156E4, Cnd_CommComplete 0x1156B4, Cnd_Destroyed 0x115640, Cnd_DistShip 0x1155E8,
+  Cnd_DistVec 0x1155C0, Cnd_LocEnter 0x1153E0, Cnd_RTCDone 0x115208, Cnd_SpaceEnter 0x1151B0, Cnd_Timer 0x115884;
+  Cnd_WatchTrigger 0x115A40 static only; the other 33 scripted only (`cnd_act_vtables.txt`; the reader does not name
+  them, the debug output shows `?Cnd_X` and flags a disagreement with the ini as MISMATCH).
+- Not verified: the 0x6BA0 / 0x6280 writers (a mission change inside a session); Server.dll's second list (RVA 0xAF638,
+  controllers created during a dispatch: the reader walks the first only - reading from the frame / a debug command is
+  outside any dispatch); the thread (the reads ran on the game thread: the debug command, `OnFrame`).
+
 ## Main menu, load screens, pause menu (verified in game 17 Oct 2026)
 - **Front-end buttons** (main menu and its screens) are FlControls with their own mouse handlers; a release does
   `parent->vt[0x5C](0x3004, id, 0)` if enabled (the screen plays the click sound): handler 0x5664A0 (main menu:
   enabled byte +0xE6, id +0xEC) and 0x59A3D0 (character select etc.: enabled +0x498, id +0x4A4).
 - **Main menu** = static object 0x67B780 (vt 0x5E27CC, handler vt[0x5C] = 0x566BD0). Unnamed buttons with ids
   0x10 New Game, 0x03 Load Game, 0x04 Multiplayer (confirmation dialog 0x4740F0), 0x0A Options, 0x0B Exit
-  (0x471F30); ids 0x10/0x03/0x0A are acted on after a short transition (+0x568 id, +0x56C pending, then +0x80).
+  (0x471F30; **asks "EXIT GAME?"** - verified 28 Oct 2026, HDE and vanilla: `ExitButtonBox0` = YES (left),
+  `ExitButtonBox1` = NO, the MMOk button class vt 0x5E614C; YES ends the process at once, exit code 0; the pause menu's
+  Quit = the PauseButtonBox with action code 5 (`pausecodes`), asking in NN_Confirm `Confirm_delBtnYes` / `No`); ids 0x10/0x03/0x0A are acted on after a short transition (+0x568 id, +0x56C pending, then +0x80).
 - **Main menu load screen** = character select, static 0x67AE10 (vt 0x5E2A84, handler 0x56C360): buttons
   LoadCharacter (+0xC8, id 0x3003), DeleteCharacter (+0xCC), MainMenu; save list = list control at +0xD8 (vt
   0x5E5CB4, also the `CharSelDesc` control): +0x8A4 rows, +0x8AC selected (-1 none), +0x8C row data (CHARACTER_ID =
@@ -1480,6 +1741,80 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
 - **The death / mission-failed dialog** after `selfdestruct`: `LoadAutosaveButton`, `LoadSavegameButton` (MMOk text
   buttons) appear ~2 s after the death camera; the pause menu's quit asks in `NN_Confirm` (`Confirm_delBtnYes` / `No`),
   the front-end DELETE asks in the same `NN_Confirm`.
+
+## Multiplayer (verified in game 28 Oct 2026, HDE 0.7.1 client + FLServer + HDE's FLHook on one machine; the whole picture `docs\MULTIPLAYER.md`)
+- **server.dll in a multiplayer client:** RemoteClient.dll imports Server.dll (Freelancer.exe does not; import tables of
+  the vanilla 1.1 files), so it is always loaded there - with no world: `pub::SpaceObj::GetLocation` returns code != 0
+  and **zeroed** outputs (not NaN), GetRep / GetAttitude / GetShieldHealth / GetTradelaneNextAndPrev /
+  Player::InspectCash / GetJumpTarget fail; `pub::System::InZones` works (static data). Mode: Common.dll `SinglePlayer()`.
+- **The client's objects** (both modes): `CObject::Find(const u32&, Class)` (AddRefs: `Release`), the non-virtual
+  `EngineObject::get_position / get_orientation`, `CEqObj::attitude_towards(const CEqObj*)` (an NPC towards the player:
+  0.65 friendly traffic, -0.65 / -0.30 pirates near Manhattan), `CEqObj::get_vibe` (rep id; `RepName` then gives "Ens.
+  Barry Washington"), `Reputation::Vibe::GetAffiliation(rep, group, false)`, `Reputation::get_short_name(group)`,
+  `CSolar::get_dest_system`, `CSolar::get_next / get_prev_trade_ring`, the ship's CEShield (equipment manager +0xE4,
+  FindFirst(1 << 8): an NPC's 600/600). All exported by HDE's and the vanilla 1.1 Common.dll.
+- **The player's cash:** Freelancer.exe int at 0x673364 (`exe::PlayerCash`): getter 0x4C4CE0, setter 0x4C4CF0 (arg 2 =
+  set without the "cash up" sound 0x26) - the only .data int that held a new MP character's 2000.
+- **Modal dialog loops:** 0x4740F0 (the MULTIPLAYER button's "Which type of multiplayer game?" prompt: `PromptYes` =
+  LAN, `PromptNo` = INTERNET, `PromptExit`) and its siblings 0x473A00..0x474600 loop on Sleep(10), 0x5B2360 (the frame timer
+  0x42D770 + the up-time 0x67ECD8; not the message pump, which is 0x5B0B60 - corrected 30 Oct 2026), the UI update 0x59E080 and a render that calls UiRender (0x473DC4) and CursorUpdate (0x473F35) - never the
+  frame update 0x5B2890. A click that opens one does not return until it closes. The prompt's loop leaves the game's
+  keyboard focus (`exe::KeyFocus`) where it was, so a modal test by keyboard focus misses it (`docs\kb\menu-screens.md`,
+  30 Oct 2026).
+- **The multiplayer front end:** account screen `AccountID` / `SelectServer` / `Back` (only while no account key
+  exists); server list `ServerTable` (+ `MainMenu`, `SetFilter`, `Refresh`, `Connect` once a row is selected); character
+  list `CharacterTable`, `NewCharacter`, `LoadCharacter`, `DeleteCharacter`, `Back`, `MainMenu`, texts `MOTD`,
+  `ServerDetails`; new character `CharacterName` (the edit has the focus: typed characters land), `SelectShip` = CREATE,
+  `Back`; refusal `NN_Error` + `ErrorOkayButton` ("I'm sorry, but that account is already in use on this server" after a
+  killed client); death `RespawnButtonButton`, `NewPlayerButtonButton`, `NewServerButtonButton`, `MainMenuButton`; the
+  pause menu's codes 1, 6, 7, 4, 5 (5 = Quit, NN_Confirm).
+- **Table controls** (vt 0x5E511C, mouse handler 0x58F230 = `exe::TableClick`): visible rows = (+0x4A8 - +0x4A4) / 4,
+  row flags at +0x4C4 + 12 * row (bytes 0 and 1 set = selectable; row 0 = never), hovered +0x4E8 / +0x4EC, selected
+  +0x4D8 / +0x4DC; a press selects and sends parent vt[0x5C](0x300D, table, row) on a change, a double click also
+  0xF002 (the screen's action). Setting the selection the same way enabled `Connect` / `LoadCharacter`.
+- **Chat senders** (`exe::ChatFlush` arg 1): FLHook's server lines 65536 (0x10000); players' lines their client ids.
+- **Registry** (Common.dll, HKCU `...\Freelancer\1.0`): `MPAccountName`, `MPAccountNameSig` (35 bytes each), `InstallKey`
+  (written on the first multiplayer session). FLServer.exe resolves its data folder (Common.dll GetUserDataPath, which
+  calls SHFOLDER's SHGetFolderPathA) in its own start-up, before DACOM's libraries; HDE's FLHook resolves the save folder
+  itself (`[DACOM] SavePath` in dacom.ini, else `%UserProfile%\My Documents\My Games\Freelancer`, created).
+- **Comms** in multiplayer arrive at Freelancer.exe's comm receipt (0x4CE000) as in single player (chatter, dock grants).
+- **One client interface for both modes** (28 Oct 2026; static + verified in game, multiplayer): Freelancer.exe exports
+  its client object `Client` (0x67EA64; vtable 0x5E6674 stored at 0x5B084A; `GetClientInterface` 0x5B0860 returns it,
+  `GetChatClientInterface` 0x5B0870 its chat sibling 0x67EA68). **Single player:** Server.dll calls rpclocal.dll's
+  IClient (vtable rpclocal +0x33978), whose methods pack each call into a packet (objectives type 0x35, a mark 0x5B) and
+  send it through its own slot 9; rpclocal fetches the exe's object by `GetProcAddress(exe, "GetClientInterface")`
+  (rpclocal 0x6D8EED0) and delivers there. **Multiplayer:** RemoteServer.dll imports `Client` (and
+  `HandleConnectError`) from FreeLancer.exe and calls its virtuals from the network's packets. The exe's vtable follows
+  the FLHookSDK IClient layout (0-based): **72** SETMISSIONOBJECTIVES = 0x5A5BC0 (thiscall(client, packet) ret 8:
+  rebuilds the client's objective list at [0x672950] - what `exe::ClientObjective` reads), **75** MARKOBJ = 0x5A5ED0
+  ((client, obj, state) ret 0xC), **83** REQUEST_RETURNED = 0x53BF80, **110** PLAYERLIST = 0x5A6380 ((client, wchar_t*
+  name, u32 client id, char flag) -> the player map 0x67E770), **21** SETSHIPARCH = 0x437510 -> 0x4C3E20 (stores
+  [0x67337C]), **22** SETHULLSTATUS -> 0x4C4F80 ([0x673380]), **24** SETEQUIPMENT = 0x437540 -> 0x4C4070 (the
+  EquipDescList at 0x672960: head +4, count +8); slots 18-20 are the CDPClientProxy stubs. FLvibed patches slots 72 /
+  75 / 83 there (`controller\src\host\events.cpp` HookExeClient) instead of rpclocal's: verified in multiplayer - a job
+  taken from the server's board gave the objective ("Launch into Space", then "Find your target, Tom Lock, by the
+  mission waypoint." with its navmarker), the job's marks (ids 59, 60), the dock replies (3 queued, then 4 granted at the
+  Manhattan ring) and the autopilot's objective mode (travel by lanes to the waypoint, the marked target destroyed).
+  Single player through the same slots (leg gate mpb1, M10): the client copy's navmarkers equal the Content.dll hook's
+  for every step (7962,0,2831; the 0,0,0 one dropped by both), the packet arrives just after the hook's event, no reread
+  takes over; marks come twice per call in both paths (the game's own, the baseline shows the same).
+- **The client's own player data** (both modes): the player map 0x67E770 (`exe::PlayerList`, MSVCP60 map: +4 head;
+  node +0 left / +4 parent / +8 right, +0xC client id, +0x10 the name wstring {+4 ptr, +8 length}; nil links 0) holds
+  every player by client id, the client's own entry included - a player's own reputation has no name the client can
+  format ("%s0 %s1 %s2 %d0"), the map has the character name (verified: "FLvibedTester", client id 1 =
+  `CSimple::GetOwnerPlayer` of our ship). Ship archetype [0x67337C] (an HDE plugin detours its getter 0x4C3E10: its ret
+  is a jmp in memory, so `exe::PlayerShipArch` is signed at 0x4C3ED7), equipment `EquipDescList` at 0x672960 (17 items on
+  the starter ship in multiplayer; Common.dll `EquipDescList::get_cargo_space_occupied` gives the hold used). Common.dll's
+  static data answers in both modes: `Universe::get_base(id)` (IBase +4 id, +0xC strid_name), `BaseDataList_get()->
+  get_base_data(base)` (+0x10 the market map, head +0x14; node +0xC good, +0x10 MarketGoodInfo {+0 good, +4 price}).
+- **The LAN list and IPv6** (verified 28 Oct 2026): the vanilla 1.1 client lists a LAN server by its IPv6 link-local
+  address only and the connect fails. Freelancer.exe 0x5ACF6A (after an import that returns -1 for a non-IPv4 address
+  string) is where HD Edition's exe skips such entries: `40 74 63 48 51 8D 54 E4 20 52 83 E9 08` over vanilla's `51 8D
+  4C 24 20 51 8D 8C 24 C8 00 00 00` (FLUF's ClientPatches "Prevent ipv6 address from appearing", Freelancer.exe +
+  0x1ACF6A; FLUF's MiscFixes::StopIPV6 adds the same offset to Common.dll - a slip there). Applied in memory by the test
+  helper, the vanilla 1.1 client connected to the vanilla server. `Freelancer.exe -s<ip>:<port>` (Discovery's
+  launcher, `docs\research\discovery.md`) changed nothing in the LAN list. HDE's Common.dll differs from vanilla 1.1's
+  in 4 bytes only (a `jl` -> `jmp` at file 0xE698E, 0x634698E, float code; 3 bytes of .rdata).
 
 ## Options screen `NN_Preferences` (verified in game 25 Oct 2026, HDE 0.7.1, 4K 16:9; screenshots `research\experience\ui_2026-10-25\`)
 - One class for both entries (the main menu's Options and the pause menu's code 4). Page buttons are icon buttons
@@ -1665,6 +2000,12 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
 - Reference overlay implementation: `repos\FLUF\FLUF\Source\Client\Ui\ImGui\ImGuiD3D8.cpp`.
 
 ## Missions, strings, saves
+- **A "Destroy ..." objective need not end on its kill** (script data, 30 Oct 2026; `mission::StepAdvanceOf`, the
+  install's sweep; verified in game for M13): M13 24420 "Destroy the Nomads" ends on `cap_timer` -> `trent_go_back`
+  (Cnd_Timer 15; it also `Act_LockDock ... unlock`s Toledo's ring and arms `land_on_base`) -> `ether_one` (Orillion's
+  0460) -> `go_home` 24430, ~20 s after 24420 shows, while `watch_cap2` (NomadCap2 destroyed) only hides the objective -
+  set td1: 24420 -> 24440 took 27.4 s without a shot at Cap2. M01b 22080 "Destroy the Hostile Fighters" is the only
+  other such step (the scouts flee on an 8 s Cnd_Timer).
 - Mission scripts run in DLLS\bin\Content.dll and talk to the player through server.dll's pub:: API.
   IAT-hooking Content.dll's imports gives exact events: `pub::Player::SetMissionObjectives(const u32& client,
   const u32&, const MissionObjective*, u32 count, const FmtStr& title, u8, const FmtStr& text)`,
@@ -1688,6 +2029,11 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
   Get-FLMissionShips and, since session 12, the logic's mission::MapSpawns (host API v17 SpawnedShips). Mission ships
   with `random_name = true` share no unique pilot name. **Unverified:** whether the game reuses ship space ids after a
   load (the logic's spawn list spans the process; it maps only spawns after the last menu - autopilot `NoteMenu`).
+  **Verified (30 Oct 2026, A37 S1, 4 saves):** within a loaded game the space ids are stable - the contacts right after the
+  load and 10 game seconds later had the same ids (49/49, 32/32, 48/48, 48/48; one fewer where a ship died). The
+  controller host used to keep the objective's title and the mission marks across a load (a free-roam save loaded after a
+  mission still listed that mission's marks and title); **fixed 30 Oct 2026**: they (and the comms heard) start over at
+  each game load ("The client's copy of the objectives and save loads" below).
 - String ids: dll index = ids >> 16 (0 resources.dll, then freelancer.ini [Resources] DLL order),
   LoadStringW(ids & 0xFFFF).
 - Content.dll strings: story states `Mission_01a` ... `Mission_13`, `No_Mission` (free roam).
@@ -1723,7 +2069,8 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
   `%M` ("Destroy the Hostile Ships%M", 21830; HDE's strings do not): dropped, verified in game on both (host v24
   ObjectiveText, HUD 2's headline).
 - **The client's copy of the objectives and save loads (25 Oct 2026, in game):** every save load reloads Content.dll
-  (the controller host's IAT hooks are re-applied ~0.5-1 s after each load, `events: Content.dll hooks installed`), and
+  (until 30 Oct 2026 the controller host's IAT hooks were re-applied ~0.5-1 s after each load, `events: Content.dll hooks
+  installed`; now at the load itself, below), and
   the mission's objective is restored during the load, before the hooks are back: **a mission save loaded in a running
   game brings no objective event** (only the first load after the start is seen: Content.dll was hooked before it).
   The game keeps its own copy: Freelancer.exe 0x4C4FF0 `const void* cdecl(int index)` (`exe::ClientObjective`; count
@@ -1734,6 +2081,17 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
   M09_ck_arch 23635; a free-roam save: empty; vanilla 1.1 the same, "...Ships%M" formatted to "Destroy the Hostile
   Ships"). Host v25 ObjectiveReread takes it over then (event `objective-reread count= obj=`); its 'N' values are not
   read (unverified in the client copy).
+  **The load's own moment (verified in game 30 Oct 2026, HDE 0.7.1, instance 2, SaveS208 -> S182, -> S010 -> S023 in one
+  game, runs `research\experience\runs\loadreset_2026-10-30_0910` and the commit's re-check):** the first game after the
+  start reuses the Content.dll the start loaded (no load notification for it); every later load maps a fresh copy, and the
+  loader's DLL notification (LdrRegisterDllNotification, reason 1 "loaded") for `content.dll` comes **before** the new
+  game's mission runs, with its server.dll imports **already bound** (3 of 3 loads) - before the load's marks (S182: 7
+  marks 0.4 s later) and its SetMissionObjectives (S182: title 24200 "MISSION 12"). So the controller host forgets the
+  title, the marks and the comms heard there, installs the Content.dll hooks at once (the load's objective, title, comms
+  and spawns are seen as the first game's are) and counts the load (HostApi v34 GameLoads; the logic then forgets
+  mission.cpp's last script / text and shown objectives). Events `game-load <n>: Content.dll loaded - forgot title .. (imports
+  bound 1, hooks 15)` and `game-load <n>: mission memory forgotten`. After the fix S182 read its own title 24200 and the
+  by-title stand-in M12 (was M07's 23200), S023 no title and no marks (was M13's title and S010's marks).
 - **Marks:** server.dll `pub::Player::MarkObj` forwards to the client interface (rpclocal.dll in single player,
   FLHookSDK IClient slot 75 Send_FLPACKET_SERVER_MARKOBJ); a job never calls it - its marks are the objectives' `R`
   arguments. Host event `mark id= state=` (vtable hook, found by the call's signature in Server.dll). A save load started

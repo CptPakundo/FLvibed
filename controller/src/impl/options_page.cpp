@@ -1619,7 +1619,11 @@ static void DrawHelp(const uikit::Fonts& f)
     if (text.empty())
         return;
     render::SetFont(f.body);
-    const std::vector<std::wstring> lines = Wrap(f.body, text, l.helpW, 3);
+    // three lines fit above the panel; a longer text widens the box to the screen's left margin before it is cut
+    // (30 Oct 2026: the rumble help lost its last word at 1600x1200)
+    std::vector<std::wstring> lines = Wrap(f.body, text, l.helpW, 99);
+    if (lines.size() > 3)
+        lines = Wrap(f.body, text, std::max(l.helpW, l.helpRight - 0.02f * l.sw), 3);
     float w = 0;
     for (const std::wstring& ln : lines)
         w = std::max(w, static_cast<float>(render::TextWidth(f.body, ln)));

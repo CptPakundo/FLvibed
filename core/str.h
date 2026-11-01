@@ -33,4 +33,30 @@ inline std::string StripComment(std::string s)
         s.erase(semi);
     return s;
 }
+
+// UTF-8 <-> UTF-16 (the text the game and Windows draw). Length-based: an embedded NUL is kept. The one conversion
+// of every module part (29 Oct 2026: text.cpp, the subtitles' data.cpp and uikit.cpp each had their own).
+inline std::wstring Widen(const char* utf8, size_t len)
+{
+    if (!utf8 || !len)
+        return L"";
+    const int n = MultiByteToWideChar(CP_UTF8, 0, utf8, static_cast<int>(len), nullptr, 0);
+    std::wstring w(n > 0 ? n : 0, L'\0');
+    if (n > 0)
+        MultiByteToWideChar(CP_UTF8, 0, utf8, static_cast<int>(len), &w[0], n);
+    return w;
+}
+inline std::wstring Widen(const std::string& s) { return Widen(s.data(), s.size()); }
+inline std::wstring Widen(const char* s) { return s ? Widen(s, strlen(s)) : L""; }
+
+inline std::string Narrow(const std::wstring& w)
+{
+    if (w.empty())
+        return "";
+    const int n = WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
+    std::string s(n > 0 ? n : 0, '\0');
+    if (n > 0)
+        WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), &s[0], n, nullptr, nullptr);
+    return s;
+}
 } // namespace str

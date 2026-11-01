@@ -15,13 +15,14 @@ enum Kind : u8
     Cutscene, // mode space -> cutscene (a story scene in space)
     Success,  // the mission's result: the objective list cleared (SetMissionObjectives count 0)
     Kill,     // the `value`-th destroyed solar the mission marked (counted per leg)
+    Save,     // the mission's checkpoint save with description id `value` (pub::Save: GAME SAVED; HostApi v35)
 };
 struct Row
 {
     const char* leg;     // "M01a"
     const char* cp;      // "M01a.wing" (the LiveSplit segment name is the part after the dot)
     Kind kind;
-    u32 value;           // Obj: the text id; Kill: n; else 0
+    u32 value;           // Obj: the text id; Kill: n; Save: the save's ids; else 0
     const char* segment; // what happens in the segment this checkpoint ends
 };
 constexpr Row kRows[] = {
@@ -42,7 +43,7 @@ constexpr Row kRows[] = {
     {"M01b", "M01b.wave3", Obj, 22080u, "waypoint leg 2"},
     {"M01b", "M01b.wp3", Obj, 22085u, "fighter wave 3"},
     {"M01b", "M01b.platforms", Obj, 22050u, "waypoint leg 3 -> the Rogue base appears (turn ~120 deg left at the Beta-4 comm)"},
-    {"M01b", "M01b.end", Obj, 22055u, "the two weapon platforms only, base explosion scene, GAME SAVED (our leg flies on to land on Pittsburgh: not timed)"},
+    {"M01b", "M01b.end", Save, 32120u, "the two weapon platforms only, base explosion scene, GAME SAVED (our leg flies on to land on Pittsburgh: not timed)"},
     {"M02", "M02.control", Control, 0u, "Manhattan base, launch + the M02 space-enter scene (55 s)"},
     {"M02", "M02.lane1", Obj, 22225u, "to the first lane with King"},
     {"M02", "M02.colorado", Obj, 22235u, "lanes + the Colorado gate (King must follow)"},

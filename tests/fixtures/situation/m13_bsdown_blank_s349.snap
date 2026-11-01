@@ -1,0 +1,65 @@
+snap v5
+obj seq=3 title=24400 marks=19 refs_obj= title_escape=0
+step text=0 refs= ref_obj= nav=0 nav_pos=0,0,0 nav_system=0 verb=none job= job_rows=0 ref_placed=0 ref_pos=0,0,0
+script from_last=1 by_title=0 standin=24425 file=M13\m13.ini next= pending= source_live=1
+inigoal kind=3 object=0 name=nomadcap pos=0,0,0 dist=0 count=1 subject=player trigger=cap_dies leads=cap2 file=M13\m13.ini by_entry=0 placed=0 obj_pos=0,0,0 objects=2212950529:0:0:0:0
+inigoal kind=1 object=2771056453 name=Sinclair pos=0,0,0 dist=300 count=0 subject=player trigger=wait_for_trent_again leads=escort_sinclair file=M13\m13.ini by_entry=1 placed=0 obj_pos=0,0,0 objects=
+inigoal kind=1 object=3217613577 name=osiris pos=0,0,0 dist=1000 count=0 subject=player trigger=in_osiris_range leads=dock_with_osiris file=M13\m13.ini by_entry=1 placed=0 obj_pos=0,0,0 objects=
+after leads=cap2 file=M13\m13.ini kind=1 object=2771056453 name=Sinclair pos=0,0,0 dist=300 count=0 subject=player trigger=wait_for_trent_again leads=escort_sinclair file=M13\m13.ini by_entry=1 placed=0 obj_pos=0,0,0 objects=
+after leads=cap2 file=M13\m13.ini kind=1 object=3217613577 name=osiris pos=0,0,0 dist=1000 count=0 subject=player trigger=in_osiris_range leads=dock_with_osiris file=M13\m13.ini by_entry=1 placed=0 obj_pos=0,0,0 objects=
+after leads=escort_sinclair file=M13\m13.ini kind=1 object=3217613577 name=osiris pos=0,0,0 dist=1000 count=0 subject=player trigger=in_osiris_range leads=dock_with_osiris file=M13\m13.ini by_entry=0 placed=0 obj_pos=0,0,0 objects=
+after leads=dock_with_osiris file=M13\m13.ini kind=1 object=2771056453 name=Sinclair pos=0,0,0 dist=300 count=0 subject=player trigger=wait_for_trent_again leads=escort_sinclair file=M13\m13.ini by_entry=0 placed=0 obj_pos=0,0,0 objects=
+prestage last_real=24425 next= next_ok=1 next_pos=6350,0,-5080 next_text=24420 stage_from=24425 stage_ok=1 stage_pos=6350,0,-5080 stage_text=24420
+nag has=0 pos=0 object=0 name= p=0,0,0 dist=0
+nextnag has=0 pos=0 object=0 name= p=0,0,0 dist=0
+live ok=1 reason= script=M13\m13.ini controller=11 ms=0.0427000001
+livetrig id=2458198285 state=0 cond=Cnd_Destroyed nick=beta1_down ini=cnd_destroyed leads= hops=-1
+livetrig id=2466975689 state=0 cond=Cnd_Destroyed nick=king_dies ini=cnd_destroyed leads=FAIL hops=0
+livetrig id=2467007629 state=0 cond=Cnd_Destroyed nick=bad_wing4_down ini=cnd_destroyed leads= hops=-1
+livetrig id=2467384448 state=0 cond=Cnd_Destroyed nick=bad_wing3_down ini=cnd_destroyed leads= hops=-1
+livetrig id=2467564674 state=0 cond=Cnd_Destroyed nick=bad_wing2_down ini=cnd_destroyed leads= hops=-1
+livetrig id=2468953796 state=0 cond=Cnd_Destroyed nick=juni_dies ini=cnd_destroyed leads=FAIL hops=0
+livetrig id=2771569870 state=0 cond=Cnd_Destroyed nick=sinclair_dies ini=cnd_destroyed leads=FAIL hops=0
+livetrig id=2934713227 state=0 cond=Cnd_Destroyed nick=alpha1_down ini=cnd_destroyed leads= hops=-1
+livetrig id=3061015296 state=0 cond=Cnd_Destroyed nick=gama1_down ini=cnd_destroyed leads= hops=-1
+livetrig id=3061621511 state=0 cond=Cnd_Destroyed nick=gama2_down ini=cnd_destroyed leads= hops=-1
+livetrig id=3174355340 state=0 cond=Cnd_Destroyed nick=osiris_dies ini=cnd_destroyed leads=FAIL hops=0
+livetrig id=3207436674 state=0 cond=Cnd_Destroyed nick=orillion_dies ini=cnd_destroyed leads=FAIL hops=0
+livetrig id=2591361359 state=0 cond=Cnd_Timer nick=cap_timer ini=cnd_timer leads=cap2 hops=0
+place system=3086998659 base=0 space=1 clock=86444.792744240418 entry=0 entry_pos=0,0,0
+pilot ok=1 op=19 locked=0 lane=0 jumping=0 cruise=0 entry=0 exit=0 leader=0 target=26 pos=6778.04736,276.65036,-4067.23779 vel=-72.3469009,20.9275112,41.8811417 hull=0.97690475 shield=0.192784548 tractor=1500 system=3086998659
+holds mission=0 dock=0 grant_ms=-1 reply_seq=0 reply_ship=0 reply_kind=0 reply_resp=0 result_seq=0 result_type=0
+settings knowledge=1 script_goals=1 stale_destroy_wait=1 prestage_next=1 airlock_fly_through=1 pre_aggro=0 tractor_exit_run=0 tractor_exit_range=600 big_coast=1 survival_calm=1 survival_stage=1 survival_until_jump=1 follow_distance=1500
+exec mode=7 target=26 obj=1 survival=0 our_dock=0 spawns=14
+queue seq=3 mode=combat target=26 sub=combat sub_target=0 action=fight tr_dest=0 tr_object=0 tr_pos=0,0,0 lock=0 lock_have=0 lock_p2=0,0,0 cruise_lock=0 leash_ship=0 leash_dist=0 last_dock=0 escort=0 bad_goal= dead_goals= script_marks= seen_alive=2212950529 seen_listed=2212950529 last_real=24425 arrived=0 step_age=0 escorted=0 surv_title=24400 surv_mission=0 surv_ended=0 surv_system=3086998659 survival=0 mission_leader=0 via_next=0 arrive_retries=0 tr_pass=0
+decided rule=threat-fight mode=combat target=0 action=fight keep=0
+contact id=26 type=65536 name_ids=0 base=0 ship=1 dock=0 targetable=1 pos=6543.80811,355.266693,-3920.32715 dist=287.456604 health=0.50156188 attitude=-0.600000024 asked=1 att_known=0 att=0 target=12 targets_player=1 max_hit=4000 rep=16 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=25 type=65536 name_ids=0 base=0 ship=1 dock=0 targetable=1 pos=6520.63672,374.661896,-3857.66553 dist=346.102631 health=0.692225516 attitude=-0.600000024 asked=1 att_known=0 att=0 target=12 targets_player=1 max_hit=4000 rep=15 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=21 type=65536 name_ids=0 base=0 ship=1 dock=0 targetable=1 pos=7084.4624,-310.236237,-4031.74219 dist=663.012817 health=1 attitude=0.600000024 asked=1 att_known=0 att=0 target=26 targets_player=0 max_hit=4200 rep=11 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=16 type=65536 name_ids=0 base=0 ship=1 dock=0 targetable=1 pos=7038.73779,-359.633972,-4140.98291 dist=691.560242 health=0.100000001 attitude=0.600000024 asked=1 att_known=0 att=0 target=0 targets_player=0 max_hit=4200 rep=6 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=19 type=65536 name_ids=0 base=0 ship=1 dock=0 targetable=1 pos=7243.72461,-228.213593,-4300.79688 dist=725.460388 health=0.428206921 attitude=0.600000024 asked=1 att_known=0 att=0 target=25 targets_player=0 max_hit=4200 rep=9 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=20 type=65536 name_ids=0 base=0 ship=1 dock=0 targetable=1 pos=7126.19385,-277.740051,-4488.60205 dist=778.525879 health=1 attitude=0.600000024 asked=1 att_known=0 att=0 target=26 targets_player=0 max_hit=5800 rep=10 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=17 type=65536 name_ids=0 base=0 ship=1 dock=0 targetable=1 pos=7454.31885,-219.150681,-3657.58765 dist=933.260437 health=0.100000024 attitude=0.600000024 asked=1 att_known=0 att=0 target=0 targets_player=0 max_hit=4200 rep=7 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=2264245635 type=32768 name_ids=237038 base=0 ship=0 dock=0 targetable=0 pos=6350,0,-5080 dist=1133.77563 health=1 attitude=0 asked=0 att_known=1 att=-0.900000036 target=0 targets_player=0 max_hit=120000 rep=17 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=2439394048 type=32 name_ids=261194 base=3149903104 ship=0 dock=1 targetable=1 pos=1500,0,-2191 dist=5608.43896 health=1 attitude=0 asked=0 att_known=1 att=0.600000024 target=0 targets_player=0 max_hit=9.99999962e+35 rep=-1855573248 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=3130422218 type=2 name_ids=196842 base=0 ship=0 dock=0 targetable=1 pos=-589,0,-2712 dist=7495.77148 health=1 attitude=0 asked=0 att_known=1 att=0.600000024 target=0 targets_player=0 max_hit=100 rep=-1164545078 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=2926089285 type=2048 name_ids=60211 base=0 ship=0 dock=0 targetable=1 pos=-5027,0,-18614 dist=18736.166 health=1 attitude=0 asked=0 att_known=1 att=0 target=0 targets_player=0 max_hit=9.99999962e+35 rep=-1368878011 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=2926433351 type=64 name_ids=261793 base=0 ship=0 dock=0 targetable=1 pos=46983,0,-10694 dist=40748.3594 health=1 attitude=0 asked=0 att_known=1 att=0 target=0 targets_player=0 max_hit=9.99999962e+35 rep=-1368533945 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+contact id=2465349960 type=4 name_ids=261010 base=0 ship=0 dock=0 targetable=1 pos=70523,30000,-62152 dist=91218.0703 health=1 attitude=0 asked=0 att_known=1 att=0 target=0 targets_player=0 max_hit=100 rep=-1829617336 dock_port=0 jumping=0 lane=0 pre_hostile=0 player=0 radius=0 named=0 dock_ring=0
+spawn id=13 arch=3038813056 pos=4781.91797,-180.67099,-2792.95728
+spawn id=14 arch=3038813056 pos=3908.45581,102.864159,-2398.1521
+spawn id=15 arch=3038813056 pos=3927.23999,101.335304,-2351.84009
+spawn id=16 arch=2793834180 pos=4263.4165,105.4795,-2524.53296
+spawn id=17 arch=2793834180 pos=3278.84448,142.38443,-2221.89087
+spawn id=18 arch=2793834180 pos=3245.58545,141.543411,-2255.26953
+spawn id=19 arch=2793834180 pos=5476.99414,-116.798187,-3305.93677
+spawn id=20 arch=2992982989 pos=3552.97876,601.719238,-2507.44336
+spawn id=21 arch=2793834180 pos=4314.41113,-211.502365,-2453.50659
+spawn id=22 arch=3038813056 pos=3411.67822,49.4628716,-2553.65991
+spawn id=23 arch=3038813056 pos=3458.5498,51.2202187,-2570.97925
+spawn id=24 arch=3038813056 pos=4026.38013,114.55706,-2425.08789
+spawn id=25 arch=3038813056 pos=4050.65356,114.857109,-2381.37646
+spawn id=26 arch=3038813056 pos=4038.98901,139.698853,-2403.66602
+end
+#arbiter differ pre-stage-next mode=travel target=0 action=pre-stage keep=0 plan=travel
+#game-hash 0x0e7bcbef step=0x54f04056

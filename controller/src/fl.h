@@ -265,6 +265,16 @@ bool GamePaused();
 inline float GetThrottle() { return Mem<float>(exe::PlayerThrottle); }
 inline void SetThrottle(float t) { hk::Call<void(__cdecl*)(float)>(exe::SetThrottle, t); }
 inline u32 CurrentCamera() { return Mem<u32>(exe::CurrentCamera); }
+// The current 3D camera's projection, read once under a guard (29 Oct 2026; the offsets were read raw in three
+// places): +4 rotation (columns = the camera's axes, it looks along -z), +0x28 position, +0x68 / +0x6C the pixel
+// centre, +0x78 / +0x7C the scale (pixels per unit of tan), +0xA4 the near plane - the UI camera's layout too
+// (FREELANCER_RE.md "Cameras and projection").
+struct CameraView
+{
+    float rot[9], pos[3];
+    float cx, cy, sx, sy, nearPlane;
+};
+bool ReadCamera(CameraView& out); // false: no camera, or it could not be read
 // The death camera object (code references only its rotation at +4), 0 when unresolved.
 inline u32 CamDeath() { return exe::CamDeathRotation.ok() ? static_cast<u32>(exe::CamDeathRotation.get()) - 4 : 0; }
 void* PlayerIObj();
@@ -293,4 +303,13 @@ int TargetLeadPos(float out[3]);
 // Project a world position with the current 3D camera: out = (pixel x, pixel y, depth).
 // False when the point is behind the camera.
 bool WorldToScreen(const float world[3], float out[3]);
+// The screen the ship is flown by: WorldToScreen through the current camera, except in turret view, where the player's
+// camera is free - then the same projection (the current camera's centre and scale) from the ship's own position and
+// axes, the frame mouse-flight steering works in (the autopilot's view, the owner, 28 Oct 2026: it flies and fights
+// the same whatever the player looks at).
+bool WorldToFlightScreen(const float world[3], float out[3]);
+// The axes WorldToFlightScreen projects along (rot columns: right, up, back): the current camera's, or the ship's in turret
+// view. False when there is neither.
+bool FlightScreenAxes(float rot[9]);
+inline bool TurretView() { return exe::CamTurret.ok() && exe::CamTurret.is(CurrentCamera()); }
 } // namespace fl

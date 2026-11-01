@@ -1,13 +1,66 @@
 # Controller UI: presets, device switching, glyphs, pad menus, assists, speedrun mode and LiveSplit
 Status: current (the UI build of 25 Oct 2026 realised U15-U23; where the build departed from the research the bullet says so in place)
-Checked against: FLvibed 77d8655 (26 Oct 2026, coordinator short form before the export: the watched commits since - d89f88c / 79e2bcc smart start + K&M goal panel, 7632ced job objective text, 77d8655 objective-named loot shot, 9ff7fe7 handoff - are autopilot / UI internals; no statement of this note changes; not re-read in depth); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: FLUF windows / popups on the pad, press ownership, the dealer close, the fluf_windows / borderless rows - first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 11 watched-path commits 073a665..855745b - Extended HUD 2 (ui_style, SKIN, MODAL, the spec rows), glyph_look, the pad probe perf fix, the unified spec page, HUD 2's objective after a load; read with UI_HUD2_EXTENDED.md 10-13 - new first paragraph); before: 073a665 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 3 watched-path commits 3ebd169..073a665 - d76299c (the HUD 2 rows in `UI_SPEC.json` through the living spec), 2541e58 / f5f07fe (`controller.cpp`: the HUD rows, the integration); the build read in `docs\UI_HUD2.md` 5.8 / 5.9, `hudvis.*`, `hud2*`, `uibtn.cpp`: U27 built, U24 / U25 superseded, U26 built in HUD 2, U23 CLASSIC only - first paragraph); before: 3ebd169 (25 Oct 2026 ~10:30, the pad HUD round 3: HUD 2, four new evidence files); before: 815c9c1 (round 2), abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 24 watched-path commits ec018b6..abf84ac - the package's owner rounds 6469b0a..3cfa88c, the HUD track 3a1dcec / 442654f / e0d2963, the HOST / PAGE / D tracks, the integration a6f8e2f, VERIFY 2f98907, FIX e68bbb2..f1daccc, GLYPHS 3318282, the spec patch 2c9e5d4, the close e2ee6df; every U15-U23 claim read in the code: `controller\src\impl\device.*`, `glyphs.*`, `presets.*`, `padhud.*`, `padbases.*`, `promptbar.*`, `osk.*`, `newgame.*`, `livesplit.*`); before: ec018b6 (25 Oct 2026 ~02:30, the note's creation)
-Dirty paths at check: none at the start (25 Oct 2026 ~23:05; during the round another session's uncommitted `controller/src/impl/padbases.cpp`, `controller/src/impl/promptbar.cpp`, `docs/UI_HUD2_EXTENDED.md` appeared - not judged); none (25 Oct 2026 ~12:15; also at 3ebd169)
+Checked against: FLvibed fc379a3 (31 Oct 2026 ~04:00, short form: 2 watched-path commits: a4571892 `controller.cpp` +3 lines (autopilot::Stop on a player death), 0b04d363 AUTOPILOT_UX.md names `repair_hull_at` design-only (the unread key was deleted, 1d6f6da); no pad / UI / HUD change; no effect)
+Dirty paths at check: another session's uncommitted `HANDOFF.txt`, `controller/src/host/main.cpp`, `controller/src/impl/autopilot_{combat,target,travel}.cpp`, `controller/src/impl/livesplit.cpp`, `controller/src/impl/uiskin.cpp`, `core/hook.{cpp,h}`, `subtitles/src/host/main.cpp`, `subtitles/src/impl/{data,impl,movie}.cpp` (not judged) (31 Oct 2026 ~04:00)
 Watch: docs/UI_PLAN.md, docs/UI_SPEC.json, controller/docs/BINDINGS.md, controller/docs/TASK_GLYPHS_HUD.md, controller/docs/AUTOPILOT_UX.md, controller/src/impl/controller.cpp, controller/src/impl/gamepad.*, core/game/render.*
 Evidence: `research\evidence\controller_ui\` - `hud_conventions_aaa.md` and `hud_space_games.md` (round 2, 25 Oct 2026 ~08:00, every claim with its URL; `hud_redesign\` the frames, renders and the proposal page); the three research files of 25 Oct 2026 in full (`flight_presets.md` 73 sources, `pad_ui_switching_glyphs_menus.md` 68 sources, `assist_speedrun_livesplit.md` 59 sources; every claim cited, forum opinions marked anecdotal) and the interactive mock-up page (`mockup_v2_index.html`; live at artifact `4v4dXbB5GTVt1URowFtSvN`); the game screens captured for it in `research\experience\ui_2026-10-25\screens\`
 Sources: see the evidence files (web pages read 25 Oct 2026; nothing downloaded). Earlier rounds this builds on: `controller\docs\BINDINGS.md` (12 games' pad layouts, 18 Oct) and `controller\docs\research\ADAPTIVE_UI_RESEARCH.md` (device switching, pad menus, accessibility, 17 Oct)
 
 ## What it means for FLvibed (the design is in `docs\UI_PLAN.md` section 6; the owner decides in the mock-up)
 
+*Research round 29 Oct 2026 ~22:30 (HEAD 04b4c05; the owner: sizing and spacing that make sense, full-featured but
+compact defaults, accessible options with depth, better presets, full rebinding, a visual / flow pass on every element):*
+FLvibed's default pad layout already matches the industry core (Findings, "Presets, rebinding, HUD rules"); the gaps are
+**customisation** and **checking**. (1) No Bindings screen - CUSTOM equals FREELANCER (`presets.h`); its must-haves are
+U33. (2) Hold / toggle is one global switch (`holds_as_toggles`) and the tap / hold / double timings are constants
+(`kHoldSec` / `kDblSec`, `presets.h` 92); no stick-layout (Southpaw) swap, only `invert_y` (U34). (3) No automatic HUD
+layout or contrast check - the measurable rules below become a lint over the draw rectangles (U35, with
+`test-automation.md` T8). (4) `text_size` stops at 150 %, `hud_scale` at 130 % (`ui_meta.h`); XAG's 200 % and the TV
+text floor are out of reach, and the 0.024 H floor should be re-measured as glyph body height (U36). (5) No accessibility
+presets or first-launch screen; no search over ~140 advanced rows (U37). Correction to the agent's list: "sensitivity
+cannot reach +50 %" is not a gap - `steer_scale`'s default 0.77 is the ship's measured maximum turn rate, so a sensitivity
+option works through the response curve (`steer_expo`), not a higher scale.
+
+*Check-up 30 Oct 2026 ~11:50 (short form, HEAD 16df8bd; 2 watched-path commits aafe41d..16df8bd):* 1893428 (U30's
+skeleton): the `rumble` help now names everything that vibrates - hits by their weight, the shield failing, the
+autopilot's hand-back pulse, the game's boxes waiting for an answer - so the 01:50 line's "its one sender" is overtaken
+(marked there). The hand-back pulse feels the same but plays only with the pad as the device in use and only when the
+autopilot ends in flight: U15's device switching (the last valid input picks the device) applied to rumble, and never in
+cutscenes or menus. d488fbd counts game loads in `controller.cpp`'s frame (the logic's mission memory starts over) - no
+UI rule. No row changes.
+*Check-up 30 Oct 2026 ~07:25 (short form, HEAD aafe41d; 3 watched-path commits 4ca36df..aafe41d):* with the opt-in
+`pad_backend` 1 the glyph family comes from SDL's gamepad type (baae629, `pad_backend.h` VendorForType ->
+`glyphs::Update`), and the SDL test pads show it per type - xbox / playstation / nintendo, a two-pad hand-over switching
+the family (8e19482). No HUD or menu rule here changed; the setting is an advanced developer key, its living-spec line
+deferred to the slice that ships it to players (WORK_QUEUE Q5).
+*Check-up 30 Oct 2026 ~01:50 (short form, HEAD 4ca36df; 3 watched-path commits 04b4c05..4ca36df):* the device rules
+met new ground, none is contradicted. 08a99a7: one focus gate for the physical pad in flight and menus (U38; the
+industry-standard "a background game ignores the pad"; a press held across the focus return stays ignored until
+released - the press-ownership rule of 0eca73d applied to focus; `focus_only` the opt-out); the `rumble` help now names
+its one sender (U30) *(overtaken 30 Oct 2026 by 1893428: it names every effect of the haptics table - check-up ~11:50)*. e38ca61: the glyph family follows the pad's vendor id through `glyphs::Update` (proven on a test
+pad, sweep `pad-device`: a PlayStation vendor id switched the glyphs xbox -> playstation), the input to U16's per-pad detection; still one active pad slot (first that
+answers). b376a21: the LAN / INTERNET prompt now holds the D-pad focus (it walked onto the main menu behind it) - U19's
+dense-screen rules hold on that prompt. U16 / U19 / U20 / U22 statuses unchanged.
+
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 2 watched-path commits 7518008..067bf32):* no effect. 373634a
+brings `UI_PLAN.md` section 2 and `AUTOPILOT_UX.md` in line with what U17's line below already records (the toggle is
+the View hold, the LB + L3 chord gone since 28 Oct); 6970588 makes the options page's own pad reader apply the player's
+`stick_deadzone` (it kept the default) - one setting now means the same on every screen, as the device rules want.
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 20 watched-path commits 77d8655..7518008):* three of this note's rules
+met new ground, none is contradicted. (1) **Assist presentation (U20):** the turret view now runs under the autopilot
+(ef56c49 / 4857584: X held = the turret camera; the right stick turns the camera and does **not** take the ship back) -
+a deliberate exception to "hand-back by the player's own flight input", limited to a look control; the hand-back rule
+stands for the flight inputs. In multiplayer a start the server refuses shows nothing on screen yet
+(`docs\MULTIPLAYER.md` "Decisions for the owner" 3): the one-state-line rule says where it belongs (IDEAS U28). (2)
+**One deliberate autopilot control:** `autopilot_pad` and its L3 + R3 / hold-Menu alternatives are gone (393bea9) - the
+pad starts the autopilot only by the half-second View hold this note recommended (U17). (3) **Dense screens (U19):** the
+multiplayer server and character lists take the pad (29bbada: D-pad picks, A connects / loads, Y new character) and the
+main menu, the MULTIPLAYER button's LAN / INTERNET prompt and the multiplayer death dialog press the game's own buttons
+directly, also out of focus (c69dad6; *30 Oct 2026, 08a99a7: the physical pad is ignored with the game in the
+background, menus and flight alike - "out of focus" holds for the harness's virtual pad only*). HUD 2's owner rounds 2-6 (TARGET AHEAD inside the ring, the LB hints, the cruise
+/ tractor spots; 1975cb5..5d52919) are layout inside HUD 2 (U27). Still open from this note: the Smart-Steering tick
+(U20), Steam Input's type (U16), the named-pipe LiveSplit fallback (U22), the Bindings screen; the handoff's "one pad
+slot only" (`gamepad.cpp`) bears on U16's per-pad detection.
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 12 watched-path commits 855745b..e5c02cc):* the pad cursor and
 the dense-screen rules (U18 / U19) now reach FLUF's ImGui windows and the game's tutorial / mission popups (0e41948: the
 stick moves the game's cursor FLUF reads, A / B as mouse button / close); a press belongs to the consumer that had the pad
@@ -153,4 +206,61 @@ colour, few boxes), Elite (hold a modifier + the D-pad direction where the panel
 emulated cursor - the closest analogue to the built state, called clunky). Anti-patterns: badges on mouse-sized icons,
 glyph salad (the built combat legend repeats six badges), glow failing contrast (Halo Infinite), small flight icons
 (Chorus).
+
+### Presets, rebinding, HUD rules (29 Oct 2026 ~22:30; a research agent's web round, not saved as evidence; confidence H / M / L)
+**Pad schemes.** Squadrons (H): remapping in three contexts (menus, hangar / briefing, flight); each wheel Hold or Toggle,
+drift Hold or Double-tap, throttle Continuous or Steps with centre friction; deadzone and sensitivity per axis; invert
+separately for flight and look (https://ea.com/able/resources/star-wars/star-wars-squadrons/xbox-one/controller-settings).
+Everspace 2 (M): Scheme A (shooter) / B (racing, Everspace 1), each right- and left-handed; D-pad tap toggle, hold wheel
+(https://everspace.fandom.com/wiki/Controls_(ES2)). Ace Combat 7 (H): Standard (LS X yaws) vs Expert (LS X rolls); Type
+A / B swaps throttle and yaw between triggers and bumpers; beginners start on Standard
+(https://shacknews.com/article/109486/ace-combat-7-controls-playstation-4-and-xbox-one). X4 7.00 (H): customisable radial
+menus, on X / Y in the default profile, custom profiles untouched (https://www.egosoft.com/news/archive/2024May_en.php).
+Elite Dangerous (M): bindings per vehicle context; any edit silently becomes Custom.3.0.binds, bindings lost when a
+device id changes; the galaxy map turns analog inputs digital - lesson: the map is its own context and a profile never
+vanishes. Halo Infinite (H; the best preset pattern): button layouts chosen **separately** from stick layouts (Default,
+Legacy, Southpaw, Legacy Southpaw); any edit relabels CUSTOM
+(https://support.halowaypoint.com/hc/en-us/articles/4407649252116-Guide-to-Halo-Infinite-Game-Settings). Rebel Galaxy
+Outlaw (L): a hidden context key also drove its autopilot, so remapping broke it - every action named and visible. No
+reliable pad defaults found for No Man's Sky, Star Citizen, Chorus, FreeSpace Open (preset files), Starfield (M, sources
+disagree). Industry core: RT primary fire; RS aim (dogfighters) or LS steer (arcade); LS click boost / drift; D-pad quick
+slots; hold = wheel; A context / accept; B back; View map; Menu pause; the stick swap a separate axis - FREELANCER fits.
+**Presets**: keep the three; add two independent axes - stick layout (Default / Southpaw) and hold-vs-toggle per action;
+an ACE "Type B" (AC7's trigger-throttle / bumper swap) and an ASSISTED left-hand mirror; no fourth preset (a trigger-thrust
+layout fights Freelancer's persistent throttle; playtest first).
+**Rebinding must-haves** (XAG 107: https://devdocs.xbox.com/build/game-principles/accessibility/xag-deep-dives/xag-107-input.md):
+any action on any button incl. the stick clicks and D-pad slots, prompts / diagrams following the mapping (FLvibed's
+prompts read the tables already); contexts Flight, FlightAp, Menus, Bases, Dealers, Nav map, Text entry; tap / hold / double
+per button with Steam Input's activator rules (an interruptible tap held back while a hold or double can still fire:
+https://partner.steamgames.com/doc/features/steam_controller/activators - the dispatcher does this); per-action
+Hold / Toggle; the timings as settings; on capture SWAP / REPLACE / CANCEL, never a silent double bind or an "already
+bound" dead end, a warning for an unbound essential (fire, accept / back, pause, map), Menu and B never unbindable; a live
+pad diagram with changed binds marked by a dot, not only colour; reset per action / context / all; named custom slots
+(The Last of Us Part II has three), export / import as a text block; a profile survives a device-id change; any edit flips
+the preset to CUSTOM (built).
+**Options**: presets -> player rows -> Show advanced (built); accessibility presets Vision / Hearing / Motion / Motor, each
+Some / Full (God of War Ragnarök: https://www.playstation.com/en-us/games/god-of-war-ragnarok/accessibility/); a short
+first-launch screen of grouped shortcuts (Far Cry 6: https://caniplaythat.com/2021/10/06/far-cry-6-accessibility-menu-deep-dive/)
+- the New Game prompt could carry it; XAG 112: accessibility reachable from launch, LB / RB tabs, LT / RT pages, B back,
+lists wrap (with an off switch), grids do not, search or filters for long content
+(https://devdocs.xbox.com/build/game-principles/accessibility/xag-deep-dives/xag-112-ui-navigation.md).
+**HUD rules an automatic check can enforce** (H = screen height; XAG 101 / 102:
+https://devdocs.xbox.com/build/game-principles/accessibility/xag-deep-dives/xag-101-text-display.md, xag-102-contrast.md;
+https://devdocs.xbox.com/build/core-features/graphics/overviews/screen-areas):
+1. every HUD rectangle inside the inner 90 % (title-safe); only clip-tolerant art in the 90-95 % band;
+2. ultrawide: edge elements anchor to a centred 16:9 rectangle (or a user width), never stretched; sizes in H units;
+3. text measured as **body height** (descender to ascender, not the font size): >= 18 px at 1080p (0.0167 H) on PC,
+   >= 26 px (0.024 H) at TV distance;
+4. scalable to 200 % of the minimum without losing content, glyphs with the text, scrolling in one direction at most;
+5. contrast 4.5:1 for text and symbols, 3:1 for large text (>= ~0.033 H), 7:1 in a high-contrast mode, against the
+   **worst** background behind the text over several frames; outline pixels count only above 2:1; a backplate option;
+6. flashes < 3 Hz, every cue with an off switch (the owner's rule, WCAG 2.3.1);
+7. a glyph ~0.5 x its element's height and never smaller than the text beside it;
+8. no overlap between HUD boxes, a minimum gap (proposed 0.01 H), nothing inside the reticle ring but ring parts, boxed
+   area <= ~10 % of the screen (HUD 2's own budget);
+9. text blocks <= 80 characters a line, line spacing 1.5x;
+10. per-axis sensitivity and invert per stick and axis.
+Overlap detection from screenshots is hard in games (https://arxiv.org/pdf/2504.20261); check the element boxes from the
+HUD bus / draw data per screen across the display matrix (PASS / WARN / FAIL per screen, as Unreal's "UI Resolution Guard"
+does), screenshot baselines for visual drift.
 

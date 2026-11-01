@@ -120,6 +120,13 @@ bool Snapshot(const ImGuiApi& api, const ImGuiLayout& L, int policy, HudFluf& ou
         out.frame = 0;
         return true;
     }
+    // ...and a 0 x 0 display at any frame (the window minimised [I]): nothing drawn, nothing open - not a layout
+    // mismatch (audit A2-3, 31 Oct 2026: one such frame dropped FLUF awareness to co-residency for the session)
+    if (dw == 0.0f && dh == 0.0f)
+    {
+        out.frame = fc;
+        return true;
+    }
     if (!(dw >= 64 && dw <= 32768 && dh >= 64 && dh <= 32768))
     {
         if (why && whyLen)

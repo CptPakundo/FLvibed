@@ -274,13 +274,14 @@ struct ContextPlaced
 // The line under the ship (docs\UI_HUD2.md 5.9 "one baseline"): at 0.915 H; the last prompts give way until the line fits
 // between the ship panel (right edge shipX1) and the loadout (left edge loX0); only a line whose first prompt alone does
 // not fit goes above the panels (their top panelsY0, 0.04 H x k above it). `w` = each prompt's width (nullptr = the line
-// measures 0: the player is typing), `gap` the space between prompts.
+// measures 0: the player is typing), `gap` the space between prompts. `lineY` = the baseline in H (HUD 2's layout core
+// passes its preset's context y: UI_SPEC.json hud2_presets, Standard 0.915).
 inline ContextPlaced PlaceContext(const float* w, int n, float gap, float W, float H, float k, float shipX1, float loX0,
-                                  float panelsY0)
+                                  float panelsY0, float lineY = 0.915f)
 {
     ContextPlaced c;
     c.n = n;
-    c.y = 0.915f * H;
+    c.y = lineY * H;
     const float cx = W / 2;
     auto measure = [&](int m)
     {
@@ -445,11 +446,11 @@ struct ContextHold
 };
 inline ContextHold PlaceContextHold(const float* base, const float* glyph, const float* label, const bool* hold, int n,
                                     const HoldDims& d, float gap, float W, float H, float k, float shipX1, float loX0,
-                                    float panelsY0)
+                                    float panelsY0, float lineY = 0.915f)
 {
     ContextHold r;
     n = n < 0 ? 0 : (n > 3 ? 3 : n);
-    const ContextPlaced none = PlaceContext(base, n, gap, W, H, k, shipX1, loX0, panelsY0);
+    const ContextPlaced none = PlaceContext(base, n, gap, W, H, k, shipX1, loX0, panelsY0, lineY);
     auto widths = [&](const HoldPlan& p, float* w)
     {
         for (int i = 0; i < n; ++i)
@@ -459,11 +460,210 @@ inline ContextHold PlaceContextHold(const float* base, const float* glyph, const
                         {
                             float w[3] = {};
                             widths(p, w);
-                            const ContextPlaced c = PlaceContext(w, n, gap, W, H, k, shipX1, loX0, panelsY0);
+                            const ContextPlaced c = PlaceContext(w, n, gap, W, H, k, shipX1, loX0, panelsY0, lineY);
                             return c.n == none.n && c.above == none.above;
                         });
     widths(r.plan, r.w);
-    r.c = PlaceContext(r.w, n, gap, W, H, k, shipX1, loX0, panelsY0);
+    r.c = PlaceContext(r.w, n, gap, W, H, k, shipX1, loX0, panelsY0, lineY);
+    return r;
+}
+
+// ---------------------------------------------------------------- HUD 2's keycap (the keyboard form's prompt)
+// hud2kit::Keycap's measure (its regular, non-tight cap), pure so the layout tests size a K&M prompt by the same numbers
+// the HUD draws: the key's name never under the 0.024 H text floor - names over 2 characters at 0.42 h, else 0.5 h - the
+// cap grows around it (its height h, or the name / 0.42 (/ 0.5) x 0.8), the width the name's (at KeycapNameSize, track
+// 0.04) + half the cap's height, never under the height. `len` the name's characters, `H` the screen height.
+inline float KeycapNameSize(size_t len, float h, float H)
+{
+    const float a = len > 2 ? h * 0.42f : h * 0.5f, b = 0.024f * H;
+    return a > b ? a : b;
+}
+inline float KeycapHeight(size_t len, float h, float H)
+{
+    const float g = KeycapNameSize(len, h, H) * (len > 2 ? 1.0f / 0.42f : 2.0f) * 0.8f;
+    return h > g ? h : g;
+}
+inline float KeycapWidth(float nameW, size_t len, float h, float H)
+{
+    const float hc = KeycapHeight(len, h, H), w = nameW + hc * 0.5f;
+    return w > hc ? w : hc;
+}
+// The tight cap (hud2kit::Keycap(..., tight): the dense panels' and, since UI_HUD2.md 5.22, the context prompts'): the
+// name at 0.62 h, never under the legibility floor `minPx` (textfit::MinSize), the cap 1.2 x the name, its width the
+// name's (track 0.04) + 0.3 x the cap, never under the cap.
+inline float KeycapTightNameSize(float h, float minPx)
+{
+    const float a = h * 0.62f;
+    return a > minPx ? a : minPx;
+}
+inline float KeycapTightWidth(float nameW, float ts)
+{
+    const float hc = ts * 1.2f, w = nameW + hc * 0.3f;
+    return w > hc ? w : hc;
+}
+
+// ---------------------------------------------------------------- HUD 2's context lanes (the owner, 31 Oct 2026)
+// The owner's decision 4 (docs\UI_HUD2.md 5.20): the prompts tight to the bottom-left and the bottom-right, the very centre
+// bottom clear "for aesthetic purposes" (the centred line's cruise / dock / context pills hid the ship). Two lanes beside
+// the bottom panels: the LEFT lane from the ship panel's right edge towards the centre, the RIGHT lane from the loadout's
+// left edge towards the centre, neither past the bottom-centre clear band (x 0.40-0.60 W: the ship keep-out's columns,
+// UI_HUD2_PRESETS.md 1.3 - the lint's zone "bottom"). Each lane has two rows: the baseline (the preset's context y) and
+// one above it. Which lane a prompt takes is the caller's (HUD 2: by the corners' jobs, PRESETS 1.1 - your ship's
+// movement left, what you fire / use / target right). The order is the priority: a lane's first prompt hugs its panel.
+struct LaneGeom
+{
+    float lx0 = 0, lx1 = 0; // the left lane's content range (pixels): the prompts' left edges from lx0, ends <= lx1
+    float rx0 = 0, rx1 = 0; // the right lane's: the prompts' right edges from rx1 leftwards, starts >= rx0
+    float y0 = 0;           // the baseline row's centre line
+    float pitch = 0;        // the rows' pitch (the row above at y0 - pitch)
+    int rows = 2;
+};
+// The lanes for a frame: `lineY` the baseline (H), `shipX1` / `loX0` the panels' facing edges, the band x0 / x1 (W), the
+// pill's plate pad 0.012 H x k and 0.012 H x k between a plate and its panel (HUD 2's gap), a plate may reach the band's
+// edge (the lint's zone tolerates an edge); rows 0.06 H x k apart (the 0.052 pill + 0.008).
+inline LaneGeom ContextLanes(float W, float H, float k, float shipX1, float loX0, float lineY = 0.915f,
+                             float bandX0W = 0.40f, float bandX1W = 0.60f)
+{
+    LaneGeom g;
+    const float pad = 0.012f * H * k, panelGap = 0.012f * H * k;
+    g.lx0 = shipX1 + panelGap + pad, g.lx1 = bandX0W * W - pad;
+    g.rx1 = loX0 - panelGap - pad, g.rx0 = bandX1W * W + pad;
+    g.y0 = lineY * H, g.pitch = 0.06f * H * k, g.rows = 2;
+    return g;
+}
+// The lanes above the bottom panels: where the beside-the-panels lanes have no room for even the first prompt (4:3 / 5:4
+// at large scales: the panels reach the band). The left from the side margin to the band's 0.40 W, the right from the
+// band's 0.60 W to the other margin (the same pads), the baseline 0.04 H x k above the panels' top `panelsTop` (pixels),
+// two rows. Replaces the old centred line above the panels, which crossed the lower centre (the owner, 31 Oct 2026: the
+// lower centre devoid of HUD elements; UI_HUD2.md 5.23).
+inline LaneGeom LanesAbove(float W, float H, float k, float mx, float panelsTop, float bandX0W = 0.40f,
+                           float bandX1W = 0.60f)
+{
+    LaneGeom g;
+    const float pad = 0.012f * H * k;
+    g.lx0 = mx + pad, g.lx1 = bandX0W * W - pad;
+    g.rx1 = W - mx - pad, g.rx0 = bandX1W * W + pad;
+    g.y0 = panelsTop - 0.04f * H * k, g.pitch = 0.06f * H * k, g.rows = 2;
+    return g;
+}
+struct LanesPlaced
+{
+    int n = 0;                             // the prompts kept (a prefix: the last give way first)
+    float x[3] = {}, y[3] = {}, w[3] = {}; // each kept prompt's left edge, centre line and width as placed
+    float asked[3] = {};                   // ... and as asked (w < asked: squeezed, its label scrolls: TextMarquee)
+    int side[3] = {}, row[3] = {};         // 0 the left lane, 1 the right; the row (0 the baseline, 1 above it)
+    bool moved[3] = {};                    // placed in the other lane (its own was full)
+    bool none = false;                     // prompts asked but not even the first one had a place (both lanes closed)
+    float x0 = 0, x1 = 0;                  // the kept prompts' extent with the line's 0.015 H x k margin
+};
+// Places n prompts (w = their widths, nullptr = the line measures 0: the player types; minW = the narrowest each may be
+// squeezed to, nullptr = no squeeze; side = 0 left / 1 right, nullptr = all left) with `gap` between two in a row:
+// for each in order, its own lane - the first row it fits whole, else an empty row it fits squeezed (>= minW, its label
+// then scrolls) - else the other lane the same way; one that finds no place ends the line there.
+inline LanesPlaced PlaceLanes(const float* w, const float* minW, const int* side, int n, float gap, const LaneGeom& g,
+                              float H, float k)
+{
+    LanesPlaced o;
+    n = n < 0 ? 0 : (n > 3 ? 3 : n);
+    const int rows = g.rows < 1 ? 1 : (g.rows > 2 ? 2 : g.rows);
+    float cur[2][2] = {{g.lx0, g.lx0}, {g.rx1, g.rx1}}; // the left rows' next left edge, the right rows' next right edge
+    bool used[2][2] = {};
+    for (int i = 0; i < n; ++i)
+    {
+        const float wi = w ? w[i] : 0.0f, mi = minW ? std::min(minW[i], wi) : wi;
+        const int own = side && side[i] == 1 ? 1 : 0;
+        bool placed = false;
+        for (int pass = 0; pass < 2 && !placed; ++pass)
+        {
+            const int s = pass == 0 ? own : 1 - own;
+            auto room = [&](int r)
+            {
+                const float g0 = used[s][r] ? gap : 0.0f;
+                return s == 0 ? g.lx1 - (cur[s][r] + g0) : (cur[s][r] - g0) - g.rx0;
+            };
+            auto put = [&](int r, float width)
+            {
+                const float g0 = used[s][r] ? gap : 0.0f;
+                if (s == 0)
+                    o.x[i] = cur[s][r] + g0, cur[s][r] = o.x[i] + width;
+                else
+                    o.x[i] = cur[s][r] - g0 - width, cur[s][r] = o.x[i];
+                o.y[i] = g.y0 - r * g.pitch, o.w[i] = width, o.asked[i] = wi, o.side[i] = s, o.row[i] = r;
+                o.moved[i] = s != own, used[s][r] = true, placed = true;
+            };
+            for (int r = 0; r < rows && !placed; ++r) // whole
+                if (wi <= room(r) + 0.5f)
+                    put(r, wi);
+            for (int r = 0; r < rows && !placed; ++r) // squeezed, alone in its row
+                if (!used[s][r] && room(r) >= mi - 0.5f && room(r) > 0)
+                    put(r, std::min(wi, room(r)));
+        }
+        if (!placed)
+            break;
+        o.n = i + 1;
+    }
+    o.none = n > 0 && o.n == 0;
+    const float m = 0.015f * H * k;
+    for (int i = 0; i < o.n; ++i)
+    {
+        const float a = o.x[i] - m, b = o.x[i] + o.w[i] + m;
+        o.x0 = i ? std::min(o.x0, a) : a, o.x1 = i ? std::max(o.x1, b) : b;
+    }
+    return o;
+}
+// The lanes with the hold cascade (as PlaceContextHold): the lanes without any word decide what must stay - the same
+// prompts in the same lanes and rows, none squeezed more than it was - and a word raised over its prompt (above the
+// glyph, over the label) needs its place free of the other prompts' plates (the row above). wordH = the word's height.
+struct LanesHold
+{
+    LanesPlaced c;
+    HoldPlan plan;
+    float w[3] = {};
+};
+inline LanesHold PlaceLanesHold(const float* base, const float* minW, const float* glyph, const float* label,
+                                const bool* hold, const int* side, int n, const HoldDims& d, float gap,
+                                const LaneGeom& g, float H, float k, float wordH)
+{
+    LanesHold r;
+    n = n < 0 ? 0 : (n > 3 ? 3 : n);
+    const LanesPlaced none = PlaceLanes(base, minW, side, n, gap, g, H, k);
+    auto widths = [&](const HoldPlan& p, float* w, float* mw)
+    {
+        for (int i = 0; i < n; ++i)
+        {
+            const float e = HoldExtra(p.at[i], glyph[i], label[i], d);
+            w[i] = base[i] + e, mw[i] = (minW ? minW[i] : base[i]) + e;
+        }
+    };
+    const float pad = 0.012f * H * k, half = 0.026f * H * k;
+    r.plan = ChooseHold(n, hold, d, [&](const HoldPlan& p)
+                        {
+                            float w[3] = {}, mw[3] = {};
+                            widths(p, w, mw);
+                            const LanesPlaced c = PlaceLanes(w, mw, side, n, gap, g, H, k);
+                            if (c.n != none.n)
+                                return false;
+                            for (int i = 0; i < c.n; ++i)
+                            {
+                                if (c.side[i] != none.side[i] || c.row[i] != none.row[i] ||
+                                    c.asked[i] - c.w[i] > none.asked[i] - none.w[i] + 0.5f)
+                                    return false;
+                                if (!Raised(p.at[i]))
+                                    continue;
+                                const float y1 = c.y[i] - half - 0.001f * H, y0 = y1 - wordH;
+                                const float x0 = c.x[i] - pad, x1 = c.x[i] + c.w[i] + pad;
+                                for (int j = 0; j < c.n; ++j)
+                                    if (j != i && c.x[j] - pad < x1 && c.x[j] + c.w[j] + pad > x0 &&
+                                        c.y[j] - half < y1 && c.y[j] + half > y0)
+                                        return false;
+                            }
+                            return true;
+                        });
+    float mw[3] = {};
+    widths(r.plan, r.w, mw);
+    r.c = PlaceLanes(r.w, mw, side, n, gap, g, H, k);
+    for (int i = 0; i < r.c.n; ++i) // (each prompt's width as placed: a squeezed one draws in its room)
+        r.w[i] = r.c.w[i];
     return r;
 }
 

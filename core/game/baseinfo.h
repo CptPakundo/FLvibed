@@ -28,6 +28,9 @@ std::wstring ShipName();
 long long Credits();
 // The hold: used and capacity (volume units), false unknown.
 bool Cargo(int& used, int& capacity);
+// Debug `docked`: each reader's client-side source against the in-process server's (base name, ship, hold, prices of the
+// held goods) - the client copies are read first in both modes (multiplayer has only them).
+std::string CompareSources();
 
 // ---- the visible controls (one walk of the game's control list; the caller refreshes it at most 10 Hz)
 struct Ctl

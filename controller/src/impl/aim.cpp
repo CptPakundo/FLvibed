@@ -2,12 +2,13 @@
 
 #include "../fl.h"
 #include "game/ai.h"
+#include "game/gameclock.h"
 #include "game/space.h"
 #include "ui.h"
 
 namespace aim
 {
-Target Current()
+Target Current(bool flightFrame)
 {
     Target t;
     fl::Kinematics me, tgt;
@@ -40,9 +41,9 @@ Target Current()
         // mean muzzle speed).
         static float speed = 0, range = 0;
         static DWORD next = 0;
-        if (GetTickCount() >= next)
+        if (gameclock::NowMs() >= next)
         {
-            next = GetTickCount() + 1000;
+            next = gameclock::NowMs() + 1000;
             float sum = 0;
             int n = 0;
             for (const space::Weapon& wpn : space::PlayerWeapons())
@@ -68,9 +69,37 @@ Target Current()
             }
         }
     }
+    // A huge static target (the Dyson city's generators: radius 915 m, the hull ~430 m from the centre): the autopilot
+    // aims at its hull in front of us, not at its centre - the centre lay beyond gun reach 260 m off the hull, the game's
+    // CanPointAt refused it ("guns 1 of 5 point") and every hold had to hug the hull (the owner, 29 Oct 2026: "the ship
+    // does not need to hug the huge generator solars so tightly")
+    if (flightFrame && t.radius >= 500.0f)
+    {
+        const float sp2 = tgt.vel[0] * tgt.vel[0] + tgt.vel[1] * tgt.vel[1] + tgt.vel[2] * tgt.vel[2];
+        const float hit = sp2 < 4.0f ? space::RayHitDistance(me.pos, tgt.pos) : -1.0f;
+        if (hit > 0 && t.dist > 1)
+        {
+            for (int i = 0; i < 3; ++i)
+                t.world[i] = me.pos[i] + d[i] / t.dist * hit;
+            // ...and "in range" by that hull point: the game's lead cross measures to the centre, so the ships never
+            // opened fire on the city generators with the hull well inside gun reach (the owner, 29 Oct 2026: "the ships
+            // never opened fire, not once")
+            static float gunRange = 0;
+            static DWORD next = 0;
+            if (gameclock::NowMs() >= next)
+            {
+                next = gameclock::NowMs() + 1000;
+                ai::Self self;
+                gunRange = ai::ReadSelf(self) && self.gunRange > 0 ? self.gunRange : 0;
+            }
+            if (gunRange > 0)
+                t.inRange = hit <= gunRange;
+        }
+    }
     float s[3];
     const float w = static_cast<float>(fl::ScreenWidth()), h = static_cast<float>(fl::ScreenHeight());
-    if (fl::WorldToScreen(t.world, s) && s[0] >= 0 && s[0] < w && s[1] >= 0 && s[1] < h)
+    if ((flightFrame ? fl::WorldToFlightScreen(t.world, s) : fl::WorldToScreen(t.world, s)) && s[0] >= 0 && s[0] < w &&
+        s[1] >= 0 && s[1] < h)
     {
         t.onScreen = true;
         t.screenX = s[0];
@@ -123,6 +152,39 @@ bool SteerTowards(const float world[3], float scale, float fullAngle, float& sx,
     return true;
 }
 
+void LevelSteer(float& sx, float& sy, const float* frame, const float* into)
+{
+    fl::Kinematics me;
+    if (!fl::PlayerKinematics(me))
+        return;
+    const float* f = frame ? frame : me.rot;
+    const float right[3] = {f[0 * 3 + 0], f[1 * 3 + 0], f[2 * 3 + 0]};
+    const float up[3] = {f[0 * 3 + 1], f[1 * 3 + 1], f[2 * 3 + 1]};
+    const float fwd[3] = {-me.rot[0 * 3 + 2], -me.rot[1 * 3 + 2], -me.rot[2 * 3 + 2]}; // (-z)
+    // the turn frame's right: the level one = fwd x (0, 1, 0), or `into`'s right (the camera's) square to the nose; its up =
+    // right x fwd
+    float lr[3] = {-fwd[2], 0.0f, fwd[0]};
+    if (into)
+    {
+        const float ir[3] = {into[0 * 3 + 0], into[1 * 3 + 0], into[2 * 3 + 0]};
+        const float d = ir[0] * fwd[0] + ir[1] * fwd[1] + ir[2] * fwd[2];
+        for (int i = 0; i < 3; ++i)
+            lr[i] = ir[i] - d * fwd[i];
+    }
+    const float n = sqrtf(lr[0] * lr[0] + lr[1] * lr[1] + lr[2] * lr[2]);
+    if (n < 0.2f)
+        return;
+    lr[0] /= n, lr[1] /= n, lr[2] /= n;
+    const float lu[3] = {lr[1] * fwd[2] - lr[2] * fwd[1], lr[2] * fwd[0] - lr[0] * fwd[2],
+                         lr[0] * fwd[1] - lr[1] * fwd[0]};
+    // the wanted turn as a world direction, then its components on the level axes (a rotation by the bank)
+    float c[3];
+    for (int i = 0; i < 3; ++i)
+        c[i] = sx * right[i] + sy * up[i];
+    sx = c[0] * lr[0] + c[1] * lr[1] + c[2] * lr[2];
+    sy = c[0] * lu[0] + c[1] * lu[1] + c[2] * lu[2];
+}
+
 static bool g_hudTransparent = false;
 void SetHudTransparent(bool on) { g_hudTransparent = on; }
 
@@ -163,14 +225,14 @@ namespace aim
 {
 float AngleFromCenter(float x, float y)
 {
-    // Current 3D camera: +0x68/+0x6C pixel center, +0x78/+0x7C scale (pixels per unit of tan).
-    const uintptr_t cam = fl::CurrentCamera();
-    if (!cam)
+    // the current 3D camera's pixel centre and scale (pixels per unit of tan): fl.h CameraView
+    fl::CameraView c;
+    if (!fl::ReadCamera(c))
         return 180.0f;
-    const float sx = fabsf(Mem<float>(cam + 0x78)), sy = fabsf(Mem<float>(cam + 0x7C));
+    const float sx = fabsf(c.sx), sy = fabsf(c.sy);
     if (sx < 1 || sy < 1)
         return 180.0f;
-    const float tx = (x - Mem<float>(cam + 0x68)) / sx, ty = (y - Mem<float>(cam + 0x6C)) / sy;
+    const float tx = (x - c.cx) / sx, ty = (y - c.cy) / sy;
     return atanf(sqrtf(tx * tx + ty * ty)) * 57.29578f;
 }
 } // namespace aim

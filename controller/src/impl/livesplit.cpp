@@ -69,6 +69,7 @@ static u32 g_lastSplitMs = 0, g_lastSegMs = 0;
 static int g_legKills = 0;
 static u32 g_objSeq = 0;
 static u32 g_resultSeq = 0;           // the host's mission results seen (HostApi v20 MissionResult)
+static u32 g_saveSeq = 0;             // the host's checkpoint saves seen (HostApi v35 MissionSave: save:<ids> rows)
 static ULONGLONG g_lastClearTick = 0; // the last single objectives-cleared call (a result clears twice; the fallback)
 static std::deque<std::pair<ULONGLONG, u32>> g_recentObj; // (tick, text id) of the objectives shown lately
 struct Mark
@@ -369,7 +370,7 @@ static void Event(checkpoints::Kind kind, u32 value, const char* how)
             Split(next, how);
         return;
     }
-    if (row.kind == kind && (kind != Obj || row.value == value))
+    if (row.kind == kind && ((kind != Obj && kind != Save) || row.value == value))
     {
         Split(next, how);
     }
@@ -562,6 +563,16 @@ void Update(float dt, const char* modeName)
                     Event(Success, 0, "success");
             }
         }
+        // the story's checkpoint saves (HostApi v35 MissionSave; save:<ids> rows: M01b.end = 32120 at GAME SAVED)
+        {
+            u32 ids = 0;
+            const u32 sseq = HostMissionSave(&ids);
+            if (sseq != g_saveSeq)
+            {
+                g_saveSeq = sseq;
+                Event(Save, ids, "save");
+            }
+        }
         // the objective step. Without the host's result (an older host): a mission's result clears the objectives
         // TWICE in one instant (every full PASS log of the 14 legs, 25 Oct 2026: two SetObjectives count=0 at the
         // SUCCESS message's millisecond), while a script's own mid-mission clear (M03 after the Willard battle, M04 at
@@ -609,9 +620,12 @@ void Update(float dt, const char* modeName)
                 if (!known)
                     g_marked.push_back({marks[i], system});
             }
-            if (!g_marked.empty())
+            // (an empty scan - no player ship yet, a death, a system change in progress - proves nothing: a kill
+            // there would split early)
+            const std::vector<space::Contact> all =
+                g_marked.empty() || system == 0 ? std::vector<space::Contact>() : space::Contacts();
+            if (!all.empty())
             {
-                const std::vector<space::Contact> all = space::Contacts();
                 for (const Mark& m : g_marked)
                 {
                     if (m.system != system || g_killed.count(m.id))
@@ -629,7 +643,10 @@ void Update(float dt, const char* modeName)
         }
     }
     else if (mode != g_mode)
+    {
         g_objSeq = HostObjectiveNow(nullptr); // keep in step so a later session does not replay an old objective
+        g_saveSeq = HostMissionSave(nullptr); // (and an old save)
+    }
     g_mode = mode;
     Publish();
 }
@@ -693,15 +710,15 @@ std::string Command(std::istream& in)
         OnNewGame(true);
         return Status();
     }
-    if (sub == "event") // livesplit event obj <id>|land|launch|control|cutscene|success|kill: a synthetic observation
+    if (sub == "event") // livesplit event obj <id>|save <ids>|land|launch|control|cutscene|success|kill: a synthetic observation
     {
         std::string k;
         in >> k;
         u32 v = 0;
         in >> v;
         using namespace checkpoints;
-        const Kind kind = k == "obj" ? Obj : k == "land" ? Land : k == "launch" ? Launch : k == "control" ? Control
-                        : k == "cutscene" ? Cutscene : k == "success" ? Success : Kill;
+        const Kind kind = k == "obj" ? Obj : k == "save" ? Save : k == "land" ? Land : k == "launch" ? Launch
+                        : k == "control" ? Control : k == "cutscene" ? Cutscene : k == "success" ? Success : Kill;
         if (kind == Obj)
             g_recentObj.push_back({GetTickCount64(), v});
         Event(kind, v, "debug");

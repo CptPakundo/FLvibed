@@ -1,13 +1,44 @@
 # BC46/FLSharp: the HDE plugin that moved from 0.8 to 0.9.2
 Status: current
-Checked against: FLvibed 77d8655 (26 Oct 2026, coordinator short form before the export: the watched commits since - d89f88c / 79e2bcc smart start + K&M goal panel, 7632ced job objective text, 77d8655 objective-named loot shot, 9ff7fe7 handoff - are autopilot / UI internals; no statement of this note changes; not re-read in depth); before: FLvibed 01fcfa9 (26 Oct 2026, the step 3 short form re-confirmed: the only watched commits since, 9327f86 / 01fcfa9, are doc and handoff edits recording what this note already says); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: 202 / 202 upstream, borderless auto stays out on HDE -> U4 (g) - first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 17 watched-path commits 073a665..855745b - Extended HUD 2's host side (HOST-X d1d5bf4, STRIP 84492e9, CARD, Repose), the vanilla 1.1 support and signature re-cut (4042c7d..0d0bcb7), HUD 2 on every build (65cd6dd, 48c712a, c6158a4), the comm portrait 5aa8294, the FLUF co-residency da1363f / 5cd02b9; read against FLSharp's source: one more shared address, the ship dealer's patches beside the new readers - second bullet); before: 073a665 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 7 watched-path commits abf84ac..073a665 in `controller/src/host` (uibtn.cpp: the HUD 2 hotspot box 08d450f, the ToolTip / NeuroNet window handling d0cf8d9 / 95dea02), `core/flexe.h` (+8 symbols, two shared with FLSharp) and `subtitles/src/impl/impl.cpp` (the HUD bus f8dc584); read against FLSharp's source: no clash found, four sweep items - second bullet); before: abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 7 watched-path commits 3cfa88c..abf84ac in `controller/src/host` (uibtn.cpp: the NN_Preferences page button and page switch, the bar button, the raw-key WinKey hook, the real mouse; main.cpp: the CursorUpdate hook clearing the cursor-shown flag) and `core/flexe.h` (+24 symbols); nothing contradicted, one new coexistence question - second bullet); before: 3cfa88c (25 Oct 2026 ~03:30: the 24 Oct refactors and the UI design docs; nothing touched)
-Dirty paths at check: none (25 Oct 2026 ~23:05); none (25 Oct 2026 ~12:15); none (25 Oct 2026 ~07:00); before: none at the start (24 Oct 2026, 1defa3f); at the end `controller/src/impl/autopilot_frame.cpp`, `controller/src/impl/autopilot_objective.cpp` (another session's uncommitted edits, appeared during the check; not judged here)
+Checked against: FLvibed 4338909 (31 Oct 2026 ~05:10, short form: 1 watched-path commit: the audit robustness bundle 55d42263 (PatchVtable / PatchImport fail closed on a non-writable slot, the D3D Reset / Present / CreateDevice re-patch keeps the previous pointer on a refusal, room-character hook order, subtitle loaders parse-then-swap); `core/flexe.h` unchanged since 5eb7bcb; no clash; no effect)
+Dirty paths at check: none (working tree clean at 4338909, 31 Oct 2026 ~05:10)
 Watch: docs/HDE_UPSTREAM.md, docs/MOD_COMPATIBILITY.md, controller/src/host, core/game/flight.*, core/game/render.*, subtitles/src/impl/impl.cpp, core/flexe.h
 Evidence: `research\repos\FLSharp\` (clone of https://github.com/BC46/FLSharp, MIT, 21 Oct 2026; `git pull` only when the user asks); the test install's and the upstream clone's `EXE\FLSharp.dll` / `FLSharp.ini`
 Sources: [api] GitHub releases and commits; [file] the two FLSharp.dll / FLSharp.ini pairs in the test install and the upstream clone; [file] FLSharp sources (README, include/Freelancer.h, src/flight_controls.cpp, mouse.cpp, camera.cpp, maneuver_frame.cpp, utils.h, version_check.cpp and others)
 
 ## What it means for FLvibed
 
+*Check-up 30 Oct 2026 ~01:50 (short form, HEAD 4ca36df; 1 watched-path commit 310be23..4ca36df):* **a new meeting
+point on paper, no clash.** 4ca36df detours the frame timer 0x42D770 (`exe::FrameTimer`, host `main.cpp`) for the
+TEST-ONLY `fixeddt`. FLSharp (source as at f58ed01) knows the same function as `UpdateDeltaTime` and reads its outputs
+but hooks none of them: `camera.cpp` 76 takes `GetDeltaTime()` 0x42D680 (= `FrameDt`), `Freelancer.h` 31 names the sum
+0x667D38 (`FrameDtAccum`), and its server-filter speed fix (`server_filter.cpp` 35-48, a vtable hook on the MP server
+filter dialog's frame update) calls 0x5B2360 `UpdateDeltaTimeAndUpTime`, which runs the timer while that dialog is open (`research\disasm\
+Freelancer.ann.asm`: 0x5B2360 calls 0x42D770, then adds the dt to the up-time double 0x67ECD8 - not a message pump, as
+`FREELANCER_RE.md` "Modal dialog loops" calls it; the pump is 0x5B0B60).
+With `fixeddt` on, FLSharp's camera smoothing therefore runs on the fixed game dt, consistent with the rest of the game;
+the detour chains, so FLSharp's call goes through it. 217 / 217 signatures on the upstream exe
+(`research\evidence\discovery\sigcheck_4ca36df.txt`). For the second-install sweep (U4): none needed - `fixeddt` is
+single player and off by default.
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 2 watched-path commits 7518008..067bf32):* no effect. The
+signature re-cut (ca2ef92, C1) keeps 211 / 211 on the upstream exe with no signature across padding
+(`research\evidence\discovery\sigcheck_067bf32.txt`); the scene-mix subtitles (a601534) add one more FLvibed caller of
+`IsPlayerInCutscene` 0x41A3E0 (`room::InScene`), already on the shared list below as a call on both sides (FLSharp's
+`camera.cpp`) - read-only, no clash. FLSharp hooks no sound start the mixes depend on (its sound features are the
+projectile one-shot fix and the test sounds).
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 17 watched-path commits 77d8655..7518008):* 211 / 211 on the upstream
+exe (`research\evidence\discovery\sigcheck_7518008.txt`). **Two new meeting points with FLSharp, both read in its
+source, both sweep items (U4 h, i):** (1) **the message pump** - `pump_no_block` (e89b007, on by default) hooks the
+exe's `GetMessageA` import so the pump 0x5B0B60 never waits (a WM_NULL when nothing is retrievable within 2 ms);
+FLSharp's `QuitMessageFix` (`src\exit.cpp`) trampolines the same function's entry (5 bytes at 0x5B0B60) and latches its
+FALSE return, for a quit while the multiplayer "disconnected" dialog runs the pump. Different layers (an import vs the
+entry), and FLvibed's hook still returns 0 for WM_QUIT, so the latch should hold - but FLSharp's case is a multiplayer
+one FLvibed now reaches: a quit with that dialog open, on the upstream install, is the test. (2) **The turret view's
+camera** - `CamTurret` 0x678F60 (ef56c49) is FLSharp's `TURRET_VIEW_CAMERA` (`include\Freelancer.h` 265; and FLvibed's
+`CamDocking` 0x679634 is FLSharp's `CINEMATICS_CAMERA`, one address, two names - K5); FLSharp's third-person camera fix
+(U5) moves the camera FLvibed now reads under the autopilot. Also: the LAN list's IPv4-only fix (0689c29,
+`LanHostFilter` 0x5ACF6A) writes only over vanilla 1.1's own bytes - both HDE exes carry the same 13 bytes already
+(adoxa's, HDE `FLDOCS\BinaryEdits.patch` 103), so on HDE FLvibed leaves the site alone, by design.
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 17 watched-path commits 855745b..e5c02cc):* 202 / 202 on the
 upstream exe (`research\evidence\discovery\sigcheck_e5c02cc.txt`). New since: FLvibed's own borderless window (90a8b7f /
 38d411c: detours at the game's `SetupScreen` and window-style reads) - with `borderless` 1 (auto, the default) it stays

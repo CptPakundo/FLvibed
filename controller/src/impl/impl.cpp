@@ -23,6 +23,8 @@ static void ImplInit(const HostApi* host)
     g_host = host;
     LogSetSink(host->LogWrite, host->dllDir);
     room::SetCharacterSource(HostAtLeast(5) ? host->GetRoomCharacters : nullptr);
+    // the front end's clicks run at the frame's end: a dialog's modal loop then keeps the pad and the harness alive
+    uiclick::SetDeferral(HostAtLeast(29) ? host->DeferToFrameEnd : nullptr);
     Log("Logic DLL init (build %s %s)", __DATE__, __TIME__);
     exe::ResolveAll("controller logic");
     ctl::RegisterBus(); // before Init loads the ini: the bus's defaults = the struct initialisers
@@ -33,6 +35,7 @@ static void ImplInit(const HostApi* host)
 static void ImplShutdown()
 {
     debug::StopWatch(); // its exception handler is code of this DLL
+    uiclick::SetDeferral(nullptr);
     options_page::Shutdown();
 #ifdef FLV_HAVE_BARBUTTON
     barbutton::Shutdown(); // the glyph texture belongs to this DLL

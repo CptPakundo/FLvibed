@@ -107,23 +107,23 @@ static constexpr const char* kOpt_input_mode[] = {"AUTOMATIC", "CONTROLLER", "KE
 static constexpr const char* kOpt_glyph_style[] = {"AUTOMATIC", "XBOX", "PLAYSTATION", "NINTENDO"};
 static constexpr const char* kOpt_glyph_look[] = {"AUTOMATIC", "COLOURED", "HUD 2 GLYPHS"};
 static constexpr const char* kOpt_confirm_button[] = {"BOTTOM BUTTON (A / CROSS / B)", "RIGHT BUTTON (NINTENDO)"};
+static constexpr const char* kOpt_pad_backend[] = {"XINPUT", "SDL3 (EXPERIMENTAL)"};
 static constexpr Row kRows_controller_0[] = {
     {"input_mode", "Controller", "input_mode", Picker, "Input device", kOpt_input_mode, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Automatic: the last device used wins and the whole UI follows it in one frame (a stick past its dead zone, a trigger, any button; a mouse move of a few pixels, a wheel notch, any key). Lock it when a drifting stick or a second device makes it flicker."},
     {"glyph_style", "Controller", "glyph_style", Picker, "Button prompts", kOpt_glyph_style, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro); choose one if yours is detected wrongly."},
     {"glyph_look", "Controller", "glyph_look", Picker, "Glyph look", kOpt_glyph_look, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "How the button prompts look: Automatic = HUD 2 in its own colour, the classic HUD and menus in the buttons' colours; Coloured everywhere; HUD 2 style everywhere. Sizes stay as each screen has them."},
     {"confirm_button", "Controller", "confirm_button", Picker, "Confirm with", kOpt_confirm_button, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which face button accepts in menus. The bottom button is the Xbox and PlayStation habit; Nintendo players may prefer the right one."},
     {"pause_on_disconnect", "Controller", "pause_on_disconnect", Toggle, "Pause when the pad disconnects in flight", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A pad that drops out mid-flight pauses the game; in menus the UI just switches to the keyboard."},
+    {"pad_backend", "Controller", "pad_backend", Picker, "Controller backend", kOpt_pad_backend, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Advanced, Live, nullptr, false, nullptr, "How the controller is read. XInput (default): Xbox pads and pads that act as one. SDL3 (experimental): also PlayStation and Switch Pro pads, with their own button prompts, and the Xbox pad through SDL; if SDL cannot start, XInput keeps reading the pad. Not yet tested with real PlayStation or Switch pads."},
 };
 // CONTROLLER / LAYOUT
 static constexpr const char* kOpt_pad_preset[] = {"FREELANCER", "ACE", "ASSISTED", "CUSTOM"};
 static constexpr const char* kOpt_weapon_groups[] = {"SIMPLE (ONE FIRE BUTTON)", "CYCLE ON Y HOLD", "TWO GROUPS ON THE TRIGGERS"};
-static constexpr const char* kOpt_autopilot_pad[] = {"HOLD VIEW", "L3 + R3", "HOLD MENU"};
 static constexpr Row kRows_controller_1[] = {
     {"pad_preset", "Controller", "pad_preset", Picker, "Preset", kOpt_pad_preset, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, true, nullptr, "The whole flight layout. Freelancer: targets and weapons on the fingers, consumables on the D-pad. Ace: arcade flight (left stick steers, triggers are the throttle). Assisted: the autopilot flies, you aim and decide. Custom: edited on the Bindings screen."},
     {"edit_bindings", "Controller", nullptr, Button, "Bindings", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", nullptr, Player, Live, nullptr, false, "EDIT BINDINGS AND SEE THE LAYOUT", "The controller diagram with every binding per situation (flight, autopilot, menus, bases, dealers, map, text entry)."},
-    {"weapon_groups", "Controller", "weapon_groups", Picker, "Weapon groups", kOpt_weapon_groups, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one. Cycle: Y held flips to the next group (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to L3 and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set on the HUD's group buttons, as in the game."},
+    {"weapon_groups", "Controller", "weapon_groups", Picker, "Weapon groups", kOpt_weapon_groups, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one. Cycle: Y held flips to the next group (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set on the HUD's group buttons, as in the game."},
     {"holds_as_toggles", "Controller", "holds_as_toggles", Toggle, "Holds as toggles", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons."},
-    {"autopilot_pad", "Controller", "autopilot_pad", Picker, "Autopilot on the pad", kOpt_autopilot_pad, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "How the Advanced Autopilot is switched on and off from the pad: a half-second hold with a ring, or the only chord in the layout. Any stick input hands the ship back."},
 };
 // CONTROLLER / AIM
 static constexpr const char* kOpt_aim_mode[] = {"GIMBAL", "RETICLE"};
@@ -142,7 +142,7 @@ static constexpr Row kRows_controller_3[] = {
     {"stick_deadzone", "Controller", "stick_deadzone", Slider, "Stick deadzone", nullptr, 0, nullptr, 0.0f, 0.9f, 0.01f, 1.0f, "", "0.24", Player, Live, nullptr, false, nullptr, "Radial deadzone of both sticks (0..0.9). The device switch ignores stick motion inside it."},
     {"trigger_threshold", "Controller", "trigger_threshold", Slider, "Trigger deadzone", nullptr, 0, nullptr, 0.0f, 0.9f, 0.01f, 1.0f, "", "0.12", Player, Live, nullptr, false, nullptr, "How far a trigger must be pulled before it counts."},
     {"throttle_rate", "Controller", "throttle_rate", Slider, "Throttle rate", nullptr, 0, nullptr, 0.1f, 5.0f, 0.1f, 1.0f, "", "0.9", Player, Live, nullptr, false, nullptr, "Throttle lever change per second at full left stick."},
-    {"rumble", "Controller", "rumble", Slider, "Rumble", nullptr, 0, nullptr, 0.0f, 100.0f, 10.0f, 1.0f, "%", "60", Player, Live, nullptr, false, nullptr, "Vibration strength: hits, the autopilot's hand-back, a confirmation request. 0 = off. Never the only cue."},
+    {"rumble", "Controller", "rumble", Slider, "Rumble", nullptr, 0, nullptr, 0.0f, 100.0f, 10.0f, 1.0f, "%", "60", Player, Live, nullptr, false, nullptr, "Vibration strength: your ship being hit (heavier for hull than shield), your shield failing, the autopilot handing the ship back, and a game box waiting for your answer. 0 = off. Never the only cue. Silent while the game is in the background, paused (except those boxes), in menus and cutscenes, and while you play with keyboard and mouse."},
 };
 // CONTROLLER / TARGETING
 static constexpr const char* kOpt_auto_target[] = {"OFF", "CLOSEST ENEMY", "CLOSEST ENEMY, KEEP MINE"};
@@ -156,31 +156,33 @@ static constexpr const char* kOpt_pad_cursor[] = {"OFF", "ROOMS AND MAPS", "EVER
 static constexpr const char* kOpt_prompt_bar[] = {"CONTEXTUAL", "ALWAYS", "OFF"};
 static constexpr const char* kOpt_world_prompts[] = {"CONTEXTUAL", "OFF"};
 static constexpr Row kRows_controller_5[] = {
-    {"ui_style", "Controller", "ui_style", Picker, "Screens", kOpt_ui_style, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The look of the menus, rooms and dialogs: Classic = the game's own; HUD 2 = FLvibed's HUD 2 skin over the same screens (the game's controls stay as they are)."},
+    {"ui_style", "Controller", "ui_style", Picker, "Menus and rooms look", kOpt_ui_style, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Advanced, Live, nullptr, false, nullptr, "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game's controls stay as they are); Classic = the game's own look in the menus. With the HUD row set to Classic, everything keeps the game's look whatever this says."},
     {"pad_cursor", "Controller", "pad_cursor", Picker, "Pad cursor", kOpt_pad_cursor, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "FLvibed's own cursor on the left stick, on every screen by default: moving the stick shows it and the game reacts as to the mouse (a bar character lights up, a button highlights, a row focuses); it slows over and pulls toward targets; a D-pad or bumper press hides it and focus navigation carries on from there. A = click either way. Off = focus navigation only."},
     {"cursor_speed", "Controller", "cursor_speed", Slider, "Cursor speed", nullptr, 0, nullptr, 0.1f, 5.0f, 0.1f, 1.0f, "", "1.1", Player, Live, nullptr, false, nullptr, "Pad cursor speed, screen heights per second."},
     {"cursor_magnet", "Controller", "cursor_magnet", Slider, "Cursor magnetism", nullptr, 0, nullptr, 0.0f, 100.0f, 10.0f, 1.0f, "%", "60", Player, Live, nullptr, false, nullptr, "How strongly the pad cursor slows over and pulls toward a clickable element."},
     {"prompt_bar", "Controller", "prompt_bar", Picker, "Prompt bar", kOpt_prompt_bar, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The bottom-right row of button prompts on controller screens. Contextual: only where a decision is pending or the screen is new to you; Always: on every screen."},
     {"world_prompts", "Controller", "world_prompts", Picker, "World prompts", kOpt_world_prompts, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "A prompt by the target when something unusual is possible now (dock in range, loot in reach). Never a permanent label."},
-    {"ap_hints", "Controller", "ap_hints", Toggle, "Autopilot hints", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Show the autopilot's prompts and status to players who have not used it yet. Off: nothing about the autopilot shows until you switch it on once."},
+    {"ap_hints", "Controller", "ap_hints", Toggle, "Autopilot hints", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Show the autopilot's prompts and status to players who have not used it yet. Off: nothing about the autopilot shows until you switch it on once."},
     {"text_size", "Controller", "text_size", Slider, "Text size", nullptr, 0, nullptr, 80.0f, 150.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "Size of FLvibed's own UI text (prompts, panels, the status strip). The subtitles have their own size."},
     {"wheel_rate", "Controller", "wheel_rate", Slider, "Scroll speed", nullptr, 0, nullptr, 1.0f, 50.0f, 1.0f, 1.0f, "", "10", Player, Live, nullptr, false, nullptr, "Right stick scrolling, notches per second."},
 };
 // CONTROLLER / HUD
 static constexpr const char* kOpt_hud_style[] = {"CLASSIC", "HUD 2 ON THE PAD", "HUD 2 ALWAYS"};
+static constexpr const char* kOpt_hud_preset[] = {"STANDARD", "FOCUS (EXPERIMENTAL)"};
 static constexpr const char* kOpt_hud_fade[] = {"ALWAYS FULL", "CALM DIMS", "MINIMAL"};
 static constexpr const char* kOpt_hud_numbers[] = {"WHEN LOW", "ALWAYS", "NEVER"};
 static constexpr const char* kOpt_hud_context[] = {"CONTEXTUAL", "OFF"};
 static constexpr const char* kOpt_button_legend[] = {"ON", "OFF"};
 static constexpr const char* kVal_button_legend[] = {"0", "1"};
 static constexpr Row kRows_controller_6[] = {
-    {"hud_style", "Controller", "hud_style", Picker, "HUD", kOpt_hud_style, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's HUD (with the controller's glyphs and legend)."},
+    {"hud_style", "Controller", "hud_style", Picker, "HUD", kOpt_hud_style, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. It is the default for the controller and for keyboard and mouse alike, and it also covers the menus and rooms (the game's screens take its look; the row 'Menus and rooms look' can keep the game's own). On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's own HUD and screens (with the controller's glyphs and legend)."},
+    {"hud_preset", "Controller", "hud_preset", Picker, "HUD 2 layout", kOpt_hud_preset, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Advanced, Live, nullptr, false, nullptr, "Experimental: HUD 2's layout. Standard is today's HUD 2. Focus is calmer: in calm flight no ring, two thin shield and hull arcs and the instruments at the screen's edges. The Speedrun and Guided layouts are planned and cannot be chosen yet."},
     {"hud_fade", "Controller", "hud_fade", Picker, "Fade when calm", kOpt_hud_fade, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "HUD 2 in quiet flight. Calm dims: the ring and the side panels dim while nothing happens and come back the moment something changes or a fight starts. Minimal: calm flight shows almost nothing. Always full: no fading."},
     {"hud_opacity", "Controller", "hud_opacity", Slider, "HUD opacity", nullptr, 0, nullptr, 40.0f, 100.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "How opaque HUD 2 is overall."},
     {"hud_scale", "Controller", "hud_scale", Slider, "HUD size", nullptr, 0, nullptr, 80.0f, 130.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "The size of HUD 2's panels, text and glyphs."},
     {"hud_numbers", "Controller", "hud_numbers", Picker, "Numbers on the ring", kOpt_hud_numbers, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The shield, hull and power numbers at the ends of the ring's arcs: only when a value runs low, always, or never (the arcs alone)."},
     {"hud_threats", "Controller", "hud_threats", Toggle, "Threat list", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "In a fight, the nearest hostiles under the target card, with the buttons that pick them."},
-    {"hud_context", "Controller", "hud_context", Picker, "Context prompts", kOpt_hud_context, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Under your ship, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons."},
+    {"hud_context", "Controller", "hud_context", Picker, "Context prompts", kOpt_hud_context, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Beside the bottom panels, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons: moving the ship on the left, firing and using on the right."},
     {"hud_alerts", "Controller", "hud_alerts", Toggle, "Alerts", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A short card at the top when something needs you now (shield failing, missile incoming, cruise disrupted, hold full), naming the button that helps; that slot lights up."},
     {"hud_info", "Controller", "hud_info", Toggle, "Situation details", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers."},
     {"hud_wireframes", "Controller", "hud_wireframes", Toggle, "Wireframe views", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "The game's wireframe pictures of your target and your ship in HUD 2's panels (else their icons)."},
@@ -188,28 +190,28 @@ static constexpr Row kRows_controller_6[] = {
     {"hud_glyphs", "Controller", "hud_glyphs", Toggle, "Glyphs on the HUD", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Classic HUD: in pad mode the HUD's own buttons carry the glyph of the button that acts on them (the maneuver bar, the cruise box, the NeuroNet box, the contact filters, repair and battery, the weapon groups)."},
     {"button_legend", "Controller", "button_legend", Picker, "Button legend", kOpt_button_legend, 2, kVal_button_legend, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Classic HUD: a small list in the empty right-middle of the screen with the actions available right now and their buttons, changing with the context (a dockable target, a fight, the autopilot flying). HUD 2 has its context prompts instead."},
     {"ap_status_line", "Controller", "ap_status_line", Toggle, "Autopilot status line", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Classic HUD: the one line under the maneuver bar while the autopilot flies, cruise charges or turret view is on. HUD 2 shows it in its navigation block."},
-    {"shield_cue", "Controller", "shield_cue", Toggle, "Shield hit cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails."},
-    {"shield_cue_intensity", "Controller", "shield_cue_intensity", Slider, "Shield cue intensity", nullptr, 0, nullptr, 0.0f, 2.0f, 0.05f, 1.0f, "", "0.75", Player, Live, "shield_cue", false, nullptr, "Strength of the shield cue."},
-    {"hull_cue", "Controller", "hull_cue", Toggle, "Hull hit cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "shield_cue", false, nullptr, "With the shield cue: hull hits show your ship's own hull hit effect at the screen edge."},
-    {"reticle_cue", "Controller", "reticle_cue", Toggle, "Reticle cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue)."},
+    {"shield_cue", "Controller", "shield_cue", Toggle, "Shield hit cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails."},
+    {"shield_cue_intensity", "Controller", "shield_cue_intensity", Slider, "Shield cue intensity", nullptr, 0, nullptr, 0.0f, 2.0f, 0.05f, 1.0f, "", "1", Player, Live, "shield_cue", false, nullptr, "Strength of the shield cue."},
+    {"hull_cue", "Controller", "hull_cue", Toggle, "Hull hit cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "shield_cue", false, nullptr, "With the shield cue: hull hits show your ship's own hull hit effect at the screen edge."},
+    {"reticle_cue", "Controller", "reticle_cue", Toggle, "Reticle cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue)."},
 };
 // CONTROLLER / SYSTEM
 static constexpr const char* kOpt_fluf_windows[] = {"IGNORE", "PLAYER WINDOWS", "ALL"};
 static constexpr const char* kOpt_borderless[] = {"OFF", "AUTO", "ALWAYS"};
 static constexpr Row kRows_controller_7[] = {
-    {"focus_only", "Controller", "focus_only", Toggle, "Controller only while the game is in focus", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Ignore the controller while the game is in the background."},
+    {"focus_only", "Controller", "focus_only", Toggle, "Controller only while the game is in focus", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Ignore the controller while the game is in the background, in flight and in menus. A button held when you come back is ignored until you release it."},
     {"run_in_background", "Controller", "run_in_background", Toggle, "Keep the game running in the background", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The game keeps running while its window is not in focus (Freelancer pauses otherwise)."},
     {"fluf_windows", "Controller", "fluf_windows", Picker, "FLUF windows", kOpt_fluf_windows, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command's or a module's window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. While FLUF's command palette is open (typing or not) FLvibed's keys all pass to FLUF, like a chat box."},
     {"borderless", "Controller", "borderless", Picker, "Borderless window", kOpt_borderless, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "A window without frame covering the monitor at its resolution - never exclusive fullscreen. Auto: only when nothing else provides it (HD Edition does); Always: also then; Off: the game's own mode. With FLUF, Alt+Enter switches to a bordered window. Next start."},
 };
 static constexpr Section kSections_controller[] = {
-    {"INPUT", kRows_controller_0, 5},
-    {"LAYOUT", kRows_controller_1, 5},
+    {"INPUT", kRows_controller_0, 6},
+    {"LAYOUT", kRows_controller_1, 4},
     {"AIM", kRows_controller_2, 6},
     {"STICKS", kRows_controller_3, 4},
     {"TARGETING", kRows_controller_4, 2},
     {"MENUS AND PROMPTS", kRows_controller_5, 9},
-    {"HUD", kRows_controller_6, 18},
+    {"HUD", kRows_controller_6, 19},
     {"SYSTEM", kRows_controller_7, 4},
 };
 
@@ -280,7 +282,7 @@ static constexpr const char* kOpt_speaker_names[] = {"OWN ROW", "INLINE", "OFF"}
 static constexpr Row kRows_subtitles_2[] = {
     {"speaker_names", "Subtitles", "speaker_names", Picker, "Speaker names", kOpt_speaker_names, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "The name on its own row, inline as \"Name: text\", or off."},
     {"speaker_colors", "Subtitles", "speaker_colors", Toggle, "Speaker colours", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Story speakers' names in their own colours (new key)."},
-    {"hostile_marker", "Subtitles", "hostile_marker", Toggle, "Hostile marker", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "A hostile speaker gets the HUD's red triangle before the name."},
+    {"hostile_marker", "Subtitles", "hostile_marker", Toggle, "Hostile marker", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "A hostile speaker gets the HUD's red triangle before the name."},
 };
 // SUBTITLES / CHANNELS
 static constexpr const char* kOpt_chatter[] = {"CHAT WINDOW", "SUBTITLES", "OFF"};
@@ -306,6 +308,7 @@ static constexpr Row kRows_subtitles_4[] = {
 // SUBTITLES / MOTION
 static constexpr Row kRows_subtitles_5[] = {
     {"motion", "Subtitles", "motion", Toggle, "Motion", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Lines fade in and out and the stack glides; off = instant."},
+    {"stack_fit", "Subtitles", "stack_fit", Slider, "Stacked lines shrink to", nullptr, 0, nullptr, 0.5f, 1.0f, 0.05f, 1.0f, "", "0.7", Player, Live, "enabled", false, nullptr, "When several speakers' lines are on screen together they shrink together, down to this size, so the stack keeps about one line's height; 1 = off."},
     {"word_pop", "Subtitles", "word_pop", Toggle, "Spoken-word pop", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "The word being spoken grows slightly (lines with word timings)."},
     {"neural_net_severity", "Subtitles", "neural_net_severity", Toggle, "Neural Net severity colours", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Neural Net lines coded by severity (colour, brightness pulses)."},
     {"linger", "Subtitles", "linger", Slider, "Linger", nullptr, 0, nullptr, 0.0f, 5.0f, 0.25f, 1.0f, " s", "1", Advanced, Live, "enabled", false, nullptr, "Seconds a line stays after its audio."},
@@ -317,7 +320,7 @@ static constexpr Section kSections_subtitles[] = {
     {"SPEAKERS", kRows_subtitles_2, 3},
     {"CHANNELS", kRows_subtitles_3, 6},
     {"PLACEMENT", kRows_subtitles_4, 5},
-    {"MOTION", kRows_subtitles_5, 5},
+    {"MOTION", kRows_subtitles_5, 6},
 };
 
 // MOVIES / (no header)
@@ -389,21 +392,18 @@ inline constexpr Preset kAutopilotPresets[] = {
 inline constexpr int kAutopilotPresetCount = 3;
 
 static constexpr PresetValue kPreset_controller_FREELANCER[] = {
-    {"Controller", "autopilot_pad", "0"},
     {"Controller", "holds_as_toggles", "0"},
 };
 static constexpr PresetValue kPreset_controller_ACE[] = {
-    {"Controller", "autopilot_pad", "0"},
     {"Controller", "holds_as_toggles", "0"},
 };
 static constexpr PresetValue kPreset_controller_ASSISTED[] = {
-    {"Controller", "autopilot_pad", "0"},
     {"Controller", "holds_as_toggles", "1"},
 };
 inline constexpr Preset kControllerPresets[] = {
-    {"FREELANCER", kPreset_controller_FREELANCER, 2},
-    {"ACE", kPreset_controller_ACE, 2},
-    {"ASSISTED", kPreset_controller_ASSISTED, 2},
+    {"FREELANCER", kPreset_controller_FREELANCER, 1},
+    {"ACE", kPreset_controller_ACE, 1},
+    {"ASSISTED", kPreset_controller_ASSISTED, 1},
 };
 inline constexpr int kControllerPresetCount = 3;
 
@@ -498,7 +498,7 @@ static constexpr Bind kBind_common_dealers[] = {
 static constexpr Bind kBind_common_flight_ap[] = {
     {"A", "accept", "none", "none"},
     {"B", "handback", "none", "none"},
-    {"X", "goal_panel", "none", "none"},
+    {"X", "goal_panel", "turret", "none"},
     {"Y", "cruise", "none", "none"},
     {"LB", "target_picker", "action_wheel", "none"},
     {"RB", "missile", "none", "none"},
@@ -632,4 +632,622 @@ inline const Row* FindRegistryRow(const char* section, const char* regKey)
             }
     return nullptr;
 }
+
+// ---- HUD 2 layout presets (docs\UI_HUD2_PRESETS.md, revision 2; UI_SPEC.json "hud2_presets": every number with
+// its section there). Fractions of H at 16:9 from the top-left unless named _W (of W) or d (from the centre); budgets
+// = fractions of the screen's area (plates only). The lint (controller\src\impl\hud2_lint.h) reads these.
+namespace hud2p
+{
+inline constexpr float kTextFloor = 0.024f; // PRESETS 1.2 Text
+inline constexpr float kTextFloorPx = 14.0f; // PRESETS 1.2 Text
+inline constexpr float kCentreGap = 0.01f; // PRESETS 6 step 3 (centre-stack overlaps); the 0.01 H gap: docs/research/controller_ui.md 'HUD rules' 8 / IDEAS U35
+inline constexpr float kCoreR = 0.045f; // PRESETS 1.3 Centre stack
+inline constexpr float kKeepX0W = 0.4f; // PRESETS 1.3 Ship keep-out
+inline constexpr float kKeepX1W = 0.6f; // PRESETS 1.3 Ship keep-out
+inline constexpr float kKeepY0 = 0.63f; // PRESETS 1.3 Ship keep-out
+inline constexpr float kKeepY1 = 0.92f; // PRESETS 1.3 Ship keep-out
+inline constexpr float kTitleSafe = 0.94f; // PRESETS 6 step 3 (title-safe 90 % as WARN; the rule: docs/research/controller_ui.md 'HUD rules' 1 / IDEAS U35)
+inline constexpr float kBudgetDefault = 0.1f; // PRESETS 6 step 3 (WARN: budgets); the cap where a preset names none for a context: docs/research/controller_ui.md 'HUD rules' 8 / IDEAS U35 (~10 %)
+inline constexpr float kMarginSideW = 0.03f; // PRESETS 1.1 (0.05 until 0.2.0; 0.03 = PC practice, the owner 1 Nov 2026)
+inline constexpr float kMarginTop = 0.03f; // PRESETS 1.1 (0.05 until 0.2.0; 0.03 = PC practice, the owner 1 Nov 2026)
+inline constexpr float kMarginBottom = 0.03f; // PRESETS 1.1 (0.05 until 0.2.0; 0.03 = PC practice, the owner 1 Nov 2026)
+inline constexpr float kAlertPlateH = 0.05f; // PRESETS 1.5
+inline constexpr float kAspectK4x3 = 0.8f; // PRESETS 1.8
+inline constexpr float kAspectK16x10 = 0.9f; // PRESETS 1.8
+// Components exempt from every zone (PRESETS 1.3 Exemptions by name)
+static constexpr const char* kZoneExempt[] = {"alert", "peek", "subtitles.dialogue", "subtitles.nametab"};
+inline constexpr int kZoneExemptCount = 4;
+
+enum class Anchor : char
+{
+    CentreToCard = 'c', // x: cx +- min(halfMax, the card's left edge - cx - cardGap (cardGapNarrow below 16:9)); y fixed
+    Rail = 'r',         // x: from the previous zone's right edge to the card's right edge; y fixed
+    Centre = 'o',       // a circle of radius r about the screen centre
+    CentreOffset = 'd', // a rectangle dx0..dx1, dy0..dy1 (in H) from the screen centre
+};
+struct Zone
+{
+    const char* name;
+    Anchor anchor;
+    bool circle;
+    float x0, y0, x1, y1;           // H at 16:9 (CentreOffset: dx0, dy0, dx1, dy1)
+    float r;                        // a circle
+    float halfMax, cardGap, cardGapNarrow; // CentreToCard
+    const char* const* exemptKbm;   // components exempt on keyboard and mouse only (beside kZoneExempt)
+    int exemptKbmCount;
+    const char* src;
+};
+// A boxed-budget cap: context (calm / combat), device (pad / kbm), case (no_target / target / steady / peak).
+struct BudgetCap
+{
+    const char* context;
+    const char* device;
+    const char* when;
+    float cap;
+};
+// A prompt cap per context: context-line pills and prompt pairs (answers apart; PRESETS 1.6).
+struct PromptCap
+{
+    const char* context;
+    int pills, pairs;
+};
+// One number of an element's geometry in a context (the spec's contexts.<ctx>.elements[]: every numeric field, as
+// written there - fractions of H at 16:9 unless the key says _w): what the layout core (hud2_layout.h) reads by name.
+struct ElemNum
+{
+    const char* context;
+    const char* elem;
+    const char* key;
+    float v;
+};
+struct Preset
+{
+    int index; // hud_preset
+    const char* id;
+    const char* name;
+    float reticleR, pickR; // the drawn ring / arcs radius and the RS-click pick radius (PRESETS 1.3, 3)
+    const Zone* zones;
+    int zoneCount;
+    const BudgetCap* budgets;
+    int budgetCount;
+    const PromptCap* prompts;
+    int promptCount;
+    const char* src;
+    const ElemNum* nums; // the elements' numbers per context (Num() below)
+    int numCount;
+};
+
+static constexpr const char* kZoneExKbm_standard_S2[] = {"list"};
+static constexpr Zone kZones_standard[] = {
+    {"S1", Anchor::CentreToCard, false, 0.469f, 0.2f, 1.309f, 0.8f, 0.0f, 0.42f, 0.02f, 0.01f, nullptr, 0, "PRESETS 2.1 Zones; 1.8 (4:3, 21:9)"},
+    {"S2", Anchor::Rail, false, 1.309f, 0.4f, 1.689f, 0.78f, 0.0f, 0.0f, 0.0f, 0.0f, kZoneExKbm_standard_S2, 1, "PRESETS 2.1 Zones; 1.3 (the K&M list, S2 only)"},
+    {"core", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.045f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 1.3"},
+};
+static constexpr BudgetCap kBudgets_standard[] = {
+    {"combat", "pad", "peak", 0.16f},
+    {"combat", "kbm", "peak", 0.17f},
+};
+static constexpr PromptCap kPrompts_standard[] = {
+    {"calm", 3, 5},
+    {"combat", 2, 6},
+};
+static constexpr ElemNum kNums_standard[] = {
+    {"calm", "nav", "x", 0.089f},
+    {"calm", "nav", "y", 0.05f},
+    {"calm", "nav", "w_max", 0.38f},
+    {"calm", "nav", "h_max", 0.3f},
+    {"calm", "nav", "h_max_kbm", 0.32f},
+    {"calm", "nav", "headline_h", 0.032f},
+    {"calm", "card", "x0", 1.329f},
+    {"calm", "card", "x1", 1.689f},
+    {"calm", "card", "y0", 0.05f},
+    {"calm", "card", "w", 0.36f},
+    {"calm", "card", "h_on_screen", 0.085f},
+    {"calm", "card", "h_off_screen", 0.12f},
+    {"calm", "hints", "glyph_h", 0.032f},
+    {"calm", "hints", "alpha", 0.45f},
+    {"calm", "ring", "r", 0.1f},
+    {"calm", "ring", "alpha_ring", 0.4f},
+    {"calm", "ring", "alpha_speed", 0.6f},
+    {"calm", "ring.cruise", "dy", 0.083f},
+    {"calm", "comm", "x_max", 0.469f},
+    {"calm", "comm", "bottom", 0.76f},
+    {"calm", "comm", "line_h", 0.034f},
+    {"calm", "context", "y", 0.915f},
+    {"calm", "context", "pill_h", 0.044f},
+    {"calm", "context", "pills_max", 3.0f},
+    {"calm", "ship", "x0", 0.089f},
+    {"calm", "ship", "x1", 0.389f},
+    {"calm", "ship", "y0", 0.83f},
+    {"calm", "ship", "y1", 0.95f},
+    {"calm", "ship", "w", 0.3f},
+    {"calm", "ship", "h", 0.12f},
+    {"calm", "ship", "thumb", 0.1f},
+    {"calm", "ship", "thumb_formation", 0.16f},
+    {"calm", "loadout", "x0", 1.329f},
+    {"calm", "loadout", "x1", 1.689f},
+    {"calm", "loadout", "y0", 0.82f},
+    {"calm", "loadout", "y1", 0.95f},
+    {"calm", "loadout", "w", 0.36f},
+    {"calm", "loadout", "h", 0.13f},
+    {"calm", "loadout", "cross", 0.11f},
+    {"combat", "card", "x0", 1.329f},
+    {"combat", "card", "w", 0.36f},
+    {"combat", "card", "h_on_screen", 0.165f},
+    {"combat", "card", "h_off_screen", 0.215f},
+    {"combat", "threats", "w", 0.36f},
+    {"combat", "threats", "h", 0.11f},
+    {"combat", "threats", "header_h", 0.044f},
+    {"combat", "threats", "rows", 2.0f},
+    {"combat", "threats", "rows_kbm", 3.0f},
+    {"combat", "threats", "row_h", 0.032f},
+    {"combat", "ship", "w", 0.36f},
+    {"combat", "ship", "h", 0.15f},
+    {"combat", "loadout", "w", 0.48f},
+    {"combat", "loadout", "h", 0.15f},
+    {"combat", "context", "pills_max", 2.0f},
+    {"cruise", "ring.cruise", "dy", 0.083f},
+    {"lane", "card", "scale", 0.75f},
+    {"reticle", "reticle", "ring_r", 0.1f},
+    {"reticle", "reticle", "arc_w", 0.007f},
+    {"reticle", "reticle", "pick_r", 0.1f},
+    {"reticle", "reticle", "calm_ring_alpha", 0.4f},
+    {"reticle", "reticle", "calm_speed_alpha", 0.6f},
+    {"reticle", "cruise_row", "dy", 0.083f},
+    {"reticle", "cruise_row", "retire_after", 3.0f},
+    {"bundle", "existing", "hud_fade", 1.0f},
+    {"bundle", "existing", "hud_numbers", 0.0f},
+    {"bundle", "existing", "hud_threats", 1.0f},
+    {"bundle", "existing", "hud_context", 0.0f},
+    {"bundle", "existing", "hud_alerts", 1.0f},
+    {"bundle", "existing", "hud_info", 1.0f},
+    {"bundle", "existing", "hud_wireframes", 1.0f},
+    {"bundle", "existing", "ap_hints", 0.0f},
+    {"bundle", "existing", "shield_cue", 0.0f},
+    {"bundle", "existing", "hull_cue_pattern", 2.0f},
+    {"bundle", "existing", "reticle_cue", 0.0f},
+    {"bundle", "new", "hud_reticle", 0.0f},
+    {"bundle", "new", "hud_calm_ring", 40.0f},
+    {"bundle", "new", "hud_calm_panel", 60.0f},
+    {"bundle", "new", "hud_card", 1.0f},
+    {"bundle", "new", "hud_ship", 1.0f},
+    {"bundle", "new", "hud_loadout", 1.0f},
+    {"bundle", "new", "hud_fight_forms", 1.0f},
+    {"bundle", "new", "hud_threat_rows", 3.0f},
+    {"bundle", "new", "hud_nav", 0.0f},
+    {"bundle", "new", "hud_place", 0.0f},
+    {"bundle", "new", "hud_cruise_row", 0.0f},
+    {"bundle", "new", "hud_context_len", 3.0f},
+    {"bundle", "new", "hud_context_combat", 2.0f},
+    {"bundle", "new", "hud_prompt_learn", 3.0f},
+    {"bundle", "new", "hud_prompt_recall_s", 10.0f},
+    {"bundle", "new", "hud_prompt_return_days", 14.0f},
+    {"bundle", "new", "hud_reveal", 1.0f},
+    {"bundle", "new", "hud_peek", 1.0f},
+    {"bundle", "new", "hud_auto_peek", 1.0f},
+    {"bundle", "new", "hud_wake_s", 4.0f},
+    {"bundle", "new", "hud_hold_nominal", 1.0f},
+    {"bundle", "new", "hud_combat_linger_ms", 2000.0f},
+    {"bundle", "new", "hud_form_linger_s", 6.0f},
+    {"bundle", "new", "hud_frame", 1.0f},
+    {"bundle", "new", "hud_ap_cue", 1.0f},
+    {"bundle", "new", "hud_labels", 0.0f},
+    {"bundle", "new", "hud_explain", 0.0f},
+    {"bundle", "new", "hud_text_scale", 100.0f},
+    {"bundle", "new", "speedrun_compare", 0.0f},
+};
+static constexpr Zone kZones_focus[] = {
+    {"core", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.045f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 1.3 (every preset)"},
+};
+static constexpr BudgetCap kBudgets_focus[] = {
+    {"calm", "pad", "target", 0.03f},
+    {"combat", "pad", "steady", 0.07f},
+    {"combat", "pad", "peak", 0.09f},
+    {"combat", "kbm", "steady", 0.085f},
+    {"combat", "kbm", "peak", 0.1f},
+};
+static constexpr PromptCap kPrompts_focus[] = {
+    {"calm", 1, 3},
+    {"combat", 2, 3},
+};
+static constexpr ElemNum kNums_focus[] = {
+    {"calm", "nav", "x", 0.089f},
+    {"calm", "nav", "y", 0.05f},
+    {"calm", "nav", "w_max", 0.48f},
+    {"calm", "nav", "w_max_4_3", 0.36f},
+    {"calm", "nav", "text_h", 0.03f},
+    {"calm", "nav", "h", 0.08f},
+    {"calm", "card", "w", 0.34f},
+    {"calm", "card", "h_on_screen", 0.065f},
+    {"calm", "card", "h_off_screen", 0.095f},
+    {"calm", "hints", "text_h", 0.026f},
+    {"calm", "hold", "x", 0.089f},
+    {"calm", "hold", "y", 0.93f},
+    {"calm", "hold", "text_h", 0.026f},
+    {"calm", "hold", "wakes_s", 4.0f},
+    {"calm", "context", "y", 0.915f},
+    {"calm", "context", "pills_max", 1.0f},
+    {"calm", "comm", "chat_free_x1_w", 0.3f},
+    {"combat", "card", "w", 0.34f},
+    {"combat", "card", "h_on_screen", 0.127f},
+    {"combat", "card", "h_off_screen", 0.167f},
+    {"combat", "card", "rows_kbm", 4.0f},
+    {"combat", "loadout", "w", 0.36f},
+    {"combat", "loadout", "w_kbm", 0.4f},
+    {"combat", "loadout", "h", 0.14f},
+    {"combat", "loadout", "cross", 0.12f},
+    {"combat", "loadout", "slot", 0.04f},
+    {"combat", "loadout", "icon", 0.02f},
+    {"combat", "ship", "row_h", 0.042f},
+    {"combat", "context", "pills_max", 2.0f},
+    {"autopilot", "context", "show_s", 3.0f},
+    {"reticle", "reticle", "arc_r", 0.12f},
+    {"reticle", "reticle", "arc_deg", 50.0f},
+    {"reticle", "reticle", "pick_r", 0.12f},
+    {"reticle", "reticle", "band_dy", 0.078f},
+    {"reticle", "reticle", "band_y_0", 0.565f},
+    {"reticle", "reticle", "band_y_1", 0.591f},
+    {"reticle", "reticle", "chevron_r_0", 0.15f},
+    {"reticle", "reticle", "chevron_r_1", 0.17f},
+    {"reticle", "reticle", "hull_alpha_below_full", 0.4f},
+    {"reticle", "reticle", "speed_shows_s", 3.0f},
+    {"reticle", "reticle", "speed_change_frac", 0.2f},
+    {"reticle", "reticle", "speed_change_hold_s", 0.5f},
+    {"reticle", "reticle", "throttle_tick_segments", 3.0f},
+    {"reticle", "cruise_row", "alpha_calm", 0.45f},
+    {"reticle", "cruise_row", "retire_after", 2.0f},
+    {"bundle", "existing", "hud_fade", 2.0f},
+    {"bundle", "existing", "hud_numbers", 0.0f},
+    {"bundle", "existing", "hud_threats", 1.0f},
+    {"bundle", "existing", "hud_context", 0.0f},
+    {"bundle", "existing", "hud_alerts", 1.0f},
+    {"bundle", "existing", "hud_info", 1.0f},
+    {"bundle", "existing", "hud_wireframes", 1.0f},
+    {"bundle", "existing", "ap_hints", 0.0f},
+    {"bundle", "existing", "shield_cue", 0.0f},
+    {"bundle", "existing", "hull_cue_pattern", 2.0f},
+    {"bundle", "existing", "reticle_cue", 0.0f},
+    {"bundle", "new", "hud_reticle", 1.0f},
+    {"bundle", "new", "hud_calm_ring", 0.0f},
+    {"bundle", "new", "hud_calm_panel", 60.0f},
+    {"bundle", "new", "hud_card", 2.0f},
+    {"bundle", "new", "hud_ship", 2.0f},
+    {"bundle", "new", "hud_loadout", 2.0f},
+    {"bundle", "new", "hud_fight_forms", 1.0f},
+    {"bundle", "new", "hud_threat_rows", 4.0f},
+    {"bundle", "new", "hud_nav", 1.0f},
+    {"bundle", "new", "hud_place", 0.0f},
+    {"bundle", "new", "hud_cruise_row", 1.0f},
+    {"bundle", "new", "hud_context_len", 1.0f},
+    {"bundle", "new", "hud_context_combat", 2.0f},
+    {"bundle", "new", "hud_prompt_learn", 2.0f},
+    {"bundle", "new", "hud_prompt_recall_s", 10.0f},
+    {"bundle", "new", "hud_prompt_return_days", 14.0f},
+    {"bundle", "new", "hud_reveal", 1.0f},
+    {"bundle", "new", "hud_peek", 1.0f},
+    {"bundle", "new", "hud_auto_peek", 1.0f},
+    {"bundle", "new", "hud_wake_s", 4.0f},
+    {"bundle", "new", "hud_hold_nominal", 1.0f},
+    {"bundle", "new", "hud_combat_linger_ms", 2000.0f},
+    {"bundle", "new", "hud_form_linger_s", 6.0f},
+    {"bundle", "new", "hud_frame", 1.0f},
+    {"bundle", "new", "hud_ap_cue", 1.0f},
+    {"bundle", "new", "hud_labels", 0.0f},
+    {"bundle", "new", "hud_explain", 0.0f},
+    {"bundle", "new", "hud_text_scale", 100.0f},
+    {"bundle", "new", "speedrun_compare", 0.0f},
+};
+static constexpr Zone kZones_speedrun[] = {
+    {"core", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.045f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 1.3 (every preset)"},
+};
+static constexpr BudgetCap kBudgets_speedrun[] = {
+    {"calm", "pad", "no_target", 0.03f},
+    {"calm", "pad", "target", 0.06f},
+    {"combat", "pad", "peak", 0.1f},
+};
+static constexpr PromptCap kPrompts_speedrun[] = {
+    {"calm", 1, 2},
+    {"combat", 0, 2},
+};
+static constexpr ElemNum kNums_speedrun[] = {
+    {"calm", "nav", "x", 0.089f},
+    {"calm", "nav", "y", 0.05f},
+    {"calm", "nav", "w_max", 0.45f},
+    {"calm", "nav", "headline_h", 0.028f},
+    {"calm", "nav", "place_h", 0.024f},
+    {"calm", "timer", "run_time_h", 0.034f},
+    {"calm", "loadout", "x0", 1.429f},
+    {"calm", "loadout", "x1", 1.689f},
+    {"calm", "loadout", "y0", 0.76f},
+    {"calm", "loadout", "y1", 0.95f},
+    {"calm", "loadout", "w", 0.26f},
+    {"calm", "loadout", "h", 0.19f},
+    {"calm", "context", "pills_max", 1.0f},
+    {"calm", "context", "pill_h", 0.026f},
+    {"calm", "comm", "chat_free_y1", 0.82f},
+    {"calm", "list_toggle", "size", 0.035f},
+    {"combat", "card", "w", 0.36f},
+    {"combat", "card", "h_on_screen", 0.115f},
+    {"combat", "card", "h_off_screen", 0.15f},
+    {"combat", "threats", "rows", 2.0f},
+    {"combat", "threats", "rows_kbm", 4.0f},
+    {"combat", "loadout", "w", 0.4f},
+    {"combat", "loadout", "h", 0.17f},
+    {"combat", "context", "pills_max", 0.0f},
+    {"cruise", "ring.cruise", "dy", 0.083f},
+    {"reticle", "reticle", "ring_r", 0.1f},
+    {"reticle", "reticle", "pick_r", 0.1f},
+    {"reticle", "reticle", "calm_ring_alpha", 0.6f},
+    {"reticle", "reticle", "speed_dy", 0.058f},
+    {"reticle", "reticle", "cruise_dy", 0.083f},
+    {"reticle", "cruise_row", "dy", 0.083f},
+    {"bundle", "existing", "hud_fade", 1.0f},
+    {"bundle", "existing", "hud_numbers", 2.0f},
+    {"bundle", "existing", "hud_threats", 1.0f},
+    {"bundle", "existing", "hud_context", 0.0f},
+    {"bundle", "existing", "hud_alerts", 1.0f},
+    {"bundle", "existing", "hud_info", 1.0f},
+    {"bundle", "existing", "hud_wireframes", 0.0f},
+    {"bundle", "existing", "ap_hints", 0.0f},
+    {"bundle", "existing", "shield_cue", 0.0f},
+    {"bundle", "existing", "hull_cue_pattern", 2.0f},
+    {"bundle", "existing", "reticle_cue", 0.0f},
+    {"bundle", "new", "hud_reticle", 2.0f},
+    {"bundle", "new", "hud_calm_ring", 60.0f},
+    {"bundle", "new", "hud_calm_panel", 60.0f},
+    {"bundle", "new", "hud_card", 2.0f},
+    {"bundle", "new", "hud_ship", 2.0f},
+    {"bundle", "new", "hud_loadout", 1.0f},
+    {"bundle", "new", "hud_fight_forms", 1.0f},
+    {"bundle", "new", "hud_threat_rows", 4.0f},
+    {"bundle", "new", "hud_nav", 1.0f},
+    {"bundle", "new", "hud_place", 1.0f},
+    {"bundle", "new", "hud_cruise_row", 2.0f},
+    {"bundle", "new", "hud_context_len", 1.0f},
+    {"bundle", "new", "hud_context_combat", 1.0f},
+    {"bundle", "new", "hud_prompt_learn", 6.0f},
+    {"bundle", "new", "hud_prompt_recall_s", 3.0f},
+    {"bundle", "new", "hud_prompt_return_days", 14.0f},
+    {"bundle", "new", "hud_reveal", 1.0f},
+    {"bundle", "new", "hud_peek", 1.0f},
+    {"bundle", "new", "hud_auto_peek", 1.0f},
+    {"bundle", "new", "hud_wake_s", 4.0f},
+    {"bundle", "new", "hud_hold_nominal", 1.0f},
+    {"bundle", "new", "hud_combat_linger_ms", 2000.0f},
+    {"bundle", "new", "hud_form_linger_s", 6.0f},
+    {"bundle", "new", "hud_frame", 1.0f},
+    {"bundle", "new", "hud_ap_cue", 1.0f},
+    {"bundle", "new", "hud_labels", 0.0f},
+    {"bundle", "new", "hud_explain", 0.0f},
+    {"bundle", "new", "hud_text_scale", 100.0f},
+    {"bundle", "new", "speedrun_compare", 2.0f},
+};
+static constexpr Zone kZones_guided[] = {
+    {"core", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.045f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 1.3 (every preset)"},
+    {"Z1", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.085f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 2.4 Zones"},
+    {"Z2L", Anchor::CentreOffset, false, -0.62f, -0.08f, -0.15f, 0.08f, 0.0f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 2.4 Zones"},
+    {"Z2R", Anchor::CentreOffset, false, 0.15f, -0.08f, 0.62f, 0.08f, 0.0f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 2.4 Zones"},
+};
+static constexpr BudgetCap kBudgets_guided[] = {
+    {"calm", "pad", "no_target", 0.06f},
+    {"calm", "pad", "target", 0.11f},
+    {"combat", "pad", "steady", 0.15f},
+    {"combat", "pad", "peak", 0.18f},
+    {"combat", "kbm", "steady", 0.165f},
+};
+static constexpr PromptCap kPrompts_guided[] = {
+    {"calm", 4, 8},
+    {"combat", 2, 8},
+};
+static constexpr ElemNum kNums_guided[] = {
+    {"calm", "nav", "x", 0.089f},
+    {"calm", "nav", "y", 0.05f},
+    {"calm", "nav", "w_max", 0.5f},
+    {"calm", "nav", "h_max", 0.24f},
+    {"calm", "nav", "h_max_kbm", 0.3f},
+    {"calm", "nav", "sentence_chars_max", 40.0f},
+    {"calm", "card", "w", 0.42f},
+    {"calm", "card", "h_on_screen", 0.15f},
+    {"calm", "card", "h_off_screen", 0.21f},
+    {"calm", "hints", "text_h", 0.028f},
+    {"calm", "hints", "glyph_h", 0.036f},
+    {"calm", "ship", "x", 0.089f},
+    {"calm", "ship", "bottom", 0.95f},
+    {"calm", "ship", "w", 0.34f},
+    {"calm", "ship", "h", 0.12f},
+    {"calm", "loadout", "w", 0.4f},
+    {"calm", "loadout", "h", 0.15f},
+    {"calm", "context", "y", 0.915f},
+    {"calm", "context", "pills_max", 4.0f},
+    {"calm", "comm", "y0", 0.6f},
+    {"calm", "comm", "y1", 0.78f},
+    {"combat", "card", "w", 0.42f},
+    {"combat", "card", "h_on_screen", 0.24f},
+    {"combat", "card", "h_off_screen", 0.3f},
+    {"combat", "card", "row_slots", 2.0f},
+    {"combat", "card", "rows_kbm", 3.0f},
+    {"combat", "loadout", "w", 0.48f},
+    {"combat", "loadout", "h", 0.17f},
+    {"combat", "ship", "w", 0.34f},
+    {"combat", "ship", "h", 0.15f},
+    {"combat", "context", "pills_max", 2.0f},
+    {"cruise", "ring.cruise", "dy", 0.083f},
+    {"arrival", "nav", "show_s", 3.0f},
+    {"autopilot", "nav", "handback_s", 4.0f},
+    {"reticle", "reticle", "ring_r", 0.1f},
+    {"reticle", "reticle", "arc_w", 0.0075f},
+    {"reticle", "reticle", "pick_r", 0.1f},
+    {"reticle", "reticle", "throttle_word_dy", 0.146f},
+    {"reticle", "reticle", "power_low_under", 0.25f},
+    {"reticle", "reticle", "power_low_hold_s", 2.0f},
+    {"reticle", "reticle", "calm_ring_alpha", 0.65f},
+    {"reticle", "reticle", "calm_panel_alpha", 0.7f},
+    {"reticle", "cruise_row", "dy", 0.083f},
+    {"reticle", "cruise_row", "retire_after", 0.0f},
+    {"bundle", "existing", "hud_fade", 1.0f},
+    {"bundle", "existing", "hud_numbers", 1.0f},
+    {"bundle", "existing", "hud_threats", 1.0f},
+    {"bundle", "existing", "hud_context", 0.0f},
+    {"bundle", "existing", "hud_alerts", 1.0f},
+    {"bundle", "existing", "hud_info", 1.0f},
+    {"bundle", "existing", "hud_wireframes", 0.0f},
+    {"bundle", "existing", "ap_hints", 1.0f},
+    {"bundle", "existing", "shield_cue", 1.0f},
+    {"bundle", "existing", "hull_cue_pattern", 2.0f},
+    {"bundle", "existing", "reticle_cue", 1.0f},
+    {"bundle", "new", "hud_reticle", 3.0f},
+    {"bundle", "new", "hud_calm_ring", 65.0f},
+    {"bundle", "new", "hud_calm_panel", 70.0f},
+    {"bundle", "new", "hud_card", 0.0f},
+    {"bundle", "new", "hud_ship", 1.0f},
+    {"bundle", "new", "hud_loadout", 3.0f},
+    {"bundle", "new", "hud_fight_forms", 1.0f},
+    {"bundle", "new", "hud_threat_rows", 3.0f},
+    {"bundle", "new", "hud_nav", 0.0f},
+    {"bundle", "new", "hud_place", 1.0f},
+    {"bundle", "new", "hud_cruise_row", 0.0f},
+    {"bundle", "new", "hud_context_len", 4.0f},
+    {"bundle", "new", "hud_context_combat", 2.0f},
+    {"bundle", "new", "hud_prompt_learn", 0.0f},
+    {"bundle", "new", "hud_reveal", 0.0f},
+    {"bundle", "new", "hud_peek", 1.0f},
+    {"bundle", "new", "hud_auto_peek", 0.0f},
+    {"bundle", "new", "hud_wake_s", 4.0f},
+    {"bundle", "new", "hud_hold_nominal", 1.0f},
+    {"bundle", "new", "hud_combat_linger_ms", 2000.0f},
+    {"bundle", "new", "hud_form_linger_s", 6.0f},
+    {"bundle", "new", "hud_frame", 1.0f},
+    {"bundle", "new", "hud_ap_cue", 1.0f},
+    {"bundle", "new", "hud_labels", 1.0f},
+    {"bundle", "new", "hud_explain", 1.0f},
+    {"bundle", "new", "hud_text_scale", 117.0f},
+    {"bundle", "new", "speedrun_compare", 0.0f},
+};
+inline constexpr Preset kPresets[] = {
+    {0, "standard", "Standard", 0.1f, 0.1f, kZones_standard, 3, kBudgets_standard, 2, kPrompts_standard, 2, "PRESETS 2.1", kNums_standard, 103},
+    {1, "focus", "Focus", 0.12f, 0.12f, kZones_focus, 1, kBudgets_focus, 5, kPrompts_focus, 2, "PRESETS 2.2", kNums_focus, 85},
+    {2, "speedrun", "Speedrun", 0.1f, 0.1f, kZones_speedrun, 1, kBudgets_speedrun, 3, kPrompts_speedrun, 2, "PRESETS 2.3", kNums_speedrun, 71},
+    {3, "guided", "Guided", 0.1f, 0.1f, kZones_guided, 4, kBudgets_guided, 5, kPrompts_guided, 2, "PRESETS 2.4; 7 answer 5", kNums_guided, 82},
+};
+inline constexpr int kPresetCount = 4;
+
+// One id per HUD value (PRESETS 1.7: one value, one place): its home per preset (index = hud_preset; homeOff = while
+// the target is off screen, null = the same), the declared second channels (components), the HUD 2 model field the
+// lint matches drawn text against (live; null = not matched yet).
+struct ValueId
+{
+    const char* id;
+    const char* live;
+    const char* home[4];
+    const char* homeOff[4];
+    const char* const* second;
+    int secondCount;
+    const char* src;
+};
+static constexpr const char* kSecond_alert[] = {"ring.lane", "ring.hull"};
+inline constexpr ValueId kValueIds[] = {
+    {"objective", "objective", {"nav", "nav", "nav", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 2; 2.1-2.4 Calm"},
+    {"maneuver", "manName", {"nav", "nav", "nav", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1 Other contexts (chip); 2.2 'chip lines as Standard'; 2.4 Calm (maneuver row)"},
+    {"maneuver.dest", "manDest", {"nav", "nav", "flank.left", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1 Other contexts; 2.3 'the flanks carry the goal'"},
+    {"eta", "eta", {"nav", "nav", "flank.right", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1 lane 'chip + bar + ETA'; 2.3 Flanks (right: ETA); 2.4 lane"},
+    {"ap.mode", "apMode", {"nav", "nav", "nav", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 4 (the AP line in the nav); 2.4 Other contexts"},
+    {"ap.wait", "wait", {"nav", "nav", "nav", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 4 (mode . goal . waiting reason); 2.4 Other contexts"},
+    {"info", "info", {"nav", nullptr, nullptr, "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1 Calm (nav free text); 2.4 reason row"},
+    {"event", "event", {"nav", nullptr, nullptr, "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1 comms (the event part of the nav line)"},
+    {"place", "place", {"nav", nullptr, "nav", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 5 hud_place; 2.3 standing place line; 2.4 reason row"},
+    {"where", "where", {"nav", nullptr, "nav", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 5 hud_place; 2.3; 2.4 reason row"},
+    {"target.name", "tName", {"native.bracket", "native.bracket", "native.bracket", "native.bracket"}, {"card", "card", "card", "card"}, nullptr, 0, "PRESETS 1.7 pair 1 (A, 7 answer 3)"},
+    {"target.distance", "tDist", {"native.bracket", "native.bracket", "native.bracket", "native.bracket"}, {"card", "card", nullptr, "card"}, nullptr, 0, "PRESETS 1.7 pairs 1 and 6 (Speedrun open: card or flank.left)"},
+    {"target.bars", nullptr, {"native.bracket", "native.bracket", "native.bracket", "native.bracket"}, {"card", "card", "card", "card"}, nullptr, 0, "PRESETS 1.7 pair 1; 2.3 Combat (bars beside the name only off screen)"},
+    {"target.closing", nullptr, {nullptr, nullptr, "flank.left", nullptr}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 6; 2.3 Flanks"},
+    {"target.faction", "tFaction", {"card", "card", "card", "card"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 1 (the card keeps class, faction and reputation)"},
+    {"target.class", "tClass", {"card", "card", "card", "card"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 1"},
+    {"target.part", nullptr, {"card", "card", "card", "card"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.4 (the card row PART)"},
+    {"threats", nullptr, {"list", "card", "list", "card"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1 Combat (threat block); 2.2 Combat (card + 2 threat rows); 2.3; 2.4 (card merged)"},
+    {"ship.name", "shipName", {"ship", nullptr, nullptr, "ship"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.4 ship strip; Standard: today's ship panel (2.1 'today's HUD 2, refined')"},
+    {"ship.class", "shipClass", {"ship", nullptr, nullptr, "ship"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "as ship.name"},
+    {"ship.shield", nullptr, {"ring.shield", "ring.shield", "ring.shield", "ring.shield"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 4 (never in the ship panel)"},
+    {"ship.hull", nullptr, {"ring.hull", "ring.hull", "ring.hull", "ring.hull"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 4"},
+    {"speed", nullptr, {"ring.speed", "ring.band", "ring.speed", "ring.speed"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.3; 2.2 under-arc band; 2.3; 2.4"},
+    {"throttle", nullptr, {"ring.throttle", "ring.band", "ring.throttle", "ring.throttle"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1 identity; 2.2 band; 4 compatibility (Speedrun: throttle % beside the speed)"},
+    {"cruise", nullptr, {"ring.cruise", "ring.band", "ring.cruise", "ring.cruise"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1-2.4 Cruise prompt; 5 hud_cruise_row; UI_HUD2.md 5.23 (nothing under the ring)"},
+    {"loot", nullptr, {"context", "ring.band", "context", "context"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.4 looting; 2.2 band 'LOOT n'; 2.3 'the tractor slot'; UI_HUD2.md 5.23 (TRACTOR n in the right context lane, nothing under the ring)"},
+    {"launcher", "launcher", {"loadout", "loadout", "loadout", "loadout"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 5; 2.2 fire strip (launcher name and lock)"},
+    {"launcher.count", nullptr, {"loadout", "ring.band", "loadout", "loadout"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 5 (Focus: the active launcher's count at the aim point)"},
+    {"hold", nullptr, {"ship", "hold", "ship", "ship"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.2 hold strip; 2.3 4 s hold line; 2.4 ship strip CARGO"},
+    {"credits", nullptr, {"ship", "hold", nullptr, "ship"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.6 (credits change -> the hold strip); 2.4 ship strip CREDITS"},
+    {"timer.mission", nullptr, {"nav", "nav", "timer", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.4 (TIME field on the headline line); 2.3 Combat (only on the strip)"},
+    {"run.time", nullptr, {nullptr, nullptr, "timer", nullptr}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.3 Calm (timer strip)"},
+    {"run.delta", nullptr, {nullptr, nullptr, "timer", nullptr}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.3 Calm; Flanks (right: the delta)"},
+    {"escort", nullptr, {"ship", "ship", "ship", "ship"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.4 protected ship; 2.1-2.4 Combat (Speedrun's 'ESC 42 %' flank: open)"},
+    {"alert", "alert", {"alert", "alert", "alert", "alert"}, {nullptr, nullptr, nullptr, nullptr}, kSecond_alert, 2, "PRESETS 1.5; 1.7 rule"},
+    {"alert.none", "alertNone", {"alert", "alert", "alert", "alert"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.5 (the answer's words in the alert plate)"},
+};
+inline constexpr int kValueIdCount = 36;
+
+// The HUD preset x controller setup table (PRESETS 4; 7 answers 2 and 5; nothing is blocked): fit, the suggested pairing, the
+// note; [hud_preset][column]. Columns = the table's controller setups (CUSTOM = FREELANCER until the Bindings editor).
+enum class Fit : char
+{
+    Fine = 'f',
+    Adapts = 'a',      // the preset adds what the setup needs (unplated free text: no boxed budget change)
+    Discouraged = 'd', // offered another preset, never blocked
+};
+struct Compat
+{
+    Fit fit;
+    bool suggested;
+    const char* note; // the words after the fit ("" none)
+};
+enum Column : int
+{
+    kColFreelancer = 0, // FREELANCER / CUSTOM
+    kColAce = 1,
+    kColAssisted = 2,
+    kColKbm = 3,
+};
+static constexpr const char* kColumnNames[] = {"FREELANCER / CUSTOM", "ACE", "ASSISTED", "K&M"};
+inline constexpr int kColumnCount = 4;
+inline constexpr Compat kCompat[4][4] = {
+    {{Fit::Fine, true, ""}, {Fit::Fine, true, "the ring's throttle arc is the reading"}, {Fit::Adapts, false, "the AP line pinned in the nav"}, {Fit::Fine, true, ""}}, // standard
+    {{Fit::Fine, false, ""}, {Fit::Adapts, false, "throttle tick + % in the under-arc band while partial"}, {Fit::Discouraged, false, "the AP line is pinned whenever the autopilot flies; Guided or Standard offered"}, {Fit::Adapts, false, "the throttle tick while partial, MANEUVERS tag"}}, // focus
+    {{Fit::Fine, false, ""}, {Fit::Adapts, false, "throttle % beside the speed (tabular) while partial"}, {Fit::Adapts, false, "the flanks carry the autopilot's goal, the AP line in the nav"}, {Fit::Adapts, false, "the list-toggle icon"}}, // speedrun
+    {{Fit::Fine, false, ""}, {Fit::Fine, false, "THROTTLE 64 % is already a label"}, {Fit::Fine, true, ""}, {Fit::Fine, false, ""}}, // guided
+};
+// The suggested HUD preset (hud_preset) per pad_preset 0..3 (FREELANCER, ACE, ASSISTED, CUSTOM), and on K&M
+inline constexpr int kSuggestedPad[4] = {0, 0, 3, 0};
+inline constexpr int kSuggestedKbm = 0;
+// "while the lever rests between 1 and 99 %" (PRESETS 4; 7 answers 2 and 5)
+inline constexpr float kLeverPartialLo = 0.01f;
+inline constexpr float kLeverPartialHi = 0.99f;
+
+inline const ValueId* FindValueId(const char* id)
+{
+    for (const ValueId& v : kValueIds)
+        if (strcmp(v.id, id) == 0)
+            return &v;
+    return nullptr;
+}
+inline const PromptCap* Prompts(const Preset& p, const char* context)
+{
+    for (int i = 0; i < p.promptCount; ++i)
+        if (strcmp(p.prompts[i].context, context) == 0)
+            return &p.prompts[i];
+    return nullptr;
+}
+// An element's number in a context (e.g. Num(p, "combat", "card", "h_off_screen", ...)); `fallback` when the spec
+// gives none (the caller's documented default: fail closed to a known layout).
+inline float Num(const Preset& p, const char* context, const char* elem, const char* key, float fallback)
+{
+    for (int i = 0; i < p.numCount; ++i)
+        if (strcmp(p.nums[i].context, context) == 0 && strcmp(p.nums[i].elem, elem) == 0 &&
+            strcmp(p.nums[i].key, key) == 0)
+            return p.nums[i].v;
+    return fallback;
+}
+inline bool HasNum(const Preset& p, const char* context, const char* elem, const char* key)
+{
+    return Num(p, context, elem, key, -1e30f) != -1e30f;
+}
+} // namespace hud2p
 } // namespace uimeta

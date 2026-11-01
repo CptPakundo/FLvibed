@@ -3,7 +3,8 @@
 // carried per save through newgame's sidecar. The detector: the story's checkpoints of docs\checkpoints.tsv
 // (checkpoints_gen.h, the same list and conditions tools\splits.py matches in the logs), reached in order from the live
 // game state - the objective step (HostObjectiveNow: obj:<id>; text id 0 = the mission's result, `success`), the mode
-// transitions (control / land / launch / cutscene), the marked solars that vanish (kill:<n>); one split per checkpoint,
+// transitions (control / land / launch / cutscene), the marked solars that vanish (kill:<n>), the story's checkpoint
+// saves (HostMissionSave, v35: save:<ids>, the runners' GAME SAVED - M01b.end); one split per checkpoint,
 // never twice, a missed objective checkpoint skipped when a later one's objective shows. The client: a non-blocking TCP
 // connection to LiveSplit Server (127.0.0.1:<livesplit_port>, commands line-terminated with \r\n: starttimer on the New
 // Game click, split per checkpoint and at the story's end, reset on the main menu, pausegametime / unpausegametime

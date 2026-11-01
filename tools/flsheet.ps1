@@ -27,8 +27,11 @@ Add-Content $log (Get-ChildItem $Dir -Filter '2*.jpg' | Sort-Object Name | Selec
 # the live EXE\FLController.log while the session is current (EXE\logs\current-session.txt = this folder's name), else
 # its archive EXE\logs\<session>_FLController.log. Key events only (objectives, autopilot starts / stops / holds /
 # missiles / evasion, deaths, mission results), each with its time.
-$exe = Join-Path $root 'Install\Freelancer HD Edition\EXE'
 $session = Split-Path $Dir -Leaf
+# an instance's session folder ends in _i<n> (tools\flshots.ps1): its logs are that instance's (until 29 Oct 2026 the
+# main install's were read for every session - captions from another game)
+$exe = if ($session -match '_i(\d+)$') { Join-Path $root "Install\instances\$($Matches[1])\Freelancer HD Edition\EXE" }
+       else { Join-Path $root 'Install\Freelancer HD Edition\EXE' }
 $cur = Join-Path $exe 'logs\current-session.txt'
 $logFile = if ((Test-Path $cur) -and (Get-Content $cur -TotalCount 1).Trim() -eq $session) { Join-Path $exe 'FLController.log' }
            else { Join-Path $exe "logs\${session}_FLController.log" }

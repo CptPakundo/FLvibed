@@ -81,6 +81,98 @@ bool Hover(void* obj) { return Valid(obj) && CallSlot(obj, 10); }
 
 namespace uiclick
 {
+static DeferFn g_defer = nullptr;
+void SetDeferral(DeferFn defer) { g_defer = defer; }
+
+// A front-end screen message (parent->vt[0x5C](msg, a, b)): deferred to the frame's end when the host offers it.
+struct ScreenMsg
+{
+    u32 parent, msg, a, b;
+};
+static ScreenMsg g_msgs[8];
+static int g_msgNext = 0;
+
+static void SendScreenMsgNow(const ScreenMsg& m)
+{
+    __try
+    {
+        reinterpret_cast<u32(__thiscall*)(u32, u32, u32, u32)>((*reinterpret_cast<void***>(m.parent))[0x5C / 4])(
+            m.parent, m.msg, m.a, m.b);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+}
+
+static void PostScreenMsg(u32 parent, u32 msg, u32 a, u32 b)
+{
+    const ScreenMsg m{parent, msg, a, b};
+    if (!g_defer)
+    {
+        SendScreenMsgNow(m);
+        return;
+    }
+    ScreenMsg* slot = &g_msgs[g_msgNext];
+    g_msgNext = (g_msgNext + 1) % 8;
+    *slot = m;
+    g_defer([](void* ctx) { SendScreenMsgNow(*static_cast<const ScreenMsg*>(ctx)); }, slot);
+}
+
+void SendScreenMsg(u32 parent, u32 id) { PostScreenMsg(parent, 0x3004, id, 0); }
+
+int TableRows(u32 ctl)
+{
+    __try
+    {
+        if (!exe::TableClick.is(reinterpret_cast<u32>((*reinterpret_cast<void***>(ctl))[0x4C / 4])))
+            return -1;
+        const u32 begin = Mem<u32>(ctl + 0x4A4), end = Mem<u32>(ctl + 0x4A8);
+        return begin && end >= begin ? static_cast<int>((end - begin) / 4) : 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return -1;
+    }
+}
+
+int TableSelected(u32 ctl)
+{
+    __try
+    {
+        return TableRows(ctl) >= 0 && Mem<u8>(ctl + 0x4D8) ? static_cast<int>(Mem<u32>(ctl + 0x4DC)) : -1;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return -1;
+    }
+}
+
+bool SelectTableRow(u32 ctl, int row, bool activate)
+{
+    __try
+    {
+        const int rows = TableRows(ctl);
+        if (row < 0 || row >= rows)
+            return false;
+        const u32 flags = Mem<u32>(ctl + 0x4C4) + 12 * row;
+        if (!Mem<u8>(flags) || !Mem<u8>(flags + 1))
+            return false;
+        const bool changed = !Mem<u8>(ctl + 0x4D8) || Mem<u32>(ctl + 0x4DC) != static_cast<u32>(row);
+        Mem<u32>(ctl + 0x4DC) = row;
+        Mem<u8>(ctl + 0x4D8) = 1;
+        const u32 parent = Mem<u32>(ctl + 4);
+        if (parent && changed)
+            PostScreenMsg(parent, 0x300D, ctl, row);
+        if (parent && activate)
+            PostScreenMsg(parent, 0xF002, ctl, row);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
 // Research captures (user, 19 Oct 2026: "hide the game's HUD for the duration of capture"): clears the visible bit
 // (+0x6C bit 0) of every visible control and remembers them; `false` restores exactly those.
 static std::vector<u32> g_hidden;
@@ -210,8 +302,8 @@ bool Click(u32 ctl)
             const u32 parent = Mem<u32>(ctl + 4);
             if (!parent || !Mem<u8>(ctl + (main ? 0xE6 : 0x498)))
                 return false;
-            reinterpret_cast<WinMsgFn>((*reinterpret_cast<void***>(parent))[0x5C / 4])(
-                parent, 0x3004, Mem<u32>(ctl + (main ? 0xEC : 0x4A4)), 0);
+            // deferred to the frame's end (v29): the screen's answer may be a dialog with its own modal loop
+            SendScreenMsg(parent, Mem<u32>(ctl + (main ? 0xEC : 0x4A4)));
             return true;
         }
         if (exe::ToggleButtonClick.is(handler))
@@ -451,6 +543,27 @@ static int NavBusyCode()
     }
 }
 
+bool InScene()
+{
+    __try
+    {
+        if (exe::IsPlayerInCutscene.ok() && hk::Call<int(__cdecl*)()>(exe::IsPlayerInCutscene))
+            return true;
+        if (!NavBar())
+            return false;
+        static RawHotspot raw[32];
+        const int n = ReadRaw(raw, 32);
+        for (int i = 0; i < n; ++i)
+            if (raw[i].ctl && (Mem<u8>(raw[i].ctl + 0x6C) & 1))
+                return false;
+        return n > 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
 std::string NavBusy()
 {
     static const char* kWhy[] = {"",          "ui-flag 67DCC8", "navbar+32C", "navbar+34C", "room+1338",
@@ -568,6 +681,24 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
                             : "scrolled %s pos=%.1f range=%.1f..%.1f",
                   name.c_str(), pos, lo, hi);
         *reply = line;
+        return true;
+    }
+    if (cmd == "table") // table <ControlName> [<row> [activate]]: a table control's rows / selection, native select
+    {
+        std::istringstream in(rest);
+        std::string name, act;
+        int row = -1;
+        in >> name >> row >> act;
+        const u32 ctl = uiclick::FindVisible(name.c_str());
+        const int rows = ctl ? uiclick::TableRows(ctl) : -1;
+        if (!ctl || rows < 0)
+            *reply = !ctl ? "no visible control " + name : "not a table: " + name;
+        else if (row < 0)
+            *reply = name + " rows=" + std::to_string(rows) + " selected=" + std::to_string(uiclick::TableSelected(ctl));
+        else
+            *reply = uiclick::SelectTableRow(ctl, row, act == "activate")
+                         ? "selected " + name + " row " + std::to_string(row) + (act == "activate" ? " (activated)" : "")
+                         : "row " + std::to_string(row) + " not selectable (rows=" + std::to_string(rows) + ")";
         return true;
     }
     if (cmd == "click") // click <ControlName>: native button click (no cursor), e.g. click MMOkButton

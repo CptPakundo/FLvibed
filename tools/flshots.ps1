@@ -13,10 +13,12 @@
 # Sessions are pruned by deploy.ps1 (the newest 15, none older than 3 days). Ends when the game has been gone for 60 s,
 # or -MaxMinutes.
 param([Parameter(Mandatory)][string]$Dir, [double]$IntervalSec = 6, [int]$Keep = 600, [int]$Width = 1280,
-      [double]$Fps = 5, [double]$MaxMinutes = 180, [int]$Instance = 0)
+      [double]$Fps = 5, [double]$MaxMinutes = 180, [string]$Instance = '')
 $ErrorActionPreference = 'Continue'
-# parallel test games: capture only this instance's game (tools\fldata.ps1 Get-FLGameProcess)
-if ($Instance -gt 0) { $env:FLVIBED_INSTANCE = "$Instance" } else { Remove-Item Env:FLVIBED_INSTANCE -ErrorAction SilentlyContinue }
+# parallel test games: capture only this instance's game (tools\fldata.ps1 Get-FLGameProcess); a number or a named
+# instance folder (deploy.ps1 -Instance)
+$hasInst = $Instance -and $Instance -ne '0'
+if ($hasInst) { $env:FLVIBED_INSTANCE = "$Instance" } else { Remove-Item Env:FLVIBED_INSTANCE -ErrorAction SilentlyContinue }
 . (Join-Path $PSScriptRoot 'fldata.ps1')
 Add-Type -AssemblyName System.Drawing
 Add-Type @'
@@ -54,9 +56,11 @@ $ms = New-Object IO.MemoryStream
 $clock = [Diagnostics.Stopwatch]::StartNew()
 # A stop request (deploy.ps1 before a new session): <shots>\sampler.stop - end cleanly, the encoder finishes its file
 # (a killed ffmpeg loses its buffered last seconds: the frames that matter after a crash).
-$stopFile = Join-Path (Split-Path $Dir -Parent) $(if ($Instance -gt 0) { "sampler$Instance.stop" } else { 'sampler.stop' })
+$stopFile = Join-Path (Split-Path $Dir -Parent) $(if ($hasInst) { "sampler$Instance.stop" } else { 'sampler.stop' })
 while (((Get-Date) - $start).TotalMinutes -lt $MaxMinutes) {
-    if ([IO.File]::Exists($stopFile)) { break }
+    # (only a request written after this sampler started: a stale one - a deploy interrupted between writing and
+    # deleting it - stopped every later sampler of that instance at once; instance 3 had none for four days, 28 Oct 2026)
+    if ([IO.File]::Exists($stopFile) -and [IO.File]::GetLastWriteTime($stopFile) -gt $start) { break }
     $p = Get-FLGameProcess | Where-Object MainWindowHandle -ne 0 | Select-Object -First 1
     if (-not $p) {
         if ($ff) { try { $ff.StandardInput.Close(); [void]$ff.WaitForExit(10000) } catch { }; $ff = $null }

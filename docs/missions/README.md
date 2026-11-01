@@ -93,7 +93,11 @@ Until then a runbook's harness lines are hints, not instructions.
   - `nn-message <ids>` = Neural Net messages
   - `comm from=<space id> to=<space id> lines=<n> first=0x<hash>` = `Act_SendComm` / ether comms (first = hash of the
     first line's id: `tools\flhash.ps1` `Get-FLHash 'DX_M01_0100_KING'` -> 0xBA4E5B0D, verified in game)
-  - `mode <a> -> <b>` (menu, docked, space, space-ui, cutscene), `player-death`
+  - `mode <a> -> <b>` (menu, docked, space, space-ui, cutscene), `player-death` (the game's death camera - the one
+    death signal; the autopilot's `autopilot stop ... why=player died` is no death event: it also comes at a dock's
+    teardown, and before 31 Oct 2026 on a ship alive at a sliver of hull)
+  - `autopilot stop mode=<m> why=<reason> ... time=<s>`: `missions\Leg.ps1` ends a leg `AUTOPILOT LOOP` after 5 stops in a
+    row at time 0 with the same reason (the objective mode restarted and stopping at once; 31 Oct 2026)
 - `Get-FLStoryState`: mode, room and its busy reason, open dialogs (MMOkButton, NavMapContinueButton,
   OfferDialog*, LoadSavegameButton, pause), character offers in the room (`talk_story`, `talk_mission`, ...), last
   story event.
@@ -179,6 +183,11 @@ Until then a runbook's harness lines are hints, not instructions.
   M12, M13) and in `..\HDE_UPSTREAM.md`.
 - **Solar space ids** = hash of the lowercase nickname (verified 17 Oct 2026), so scripts' object nicknames work
   with `Set-FLTarget` / `Start-FLDock`.
+- **A "Destroy ..." objective need not end on its kill** (30 Oct 2026, from the scripts: `mission::StepAdvanceOf`,
+  sweep in `tests\look_test.cpp -v`): two story steps advance on the clock and the dialogue whatever is killed - M13
+  24420 "Destroy the Nomads" (`cap_timer` -> `trent_go_back` 15 s -> `ether_one` -> `go_home`; the Cap2 watcher only
+  hides the objective) and M01b 22080 "Destroy the Hostile Fighters" (the scouts flee on an 8 s timer). Runbooks call
+  such a kill "not needed"; the autopilot's switch `timer_destroy` acts on it.
 
 ## Runbook template
 Keep the M01a conventions (line numbers **1-based** as an editor shows them, `->` = Act_ActTrig, real seconds for

@@ -1,13 +1,40 @@
 # Crossfire 2.0.1: a launcher-run install with a one-script campaign and an anticheat
 Status: current
-Checked against: FLvibed 77d8655 (26 Oct 2026, coordinator short form before the export: the watched commits since - d89f88c / 79e2bcc smart start + K&M goal panel, 7632ced job objective text, 77d8655 objective-named loot shot, 9ff7fe7 handoff - are autopilot / UI internals; no statement of this note changes; not re-read in depth); before: FLvibed bcbc3f2 (26 Oct 2026, coordinator's concurrency sweep: the only watched commit since, 35236ad, pages the intro movie lines on their force-aligned words - the intro is still recognised by duration and size, S5 / S7 unchanged); before: FLvibed 01fcfa9 (26 Oct 2026, the step 3 short form re-confirmed: the only watched commits since, 9327f86 / 01fcfa9, are doc and handoff edits recording what this note already says); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: subtitle priority / side chat, FLUF layer, borderless - S5 / S7 unchanged, first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 19 watched-path commits 073a665..855745b - subtitles placement / fit / portrait / font fixes, movie subtitles in the game window (0d522bc), vanilla 1.1 support, the FLUF notes; S5 / S7 unchanged - Subtitles bullet); before: 073a665 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 4 watched-path commits abf84ac..073a665 in `subtitles/src/impl` (the HUD bus f8dc584, the Neural Net lines left to HUD 2's alerts f5f07fe, the comm feed in HUD 2's chat band 15f5ffc, the feed held under the letterbox c2a27eb); nothing contradicted - "Subtitles" bullet); before: abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 4 watched-path commits 3cfa88c..abf84ac in `subtitles/src/impl` (the settings bus and MOVIES rows 001d858, gamefont moved to core e42c1f1, the page caption 6200900, the display cleared on the return to the menu 0c2328e); nothing contradicted; S7 answered in effect - "Subtitles" bullet); before: 3cfa88c (25 Oct 2026 ~03:30: the 24 Oct refactors and the UI design docs; nothing touched)
-Dirty paths at check: none at the start (25 Oct 2026 ~23:05; during the round another session's uncommitted `controller/src/impl/padbases.cpp`, `controller/src/impl/promptbar.cpp`, `docs/UI_HUD2_EXTENDED.md` appeared - not judged); none (25 Oct 2026 ~12:15); none (25 Oct 2026 ~07:00); before: none at the start (24 Oct 2026, 1defa3f); at the end `controller/src/impl/autopilot_frame.cpp`, `controller/src/impl/autopilot_objective.cpp` (another session's uncommitted edits, appeared during the check; not judged here)
+Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 3 watched-path commits (autopilot_*.cpp): bd5d7af6 + 44659916 the locked-transit back-off (keyed on the game's own route answer, no mission literal), 4a4bd7b1 strafe_pass (hull geometry by ray tests, default 0, parked BAD); no Crossfire-specific content; no effect)
+Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
 Watch: docs/MOD_COMPATIBILITY.md, tools/install*, subtitles/src/impl, controller/src/impl/autopilot_*.cpp, core/game/route.cpp
 Evidence: research\evidence\crossfire\ (installer manifest of 11,167 files with SHA1, dacom.ini, dacomsrv.ini, freelancer.ini, Launcher.ini, storylvl.ini, HudShift.ini, Cameras.ini, keymap.ini, voices_mission12.ini, installer strings); the 2.9 GB installer and the 3.1 GB unpacked payload stayed in the session scratchpad (IDEAS X3)
 Sources: [file] the installer, statically unpacked by a pure-Python Inno Setup reader (nothing executed); [page] ModDB, the-starport, SWAT Portal via Wayback (the site timed out)
 
 ## What it means for FLvibed
 
+*Check-up 29 Oct 2026 ~07:45 (second round, HEAD 557738f):* **S7 is closed for the scene mixes.** e560fcf: `mixcues.cpp`
+CheckFiles resolves each mix nickname through the `[Data] sounds` inis and keeps the lines only when the file has the
+vanilla recording's size (21 sizes, identical in vanilla 1.1 and HDE 0.7.1) - a Crossfire mix under a vanilla nickname
+gets no lines instead of the wrong ones. 538761f: vanilla 1.1's binary (BINI) `gf_sounds.ini` is decoded now (all 19
+judged). The paragraph below is the state at 067bf32, kept for history.
+
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 3 watched-path commits 7518008..067bf32):* two points move.
+(1) **A12:** the escape stance now recognises M04 by its title's string id 22602 first (420506f,
+`autopilot_objective.cpp` ~1094; the same id in every language) and keeps the English words as the fallback - a
+Crossfire-style campaign with its own titles still meets only the words; the chain end (24400) and the Mxx-keyed
+legs are unchanged, so A12 stays open in part. (2) **The scene mixes (new, S7):** a601534 subtitles the 19 vanilla room
+scenes recorded as one track (`gf_sounds.ini` `mix_*`) from `data\mixes.tsv`, **keyed on the sound nickname alone**
+(`mixcues.cpp`: CreateID of the nickname). Crossfire ships its own `DATA\AUDIO\gf_sounds.ini` (31,096 bytes) and two
+mix files, `MIXES\mixcf.wav` (26.3 MB) and `MIXES\mix_s027bcf.wav` (753 KB; vanilla `mix_s027b.wav` is 1,385,731 bytes)
+(`research\evidence\crossfire\MANIFEST.tsv`). If its ini points a vanilla nickname at its own file [assumed: the ini is
+not in the evidence], FLvibed would show the vanilla scene's lines over another track - not fail closed, unlike the
+intro movies (S7: recognised by duration and size). For the working session: key a mix on its file's size or
+duration as well (IDEAS S7).
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 33 watched-path commits 77d8655..7518008):* **one point gained weight:
+the packed anticheat that enumerates modules is now a live risk, not a theoretical one** - FLvibed works in multiplayer
+since 28 Oct 2026 (b09fcab..c69dad6, `docs\MULTIPLAYER.md`), and its server permission for the autopilot is courtesy,
+not anticheat: a server that scans the client's modules sees `FLvibed.dll` whatever the server's own line allows (IDEAS
+M2). The rest stands: the subtitles' line source is unchanged (S5; e99e5f5 only keeps unfilled name templates out of the
+chat), the movies' intro match is unchanged (S7), and the cruise speed is still Common.dll's single constant (M4: the
+28-29 Oct autopilot work - roll, head-on pass, stand-off, the coast at huge targets - reads it the same way). The escape
+stance (4c67fee) recognises an escape mission by its title's words, not a mission number - A12's rule in spirit, but
+English-only (IDEAS A12).
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 17 watched-path commits 855745b..e5c02cc):* the subtitles now
 route by priority (915be52 / 034ee2e / cce17fa: story lines and portrait comms centre stage, other NPC lines to the game's
 chat log / HUD 2's feed) - where a line shows, not which lines exist, so S5 (foreign voice banks: unknown ids show

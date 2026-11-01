@@ -48,6 +48,10 @@ std::vector<Hotspot> Hotspots();
 // by 0x55E280), current room info byte +0x1338 (0x44C4A0). Empty = ready, else the busy gate's name.
 // Also busy ("nn-window") while NNWindowBusy().
 std::string NavBusy();
+// A cinematic or room scene plays now: the game's own cutscene state (exe::IsPlayerInCutscene, the letterbox) or -
+// without letterbox bars, which vanilla setups and mods allow - a docked room whose NavBar shows with every room button
+// hidden (what a room scene does). False in space, in a plain room and when it cannot tell.
+bool InScene();
 // Whether the docked NeuroNet's window manager (exe::NNManager) runs one of its two transitions - the open slide of a
 // dealer / job board / news / ship dealer / repair window (~0.5 s after its controls show) or the close slide. Its
 // window close (exe::NNWindowClose: the close button, the pad's B, Escape) does nothing then: the press is lost, not
@@ -76,6 +80,18 @@ namespace uiclick
 // maneuvers, base rooms); false for others. Verified 17 Oct 2026 (nav map open/close in flight) and on
 // the M01 "Basics of Combat" tutorial in flight (closed it; the mouse was captured).
 u32 FindVisible(const char* name);
+// The front end's button messages (main menu, character select, server list ...) go through the controller host's
+// DeferToFrameEnd when set (HostApi v29): the screen's answer may open a dialog with its own modal loop, whose frames
+// the host serves only with no logic call on the stack. Unset (subtitles, older host): sent at once.
+using DeferFn = void (*)(void (*fn)(void* ctx), void* ctx);
+void SetDeferral(DeferFn defer);
+void SendScreenMsg(u32 parent, u32 id);
+// Table controls (exe::TableClick: the multiplayer server list ServerTable): rows (-1 = not a table), the selected row
+// (-1 none), and a selection the way the table's own press does (activate = its double click: the screen's action,
+// e.g. connect). False for a row out of range or not selectable.
+int TableRows(u32 ctl);
+int TableSelected(u32 ctl);
+bool SelectTableRow(u32 ctl, int row, bool activate);
 // Research: every visible control whose name contains `part` (debug `uinames [part]`), one per line.
 std::string VisibleNames(const char* part);
 bool Click(u32 ctl);

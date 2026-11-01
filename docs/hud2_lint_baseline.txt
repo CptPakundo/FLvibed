@@ -1,0 +1,185 @@
+# HUD 2 layout lint - the live baseline (docs\UI_HUD2_PRESETS.md 6 item 3), by tools\hud2_lint_baseline.ps1
+# 2026-10-31 22:50, dev 1c93bf0d+dirty src:b7a57dc4 dev 2026-10-31T22:49:12, instance 3, Save0e2b.fl, hud_preset 0, K&M (a background game), 3840x2160 expected; every hud2 sim context, sampled settled
+# Diff a later run against this file (-Compare): a new FAIL / WARN is a regression or a decision; "live" varies by a few px.
+=== context live
+hud2 lint 3840x2160 k=1 preset=Standard state=calm kbm=1 items=74
+WARN prompts.pairs: -: 15 prompts (answers apart), the cap is 5
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 1 WARN) boxed=9.0% pills=2 prompts=15
+=== context combat
+hud2 lint 3840x2160 k=1 preset=Standard state=combat kbm=1 items=125
+WARN budget: 18 plates: boxed 17.6 % of the screen, the budget is 17.0 %
+WARN prompts.pairs: -: 19 prompts (answers apart), the cap is 6
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=17.6% pills=2 prompts=19
+=== context travel
+hud2 lint 3840x2160 k=1 preset=Standard state=calm kbm=1 items=96
+WARN budget: 14 plates: boxed 14.3 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 19 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=14.3% pills=2 prompts=19
+=== context cruise
+hud2 lint 3840x2160 k=1 preset=Standard state=cruise kbm=1 items=99
+WARN budget: 14 plates: boxed 14.5 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 19 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=14.5% pills=2 prompts=19
+=== context dock
+hud2 lint 3840x2160 k=1 preset=Standard state=autopilot kbm=1 items=102
+WARN budget: 15 plates: boxed 14.8 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 19 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=14.8% pills=2 prompts=19
+=== context lane
+hud2 lint 3840x2160 k=1 preset=Standard state=maneuver kbm=1 items=97
+WARN budget: 13 plates: boxed 13.7 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 18 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=13.7% pills=1 prompts=18
+=== context ap
+hud2 lint 3840x2160 k=1 preset=Standard state=autopilot kbm=1 items=99
+WARN budget: 15 plates: boxed 14.8 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 19 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=14.8% pills=2 prompts=19
+=== context apwait
+hud2 lint 3840x2160 k=1 preset=Standard state=autopilot kbm=1 items=87
+WARN prompts.pairs: -: 17 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 2 WARN) boxed=9.3% pills=2 prompts=17
+=== context turret
+hud2 lint 3840x2160 k=1 preset=Standard state=turret kbm=1 items=106
+WARN budget: 16 plates: boxed 16.1 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 18 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=16.1% pills=1 prompts=18
+=== context formation
+hud2 lint 3840x2160 k=1 preset=Standard state=maneuver kbm=1 items=79
+WARN prompts.pairs: -: 16 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 2 WARN) boxed=8.6% pills=1 prompts=16
+=== context jump
+hud2 lint 3840x2160 k=1 preset=Standard state=maneuver kbm=1 items=97
+WARN budget: 13 plates: boxed 13.7 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 18 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=13.7% pills=1 prompts=18
+=== context letterbox
+hud2 lint 3840x2160 k=1 preset=Standard state=maneuver kbm=1 items=11
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict PASS (0 FAIL, 0 WARN) boxed=0.0% pills=0 prompts=0
+=== context loot
+hud2 lint 3840x2160 k=1 preset=Standard state=calm kbm=1 items=93
+WARN budget: 13 plates: boxed 13.9 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 18 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=13.9% pills=1 prompts=18
+=== context capital
+hud2 lint 3840x2160 k=1 preset=Standard state=combat kbm=1 items=107
+WARN prompts.pairs: -: 19 prompts (answers apart), the cap is 6
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 2 WARN) boxed=16.1% pills=2 prompts=19
+=== context notarget
+hud2 lint 3840x2160 k=1 preset=Standard state=combat kbm=1 items=92
+WARN prompts.pairs: -: 18 prompts (answers apart), the cap is 6
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+WARN title-safe: list 'CTRL+R' [2819,96-3014,181]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=10.6% pills=2 prompts=18
+=== context offscreen
+hud2 lint 3840x2160 k=1 preset=Standard state=calm kbm=1 items=96
+WARN budget: 14 plates: boxed 14.3 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 19 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=14.3% pills=2 prompts=19
+=== context comm
+hud2 lint 3840x2160 k=1 preset=Standard state=maneuver kbm=1 items=98
+WARN budget: 13 plates: boxed 13.9 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 18 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=13.9% pills=1 prompts=18
+=== context lane+comm
+hud2 lint 3840x2160 k=1 preset=Standard state=maneuver kbm=1 items=97
+WARN budget: 13 plates: boxed 13.7 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 18 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=13.7% pills=1 prompts=18
+=== context ap+comm
+hud2 lint 3840x2160 k=1 preset=Standard state=autopilot kbm=1 items=99
+WARN budget: 15 plates: boxed 14.8 % of the screen, the budget is 10.0 %
+WARN prompts.pairs: -: 19 prompts (answers apart), the cap is 5
+WARN title-safe: nav 'shape' [190,335-237,382]: outside the inner 90 % (title-safe)
+n/a: action.reach: HUD 2 keeps no catalogue of the actions its prompts can show (a frame shows only its context's prompts) and the wheel's entries are wheel.cpp's; needs step 1's controller-setup requirements
+n/a: analog.readout:steer/aim: their reading is the game's reticle (native, not drawn by HUD 2)
+n/a: toggle.state:rear view (held): a rear view latched by holds_as_toggles on a button is the dispatcher's (controller.cpp), not HUD 2 state: only the wheel's latch is checked
+n/a: contrast: needs frames (WCAG 4.5:1 / 3:1 against the worst background, U35 rule 5): not in this lint
+verdict WARN (0 FAIL, 3 WARN) boxed=14.8% pills=2 prompts=19

@@ -36,8 +36,10 @@ publish root): on 26 Oct 2026 they were written there as `index_owner.html` / `i
 environment's `.claude\launch.json` entry `spec-local` (the project venv's `http.server` on 127.0.0.1:8790; images are
 lazy-loaded, so check them by fetching every referenced path) and deleted after the test.
 
-**Structure (since 25 Oct 2026, late evening; "With FLUF" added 26 Oct 2026):** fourteen sections in a sticky nav -
-Overview (FLvibed at a glance), Install (requirements and compatibility), With FLUF (what FLvibed does beside FLUF, the
+**Structure (since 25 Oct 2026, late evening; "With FLUF" added 26 Oct 2026, "Upcoming" 29 Oct 2026):** fifteen sections in a sticky nav -
+Overview (FLvibed at a glance), Upcoming (every user-visible change since the 0.1.0 release, from `CHANGELOG.md`
+"Unreleased"; elsewhere `UP()` tags such a feature in place - a change built after a release adds both, a release
+empties the section and drops the tags), Install (requirements and compatibility), With FLUF (what FLvibed does beside FLUF, the
 recorded conflicts), Flight & aim, Flight HUD 2, Classic HUD, Hit effects (the HUD cues), Menus and
 bases (Extended HUD 2), Controls, Subtitles & movies, Autopilot (WIP), Options page, Speedrun & New Game, Not
 implemented yet - each with a plain-language lead, a device note, real release-build captures (drag sliders with their
@@ -52,8 +54,8 @@ Decisions views are gone from the page; `screens`, `bar` and `decisions` stay in
 | Page source | `part1_head.html` (CSS, header, section nav, the interactive views' toolbar), `part2_data.js` (the spec: tabs, rows, presets, glyph families, bindings, screens, decisions), `part2b_doc.js` (the document: sections, leads, device notes, comparisons, galleries, status tables, developer blocks; static, reviewed against the docs and the code), `part3a_render.js` (dispatcher, options screen, bindings diagram), `part3c_doc.js` (the document renderer: sliders, galleries, the Input switch's variants, settings / bindings tables from the live spec), `part3b_editor.js` (editor drawer, notes, persistence, toolbar) |
 | Build | `build.ps1` concatenates the parts into `index.html` beside the images and syntax-checks the script |
 | Images | `research\evidence\controller_ui\mockup\img\` (git-ignored): the Options backgrounds and control sprites (`assets.py`, from `research\experience\ui_2026-10-25\`) and `img\cap\` = the real captures as 1600-px JPEGs written by `spec_images.py` (flight: `runs\hud2_fix2_2026-10-25\final_*.png` + classic counterparts; screens: `runs\hud2x_final_2026-10-25\` before_ / final_ pairs + aspect frames; cues and aim: `runs\spec_flvibed_2026-10-25\`; subtitles, autopilot, timer, glyph look: earlier runs, listed in the script). New captures: rerun it, keep the page names |
-| Publish | the Artifact tool with `url` = the artifact, `root` = the build folder, `files` = the changed `img/**` files (files left out are kept); capabilities `db` + `user` are stored on the artifact and carry forward |
-| The owner's edits | the artifact's database document `ui/spec` (ArtifactData get, collection `ui`, doc `spec`; version 122 after `glyph_look`); patch it with a pinned `set` (`if_version`) after reading, never overwrite blindly (`specpatch.py`: `add_rows` first / end / `after` a row key); `docs\UI_SPEC.json` = that document's `spec` with an `_about` line; then `tools\ui_meta.py` for `core\ui_meta.h` |
+| Publish | the Artifact tool with `url` = the artifact, `root` = the build folder, `files` = the changed `img/**` files (files left out are kept); capabilities `db` + `user` are stored on the artifact and carry forward. A session's first publish is refused with a line diff against the live page (that counts as viewed, the 300 KB page need not be read): check the diff is only your change (the live page = `mockup_v4_index.html` + the platform's skeleton - compare first, `git diff --no-index`), then publish the same file again - a resend right after is refused once more as "identical", the next one goes through (30 Oct 2026, Q1) |
+| The owner's edits | the artifact's database document `ui/spec` (ArtifactData get, collection `ui`, doc `spec`; version 134 after the HUD 2 rounds of 31 Oct 2026); patch it with a pinned `set` (`if_version`) after reading, never overwrite blindly (`specpatch.py`: `add_rows` first / end / `after` a row key); `docs\UI_SPEC.json` = that document's `spec` with an `_about` line; then `tools\ui_meta.py` for `core\ui_meta.h` |
 | Evidence copy | `research\evidence\controller_ui\mockup_v4_index.html` (the last built page: FLvibed's living spec; `mockup_v3_index.html` = the HUD 2 spec, `mockup_v2_index.html` = the mock-up before the restructure) |
 | Static copy (repository) | `docs\spec\` = `index.html` + `img\` (WebP captures, at most 1280 px wide; ~7.5 MB), written by `export.ps1` (PowerShell tool) from the same parts + `docs\UI_SPEC.json` (the owner's values, carried as a snapshot): **always read-only** (`window.FLV_STATIC_COPY` and no `window.claude` runtime -> `RUNTIME` false in `part3b_editor.js`: no editor, no store, no browser storage), no network (the Google Fonts link dropped), a banner naming it a static copy. For readers of the repository (GitHub), who cannot open the artifact. `export.ps1 -Check` = `drift_check`'s `spec-copy` line |
 
@@ -62,6 +64,11 @@ changed, `part2_data.js` + `ui/spec`), build, test every control locally (above)
 capability exist only inside the claude.ai viewer; locally the page is read-only), publish to the same artifact, patch
 `ui/spec` the same way the data changed (the owner's values and decisions must survive), copy the page to the evidence
 folder, regenerate `docs\UI_SPEC.json` and `core\ui_meta.h`, commit the parts and the spec together.
+
+**Spec-only blocks (31 Oct 2026):** `UI_SPEC.json` `hud2_presets` (the HUD 2 layout presets, `docs\UI_HUD2_PRESETS.md` 6
+step 1) is data the page does not render; it comes from `patches\2026-10-31_hud2_presets.json` through specpatch's `top`
+op (spec half only; the page's `applySpec` keeps unknown top-level keys and saves them back), into the artifact's `ui/spec`
+the same way, and `tools\ui_meta.py` refuses a spec without it (`core\ui_meta.h` `uimeta::hud2p`, read by the HUD 2 lint).
 
 **Sync rule for the static copy (25 Oct 2026):** every spec build also refreshes `docs\spec\` - run `export.ps1` after
 `build.ps1` and after `docs\UI_SPEC.json` is regenerated (it builds the parts itself and converts only changed images) -

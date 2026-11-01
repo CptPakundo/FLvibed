@@ -107,9 +107,9 @@ lane and land on Pittsburgh. Lane entry is a race with the script (Brandt must b
 <!-- legtimes:M01a:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 417 | 423 | 409 | 409 | 409 | 515 | 106 |
+| 417 | 423 | 409 | 409 | 409 | 479 | 70 |
 
-Our personal bests (full leg): 517 (10-22 08:03) -> 515 (10-23 15:27) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 517 (10-22 08:03) -> 515 (10-23 15:27) -> 511 (10-28 17:35) -> 509 (10-28 23:37) -> 479 (10-29 07:52) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M01a:end -->
 
 **How each runner does it**
@@ -142,9 +142,9 @@ base explodes in a space scene; the leg ends on "GAME SAVED". The WR's lead here
 <!-- legtimes:M01b:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 457 | 476 | 472 | 457 | 457 | 648 | 191 |
+| 457 | 476 | 472 | 457 | 457 | 634 | 177 |
 
-Our personal bests (full leg): 648 (10-22 05:41) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 648 (10-22 05:41) -> 634 (10-30 15:11) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M01b:end -->
 
 **How each runner does it**
@@ -203,9 +203,9 @@ the long open cruise to the New York gate -> Fort Bush Rogues -> land on Battles
 <!-- legtimes:M02:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 876 | 928 | 896 | 876 | 876 | 1134 | 258 |
+| 876 | 928 | 896 | 876 | 876 | 1099 | 223 |
 
-Our personal bests (full leg): 1134 (10-22 08:54) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 1134 (10-22 08:54) -> 1128 (10-28 23:05) -> 1109 (10-29 13:25) -> 1099 (10-30 16:28) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M02:end -->
 
 **How each runner does it**
@@ -229,6 +229,27 @@ Our personal bests (full leg): 1134 (10-22 08:54) - what changed: LEGS.md "Perso
 2. Scan Cosmo at once (+48 s): the script advances on the scan (NAV rule 7, A21).
 3. Marked ship / Rogues (+43 s): go to the fight at cruise; pre-aggro the Fort Bush Rogues while neutral (A6).
 4. No hold-short at the Colorado gate (+30 s): request at once when no NPC is locked in (A23); King must still follow.
+
+**Per segment: M02.ashcroft -> M02.pod (the Rogues fight's end and the follow; 30 Oct 2026, `ref.py M02`, LOOK L2's
+probe, `controller\docs\LOOK_PLAN.md` 8)** - our pod segment 114-131 s (sd 5.6) vs par 22; our Rogues gold 26 s UNDER
+par - the runners spend those seconds placing themselves.
+- WHAT: the runners do not kill the 4th escort themselves. They bring it low (r1 Dowling and r3 Harrison left at 0.09
+  hull; HUD kills 1 / 2 / 1 in the section) and leave it to King and the police. **12-17 s before "Follow Ashcroft" they are
+  already cruising at ~300 m/s** (r1 +29 s 17 s C, r2 +40 s 12 s C, r3 +28 s 16 s C of 46 / 52 / 60 s). When the 4th
+  escort dies, Ashcroft spawns at (-28500, 0, 51100) and they are close: r3 843 m. They stay on him in cruise at 110-260 m
+  (r1 98 % cruise, 213-1305 m; r2 114-214 m and an engine-kill coast at +27 s, 269 -> 218 m/s; r3 45-173 m). Javelins: r1 2,
+  r3 1. Pod at +21.5 / +28.5 / +18 s.
+- HOW: guns and missiles bring the escorts down from 100-700 m at engine speed and afterburner. A cruise charge (5 s at
+  ~80 m/s) starts while the last escort still lives. The follow is all cruise speed, with an engine kill to fire.
+- ADVANTAGE: they are in cruise near his spawn when he appears, so they catch him during his own ~8 s charge (LOOK L2's
+  probe: 75 m/s at 0.8 s, 294 m/s at 9 s). After that it is a chase at equal speed: we start 4.6 km behind at rest, cannot
+  close, and meet him only at his run point (~107 s).
+- RISK (vanilla 1.1 vs HDE): the step waits on the 4th escort's death by anyone (`Cnd_Destroyed Escort, 4`). Left to the
+  NPCs, it may take longer or stall. `nag_battle3` (`Act_NagDistLeaving` King 5 km, NAG_ALWAYS, 13093) fails a ship more
+  than 5 km from King during the fight. Ashcroft has no hull floor against the player (L2 probe), so an early kill below
+  35 % is safe for the script (`ashcroft_dead` fires on any death). HDE's full-damage explosions: a Javelin at 110-230 m is
+  expected to be outside its blast (inferred, not tested). Unverified: who kills the 4th escort in each run (no frames read), and how far each run is from the
+  spawn at the banner (r3 only).
 
 ## FT2 - Ship and Kit for M03
 Missouri -> (money) -> Manhattan story step "meet Juni on CA Minor" -> California gate -> CA Minor bar -> accept M03.
@@ -261,9 +282,9 @@ Juni) -> Walker to Willard -> the Rheinland pirates at Willard -> Juni pays in s
 <!-- legtimes:M03:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 780 | 766 | 763 | 763 | 763 | 885 | 122 |
+| 780 | 766 | 763 | 763 | 763 | 861 | 98 |
 
-Our personal bests (full leg): 919 (10-22 08:20) -> 901 (10-23 08:37) -> 896 (10-24 10:34) -> 885 (10-24 14:16) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 919 (10-22 08:20) -> 901 (10-23 08:37) -> 896 (10-24 10:34) -> 885 (10-24 14:16) -> 872 (10-29 14:23) -> 869 (10-29 15:38) -> 861 (10-30 15:10) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M03:end -->
 
 **How each runner does it**
@@ -345,6 +366,12 @@ script's total in `legs.tsv`.)
 - Magellan gate: queued (reply 3) after a rush, 42 s vs 33 (+9..16 s) - no shed.
 
 **Key notes for training**
+- 2026-10-29 (the owner): **up to the jump after Benford no kill buys time** - survive, no hull loss, stay near the next
+  objective (the lane out of Manhattan); kills matter only after that jump. The runners agree (ref.py M04): "Destroy the
+  Battleship Unity" kills 0 / 2, hull lost 0.0-0.04; R1 65 % stopped at the Unity's hull (target 0 m), R2 135-139 m/s at
+  280-330 m; batteries 9-10 burned, no hull. The script waits for Walker's wing to kill the Unity (`Cnd_Destroyed`) and
+  its comms - our M04.unity / lane2 are at par. Benford: the fast dock rammed the station at 282-299 m/s every gate
+  (`bay_arrive`, 29 Oct); lane3 +25 s: lane entries at 200 m/s bump Juni / the escorts (57-258 m).
 - 2026-10-24 23:55 (set s13b, M04 x2 on 3 instances at 34ba88f: the placeholder fight keeps the escort - the user's choice):
   **5 / 6 PASS, 974 / 990 / 1026 / 1028 / 1054 - PB 974 (was 989), two runs under the old PB.** M04.mactan 133.1 (s13a
   152.6, s12d 135.8: the chase is gone - the escort killed the 8 wing ships in 41 s carried along with Juni), wing 73.0
@@ -420,9 +447,9 @@ Rheinlanders, chase and torpedo-run space scenes -> fight -> Leeds hole -> land 
 <!-- legtimes:M05:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 1204 | 1170 | 1198 | 1170 | 952 | 1203 | 251 |
+| 1204 | 1170 | 1198 | 1170 | 952 | 1084 | 132 |
 
-Our personal bests (full leg): 1346 (10-22 09:05) -> 1249 (10-23 09:09) -> 1236 (10-23 15:51) -> 1203 (10-24 10:18) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 1346 (10-22 09:05) -> 1249 (10-23 09:09) -> 1236 (10-23 15:51) -> 1203 (10-24 10:18) -> 1118 (10-29 13:22) -> 1112 (10-29 15:23) -> 1084 (10-30 02:35) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M05:end -->
 
 **How each runner does it**
@@ -473,9 +500,9 @@ Rheinland gunboat -> Leeds hole (destroy all hostiles) -> land on Leeds. The rac
 <!-- legtimes:M06:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 544 | 534 | 489 | 489 | 489 | 682 | 193 |
+| 544 | 534 | 489 | 489 | 489 | 681 | 192 |
 
-Our personal bests (full leg): 1193 (10-22 08:03) -> 719 (10-23 07:52) -> 714 (10-23 14:37) -> 710 (10-23 22:32) -> 682 (10-24 13:24) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 1193 (10-22 08:03) -> 719 (10-23 07:52) -> 714 (10-23 14:37) -> 710 (10-23 22:32) -> 682 (10-24 13:24) -> 681 (10-28 22:36) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M06:end -->
 
 **How each runner does it**
@@ -522,9 +549,9 @@ fleet scenes (68 s) -> the Schiller fleet fight -> Tau-23 hole -> Cali (Kress' b
 <!-- legtimes:M07:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 1262 | 1266 | 1250 | 1250 | 1250 | 1669 | 419 |
+| 1262 | 1266 | 1250 | 1250 | 1250 | 1648 | 398 |
 
-Our personal bests (full leg): 1816 (10-22 06:41) -> 1721 (10-23 08:11) -> 1669 (10-23 14:52) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 1816 (10-22 06:41) -> 1721 (10-23 08:11) -> 1669 (10-23 14:52) -> 1648 (10-30 03:43) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M07:end -->
 
 **How each runner does it**
@@ -590,9 +617,9 @@ escort to the Chugoku hole -> land on Kyoto.
 <!-- legtimes:M08:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 601 | 582 | 600 | 582 | 582 | 676 | 94 |
+| 601 | 582 | 600 | 582 | 582 | 655 | 73 |
 
-Our personal bests (full leg): 691 (10-22 04:52) -> 685 (10-22 07:54) -> 676 (10-22 14:03) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 691 (10-22 04:52) -> 685 (10-22 07:54) -> 676 (10-22 14:03) -> 663 (10-28 23:25) -> 656 (10-29 01:38) -> 655 (10-30 16:39) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M08:end -->
 
 **How each runner does it**
@@ -722,9 +749,9 @@ hole within 6 km of Von Claussen -> Order forces -> land on the Osiris (only onc
 <!-- legtimes:M10:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 980 | 1040 | 1026 | 980 | 915 | 1125 | 210 |
+| 980 | 1040 | 1026 | 980 | 915 | 1079 | 164 |
 
-Our personal bests (full leg): 1498 (10-22 08:44) -> 1379 (10-23 13:24) -> 1171 (10-23 17:07) -> 1143 (10-24 16:39) -> 1128 (10-24 16:58) -> 1125 (10-24 16:59) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 1498 (10-22 08:44) -> 1379 (10-23 13:24) -> 1171 (10-23 17:07) -> 1143 (10-24 16:39) -> 1128 (10-24 16:58) -> 1125 (10-24 16:59) -> 1115 (10-29 12:53) -> 1095 (10-30 02:25) -> 1093 (10-30 11:46) -> 1090 (10-30 13:04) -> 1079 (10-30 15:56) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M10:end -->
 
 **How each runner does it**
@@ -802,6 +829,18 @@ fails the leg on it, whatever the mission's outcome. **M11 is chronically unreli
 (FAIL 1237, 1208, 675, 1151, 690, 609; PASS 1196, 1214, 1169, 1229, 1242), most by one-shot mine deaths in Zone 21** -
 pursuits drift into the field, and the travel to the in-system jump hole crawls through it on strict avoidance (s9m11b,
 30 m/s, 20+ mines near). Needed: routes and fights kept out of mine fields by the zone's geometry (TODO).
+Gate mpb23 (29 Oct 2026, 8c5c9a3): FAIL 1147 s, the same kind after the NY gate (split nygate 1,059 s, a new gold):
+travel toward the line of approach, `avoid strict=1 mine_danger_objects` twice within 4 s, a bump 298 -> 220 m/s,
+then `big-hit lost=3143 of 6744` at full shield / hull 0.91 and death 1 s later (nearest ships 878 m: a mine, by the
+pattern). Not the 8c5c9a3 change (its zone tables are identical to before on all HDE systems: tests\universe_test.cpp).
+**Design for the TODO (29 Oct 2026, from the data):** Zone 21 is `Zone_Li01_zone21` in li01.ini, an ELLIPSOID 20,000 x
+20,000 x 30,000 at (81640, 0, 2050) - the Li01 -> Li05 gate lies inside it, so rounding the field (the lethal-sphere
+way) cannot work. Its field file (`solar\asteroids\li01_zone21_mine_field.ini`) excludes `Zone_Li01_to_Li05` (the
+gate's approach) and `Zone_Li01_zone21_lane_access`: the game spawns no mines there. So the route through it is those
+exclusion corridors: when a leg's line crosses a mine-danger field (space::StrictAt / ZonesAlong, the game's own zone
+test) toward a goal inside one of the field's exclusions, fly to the exclusion's entry first and along it (its
+geometry: pos / size / rotate in the system file; core\game\universe_data reads the field and its exclusions).
+Behind its own setting, off until an M11 set and the gate show no regression.
 Walker rendezvous, follow Walker into Zone 21 -> fights, defend the Order ships -> Alaska gate -> follow Walker to prison
 station Mitchell (room scene, Esc on HDE) -> defend the Order ships (Walker's death scene) -> NY gate -> Omaha / Buffalo ->
 the Osiris uncloaks, land on it.
@@ -1206,12 +1245,19 @@ Toledo -> defend the Order base: Nomad interceptors and the Nomad battleship -> 
 escort Sinclair to the Osiris -> Osiris (refill) -> follow Orillion to the Nomad gate (fight at the gate) -> the barrier:
 destroy the generators -> enter the Dyson sphere (airlock) -> the city generators -> the final cutscene.
 
+**Why the sets since ab8 made no progress on the median (31 Oct 2026 ~04:45, the driver):** ab9 / pr1 / ab11 changed
+the consumables and the launch rules, not where the time goes; ab11 died 3 / 5 at the city's first generator, holding
+31-67 m off its outward face in front of the platforms. Probes ch1-ch2 (`city_hold_side`) moved the approach: ch1 picked
+the side but never flew there (the pursuit kept the arrival side), the transit (19cf6932) fixed it - ch2 3 / 3 alive,
+M13.end 161 / 158 / 150 (gold) vs 167. Still +90 on the leg: bsdown (+25), sphere (+20) and the city's ordnance (46 of
+50 missiles spent on fighters before it: `missile_keep_big`, probe ch3) - the median moves only once the set flies them.
+
 <!-- legtimes:M13:begin -->
 | Run 1 (WR) | Run 2 | Run 3 | Best of 3 | Scene-free | Ours (best) | To go |
 |---|---|---|---|---|---|---|
-| 752 | 702 | 686 | 686 | 686 | 1194 | 508 |
+| 752 | 702 | 686 | 686 | 686 | 746 | 60 |
 
-Our personal bests (full leg): 1194 (10-22 11:35) - what changed: LEGS.md "Personal-best history".
+Our personal bests (full leg): 1194 (10-22 11:35) -> 909 (10-28 19:24) -> 892 (10-29 13:08) -> 879 (10-30 13:19) -> 864 (10-30 17:32) -> 785 (10-31 01:27) -> 783 (10-31 01:42) -> 756 (10-31 02:12) -> 746 (10-31 05:13) - what changed: LEGS.md "Personal-best history".
 <!-- legtimes:M13:end -->
 
 **How each runner does it**
@@ -1227,6 +1273,19 @@ Our personal bests (full leg): 1194 (10-22 11:35) - what changed: LEGS.md "Perso
   with a right slide; **city satellites from inside the model (0 m)**; ends with no batteries (R2 P3; BEH 1b).
 - Run 3: no Osiris softlock; barrier ~63 s with nanobots (no batteries aboard); city ~132 s (CMB fights.tsv).
 
+**Per segment: what / how / advantage / risk vs ours (29 Oct 2026, the owner: "their times are your minimum goal";
+from reference\events_dense_run{1,2,3}.tsv and fights.tsv; ours = docs\SPLITS.md 29 Oct 15:51 and the 29 Oct probes)**
+| Segment (par / our gold / our PB seg) | What and how (runners) | Advantage | Risk / why safe for them | Ours |
+|---|---|---|---|---|
+| bsdown (45 / 73 / 110) | R1 cruises in at 270 m/s straight to 0 m, bursts 9 batteries ON ARRIVAL, then 10 and 8 (27 -> 0 in 21 s), dead in ~39 s. R2 afterburns in at ~190 m/s firing torpedo + Slingshot + Catapult every ~2 s from 1,358 m, at 0 m keeps moving 90-199 m/s (ab pulses), mines, batteries 9 / 10 / 9 every 8-14 s, dead ~46 s after targeting. Both fire every launcher every 2-3 s | no closing time; full ordnance rate the whole fight; motion keeps turrets / fighters off; batteries hold the shield up instead of a hull loss | vanilla 1.1: their own blasts at 0 m graze for 1/3. **HDE deals them in full** (FREELANCER_RE "Explosion damage") - 0 m + torpedoes is lethal for us (four deaths); the batteries they burst are full (29) on arrival | crawl 600 -> 150 m at 40-50 m/s, then a still blind-spot hold 50-100 m off (one turret still on it), batteries spent before (arrive with 3-29), launches held by self_burst or the blast rule; 4 / 13 died. shape60 (contact hold): hull 1.0 but ~no launches |
+| sinclair (33 / 41 / 85) | **(TIMER-DESTROY, 30 Oct 2026, ref.py M13 "DESTROY THE NOMADS" + the section before it)** the step 24420 ends on the script's clock (cap_timer -> trent_go_back 15 s unlocks Toledo's ring -> Orillion's 0460 -> 24430 ~20 s after the banner), so **no runner ever targets NomadCap2**: they leave the first battleship for Toledo during the 25 s cap_timer and **dock the moment the ring unlocks, before 24430 shows**. R2: battleship dead 14115, banner 14141, at it 1 nanobot / 3 mines / 2 batteries, targets Toledo +6 s, afterburner 193-199 m/s, stops at the ring +11, docked +14 (= kill +40 s = the unlock), 2.0 km flown, 2 interceptors killed in passing, hull 0.955 at the end. R3: 1.4 km flown from the banner (already near Toledo), one interceptor targeted 146-736 m, "Omicron Minor Docking Ring" 0-91 m at +14..+20, docked +20, 0 launches, 0 hull lost. R1: cruises at 300 m/s toward the ring ~14 s after the battleship's last launch, stopped at it ~7 s, docked ~kill +50 s | the clock fixes the step's end; the only time to win is being at the ring at the unlock (the dock, the base scene and the relaunch make the rest of par 33) | none for them: Cap2 never fought, the wings' respawns stop at trent_go_back; vanilla 1.1 vs HDE: no ordnance used, no difference | look0 (30 Oct): fought Cap2 from 3 km with 0 batteries, died 5 s after 24430 turning for Toledo; the full PASS runs fly the 4.9 km to the ring only at 24430 (mean 57.9 s, sd 12.0 over 8). `timer_destroy` (B): stage 300 m short of go_home's point during 24420, dock at 24430 (the unlock ~5 s earlier is not read yet: the next lever). **td1 (30 Oct, run-judged GOOD): A 57.3 +- 0.4 s (Cap2 fought, never killed), B 27.4 +- 0.6 s (no shot, 0 hull lost) - about at par like-for-like (our 24440 is 0.5 s after the dock, theirs at the relaunch: ~32 vs 33.2); full leg td1full 36.3 s to the relaunch from a 0-battery entry; the 25 s cap_timer gap before 24420 still chases Cap2 (6 torpedoes) where the runners fly to Toledo** |
+| osiris (104 / 119 / 119) | cruise ~105 s behind Sinclair | - | - | +15: escort pace (follow / cruise rules) |
+| barrier gens (65 / 95 / 104) | R1: 4 generators in 86 s, a salvo (torpedo + 2 missiles) every ~3.5 s from 73-96 m, moving 74-198 m/s (ab), 19 mines, batteries 9 + 9. R2: 6-99 m, batteries 9 then 19. R3: missiles only, 13 nanobots at once, no batteries, 68 s | constant fire at short range while moving; consumables in bursts at need | same HDE blast risk at 6-99 m (torpedoes); the generators' own defence weak, fighters ignored | +30: still holds, hops, one battery at a time (dossier notes 23 / 29 Oct) |
+| end / city (129 / 152 / 152) | cruise across at ~274 m/s (~60 s, 8-9 km) to the first generator, salvos at ~150 m (R1 15 salvos, 20 mines), batteries / nanobots in bursts (R2 10 / 8 / 3), fighters ignored | travel at cruise; no fights with fighters | the city towers: cruise ~2 km above them (R1) | +24: big_coast city fixture 126-136 s (par 129), the full leg not run with it |
+**Consistency** costs more than any segment: our golds sum to 779 (+94 over par), our PB is 890 (+205) - the deaths
+(battleship, generators) and the slow fights in the PB run. The HDE difference decides the battleship and generator
+design: the runners' 0 m + every launcher works only where our blasts cannot reach us.
+
 **Our autopilot**
 - PASS full leg from Save3989 once in 11 runs (8 deaths) - and that 1194 s pass flew the sphere letterboxed (the airlock
   lockout, fixed session 4: airlocks are flown through). Checkpoints: from St03 470 / 500 s with hold-and-salvo (barrier 124
@@ -1237,6 +1296,29 @@ Our personal bests (full leg): 1194 (10-22 11:35) - what changed: LEGS.md "Perso
   short); slide 5 deg/s, mines every 1.5 s, exposed = faster slide in use (`static-hold exposed` events).
 
 **Key notes for training**
+- 2026-10-31 (M13-MIMIC 3-6, the owner watching; sets mm4-mm9 from S415): **the sphere gap is the 24470 detour** -
+  `kill_ahead` (fly to generator 1 at once, fight it once juni_near_center fired) closed M13.sphere by ~27 s (83.2 / 76.7
+  vs 99-112). **The S415 battleship deaths are the pull-away** (the owner's reading): every one followed `static-pass
+  out`, the afterburner exit run a shield failure starts - `blind_no_pass` alone: 0 of 9 deaths at A's ~80 s. **The crawl
+  is our approach volley** (8 launches take the battleship 120k -> ~56k before 300 m): a fast rush without the volley
+  (standoff_hold) was safer and ~15 s slower. The city's lever is the hold (R1 ~200 m HUD at a dead stop; ours 82-112 m
+  with the launchers banned after a burst 24-32 m from us), not the battery reserve. Next: the battleship approach of
+  WORK_QUEUE M13-MIMIC 4c (volley from range, a nose-on dash, a blind spot whose round path first meets hull >= ~100 m).
+- 2026-10-30 (Q4 parked, AFK): three battleship slices, 75 segment legs `Save3989 -> M13.bsdown`, no verdict -
+  ordnance from a burst-clear site (INCONCLUSIVE; the site check fails open), `static_volley` batteries before the
+  battleship's volley (REVERT: spends them sooner, both arms end at 0), `blind_rush` with the fixed reserve
+  (INCONCLUSIVE). Why they failed: every death is ONE turret volley of 3.9-5.7k on a low shield, and what decides it is
+  the batteries left on reaching 300 m (>= 7: 15 / 15 lived) - our 16-27 s crawl through the cover drains them where
+  the runners cross it in ~7 s; and bsdown's sigma 26.6 s hides any effect under ~27 s at 12 runs a side. Next: cut the
+  variance first (Q3 fixed dt + seeds), then the runners' shape as ONE switch set (cruise in, 0 m, batteries on each
+  failure), not one switch at a time (AUTOPILOT_LOG.md "Q4 slice 1 and 2, judged 30 Oct 2026").
+- 2026-10-29 (the owner, after gate mpb22 / run mpb22b): **the ship eats too many hits at the generators** - unlike M12
+  the Nomads keep aggro on the player; maneuvers are needed that keep time on the generators. mpb22b: after the sphere
+  3 attackers took hull 0.79 -> 0.42 and nanobots 6 -> 1 at a still hold 52-60 m off (static-hold's "exposed" wide orbit
+  lasted 6 s, batteries 0), died fleeing under 4 attackers (cruise charge reset). The runners (above): never a still
+  hold - a steady one-way right slide at 60-100 m (R2 34-60 m), afterburner hops every 4-8 s, batteries 9 at once on
+  each shield failure (nanobots kept), mines while holding; the city held under each satellite's cone at ~200 m, the
+  fighters ignored. Two earlier M13 deaths were our own torpedoes (`self_burst`). Next: the hold's slide + battery dump.
 - 2026-10-23 (session 6; user: "failed as soon as the player ship targeted a nomad ship rather than fly straight at the generators in the trenches"; "did not move with intent into the airlock"; "engaged some nomad fighters after it got in the dyson sphere rather than immediately leg it to the nearest generator"): script destroy goals - straight at the barrier generators (164-202 s from "Head to the Barrier" incl. the 11 km in; runners 106-124), the airlock run no longer restarted by threats (15 s to the transit), the city's generators rushed from the entry. From St03 PASS **422** s, from the city PASS **171** s (and 174); one city run died under 12 attackers 42-119 m off a 915 m generator with 0 batteries. Next: consumables (all 28 nanobots + 29 batteries went at the barrier one at a time; run 1 bursts 9 batteries on a failing shield, keeps nanobots for the city) and the city hold position (run 1: under each generator's cone at HUD ~200 m, ~2 km above the towers).
 1. City (+293 s): cruise above the clutter straight to each generator, stop 0-200 m, salvo, leave on the kill; ignore the
    fighters (user: "inside the Dyson Sphere you can bumrush the generators and ignore the fighters completely", AP).

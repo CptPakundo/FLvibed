@@ -2,6 +2,7 @@
 
 #include "data.h"
 #include "display.h"
+#include "str.h"
 #include "log.h"
 
 #include <algorithm>
@@ -68,11 +69,7 @@ static double Dist(u32 x, u32 y)
     return std::sqrt((p.L - q.L) * (p.L - q.L) + (p.a - q.a) * (p.a - q.a) + (p.b - q.b) * (p.b - q.b));
 }
 
-static std::string Lower(std::string s)
-{
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(tolower(c)); });
-    return s;
-}
+using str::Lower;
 
 // "dx_m01_0130_donau" -> "m01", "dx_s064x_0101_juni" -> "s064"; "" for other ids.
 static std::string Group(const std::string& id)
@@ -218,6 +215,8 @@ bool Load(const std::string& path)
     {
         if (!l.empty() && l.back() == '\r')
             l.pop_back();
+        if (l.compare(0, 3, "\xEF\xBB\xBF") == 0) // a UTF-8 BOM (an editor's save) must not break the header
+            l.erase(0, 3);
         if (l.empty() || l[0] == '#')
             continue;
         const std::vector<std::string> f =

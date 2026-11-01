@@ -63,7 +63,7 @@ void OnHotspot(int slot);
 // older host: the raw text with its format codes dropped, never shown raw); "" when there is none. Shared with the goal
 // panel (its MISSION OBJECTIVE row and queue).
 std::wstring ObjectiveLine(u32 textId);
-// Debug: hud2 on|off|auto|state|sim <state>|perf|hot|click <slot>|list [on|off|0..4]
+// Debug: hud2 on|off|auto|state|sim <state>|perf|hot|click <slot>|list [on|off|0..4]|lint [off]
 std::string Command(std::istream& in);
 void OnDeviceLost();
 void Shutdown();

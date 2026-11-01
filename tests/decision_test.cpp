@@ -123,6 +123,45 @@ void Test_decision_synthetic()
     DeleteFileA(path.c_str());
 }
 
+// A new game forgets AdvanceGoals' memory (mission::ForgetGame, called at HostApi v34 GameLoads; A37 S1, 30 Oct 2026):
+// two synthetic missions - M98 shows its step, then a load of M97 shows only "Awaiting" (21660) under M97's title. Before
+// the forget M98's last objective stands in (the stale stand-in S1 found: M07's for M12); after it the title names M97.
+void Test_decision_forget_game()
+{
+    const std::string root = TempPath("", "LOADS"); // (TempPath makes one folder level: the parent first)
+    const std::string a = TempPath("m98.ini", "LOADS\\M98"), b = TempPath("m97.ini", "LOADS\\M97");
+    CHECK(WriteTextFile(a, "[NNObjective]\nnickname = nn_x\ntype = ids, 24360\n\n"
+                           "[Trigger]\nnickname = start\nsystem = Li01\nCnd_True = no_params\nAct_SetTitle = 24800\n"
+                           "Act_SetNNObj = nn_x\nAct_ActTrig = arrive\n\n"
+                           "[Trigger]\nnickname = arrive\nCnd_DistShip = inside, Player, Li01_01_Base, 2000\n"
+                           "Act_ChangeState = SUCCEED\n"));
+    CHECK(WriteTextFile(b, "[NNObjective]\nnickname = nn_y\ntype = ids, 24460\n\n"
+                           "[Trigger]\nnickname = start\nsystem = Li01\nCnd_True = no_params\nAct_SetTitle = 24900\n"
+                           "Act_SetNNObj = nn_y\nAct_ActTrig = arrive\n\n"
+                           "[Trigger]\nnickname = arrive\nCnd_DistShip = inside, Player, Li01_02_Base, 2000\n"
+                           "Act_ChangeState = SUCCEED\n"));
+    mission::UseScriptsFrom(root);
+    const u32 li01 = 0, awaiting = 21660;
+    auto file = [](const std::string& path) { return path.substr(path.find_last_of("\\/") + 1); };
+    bool fromLast = true;
+    mission::AdvanceGoals(24360, li01, &fromLast, 24800); // M98's step: remembered
+    CHECK(!fromLast);
+    mission::AdvanceInfo info;
+    mission::AdvanceGoalsPeek(awaiting, li01, 24900, info); // the same game: M98's last step stands in
+    CHECK(info.fromLast && !info.byTitle && info.standInText == 24360 && file(info.script) == "m98.ini");
+    mission::ForgetGame(); // a load
+    mission::AdvanceGoalsPeek(awaiting, li01, 24900, info);
+    CHECK(info.fromLast && info.byTitle && info.standInText == 0 && file(info.script) == "m97.ini");
+    mission::AdvanceGoalsPeek(awaiting, li01, 0, info); // no title yet (the host forgets it at a load too): nothing
+    CHECK(!info.fromLast && !info.byTitle && info.script.empty());
+    mission::ForgetGame(); // (a second forget is harmless)
+    mission::AdvanceGoalsPeek(24460, li01, 24900, info); // the loaded game's own step
+    CHECK(!info.fromLast && file(info.script) == "m97.ini");
+    mission::UseScriptsFrom(""); // back to the tests' default: no scripts
+    DeleteFileA(a.c_str());
+    DeleteFileA(b.c_str());
+}
+
 void Test_decision_baseline()
 {
     if (!NeedInstall("the decision baseline sweep"))

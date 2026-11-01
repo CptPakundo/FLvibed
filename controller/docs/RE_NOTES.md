@@ -3,6 +3,10 @@
 Game facts (addresses, structures, vtables, mission/save formats) live in the shared notes:
 `..\..\docs\FREELANCER_RE.md` (FLvibed\docs) — read them before touching hooks,
 and add newly verified game facts there, not here. This file only records how FLController uses them.
+Verified against 038eb1f (29 Oct 2026: paths corrected; the table is the core of the host's hooks since 17 Oct - the
+full set is every `hk::Detour` / IAT / vtable patch in `src\host\*.cpp` (main.cpp, events.cpp the economy and Content.dll
+hooks, uibtn.cpp the native buttons, winmode.cpp borderless windowed, dimouse.cpp), each address a signed symbol in
+`..\..\core\flexe.h` with its comment).
 
 ## Hooks installed by the host (`src/host/main.cpp`)
 | Address | Use |
@@ -16,13 +20,14 @@ and add newly verified game facts there, not here. This file only records how FL
 | DirectInput mouse | injection of cursor motion/buttons (needs FL in the foreground) |
 | RP8.dll IAT → CreateDevice/Reset | D3D8 device capture (`GetD3DDevice`) |
 | Content.dll imports (server.dll pub::) | event log (objectives, popups, messages, comms, failure) + `IdsText` |
-| 0x443ED0 / 0x4440C0 room character ctor / dtor | live list of base-room characters (HostApi v5 `GetRoomCharacters`); `impl/room.cpp` uses their vtable natively: vt[10] hover-enter (sets the offer cursor), vt[11] leave, vt[12] click = talk. Debug: `talkers`, `talk <n or offer>` (added from the FLSubtitles session, 17 Oct 2026) |
+| 0x443ED0 / 0x4440C0 room character ctor / dtor | live list of base-room characters (HostApi v5 `GetRoomCharacters`); `..\..\core\game\room.cpp` uses their vtable natively: vt[10] hover-enter (sets the offer cursor), vt[11] leave, vt[12] click = talk. Debug: `talkers`, `talk <n or offer>` (added from the FLSubtitles session, 17 Oct 2026) |
 
 ## Logic-side choices
 - Projection: `fl::WorldToScreen` uses the current camera's fields directly (FLUF's 0x40F4F0 failed from our
-  frame update); UI positions use the UI camera 0x67DBF8 (`ui.cpp`).
-- Lead cross: Common.dll `CShip::get_tgt_lead_fire_pos` via IObjInspect vt[84] cobject() (`fl.cpp`).
-- Hostility: attitude (vt[26]) ≤ −0.55 counts as hostile (aim assist, bot, select-by-firing).
+  frame update), read once under a guard by `fl::ReadCamera` (named offsets, 29 Oct 2026); UI positions use the UI
+  camera 0x67DBF8 (`ui.cpp`).
+- Lead cross: Common.dll's exported `CShip::get_tgt_lead_fire_pos` on the ship's cobject() (`fl.cpp`).
+- Hostility: attitude ≤ −0.55 counts as hostile (`aim.h` kHostileAttitude: aim assist, bot, select-by-firing).
 - Lists: load/save rows are hit by the per-class row metrics (no arrow-key support in FL lists).
-- D3D8 vtable calls: `VCall<>()` from `src/hook.h` with index constants.
+- D3D8 vtable calls: `VCall<>()` from `..\..\core\hook.h` with index constants.
 - Command ids: enum in `src/fl.h`.

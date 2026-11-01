@@ -32,7 +32,7 @@ Situation Assess();
 // stop): where a pilot at rest looks first (user + 2020 footage, M01b 19 Oct 2026: after the last Rogue the player
 // turned to the prison ship and held there, level, while its crew talked).
 u32 g_subjectId = 0;
-ULONGLONG g_subjectTick = 0; // last seen as the subject (GetTickCount64)
+ULONGLONG g_subjectTick = 0; // last seen as the subject (gameclock::NowMs64)
 
 void Reassess()
 {
@@ -41,7 +41,7 @@ void Reassess()
     if (g_sit.protectedId)
     {
         g_subjectId = g_sit.protectedId;
-        g_subjectTick = GetTickCount64();
+        g_subjectTick = gameclock::NowMs64();
     }
 }
 u32 PickTarget()
@@ -50,17 +50,31 @@ u32 PickTarget()
     return g_sit.best;
 }
 
-// Our hull damage rate: measured once 8 s of firing make it reliable; before that the guns' hull damage per second
-// (loadout) at a 35 % hit rate (M02 run: 146 measured of 408 - was: 3 dps after 3 s, hits not yet landed, made every
-// fight "outmatched", 18 Oct 2026).
-float OurHullDps()
+// Our damage rate in points - hull + shield taken off our targets, the units our own losses (`lost`) and the targets'
+// points (PointsLeft) count (the owner, 28 Oct 2026: "shield damage dished out needs to be counted": hull alone read
+// every shielded target as slower to kill than it was, and the races against us): measured once 8 s of firing make it
+// reliable; before that the guns' hull damage per second (loadout) at a 35 % hit rate (M02 run: 146 measured of 408 -
+// was: 3 dps after 3 s, hits not yet landed, made every fight "outmatched", 18 Oct 2026).
+float OurDps()
 {
     float gunDps = 0;
     for (const space::Weapon& w : space::PlayerWeapons())
         if (w.active && !w.homing && w.ammo < 0 && w.refire > 0)
             gunDps += w.hullDamage / w.refire;
-    return g.stats.firing > 8 ? g.combat.dealt / g.stats.firing
-                              : std::max(g.stats.firing > 3 ? g.combat.dealt / g.stats.firing : 0.0f, 0.35f * gunDps);
+    const float dealt = g.combat.dealt + (g_set.oddsShield ? g.combat.dealtShield : 0.0f); // (`odds_shield`)
+    return g.stats.firing > 8 ? dealt / g.stats.firing
+                              : std::max(g.stats.firing > 3 ? dealt / g.stats.firing : 0.0f, 0.35f * gunDps);
+}
+
+// A contact's points left: hull + its shield while up (ships; a solar's hull alone) - what OurDps has to take off.
+float PointsLeft(const space::Contact& c)
+{
+    float pts = c.maxHit > 0 ? c.maxHit * std::max(0.0f, c.health) : 0.0f;
+    float sh = 0, shMax = 0;
+    bool up = false;
+    if (g_set.oddsShield && c.ship && space::ShieldOf(c.id, sh, shMax, up) && up)
+        pts += std::max(0.0f, sh);
+    return pts;
 }
 
 Situation Assess()
@@ -83,6 +97,21 @@ Situation Assess()
     ai::Self self;
     ai::ReadSelf(self);
     const float gunRange = self.gunRange > 0 ? self.gunRange : 600.0f;
+    // Another player's ship reads by the reputations (multiplayer: players are friendly to each other, 0.9, PvP or not -
+    // the server's "harm other players" decides who can shoot). Two clients on one server, 28 Oct 2026: a duelling player
+    // added no threat (`flee ... threat=0.0`, attackers=0), so the odds-aware exit (caution) never saw the fight and the
+    // ship stayed in it to the 10 % hull floor. A player's ship counts as hostile when it is the target we chose to fight,
+    // or when it has us targeted while we lost hull or shield in the last 3 s (the hit points read here, every Assess).
+    static float lastHp = -1;
+    static ULONGLONG hurtUntil = 0;
+    const float hpNow = (self.hull >= 0 ? self.hull * self.hullMax : 0) + (self.shield > 0 ? self.shield * self.shieldMax : 0);
+    if (lastHp >= 0 && hpNow < lastHp - 0.5f)
+        hurtUntil = gameclock::NowMs64() + 3000;
+    lastHp = hpNow;
+    const bool hurt = gameclock::NowMs64() < hurtUntil;
+    auto playerFoe = [&](const space::Contact& c) {
+        return c.player && ((g.mode == Mode::Combat && g.combat.chosen && c.id == g.target) || (c.targetsPlayer && hurt));
+    };
     // The area's encounter level against the player's rank: hostiles in zones above the player's level carry better
     // equipment than their class shows (+25 % weight per level above).
     space::Area area;
@@ -134,8 +163,8 @@ Situation Assess()
         float markHp = -1, markDist = 1e30f;
         for (const space::Contact& c : all)
             if (missionPointed(c.id) && c.maxHit > 0 && c.health > 0 && c.distance < markDist)
-                markHp = c.maxHit * c.health, markDist = c.distance;
-        const float dps = OurHullDps();
+                markHp = PointsLeft(c), markDist = c.distance;
+        const float dps = OurDps();
         const float lossRate = g.stats.engaged > 3 ? g.combat.lost / g.stats.engaged : 0.0f;
         const float left = std::max(0.0f, self.hull) + 0.5f * std::max(0.0f, self.shield) + 0.03f * self.nanobots;
         const float toKill = markHp > 0 && dps > 0 ? markHp / dps : 1e9f;
@@ -172,6 +201,10 @@ Situation Assess()
         // 90 s - a weapon platform, not an armoured base ("We'll need torpedoes to take it out").
         bool solar = false;
         const bool pointed = missionPointed(c.id);
+        // TIMER-DESTROY (`timer_destroy`): a step the script ends by itself takes no fight of its own - only a ship shooting
+        // at us within the survival reach is a target (the battleship it marks stays scenery: M13's NomadCap2)
+        if (ObjectiveOn() && g_obj.defendOnly && !(c.ship && c.targetsPlayer && c.distance < kSurvivalReach))
+            continue;
         // The objective says "Destroy ..." and the mission marks it: a target whatever its attitude, unless friendly (M09 22 Oct
         // 2026: the four Shield Generators are neutral mission satellites - skipped, the fight went on at endless
         // reinforcements; speedrun note A6: marked neutrals are attacked before they turn). Solars only: a neutral marked
@@ -184,7 +217,7 @@ Situation Assess()
             // solar is the mission's business; beyond that it needs other means - torpedoes, the script). Never one
             // with the game's "indestructible" hit points (1e36).
             float att = 0;
-            const float dps = OurHullDps();
+            const float dps = OurDps();
             const float cap = pointed ? 600.0f : 90.0f;
             // a mark the "Destroy ..." objective names: its attitude may not read (a spawned mission satellite: M09's
             // generators) and it may be flagged untargetable - the objective still asks for it
@@ -196,7 +229,7 @@ Situation Assess()
                 continue;
             solar = true;
         }
-        else if (c.attitude > hostileCut || c.health == 0)
+        else if ((c.attitude > hostileCut && !playerFoe(c)) || c.health == 0)
             continue;
         // The threat counts every hostile ship near us, given up or not: its class, scaled by its real toughness
         // against ours (square root: heavy freighters are not warships), attacking or not, hull left.
@@ -222,6 +255,10 @@ Situation Assess()
         // (not a mark a "Destroy ..." objective names: M10's experimental battleships sit at 0.99 and the script wants one
         // hit - its damage starts the chain; 22 Oct 2026)
         if (space::AtInvincibleFloor(c.id, c.health) && !(pointed && ObjectiveOn() && g_obj.fightObjective))
+            continue;
+        // `survival_calm`: under the objective mode's survival stance only a ship shooting at us is a target (the escort
+        // stays with its lead and answers what attacks us; M04 until the first jump - the owner, 29 Oct 2026)
+        if (ObjectiveOn() && g_obj.survival && g_set.survivalCalm && !c.targetsPlayer)
             continue;
         const u32 blocker = haveMe && c.distance < 8000 ? space::SightBlocker(me.pos, c.pos, c.id) : 0;
         // Hidden but far (beyond 1.5x gun range): still a target - the approach flies round the obstacle and it comes
@@ -331,14 +368,15 @@ float Strength(const ai::Self& s)
 // loadouts) times how much of it lands - measured once 3 s of the fight show it (our points lost per second), before
 // that a low prior (kTheirHitPrior: the share NPC fire really lands, 1-15 % measured; the low end so that a winnable
 // fight is never left on a guess). Our side: our points (+ half the consumables aboard) and our damage rate
-// (OurHullDps: measured, before that 35 % of our guns' potential). odds = their time / ours: < 1 we lose the race.
+// (OurDps: hull + shield points, measured, before that 35 % of our guns' potential). odds = their time / ours: < 1 we
+// lose the race.
 // (Equal aim was assumed first: NPCs land 1-15 % of their potential, the autopilot ~60 %, so 3 level-5 pirates read
 // 0.03 and the run from them died - 19 Oct 2026.) Re-read at most twice a second; 1e9 with nobody hostile.
 const Odds& FightOdds(const ai::Self& self)
 {
     static Odds o;
     static ULONGLONG at = 0;
-    const ULONGLONG now = GetTickCount64();
+    const ULONGLONG now = gameclock::NowMs64();
     if (now - at < 500)
         return o;
     at = now;
@@ -358,20 +396,17 @@ const Odds& FightOdds(const ai::Self& self)
                 pot += w.hullDamage / w.refire;
         if (pot <= 0)
             continue;
-        float sh = 0, shMax = 0;
-        bool up = false;
-        space::ShieldOf(c.id, sh, shMax, up);
         o.theirPot += pot;
-        o.theirHp += std::max(0.0f, c.health) * c.maxHit + (up ? sh : 0.0f);
+        o.theirHp += PointsLeft(c);
         ++o.ships;
     }
     if (o.theirPot <= 0)
         return o;
     // (a floor: 8 s of firing before the first confirmed hit measured 0 and read as "unarmed" - the run from 3 pirates
     // the autopilot normally beats died, 19 Oct 2026)
-    // and for the first 20 s of firing at least the prior: our measured rate counts hull points only while the targets'
-    // shields take the first hits (3 pirates read 16/s at 8 s, the race 0.26 against retreat_odds 0.25 - a fight won)
-    o.ourDps = std::max(OurHullDps(), (g.stats.firing < 20 ? 0.35f : 0.1f) * o.ourPot);
+    // and for the first 20 s of firing at least the prior (3 pirates read 16/s at 8 s when the rate counted hull points
+    // only, the race 0.26 against retreat_odds 0.25 - a fight won; it counts shield points too since 28 Oct 2026)
+    o.ourDps = std::max(OurDps(), (g.stats.firing < 20 ? 0.35f : 0.1f) * o.ourPot);
     // (8 s: NPC fire comes in bursts - 3 pirates measured over 4 s read 6.2, over 8 s 0.16, and the fight was won the
     // run before)
     o.measured = g.stats.engaged > 15 && g.combat.lost > 0 &&
@@ -443,9 +478,16 @@ static void OwnMissileNew(const space::Missile& m)
     o.launched = g.time;
     o.damage = m.hullDamage;
     o.blast = m.blastRadius;
-    // the planner's launch: the missile appears within a few frames of our tap (else fire-all / the player's own)
-    o.planned = g.missiles.tapFrame && g.frames - g.missiles.tapFrame <= 5;
-    if (o.planned)
+    // the planner's launch: the missile appears within a few frames of our tap (else fire-all / the player's own) - a
+    // torpedo tap too (28 Oct 2026: every torpedo read "unplanned", 361 of 400 such rounds were at generators)
+    const bool torpTap = g.missiles.torpFrame && g.frames - g.missiles.torpFrame <= 5;
+    o.planned = (g.missiles.tapFrame && g.frames - g.missiles.tapFrame <= 5) || torpTap;
+    o.torp = torpTap && !(g.missiles.tapFrame && g.frames - g.missiles.tapFrame <= 5);
+    if (const space::Contact c = FindContact(o.target); c.id)
+        o.solar = !c.ship;
+    if (torpTap && !(g.missiles.tapFrame && g.frames - g.missiles.tapFrame <= 5))
+        o.launchDist = g.missiles.torpDist;
+    else if (o.planned)
     {
         o.launchDist = g.missiles.lastLaunchDist;
         o.flightPred = g.missiles.lastLaunchFlight;
@@ -468,6 +510,8 @@ void TrackOwnMissiles()
         const space::Contact c = FindContact(id);
         return c.id && c.maxHit > 0 ? c.maxHit * std::max(0.0f, c.health) : -1.0f;
     };
+    space::ShipMotion mine;
+    const bool haveMine = space::ShipMotionOf(me, mine);
     std::map<u32, bool> alive;
     for (const space::Missile& m : space::Missiles())
     {
@@ -480,14 +524,59 @@ void TrackOwnMissiles()
             OwnMissileNew(m);
             it = g.missiles.ownMissiles.find(m.id);
         }
+        if (haveMine)
+        {
+            const float u[3] = {m.pos[0] - mine.pos[0], m.pos[1] - mine.pos[1], m.pos[2] - mine.pos[2]};
+            it->second.lastToUs = Len3(u);
+        }
         if (const space::Contact c = FindContact(it->second.target); c.id)
         {
             const float d[3] = {c.pos[0] - m.pos[0], c.pos[1] - m.pos[1], c.pos[2] - m.pos[2]};
-            it->second.closest = std::min(it->second.closest, std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]));
+            float dist = std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+            // at a solar the real hull, not its centre (a generator's centre sits ~110 m inside: torpedoes bursting on
+            // its hull read "closest 48 m" and counted as misses) - the game's ray test from the round to the centre
+            if (it->second.solar)
+                if (const float h = space::RayHitDistance(m.pos, c.pos); h >= 0)
+                    dist = std::min(dist, h);
+            it->second.closest = std::min(it->second.closest, dist);
+            float sh = 0, shMax = 0;
+            bool up = false;
+            if (space::ShieldOf(c.id, sh, shMax, up))
+                it->second.targetSh = up ? std::max(0.0f, sh) : 0.0f;
             // its hull in the last frame before the impact (guns' share: small) - the last LIVE reading: the frame a
             // missile kills reads 0 (21 Oct 2026: 400+ such kills had been counted as misses, "1 of 6 hit")
             if (const float h = hpOf(c.id); h > 0)
                 it->second.targetHp = h;
+        }
+        // `ordnance_keepout` (WORK_QUEUE Q4 slice 1): where it will burst - the ray from the round to its target's centre
+        // meets the hull (10 Hz; a ship target, whose hull the ray test does not see, has none) - when, at its speed over
+        // the last 0.1 s, and the distance its burst must keep from us. The fuse (detonation_dist, a few metres) is not
+        // known per round here: the margin covers it.
+        State::OwnMissile& om = it->second;
+        if (g_set.ordnanceKeepout && g.time - om.rayAt >= 0.1f)
+        {
+            const float speed = om.lastAt >= 0 && g.time > om.lastAt + 1e-3f
+                                    ? geom::Dist(m.pos, om.lastPos) / (g.time - om.lastAt)
+                                    : -1.0f;
+            memcpy(om.lastPos, m.pos, sizeof(om.lastPos));
+            om.lastAt = g.time;
+            om.rayAt = g.time;
+            om.impactOk = false;
+            if (const space::Contact c = FindContact(om.target); c.id)
+            {
+                float d[3];
+                geom::Sub(d, c.pos, m.pos);
+                const float len = geom::Len(d);
+                const float h = len > 1 ? space::RayHitDistance(m.pos, c.pos) : -1.0f;
+                if (h >= 0)
+                {
+                    for (int i = 0; i < 3; ++i)
+                        om.impact[i] = m.pos[i] + d[i] / len * h;
+                    om.tImpact = g.time + h / std::max(20.0f, speed);
+                    om.need = ordnance::Need(om.blast, space::PlayerRadius(), g_set.launchSiteMargin);
+                    om.impactOk = true;
+                }
+            }
         }
     }
     for (auto it = g.missiles.ownMissiles.begin(); it != g.missiles.ownMissiles.end();)
@@ -509,13 +598,22 @@ void TrackOwnMissiles()
         }
         const State::OwnMissile& m = it->m;
         const float now = hpOf(m.target);
+        // the shield's loss counts as the round's damage too (a shielded generator's hull hardly moves)
+        float shNow = -1;
+        {
+            float sh = 0, shMax = 0;
+            bool up = false;
+            if (m.targetSh >= 0 && space::ShieldOf(m.target, sh, shMax, up))
+                shNow = up ? std::max(0.0f, sh) : 0.0f;
+        }
+        const float shLost = m.targetSh >= 0 && shNow >= 0 ? std::max(0.0f, m.targetSh - shNow) : 0.0f;
         // A hit on shields leaves the hull alone (the shield takes it): the missile's end within its blast radius plus a
         // fighter's size of the target's centre counts too (18 Oct 2026: "misses" that ended 7-16 m away, Javelin
         // blast 16 m).
         // (dead now - gone or hull 0 - with the missile ending near it: the kill was the missile's)
         const bool hit =
             m.targetHp > 0 && ((now <= 0 && m.closest <= m.blast + 30.0f) ||
-                               (now > 0 && m.targetHp - now >= 0.4f * m.damage) || m.closest <= m.blast + 15.0f);
+                               (now > 0 && m.targetHp - now + shLost >= 0.4f * m.damage) || m.closest <= m.blast + 15.0f);
         ++(hit ? g.missiles.ownMissileHits : g.missiles.ownMissileMisses);
         // the run-in's gate for this target type learns from the planner's own launches
         if (m.planned && m.geom.tArch && m.flightPred > 0)
@@ -527,16 +625,63 @@ void TrackOwnMissiles()
                 events::Push("autopilot missile-gate type=%u max-flight %.2f -> %.2fs (a miss at %.2fs)", m.geom.tArch,
                              was, gate, m.flightPred);
         }
+        // a round gone at its launch, or ending within its blast of us, burst on us (`self_burst`, autopilot.cpp
+        // g_selfBurst; gate mpb22, M13: a torpedo at the Nomad battleship from its blind spot, 242 m from its centre, came
+        // back on us 0.9 s later - 2,424, the ship dead half a second on)
+        // (within its blast + our radius: a torpedo bursting on a generator's hull at our 45-52 m hold gap is a hit, not on us -
+        // M13 mpb22b read one so and held every launch inside 304-420 m, the sphere 112 s vs 95)
+        const bool onUs = m.lastToUs <= std::max(15.0f, m.blast + std::max(5.0f, space::PlayerRadius()));
+        // `self_burst_damage` (run-judge 29 Oct 2026, the blind_rush batch: 13 learning round ends "on us" by distance,
+        // one of them cost hit points - the rest held launches 7-33 times a fight and doubled the battleship's kill;
+        // HD Edition's explosions hurt at any reach, FREELANCER_RE "Explosion damage"): what it cost decides - our hull +
+        // shield points from just before the round was gone to 0.35 s after it, >= 70 % of its damage (above a turret
+        // hit's 697 for a torpedo's 2,424, a missile's 1,212 above one); within 100 m of us or gone at the launch
+        float cost = 0;
+        if (g_set.selfBurstDamage)
+        {
+            float before = -1, low = 1e30f;
+            for (const auto& h : g.combat.hp)
+            {
+                if (h.first <= it->gone)
+                    before = h.second;
+                else if (h.first <= it->gone + 0.35f)
+                    low = std::min(low, h.second);
+            }
+            cost = before >= 0 && low < 1e30f ? std::max(0.0f, before - low) : 0.0f;
+        }
+        const bool burst = g_set.selfBurstDamage
+                               ? cost >= 0.7f * m.damage && (it->gone - m.launched < 0.12f || m.lastToUs <= 100.0f)
+                               : it->gone - m.launched < 0.12f || onUs;
+        if (g_set.selfBurstDamage && (it->gone - m.launched < 0.12f || onUs) && !burst)
+            events::Push("autopilot self-burst ignored target=%u to-us=%.0f cost=%.0f of %.0f: no damage to us",
+                         m.target, m.lastToUs, cost, m.damage);
+        // (`self_burst_near`: learn only from a round launched within 400 m - ab8-b_i3 learned "inside 1201 m" from one
+        // launched at 1,051 m during a 286 m/s coast that ended 22 m from us beside a bump, then held 19 launches, bsdown
+        // 74.6; ab3-b_i2 at 981 m, ab3-b_i5 at 1,495 m: the driver's M13 log analysis, 31 Oct 2026)
+        if (g_set.selfBurst && burst && m.launchDist > 0 && (!g_set.selfBurstNear || m.launchDist <= 400.0f))
+        {
+            float& keep = g_selfBurst.emplace(m.target, 0.0f).first->second;
+            if (m.launchDist + 150.0f > keep)
+            {
+                keep = m.launchDist + 150.0f;
+                events::Push("autopilot self-burst target=%u flight=%.2fs to-us=%.0f launch-dist=%.0f: no round inside %.0f m now",
+                             m.target, it->gone - m.launched, m.lastToUs, m.launchDist, keep);
+            }
+        }
+        else if (g_set.selfBurst && burst && m.launchDist > 400.0f && g_set.selfBurstNear)
+            events::Push("autopilot self-burst not-learned target=%u flight=%.2fs to-us=%.0f launch-dist=%.0f: launched "
+                         "beyond 400 m (self_burst_near)",
+                         m.target, it->gone - m.launched, m.lastToUs, m.launchDist);
         if (hit)
             g.missiles.ownMissileDealt +=
                 now < 0 ? std::min(m.targetHp, m.damage) : std::min(m.targetHp - now, m.damage);
         events::Push("autopilot missile-outcome %s %s id=%u target=%u flight=%.2fs predicted=%.2fs launch-dist=%.0f "
                      "closing=%.0f closest=%.0f lost=%.0f dead=%d t-speed=%.0f t-turn=%.2f t-strafe=%.0f aspect=%.0f "
-                     "crossing=%.0f escape=%.2f",
+                     "crossing=%.0f escape=%.2f to-us=%.0f",
                      hit ? "hit" : "miss", m.planned ? "planned" : "unplanned", it->id, m.target, it->gone - m.launched,
                      m.flightPred, m.launchDist, m.closing, m.closest,
-                     m.targetHp > 0 && now >= 0 ? m.targetHp - now : -1.0f, now <= 0 ? 1 : 0, m.geom.tSpeed,
-                     m.geom.tTurn, m.geom.tStrafe, m.geom.aspect, m.geom.crossing, m.geom.escape);
+                     m.targetHp > 0 && now >= 0 ? m.targetHp - now + shLost : -1.0f, now <= 0 ? 1 : 0, m.geom.tSpeed,
+                     m.geom.tTurn, m.geom.tStrafe, m.geom.aspect, m.geom.crossing, m.geom.escape, m.lastToUs);
         it = g.missiles.ownGone.erase(it);
     }
 }
@@ -595,37 +740,26 @@ bool LineOfFireBlocked(u32 target, const float tpos[3], float radius, float past
 // Seconds a missile from launcher `w` needs to close `dist` metres when it starts closing at `closing0` m/s (our range
 // rate + the muzzle velocity: the munition inherits the ship's velocity - measured 18 Oct 2026): coasting through the
 // motor delay, accelerating during the burn, coasting after. The target's own acceleration is ignored. 1e9 when the
-// munition's lifetime runs out first.
+// munition's lifetime runs out first. (The maths: core\game\ordnance.h FlightTime since 30 Oct 2026, unit-tested against
+// this function's old body.)
 float MissileFlightTime(const space::Weapon& w, float dist, float closing0)
 {
-    const float a = w.motorAccel > 0 ? w.motorAccel : 0.0f, delay = std::max(0.0f, w.motorDelay),
-                burn = std::max(0.0f, w.motorTime), life = w.lifetime > 0 ? w.lifetime : 30.0f;
-    float d = dist, t = 0, v = closing0;
-    // delay: constant speed
-    if (delay > 0)
-    {
-        if (v > 0 && v * delay >= d)
-            return d / v;
-        d -= v * delay;
-        t += delay;
-    }
-    // burn: d = v t + a t^2 / 2
-    if (burn > 0 && a > 0)
-    {
-        const float covered = v * burn + 0.5f * a * burn * burn;
-        if (covered >= d)
-        {
-            const float disc = v * v + 2 * a * d;
-            return t + (-v + std::sqrt(std::max(0.0f, disc))) / a;
-        }
-        d -= covered;
-        t += burn;
-        v += a * burn;
-    }
-    if (v <= 0)
-        return 1e9f;
-    t += d / v;
-    return t <= life ? t : 1e9f;
+    return ordnance::FlightTime(RoundOf(w), dist, closing0);
+}
+
+// A launcher's round for core\game\ordnance.h (its munition's flight data as space::ReadWeapons read it).
+ordnance::Round RoundOf(const space::Weapon& w)
+{
+    ordnance::Round r;
+    r.muzzle = w.muzzleVelocity;
+    r.motorDelay = w.motorDelay;
+    r.motorAccel = w.motorAccel;
+    r.motorTime = w.motorTime;
+    r.lifetime = w.lifetime;
+    r.maxTurn = w.maxTurn;
+    r.blast = w.blastRadius;
+    r.detonation = w.detonationDist;
+    return r;
 }
 
 // Can the target escape a missile launched now? (user, 21 Oct 2026: "absent-mindedly launching missiles without

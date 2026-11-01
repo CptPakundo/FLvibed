@@ -40,17 +40,58 @@ inline const Def* Find(const Def* defs, size_t n, const std::string& name)
 
 inline float ClampDef(const Def& d, float v) { return (d.min == 0 && d.max == 0) ? v : Clampf(v, d.min, d.max); }
 
-// Applies one value; false when it does not parse (a Vec3 with fewer than three numbers). Numbers parse as atof does
-// ("1", "0.5", "-1"); an Int truncates ("1.9" -> 1) as the hand-written parsers did (atoi).
+// One finite number, nothing after it but blanks (fails closed: "nan", "inf", "1x" and "" leave the setting as it is).
+// Bools also take true / false, on / off, yes / no.
+inline bool Number(const std::string& v, double& out)
+{
+    const char* s = v.c_str();
+    char* end = nullptr;
+    out = strtod(s, &end);
+    if (end == s || !std::isfinite(out))
+    {
+        const char* t = s;
+        while (*t == ' ' || *t == '\t')
+            ++t;
+        // (the word alone: "true ; note" is not taken, nothing parses as a half-word)
+        for (const char* w : {"true", "on", "yes"})
+            if (_stricmp(t, w) == 0)
+                return out = 1, true;
+        for (const char* w : {"false", "off", "no"})
+            if (_stricmp(t, w) == 0)
+                return out = 0, true;
+        return false;
+    }
+    while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n')
+        ++end;
+    return *end == 0 || *end == ';'; // (a hand-edited ini line may carry "; a note" after the value)
+}
+
+// Applies one value; false when it does not parse (not a finite number; a Vec3 with fewer than three numbers) - the
+// setting then keeps its value. An Int truncates ("1.9" -> 1) as the hand-written parsers did (atoi), after the clamp.
 inline bool Apply(const Def& d, const std::string& v)
 {
+    double x = 0;
     switch (d.type)
     {
-    case Bool: *static_cast<bool*>(d.ptr) = atof(v.c_str()) != 0; return true;
-    case Int:
-        *static_cast<int*>(d.ptr) = static_cast<int>(ClampDef(d, static_cast<float>(atof(v.c_str()))));
+    case Bool:
+        if (!Number(v, x))
+            return false;
+        *static_cast<bool*>(d.ptr) = x != 0;
         return true;
-    case Float: *static_cast<float*>(d.ptr) = ClampDef(d, static_cast<float>(atof(v.c_str()))); return true;
+    case Int:
+        if (!Number(v, x))
+            return false;
+        if (!(d.min == 0 && d.max == 0))
+            x = x < d.min ? d.min : (x > d.max ? d.max : x);
+        x = x < -2147483647.0 ? -2147483647.0 : (x > 2147483647.0 ? 2147483647.0 : x); // a defined int conversion
+        *static_cast<int*>(d.ptr) = static_cast<int>(x);
+        return true;
+    case Float:
+        if (!Number(v, x))
+            return false;
+        x = x < -3.0e38 ? -3.0e38 : (x > 3.0e38 ? 3.0e38 : x);
+        *static_cast<float*>(d.ptr) = ClampDef(d, static_cast<float>(x));
+        return true;
     case Hex: *static_cast<u32*>(d.ptr) = static_cast<u32>(strtoul(v.c_str(), nullptr, 0)); return true;
     case String: *static_cast<std::string*>(d.ptr) = v; return true;
     case Vec3:

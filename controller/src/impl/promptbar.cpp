@@ -485,11 +485,12 @@ static void DrawClassic(int sw, int sh, bool visible)
         if (p.progress > 0) // a hold's sweep: a fill under the pair, growing with the hold
             render::Box(x - gap * 0.5f, y + gh + 2, (w[i] + gap) * (p.progress > 1 ? 1 : p.progress),
                         (H * 0.003f < 2 ? 2 : H * 0.003f), 0xFFE0B050);
-        glyphs::Draw(p.btn, x + glyphs::Width(p.btn, gh) * 0.5f, cy, gh, p.enabled ? 0.95f : 0.45f);
+        // every prompt here is menu grammar: an A / B pill shows the button that accepts / goes back (glyphs::Menu)
+        glyphs::Draw(glyphs::Menu(p.btn), x + glyphs::Width(p.btn, gh) * 0.5f, cy, gh, p.enabled ? 0.95f : 0.45f);
         x += glyphs::Width(p.btn, gh) + gap;
         if (p.btn2 != glyphs::COUNT)
         {
-            glyphs::Draw(p.btn2, x + glyphs::Width(p.btn2, gh) * 0.5f, cy, gh, p.enabled ? 0.95f : 0.45f);
+            glyphs::Draw(glyphs::Menu(p.btn2), x + glyphs::Width(p.btn2, gh) * 0.5f, cy, gh, p.enabled ? 0.95f : 0.45f);
             x += glyphs::Width(p.btn2, gh) + gap;
         }
         if (labelScale < 0.995f)
@@ -576,6 +577,8 @@ std::string Status()
     o << " items='";
     for (int i = 0; i < g_count; ++i)
         o << (i ? ", " : "") << glyphs::Name(g_items[i].btn)
+          << (glyphs::Menu(g_items[i].btn) != g_items[i].btn ? std::string("=") + glyphs::Name(glyphs::Menu(g_items[i].btn))
+                                                               : std::string()) // drawn as (confirm_button 1)
           << (g_items[i].btn2 != glyphs::COUNT ? std::string("+") + glyphs::Name(g_items[i].btn2) : std::string()) << " "
           << text::Utf8(g_labels[i]);
     o << "'";

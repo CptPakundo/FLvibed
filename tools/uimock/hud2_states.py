@@ -17,6 +17,13 @@ Layout (fractions of H; anchored to the safe frame's corners: 5 % of W at the si
   bottom-left   SHIP panel: the game's wireframe of the player's ship with its damage, escorts, hold, credits
   bottom-centre the context line under the player's ship (at most three, holds as a broken ring)
   bottom-right  LOADOUT panel: the D-pad cross and the weapon groups (">" on the active), the launcher and its lock
+
+Since 31 Oct 2026 it draws the BUILT Standard layout (docs\\UI_HUD2.md 5.19-5.23), not the proposal above where they
+differ: both bottom panels 0.15 H tall (ship 0.31 wide, loadout base 0.40 with the consumables cross on its own 0.20
+plate stacked 0.012 above the base's right end), tight glyphs in the loadout, a too-long name in its cut start form (the
+marquee), the context prompts in two lanes beside the panels (movement / control left, fire / use / target right), the
+cruise state inside the ring (seconds / CRUISE ON at +0.083), the throttle word beside its arc, and nothing under the
+ring (the lower centre). Renders also feed the living spec page (tools\\uimock\\spec_images.py, img\\cap\\m_*.jpg).
 """
 import glob
 import math
@@ -33,11 +40,34 @@ PLATE = 'plate_subs.png'      # the subtitles' area from a capture without lines
 PLATE_XY = (0, 900)
 T = 0.024                     # the text floor (XAG 101: 26 px at 1080p); captions never go below it
 G = 0.036                     # glyph height in prompts and on clusters
+# The built Standard layout (31 Oct 2026, docs\UI_HUD2.md 5.19-5.23; fractions of H at 16:9, k 1)
+PANEL_H = 0.15                # both bottom panels (A5)
+SHIP_W = 0.31                 # the ship panel (5.22): icon column 0.085, texts from 0.107, values 0.014 before the edge
+BASE_W = 0.40                 # the loadout's base (5.20 decision 3: the weapons only; K&M 0.44)
+CROSS_W = 0.20                # the consumables cross on its own plate, stacked on the base's right end, 0.012 above it
+CROSS_GAP = 0.012
+TIGHT = 0.0288                # the tight keycap / glyph (A1): 1.2 x the 0.024 name
+LANE_ROWS = (0.915, 0.855)    # the context lanes' two rows (5.20 decision 4)
+
+
+def fit(c, s, size, room, floor=T):
+    """The kit's fit rule as the frame shows it: step down to the floor, then the marquee's cut start form (the text's
+    start + "..."; in game it holds 1.5 s, then scrolls to the end - 5.20 decision 1)."""
+    H = c.H
+    sz = size
+    while c.textlen(s, sz) > room and sz > floor * H:
+        sz = max(floor * H, sz - 0.001 * H)
+    if c.textlen(s, sz) <= room:
+        return s, sz
+    while s and c.textlen(s + '...', sz) > room:
+        s = s[:-1]
+    return s.rstrip() + '...', sz
 
 SHIP = dict(hull=0.88, shield=0.22, power=0.64, speed=84, throttle=0.75, cruise='off', nano=3, batt=3, cm=12, mines=8,
             missiles=36, hold=(12, 40), credits=4250)
 CALM = dict(SHIP, hull=1.0, shield=1.0, power=1.0, speed=80, throttle=1.0)
-GROUPS = ['Azrael  ·  Lavablade Mk II', 'Azrael', 'Lavablade Mk II']
+# group 1 is too long for the names' ~0.23 H room: it shows the marquee's cut start form (5.20 decision 1)
+GROUPS = ['Azrael ×2  ·  Lavablade Mk II ×2', 'Azrael ×2', 'Lavablade Mk II ×2']
 ESCORTS = [('Escort 1 · Charackli', 1.0), ('Escort 2 · Cazamias', 0.7), ('Escort 3 · Carlson', 0.35)]
 
 
@@ -50,32 +80,39 @@ class Layout:
 
 
 # ------------------------------------------------------------------ the reticle ring
-def reticle(c, L, s, combat=True, charge=None, missile=None, damage=None):
+def reticle(c, L, s, combat=True, charge=None, missile=None, damage=None, word=None):
     """Shield left (138..222), hull right (-42..42), power below (68..112); the speed inside the ring above the power
-    arc, the drive state (CRUISE) under the ring; a number at its arc's end only when below 40 %. Calm: 40 %.
-    Cruise charge = the bottom arc turns cyan and fills, the seconds at its end (no second circle). Alerts outside:
-    the missile's bearing on the ring (pulsing), a hit's side as a transient amber flash at 0.13 H."""
+    arc; a number at its arc's end only when below 40 %. Calm: 40 %. The throttle arc (82..98) just outside the ring's
+    bottom with its word (BOOST / KILL / REV) RIGHT of it, not under it (5.23). Cruise reads in one place, inside the
+    ring in the charge seconds' slot (+0.083): the seconds while the bottom arc fills cyan, CRUISE ON while it runs;
+    the speed rises to +0.045 and the power arc yields meanwhile. Nothing HUD 2 draws lies under the ring (the lower
+    centre, x 0.40-0.60 W from the throttle arc + 0.01 H down: 5.23). Alerts outside: the missile's bearing on the
+    ring (pulsing), a hit's side as a transient amber flash at 0.13 H."""
     H = c.H
     cx, cy, R = L.cx, L.cy, L.R
     w = 0.0065 * H
+    cruising = charge is not None or s['cruise'] == 'on'
     c.op = 1.0 if combat else 0.4
     low_shield = s['shield'] <= 0.25
     c.arcbar(cx, cy, R, 138, 222, w, s['shield'], HOSTILE if low_shield else SHIELD, n=14, reverse=True)
     c.arcbar(cx, cy, R, -42, 42, w, s['hull'], INK if s['hull'] > 0.2 else HULL, n=14, reverse=True)
-    if charge is None:
+    if not cruising:
         c.arcbar(cx, cy, R, 68, 112, w * 0.8, s['power'], POWER, n=8, gapdeg=2.2)
+    c.arcbar(cx, cy, R + 0.022 * H, 82, 98, w * 0.75, s['throttle'], CHROME, n=5, gapdeg=1.2)   # throttle
     f = T * H
     if s['shield'] < 0.4:
         c.text((cx - R * 0.72, cy - R * 0.92), f"{int(s['shield'] * 100)}", f, fill=HOSTILE, anchor='rm')
     if s['hull'] < 0.4:
         c.text((cx + R * 0.72, cy - R * 0.92), f"{int(s['hull'] * 100)}", f, fill=INK, anchor='lm')
     c.op = 1.0
+    if word:   # beside the throttle arc: from cx + 0.068, its box's bottom on the arc's outer edge
+        c.text((cx + 0.068 * H, cy + R + 0.022 * H + w * 0.375 - f / 2), word, f, fill=ACTIVE, anchor='lm', track=0.08)
     if charge is not None:
         c.arcbar(cx, cy, R, 68, 112, w, charge, CYAN, n=8, gapdeg=2.2, reverse=True)
-        c.text((cx + R * 0.52, cy + R * 1.02), f"{(1 - charge) * 5:.1f} s", f, fill=CYAN, anchor='lm')
-    c.text((cx, cy + 0.058 * H), f"{s['speed']}", 0.030 * H, fill=INK, anchor='mm')
-    if s['cruise'] == 'on':
-        c.text((cx, cy + R + 0.034 * H), 'CRUISE', f, fill=CYAN, anchor='mm', track=0.1)
+        c.text((cx, cy + 0.083 * H), f"{(1 - charge) * 5:.1f} s", f, fill=CYAN, anchor='mm')
+    elif s['cruise'] == 'on':
+        c.text((cx, cy + 0.083 * H), 'CRUISE ON', f, fill=CYAN, anchor='mm', track=0.08)
+    c.text((cx, cy + (0.045 if cruising else 0.058) * H), f"{s['speed']}", 0.030 * H, fill=INK, anchor='mm')
     r = 0.018 * H   # the game's own reticle (kept native; drawn here as it looks)
     c.shape(lambda d, P, S: (d.ellipse([P(cx - r, cy - r), P(cx + r, cy + r)], outline=CHROME + (230,),
                                        width=int(0.0016 * H * S)),
@@ -106,22 +143,38 @@ def direction(c, L, ang, col, dist):
     c.arrow(x, y, 0.040 * H, -ang, col=col)
     c.text((x, y + 0.036 * H), dist, T * H, fill=col, anchor='mm')
 
-def context_line(c, L, items):
-    """The contextual legend under the player's ship: what applies now, at most three, never one a panel header
-    shows; each on a dark pill (it sits over engine glare); holds as a broken ring."""
-    H = c.H
+def context_lanes(c, L, left=(), right=()):
+    """The context prompts (at most three) in two lanes tight to the bottom panels (5.20 decision 4, the corners'
+    jobs): the ship's movement and control LEFT beside the ship panel (DOCK, CRUISE / CANCEL CRUISE, STOP, ABORT DOCK,
+    TAKE CONTROL, MAP ...), what you fire / use / target RIGHT beside the loadout (TURRET, TRACTOR n, TARGET AHEAD,
+    TARGETS); the first prompt hugs its panel, two rows a lane (the baseline 0.915 H and one 0.06 above). A prompt too
+    wide for an empty row is squeezed (its label in the marquee's cut form). The lower centre stays empty."""
+    H, W = c.H, c.W
     g = G * H
     lab = 0.026 * H
-    widths = [g * 1.3 + c.textlen(t, lab, track=0.06) for _, t, _ in items]
-    gap = 0.03 * H
-    x = L.cx - (sum(widths) + gap * (len(items) - 1)) / 2
-    y = c.H * 0.915
-    for (k, t, hold), w in zip(items, widths):
-        c.plate((x - 0.012 * H, y - 0.026 * H, x + w + 0.012 * H, y + 0.026 * H), alpha=150, rim_alpha=0,
-                corners=(1, 1, 1, 1), chamfer=0.026 * H)
-        c.glyph(k, x + g / 2, y, g, colored=False, hold=hold)
-        c.text((x + g * 1.3, y), t, lab, fill=INK, track=0.06)
-        x += w + gap
+    pad, gap = 0.012 * H, 0.024 * H
+    # the prompts' own extents (a pill reaches pad further): panel + 0.012 gap + 0.012 pad .. 0.40 W - pad; the right
+    # lane mirrored (0.60 W + pad .. the loadout - 0.024)
+    lanes = ((left, L.mx + SHIP_W * H + 0.024 * H, 0.40 * W - pad, 1),
+             (right, 0.60 * W + pad, W - L.mx - BASE_W * H - 0.024 * H, -1))
+    for items, x0, x1, way in lanes:
+        row, used = 0, 0.0
+        for k, t, hold in items:
+            w = g * 1.3 + c.textlen(t, lab, track=0.06)
+            if used and used + gap + w > x1 - x0:
+                row, used = row + 1, 0.0
+            if row >= len(LANE_ROWS):
+                break
+            if w > x1 - x0:   # squeezed to the lane: the label's cut start form
+                t, _ = fit(c, t, lab, x1 - x0 - g * 1.3)
+                w = g * 1.3 + c.textlen(t, lab, track=0.06)
+            y = H * LANE_ROWS[row]
+            x = x0 + used if way > 0 else x1 - used - w
+            c.plate((x - pad, y - 0.026 * H, x + w + pad, y + 0.026 * H), alpha=150, rim_alpha=0,
+                    corners=(1, 1, 1, 1), chamfer=0.026 * H)
+            c.glyph(k, x + g / 2, y, g, colored=False, hold=hold)
+            c.text((x + g * 1.3, y), t, lab, fill=INK, track=0.06)
+            used += w + gap
 
 def world_target(c, x, y, w, h, dist, col=HOSTILE, lead=None, in_range=True, lock=None):
     """The game's corner brackets in the attitude colour and the distance under them (the card has the rest); the
@@ -245,28 +298,33 @@ def ship_panel(c, L, src, s, wire, escorts=None, combat=True):
     call signs with their hull in a fight, else the hold and credits. No shield ring: the reticle ring has it."""
     H = c.H
     c.op = 1.0 if combat else 0.65
-    w, h = 0.40 * H, 0.17 * H
+    w, h = SHIP_W * H, PANEL_H * H            # 0.31 x 0.15 (5.22; the loadout's height, A5)
     x0, y1 = L.mx, H - L.my
     y0 = y1 - h
     c.plate((x0, y0, x0 + w, y1), alpha=200, corners=(1, 0, 1, 0))
-    vw = h * 0.80
-    ccx, ccy = x0 + 0.012 * H + vw / 2, (y0 + y1) / 2
-    c.icon_from(src, wire, ccx, ccy, vw * 0.95, floor=55)
-    tx = x0 + vw + 0.03 * H
-    yy = y0 + 0.032 * H
-    if escorts:
-        for nm, hp in escorts:
-            c.text((tx, yy), nm, T * H, fill=INK)
-            c.segbar(tx, yy + 0.02 * H, x0 + w - 0.018 * H - tx, 0.007 * H, hp, FRIEND, n=10, gap=2)
-            yy += 0.05 * H
-    else:
+    vw = 0.085 * H                            # the icon column: the icon at half the panel's height
+    c.icon_from(src, wire, x0 + vw / 2, (y0 + y1) / 2, 0.075 * H, floor=55)
+    tx, vx = x0 + 0.107 * H, x0 + w - 0.014 * H
+    room = vx - tx
+    if escorts:   # up to 3 from 0.026 at a 0.042 pitch, bars 0.018 under their names; long names in the cut form
+        for i, (nm, hp) in enumerate(escorts[:3]):
+            yy = y0 + (0.026 + 0.042 * i) * H
+            t, sz = fit(c, nm, T * H, room)
+            c.text((tx, yy), t, sz, fill=INK)
+            c.segbar(tx, yy + 0.018 * H - 0.0035 * H, room, 0.007 * H, hp, FRIEND, n=10, gap=2)
+    else:         # name / class 0.030, HOLD 0.068 (its bar + 0.020), CREDITS 0.120
+        nw = c.text((tx, y0 + 0.030 * H), 'Patriot', T * H, fill=INK)
+        t, sz = fit(c, 'LIGHT FIGHTER', T * H, room - nw - 0.011 * H)   # ClearRoom: ends 0.011 H clear of the name
+        c.text((vx, y0 + 0.030 * H), t, sz, fill=DIM, anchor='rm')
         used, cap = s['hold']
+        yy = y0 + 0.068 * H
+        val = f"{used} / {cap}"
         c.text((tx, yy), 'HOLD', T * H, fill=DIM, track=0.08)
-        c.text((x0 + w - 0.018 * H, yy), f"{used} / {cap}", T * H, fill=INK, anchor='rm')
-        c.segbar(tx, yy + 0.02 * H, x0 + w - 0.018 * H - tx, 0.007 * H, used / cap, CHROME, n=16, gap=2)
-        yy += 0.06 * H
+        c.text((vx, yy), val, T * H, fill=INK, anchor='rm')
+        c.segbar(tx, yy + 0.020 * H - 0.0035 * H, room, 0.007 * H, used / cap, CHROME, n=16, gap=2)
+        yy = y0 + 0.120 * H
         c.text((tx, yy), 'CREDITS', T * H, fill=DIM, track=0.08)
-        c.text((x0 + w - 0.018 * H, yy), f"{s['credits']:,}".replace(',', ' '), T * H, fill=INK, anchor='rm')
+        c.text((vx, yy), f"{s['credits']:,}".replace(',', ' '), T * H, fill=INK, anchor='rm')
     c.op = 1.0
 
 def loadout(c, L, s, groups, active=0, combat=True, hot=None, lock=None):
@@ -275,13 +333,16 @@ def loadout(c, L, s, groups, active=0, combat=True, hot=None, lock=None):
     H, W = c.H, c.W
     c.op = 1.0 if combat else 0.6
     x1, y1 = W - L.mx, H - L.my
-    w, h = 0.56 * H, 0.17 * H
+    w, h = BASE_W * H, PANEL_H * H            # the base: the weapons only (5.20 decision 3)
     x0, y0 = x1 - w, y1 - h
     c.plate((x0, y0, x1, y1), alpha=190, corners=(0, 1, 0, 1))
+    # the consumables cross: its own plate on the base's right end, right-aligned, 0.012 H above it
+    k0, k1 = x1 - CROSS_W * H, y0 - CROSS_GAP * H
+    c.plate((k0, k1 - h, x1, k1), alpha=190, corners=(0, 1, 0, 1))
     d = 0.050 * H
     sz = 0.046 * H
-    cx, cy = x0 + 0.03 * H + d * 1.15 + sz / 2, (y0 + y1) / 2
-    c.glyph('D', cx, cy, 0.028 * H, colored=False, alpha=220)
+    cx, cy = (k0 + x1) / 2, k1 - h / 2
+    c.glyph('D', cx, cy, TIGHT, colored=False, alpha=220)
     for ic, n, (dx, dy) in (('wrench', s['nano'], (0, -1)), ('battery', s['batt'], (0, 1)),
                             ('flare', s['cm'], (-1, 0)), ('mine', s['mines'], (1, 0))):
         px, py = cx + dx * d * 1.15, cy + dy * d * 0.98
@@ -294,35 +355,43 @@ def loadout(c, L, s, groups, active=0, combat=True, hot=None, lock=None):
             c.shape(lambda dd, P, S, px=px, py=py: dd.rectangle([P(px - sz / 2, py - sz / 2), P(px + sz / 2, py + sz / 2)],
                                                                outline=hotcol + (160,), width=int(0.004 * H * S)),
                     glow=0.006 * H, box=(px - sz / 2 - 8, py - sz / 2 - 8, px + sz / 2 + 8, py + sz / 2 + 8))
+        # the Slot helper (A1): the count at the text floor at the slot's right, the icon beside it (two digits' room)
+        ix = px - sz / 2 + (sz - 0.0199 * H) / 2
         if ic in ('wrench', 'battery'):
             c.icon_from(c.native, (3192, 1512, 3255, 1600) if ic == 'wrench' else (3352, 1512, 3430, 1602),
-                        px - sz * 0.10, py - sz * 0.08, sz * 0.60)
+                        ix, py, sz * 0.52)
         else:   # the game's flat icons as filled silhouettes (the starburst, the spiked sphere)
-            c.ficon('star' if ic == 'flare' else 'mine', px - sz * 0.10, py - sz * 0.08, sz * 0.62, col=CHROME)
-        c.text((px + sz * 0.46, py + sz * 0.26), f"{n}", T * H, fill=INK, anchor='rm')
-    # the weapons
-    wx = cx + d * 1.15 + sz / 2 + 0.04 * H
-    c.panel((wx - 0.02 * H, y0 + 0.02 * H, wx - 0.02 * H + 2, y1 - 0.02 * H), chamfer=0, alpha=255, glow=False)
-    g = G * H
-    yy = y0 + 0.032 * H
-    c.glyph('RT', wx + g / 2, yy + 0.02 * H, g, colored=False)
+            c.ficon('star' if ic == 'flare' else 'mine', ix, py, sz * 0.54, col=CHROME)
+        c.text((px + sz / 2 - 0.003 * H, py), f"{n}", T * H, fill=INK, anchor='rm')
+    # the weapons: tight glyphs (0.0288), the pad's rows 0.028 at a 0.030 pitch, the launcher row 0.122; a name too long
+    # for its room (~0.23 H) shows its cut start form (the marquee)
+    g = TIGHT * H
+    wx = x0 + 0.016 * H
+    tx = wx + g + 0.014 * H
+    nx = tx + 0.030 * H
+    xr = x1 - 0.016 * H
+    c.glyph('RT', wx + g / 2, y0 + (0.028 + 0.030 * (len(groups) - 1) / 2) * H, g, colored=False)
     for i, gname in enumerate(groups):
         lit = i == active
-        tx = wx + g + 0.02 * H
-        c.text((tx, yy), ('>' if lit else '') + f"{i + 1}", 0.026 * H, fill=ACTIVE if lit else DIM, anchor='lm')
-        c.text((tx + 0.04 * H, yy), gname, 0.026 * H, fill=INK if lit else DIM)
-        yy += 0.032 * H
-    yy += 0.012 * H
+        yy = y0 + (0.028 + 0.030 * i) * H
+        c.text((tx, yy), ('>' if lit else '') + f"{i + 1}", T * H, fill=ACTIVE if lit else DIM, anchor='lm')
+        t, sz_ = fit(c, gname, T * H, min(0.23 * H, xr - nx))
+        c.text((nx, yy), t, sz_, fill=INK if lit else DIM)
+    yy = y0 + 0.122 * H
     c.glyph('RB', wx + g / 2, yy, g, colored=False)
-    tx = wx + g + 0.02 * H
-    c.icon('missile', tx + 0.016 * H, yy, 0.03 * H, col=INK)
-    jw = c.text((tx + 0.04 * H, yy), f"JAVELIN  {s['missiles']}", 0.026 * H, fill=INK)
+    c.icon('missile', tx + 0.012 * H, yy, 0.026 * H, col=INK)
+    x_end = xr
     if lock:
         lw = c.textlen(lock, T * H * 0.9, track=0.12) + 0.016 * H
-        lx = tx + 0.05 * H + jw
-        c.plate((lx, yy - 0.016 * H, lx + lw, yy + 0.016 * H), alpha=230, rim=HOSTILE, rim_alpha=255,
+        c.plate((xr - lw, yy - 0.016 * H, xr, yy + 0.016 * H), alpha=230, rim=HOSTILE, rim_alpha=255,
                 corners=(1, 1, 1, 1), chamfer=0.005 * H)
-        c.text((lx + 0.008 * H, yy), lock, T * H * 0.9, fill=HOSTILE, track=0.12, shadow=False)
+        c.text((xr - lw + 0.008 * H, yy), lock, T * H * 0.9, fill=HOSTILE, track=0.12, shadow=False)
+        x_end = xr - lw - 0.012 * H
+    cnt = f"{s['missiles']}"
+    c.text((x_end, yy), cnt, T * H, fill=INK, anchor='rm')
+    x_end -= c.textlen(cnt, T * H) + 0.012 * H
+    t, sz_ = fit(c, 'JAVELIN MISSILE', T * H, x_end - nx)
+    c.text((nx, yy), t, sz_, fill=INK)
     c.op = 1.0
 
 
@@ -332,7 +401,7 @@ def comms(c, L, lines):
     lines wide (0.30 W), the speaker in the attitude colour."""
     H, W = c.H, c.W
     maxw = 0.30 * W
-    y = H - L.my - 0.17 * H - 0.05 * H
+    y = H - L.my - PANEL_H * H - 0.05 * H
     blocks = []
     for speaker, faction, text, col in lines:
         words, rows, cur = text.split(), [], ''
@@ -408,7 +477,7 @@ def render_combat():
     s = dict(SHIP)
     world_target(c, 1080, 832, 0.085 * H, 0.06 * H, '427 m', lead=(985, 868), in_range=True, lock=1.0)
     direction(c, L, -8, HOSTILE, '1.2 km')
-    reticle(c, L, s, combat=True, missile=28, damage=200)
+    reticle(c, L, s, combat=True, missile=28, damage=200, word='BOOST')
     nav(c, L, 'Protect the armored transport', protect=0.62)
     notification(c, L, 'SHIELD FAILING', [('DD', 'BATTERY'), ('DL', 'FLARE')], col=HOSTILE)
     target_card(c, L, c.native, 'Dustin Leinenbach', 'Rogues', 'FIGHTER', '427 m', 0.30, 0.74, wire=TGT_WIRE,
@@ -417,7 +486,7 @@ def render_combat():
     comms(c, L, [('Escort 1 · Charackli', 'Cryer', "I've got a target.", FRIEND)])
     ship_panel(c, L, c.native, s, OWN_WIRE, escorts=ESCORTS)
     loadout(c, L, s, GROUPS, active=0, hot=('flare', 'battery'), lock='LOCKED')
-    context_line(c, L, [('B', 'REVERSE', 1.0), ('X', 'TURRET', 1.0)])
+    context_lanes(c, L, left=[('B', 'REVERSE', 1.0)], right=[('X', 'TURRET', 1.0)])
     return save(c, 'combat')
 
 
@@ -432,7 +501,7 @@ def render_travel():
     comms(c, L, [('Baltimore Shipyard', 'DSE', 'Mooring link disengaged. Good luck out there.', FRIEND)])
     ship_panel(c, L, c.native, s, OWN_WIRE, combat=False)
     loadout(c, L, s, GROUPS, active=0, combat=False)
-    context_line(c, L, [('A', 'DOCK', None), ('Y', 'CRUISE', None), ('LB', 'TARGETS', None)])
+    context_lanes(c, L, left=[('A', 'DOCK', None), ('Y', 'CRUISE', None)], right=[('X', 'TRACTOR 3', None)])
     return save(c, 'travel')
 
 
@@ -446,7 +515,7 @@ def render_cruise():
                 col=FRIEND, icon='station', bars=False)
     ship_panel(c, L, c.native, s, OWN_WIRE, combat=False)
     loadout(c, L, s, GROUPS, active=0, combat=False)
-    context_line(c, L, [('Y', 'CANCEL CRUISE', None), ('A', 'DOCK', None)])
+    context_lanes(c, L, left=[('Y', 'CANCEL CRUISE', None), ('A', 'DOCK', None)])
     return save(c, 'cruise')
 
 
@@ -462,7 +531,7 @@ def render_dock():
     comms(c, L, [('Fort Bush', 'Police', 'Roger that. Your request to dock is granted. Proceed to dock 3.', FRIEND)])
     ship_panel(c, L, c.native, s, OWN_WIRE, combat=False)
     loadout(c, L, s, GROUPS, active=0, combat=False)
-    context_line(c, L, [('B', 'ABORT DOCK', None), ('VIEW', 'TAKE CONTROL', 1.0)])
+    context_lanes(c, L, left=[('B', 'ABORT DOCK', None), ('VIEW', 'TAKE CONTROL', 1.0)])
     return save(c, 'dock')
 
 
@@ -478,7 +547,7 @@ def render_lane():
     c.op = 1.0
     ship_panel(c, L, c.native, s, OWN_WIRE, combat=False)
     loadout(c, L, s, GROUPS, active=0, combat=False)
-    context_line(c, L, [('VIEW', 'MAP', None)])
+    context_lanes(c, L, left=[('VIEW', 'MAP', None)])
     return save(c, 'lane')
 
 

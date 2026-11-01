@@ -1,9 +1,9 @@
 #include "hudvis.h"
 
-#include "debug.h"
 #include "flexe.h"
 #include "game/hudinfo.h"
 #include "log.h"
+#include "safemem.h"
 #include "ui.h"
 
 #include <sstream>
@@ -51,7 +51,7 @@ static bool NeuroNetWindowOpen(const Root& r)
     for (int i = 0; i < r.nAux; ++i)
     {
         u8 st = 0;
-        if (debug::SafeRead(r.aux[i] + kState, &st, 1) && (st & 2))
+        if (safemem::Read(r.aux[i] + kState, &st, 1) && (st & 2))
             return true;
     }
     return false;
@@ -62,17 +62,17 @@ static void FindNeuroNetButtons(Root& r)
 {
     r.nAux = 0;
     u32 c = 0;
-    debug::SafeRead(r.ctl + kChild, &c, 4);
+    safemem::Read(r.ctl + kChild, &c, 4);
     for (int guard = 0; c && guard < 32 && r.nAux < 8; ++guard)
     {
         char n[33] = {};
-        if (debug::SafeRead(c + kName, n, 32))
+        if (safemem::Read(c + kName, n, 32))
         {
             const size_t len = strlen(n);
             if (len > 8 && strncmp(n, "NN", 2) == 0 && strcmp(n + len - 6, "Button") == 0)
                 r.aux[r.nAux++] = c;
         }
-        if (!debug::SafeRead(c + kSibling, &c, 4))
+        if (!safemem::Read(c + kSibling, &c, 4))
             break;
     }
 }
@@ -89,7 +89,7 @@ static bool ChatInputOpen(const Root&)
         at = now;
         u8 st = 0;
         const uintptr_t c = ui::FindControl("CTID");
-        cache = c && debug::SafeRead(c + kState, &st, 1) && (st & 2);
+        cache = c && safemem::Read(c + kState, &st, 1) && (st & 2);
     }
     return cache;
 }
@@ -153,7 +153,7 @@ struct Arrival
     u32 hides = 0;
 } g_arrival;
 
-static bool ReadState(uintptr_t ctl, u8& state) { return debug::SafeRead(ctl + kState, &state, 1); }
+static bool ReadState(uintptr_t ctl, u8& state) { return safemem::Read(ctl + kState, &state, 1); }
 
 static bool WriteState(uintptr_t ctl, u8 state)
 {
@@ -174,12 +174,12 @@ static bool Valid(const Root& r, bool name)
     if (!r.ctl)
         return false;
     u32 vt = 0;
-    if (!debug::SafeRead(r.ctl, &vt, 4) || vt != r.vtable)
+    if (!safemem::Read(r.ctl, &vt, 4) || vt != r.vtable)
         return false;
     if (name)
     {
         char n[33] = {};
-        if (!debug::SafeRead(r.ctl + kName, n, 32) || strcmp(n, r.name) != 0)
+        if (!safemem::Read(r.ctl + kName, n, 32) || strcmp(n, r.name) != 0)
             return false;
     }
     return true;
@@ -197,13 +197,13 @@ static void Find(Root& r)
     for (int guard = 0; c && guard < 16 && !r.self; ++guard)
     {
         u32 parent = 0;
-        if (!debug::SafeRead(c + kParent, &parent, 4))
+        if (!safemem::Read(c + kParent, &parent, 4))
             return;
         if (!parent)
             break;
         c = parent;
     }
-    if (!c || !debug::SafeRead(c, &r.vtable, 4) || !debug::SafeRead(c + kName, r.name, 32))
+    if (!c || !safemem::Read(c, &r.vtable, 4) || !safemem::Read(c + kName, r.name, 32))
         return;
     r.name[32] = 0;
     r.ctl = c;
@@ -230,7 +230,7 @@ static uintptr_t ArrivalNow()
     if (!exe::ArrivalText.ok())
         return 0;
     u32 p = 0;
-    debug::SafeRead(exe::ArrivalText.get(), &p, 4);
+    safemem::Read(exe::ArrivalText.get(), &p, 4);
     return p;
 }
 
@@ -310,7 +310,7 @@ static bool SubobjNone(u16& v)
         if (HMODULE c = GetModuleHandleA("common.dll"))
             p = reinterpret_cast<const u16*>(GetProcAddress(c, "?SUBOBJ_ID_NONE@@3GB"));
     }
-    return p && debug::SafeRead(reinterpret_cast<uintptr_t>(p), &v, 2);
+    return p && safemem::Read(reinterpret_cast<uintptr_t>(p), &v, 2);
 }
 
 static bool UiCam(float& cx, float& cy, float& kx, float& ky)
@@ -318,8 +318,8 @@ static bool UiCam(float& cx, float& cy, float& kx, float& ky)
     if (!exe::UiCamera.ok())
         return false;
     const uintptr_t c = exe::UiCamera.get();
-    return debug::SafeRead(c + 0x68, &cx, 4) && debug::SafeRead(c + 0x6C, &cy, 4) && debug::SafeRead(c + 0x78, &kx, 4) &&
-           debug::SafeRead(c + 0x7C, &ky, 4) && kx != 0 && ky != 0;
+    return safemem::Read(c + 0x68, &cx, 4) && safemem::Read(c + 0x6C, &cy, 4) && safemem::Read(c + 0x78, &kx, 4) &&
+           safemem::Read(c + 0x7C, &ky, 4) && kx != 0 && ky != 0;
 }
 
 static bool WriteFloats(uintptr_t a, const float* v, int n)
@@ -345,7 +345,7 @@ static uintptr_t TargetViewOwner(uintptr_t& fn)
         return 0;
     const uintptr_t owner = t->ctl - kOwner;
     u32 vt = 0, slot = 0;
-    if (!debug::SafeRead(owner, &vt, 4) || !debug::SafeRead(vt + kViewDraw, &slot, 4) || slot != exe::TargetViewDraw.get())
+    if (!safemem::Read(owner, &vt, 4) || !safemem::Read(vt + kViewDraw, &slot, 4) || slot != exe::TargetViewDraw.get())
         return 0;
     fn = slot;
     return owner;
@@ -366,12 +366,12 @@ static void DrawShipView(View& v, uintptr_t owner, float cx, float cy, float kx,
 {
     u32 holder = 0;
     float saveRect[5] = {};
-    if (!debug::SafeRead(owner + kHolder, &holder, 4) || !holder)
+    if (!safemem::Read(owner + kHolder, &holder, 4) || !holder)
     {
         ++v.refused, v.why = "no object in the status panel";
         return;
     }
-    if (!debug::SafeRead(owner + kViewRect, saveRect, sizeof(saveRect)) || saveRect[2] > -0.01f)
+    if (!safemem::Read(owner + kViewRect, saveRect, sizeof(saveRect)) || saveRect[2] > -0.01f)
     {
         ++v.refused, v.why = "not the layout measured";
         return;
@@ -454,10 +454,10 @@ static void DrawView(View& v, bool hide)
     u32 holder = 0, saveHolder = 0, saveMode = 0;
     u16 saveSub = 0, none = 0;
     float saveRect[5] = {};
-    if (!debug::SafeRead(src + kHolder, &holder, 4) || !holder)
+    if (!safemem::Read(src + kHolder, &holder, 4) || !holder)
         return refuse("no object in the panel's holder");
-    if (!debug::SafeRead(owner + kHolder, &saveHolder, 4) || !debug::SafeRead(owner + kViewMode, &saveMode, 4) ||
-        !debug::SafeRead(owner + kSubTarget, &saveSub, 2) || !debug::SafeRead(owner + kViewRect, saveRect, sizeof(saveRect)))
+    if (!safemem::Read(owner + kHolder, &saveHolder, 4) || !safemem::Read(owner + kViewMode, &saveMode, 4) ||
+        !safemem::Read(owner + kSubTarget, &saveSub, 2) || !safemem::Read(owner + kViewRect, saveRect, sizeof(saveRect)))
         return refuse("owner unreadable");
     if (saveRect[2] > -0.01f || saveMode > 8)
         return refuse("not the layout measured"); // (z = -1, a small mode): leave it alone
@@ -520,8 +520,8 @@ u32 TargetViewObject()
     if (!r || !r->ctl)
         return 0;
     u32 p = 0, obj = 0, id = 0;
-    if (!debug::SafeRead(r->ctl - kOwner + 0x398, &p, 4) || !p || !debug::SafeRead(p + 8, &obj, 4) || !obj ||
-        !debug::SafeRead(obj + 0xB0, &id, 4))
+    if (!safemem::Read(r->ctl - kOwner + 0x398, &p, 4) || !p || !safemem::Read(p + 8, &obj, 4) || !obj ||
+        !safemem::Read(obj + 0xB0, &id, 4))
         return 0;
     return id;
 }
@@ -701,11 +701,11 @@ static void Walk(uintptr_t c, int depth, std::ostringstream& o, int& budget)
         u8 st = 0;
         char n[33] = {};
         float pos[3] = {};
-        if (!debug::SafeRead(c, &vt, 4) || !debug::SafeRead(c + kChild, &child, 4) || !debug::SafeRead(c + kSibling, &sib, 4))
+        if (!safemem::Read(c, &vt, 4) || !safemem::Read(c + kChild, &child, 4) || !safemem::Read(c + kSibling, &sib, 4))
             return;
-        debug::SafeRead(c + kName, n, 32);
-        debug::SafeRead(c + kState, &st, 1);
-        debug::SafeRead(c + 0xA8, pos, 12);
+        safemem::Read(c + kName, n, 32);
+        safemem::Read(c + kState, &st, 1);
+        safemem::Read(c + 0xA8, pos, 12);
         char line[200];
         sprintf_s(line, "%*s%-28s ctl=%08X vt=%08X state=%02X pos=(%.3f %.3f %.3f)\n", depth * 2, "", n,
                   static_cast<u32>(c), vt, st, pos[0], pos[1], pos[2]);
@@ -724,17 +724,17 @@ std::string Tree(const std::string& label)
         if (!exe::UiControls.ok())
             return "UiControls unsigned";
         u32 node = 0;
-        debug::SafeRead(exe::UiControls.get(), &node, 4);
+        safemem::Read(exe::UiControls.get(), &node, 4);
         for (int guard = 0; node && guard < 4000; ++guard)
         {
             u32 c = 0, next = 0, parent = 1;
-            debug::SafeRead(node + 8, &c, 4), debug::SafeRead(node + 4, &next, 4);
-            if (c && debug::SafeRead(c + kParent, &parent, 4) && parent == 0)
+            safemem::Read(node + 8, &c, 4), safemem::Read(node + 4, &next, 4);
+            if (c && safemem::Read(c + kParent, &parent, 4) && parent == 0)
             {
                 char n[33] = {};
                 u8 st = 0;
                 u32 vt = 0;
-                debug::SafeRead(c + kName, n, 32), debug::SafeRead(c + kState, &st, 1), debug::SafeRead(c, &vt, 4);
+                safemem::Read(c + kName, n, 32), safemem::Read(c + kState, &st, 1), safemem::Read(c, &vt, 4);
                 char b[96];
                 sprintf_s(b, "%08X vt=%08X state=%02X %s\n", c, vt, st, n);
                 o << b;
@@ -749,7 +749,7 @@ std::string Tree(const std::string& label)
             std::ostringstream o;
             int budget = 300;
             u32 child = 0;
-            debug::SafeRead(r.ctl + kChild, &child, 4);
+            safemem::Read(r.ctl + kChild, &child, 4);
             o << r.name << "\n";
             Walk(child, 1, o, budget);
             return o.str();
@@ -759,7 +759,7 @@ std::string Tree(const std::string& label)
         std::ostringstream o;
         int budget = 300;
         u32 child = 0;
-        debug::SafeRead(c + kChild, &child, 4);
+        safemem::Read(c + kChild, &child, 4);
         o << label << "\n";
         Walk(child, 1, o, budget);
         return o.str();

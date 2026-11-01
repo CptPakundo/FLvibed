@@ -438,6 +438,24 @@ Decisions (built 19 Oct 2026):
   ends. ~~Not yet seen: bases / cutscenes / movies with the new look (bottom-anchored, same code).~~ (Seen since: the
   letterboxed scenes, bases and movies, 21 Oct 2026 - "Next" 3 below.)
 
+### Stack fit (the owner, 1 Nov 2026, for 0.2.0; built, in game pending)
+- **What:** while two or more speakers' blocks are stacked (the dialogue stack, not the Neural Net corner), the whole
+  stack - the top panel with its dividers and the comm portrait's slot, the rows, names, markers, the word pop - shrinks
+  together so its height stays about the tallest block's: scale = tallest / (all blocks + gaps), never below the
+  setting; it glides there (the display's 0.07 s ease) and back to full size as blocks leave (lines fading out no longer
+  count). One speaker: unchanged.
+- **Why:** at 4:3 and in letterboxed story scenes (M01's Donau: a line kept over the picture for its reading minimum) a
+  two-speaker stack covered a large part of the picture.
+- **How:** `src\impl\stack_fit.h` (pure: the target and the ease; `..\..\tests\stack_fit_test.cpp`); DrawImpl draws the
+  stack as before and zooms its vertices (`render::ZoomBegin` / `ZoomEnd`, linearly filtered) about the stack's anchor:
+  top-anchored stacks about their top (the flush top panel: the screen's top edge; space_narrow 3: the panel's top; the
+  tab layout: the body's top, the tab then reaches up to the screen edge from there), bottom-anchored about their bottom,
+  centred on the panel / the rows. It only shrinks, so the drawn stack lies inside its unscaled place: the placement,
+  keep-outs, the crosshair limit, the retiring and the `layout` numbers stay unscaled (`layout`'s screen line adds
+  `stackfit=<scale>`). The game's comm window gets its slot zoomed the same way (the panel's hole for it unzoomed).
+  Movies (the software target) unscaled.
+- **Setting:** `stack_fit` (0.5..1, default 0.7 = shrinks to 70 % at most; 1 = off).
+
 ### FLUF's windows (26 Oct 2026; built, in game pending - `..\..\docs\MOD_COMPATIBILITY.md` FLUF)
 With FLUF (nightly-2026-10-16) the HUD bus v4 (`ReadFluf`) names FLUF's open ImGui windows; FLUF draws them over this
 module's text. `display.cpp` `Place` (over the former placement, now `PlaceBase`) moves the block clear of any that cover

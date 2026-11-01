@@ -1,0 +1,9 @@
+{
+  "_about": "0.2.0 (1 Nov 2026): HUD 2 is the default for all input modes (hud_style 2 = HUD 2 ALWAYS) and Extended HUD 2 is folded into HUD 2: ui_style defaults to HUD 2 (1), applies only while HUD 2 is on, and becomes the advanced row 'Menus and rooms look' (the opt-out to the game's own look in the menus). Apply with specpatch.py to part2_data.js (def/help only; the label and tier of ui_style are edited in part2_data.js by hand), docs/UI_SPEC.json and the artifact's ui/spec. Registry: controller/src/impl/controller.cpp hud_style, ui_style.",
+  "rows": {
+    "hud_style": {"def": "HUD 2 ALWAYS", "value": "HUD 2 ALWAYS",
+      "help": "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. It is the default for the controller and for keyboard and mouse alike, and it also covers the menus and rooms (the game's screens take its look; the row 'Menus and rooms look' can keep the game's own). On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's own HUD and screens (with the controller's glyphs and legend)."},
+    "ui_style": {"label": "Menus and rooms look", "def": "HUD 2", "value": "HUD 2", "tier": "advanced",
+      "help": "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game's controls stay as they are); Classic = the game's own look in the menus. With the HUD row set to Classic, everything keeps the game's look whatever this says."}
+  }
+}

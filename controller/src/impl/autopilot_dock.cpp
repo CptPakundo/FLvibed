@@ -41,7 +41,8 @@ u32 EnteringShip(float dist)
         if (r >= 2000) // 600 m for "busy", 2 km for who reaches the entrance first
             continue;
         const auto it = seen.find(c.id);
-        if (it != seen.end() && g.time - it->second.time < 0.05f)
+        // (g.time restarts at 0 with every autopilot run: a sample from the time ahead is a past run's, never kept)
+        if (it != seen.end() && g.time >= it->second.time && g.time - it->second.time < 0.05f)
         {
             // too short a step for a velocity (frames of ~6 ms): keep the sample and its verdict (the flag flickered
             // every frame at the Manhattan ring - a wait event per frame)
@@ -50,7 +51,7 @@ u32 EnteringShip(float dist)
         else
         {
             Seen s{{c.pos[0], c.pos[1], c.pos[2]}, g.time, false, false, 1e9f};
-            if (it != seen.end())
+            if (it != seen.end() && g.time > it->second.time) // (a past run's sample gives no velocity: a first sight)
             {
                 const float dt = g.time - it->second.time;
                 const float v[3] = {(c.pos[0] - it->second.pos[0]) / dt, (c.pos[1] - it->second.pos[1]) / dt,
@@ -220,6 +221,9 @@ void QueuedShortcut()
         events::Push("autopilot fast-dock request again (after the shortcut)");
         return;
     }
+    // (shortcut_rush 0: queued = the game's queue, no shortcut of ours)
+    if (!g_set.shortcutRush)
+        return;
     if (g.dock.queuedSince >= 0 && g.dock.queueTries < 2 && g.mode == Mode::Travel && ShortcutPlace())
     {
         fl::Kinematics k = {};
@@ -304,7 +308,11 @@ bool DockRegain(float dt, u32 target)
     // dock maneuver at once, once per grant
     if (g.dock.grantAt >= 0 && g.dock.grantAt >= g.dock.fastRequestAt && !g.dock.grantHanded)
     {
-        g.dock.grantCrawlFor = crawl ? g.dock.grantCrawlFor + 1.0f : 0.0f;
+        // (a crawl that still closes in is the game's dock carrying the ship in - gate mpb22, M04 Benford: granted at 16
+        // m / 282 m/s, handed over after 4 s of a closing crawl, the approach restarted, docked 14 s after the grant (mpb21:
+        // 5 s); only a crawl that gains nothing counts)
+        const bool closing = g.dock.gainDist >= 0 && tc.distance < g.dock.gainDist - 2.0f;
+        g.dock.grantCrawlFor = crawl && !closing ? g.dock.grantCrawlFor + 1.0f : 0.0f;
         if (g.dock.grantCrawlFor >= 4.0f)
         {
             events::Push("autopilot fast-dock grant not followed (%.0f m, crawling %.0f s): the game's dock",
@@ -590,13 +598,38 @@ bool FastApproach(float dt, Out& out)
     // the distance shrink with the speed - slowed beside the ring, 300 m from p2, the ship stopped and never requested)
     // ...or at p2 itself at full speed (ring_request: the runners' way, the landing scene at the ring - see the setting)
     const float ringRequest = g_set.ringRequest > 0 ? g_set.ringRequest + speed * dt : std::max(400.0f, speed * 1.4f);
+    // (`bay_request_lined`: off a bay's axis the brake keys on the way to p2, not the axis distance - ab6-b_i4 at the Osiris
+    // braked to rest beside the bay, the request waiting for the axis, and the at-rest failsafe asked from 622 m)
+    const bool bayOffAxis = g_set.bayRequestLined && g.dock.fastKind == DockKind::Bay && lat > 40.0f;
     const float toGo = !g.dock.fastLined                                                           ? aimDist
                        : g.dock.fastKind == DockKind::Lane || g.dock.fastKind == DockKind::Airlock ? aimDist
                        : g.dock.fastKind == DockKind::Ring ? std::max(0.0f, dist - ringRequest)
+                       : bayOffAxis                        ? std::max(0.0f, dist - requestAt)
                                                            : std::max(0.0f, along - requestAt);
-    const float arrive = g_set.dockArriveSpeed > 0 && g.dock.fastKind != DockKind::Airlock
-                             ? g_set.dockArriveSpeed
-                             : 1e6f; // no braking: full speed through
+    float arrive = g_set.dockArriveSpeed > 0 && g.dock.fastKind != DockKind::Airlock
+                       ? g_set.dockArriveSpeed
+                       : 1e6f; // no braking: full speed through
+    // `bay_arrive` (the owner, 29 Oct 2026, M04: "fast-dock was a little too aggressive with the station"): at a bay the
+    // game's own dock flies the last metres from p2 in (the docking scene comes 1.3-5 s after the grant), so a ship
+    // arriving in cruise rams the station - gates mpb21 / mpb22 / mpb22b, Benford: requested at 15-25 m from p2 at
+    // 282-299 m/s, the hull hit 0.15 s later (299 -> 136-146 m/s, 112 m from its centre), then a crawl and a dock 5-16 s
+    // after the grant; M06's Hood the same at 193 m/s. Lined up on a bay, the arrival is braked to what the way in
+    // allows: the hull ahead of p2 along the bay's axis (the game's ray test, up to 1 km) in 2 s, at least 1.25 x the
+    // engine's top speed.
+    if (g_set.bayArrive && g.dock.fastKind == DockKind::Bay && g.dock.fastLined && haveModel && fm.engine.ok())
+    {
+        const float in[3] = {g.dock.bayP2[0] - g.dock.bayAxis[0] * 1000.0f, g.dock.bayP2[1] - g.dock.bayAxis[1] * 1000.0f,
+                             g.dock.bayP2[2] - g.dock.bayAxis[2] * 1000.0f};
+        const float h = space::RayHitDistance(g.dock.bayP2, in);
+        const float cap = std::max(fm.engine.top() * 1.25f, (h >= 0 ? h : 1000.0f) / 2.0f);
+        if (cap < arrive)
+        {
+            static Throttle said;
+            if (said.Due(g.time, 5.0f))
+                events::Push("autopilot fast-dock bay-arrive cap=%.0f hull-ahead=%.0f speed=%.0f", cap, h, speed);
+            arrive = cap;
+        }
+    }
     // Braking distance plus one frame of travel at this speed (a late frame would overshoot the point).
     const float brakeDist = haveModel ? flight::BrakeDistance(fm, speed, arrive) + speed * dt : 0.0f;
     if (g.dock.fastLined && !g.dock.fastBrakeCommit && toGo <= brakeDist)
@@ -905,7 +938,7 @@ bool FastApproach(float dt, Out& out)
         // ...never under fire (session 8, 23 Oct 2026, M12 Omicron Minor hole: the rush parked at the entrance behind a
         // Nomad going in, 5 attackers, hull 0.56 -> dead in 4 s; the plain request under fire below takes the hole at once)
         const bool underFire = g.stats.pressure > 0 || g_sit.attackers >= 3;
-        if (place && !g.dock.formationTried && !g.dock.rushing && !underFire)
+        if (place && g_set.shortcutRush && !g.dock.formationTried && !g.dock.rushing && !underFire)
         {
             float ourEta = g.dock.fastPredicted - (g.time - g.dock.fastStart);
             if (ourEta <= 0)
@@ -1070,9 +1103,23 @@ bool FastApproach(float dt, Out& out)
             forceRequest = true;
         }
     }
-    if (g.dock.fastLined && (forceRequest || (g.dock.fastKind == DockKind::Lane   ? laneStopOnAim
-                                              : g.dock.fastKind == DockKind::Ring ? dist <= ringRequest
-                                                                                  : along <= requestAt)))
+    // `bay_request_lined` (M13-MIMIC, the Osiris stop: mm9-b_i2 requested at the axis distance with the ship 300 m off
+    // to the side of p2 at 70 m/s, and the game's dock flew those 300 m in 10 s - the runners cruise in, R3 docked at the
+    // 24445 banner): at a bay the request waits until we are within 40 m of its axis, our own run going on at p2 (the
+    // bay_arrive cap holds); once 100 m past p2 it goes anyway (the game's dock takes it from anywhere)
+    const bool bayWaits = g_set.bayRequestLined && g.dock.fastKind == DockKind::Bay && !forceRequest &&
+                          along <= requestAt && lat > 40.0f && along > -100.0f;
+    if (bayWaits)
+    {
+        static Throttle said;
+        if (said.Due(g.time, 1.0f))
+            events::Push("autopilot fast-dock bay request waits: %.0f m off the axis at along %.0f, speed %.0f", lat,
+                         along, speed);
+    }
+    if (g.dock.fastLined && !bayWaits &&
+        (forceRequest || (g.dock.fastKind == DockKind::Lane   ? laneStopOnAim
+                          : g.dock.fastKind == DockKind::Ring ? dist <= ringRequest
+                                                              : along <= requestAt)))
     {
         g.dock.fastRequested = true;
         g.dock.fastRequestAt = g.time;

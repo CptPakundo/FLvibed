@@ -58,4 +58,10 @@ inline void Forward(float* out, const float* rot)
     out[1] = -rot[5];
     out[2] = -rot[8];
 }
+// The bank angle in degrees (row-major rotation, columns = the ship's right, up, back): 0 = the wings level with the
+// system's plane, + = rolled right (the right wing down); meaningless near a vertical nose (|forward.y| near 1).
+inline float RollDeg(const float* rot)
+{
+    return std::atan2(-rot[3], rot[4]) * 57.29578f; // right.y, up.y
+}
 } // namespace geom

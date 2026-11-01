@@ -245,6 +245,10 @@ bool PlotBestPath(const float end[3], u32 endObject, u32 endSystem)
     Pilot p;
     if (!InSpace() || !exe::PlotBestPath.ok() || !ReadPilot(p))
         return false;
+    // ReadPilot leaves the position unset when the game's GetLocation fails: never hand the plotter a NaN start
+    for (int i = 0; i < 3; ++i)
+        if (!std::isfinite(p.pos[i]) || !std::isfinite(end[i]))
+            return false;
     typedef void(__cdecl * PlotFn)(const float*, const float*, u32, u32);
     hk::Call<PlotFn>(exe::PlotBestPath, p.pos, end, endObject, endSystem ? endSystem : p.system);
     return true;

@@ -1,13 +1,58 @@
 # Freelancer Decomp (FreelancerDecomp/Freelancer-Decomp): a full C++ rebuild of the 1.1 client
 Status: current
-Checked against: FLvibed 77d8655 (26 Oct 2026, coordinator short form before the export: the watched commits since - d89f88c / 79e2bcc smart start + K&M goal panel, 7632ced job objective text, 77d8655 objective-named loot shot, 9ff7fe7 handoff - are autopilot / UI internals; no statement of this note changes; not re-read in depth); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: 202 symbols, 79 behind - first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 31 watched-path commits 073a665..855745b - Extended HUD 2's readers and FREELANCER_RE sections, HUD 2's panel views and objective copy, the subtitles' placement fixes, the FLUF co-residency; 36 new symbols (195), all found in game - first bullet); before: 073a665 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 10 watched-path commits abf84ac..073a665 - `core/flexe.h` +8 symbols (e008407, d0cf8d9, 08d450f, f5f07fe), `docs/FREELANCER_RE.md` "UI" (the flight HUD's roots and hiding them, 1ae14b0; the docs of 5.8 / 5.9), the subtitles display on the HUD bus (f8dc584, 15f5ffc, c2a27eb); no conclusion contradicted; K1 36 behind, two reading leads - first bullet); before: abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 10 watched-path commits 3cfa88c..abf84ac - `core/flexe.h` +24 signed symbols (dd5bce6, 28dd009, 52b6871, 13c41f0, c476760, f1e0ed9), `docs/FREELANCER_RE.md` +264 lines, `docs/kb` hud-controls.md / menu-screens.md, the subtitles display / impl refactor (gamefont moved to core, e42c1f1); no conclusion contradicted; the symbol count moves K1 - see the first bullet); before: 3cfa88c (25 Oct 2026 ~03:30: the 24 Oct refactors and the UI design docs; nothing touched)
-Dirty paths at check: none at the start (25 Oct 2026 ~23:05; during the round another session's uncommitted `controller/src/impl/padbases.cpp`, `controller/src/impl/promptbar.cpp`, `docs/UI_HUD2_EXTENDED.md` appeared - not judged); none (25 Oct 2026 ~12:15); none (25 Oct 2026 ~07:00); before: none at the start (24 Oct 2026, 1defa3f); at the end `controller/src/impl/autopilot_frame.cpp`, `controller/src/impl/autopilot_objective.cpp` (another session's uncommitted edits, appeared during the check; not judged here)
+Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 4 watched-path commits: bd5d7af6 + 44659916 (locked-transit back-off, Action::Jump), 4a4bd7b1 strafe_pass (strafe.h pure), f8e1dd31 (FREELANCER_RE: engine kill at full cruise holds 300 -> 287 m/s, HDE, measured from a motion trace); no symbol, flexe.h or decomp cross-reference touched; no effect)
+Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
 Watch: core/flexe.h, core/hook.*, docs/FREELANCER_RE.md, subtitles/src/impl/impl.cpp, subtitles/src/impl/display.cpp, controller/src/impl/autopilot_*.cpp, core/game/route.cpp, core/game/avoid.cpp, docs/kb
 Evidence: research\evidence\decomp\ (flexe_xref.txt: 109 of 123 symbols mapped to decomp names; decomp_xref.js regenerates it from a clone)
 Sources: https://github.com/FreelancerDecomp/Freelancer-Decomp read from a shallow clone in the session scratchpad (not kept: IDEAS X1); its docs/re, docs/ini and src; GitHub API for commits and pull requests
 
 ## What it means for FLvibed
 
+*Check-up 30 Oct 2026 ~23:30 (short form + the repository re-fetched, HEAD 5eb7bcb; 10 watched-path commits
+bf4d1d1..5eb7bcb):* `flexe.h` unchanged (217; K1 still 94 behind). The new `FREELANCER_RE.md` "Saves" facts were read
+in Content.dll with Ghidra, not from the decomp:
+- a load re-sends a saved mark only when an object of that name is created;
+- a spawned `[MsnSolar]` is saved only when its `system =` is the player's system.
+The decomp's Content.dll mission sources (`content_mission_script.md`) are their second reading if a mark or a solar
+behaves otherwise (K2). **The repository:** 15 commits in total, the last push on 20 Oct 2026; 46 stars, 17 forks;
+PRs #5 (asm to C++) and #6 (GetScannerRange) open. RP9, the D3D9 fork of RP8 with volumetric nebulae, is off by
+default (`FreelancerRp9=0`, DACOM.INI) and outside the deviations ledger. `docs/hd_edition.md` is a plan (15 Oct 2026)
+with only Hor+ widescreen implemented, so the "Limits" bullet's vanilla-only still holds. **It is still not
+byte-matching** and makes no such claim. On the HDE Discord (30 Oct 2026, `starport.md` section 10), BC46 named this
+as the reason a v1.0 base should be a 100 % byte-accurate decomp. The only matching effort, HaydnTrigg's, is at
+12.16 %. A byte-matching rebuild would carry FLvibed's signatures unchanged; this one would not ("Theoretical, later").
+*Check-up 30 Oct 2026 ~07:25 (short form, HEAD aafe41d; 6 watched-path commits 4ca36df..aafe41d):* the decomp's
+detonation phantom (A14: arming creates a phantom of radius sqrt(DetonationDistSq), `server_guided.cpp`) is now read
+in the exe: `[Munition] detonation_dist` is a proximity fuse travelling with the round (4 m missiles, 6.25 m
+torpedoes), at Munition +0xA4 squared (217a972, data + Ghidra, not verified in game; FREELANCER_RE "Proximity fuse") -
+consistent with the decomp. Statics' guns ride in the same `CEquipManager` as a ship's (29b6ae2, verified in game).
+`flexe.h` unchanged (217 symbols; K1 still 94 behind).
+*Check-up 30 Oct 2026 ~01:50 (short form, HEAD 4ca36df; 2 watched-path commits 12e7942..4ca36df):* **217 symbols
+(+6, the cross-reference now 94 behind, K1)** - the frame timer family (4ca36df: `FrameTimer` 0x42D770, `FpsCapF`
+0x610A0C, `DtClampMax` 0x610A08, `FrameDt` 0x667D40, `FrameDtRaw` 0x667D48, `FrameDtAccum` 0x667D38), read with Ghidra
+and verified in game, not from the decomp (the clone is not kept: X1; FLSharp names the same function
+`UpdateDeltaTime`, `flsharp.md`). b376a21's FREELANCER_RE line (the LAN / INTERNET prompt's modal loop leaves the
+keyboard focus where it was) is client UI the decomp may cover - not cross-checked. 217 / 217 statically on four exes
+(`discovery.md`). No finding of this note changes.
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 5 watched-path commits 7518008..067bf32):* no effect. 211
+symbols, none added (ca2ef92 re-cut 31 signatures; addresses unchanged, so K1's cross-reference stays 88 behind). Two
+`FREELANCER_RE.md` facts were found in game, not from the decomp: which dealer room the player is in (a room's NavBar
+button `IDS_HOTSPOT_<X>_ROOM` paired with the RoomControl hotspot `IDS_HOTSPOT_<X>` inside it, 3c7dec9 "Room
+hotspots") and `room::InScene` (a601534: `IsPlayerInCutscene` 0x41A3E0, or a shown NavBar with every room button
+hidden) - the decomp's room / NavBar sources are the reading lead if either needs its reason. A12's escape test now
+keys on the title's IDS id (420506f).
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 42 watched-path commits 77d8655..7518008):* **211 symbols (+9; the
+cross-reference now 88 behind, K1)** - the turret view (`GunAimPoint` 0x4F1DA0, `PlayerFlightState` 0x674AA0 with the
+lock at +0x5B9, `CamTurret` 0x678F60) and the multiplayer readers (`PlayerCash` 0x673364, `PlayerShipArch`,
+`PlayerEquipList`, `PlayerList`, `TableClick` 0x58F230, `LanHostFilter` 0x5ACF6A); all found in game, none from the
+decomp. **Two lines of work since are what the decomp describes:** (1) the multiplayer readers go through the client
+object's interface slots (`Client` slots 72 / 75 / 83, `docs\MULTIPLAYER.md` inventory) - the decomp's `rpc_iclient.h`
+(126 slots) is the typed reference for that interface (K7, raised to open); (2) the flight facts learned in game on
+28-29 Oct - the game turns a ship relative to its view, not to the rolled ship (`steer_level`, 0332ec1), the player has
+no roll control and mouse flight never levels (0689c29, `FREELANCER_RE.md`), the message pump 0x5B0B60 peeks and then
+blocks in GetMessage (e89b007) - each was a file read in the decomp's flight / input code first (A11's rule). The dock
+items stay A11's: `dock_regain` is on by default since 0332ec1 and `bay_arrive` (2097d8f) brakes the fast dock to what
+the bay allows, both written from logs, not from `common_dockbehavior.cpp`. Nothing contradicted.
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 13 watched-path commits 855745b..e5c02cc):* **202 symbols (+7;
 the cross-reference now 79 behind, K1)** - `NNManager`, `NNWindowClose`, `TransitionRunning` (the dealer close f52815b:
 the NeuroNet window manager drops a close during its ~0.5 s slide) and `SetupScreen`, `WindowStyle`, `WindowedStyle`,
@@ -178,6 +223,10 @@ takes from FLUF, FLHook and adoxa.
 - **Running FLvibed on the decomp build: no.** FLvibed verifies retail v1.1 bytes by signature; the decomp is a
   relinked MSVC v143 binary, so nothing matches and nothing should. If the decomp matures, the natural integration is
   source level (FLvibed's features as patches to it), which is a different project from a DLL mod for HDE.
+  *30 Oct 2026:* the exception is a **byte-matching** rebuild (HaydnTrigg/Freelancer, 12.16 %; Liberty's planned
+  "delink based matching decomp"). Identical bytes carry every `flexe.h` signature, so FLvibed would run on it
+  unchanged until its authors change code at a hooked site. The signature check then fails closed for that feature
+  only (`starport.md` section 10).
 - **The decomp as a debugging oracle.** Built (VS2022 + DirectX 8.1 SDK + vanilla DATA), it is a client with full
   symbols where goto, dock, lane and formation behaviour can be stepped through, instead of hardware breakpoints on
   retail (`controller` debug `watch`). Vanilla only, so a way to answer "what does the AI do here", not a test target.

@@ -34,9 +34,15 @@ struct Out
     bool active = false;       // the autopilot flies: the controller does not steer
     bool gimbal = false;       // aim with the gimbal (reticle on the lead cross inside the cone)
     bool fire = false;         // hold the guns
+    bool gunAim = false;       // the guns aim at gunAimPos (host v28 SetGunAim), not along the cursor's ray: a target
+    float gunAimPos[3] = {};   // off the nose that some gun can still point at (`fire_covering`)
+    bool steerAhead = false;   // pursuit: steer the nose at steerAheadPos (the head-on pass's predictive turn) while
+    float steerAheadPos[3] = {}; // the guns keep the lead (gunAim)
     bool missile = false;      // tap missiles
     bool torpedo = false;      // tap torpedoes
     bool mine = false;         // tap mines (the game ignores it without a dropper / ammo)
+    bool engineKill = false;   // tap engine kill (a toggle: the engine off / on)
+    bool coast = false;        // coast: steer at steerPos only - no throttle, reverse, afterburner, slide or cruise input
     bool cm = false;           // tap countermeasures
     bool closestEnemy = false; // tap "closest enemy" (target selection)
     int slide = 0;             // hold a slide evade: 1 left, 2 right, 3 up, 4 down (the player's own dodge keys)
@@ -63,6 +69,8 @@ struct Out
     float steerThrottle = 1;   // steerTo: throttle 0..1 (fast dock: 0 while braking)
     bool steerReverse = false; // steerTo: reverse thrust while steering (fast dock: braking before the bay)
     float steerFullAngle = 0;  // steerTo: 0 = full-rate turns (a fight); > 0 = proportional below this angle (rad)
+    bool steerCheck = false;   // debug `steer_check`: log the lead round the nose vs the turn in a fight
+    int steerLevel = 0;        // restate the steering into the game's turn frame: 1 level, 2 the camera's (`steer_level`)
     bool station = false;      // pursuit: hold stationPos with throttle and slides (the nose and guns stay on the
     float stationPos[3] = {};  // target): a capital ship's turret blind spot
     int cruise = -1;           // want the cruise engine: 1 on, 0 off, -1 leave it as it is (the controller toggles by
@@ -72,6 +80,7 @@ struct Out
 void Update(float dt, Out& out); // once per frame while in space
 void TracePlayer(float dt);      // once per frame in space while the player flies: the motion trace (FLMotion.tsv)
 void NoteMenu();            // the game is in its menu (a load passes through it): the spawns so far are another game's
+void ArbiterForgetGame();   // a new game (host v34 GameLoads): the goal queue and its pause forgotten (A37 S7)
 void Stop(const char* why); // hands control back (free flight)
 bool Active();
 // The autopilot began the dock that is running now (its own request: stopped "docking" in the last 5 s, or the

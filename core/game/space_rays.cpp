@@ -8,7 +8,7 @@
 namespace space
 {
 // Obstacles: class ids (FLSDK CObject::Class) and the exported accessors that read them.
-constexpr u32 kClassAsteroid = 0x1003, kClassDynamicAsteroid = 0x4001;
+constexpr u32 kClassDynamicAsteroid = 0x4001; // (kClassAsteroid: space_internal.h)
 // A solar's moving part (a Rev joint driven by its animation script) answers the ray test as its own object of class 0x1
 // (session 6, 23 Oct 2026, `ap rayraw`: the M12 core's rotating reactor - six spokes at 36 deg/s - hit as class 0x1,
 // id 4284637536; filtered out, the core read as empty where the user's ship struck a spoke)

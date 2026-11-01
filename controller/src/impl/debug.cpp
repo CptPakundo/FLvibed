@@ -5,16 +5,21 @@
 #include "../fl.h"
 #include "hook.h"
 #include "log.h"
+#include "safemem.h"
 #include "../shm.h"
 #include "host.h"
+#include "game/gameclock.h"
+#include "game/geom.h"
 #include "game/menu.h"
 #include "game/room.h"
 #include "game/ai.h"
 #include "game/space.h"
 #include "game/route.h"
+#include "game/mission_live.h"
 #include "game/spawn.h"
 #include "game/hitlook.h"
 #include "options_page.h"
+#include "haptics.h"
 #include "reticlecue.h"
 #include "shieldcue.h"
 #include "../events.h"
@@ -23,6 +28,7 @@
 #include "padhud.h"
 #include "hud2.h"
 #include "flufaware.h"
+#include "mprules.h"
 #include "hudvis.h"
 #include "uiskin.h"
 #include "uistrip.h"
@@ -42,21 +48,8 @@
 
 namespace debug
 {
-// ---------------------------------------------------------------- safe memory
-static bool SafeCopy(void* dst, const void* src, size_t len)
-{
-    __try
-    {
-        memcpy(dst, src, len);
-        return true;
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        return false;
-    }
-}
-
-bool SafeRead(uintptr_t addr, void* out, size_t len) { return SafeCopy(out, reinterpret_cast<void*>(addr), len); }
+// ---------------------------------------------------------------- safe memory (core\safemem.h since 29 Oct 2026)
+bool SafeRead(uintptr_t addr, void* out, size_t len) { return safemem::Read(addr, out, len); }
 
 // ------------------------------------------------------------------ RE aids: object search, hardware data breakpoints
 // (21 Oct 2026, for objects the UI tree does not list - the HUD's target arrows: who writes a field each frame)
@@ -297,9 +290,13 @@ std::string DumpUi()
     std::ostringstream out;
     int budget = 8000;
     // 0x67DBE8 is a flat list of every control; dump the trees of parentless ones.
-    u32 node = Mem<u32>(exe::UiControls);
+    // a ring with a sentinel head: start after it, stop on it (as ui::Collect, 29 Oct 2026)
+    const u32 head = Mem<u32>(exe::UiControls);
+    u32 node = 0;
+    if (head && !SafeRead(head + 4, &node, 4))
+        node = 0;
     int seen = 0, roots = 0;
-    while (node && seen < 20000)
+    while (node && node != head && seen < 20000)
     {
         u32 next = 0, ctl = 0, parent = 1;
         if (!SafeRead(node + 4, &next, 4) || !SafeRead(node + 8, &ctl, 4))
@@ -428,6 +425,9 @@ std::string Execute(const std::string& line)
                   local[0] * r2d, local[1] * r2d, local[2] * r2d, -m[2], -m[5], -m[8], fl::GetThrottle(), lv[0], lv[1],
                   -lv[2]);
         std::string s = tmp;
+        sprintf_s(tmp, "roll=%.1f deg (0 = wings level with the system plane) up=(%.3f,%.3f,%.3f)\n", geom::RollDeg(m), m[1],
+                  m[4], m[7]);
+        s += tmp;
         sprintf_s(tmp, "steer=(%.2f,%.2f)\n", ctl::LastSteerX(), ctl::LastSteerY());
         s += tmp;
         fl::Kinematics t;
@@ -463,6 +463,58 @@ std::string Execute(const std::string& line)
         return ctl::BotCommand(in);
     if (op == "state")
         return ctl::DescribeState();
+    // TEST ONLY (IDEAS T2): fixeddt [<fps>|off] - every frame advances 1/fps of game time, the game runs as fast as it
+    // draws (single player; the host's FrameTimerHook, HostApi v32); no argument = show it. `timing`: the frame timer's
+    // values (probe step 1 of research\evidence\timing\probe_report.md).
+    if (op == "fixeddt")
+    {
+        std::string arg;
+        in >> arg;
+        if (!HostAtLeast(32) || !g_host->FixedDt)
+            return "fixeddt: needs host API v32 (restart the game)";
+        const int r = g_host->FixedDt(arg.empty() ? -1 : arg == "off" ? 0 : atoi(arg.c_str()));
+        return r < 0 ? std::string("fixeddt refused (multiplayer, an unverified symbol, or fps outside 10..1000)")
+                     : r > 0 ? "fixeddt " + std::to_string(r) : std::string("fixeddt off");
+    }
+    if (op == "timing")
+    {
+        char tmp[256];
+        sprintf_s(tmp, "timing cap=%.1f clampmax=%.3f dt=%.6f raw=%.6f sum=%.3f fixeddt=%d fpscap=%d",
+                  Mem<float>(exe::FpsCapF), Mem<float>(exe::DtClampMax), Mem<double>(exe::FrameDt),
+                  Mem<double>(exe::FrameDtRaw), Mem<double>(exe::FrameDtAccum),
+                  HostAtLeast(32) && g_host->FixedDt ? g_host->FixedDt(-1) : -1, ctl::FpsCap(-1));
+        return tmp;
+    }
+    // gameclock: FLvibed's game clock in seconds (core\game\gameclock.h: the sum of the game's frame dt, still while
+    // paused; restarts at 86400 with a logic hot reload) - the leg harness's clock under fixeddt (Leg.ps1 -GameClock)
+    if (op == "gameclock")
+    {
+        char tmp[64];
+        sprintf_s(tmp, "gameclock %.3f", gameclock::NowSec());
+        return tmp;
+    }
+    // seed <n>: TEST ONLY (WORK_QUEUE Q3, IDEAS T3 common random numbers) - seeds the game's C runtime RNG (MSVCRT.dll,
+    // which Freelancer.exe, server.dll and common.dll import; the game seeds it once with srand(timeGetTime()) at
+    // 0x5B1B66) and FLvibed's own (the static CRT's rand: the autopilot's jinks, dodges, slides) with n. MSVCRT's state
+    // is per thread: this runs on the game thread, as the game's own rand calls there do.
+    if (op == "seed")
+    {
+        const unsigned n = static_cast<unsigned>(num(1));
+        srand(n);
+        using SrandFn = void(__cdecl*)(unsigned);
+        const HMODULE crt = GetModuleHandleA("msvcrt.dll");
+        const SrandFn gameSrand = crt ? reinterpret_cast<SrandFn>(GetProcAddress(crt, "srand")) : nullptr;
+        if (gameSrand)
+            gameSrand(n);
+        return "seed " + std::to_string(n) + (gameSrand ? " (game msvcrt + FLvibed)" : " (FLvibed only: msvcrt.dll srand not found)");
+    }
+    if (op == "fpscap") // fpscap [<fps>|0]: cap the frame rate of this (test) game; no argument = show it
+    {
+        std::string arg;
+        in >> arg;
+        const int cap = ctl::FpsCap(arg.empty() ? -1 : atoi(arg.c_str()));
+        return cap > 0 ? "fpscap " + std::to_string(cap) : std::string("fpscap off");
+    }
     if (op == "peek")
     {
         u32 a = num(), n = num(64);
@@ -547,6 +599,8 @@ std::string Execute(const std::string& line)
         g_snap = now;
         return shown ? out.str() : "no changes";
     }
+    if (op == "haptics") // haptics [status] | table | play <effect> [level] | stop: the pad's vibration (haptics.h)
+        return haptics::Command(in);
     if (op == "cue") // cue status | cue hit|break|hull [damage] [munition arch] | cue dir <screen deg>|off: shield cue
     {
         std::string what;
@@ -865,6 +919,8 @@ std::string Execute(const std::string& line)
             return reply;
         if (route::Command(op, rest, &reply)) // route, lanelaw: travel planning (core/game/route.cpp)
             return reply;
+        if (mission::Command(op, rest, &reply)) // mission live: the story's live trigger table (core/game/mission_live.cpp)
+            return reply;
         // the shared commands took the rest of the line: rewind it for the commands below (`set`, `call` got an empty
         // line before, 19 Oct 2026)
         in.clear();
@@ -898,6 +954,15 @@ std::string Execute(const std::string& line)
         sprintf_s(tmp, "hit (%.0f,%.0f) = %08X %s", x, y, static_cast<u32>(c), c ? ui::ControlName(c) : "-");
         return tmp;
     }
+    if (op == "navplant") // TEST ONLY: navplant <ctl hex> | off - a planted dead end for the focus crawler (ui.h)
+    {
+        std::string a;
+        in >> a;
+        ui::SetNavPlant(a.empty() || a == "off" ? 0 : static_cast<uintptr_t>(std::stoul(a, nullptr, 16)));
+        std::ostringstream o;
+        o << "navplant " << std::hex << ui::NavPlant();
+        return o.str();
+    }
     if (op == "uiitems")
     {
         std::vector<ui::Item> items = ui::CollectAll(); // what D-pad navigation sees
@@ -909,9 +974,16 @@ std::string Execute(const std::string& line)
             char tmp[200];
             u32 vt = 0;
             SafeRead(it.ctl, &vt, 4);
-            sprintf_s(tmp, "%-26s ctl=%08X vt=%08X root=%08X center=(%.0f,%.0f) half=(%.0f,%.0f) depth=%.3f\n", it.name,
+            sprintf_s(tmp, "%-26s ctl=%08X vt=%08X root=%08X center=(%.0f,%.0f) half=(%.0f,%.0f) depth=%.3f", it.name,
                       static_cast<u32>(it.ctl), vt, static_cast<u32>(it.root), it.x, it.y, it.hw, it.hh, it.depth);
             out << tmp;
+            // a main menu button's id (menu.h MainButton: 0x10 new game ... 0x0B exit; the crawler's safety list)
+            u32 click = 0, id = 0;
+            if (vt && SafeRead(vt + 0x4C, &click, 4) && exe::MainMenuButtonClick.is(click) && SafeRead(it.ctl + 0xEC, &id, 4))
+                out << " main=0x" << std::hex << id << std::dec;
+            if (ui::NavPlant() == it.ctl)
+                out << " navplant";
+            out << "\n";
         }
         return out.str();
     }
@@ -924,6 +996,10 @@ std::string Execute(const std::string& line)
     // ---- FLUF awareness (flufaware.h): fluf = the build, status, policy, text input / mouse, every open keep-out
     if (op == "fluf")
         return flufaware::Describe();
+    // ---- multiplayer (mprules.h): mp = single / multiplayer, what the server allows the autopilot and where that came
+    // from, the last chat lines with their senders
+    if (op == "mp")
+        return mprules::Describe();
     // ---- Extended HUD 2 (the SKIN track): uiskin state | windows | restore | rescan
     if (op == "uiskin")
         return uiskin::Command(in);

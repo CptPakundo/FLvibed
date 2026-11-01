@@ -44,7 +44,7 @@ try {
         $need = Get-FLWorthNeeded
         if ($null -eq $need) {
             $need = 3500
-            $lvl = Join-Path $script:FLRoot 'Install\Freelancer HD Edition\DATA\MISSIONS\storylvl.ini'
+            $lvl = Join-Path (Get-FLInstallDir) 'DATA\MISSIONS\storylvl.ini'
             if (Test-Path -LiteralPath $lvl) {
                 $v = Get-Content -LiteralPath $lvl | Where-Object { $_ -match '^\s*freetime_01_02\s*=\s*([\d.]+)' } | Select-Object -First 1
                 if ($v -match '=\s*([\d.]+)') { $need = [double]$Matches[1] }

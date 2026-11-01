@@ -8,6 +8,7 @@ before_ / final_ pairs plus the aspect frames (research\\experience\\runs\\hud2x
 (part2b_doc.js); a missing source is reported and skipped.
 """
 import os
+import sys
 
 from PIL import Image
 
@@ -18,6 +19,21 @@ FIX2 = os.path.join(RUNS, 'hud2_fix2_2026-10-25')
 # the 0.1.0 recapture (26 Oct 2026, HEAD c33e680): HUD 2's ring row, the LB hints, the card's RS x2 CLEAR footer
 REFRESH = os.path.join(RUNS, 'spec_refresh_2026-10-26')
 X = os.path.join(RUNS, 'hud2x_final_2026-10-25')
+# the 0.2.0 recapture (1 Nov 2026, release build, main test install, 0.2.0 defaults): the bottom lanes, stack fit, the
+# options page; the names it holds replace the older sources below (S020_NAMES), the menus' final_<k> too (S020 first)
+S020 = os.path.join(RUNS, 'spec_020_2026-11-01')
+S020_NAMES = {
+    'f_combat_h2': 'final_combat', 'f_travel_h2': 'final_travel', 'f_cruise_h2': 'final_cruise', 'f_dock_h2': 'final_dock',
+    'f_kbm_h2': 'final_kbm', 'f_lane': 'final_lane', 'f_turret': 'final_turret', 'f_missile': 'final_missile_alert',
+    'f_m03': 'final_m03_protect', 'f_720p': 'final_720p_combat',
+    'c_hull_h2': 'cue_hull_h2', 'c_ring_nano': 'cue_ring_nano', 'a_gimbal_h2': 'aim_mode1', 'a_reticle_h2': 'aim_mode0',
+    'p_ap_h2': 'ap_status', 'p_goals': 'goals', 'p_picker': 'picker', 'p_wheel': 'wheel', 'g_h2_look0': 'look0',
+    'g_h2_look1': 'look1', 's_portrait_h2': 'portrait_4k', 's_stack_h2': 's_stack_h2', 's_stack_43': '1600x1200_stack_room',
+    't_43_fight': '1600x1200_fight', 'o_4k_min': 'o_4k_min', 'o_4k_max': 'o_4k_max',
+    # the drawn mock-ups' real equivalents
+    'm_combat': 'final_combat', 'm_travel': 'final_travel', 'm_cruise': 'final_cruise', 'm_dock': 'ap_status',
+    'm_lane': 'final_lane',
+}
 
 # page name -> source
 FLIGHT = {
@@ -122,17 +138,30 @@ def save(src, name, width=1600, crop=None):
     im.save(os.path.join(OUT, name + '.jpg'), quality=80, optimize=True, progressive=True)
 
 
+# The built HUD 2 layout of 31 Oct 2026 (docs\UI_HUD2.md 5.19-5.23) drawn by hud2_states.py on HUD-free 4K frames (run it
+# first): no release-build capture of it exists yet. `spec_images.py mock` writes only these.
+HUD2 = os.path.join(ROOT, 'research', 'evidence', 'controller_ui', 'hud_redesign', 'hud2')
+MOCK = {'m_' + k: os.path.join(HUD2, f'hud2_{k}.png') for k in ('combat', 'travel', 'cruise', 'dock', 'lane')}
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
+    for n, s in MOCK.items():
+        save(s, n)
+    if sys.argv[1:] == ['mock']:
+        return
     for n, s in list(FLIGHT.items()) + list(FLVIBED.items()):
         save(s, n)
     for n, (s, box) in FIXES.items():
         save(s, n, 1600, box)
     for k in SCREENS:
         save(os.path.join(X, f'before_{k}.png'), f'x_{k}_cl')
-        save(os.path.join(X, f'final_{k}.png'), f'x_{k}_h2')
+        new = os.path.join(S020, f'final_{k}.png')   # the 0.2.0 tour (Fort Bush) where it has the screen
+        save(new if os.path.exists(new) else os.path.join(X, f'final_{k}.png'), f'x_{k}_h2')
     for k in ASPECT:
         save(os.path.join(X, k + '.png'), 'a_' + k.replace('final', ''), 1200)
+    for n, f in S020_NAMES.items():   # last: the 0.2.0 captures replace the older sources of these names
+        save(os.path.join(S020, f + '.png'), n)
     print(len(os.listdir(OUT)), 'images in', OUT)
 
 

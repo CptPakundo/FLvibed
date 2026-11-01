@@ -7,6 +7,12 @@
   `[data]` + measured; the last unit rounds up `[game]` (exact rounding: to measure).
 - A failed shield reboots offline: its points build up again while it absorbs nothing (`pub` shield `up` flag)
   `[game]` 19 Oct 2026 - must not count as protection.
+- **A battery ends the reboot at once** when it lifts the shield over its offline threshold: the shield comes back up
+  when its rebuild time has passed AND its relative health is above `offline_threshold` (Common.dll
+  CEShield::SetHitPoints / Update), and CEShield::ShieldBatteryBoost (0x0629caa0) clears the offline timer before it
+  sets the points `[disasm]` 31 Oct 2026; seen in game: M13's gate battleship, a failed shield 0.08 -> 0.39 one second
+  after a 3-battery press, hull 1.00 throughout, then shot down again in ~2 s (set ab11-b_i1) `[game]`. So a press on a
+  failed shield under heavy fire is protection, not waste (autopilot_combat.cpp's repair line logs `raw=` / `up=`).
 - So frugality is about **when** to press: late (near depletion) refills more per press; a press on a small gap spends a
   whole unit for part of its value.
 

@@ -4,6 +4,7 @@
 #include "game/space_internal.h"
 
 #include "flexe.h"
+#include "game/ini.h"
 
 #include <fstream>
 #include <unordered_map>
@@ -39,41 +40,16 @@ float Price(u32 archetype)
     if (!loaded && a.createId)
     {
         loaded = true;
-        char path[MAX_PATH] = {};
-        GetModuleFileNameA(nullptr, path, MAX_PATH); // EXE\Freelancer.exe -> DATA\EQUIPMENT\goods.ini
-        if (char* slash = strrchr(path, '\\'))
-            strcpy_s(slash + 1, MAX_PATH - (slash + 1 - path), "..\\DATA\\EQUIPMENT\\goods.ini");
-        std::ifstream in(path);
-        std::string line, nickname;
-        bool good = false;
-        while (std::getline(in, line))
+        for (const ini::Section& s : ini::Read(DataPath("EQUIPMENT\\goods.ini"))) // text or BINI (SWEEP #5)
         {
-            const size_t semi = line.find(';');
-            if (semi != std::string::npos)
-                line.erase(semi);
-            auto trim = [](std::string s)
-            {
-                s.erase(0, s.find_first_not_of(" \t\r"));
-                s.erase(s.find_last_not_of(" \t\r") + 1);
-                return s;
-            };
-            line = trim(line);
-            if (line.empty())
+            if (s.type != "good")
                 continue;
-            if (line[0] == '[')
-            {
-                good = _stricmp(line.c_str(), "[Good]") == 0;
-                nickname.clear();
-                continue;
-            }
-            const size_t eq = line.find('=');
-            if (!good || eq == std::string::npos)
-                continue;
-            const std::string k = trim(line.substr(0, eq)), v = trim(line.substr(eq + 1));
-            if (_stricmp(k.c_str(), "nickname") == 0)
-                nickname = v;
-            else if (_stricmp(k.c_str(), "price") == 0 && !nickname.empty())
-                prices[a.createId(nickname.c_str())] = static_cast<float>(atof(v.c_str()));
+            std::string nickname;
+            for (const auto& kv : s.kv)
+                if (kv.first == "nickname")
+                    nickname = kv.second;
+                else if (kv.first == "price" && !nickname.empty())
+                    prices[a.createId(nickname.c_str())] = static_cast<float>(atof(kv.second.c_str()));
         }
     }
     const auto it = prices.find(archetype);
@@ -89,39 +65,18 @@ float ShieldOfflineThreshold(u32 shieldArch)
     if (!loaded && a.createId)
     {
         loaded = true;
-        char path[MAX_PATH] = {};
-        GetModuleFileNameA(nullptr, path, MAX_PATH); // EXE\Freelancer.exe -> DATA\EQUIPMENT\st_equip.ini
-        if (char* slash = strrchr(path, '\\'))
-            strcpy_s(slash + 1, MAX_PATH - (slash + 1 - path), "..\\DATA\\EQUIPMENT\\st_equip.ini");
-        std::ifstream in(path);
-        std::string line, nickname;
-        bool shield = false;
-        while (std::getline(in, line))
+        for (const ini::Section& s : ini::Read(DataPath("EQUIPMENT\\st_equip.ini"))) // text or BINI (SWEEP #5)
         {
-            if (const size_t semi = line.find(';'); semi != std::string::npos)
-                line.erase(semi);
-            line.erase(0, line.find_first_not_of(" \t\r"));
-            line.erase(line.find_last_not_of(" \t\r") + 1);
-            if (line.empty())
+            if (s.type != "shieldgenerator")
                 continue;
-            if (line[0] == '[')
-            {
-                shield = _stricmp(line.c_str(), "[ShieldGenerator]") == 0;
-                nickname.clear();
-                continue;
-            }
-            const size_t eq = line.find('=');
-            if (!shield || eq == std::string::npos)
-                continue;
-            std::string k = line.substr(0, eq), v = line.substr(eq + 1);
-            k.erase(k.find_last_not_of(" \t") + 1);
-            v.erase(0, v.find_first_not_of(" \t"));
-            if (_stricmp(k.c_str(), "nickname") == 0)
-                nickname = v;
-            else if (_stricmp(k.c_str(), "offline_threshold") == 0 && !nickname.empty())
-                thresholds[a.createId(nickname.c_str())] = static_cast<float>(atof(v.c_str()));
-            else if (_stricmp(k.c_str(), "offline_rebuild_time") == 0 && !nickname.empty())
-                g_shieldRebuild[a.createId(nickname.c_str())] = static_cast<float>(atof(v.c_str()));
+            std::string nickname;
+            for (const auto& kv : s.kv)
+                if (kv.first == "nickname")
+                    nickname = kv.second;
+                else if (kv.first == "offline_threshold" && !nickname.empty())
+                    thresholds[a.createId(nickname.c_str())] = static_cast<float>(atof(kv.second.c_str()));
+                else if (kv.first == "offline_rebuild_time" && !nickname.empty())
+                    g_shieldRebuild[a.createId(nickname.c_str())] = static_cast<float>(atof(kv.second.c_str()));
         }
     }
     const auto it = thresholds.find(shieldArch);
@@ -144,11 +99,68 @@ bool ShieldOf(u32 id, float& current, float& max, bool& up)
         GetProcAddress(GetModuleHandleA("server.dll"), "?GetShieldHealth@SpaceObj@pub@@YAHABIAAM1AA_N@Z"));
     current = max = 0;
     up = false;
+    if (!id || !InSpace())
+        return false;
+    __try
+    {
+        if (get && get(id, current, max, up) == 0 && std::isfinite(current) && std::isfinite(max))
+            return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+    // multiplayer (server.dll holds no world): the client ship's own shield - CEqObj equipment manager +0xE4 ->
+    // CEquipManager::FindFirst(1 << 8) = the CEShield -> GetHitPoints / GetMaxHitPoints (as ai.cpp reads the player's)
+    typedef void*(__fastcall * FirstFn)(void*, void*, u32);
+    typedef float(__fastcall * HpFn)(const void*, void*);
+    static const HMODULE common = GetModuleHandleA("common.dll");
+    static const auto first = reinterpret_cast<FirstFn>(
+        common ? GetProcAddress(common, "?FindFirst@CEquipManager@@QAEPAVCEquip@@I@Z") : nullptr);
+    static const auto hp =
+        reinterpret_cast<HpFn>(common ? GetProcAddress(common, "?GetHitPoints@CEShield@@UBEMXZ") : nullptr);
+    static const auto hpMax =
+        reinterpret_cast<HpFn>(common ? GetProcAddress(common, "?GetMaxHitPoints@CEShield@@UBEMXZ") : nullptr);
+    const Api& a = GetApi();
+    void* o = first && hp && hpMax ? ClientFind(a, id, true) : nullptr; // (CEqObj only)
+    if (!o)
+        return false;
+    bool ok = false;
+    if (IsClass(o, "??_7CShip@@6BCEqObj@@@"))
+        __try
+        {
+            void* shield = first(static_cast<u8*>(o) + kEqObjEquipManager, nullptr, 1u << 8);
+            if (shield && IsClass(shield, "??_7CEShield@@6B@"))
+            {
+                current = hp(shield, nullptr);
+                max = hpMax(shield, nullptr);
+                up = current > 0;
+                ok = std::isfinite(current) && std::isfinite(max);
+            }
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            ok = false;
+        }
+    ClientRelease(a, o);
+    return ok;
+}
+
+// The game's invincibility of a space object (missions' Act_Invulnerable): server.dll
+// pub::SpaceObj::GetInvincible(uint id, bool& invincible, bool& (a second flag), float& floor) - the hull fraction it
+// cannot be damaged below. True when the object is invincible and already at that floor: guns cannot take more off it
+// (M04 Benford: the cruisers' floor 0.4 - the autopilot held still firing at one, 20 Oct 2026).
+bool Invincible(u32 id, bool& invincible, bool& second, float& floor)
+{
+    typedef int(__cdecl * GetInvincibleFn)(u32, bool&, bool&, float&);
+    static GetInvincibleFn get = reinterpret_cast<GetInvincibleFn>(
+        GetProcAddress(GetModuleHandleA("server.dll"), "?GetInvincible@SpaceObj@pub@@YAHIAA_N0AAM@Z"));
+    invincible = second = false;
+    floor = 0;
     if (!get || !id || !InSpace())
         return false;
     __try
     {
-        return get(id, current, max, up) == 0 && std::isfinite(current) && std::isfinite(max);
+        return get(id, invincible, second, floor) == 0 && std::isfinite(floor);
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
@@ -156,29 +168,13 @@ bool ShieldOf(u32 id, float& current, float& max, bool& up)
     }
 }
 
-// The game's invincibility of a space object (missions' Act_Invulnerable): server.dll
-// pub::SpaceObj::GetInvincible(uint id, bool& invincible, bool& (a second flag), float& floor) - the hull fraction it
-// cannot be damaged below. True when the object is invincible and already at that floor: guns cannot take more off it
-// (M04 Benford: the cruisers' floor 0.4 - the autopilot held still firing at one, 20 Oct 2026).
 bool AtInvincibleFloor(u32 id, float health)
 {
-    typedef int(__cdecl * GetInvincibleFn)(u32, bool&, bool&, float&);
-    static GetInvincibleFn get = reinterpret_cast<GetInvincibleFn>(
-        GetProcAddress(GetModuleHandleA("server.dll"), "?GetInvincible@SpaceObj@pub@@YAHIAA_N0AAM@Z"));
-    if (!get || !id || health < 0 || !InSpace())
+    bool inv = false, other = false;
+    float floor = 0;
+    if (!id || health < 0 || !Invincible(id, inv, other, floor) || !inv)
         return false;
-    __try
-    {
-        bool inv = false, other = false;
-        float floor = 0;
-        if (get(id, inv, other, floor) != 0 || !inv || !std::isfinite(floor))
-            return false;
-        return health <= floor + 0.02f;
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        return false;
-    }
+    return health <= floor + 0.02f;
 }
 
 // Test aid (research captures): the game's pub::SpaceObj::DrainShields(uint id) (server.dll; adoxa's Console
@@ -245,6 +241,8 @@ static bool ReadShipMotion(const Api& a, void* o, u32 id, ShipMotion& m)
                     if (drag[axis] > 0 && torque[axis] > 0)
                         m.turnRate = m.turnRate > 0 ? std::min(m.turnRate, torque[axis] / drag[axis])
                                                     : torque[axis] / drag[axis];
+                if (drag[2] > 0 && torque[2] > 0)
+                    m.rollRate = torque[2] / drag[2]; // its own top roll rate (steering_torque z / angular_drag z)
                 const float strafe = Mem<float>(reinterpret_cast<uintptr_t>(arch) + 0x124);
                 if (m.mass > 0)
                     m.strafeAccel = strafe / m.mass;
@@ -258,6 +256,44 @@ static bool ReadShipMotion(const Api& a, void* o, u32 id, ShipMotion& m)
         m.ok = false;
     }
     return m.ok;
+}
+
+bool PlayerSpin(float spin[3])
+{
+    using GetFn = float*(__cdecl*)(float*, const void*); // Vector returned through the hidden pointer
+    static const GetFn get = reinterpret_cast<GetFn>(
+        GetProcAddress(GetModuleHandleA("common.dll"), "?GetAngularVelocityOS@PhySys@@YA?AVVector@@PBUCObject@@@Z"));
+    const void* ship = InSpace() ? PlayerCShip() : nullptr;
+    if (!get || !ship)
+        return false;
+    __try
+    {
+        get(spin, ship);
+        return std::isfinite(spin[0]) && std::isfinite(spin[1]) && std::isfinite(spin[2]);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+bool AddPlayerSpin(const float delta[3])
+{
+    using AddFn = void(__cdecl*)(void*, const float*);
+    static const AddFn add = reinterpret_cast<AddFn>(
+        GetProcAddress(GetModuleHandleA("common.dll"), "?AddToAngularVelocityOS@PhySys@@YAXPAUCObject@@ABVVector@@@Z"));
+    void* ship = InSpace() ? PlayerCShip() : nullptr;
+    if (!add || !ship)
+        return false;
+    __try
+    {
+        add(ship, delta);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
 }
 
 // A ship's shield generator archetype (the first CEquip of EquipmentClass ShieldGenerator, 1 << 9), 0 none.
@@ -346,42 +382,25 @@ const std::unordered_map<u32, LootProps>& LootTable()
     if (loaded || !a.createId)
         return table;
     loaded = true;
-    std::ifstream in(DataPath("MISSIONS\\lootprops.ini"));
-    std::string line, nickname;
-    bool block = false;
-    while (std::getline(in, line))
+    for (const ini::Section& s : ini::Read(DataPath("MISSIONS\\lootprops.ini"))) // text or BINI (SWEEP #5)
     {
-        if (const size_t semi = line.find(';'); semi != std::string::npos)
-            line.erase(semi);
-        line.erase(0, line.find_first_not_of(" \t\r"));
-        line.erase(line.find_last_not_of(" \t\r") + 1);
-        if (line.empty())
+        if (s.type != "mlootprops")
             continue;
-        if (line[0] == '[')
-        {
-            block = _stricmp(line.c_str(), "[mLootProps]") == 0;
-            nickname.clear();
-            continue;
-        }
-        const size_t eq = line.find('=');
-        if (!block || eq == std::string::npos)
-            continue;
-        std::string k = line.substr(0, eq), v = line.substr(eq + 1);
-        k.erase(k.find_last_not_of(" \t") + 1);
-        v.erase(0, v.find_first_not_of(" \t"));
-        if (_stricmp(k.c_str(), "nickname") == 0)
-            nickname = v;
-        else if (_stricmp(k.c_str(), "drop_properties") == 0 && !nickname.empty())
-        {
-            LootProps p;
-            float chance = 0;
-            if (sscanf_s(v.c_str(), "%f , %d , %d , %d , %d , %d", &chance, &p.minWorth, &p.worthMult, &p.min, &p.max1,
-                         &p.max2) == 6)
+        std::string nickname;
+        for (const auto& kv : s.kv)
+            if (kv.first == "nickname")
+                nickname = kv.second;
+            else if (kv.first == "drop_properties" && !nickname.empty())
             {
-                p.chance = chance * 0.01f;
-                table[a.createId(nickname.c_str())] = p;
+                LootProps p;
+                float chance = 0;
+                if (sscanf_s(kv.second.c_str(), "%f , %d , %d , %d , %d , %d", &chance, &p.minWorth, &p.worthMult,
+                             &p.min, &p.max1, &p.max2) == 6)
+                {
+                    p.chance = chance * 0.01f;
+                    table[a.createId(nickname.c_str())] = p;
+                }
             }
-        }
     }
     return table;
 }

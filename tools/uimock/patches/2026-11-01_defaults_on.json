@@ -1,0 +1,11 @@
+{
+  "_about": "0.2.0 (1 Nov 2026): every feature is on by default (owner decision) - shield_cue, hull_cue, reticle_cue, ap_hints, hostile_marker default on; shield_cue_intensity default 1.0 (the code's, the spec had a stale 0.75). Spec defaults = docs/SETTINGS.md (generated from the code's registries). Apply with specpatch.py to part2_data.js, docs/UI_SPEC.json and the artifact's ui/spec.",
+  "rows": {
+    "shield_cue": {"def": true, "value": true},
+    "shield_cue_intensity": {"def": 1.0, "value": 1.0},
+    "hull_cue": {"def": true, "value": true},
+    "reticle_cue": {"def": true, "value": true},
+    "ap_hints": {"def": true, "value": true},
+    "hostile_marker": {"def": true, "value": true}
+  }
+}

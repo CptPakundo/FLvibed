@@ -155,12 +155,28 @@ static SetRankFn g_origSetRank;
 // pub::Save(client, ids): a mission's Act_Save checkpoint (the game writes a save file described by `ids`).
 typedef int(__cdecl* SaveFn)(u32, u32);
 static SaveFn g_origSave;
+static SRWLOCK g_saveLock = SRWLOCK_INIT;
+static u32 g_saveSeq = 0, g_saveIds = 0; // v35 MissionSave
 
 static int __cdecl SaveHook(u32 client, u32 ids)
 {
     const int r = g_origSave(client, ids);
     Push("mission-save ids=%u result=%d %s", ids, r, Quote(ids).c_str());
+    AcquireSRWLockExclusive(&g_saveLock);
+    ++g_saveSeq;
+    g_saveIds = ids;
+    ReleaseSRWLockExclusive(&g_saveLock);
     return r;
+}
+
+u32 MissionSave(u32* ids)
+{
+    AcquireSRWLockShared(&g_saveLock);
+    const u32 seq = g_saveSeq;
+    if (ids)
+        *ids = g_saveIds;
+    ReleaseSRWLockShared(&g_saveLock);
+    return seq;
 }
 
 typedef u32(__cdecl* OfferCreateFn)(const void*);
@@ -390,7 +406,13 @@ static const void* ClientEntry(int i)
     return e;
 }
 
-u32 ObjectiveReread()
+// (readNav: the entries' navmarkers too - the exe's objective handler, ClientObjectivesHook: the client copy's Val chain is
+// the server's, 'N' -> {+0 system, +8 x ..}; a save load's reread keeps them off as before, v25)
+static u32 Reread(bool readNav);
+static bool NavSet(u32 v);
+u32 ObjectiveReread() { return Reread(false); }
+
+static u32 Reread(bool readNav)
 {
     if (!exe::ClientObjective.ok())
         return ObjectiveNow(nullptr);
@@ -416,6 +438,16 @@ u32 ObjectiveReread()
                 if (es.refCount < 4)
                     es.refs[es.refCount++] = v;
             }
+            else if (readNav && kind == 'N' && v && !es.hasNav && NavSet(v))
+            {
+                es.hasNav = true;
+                es.navSystem = Word(reinterpret_cast<const void*>(v), 0);
+                for (int j = 0; j < 3; ++j)
+                {
+                    const u32 w = Word(reinterpret_cast<const void*>(v), 8 + j * 4);
+                    memcpy(&es.nav[j], &w, 4);
+                }
+            }
         }
     }
     const u32 text = steps.empty() ? 0 : steps[0].textId;
@@ -423,7 +455,12 @@ u32 ObjectiveReread()
     if (text)
         formatted = FormatFirstShown([](int i) { return ClientEntry(i); }, static_cast<int>(steps.size()));
     AcquireSRWLockExclusive(&g_missionLock);
-    const bool changed = text != g_objText || (text && formatted != g_objFormatted);
+    // (the steps too: a job's second packet adds entries behind an unchanged entry 0 - "Launch into Space" then its
+    // waypoints, multiplayer 28 Oct 2026)
+    bool stepsDiffer = readNav && steps.size() != g_objSteps.size();
+    for (size_t i = 0; readNav && !stepsDiffer && i < steps.size(); ++i)
+        stepsDiffer = steps[i].textId != g_objSteps[i].textId || steps[i].hasNav != g_objSteps[i].hasNav;
+    const bool changed = text != g_objText || (text && formatted != g_objFormatted) || stepsDiffer;
     if (changed)
     {
         g_objFormatted = formatted;
@@ -431,9 +468,13 @@ u32 ObjectiveReread()
         g_objRefs0 = refs0;
         g_objSteps = steps;
         g_objText = text;
-        g_objHasNav = false;
-        g_objNavSystem = 0;
-        memset(g_objNav, 0, sizeof(g_objNav));
+        // the current step's navmarker = entry 0's (as SetObjectivesHook takes it)
+        g_objHasNav = !steps.empty() && steps[0].hasNav;
+        g_objNavSystem = g_objHasNav ? steps[0].navSystem : 0;
+        if (g_objHasNav)
+            memcpy(g_objNav, steps[0].nav, sizeof(g_objNav));
+        else
+            memset(g_objNav, 0, sizeof(g_objNav));
         ++g_objSeq;
     }
     const u32 seq = g_objSeq;
@@ -468,8 +509,9 @@ static int __cdecl SetObjectivesHook(const u32& client, const u32& a, const void
             steps.push_back(ObjectiveStep{});
             ObjectiveStep& es = steps.back();
             es.textId = Word(objs, e * 28 + 8);
-            for (const void* p = reinterpret_cast<const void*>(Word(objs, e * 28 + 4)); p;
-                 p = reinterpret_cast<const void*>(Word(p, 0)))
+            int k = 0; // a bounded walk (the chain is game memory: a cycle must not hang the game)
+            for (const void* p = reinterpret_cast<const void*>(Word(objs, e * 28 + 4)); p && k < 16;
+                 p = reinterpret_cast<const void*>(Word(p, 0)), ++k)
             {
                 const u32 v = Word(p, 4), kind = Word(p, 8) & 0xFFFF;
                 if (kind == 'R' && v && es.refCount < 4)
@@ -487,8 +529,10 @@ static int __cdecl SetObjectivesHook(const u32& client, const u32& a, const void
             }
         }
         for (u32 e = 0; objs && e < count && e < 8; ++e)
-            for (const void* p = reinterpret_cast<const void*>(Word(objs, e * 28 + 4)); p;
-                 p = reinterpret_cast<const void*>(Word(p, 0)))
+        {
+            int k = 0;
+            for (const void* p = reinterpret_cast<const void*>(Word(objs, e * 28 + 4)); p && k < 16;
+                 p = reinterpret_cast<const void*>(Word(p, 0)), ++k)
             {
                 const u32 v = Word(p, 4), kind = Word(p, 8) & 0xFFFF;
                 if (kind == 'R' && v)
@@ -508,6 +552,7 @@ static int __cdecl SetObjectivesHook(const u32& client, const u32& a, const void
                     }
                 }
             }
+        }
         const std::wstring formatted =
             (objs && count) ? FormatFirstShown([objs](int i) -> const void* { return static_cast<const u8*>(objs) + i * 28 + 4; },
                                                static_cast<int>(count))
@@ -537,13 +582,15 @@ static int __cdecl SetObjectivesHook(const u32& client, const u32& a, const void
     char where[8][96] = {};
     for (u32 e = 0; objs && e < count && e < 8; ++e)
     {
+        // _TRUNCATE: a long chain (or a navmarker of huge floats) is cut, never the CRT's fast-fail of sprintf_s
         int n = 0;
         const void* p = reinterpret_cast<const void*>(Word(objs, e * 28 + 4));
-        for (int k = 0; p && k < 8; ++k)
+        for (int k = 0; p && k < 8 && n < static_cast<int>(sizeof(where[e])) - 1; ++k)
         {
             const u32 v = Word(p, 4), kind = Word(p, 8) & 0xFFFF;
+            int wrote = 0;
             if (kind == 'R' && v)
-                n += sprintf_s(where[e] + n, sizeof(where[e]) - n, " target=%u", v);
+                wrote = _snprintf_s(where[e] + n, sizeof(where[e]) - n, _TRUNCATE, " target=%u", v);
             else if (kind == 'N' && v)
             {
                 float f[3];
@@ -552,9 +599,12 @@ static int __cdecl SetObjectivesHook(const u32& client, const u32& a, const void
                     const u32 w = Word(reinterpret_cast<const void*>(v), 8 + i * 4);
                     memcpy(&f[i], &w, 4);
                 }
-                n += sprintf_s(where[e] + n, sizeof(where[e]) - n, " nav=%.0f,%.0f,%.0f system=%u", f[0], f[1], f[2],
-                               Word(reinterpret_cast<const void*>(v), 0));
+                wrote = _snprintf_s(where[e] + n, sizeof(where[e]) - n, _TRUNCATE, " nav=%.0f,%.0f,%.0f system=%u", f[0],
+                                    f[1], f[2], Word(reinterpret_cast<const void*>(v), 0));
             }
+            if (wrote < 0)
+                break; // truncated: the line is full
+            n += wrote;
             p = reinterpret_cast<const void*>(Word(p, 0));
         }
     }
@@ -581,13 +631,12 @@ static int __cdecl PopUpHook(u32 client, const void* caption, const void* msg, u
     return g_origPopUp(client, caption, msg, buttons);
 }
 
-static int __cdecl MissionMsgHook(const u32& client, const void* text, int type, bool b)
+static void NoteMissionMessage(u32 t, int type)
 {
     // pub::Player::MissionMessageType, from game data (18 Oct 2026, M01b): 0 = failure ("Mission Failed. ..."), 1 =
     // success (1231 "Mission Result: Success"); others (e.g. "GAME SAVED", personal log entries) by number until known.
     // Job board missions report their result with other types (type 2 = 13093 "Mission Result: Failure - You ran from
     // the battle", 18 Oct 2026): a "Mission Result" text is named by its own words.
-    const u32 t = StrId(text);
     char name[16];
     const std::string words = IdsText(t);
     // A job's success is type 3 ("You have made <faction> very pleased.", 18 Oct 2026).
@@ -607,6 +656,11 @@ static int __cdecl MissionMsgHook(const u32& client, const void* text, int type,
         g_resultType = name[0] == 'S' ? 1 : 2;
         ReleaseSRWLockExclusive(&g_missionLock);
     }
+}
+
+static int __cdecl MissionMsgHook(const u32& client, const void* text, int type, bool b)
+{
+    NoteMissionMessage(StrId(text), type);
     return g_origMissionMsg(client, text, type, b);
 }
 
@@ -839,6 +893,69 @@ static VOID CALLBACK ClientModuleLoaded(ULONG reason, const LdrNotifyData* d, vo
     }
 }
 
+// Every game load (a save, New Game, the load after a death) loads a fresh Content.dll (docs\FREELANCER_RE.md "The
+// client's copy of the objectives and save loads"), so its loader notification is the start of a new game, before the
+// new mission marks anything or sets an objective. What the host keeps per game starts over there (A37 S1, 30 Oct 2026:
+// the title and the marks survived a load - SaveS182 after SaveS208 kept M07's title 23200, so the by-title stand-in
+// named M07's script; SaveS023, free roam, still listed S010's marks). The objective itself is re-read from the game's
+// own copy once the hooks are back (Update, v25). The first game after the start reuses the Content.dll loaded at the
+// start (no notification: measured 30 Oct 2026) - a fresh boot's first game is unchanged.
+static volatile LONG g_gameLoads = 0;       // v34 GameLoads
+static volatile LONG g_rereadAfterLoad = 0; // the hooks went in at the load: Update re-reads the objective once
+static int InstallContentHooks(HMODULE content);
+static VOID CALLBACK ContentModuleLoaded(ULONG reason, const LdrNotifyData* d, void*)
+{
+    static const wchar_t kName[] = L"content.dll";
+    const size_t len = sizeof(kName) / sizeof(kName[0]) - 1;
+    if (reason != 1 || !d || !d->baseName || !d->baseName->buffer || d->baseName->length / sizeof(wchar_t) != len ||
+        _wcsnicmp(d->baseName->buffer, kName, len) != 0)
+        return;
+    AcquireSRWLockExclusive(&g_missionLock);
+    const u32 title = g_objTitle, marks = static_cast<u32>(g_marked.size()), comms = static_cast<u32>(g_commHeard.size());
+    g_marked.clear();
+    g_objTitle = 0;
+    g_commHeard.clear();
+    ReleaseSRWLockExclusive(&g_missionLock);
+    const LONG n = InterlockedIncrement(&g_gameLoads);
+    // its server.dll imports bound already at this notification? (1 = the import points into server.dll's image; 0 / -1:
+    // the hooks wait for Update, ~0.5-1 s after the load, as before)
+    int bound = -1;
+    if (const auto server = reinterpret_cast<const u8*>(GetModuleHandleA("server.dll")))
+        if (void** slot = hk::ImportSlot(static_cast<HMODULE>(d->base), "server.dll",
+                                         "?SendComm@SpaceObj@pub@@YAHIIIPBUCostume@@IPAIHIM_N@Z"))
+        {
+            const auto nt = reinterpret_cast<const IMAGE_NT_HEADERS*>(
+                server + reinterpret_cast<const IMAGE_DOS_HEADER*>(server)->e_lfanew);
+            const uintptr_t v = reinterpret_cast<uintptr_t>(*slot), b = reinterpret_cast<uintptr_t>(server);
+            bound = v >= b && v < b + nt->OptionalHeader.SizeOfImage ? 1 : 0;
+        }
+    // Bound (verified 30 Oct 2026, every load: 1): the hooks go in now, before the new game's mission runs - its load's
+    // SetMissionObjectives (the title), comms and spawns are seen as the first game's are (that Content.dll was hooked
+    // before its load); Update then finds them in place and only re-reads the objective once.
+    int hooked = 0;
+    if (bound == 1)
+    {
+        hooked = InstallContentHooks(static_cast<HMODULE>(d->base));
+        InterlockedExchange(&g_rereadAfterLoad, 1);
+    }
+    Push("game-load %ld: Content.dll loaded - forgot title %u, %u marks, %u comms heard (imports bound %d, hooks %d)", n,
+         title, marks, comms, bound, hooked);
+}
+u32 GameLoads() { return static_cast<u32>(g_gameLoads); }
+
+static void WatchContentModule()
+{
+    static bool done = false;
+    if (done)
+        return;
+    done = true;
+    typedef LONG(NTAPI * RegisterFn)(ULONG, void*, void*, void**);
+    static void* cookie = nullptr;
+    auto reg = reinterpret_cast<RegisterFn>(GetProcAddress(GetModuleHandleA("ntdll.dll"), "LdrRegisterDllNotification"));
+    Log("events: game load watch (Content.dll loads) %s",
+        reg && reg(0, reinterpret_cast<void*>(ContentModuleLoaded), nullptr, &cookie) == 0 ? "on" : "FAILED");
+}
+
 static void WatchClientModule(void** vt)
 {
     HMODULE mod = nullptr;
@@ -857,8 +974,119 @@ static void WatchClientModule(void** vt)
             reg(0, reinterpret_cast<void*>(ClientModuleLoaded), nullptr, &cookie) == 0 ? "on" : "FAILED");
 }
 
+// One client interface for both modes (28 Oct 2026, the multiplayer gaps): every server message ends in Freelancer.exe's
+// own client object - its export `Client` (v1.1: 0x67EA64, vtable 0x5E6674 stored at 0x5B084A; `GetClientInterface`
+// returns it). Single player: Server.dll calls rpclocal.dll's IClient, which packs each call (objectives = packet 0x35,
+// a mark = 0x5B) and delivers it to the exe's object, fetched by GetProcAddress("GetClientInterface") (rpclocal
+// 0x6D8EED0); multiplayer: RemoteServer.dll imports `Client` and calls its virtuals from the network's packets. The
+// exe's vtable has the FLHookSDK IClient layout (slot 83 = 0x53BF80, the reply handler; 75 = 0x5A5ED0, the mark;
+// 72 = 0x5A5BC0, which rebuilds the client's objective list at 0x672950 that exe::ClientObjective reads). Patched once:
+// the vtable is the exe's own (no module reloads to follow, unlike rpclocal's).
+typedef bool(__fastcall* ClientObjectivesFn)(void* self, void* edx, u32 client, const void* packet);
+static ClientObjectivesFn g_origClientObjectives = nullptr;
+static bool g_exeClient = false; // the exe's client object is patched (the server-side rpclocal path stands down)
+
+static bool __fastcall ClientObjectivesHook(void* self, void* edx, u32 client, const void* packet)
+{
+    const bool r = g_origClientObjectives(self, edx, client, packet);
+    // the client's copy is the game's own now: the reread takes it over when it differs from what the single-player
+    // Content.dll hook saw (multiplayer: always - the story's scripts run on the server); each entry's navmarker logged
+    const u32 seq = Reread(true);
+    ObjectiveStep steps[8] = {};
+    const int n = ObjectiveSteps(steps, 8);
+    // the client copy's own navmarkers (in single player the steps above stay the Content.dll hook's: compare the two)
+    std::string where;
+    for (int i = 0; i < 8; ++i)
+    {
+        const void* e = ClientEntry(i);
+        if (!e)
+            break;
+        const void* p = reinterpret_cast<const void*>(Word(e, 0));
+        for (int k = 0; p && k < 16; ++k, p = reinterpret_cast<const void*>(Word(p, 0)))
+            if ((Word(p, 8) & 0xFFFF) == 'N' && Word(p, 4) && NavSet(Word(p, 4)))
+            {
+                float f[3];
+                for (int j = 0; j < 3; ++j)
+                {
+                    const u32 w = Word(reinterpret_cast<const void*>(Word(p, 4)), 8 + j * 4);
+                    memcpy(&f[j], &w, 4);
+                }
+                where += " nav" + std::to_string(i) + "=" + std::to_string(static_cast<int>(f[0])) + "," +
+                         std::to_string(static_cast<int>(f[1])) + "," + std::to_string(static_cast<int>(f[2]));
+                break;
+            }
+    }
+    Push("objective-client seq=%u obj=%u %s steps=%d%s", seq, n ? steps[0].textId : 0, Quote(n ? steps[0].textId : 0).c_str(), n,
+         where.c_str());
+    return r;
+}
+
+// Slot 70 SET_MISSION_MESSAGE (0x5A5BA0: thiscall(client, packet) ret 8 -> 0x4B9C60(packet, [packet + 0x18])): the
+// packet starts with the message's FmtStr (+4 its string id), +0x18 the MissionMessageType. Multiplayer only - single
+// player's messages come through the Content.dll hook (MissionMsgHook) first, with the same naming.
+typedef bool(__fastcall* ClientMissionMsgFn)(void* self, void* edx, u32 client, const void* packet);
+static ClientMissionMsgFn g_origClientMissionMsg = nullptr;
+static bool EventsMultiplayer()
+{
+    typedef bool (*SinglePlayerFn)();
+    static const SinglePlayerFn sp =
+        reinterpret_cast<SinglePlayerFn>(GetProcAddress(GetModuleHandleA("common.dll"), "?SinglePlayer@@YA_NXZ"));
+    return sp && !sp();
+}
+static bool __fastcall ClientMissionMsgHook(void* self, void* edx, u32 client, const void* packet)
+{
+    if (EventsMultiplayer() && packet)
+        NoteMissionMessage(StrId(packet), static_cast<int>(Word(packet, 0x18)));
+    return g_origClientMissionMsg(self, edx, client, packet);
+}
+
+static bool HookExeClient()
+{
+    static bool tried = false;
+    if (tried)
+        return g_exeClient;
+    tried = true;
+    void* client = reinterpret_cast<void*>(GetProcAddress(GetModuleHandleA(nullptr), "Client"));
+    if (!client)
+    {
+        Log("events: Freelancer.exe exports no Client object - the server-side client hooks instead (single player)");
+        return false;
+    }
+    void** vt = nullptr;
+    __try
+    {
+        vt = *static_cast<void***>(client);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        vt = nullptr;
+    }
+    HMODULE exe = GetModuleHandleA(nullptr), mod = nullptr;
+    // the vtable and its three slots must be the exe's own (a wrapper that replaced the object: the old path)
+    const auto inExe = [&](const void* p) {
+        return GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                  static_cast<LPCSTR>(p), &mod) &&
+               mod == exe;
+    };
+    if (!vt || !inExe(vt) || !inExe(vt[70]) || !inExe(vt[72]) || !inExe(vt[75]) || !inExe(vt[83]))
+    {
+        Log("events: Freelancer.exe's Client vtable is not the exe's own - the server-side client hooks instead");
+        return false;
+    }
+    PatchClientVtable(vt);
+    g_origClientObjectives =
+        reinterpret_cast<ClientObjectivesFn>(hk::PatchVtable(vt, 72, reinterpret_cast<void*>(ClientObjectivesHook)));
+    g_origClientMissionMsg =
+        reinterpret_cast<ClientMissionMsgFn>(hk::PatchVtable(vt, 70, reinterpret_cast<void*>(ClientMissionMsgHook)));
+    g_exeClient = true;
+    Log("events: Freelancer.exe's Client object hooked (objectives, marks, replies: single player and multiplayer)");
+    return true;
+}
+
 static void HookClientMark()
 {
+    if (HookExeClient())
+        return;
     uintptr_t& global = g_clientGlobal;
     bool& searched = g_clientSearched;
     if (!searched)
@@ -1014,18 +1242,8 @@ static void HookServerCalls()
 // Installs the hooks, and installs them again whenever Content.dll is a fresh copy: the game unloads and reloads it
 // (e.g. loading a game after a death), which drops IAT patches; a reloaded copy can sit at the same address, so the
 // check reads the import slot itself.
-void Update()
+static int InstallContentHooks(HMODULE content)
 {
-    static u32 nextCheck = 0;
-    if (GetTickCount() < nextCheck)
-        return;
-    nextCheck = GetTickCount() + 1000;
-    HookClientMark();
-    HookServerCalls();
-    HMODULE content = GetModuleHandleA("content.dll");
-    void** probe = hk::ImportSlot(content, "server.dll", "?SendComm@SpaceObj@pub@@YAHIIIPBUCostume@@IPAIHIM_N@Z");
-    if (!probe || *probe == reinterpret_cast<void*>(SendCommHook))
-        return;
     struct H
     {
         const char* name;
@@ -1074,6 +1292,32 @@ void Update()
             Log("events: import %s not found", h.name);
     }
     Log("events: Content.dll hooks installed (%d/%d)", ok, static_cast<int>(sizeof(hooks) / sizeof(hooks[0])));
+    return ok;
+}
+
+void Update()
+{
+    static u32 nextCheck = 0;
+    if (GetTickCount() < nextCheck)
+        return;
+    nextCheck = GetTickCount() + 1000;
+    WatchContentModule();
+    HookClientMark();
+    HookServerCalls();
+    HMODULE content = GetModuleHandleA("content.dll");
+    void** probe = hk::ImportSlot(content, "server.dll", "?SendComm@SpaceObj@pub@@YAHIIIPBUCostume@@IPAIHIM_N@Z");
+    if (!probe)
+        return;
+    if (*probe == reinterpret_cast<void*>(SendCommHook))
+    {
+        // hooked at the load itself (ContentModuleLoaded): the one re-read after a load stays (a no-op when the hooked
+        // copy already equals the game's)
+        if (InterlockedExchange(&g_rereadAfterLoad, 0))
+            Log("events: objective after the load (hooked at the load): seq %u", ObjectiveReread());
+        return;
+    }
+    InterlockedExchange(&g_rereadAfterLoad, 0);
+    InstallContentHooks(content);
     // Content.dll (re)loaded = a game loaded (every save load reloads it, 25 Oct 2026): the mission's objective was set
     // while its imports were not yet ours (no objective event: HUD 2's headline stayed empty after a mission save loaded
     // in a running game), so take it from the game's own copy once (v25 ObjectiveReread; a free-roam load clears it).

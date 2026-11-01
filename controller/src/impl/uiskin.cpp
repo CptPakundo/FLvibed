@@ -18,10 +18,10 @@
 #include "uiskin.h"
 
 #include "../fl.h"
-#include "debug.h"
 #include "flexe.h"
 #include "game/room.h"
 #include "glyphs.h"
+#include "safemem.h"
 #include "host.h"
 #include "hud2_kit.h"
 #include "log.h"
@@ -697,7 +697,7 @@ void Repose(u32 ctl)
     u32 vt = 0, setPos = 0, setOrient = 0;
     u8 st = 0;
     if (!R8(ctl + kState, st) || (st & 4) || !R32(ctl, vt) || !R32(vt + 0x14, setPos) || !R32(vt + 0x1C, setOrient) || !setPos || !setOrient ||
-        !debug::SafeRead(ctl + kPos, pos, sizeof(pos)) || !debug::SafeRead(ctl + kOrient, orient, sizeof(orient)))
+        !safemem::Read(ctl + kPos, pos, sizeof(pos)) || !safemem::Read(ctl + kOrient, orient, sizeof(orient)))
         return;
     const bool posOk = exe::ControlSetPosition.is(setPos) || exe::InventorySetPosition.is(setPos) || exe::NavMapSetPosition.is(setPos);
     if (!posOk || !exe::ControlSetOrientation.is(setOrient))
@@ -881,7 +881,9 @@ void Rescan()
 void Refresh()
 {
     u32 g = 0;
-    g_genHost = HostGen(g_host, g, 0);
+    // (generation 0 = the host's UI-generation detours were refused, or nothing changed yet: the poll, else a single
+    // rescan would be all the skin ever saw)
+    g_genHost = HostGen(g_host, g, 0) && g != 0;
     if (!g_genHost)
     {
         const ULONGLONG now = GetTickCount64();

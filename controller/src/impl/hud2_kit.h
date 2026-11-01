@@ -104,6 +104,14 @@ float TextWidth(const std::wstring& s, float size, float track = 0);
 const textfit::Result& FitText(const std::wstring& s, float size, float maxW, float track = 0, float floor = -1);
 float TextFit(float x, float y, const std::wstring& s, float size, float maxW, u32 argb, Align align = Left,
               float track = 0, bool outline = true, float floor = -1);
+// HUD 2's long names (the owner, 31 Oct 2026, decision 1; core\game\marquee.h; docs\UI_HUD2.md 5.20): the fit rule as
+// TextFit, but a text it would cut is a marquee instead of a permanent "..." - its cut form (the start + the ellipsis)
+// held 1.5 s, then scrolling continuously (sub-pixel, by the clock: frame-rate independent) until its end shows in the
+// room, held 1.5 s, a fade back to the start, repeated. Drawn clipped to its room (x .. x + maxW for Left; Center /
+// Right about x), recorded for the lint as one text with the room as its box. A text that fits is TextFit's, still.
+// Returns the drawn width (maxW for a marquee).
+float TextMarquee(float x, float y, const std::wstring& s, float size, float maxW, u32 argb, Align align = Left,
+                  float track = 0, bool outline = true, float floor = -1);
 float TextFloor();
 // The rule for a box that can take more lines: when one line would be cut even at the floor, the text wraps by whole
 // words onto up to maxLines lines at the floor, the last line cut by the rule. Fills out[0..n), returns n and the size.
@@ -117,8 +125,44 @@ std::wstring Fit(const std::wstring& s, float size, float maxW, float track = 0)
 // a ring with the mark; `hold` adds the broken outer ring.
 void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold = false);
 float GlyphWidth(glyphs::Id id, float h);
-// A keyboard key: a rounded keycap with its name ("K", "F1", "SPACE"); returns its width.
-float Keycap(const std::wstring& name, float cx, float cy, float h, u32 argb, bool measure = false);
+// A keyboard key: a rounded keycap with its name ("K", "F1", "SPACE"); returns its width. `tight` = the dense panels'
+// keycap (the loadout, the fire strip, the K&M maneuver row, Focus's card click row; the owner, 31 Oct 2026, A1:
+// "tightening the glyphs themselves so that everything fits"): the name at the 0.024 H floor (or 0.62 h) and the cap
+// 1.2 x the name tall (0.0288 H at the floor) instead of the floor-grown 0.033-0.039 H cap - rows of keycaps can keep
+// the lint's 0.01 H between them (panel.overlap).
+float Keycap(const std::wstring& name, float cx, float cy, float h, u32 argb, bool measure = false, bool tight = false);
 
 std::string Status();
+
+// ---- the layout lint's recorder (debug `hud2 lint`: hud2_lint.h, hud2_lint_live.cpp). While a list is set, every
+// primitive the caller draws appends one record - not the ones a kit call draws inside another (a glyph's letter, a
+// keycap's name, a segmented arc's blocks, a plate's outline): its box in pixels with the offset applied, its alpha as
+// drawn, the current tag. Not recorded: Tri / Quad / Poly / Grad / Disc called directly (fills, not HUD elements of
+// their own). Off (nullptr, the default) = one pointer test per call, nothing allocated.
+struct Drawn
+{
+    char kind = 0; // 'P' plate, 'T' text, 'G' glyph, 'K' keycap, 'A' arc, 'I' icon, 'S' shape (rect, line, bar, outline)
+    float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    float size = 0;  // text / a keycap's name: the em in px; a glyph: its height; an icon: its size
+    float alpha = 0; // 0..1 as drawn (the global alpha applied)
+    float cx = 0, cy = 0, r = 0, a0 = 0, a1 = 0, w = 0; // an arc: centre, radius at its centre line, degrees, width
+    int glyph = -1;       // a glyph: its glyphs::Id
+    const char* tag = ""; // RecordTag's
+    int unit = 0;         // the designed unit it belongs to (RecUnit; 0 none)
+    std::wstring text;    // text / a keycap: the string drawn
+};
+void Record(std::vector<Drawn>* out);
+void RecordTag(const char* tag); // a string literal (kept by pointer); Record resets it to ""
+// A designed unit: a prompt and its own label, a slot's icon and count with its key, a chip's icon and word. The items
+// drawn inside one RecUnit's scope share a unit id in the records; the lint's panel.overlap lets them touch (gap >= 0)
+// but never overlap, where separate elements keep 0.01 H (hud2_lint.h). Scopes nest (the outer unit holds); costs one
+// int store when nothing records.
+struct RecUnit
+{
+    RecUnit();
+    ~RecUnit();
+    RecUnit(const RecUnit&) = delete;
+    RecUnit& operator=(const RecUnit&) = delete;
+    int prev;
+};
 } // namespace hud2kit

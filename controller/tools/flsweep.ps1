@@ -1,6 +1,6 @@
 # Regression sweep: every area in its own section (PASS / FAIL with evidence), on to the next on failure. -Only <sections>.
 # Results: research\experience\runs\sweep_<time>.txt; every section's time (and a mission's time per objective) goes to
-# the benchmark history (tools\flbench.ps1, Show-FLBench). Each section starts on the fixture that reaches its subject
+# the benchmark history (tools\flbenchhist.ps1, Show-FLBench). Each section starts on the fixture that reaches its subject
 # fastest.
 # Speed (user, 20 Oct 2026): one build per sweep (sections deploy -NoBuild); the short sections reuse the running game,
 # loading their fixture natively (Load-FLSave) instead of a ~35 s restart. Safeguards (user: state that only resets at
@@ -25,7 +25,7 @@ $Only = @($Only | ForEach-Object { $_ -split ',' } | Where-Object { $_ })   # 'a
 $res = Join-Path $fl ("research\experience\runs\sweep_{0:yyyy-MM-dd_HHmm}{1}.txt" -f (Get-Date), $(if ($Instance -gt 0) { "_i$Instance" } else { '' }))
 . (Join-Path $fl 'controller\tools\flctl.ps1')
 . (Join-Path $fl 'subtitles\tools\flsub.ps1')
-. (Join-Path $fl 'tools\flbench.ps1')
+. (Join-Path $fl 'tools\flbenchhist.ps1')
 if ($Parallel -gt 1) {
     $t0 = Get-Date
     $all = @([regex]::Matches((Get-Content -Raw $PSCommandPath), "(?m)^Section '([^']+)'") | ForEach-Object { $_.Groups[1].Value })
@@ -238,6 +238,311 @@ Section 'pad-input' {
     if ($v1 -lt 20) { throw "throttle up by pad: speed $([int]$v0) -> $([int]$v1)" }
     "pad throttle: speed $([int]$v0) -> $([int]$v1) m/s"
 }
+
+Section 'pad-device' {
+    # The device-layer test pads (30 Oct 2026, IDEAS T36 slice 1, controller\src\shm.h v2): a test pad on an XInput slot
+    # takes a real pad's whole path. Plug slot 2 as a PlayStation pad -> found by the slot scan, glyph family follows;
+    # the focus gate: closed in this background game (the stick does nothing), opened (-Foreground) with the stick still
+    # held -> still nothing until released (focus_gate.h), a new push flies; the autopilot's hand-back pulse read back
+    # from the rumble stream; the options page on the test pad's D-pad; unplug in flight -> lost + pause_on_disconnect;
+    # replug on slot 0 as an Xbox pad -> found, family follows; off -> the family falls back to the HID list.
+    Boot SaveC702.fl
+    $null = Send-FL 'ai dir idle'; $null = Wait-FLFramesPassed 30
+    $padLine = { (Send-FL 'state') -split "`n" | Where-Object { $_ -match '^pad ' } | Select-Object -First 1 }
+    $family = { [regex]::Match((Send-FL 'padhud'), 'glyphs family=(\w+)').Groups[1].Value }
+    $out = [Collections.Generic.List[string]]::new()
+    try {
+        $fam0 = & $family
+        Enable-FLDevPads
+        Set-FLDevPad -Slot 2 -Vendor playstation
+        $null = Wait-FLUntil { (& $padLine) -match ' slot=2 ' } 'the test pad found on slot 2' -TimeoutSec 10
+        $null = Wait-FLUntil { (& $family) -eq 'playstation' } 'glyph family playstation' -TimeoutSec 5
+        $out.Add("slot 2 found, family $fam0 -> playstation")
+        # gate closed (background, focus_only on): full throttle on the left stick does nothing
+        Set-FLDevPad -Slot 2 -Vendor playstation -LY 1; $null = Wait-FLFramesPassed 60
+        $vClosed = Speed
+        if ($vClosed -gt 5) { throw "gate closed but the test pad flew: speed $([int]$vClosed)" }
+        # opened while the stick is held: still ignored until released
+        Enable-FLDevPads -Foreground; $null = Wait-FLFramesPassed 60
+        $vHeld = Speed
+        if ($vHeld -gt 5) { throw "a stick held across the gate's opening acted: speed $([int]$vHeld)" }
+        Set-FLDevPad -Slot 2 -Vendor playstation; $null = Wait-FLFramesPassed 5
+        Set-FLDevPad -Slot 2 -Vendor playstation -LY 1; $null = Wait-FLFramesPassed 90
+        Set-FLDevPad -Slot 2 -Vendor playstation
+        $vOpen = Speed
+        if ($vOpen -lt 20) { throw "gate open but the test pad's new push did not fly: speed $([int]$vOpen)" }
+        $out.Add("gate: closed $([int]$vClosed), held across opening $([int]$vHeld), new push $([int]$vOpen) m/s")
+        # the hand-back pulse: the autopilot holds station, the test pad's stick takes the ship back -> one pulse on
+        # slot 2, then the motors off
+        $seq = @(Get-FLDevRumble | Select-Object -Last 1).Seq; if (-not $seq) { $seq = 0 }
+        $null = Send-FL 'ap start hold'; $null = Wait-FLFramesPassed 60
+        if ((Get-FLAutopilot).Mode -eq 'off') { throw "the autopilot did not start (ap start hold)" }
+        Set-FLDevPad -Slot 2 -Vendor playstation -LX 1; $null = Wait-FLFramesPassed 5
+        Set-FLDevPad -Slot 2 -Vendor playstation
+        $null = Wait-FLUntil { @(Get-FLDevRumble -Since $seq | Where-Object { $_.Low -eq 0 -and $_.High -eq 0 }).Count } 'the pulse and its stop' -TimeoutSec 5
+        $r = @(Get-FLDevRumble -Since $seq)
+        $pulse = $r | Where-Object { $_.Low -gt 0 } | Select-Object -First 1
+        if (-not $pulse -or $pulse.Slot -ne 2) { throw "no hand-back pulse on slot 2: $($r | ForEach-Object { "$($_.Slot):$($_.Low)/$($_.High)" })" }
+        $frames = ($r[-1].Frame - $pulse.Frame)
+        $out.Add(("hand-back pulse slot 2 low {0:N2} high {1:N2}, off after {2} frames" -f $pulse.Low, $pulse.High, $frames))
+        # the menus' reader (uikit.cpp, its own Gamepad): the options page's focus moves by the test pad's D-pad
+        $null = Send-FL 'ui options open'; $null = Wait-FLFramesPassed 10
+        $focus = { [regex]::Match((Send-FL 'ui rows'), 'focus=(-?\d+)').Groups[1].Value }
+        $f0 = & $focus
+        Press-FLDevPad Down -Slot 2 -Vendor playstation; Press-FLDevPad Down -Slot 2 -Vendor playstation
+        $f1 = & $focus
+        $null = Send-FL 'ui options close'
+        if (-not $f1 -or $f0 -eq $f1) { throw "the options page did not take the test pad's D-pad: focus $f0 -> $f1" }
+        $out.Add("options page focus $f0 -> $f1")
+        # unplugged in flight while the pad is the device: lost, and pause_on_disconnect pauses the game (its own pause
+        # menu; its RESUME button clicked natively)
+        $null = Start-FLEventLog
+        Set-FLDevPad -Slot 2 -Connected $false
+        $null = Wait-FLUntil { (& $padLine) -match ' slot=-1 ' } 'the test pad lost' -TimeoutSec 5
+        $null = Wait-FLUntil { (Send-FL 'state') -match 'paused=1' } 'pause_on_disconnect pausing the game' -TimeoutSec 5
+        if (-not @(Get-FLEventLog | Where-Object { "$_" -match 'device pad disconnected: pause' }).Count) { throw "paused without the disconnect event" }
+        $null = Wait-FLUntil { (Send-FL 'visible PauseButtonBox0') -match '^visible' } 'the pause menu' -TimeoutSec 5
+        $r = Send-FL 'click PauseButtonBox0'; if ($r -notmatch '^clicked') { throw "resume: $r" }
+        $null = Wait-FLUntil { (Send-FL 'state') -match 'paused=0' } 'the pause menu resumed' -TimeoutSec 10
+        $out.Add("unplugged in flight: slot -1, paused (pause_on_disconnect), resumed")
+        # replugged on another slot as an Xbox pad: found at the next scan (<= 1.5 s of game time), family follows
+        Set-FLDevPad -Slot 0 -Vendor xbox
+        $null = Wait-FLUntil { (& $padLine) -match ' slot=0 ' } 'the test pad replugged on slot 0' -TimeoutSec 10
+        $null = Wait-FLUntil { (& $family) -eq 'xbox' } 'glyph family xbox' -TimeoutSec 5
+        Set-FLDevPad -Slot 0 -Connected $false
+        Disable-FLDevPads
+        $null = Wait-FLUntil { (& $padLine) -match ' slot=-1 ' } 'the test pads off' -TimeoutSec 5
+        $null = Wait-FLUntil { (& $family) -eq $fam0 } "glyph family back to $fam0" -TimeoutSec 5
+        $out.Add("replugged on slot 0 (xbox); off: slot -1, family $fam0")
+    } finally { try { Disable-FLDevPads } catch {} ; $null = Send-FL 'ap stop' }
+    $out -join '; '
+}
+
+Section 'pad-sdl' {
+    # The SDL backend's own virtual test pads (30 Oct 2026, WORK_QUEUE Q5 slice 2, IDEAS T36 slice 2; shm.h v3, the host's
+    # debug `sdlpad`): the real SDL path in the game with no device. Steps (each a done-check clause): refused while SDL is
+    # off; pad_backend 1 live -> running; per type (xbox, ps5, switchpro): attach -> `state` source=sdl with SDL's type and
+    # vendor, the glyph family switches, a button press and the sticks / a trigger read through `state`, the options
+    # page's focus by its D-pad (the menus' own reader on the same backend), the autopilot's
+    # hand-back pulse reaches the device's read-back (and its stop), a trigger rumble and an effect sent through SDL reach
+    # it too, detach -> the pad gone and the family back; two pads -> the newest in use, its detach -> the older again;
+    # pad_backend 0 -> SDL stopped (no backend line, status 0, attach refused).
+    Boot SaveC702.fl
+    $null = Send-FL 'ai dir idle'; $null = Wait-FLFramesPassed 30
+    $padLine = { (Send-FL 'state') -split "`n" | Where-Object { $_ -match '^pad connected' } | Select-Object -First 1 }
+    $sdlLine = { (Send-FL 'state') -split "`n" | Where-Object { $_ -match '^pad_backend=' } | Select-Object -First 1 }
+    $family = { [regex]::Match((Send-FL 'padhud'), 'glyphs family=(\w+)').Groups[1].Value }
+    $padVals = {
+        $m = [regex]::Match((& $padLine), 'buttons=0x([0-9a-f]+) L=\(([^,]+),([^)]+)\) R=\(([^,]+),([^)]+)\) LT=(\S+) RT=(\S+)')
+        if (-not $m.Success) { throw "no pad line in state" }
+        [pscustomobject]@{ Buttons = [Convert]::ToInt32($m.Groups[1].Value, 16); LX = [double]$m.Groups[2].Value; LY = [double]$m.Groups[3].Value
+                           RX = [double]$m.Groups[4].Value; RY = [double]$m.Groups[5].Value; LT = [double]$m.Groups[6].Value; RT = [double]$m.Groups[7].Value }
+    }
+    $lastOut = { $o = @(Get-FLSdlPadOut | Select-Object -Last 1); if ($o.Count -and $o[0]) { $o[0].Seq } else { 0 } }
+    $kinds = @(
+        @{ k = 'xbox'; type = 3; vendor = '0x045E'; fam = 'xbox' },
+        @{ k = 'ps5'; type = 6; vendor = '0x054C'; fam = 'playstation' },
+        @{ k = 'switchpro'; type = 7; vendor = '0x057E'; fam = 'nintendo' })
+    $out = [Collections.Generic.List[string]]::new()
+    try {
+        $fam0 = & $family
+        $r = Send-FL 'sdlpad attach xbox'
+        if ($r -notmatch '^sdlpad refused') { throw "attach with pad_backend 0 not refused: $r" }
+        $null = Send-FL 'set pad_backend 1'
+        $null = Wait-FLUntil { (& $sdlLine) -match 'sdl_status=2' } 'SDL running (pad_backend 1)' -TimeoutSec 10
+        $out.Add("refused while off; SDL running: $([regex]::Match((& $sdlLine), 'sdl_init_ms=\S+').Value)")
+        foreach ($t in $kinds) {
+            $k = $t.k
+            $r = Connect-FLSdlPad -Type $k -Slot 0 -Foreground
+            if ($r -match 'NOT the expected') { throw "${k}: $r" }
+            $null = Wait-FLUntil { $l = & $sdlLine; $l -match 'source=sdl' -and $l -match 'sdl_connected=1' -and $l -match "sdl_type=$($t.type) " -and $l -match "sdl_vendor=$($t.vendor)" } "${k}: state source=sdl type $($t.type) vendor $($t.vendor)" -TimeoutSec 5
+            $null = Wait-FLUntil { (& $family) -eq $t.fam } "${k}: glyph family $($t.fam)" -TimeoutSec 5
+            # a button (B: east, positional) and the sticks / LT through SDL's gamepad layer into `state`
+            Set-FLSdlPad -Slot 0 -Buttons B
+            $null = Wait-FLUntil { ((& $padVals).Buttons -band 0x2000) -ne 0 } "${k}: B read down" -TimeoutSec 5
+            Set-FLSdlPad -Slot 0
+            $null = Wait-FLUntil { ((& $padVals).Buttons -band 0x2000) -eq 0 } "${k}: B read up" -TimeoutSec 5
+            Set-FLSdlPad -Slot 0 -LX 0.8 -RY -0.8 -LT 1
+            $null = Wait-FLUntil { $p = & $padVals; $p.LX -gt 0.5 -and $p.RY -lt -0.5 -and $p.LT -gt 0.9 } "${k}: LX + / RY - / LT read" -TimeoutSec 5
+            $p = & $padVals
+            Set-FLSdlPad -Slot 0
+            $null = Wait-FLUntil { $p2 = & $padVals; $p2.LX -eq 0 -and $p2.RY -eq 0 -and $p2.LT -eq 0 } "${k}: sticks / LT back to rest" -TimeoutSec 5
+            # the menus' reader (uikit.cpp, its own Gamepad on the same backend): the options page's focus by the D-pad
+            $null = Send-FL 'ui options open'; $null = Wait-FLFramesPassed 10
+            $focus = { [regex]::Match((Send-FL 'ui rows'), 'focus=(-?\d+)').Groups[1].Value }
+            $f0 = & $focus
+            Press-FLSdlPad Down -Slot 0; Press-FLSdlPad Down -Slot 0
+            $f1 = & $focus
+            $null = Send-FL 'ui options close'
+            if (-not $f1 -or $f0 -eq $f1) { throw "${k}: the options page did not take the test pad's D-pad: focus $f0 -> $f1" }
+            # the hand-back pulse: the autopilot holds station, the test pad's stick takes the ship back
+            $seq = & $lastOut
+            $null = Send-FL 'ap start hold'; $null = Wait-FLFramesPassed 60
+            if ((Get-FLAutopilot).Mode -eq 'off') { throw "${k}: the autopilot did not start (ap start hold)" }
+            Set-FLSdlPad -Slot 0 -LX 1; $null = Wait-FLFramesPassed 5
+            Set-FLSdlPad -Slot 0
+            $null = Wait-FLUntil { $o = @(Get-FLSdlPadOut -Since $seq | Where-Object Kind -eq 'rumble'); @($o | Where-Object A -gt 0).Count -and $o[-1].A -eq 0 -and $o[-1].B -eq 0 } "${k}: the hand-back pulse and its stop on the device" -TimeoutSec 5
+            $rum = @(Get-FLSdlPadOut -Since $seq | Where-Object Kind -eq 'rumble')
+            $pulse = $rum | Where-Object A -gt 0 | Select-Object -First 1
+            if ($pulse.Slot -ne 0) { throw "${k}: the pulse went to slot $($pulse.Slot)" }
+            # trigger rumble and an effect, sent through SDL to the pad in use
+            $seq = & $lastOut
+            $r1 = Send-FL 'sdlpad send triggers 8192 32768 200'; $r2 = Send-FL 'sdlpad send effect 47'
+            if ($r1 -notmatch ': ok' -or $r2 -notmatch ': ok') { throw "${k}: send: $r1 | $r2" }
+            $o = @(Get-FLSdlPadOut -Since $seq)
+            $tr = $o | Where-Object Kind -eq 'triggers' | Select-Object -First 1
+            $fx = $o | Where-Object Kind -eq 'effect' | Select-Object -First 1
+            if (-not $tr -or [Math]::Abs($tr.A - 0.125) -gt 0.001 -or [Math]::Abs($tr.B - 0.5) -gt 0.001) { throw "${k}: trigger rumble read back: $($o | ConvertTo-Json -Compress)" }
+            if (-not $fx -or $fx.A -ne 47) { throw "${k}: effect read back: $($o | ConvertTo-Json -Compress)" }
+            # detach: the pad gone, the family back
+            $null = Disconnect-FLSdlPad -Slot 0
+            $null = Wait-FLUntil { (& $sdlLine) -match 'sdl_connected=0' } "${k}: detached" -TimeoutSec 5
+            $null = Wait-FLUntil { (& $family) -eq $fam0 } "${k}: glyph family back to $fam0" -TimeoutSec 5
+            $out.Add(("{0}: type {1} vendor {2}, family {3}, B + LX {4:N2} RY {5:N2} LT {6:N2}, options focus {9} -> {10}, pulse {7:N2}/{8:N2} + stop, triggers + effect 47, detached" -f
+                      $k, $t.type, $t.vendor, $t.fam, $p.LX, $p.RY, $p.LT, $pulse.A, $pulse.B, $f0, $f1))
+        }
+        # two at once: the newest is in use; its detach hands back to the older one
+        $null = Connect-FLSdlPad -Type xbox -Slot 0 -Foreground
+        $null = Connect-FLSdlPad -Type ps5 -Slot 1 -Foreground
+        $null = Wait-FLUntil { (& $sdlLine) -match 'sdl_type=6 ' -and (& $family) -eq 'playstation' } 'two pads: the newest (ps5) in use' -TimeoutSec 5
+        if ((Get-FLSdlPad) -notmatch 'in_use=1 ') { throw "two pads: $(Get-FLSdlPad)" }
+        $null = Disconnect-FLSdlPad -Slot 1
+        $null = Wait-FLUntil { (& $sdlLine) -match 'sdl_type=3 ' -and (& $family) -eq 'xbox' } 'the older (xbox) in use again' -TimeoutSec 5
+        $null = Disconnect-FLSdlPad
+        $null = Wait-FLUntil { (& $sdlLine) -match 'sdl_connected=0' } 'none attached' -TimeoutSec 5
+        $out.Add("two pads: ps5 (newest) in use, its detach -> xbox again")
+        # off: SDL stopped (the test pads with it)
+        $null = Send-FL 'set pad_backend 0'
+        $null = Wait-FLUntil { -not (& $sdlLine) } 'pad_backend 0: no backend line' -TimeoutSec 5
+        if ((Get-FLSdlPad) -notmatch 'status=0 ') { throw "SDL not stopped: $(Get-FLSdlPad)" }
+        $r = Send-FL 'sdlpad attach xbox'
+        if ($r -notmatch '^sdlpad refused') { throw "attach after the stop not refused: $r" }
+        $out.Add("pad_backend 0: SDL stopped, attach refused")
+    } finally {
+        try { $null = Disconnect-FLSdlPad } catch {}
+        $null = Send-FL 'set pad_backend 0'; $null = Send-FL 'ap stop'
+    }
+    $out -join '; '
+}
+
+Section 'pad-haptics' {
+    # The haptics skeleton (30 Oct 2026, WORK_QUEUE Q5 slice 3, IDEAS U30; controller\src\impl\haptics_rules.h + haptics.cpp,
+    # debug `haptics`): what the mixer sends, read back from the test pads' device streams. Steps = the done-check clauses:
+    # (1) the XInput backend (a device-layer test pad): an injected shield hit's stream (the high motor's signature, then
+    # the stop); (2) the SDL backend (an SDL test pad): the hand-back's stream - the autopilot's end by the stick, today's
+    # pulse 0.36 / 0.216 at rumble 60, then its stop; (3) an injected hull hit in flight (the low motor's signature, the
+    # decay, the stop; a second one inside its gap merges); (4) the confirm's two ticks; (5) nothing out of focus (the test
+    # pad's foreground flag off: `silent (focus)`, no stream); (6) nothing paused (the pause menu: the world's and the
+    # autopilot's effects `silent (paused)`, no stream - the game's own boxes pause the game, so the prompt still plays);
+    # (7) one real hit (two level-1 pirates at 500 m, despawned at 95 % hull): a game hit's effect started (src=game) and
+    # on the device. The pad is the device in use by `input_mode 1` (the background game has no input of its own).
+    Boot SaveC702.fl
+    $null = Send-FL 'ai dir idle'; $null = Wait-FLFramesPassed 30
+    $hap = { Send-FL 'haptics status' }
+    $sdlLine = { (Send-FL 'state') -split "`n" | Where-Object { $_ -match '^pad_backend=' } | Select-Object -First 1 }
+    $padLine = { (Send-FL 'state') -split "`n" | Where-Object { $_ -match '^pad connected' } | Select-Object -First 1 }
+    $lastOut = { $o = @(Get-FLSdlPadOut | Select-Object -Last 1); if ($o.Count -and $o[0]) { $o[0].Seq } else { 0 } }
+    $rumble = { param($s) @(Get-FLSdlPadOut -Since $s | Where-Object Kind -eq 'rumble') }
+    $onRuns = { param($r, $lo, $hi) $n = 0; $was = $false; foreach ($e in $r) { $on = $e.$lo -gt 0 -or $e.$hi -gt 0; if ($on -and -not $was) { $n++ }; $was = $on }; $n }
+    $fmt = { param($r, $lo, $hi) ($r | ForEach-Object { '{0:N3}/{1:N3}' -f $_.$lo, $_.$hi }) -join ' ' }
+    $out = [Collections.Generic.List[string]]::new()
+    $ev0 = $script:secStart
+    try {
+        # (pause_on_disconnect off: step 1's test pad leaves in flight with the pad in use - it paused the game, the first run)
+        $null = Send-FL 'set rumble 60'; $null = Send-FL 'set input_mode 1'; $null = Send-FL 'set pause_on_disconnect 0'
+        # (1) XInput: a device-layer test pad on slot 0, the gate open
+        Enable-FLDevPads -Foreground
+        Set-FLDevPad -Slot 0 -Vendor xbox
+        $null = Wait-FLUntil { (& $padLine) -match ' slot=0 ' } 'the device-layer test pad on slot 0' -TimeoutSec 10
+        $null = Wait-FLUntil { (& $hap) -match 'world=open' } 'haptics open (XInput test pad)' -TimeoutSec 5
+        $d = @(Get-FLDevRumble | Select-Object -Last 1).Seq; if (-not $d) { $d = 0 }
+        $r = Send-FL 'haptics play hit_shield 0.8'
+        if ($r -notmatch ': started') { throw "XInput: $r | $(& $hap)" }
+        $null = Wait-FLUntil { $x = @(Get-FLDevRumble -Since $d); @($x | Where-Object High -gt 0).Count -and $x[-1].Low -eq 0 -and $x[-1].High -eq 0 } 'XInput: the shield hit and its stop' -TimeoutSec 5
+        $x = @(Get-FLDevRumble -Since $d)
+        $x1 = $x | Where-Object High -gt 0 | Select-Object -First 1
+        if ([Math]::Abs($x1.High - 0.65 * 0.8 * 0.6) -gt 0.01 -or $x1.Low -ge $x1.High -or $x1.Slot -ne 0) { throw "XInput shield hit: $(& $fmt $x 'Low' 'High')" }
+        $out.Add("XInput: shield hit $(& $fmt $x 'Low' 'High') in $($x[-1].Frame - $x1.Frame) frames")
+        Set-FLDevPad -Slot 0 -Connected $false; Disable-FLDevPads
+        # (2) SDL: the hand-back
+        $null = Send-FL 'set pad_backend 1'
+        $null = Wait-FLUntil { (& $sdlLine) -match 'sdl_status=2' } 'SDL running (pad_backend 1)' -TimeoutSec 10
+        $null = Connect-FLSdlPad -Type xbox -Slot 0 -Foreground
+        $null = Wait-FLUntil { $l = & $sdlLine; $l -match 'source=sdl' -and $l -match 'sdl_connected=1' } 'the SDL test pad in use' -TimeoutSec 5
+        $null = Wait-FLUntil { (& $hap) -match 'world=open' } 'haptics open (SDL test pad)' -TimeoutSec 5
+        $seq = & $lastOut
+        $null = Send-FL 'ap start hold'; $null = Wait-FLFramesPassed 60
+        if ((Get-FLAutopilot).Mode -eq 'off') { throw "the autopilot did not start (ap start hold)" }
+        Set-FLSdlPad -Slot 0 -LX 1; $null = Wait-FLFramesPassed 5
+        Set-FLSdlPad -Slot 0
+        $null = Wait-FLUntil { $o = @(& $rumble $seq); @($o | Where-Object A -gt 0).Count -and $o[-1].A -eq 0 -and $o[-1].B -eq 0 } 'the hand-back pulse and its stop' -TimeoutSec 5
+        $o = @(& $rumble $seq)
+        $on = @($o | Where-Object A -gt 0)
+        if (@($on | Where-Object { [Math]::Abs($_.A - 0.36) -gt 0.002 -or [Math]::Abs($_.B - 0.216) -gt 0.002 }).Count -or (& $onRuns $o 'A' 'B') -ne 1) { throw "hand-back stream: $(& $fmt $o 'A' 'B')" }
+        $out.Add("hand-back: $(& $fmt $o 'A' 'B') ($($o[-1].Frame - $on[0].Frame) frames to the stop)")
+        # (3) a hull hit injected, a second inside its gap
+        $seq = & $lastOut
+        $r1 = Send-FL 'haptics play hit_hull 0.6'; $r2 = Send-FL 'haptics play hit_hull 0.9'
+        if ($r1 -notmatch ': started') { throw "hull hit: $r1" }
+        $null = Wait-FLUntil { $o = @(& $rumble $seq); @($o | Where-Object A -gt 0).Count -and $o[-1].A -eq 0 -and $o[-1].B -eq 0 -and (& $hap) -match 'playing=0 ' } 'the hull hit(s) and the stop' -TimeoutSec 5
+        $o = @(& $rumble $seq)
+        $h1 = $o | Where-Object A -gt 0 | Select-Object -First 1
+        if ([Math]::Abs($h1.A - 0.85 * 0.6 * 0.6) -gt 0.01 -or @($o | Where-Object { $_.A -gt 0 -and $_.A -le $_.B }).Count) { throw "hull hit stream (low over high): $(& $fmt $o 'A' 'B')" }
+        if ($o.Count -gt 24) { throw "hull hit: $($o.Count) commands (a buzz?): $(& $fmt $o 'A' 'B')" }
+        $out.Add("hull hit 0.6 then 0.9 ($($r2 -replace '^haptics play hit_hull: ', '')): $($o.Count) commands, $(& $onRuns $o 'A' 'B') run(s), $(& $fmt $o 'A' 'B')")
+        # (4) the confirm: two ticks
+        $seq = & $lastOut
+        $r = Send-FL 'haptics play confirm'
+        if ($r -notmatch ': started') { throw "confirm: $r" }
+        $null = Wait-FLUntil { $o = @(& $rumble $seq); (& $hap) -match 'playing=0 ' -and $o.Count -and $o[-1].A -eq 0 } 'the confirm played out' -TimeoutSec 5
+        $o = @(& $rumble $seq)
+        if ((& $onRuns $o 'A' 'B') -ne 2) { throw "confirm: not two ticks: $(& $fmt $o 'A' 'B')" }
+        $out.Add("confirm: 2 ticks $(& $fmt $o 'A' 'B')")
+        # (5) out of focus: nothing
+        Set-FLSdlForeground $false
+        $null = Wait-FLUntil { (& $hap) -match 'world=focus' } 'haptics silent: focus' -TimeoutSec 5
+        $seq = & $lastOut
+        $r1 = Send-FL 'haptics play hit_hull 1'; $r2 = Send-FL 'haptics play handback'; $r3 = Send-FL 'haptics play confirm'
+        $null = Wait-FLFramesPassed 60
+        $o = @(& $rumble $seq | Where-Object { $_.A -gt 0 -or $_.B -gt 0 })
+        if ($r1 -notmatch 'silent \(focus\)' -or $r2 -notmatch 'silent \(focus\)' -or $r3 -notmatch 'silent \(focus\)' -or $o.Count) { throw "out of focus: $r1 | $r2 | $r3 | stream $(& $fmt $o 'A' 'B')" }
+        Set-FLSdlForeground $true
+        $null = Wait-FLUntil { (& $hap) -match 'world=open' } 'haptics open again' -TimeoutSec 5
+        $out.Add("out of focus: hit / hand-back / confirm silent (focus), no stream in 60 frames")
+        # (6) paused: the world's and the autopilot's silent, the prompt plays
+        $r = Send-FL 'pause'
+        $null = Wait-FLUntil { (Send-FL 'state') -match 'paused=1' } 'the game paused (pause menu)' -TimeoutSec 5
+        $null = Wait-FLUntil { (& $hap) -match 'world=paused' -and (& $hap) -match 'prompt=open' } 'haptics: world paused, prompt open' -TimeoutSec 5
+        $seq = & $lastOut
+        $r1 = Send-FL 'haptics play hit_hull 1'; $r2 = Send-FL 'haptics play handback'
+        $null = Wait-FLFramesPassed 60
+        $o = @(& $rumble $seq | Where-Object { $_.A -gt 0 -or $_.B -gt 0 })
+        if ($r1 -notmatch 'silent \(paused\)' -or $r2 -notmatch 'silent \(paused\)' -or $o.Count) { throw "paused: $r1 | $r2 | stream $(& $fmt $o 'A' 'B')" }
+        $r3 = Send-FL 'haptics play confirm'
+        $null = Wait-FLUntil { $o = @(& $rumble $seq); $o.Count -and (& $onRuns $o 'A' 'B') -eq 2 -and $o[-1].A -eq 0 } 'paused: the confirm still asks (two ticks)' -TimeoutSec 5
+        $null = Wait-FLUntil { (Send-FL 'visible PauseButtonBox0') -match '^visible' } 'the pause menu' -TimeoutSec 5
+        $r = Send-FL 'click PauseButtonBox0'; if ($r -notmatch '^clicked') { throw "resume: $r" }
+        $null = Wait-FLUntil { (Send-FL 'state') -match 'paused=0' } 'the pause menu resumed' -TimeoutSec 10
+        $out.Add("paused: hit / hand-back silent (paused), no stream in 60 frames; confirm $($r3 -replace '^haptics play confirm: ', '') with 2 ticks")
+        # (7) a real hit
+        $seq = & $lastOut
+        $null = Send-FL 'spawn clearat 0.95'
+        $null = Send-FL 'spawn fc_lr_pi_fighter_d3 fc_lr_grp 2 500 level=1'
+        $null = Wait-FLUntil { @(Get-FLEventLog $ev0 | Where-Object { "$_" -match 'haptics started hit_(shield|hull) \S+ src=game' }).Count -and @(& $rumble $seq | Where-Object { $_.A -gt 0 -or $_.B -gt 0 }).Count } 'a real hit felt (src=game) on the device' -TimeoutSec 120
+        $hit = @(Get-FLEventLog $ev0 | Where-Object { "$_" -match 'haptics started hit_(shield|hull) \S+ src=game' })[0]
+        $o = @(& $rumble $seq)
+        $null = Send-FL 'spawn clear'; $null = Send-FL 'spawn clearat off'
+        $out.Add("real hit: '$(("$hit" -split ' ', 3)[2])', device $(& $fmt ($o | Select-Object -First 4) 'A' 'B') ...; $((& $hap) -replace '^.*?(game_hits=\d+ game_fails=\d+).*$', '$1')")
+    } finally {
+        try { Disable-FLDevPads } catch {}
+        try { $null = Disconnect-FLSdlPad } catch {}
+        $null = Send-FL 'spawn clear'; $null = Send-FL 'spawn clearat off'
+        $null = Send-FL 'set pad_backend 0'; $null = Send-FL 'set input_mode 0'; $null = Send-FL 'set pause_on_disconnect 1'
+        $null = Send-FL 'ap stop'
+        if ((Send-FL 'state') -match 'paused=1') { $null = Send-FL 'click PauseButtonBox0' }
+    }
+    $out -join '; '
+} -budget 300
 
 Section 'combat-missiles' {
     Boot SaveC705.fl

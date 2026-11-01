@@ -13,6 +13,7 @@
 105 RCDATA "subtitles/data/speaker_colors.tsv"
 106 RCDATA "subtitles/data/word_times.tsv"
 107 RCDATA "controller/data/autopilot.3db"
+108 RCDATA "subtitles/data/mixes.tsv"
 
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "tools/setup/setup.manifest"
 

@@ -7,11 +7,11 @@
 // most 10 Hz (Update); Draw only draws the cached lines - a handful of text quads in one hud2kit pass.
 #include "uistrip.h"
 
-#include "debug.h"
 #include "flufaware.h"
 #include "host.h"
 #include "hud2_kit.h"
 #include "padbases.h"
+#include "safemem.h"
 #include "log.h"
 #include "options_page.h"
 #include "osk.h"
@@ -836,7 +836,7 @@ void NativeFind()
     // z: UI camera space; 0x4BD8AA), which the hover code derives from the box's top-left (x, y - 30 px) - the nearest
     // hovered box wins (two characters can claim the hover: the cursor's and the pad's)
     float last[3] = {}, lx = 0, ly = 0;
-    const bool haveLast = debug::SafeRead(tip + 0x13C, last, sizeof(last)) && ui::Project(last[0], last[1], last[2], lx, ly);
+    const bool haveLast = safemem::Read(tip + 0x13C, last, sizeof(last)) && ui::Project(last[0], last[1], last[2], lx, ly);
     float best = 1e30f;
     g_native.lastAt[0] = lx, g_native.lastAt[1] = ly, g_native.hovered = 0;
     for (void* o : Characters())
@@ -881,8 +881,8 @@ void NativeCard(bool scene)
     u8 st = 0;
     float sz[2] = {}, p[3] = {}, bx = 0, by = 0, bw = 0, bh = 0;
     int sw = 0, sh = 0;
-    if (!baseinfo::CharacterHovered(g_native.who) || !debug::SafeRead(tip + 0x6C, &st, 1) || !(st & 2) ||
-        !debug::SafeRead(tip + 0xB4, sz, sizeof(sz)) || !debug::SafeRead(tip + 0x60, p, sizeof(p)) || sz[0] <= 0 ||
+    if (!baseinfo::CharacterHovered(g_native.who) || !safemem::Read(tip + 0x6C, &st, 1) || !(st & 2) ||
+        !safemem::Read(tip + 0xB4, sz, sizeof(sz)) || !safemem::Read(tip + 0x60, p, sizeof(p)) || sz[0] <= 0 ||
         sz[1] <= 0 || p[2] > -0.01f || !render::ScreenSize(sw, sh) || sh < 100 ||
         !baseinfo::CharacterScreenRect(g_native.who, bx, by, bw, bh))
     {
@@ -890,7 +890,7 @@ void NativeCard(bool scene)
         return;
     }
     u32 vt = 0;
-    if (!debug::SafeRead(tip, &vt, 4) || !exe::VtToolTip.is(vt))
+    if (!safemem::Read(tip, &vt, 4) || !exe::VtToolTip.is(vt))
     {
         if (!g_native.refused++)
             Log("uistrip: the game's ToolTip 0x%08X has vt 0x%08X, not the signed VtToolTip - its card stays where the game puts it",

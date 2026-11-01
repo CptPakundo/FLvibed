@@ -19,7 +19,12 @@ param([int]$TimeoutSec = 3600, [double]$BudgetSec = 0, [int]$StallSec = 60, [str
       # counted after the save's); -StopAt <cp> ends the leg UNTIL once that checkpoint is reached. -StartSave <file> =
       # the save -StartCp loaded (flleg.ps1 passes it; else the newest leg-checkpoint save of that checkpoint): the
       # save-fit check below judges that catalogue row.
-      [string[]]$SaveAt = @(), [string]$StartCp = '', [string]$StopAt = '', [string]$StartSave = '')
+      [string[]]$SaveAt = @(), [string]$StartCp = '', [string]$StopAt = '', [string]$StartSave = '',
+      # -GameClock: the checkpoints, splits and the total in GAME seconds (debug `gameclock`, FLvibed's sum of the
+      # game's frame dt) instead of wall seconds - for legs under the test aid `fixeddt` (WORK_QUEUE Q3 probe 4: the
+      # game runs 2-4x faster than the wall clock). The fail-state windows, the timeout and the stall watchdog stay on
+      # wall time (under fixeddt they only get more lenient in game time).
+      [switch]$GameClock)
 # -ReplayLog <leg folder>: no game - the folder's FLController.log is fed through the live checkpoint check (its clock
 # from the transcript's leg start) and the splits / verdict printed: the live code checked against `splits.py replay`.
 . (Join-Path $PSScriptRoot '..\flctl.ps1')
@@ -29,7 +34,7 @@ param([int]$TimeoutSec = 3600, [double]$BudgetSec = 0, [int]$StallSec = 60, [str
 # (-StartCp) compares the state after the load and writes the verdict fit / unfit (fit_note, fit_date); the set drivers
 # refuse an unfit save (tools\flset.ps1 -Force). The catalogue keeps these columns through every harness write from this
 # script (Set-FLScenes writes $script:FLSceneHead).
-$script:FLSceneFit = 'speed', 'cruise', 'hull', 'shield', 'nanobots', 'batteries', 'objective_text', 'fit', 'fit_note', 'fit_date'
+$script:FLSceneFit = 'speed', 'cruise', 'hull', 'shield', 'nanobots', 'batteries', 'objective_text', 'fit', 'fit_note', 'fit_date', 'marks'
 $script:FLSceneHead = @(@($script:FLSceneHead) + $script:FLSceneFit | Select-Object -Unique)
 $t0 = Get-Date
 $script:legStart = if ($ReplayLog) { 0 } else { Get-FLEventSeq }
@@ -37,7 +42,12 @@ $script:chainFrom = $script:legStart
 $script:moneyAt = [datetime]::MinValue   # the last money step (a gate it could not clear is tried again after 60 s)
 $script:legUntil = $Until   # by script scope: inside Complete-FLBaseStory a bare $Until is its own parameter (call-depth overflow, 22 Oct 2026)
 $script:phases = [Collections.Generic.List[string]]::new()
-function Step($m) { Write-Host ("{0:HH:mm:ss} +{1,5:N0} {2}" -f (Get-Date), (CpNow), $m) }
+# (CpNow is defined further down: a Step before it - the judged SAVE-FIT line of an already fit save, line ~98 - reads the
+# wall clock; it failed "CpNow is not recognized" on every such run since the fit catalogue, and its line was lost)
+function Step($m) {
+    $s = if (Get-Command CpNow -CommandType Function -ErrorAction SilentlyContinue) { CpNow } else { ((Get-Date) - $t0).TotalSeconds }
+    Write-Host ("{0:HH:mm:ss} +{1,5:N0} {2}" -f (Get-Date), $s, $m)
+}
 # Fail states (the user, 23 Oct 2026: "additional fail states for each leg, where certain events happening or certain
 # prerequisites for success failing to happen fail the run immediately" - shorter test cycles): leg_failstates.tsv,
 # rows for this leg (the label's M12 / M01a prefix) and for every leg (*). 'event': an event matching the pattern ends
@@ -116,6 +126,8 @@ function Set-SaveFit([string]$Name, $Values) {
     # one catalogue row's fit columns, written atomically (a temp file, then a move: the set drivers read the catalogue
     # at every run's start); every other row and the column order kept, missing fit columns added at the end
     $f = $script:FLSceneCatalogue
+    $lock = Enter-FLSceneLock   # (flctl.saves.ps1: parallel legs write the same catalogue)
+    try {
     for ($try = 1; $try -le 5; $try++) {
         try {
             $lines = [IO.File]::ReadAllLines($f)
@@ -143,6 +155,7 @@ function Set-SaveFit([string]$Name, $Values) {
             if ($try -eq 5) { Step "SAVE-FIT: catalogue write failed: $_" } else { Start-Sleep -Milliseconds 200 }
         }
     }
+    } finally { Exit-FLSceneLock $lock }
 }
 function FitLoad {
     $script:fit.load = SaveState; $script:fit.at = Get-Date
@@ -157,9 +170,19 @@ function FitStory {
     $ids = @(ObjIds (Get-FLHistory ' objective count=') | Where-Object { $_ -ne '0' })
     $loaded = if ($ids.Count) { $ids[-1] } else { '' }
     if (($loaded -in '', '21660') -and ((Get-Date) - $x.at).TotalSeconds -lt 10) { return }
+    # (c) marks: a save made with mission marks up gets them back with its objective (S416, 30 Oct 2026 evening: 4
+    # generator marks at the save, none after the load - the autopilot had no target for 160 s); 5 s for them to arrive
+    $r = $x.row
+    $wantMarks = if ("$($r.marks)" -match '^\d+$') { [int]$r.marks } else { 0 }
+    $gotMarks = if ($wantMarks) { @(Get-FLHistory ' mark id=\d+ state=1').Count } else { 0 }
+    if ($wantMarks -and -not $gotMarks -and ((Get-Date) - $x.at).TotalSeconds -lt 5) { return }
     $x.done = $true
-    $r = $x.row; $l = $x.load
+    $l = $x.load
     $why = @()
+    if ($wantMarks -and -not $gotMarks) {
+        $why += "saved with $wantMarks mission mark(s) up, none after the load"
+        $x.story = $true   # (no target for the step: Result ends the run as HARNESS)
+    }
     # (a) physical: saved moving (above ~50 m/s or in cruise), loads at rest or below half that speed
     $sv = if ("$($r.speed)" -match '^-?[\d.]+$') { [double]$r.speed } else { $null }
     $lv = if ($l.speed -match '^-?[\d.]+$') { [double]$l.speed } else { $null }
@@ -172,8 +195,11 @@ function FitStory {
     $so = if ("$($r.objective_text)") { "$($r.objective_text)" } elseif ("$($r.objective)" -notin '', '0', '21660') { "$($r.objective)" } else { '' }
     if ($loaded -eq '21660' -or ($so -and $loaded -ne $so)) {
         $why += "objective $(if ($so) { $so } else { '?' }) -> $(if ($loaded) { $loaded } else { 'none' })$(if ($loaded -eq '21660') { ' (Awaiting)' }) after the load"
+        $x.story = $true   # the load lost the story step: Result ends the run (a harness failure, never a result)
     }
-    $fit = if ($why.Count) { 'unfit' } else { 'fit' }
+    # (two stages since 30 Oct 2026 evening: a load that passes is 'fit-load' - SaveS409 loaded right and then hung in
+    # the sphere entry's letterbox; 'fit' only once a run from it reached its first checkpoint, FitFirst)
+    $fit = if ($why.Count) { 'unfit' } else { 'fit-load' }
     $note = if ($why.Count) { $why -join '; ' } else {
         "loads at $($l.speed) m/s$(if ($l.cruise -eq '1') { ' (cruise)' }), objective $loaded" +
             "$(if ($l.hull) { ", hull $($l.hull) shield $($l.shield)" })$(if ($null -ne $sv) { " (saved at $($r.speed) m/s)" })"
@@ -203,16 +229,39 @@ function FitFirst([string]$Cp, [double]$Seg) {
     Step "SAVE-FIT $($x.first)"
     if ($x.done -and $x.judge) {
         $x.note += "; $($x.first)"
-        Set-SaveFit $x.row.name ([ordered]@{ fit_note = "$($x.note) ($Label, $(Get-Date -Format 'dd MMM yyyy'))" })
+        $vals = [ordered]@{ fit_note = "$($x.note) ($Label, $(Get-Date -Format 'dd MMM yyyy'))" }
+        if ($x.fit -eq 'fit-load') { $x.fit = 'fit'; $vals.fit = 'fit'; $vals.fit_date = (Get-Date -Format 'yyyy-MM-dd HH:mm'); Step "SAVE-FIT fit: the first checkpoint ($Cp) passed after the load ($($x.row.name))" }
+        Set-SaveFit $x.row.name $vals
     }
 }
 function CpTime([double]$ms) {
-    # the event's own tick (ms) -> seconds since the leg start: anchored on the first event seen
+    # the event's own tick (ms) -> seconds since the leg start: anchored on the first event seen. -GameClock: the game
+    # clock when the harness reads the event (the events carry wall ticks only: up to one poll late, < 1 s)
+    if ($null -ne $script:g0) { return (CpNow) }
     if ($null -eq $script:cpk.ms0) { $script:cpk.ms0 = (CpNow) - $ms / 1000.0 }
     $ms / 1000.0 + $script:cpk.ms0
 }
 $script:replayNow = $null
-function CpNow { if ($null -ne $script:replayNow) { $script:replayNow } else { ((Get-Date) - $t0).TotalSeconds } }
+$script:savePending = $null   # a -SaveAt save waiting for the ship at rest (CpSave)
+$script:liveObj = ''          # the objective shown now, 21660 "Awaiting" included (a save there loads story-unfit: S404 / S405 / S417)
+$script:liveMarks = @{}       # the mission marks up now (a save with marks up must get them back after its load: S416)
+$script:liveSolars = @{}      # the mission solars spawned and not destroyed (a save keeps only those whose [MsnSolar] system = the player's: S416)
+function GameSec { if ((Send-FL 'gameclock') -match '^gameclock (\d+(\.\d+)?)') { [double]$Matches[1] } else { $null } }
+$script:g0 = if ($GameClock -and -not $ReplayLog) { GameSec } else { $null }
+if ($GameClock -and -not $ReplayLog -and $null -eq $script:g0) { throw '-GameClock: the game does not answer `gameclock` (a build before it?)' }
+$script:gLast = 0.0
+function CpNow {
+    if ($null -ne $script:replayNow) { return $script:replayNow }
+    if ($null -ne $script:g0) {
+        # (a missed answer keeps the last reading: the clock never runs backwards)
+        $g = GameSec
+        if ($null -ne $g -and $g - $script:g0 -ge $script:gLast) { $script:gLast = $g - $script:g0 }
+        return $script:gLast
+    }
+    ((Get-Date) - $t0).TotalSeconds
+}
+# the splits' / phases' / total's clock: game seconds under -GameClock, else wall seconds as always (a replay too)
+function LegNow { if ($null -ne $script:g0) { CpNow } else { ((Get-Date) - $t0).TotalSeconds } }
 function CpEvent([string]$line) {
     if (-not $script:cps.Count) { return }
     $p = $line -split ' ', 3
@@ -221,7 +270,7 @@ function CpEvent([string]$line) {
     $t = CpTime ([double]$p[1])
     $x = $p[2]
     $e = $null
-    if ($x -match '^objective .* obj=(\d+) ') { $e = @{ t = $t; kind = 'obj'; val = $Matches[1] } }
+    if ($x -match '^objective .* obj=(\d+) ') { $e = @{ t = $t; kind = 'obj'; val = $Matches[1] }; if ($Matches[1] -ne '0') { $script:liveObj = $Matches[1] } }
     elseif ($x -match '^mode (\S+) -> (\S+)') {
         $a, $b = $Matches[1], $Matches[2]
         if ($b -eq 'docked' -and $a -ne 'menu') { $e = @{ t = $t; kind = 'land' } }
@@ -229,11 +278,16 @@ function CpEvent([string]$line) {
         elseif ($a -eq 'space' -and $b -eq 'cutscene') { $e = @{ t = $t; kind = 'cutscene' } }
         if ($b -in 'space', 'space-ui' -and $a -in 'cutscene', 'docked') { $script:cpk.ev.Add(@{ t = $t; kind = 'control' }) }
     }
-    elseif ($x -match '^mark id=(\d+) state=1') { $script:cpk.marks[$Matches[1]] = $true }
+    elseif ($x -match '^mark id=(\d+) state=(\d)') {
+        if ($Matches[2] -eq '1') { $script:cpk.marks[$Matches[1]] = $true; $script:liveMarks[$Matches[1]] = $true } else { $script:liveMarks.Remove($Matches[1]) }
+    }
     elseif ($x -match 'target-destroyed id=(\d+)' -and $script:cpk.marks.ContainsKey($Matches[1]) -and [double]$Matches[1] -gt 100000) {
         $e = @{ t = $t; kind = 'kill' }
     }
     elseif ($x -match 'mission-message type=SUCCESS') { $e = @{ t = $t; kind = 'success' } }
+    elseif ($x -match '^mission-save ids=(\d+) ') { $e = @{ t = $t; kind = 'save'; val = $Matches[1] } }   # save:<ids> (M01b.end at GAME SAVED)
+    if ($x -match '^spawn-solar id=(\d+)') { $script:liveSolars[$Matches[1]] = $true }
+    if ($x -match 'target-destroyed id=(\d+)') { $script:liveMarks.Remove($Matches[1]); $script:liveSolars.Remove($Matches[1]) }   # (a destroyed mark is down)
     if ($e) { $script:cpk.ev.Add($e) }
     CpAdvance
 }
@@ -259,10 +313,31 @@ function CpAdvance {
             for ($j = 0; $j -lt $c.ev.Count; $j++) {
                 if ($j -le $c.prevSeq -and -not ($null -ne $c.prevT -and $c.ev[$j].t -ge $c.prevT - 5)) { continue }
                 if ($j -eq $c.prevSeq) { continue }
-                if ($c.ev[$j].kind -eq $kind -and ($kind -ne 'obj' -or $c.ev[$j].val -eq $val)) { $hit = $j; break }
+                if ($c.ev[$j].kind -eq $kind -and ($kind -notin 'obj', 'save' -or $c.ev[$j].val -eq $val)) { $hit = $j; break }
             }
         }
-        if ($hit -lt 0) { return }
+        if ($hit -lt 0) {
+            # a hard obj checkpoint whose objective the script skipped (M05: 22867 posted in the jump tunnel, 22870
+            # shown): since the previous checkpoint the story showed a later checkpoint's objective, or one whose text
+            # id lies between this checkpoint's and the next obj checkpoint's (ids are not in story order across a
+            # leg: M11.ishole 24125 comes before .satellite 24055) - soft, its limit carried over (splits.py
+            # our_splits / judge: the same rule)
+            if ($kind -eq 'obj') {
+                $rest = @($script:cps | Select-Object -Skip ($c.k + 1) | Where-Object { $_.ours -like 'obj:*' } | ForEach-Object { $_.ours.Substring(4) })
+                $later = $null
+                for ($j = $c.prevSeq + 1; $j -lt $c.ev.Count; $j++) {
+                    $e = $c.ev[$j]
+                    if ($e.kind -ne 'obj' -or $e.val -in '0', '21660') { continue }
+                    if ($e.val -in $rest -or ($rest.Count -and [long]$val -lt [long]$e.val -and [long]$e.val -lt [long]$rest[0])) { $later = $e; break }
+                }
+                if ($later) {
+                    $c.lim += [double]$cp.seg_limit; $c.k++
+                    Step "checkpoint $($cp.cp) skipped: objective $($later.val) shown after it (soft: carried over)"
+                    continue
+                }
+            }
+            return
+        }
         $t = $c.ev[$hit].t
         if ($null -ne $c.prevT -and $t -lt $c.prevT) { $t = $c.prevT }
         $seg = if ($null -ne $c.prevT -and $c.firstSeen) { $t - $c.prevT } elseif ($Full -and $c.k -eq 0) { $t } else { $null }
@@ -280,7 +355,55 @@ function CpAdvance {
         if ($StopAt -and $cp.cp -eq $StopAt) { $c.stop = $true; return }
     }
 }
+function CpObjective {
+    # the story's step now: this leg's last objective event other than 0 and 21660 "Awaiting" ('' none yet)
+    $ob = @($script:cpk.ev | Where-Object { $_.kind -eq 'obj' -and $_.val -notin '0', '21660' } | ForEach-Object { $_.val })
+    if ($ob.Count) { $ob[-1] } else { '' }
+}
 function CpSave([string]$name) {
+    # A save taken moving is unfit (a load starts at rest; 30 Oct 2026: 9 of 10 kcs / jrs saves). Moving at the checkpoint
+    # -> the save waits for the first moment at rest (<= 30 m/s, no cruise) on the same story step, 90 s at most
+    # (CpSavePending, polled from Result); the run itself is not slowed or steered for it.
+    if ($script:savePending) { Step "SAVE $($script:savePending.name) dropped: checkpoint $name came first"; $script:savePending = $null }
+    $st = SaveState
+    $sv = if ("$($st.speed)" -match '^-?[\d.]+$') { [double]$st.speed } else { 0 }
+    # (nor while the objective reads 21660 "Awaiting": such a save loads story-unfit - S404 / S405, and S417 deferred into it)
+    if ($sv -le 50 -and "$($st.cruise)" -ne '1' -and $script:liveObj -ne '21660') { CpSaveNow $name; return }
+    $script:savePending = @{ name = $name; obj = (CpObjective); at = (Get-Date); next = (Get-Date) }
+    Step ("SAVE $name deferred: {0:0} m/s{1}{3} at the checkpoint, waits for rest on objective {2} (90 s at most)" -f $sv, $(if ("$($st.cruise)" -eq '1') { ' cruise' } else { '' }), $script:savePending.obj, $(if ($script:liveObj -eq '21660') { ', Awaiting' } else { '' }))
+}
+function CpSavePending {
+    $p = $script:savePending
+    if (-not $p -or (Get-Date) -lt $p.next) { return }
+    $p.next = (Get-Date).AddSeconds(1)
+    $wait = ((Get-Date) - $p.at).TotalSeconds
+    if ((CpObjective) -ne $p.obj) { Step ("SAVE $($p.name) dropped: the step moved on ({0} -> {1}) before the ship came to rest ({2:0} s)" -f $p.obj, (CpObjective), $wait); $script:savePending = $null; return }
+    if ($wait -gt 90) { Step "SAVE $($p.name) dropped: no rest within 90 s on objective $($p.obj)"; $script:savePending = $null; return }
+    if ($script:liveObj -eq '21660') { return }   # (the step talks: "Awaiting" - wait for its objective or the timeout)
+    $s = if ((Send-FL 'ship') -match 'speed=(-?[\d.]+)') { [double]$Matches[1] } else { 999 }
+    $p0 = Get-FLPilot
+    if ($s -le 30 -and -not ($p0 -and $p0.Cruise)) {
+        $script:savePending = $null
+        Step ("SAVE $($p.name) at rest {0:0.0} s after the checkpoint" -f $wait)
+        CpSaveNow $p.name
+    }
+}
+function LostSolars {
+    # the mission solars up now that a save made now would not keep: no [MsnSolar] definition of theirs has the player's
+    # system as its `system =` (Get-FLMissionSolars; an id no script names is no mission solar), and the game still lists
+    # it (`objobj <id>` by-id: a solar killed by a fuse or an NPC - M05's Wotan - leaves no target-destroyed event)
+    $p = Get-FLPilot
+    if (-not $p -or -not $p.System) { return }   # (the player's system unread: no verdict, never a false unfit)
+    $sys = [uint32]$p.System
+    $defs = Get-FLMissionSolars
+    foreach ($id in @($script:liveSolars.Keys)) {
+        $d = $defs[$id]
+        if (-not $d -or $d.systems.Contains($sys)) { continue }
+        if ("$(Send-FL "objobj $id")" -notmatch ' by-id=(\d+)' -or $Matches[1] -eq '0') { $script:liveSolars.Remove($id); continue }
+        [pscustomobject]@{ id = $id; nick = $d.nick }
+    }
+}
+function CpSaveNow([string]$name) {
     # a native save in flight (server.dll pub::Save, the missions' Act_Save) - its cost: the call's wall time and the
     # frames the game drew meanwhile, the ship's speed before and after (the game stalls while it writes). The ship's
     # state at the save (SaveState, read just before it) and the story's step objective go into the save's catalogue
@@ -298,7 +421,25 @@ function CpSave([string]$name) {
         $vals = [ordered]@{}
         foreach ($k in $st.Keys) { $vals[$k] = $st[$k] }
         $vals.objective_text = if ($ob.Count) { $ob[-1] } else { '' }
+        $vals.marks = "$($script:liveMarks.Count)"   # (the mission marks up at the save: FitStory wants them back after the load)
         $vals.fit = 'unverified'; $vals.fit_note = ''; $vals.fit_date = ''
+        # a load always starts at rest (FREELANCER_RE "Saves"): a save made above ~50 m/s or in cruise is unfit at once,
+        # the same rule FitStory applies on its first load (30 Oct 2026: 5 of the kcs / jrs saves, 3 runs spent on them)
+        $sv = if ("$($st.speed)" -match '^-?[\d.]+$') { [double]$st.speed } else { 0 }
+        if ($sv -gt 50 -or "$($st.cruise)" -eq '1') {
+            $vals.fit = 'unfit'; $vals.fit_date = (Get-Date -Format 'yyyy-MM-dd HH:mm')
+            $vals.fit_note = "saved at {0:0} m/s{1}, a load starts at rest (at the save, $Label)" -f $sv, $(if ("$($st.cruise)" -eq '1') { ' (cruise)' } else { '' })
+        }
+        # a marked mission solar the save does not keep ([MsnSolar] without `system =` or another system than the
+        # player's: Content.dll's [MsnSolarSave] writer) is not re-created by the load - the step's target is gone (S416:
+        # M09's generators; FREELANCER_RE "Saves")
+        $lost = @(LostSolars | Where-Object { $script:liveMarks.ContainsKey($_.id) })
+        if ($lost.Count) {
+            $vals.fit = 'unfit'; $vals.fit_date = (Get-Date -Format 'yyyy-MM-dd HH:mm')
+            $why = "saved with $($lost.Count) marked mission solar(s) a save does not keep ($(($lost | ForEach-Object { $_.nick }) -join ', ')): the load drops them (at the save, $Label)"
+            $vals.fit_note = if ($vals.fit_note) { "$($vals.fit_note); $why" } else { $why }
+            Step "SAVE $name unfit: $why"
+        }
         Set-SaveFit $row.name $vals
         Step "SAVE $name state: speed $($st.speed) cruise $($st.cruise) hull $($st.hull) shield $($st.shield) nano $($st.nanobots) batt $($st.batteries) objective $($vals.objective_text)"
     } catch { Step "SAVE $name failed: $_" }
@@ -345,20 +486,50 @@ function FailDeadline {
     }
     return $null
 }
+# The autopilot's restart loop (set ab11 i5, 31 Oct 2026, M13): every restart of the objective mode ended at once with
+# the same reason - 36 times "player died" on a ship alive at a sliver of hull (the autopilot's old hull test) - while
+# the ship flew on at full throttle, so the watchdog's 300 m kept seeing progress; the leg idled 2.5 min to the
+# checkpoint limit. $script:apLoopN stops in a row at time 0 (no frame flown) with the same why end the leg AUTOPILOT
+# LOOP (sticky: every later Result returns it; not 'STALL*', which would judge a fit-load save unfit - the loop is the
+# autopilot's, not the save's). None of 1,100+ earlier leg logs has even 3 in a row; i5 ends 22 s after its false death
+# instead of 150 s.
+$script:apLoop = @{ seen = @{}; why = ''; n = 0; verdict = $null }
+$script:apLoopN = 5
+function ApLoop([string]$line) {
+    if ($script:apLoop.verdict) { return $script:apLoop.verdict }
+    $p = $line -split ' ', 3
+    if ($p.Count -lt 3 -or $script:apLoop.seen.ContainsKey($p[0])) { return $null }
+    $script:apLoop.seen[$p[0]] = $true
+    if ($p[2] -notmatch '^autopilot stop mode=\S+ why=(.+?) kills=\S+ time=([\d.]+)') { return $null }
+    $w, $secs = $Matches[1], [double]$Matches[2]
+    if ($secs -ge 0.05) { $script:apLoop.why = ''; $script:apLoop.n = 0; return $null }
+    if ($w -eq $script:apLoop.why) { $script:apLoop.n++ } else { $script:apLoop.why = $w; $script:apLoop.n = 1 }
+    if ($script:apLoop.n -ge $script:apLoopN) {
+        $script:apLoop.verdict = "AUTOPILOT LOOP ($($script:apLoop.n) stops in a row at start, why=$w)"
+    }
+    return $script:apLoop.verdict
+}
 function Result {
+    if ($script:apLoop.verdict) { return $script:apLoop.verdict }
     if ($script:fit -and $script:fit.judge -and -not $script:fit.done) {
         try { FitStory } catch { Step "SAVE-FIT check failed: $_"; $script:fit.done = $true }
     }
+    # A load that lost the story step (objective changed / "Awaiting") leaves the autopilot without its step: the run can
+    # only drift to the stall limit (30 Oct 2026, M07-jrs2 from the Cali base save: 2 instances idle) - end it at once.
+    # A save saved moving and loaded at rest still flies its story (its later checkpoints and saves stay usable).
+    if ($script:fit -and $script:fit.done -and $script:fit.story) { return "HARNESS unfit save: $($script:fit.note)" }
+    if ($script:savePending -and $null -eq $script:replayNow) { try { CpSavePending } catch { Step "SAVE pending check failed: $_"; $script:savePending = $null } }
     foreach ($l in (Get-FLEventLog $script:legStart)) {
         CpEvent "$l"
         if ($script:failRules.Count -and ($fs = FailState "$l")) { return $fs }
         if ("$l" -match 'mission-message type=FAILURE|player-death') { return "FAILED: $l" }
+        if ($al = ApLoop "$l") { return $al }
         if ("$l" -match 'mission-message type=SUCCESS') {
             if (-not $Chain) { return 'SUCCESS' }
             if (@(Get-FLEventLog $script:chainFrom | Where-Object { "$_" -match 'title=24400 ' }).Count) { return 'SUCCESS' }
             # a split: the next mission's result counts from here
             $script:legStart = [long]("$l" -split ' ')[0] + 1
-            $script:phases.Add(("split`t{0:N1}`t0`t{1}" -f ((Get-Date) - $t0).TotalSeconds, "$l"))
+            $script:phases.Add(("split`t{0:N1}`t0`t{1}" -f (LegNow), "$l"))
             Step "SPLIT $l"
             return $null
         }
@@ -370,7 +541,7 @@ function Result {
 }
 function Phase([string]$kind, [datetime]$from, [string]$end) {
     $s = ((Get-Date) - $from).TotalSeconds
-    $script:phases.Add(("{0}`t{1:N1}`t{2:N1}`t{3}" -f $kind, ((Get-Date) - $t0).TotalSeconds, $s, $end))
+    $script:phases.Add(("{0}`t{1:N1}`t{2:N1}`t{3}" -f $kind, (LegNow), $s, $end))
 }
 if ($ReplayLog) {
     $tr = Get-Content -Raw -LiteralPath (Join-Path $ReplayLog 'transcript.txt')
@@ -379,6 +550,7 @@ if ($ReplayLog) {
     $script:cpk.ms0 = -$t0c   # the replayed events' "ms" are the log's clock in ms
     $n = 0
     $verdict = $null
+    $ended = $null
     foreach ($ln in [IO.File]::ReadLines((Join-Path $ReplayLog 'FLController.log'))) {
         $mm = [regex]::Match($ln, '^\[(\d+):(\d+):(\d+)\.(\d+)\] event (.*)$')
         if (-not $mm.Success) { continue }
@@ -387,13 +559,27 @@ if ($ReplayLog) {
         if ($c -lt $t0c - 5) { continue }
         $script:replayNow = $c - $t0c
         if ($verdict = CpDeadline) { break }
-        CpEvent ("{0} {1} {2}" -f (++$n), [long]($c * 1000), $mm.Groups[5].Value)
-        if ($mm.Groups[5].Value -match 'mission-message type=SUCCESS|mission-message type=FAILURE|player-death') { break }
+        $ev = "{0} {1} {2}" -f (++$n), [long]($c * 1000), $mm.Groups[5].Value
+        CpEvent $ev
+        if ($verdict = ApLoop $ev) { break }   # the live Result's restart-loop check
+        if ($mm.Groups[5].Value -match 'mission-message type=SUCCESS|mission-message type=FAILURE|player-death') { $ended = $mm.Groups[5].Value; break }
     }
-    if ($verdict) { "FAILED ($verdict) at {0:N0} s" -f $script:replayNow } else { "no fail state (last event {0:N0} s)" -f $script:replayNow }
+    $at = '{0:N0}' -f $script:replayNow
+    # (the game's result too, as the live Result reads it: FAILED: <event> / SUCCESS)
+    if ($verdict) { "FAILED ($verdict) at $at s" }
+    elseif ($ended -match 'type=SUCCESS') { "SUCCESS at $at s" }
+    elseif ($ended) { "FAILED (FAILED: $ended) at $at s" }
+    else { "no fail state (last event $at s)" }
     return
 }
-if ($BudgetSec -gt 0) { Set-FLDeadline $BudgetSec "leg $Label budget" }
+# every harness wait inside the leg throws OVER BUDGET at the budget, else at the time-out (29 Oct 2026: before, the
+# time-out was checked only between phases, so a docked phase could overrun it by its own 600 s); a tighter deadline
+# of the caller (a sweep section's) stays, and comes back after the leg
+$outerDeadline = $global:FLDeadline
+$limit = if ($BudgetSec -gt 0) { [Math]::Min($BudgetSec, $TimeoutSec) } else { $TimeoutSec }
+if (-not $outerDeadline -or $outerDeadline.at -gt (Get-Date).AddSeconds($limit)) {
+    Set-FLDeadline $limit $(if ($BudgetSec -gt 0 -and $BudgetSec -le $TimeoutSec) { "leg $Label budget" } else { "leg $Label time-out" })
+}
 $r = $null
 $why = ''
 try {
@@ -440,6 +626,13 @@ try {
                             $talk = [bool]($evLines | Where-Object { $_ -match ' comm from=| mission-message ' })
                             # (a comm event of n lines plays ~6 s a line: M10's 7-line Bruchsal dock dialogue outlasted 60 s)
                             foreach ($l in $evLines) {
+                                # the docking letterbox (exclusion 4): seconds when a dock / jump goes through, 78 s at most in
+                                # a passing run (M12's scripted entry; 1,109 leg logs); held past 120 s it is a hang no comm
+                                # line excuses (30 Oct 2026: M13 from SaveS409, the sphere entry
+                                # stuck at 4 for 2+ min while Nomad chatter kept the watchdog quiet; the owner saw it)
+                                if ($l -match ' control-exclusion \S+ -> (\S+)') {
+                                    if ($Matches[1] -eq '4') { if (-not $box.dockExcl) { $box.dockExcl = Get-Date } } else { $box.dockExcl = $null }
+                                }
                                 if ($l -match ' comm from=.* lines=(\d+)') {
                                     $grace = (Get-Date).AddSeconds(6 * [int]$Matches[1])
                                     if (-not $box.talkUntil -or $grace -gt $box.talkUntil) { $box.talkUntil = $grace }
@@ -449,6 +642,7 @@ try {
                         $box.evSeq = [int](($evLines[-1] -split ' ')[0])
                     }
                     if ($box.talkUntil -and (Get-Date) -lt $box.talkUntil) { $talk = $true }
+                    if ($box.dockExcl -and ((Get-Date) - $box.dockExcl).TotalSeconds -gt 120) { $box.end = "STALL docking letterbox held 120 s (control-exclusion 4)"; return $true }
                     if (-not $box.wdPos -or $moved -or $talk -or $key -ne $box.wdKey) { $box.wdSince = Get-Date; $box.wdPos = $pos; $box.wdKey = $key }
                     elseif (((Get-Date) - $box.wdSince).TotalSeconds -gt $StallSec) { $box.end = "STALL no progress $StallSec s ($key)"; return $true }
                 }
@@ -482,13 +676,21 @@ try {
             Start-Sleep -Milliseconds 200
         }
     }
-} catch { $why = "$_" -replace '\s+', ' ' } finally { Set-FLDeadline 0; $null = Send-FL 'ap stop' }
+} catch { $why = "$_" -replace '\s+', ' ' } finally { $global:FLDeadline = $outerDeadline; $null = Send-FL 'ap stop' }
 # a leg that ended before the load's objective settled: judged with what the load showed
 if ($script:fit -and $script:fit.judge -and $script:fit.load -and -not $script:fit.done) {
     $script:fit.at = [datetime]::MinValue; $script:fit.checked = [datetime]::MinValue
     try { FitStory } catch { Step "SAVE-FIT check failed: $_" }
 }
-$total = [int]((Get-Date) - $t0).TotalSeconds
+# a load judged 'fit-load' whose run stalled before its first checkpoint (no death, no story failure: the save's own
+# state - SaveS409's letterbox hang) is unfit; a death leaves the verdict to the next run
+if ($script:fit -and $script:fit.fit -eq 'fit-load' -and "$why" -like 'STALL*') {
+    try {
+        Set-SaveFit $script:fit.row.name ([ordered]@{ fit = 'unfit'; fit_note = "loads right, then $why before the first checkpoint ($Label, $(Get-Date -Format 'dd MMM yyyy'))"; fit_date = (Get-Date -Format 'yyyy-MM-dd HH:mm') })
+        Step "SAVE-FIT unfit: $why before the first checkpoint after the load ($($script:fit.row.name))"
+    } catch { Step "SAVE-FIT stall verdict failed: $_" }
+}
+$total = [int](LegNow)
 if ($Out) { Set-Content -LiteralPath $Out -Value (@("phase`tat`tsecs`tend") + $script:phases) }
 if ($r -eq 'SUCCESS' -or $r -eq 'UNTIL') { "$r total $total s" }
 else { "FAILED ($(if ($r) { $r } else { $why })) total $total s; $(Get-FLStoryState)" }

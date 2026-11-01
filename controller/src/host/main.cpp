@@ -10,10 +10,13 @@
 #include "flexe.h"
 #include "hook.h"
 #include "log.h"
+#include "safemem.h"
 #include "version.h"
 #include "../shm.h"
 #include "uibtn.h"
+#include "sdlpad.h"
 #include "winmode.h"
+#include "mprules_tag.h"
 
 // The settings bus: one instance in FLvibed.dll (core\settings_bus.cpp, compiled plain), reached by this C symbol.
 extern "C" const SettingsBus* flv_settings_bus();
@@ -35,6 +38,7 @@ static void* g_d3dDevice = nullptr;
 
 static void HostSetSteer(bool active, float x, float y);
 static void HostSetHudHitSuppression(bool on, const uintptr_t* roots, int count);
+static bool HostSetGunAim(bool on, const float* world);
 
 // ------------------------------------------------------------------ host API functions
 static void HostLogWrite(const char* line) { LogWriteLine(line); }
@@ -44,6 +48,18 @@ static void HostSetHeld(int cmd, bool held)
         g_held[cmd] = held;
 }
 static void HostClearAllHeld() { memset(g_held, 0, sizeof(g_held)); }
+// The logic faulted (any of its entry points): every override it set on the host ends with it - held commands, the
+// pad's steering, the HUD's hit suppression, the hidden cursor, the virtual mouse - or the ship keeps turning / firing
+static void HostFailSafe()
+{
+    g_faulted = true;
+    HostClearAllHeld();
+    HostSetSteer(false, 0, 0);
+    HostSetHudHitSuppression(false, nullptr, 0);
+    HostSetGunAim(false, nullptr);
+    g_cursorHidden = false;
+    dimouse::Reset();
+}
 static void HostSetKeyTrace(bool on) { g_traceKeys = on; }
 static void HostMouseStats(char* out, int len) { strncpy_s(out, len, dimouse::Stats().c_str(), _TRUNCATE); }
 static void* HostGetD3DDevice() { return g_d3dDevice; }
@@ -64,7 +80,7 @@ void UiButtonClicked(int id)
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        g_faulted = true;
+        HostFailSafe();
         Log("FATAL: exception 0x%08X in OnUiButton(%d); logic disabled until reload", GetExceptionCode(), id);
     }
 }
@@ -141,7 +157,7 @@ static bool GuardedRawKey(int vk, bool down, bool textField)
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        g_faulted = true;
+        HostFailSafe();
         Log("FATAL: exception 0x%08X in OnRawKey; logic disabled until reload", GetExceptionCode());
         return false;
     }
@@ -193,7 +209,8 @@ static void UnloadImpl()
     HostClearAllHeld();
     HostSetSteer(false, 0, 0);
     HostSetHudHitSuppression(false, nullptr, 0);
-    g_cursorHidden = false; // v20: the pad screens' cursor hide ends with the logic
+    HostSetGunAim(false, nullptr); // v28: the guns' aim goes back to the game
+    g_cursorHidden = false;        // v20: the pad screens' cursor hide ends with the logic
     dimouse::Reset();
     if (g_implModule)
     {
@@ -279,7 +296,23 @@ static void UiBtnReply(char* reply, size_t len)
 static void UiGenReply(char* reply, size_t len); // the UI generation (below)
 static void D3dResetReply(char* reply, size_t len); // the test-only forced device Reset (below)
 
+// Logic calls on the stack (OnFrame, Command): a modal-loop frame (below) never re-enters the logic.
+static int g_implDepth = 0;
+struct ImplDepth
+{
+    ImplDepth() { ++g_implDepth; }
+    ~ImplDepth() { --g_implDepth; }
+};
+
+static void PollCommandsInner();
+static bool HostMultiplayer();
 static void PollCommands()
+{
+    ImplDepth depth; // also host-side commands: a reload inside a modal frame stays one at a time
+    PollCommandsInner();
+}
+
+static void PollCommandsInner()
 {
     ShmBlock* s = shm::Get();
     if (!s || s->cmdSeq == s->cmdAck)
@@ -308,6 +341,8 @@ static void PollCommands()
         UiGenReply(s->reply, sizeof(s->reply));
     else if (strncmp(cmd, "winmode", 7) == 0 && (cmd[7] == 0 || cmd[7] == ' ')) // borderless status / altenter (host-side)
         winmode::Command(cmd + 7, s->reply, sizeof(s->reply));
+    else if (strncmp(cmd, "sdlpad", 6) == 0 && (cmd[6] == 0 || cmd[6] == ' ')) // SDL virtual test pads (TEST ONLY, host-side)
+        sdlpad::Command(cmd + 6, HostMultiplayer(), s->reply, sizeof(s->reply));
     else if (strcmp(cmd, "d3dreset") == 0) // background test starts only: a device Reset as the game's own (host-side)
         D3dResetReply(s->reply, sizeof(s->reply));
     else if (strcmp(cmd, "reload") == 0)
@@ -342,6 +377,79 @@ static void PollCommands()
 typedef void(__cdecl* FrameUpdateFn)(double dt);
 static FrameUpdateFn g_origFrameUpdate = nullptr;
 
+// v29 DeferToFrameEnd: calls run after the logic's frame, with no logic call on the stack (the front end's clicks:
+// a click may open a dialog with its own modal loop, whose frames the host then serves - see ModalFrame).
+struct DeferredCall
+{
+    void (*fn)(void*);
+    void* ctx;
+};
+static DeferredCall g_deferred[16];
+static int g_deferredCount = 0;
+
+static void HostDeferToFrameEnd(void (*fn)(void*), void* ctx)
+{
+    if (!fn)
+        return;
+    if (g_deferredCount < 16)
+        g_deferred[g_deferredCount++] = {fn, ctx};
+    else
+        fn(ctx); // full (never seen): at once, as before v29
+}
+
+static void ImplOnFrame(double dt)
+{
+    ImplDepth depth;
+    g_impl->OnFrame(dt);
+}
+
+static void RunDeferred()
+{
+    // a copy: a deferred call may open a modal loop whose frames defer again
+    DeferredCall calls[16];
+    const int n = g_deferredCount;
+    memcpy(calls, g_deferred, sizeof(DeferredCall) * n);
+    g_deferredCount = 0;
+    for (int i = 0; i < n; ++i)
+        calls[i].fn(calls[i].ctx);
+}
+
+static void TagModeCheck(); // (the chat's server tag, below)
+
+// The multiplayer LAN list, IPv4 hosts only (the owner, 28 Oct 2026: ship it, never over another version of the fix):
+// vanilla 1.1 lists a local server by its IPv6 link-local address and the connect fails. HD Edition's exe and FLUF's
+// client patch skip an entry whose address is not IPv4 (exe::LanHostFilter, docs\FREELANCER_RE.md "The LAN list and
+// IPv6"); FLvibed writes the same 13 bytes only where vanilla 1.1's own bytes are - any other content (that fix, another
+// mod's) is left as it is.
+static void LanListIpv4()
+{
+    static const u8 vanilla[13] = {0x51, 0x8D, 0x4C, 0x24, 0x20, 0x51, 0x8D, 0x8C, 0x24, 0xC8, 0x00, 0x00, 0x00};
+    static const u8 fixed[13] = {0x40, 0x74, 0x63, 0x48, 0x51, 0x8D, 0x54, 0xE4, 0x20, 0x52, 0x83, 0xE9, 0x08};
+    if (!exe::LanHostFilter.ok())
+    {
+        Log("LAN list: the site is not this game's (signature) - left alone");
+        return;
+    }
+    u8* at = reinterpret_cast<u8*>(exe::LanHostFilter.get());
+    if (memcmp(at, fixed, 13) == 0)
+    {
+        Log("LAN list: IPv4 only already (HD Edition's exe or another mod's fix) - left alone");
+        return;
+    }
+    if (memcmp(at, vanilla, 13) != 0)
+    {
+        Log("LAN list: another patch at the site - left alone");
+        return;
+    }
+    DWORD old = 0;
+    if (!VirtualProtect(at, 13, PAGE_EXECUTE_READWRITE, &old))
+        return;
+    memcpy(at, fixed, 13);
+    VirtualProtect(at, 13, old, &old);
+    FlushInstructionCache(GetCurrentProcess(), at, 13);
+    Log("LAN list: IPv4 hosts only (vanilla's list fixed as HD Edition's)");
+}
+
 static void GuardedFrame(double dt)
 {
     __try
@@ -352,25 +460,176 @@ static void GuardedFrame(double dt)
         dimouse::Update();
         events::Update();
         uibtn::OnFrame();
+        TagModeCheck();
         if (g_impl && !g_faulted)
-            g_impl->OnFrame(dt);
+            ImplOnFrame(dt);
+        RunDeferred();
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        g_faulted = true;
-        HostClearAllHeld();
-        HostSetSteer(false, 0, 0);
-        dimouse::Reset();
+        g_deferredCount = 0;
+        HostFailSafe();
         Log("FATAL: exception 0x%08X in controller update; logic disabled until reload", GetExceptionCode());
     }
+}
+
+// Modal loops: some of the game's dialogs run their own loop (Freelancer.exe 0x4740F0 and its siblings around
+// 0x473A00..0x474600: Sleep(10), the message pump, the UI update and render - 0x473DC4 UiRender, 0x473F35 CursorUpdate)
+// and never return to the frame update until closed: the Multiplayer button's "LAN / INTERNET" prompt (verified 28 Oct
+// 2026: the pad and the debug channel went silent there), the connection dialogs. A second CursorUpdate without a
+// frame update in between is such a loop: the host serves the frame from there (commands, the virtual mouse, the
+// logic's OnFrame) - only while no logic call is on the stack (a click from the logic is deferred to the frame's end,
+// v29, so this holds for the front end's buttons).
+static u32 g_frameSerial = 0, g_cursorSerial = 0;
+static bool g_modal = false;
+static u32 g_modalFrames = 0;
+
+static void ModalFrame()
+{
+    static LARGE_INTEGER freq{}, last{};
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    if (!freq.QuadPart)
+        QueryPerformanceFrequency(&freq);
+    const double dt = g_modal && last.QuadPart ? double(now.QuadPart - last.QuadPart) / double(freq.QuadPart) : 0.016;
+    last = now;
+    if (!g_modal)
+    {
+        g_modal = true;
+        g_modalFrames = 0;
+        Log("modal loop: the game runs a dialog's own loop - frames served from its render%s",
+            g_implDepth ? " (a logic call is on the stack: commands and logic wait)" : "");
+    }
+    ++g_modalFrames;
+    if (g_implDepth)
+        return;
+    if (ShmBlock* s = shm::Get())
+        ++s->heartbeat;
+    GuardedFrame(dt > 0.25 ? 0.25 : dt);
+}
+
+typedef bool (*SinglePlayerFn)();
+static SinglePlayerFn SinglePlayerExport();
+static bool HostMultiplayer();
+
+// ---- Fixed dt (IDEAS T2, 30 Oct 2026; research\evidence\timing\probe_report.md): TEST ONLY, single player only, set
+// by the debug command `fixeddt` (HostApi v32). The game's frame timer (exe::FrameTimer) waits for 1/[FpsCapF], then
+// writes the clamped dt every reader takes (exe::FrameDt: FrameUpdate, ~90 getter callers, Server.dll's ElapseTime,
+// the pub::SetTimer timers, Cnd_Timer); with fixed dt on, the cap is lifted before it runs (no minimum frame time: the
+// game resets the cap on state entry, so every frame) and its outputs are overwritten with 1/fps after it - the game
+// runs as fast as it draws, each frame advancing 1/fps of game time. Left on wall time (the probe's list): the server's
+// own clock (pub::GetTime, the save's time), its damage timestamps, audio and comm lengths.
+typedef void(__cdecl* FrameTimerFn)();
+static FrameTimerFn g_origFrameTimer = nullptr;
+static double g_fixedDt = 0; // seconds per frame, 0 = off
+static float g_fpsCapSaved = 0;
+static void __cdecl FrameTimerHook()
+{
+    const double fixed = g_fixedDt;
+    if (fixed > 0)
+        Mem<float>(exe::FpsCapF) = 100000.0f;
+    g_origFrameTimer();
+    if (fixed > 0)
+    {
+        const double was = Mem<double>(exe::FrameDt);
+        Mem<double>(exe::FrameDt) = fixed;
+        Mem<double>(exe::FrameDtRaw) = fixed;
+        Mem<double>(exe::FrameDtAccum) += fixed - was;
+    }
+}
+// The single-player server's own clock (pub::GetTime / GetRwTime, the save's time): Server.dll's ElapseTime (RVA 0x65160
+// in HDE 0.7.1) adds Delta::read_dt() - wall time - to it: mov ecx,<delta>; call [read_dt]; fcom [<max>]; ...; fld
+// [<clock>]; push esi; mov esi,[esp+8]; fadd st,st1; push esi; fstp [<clock>]. With fixed dt on, FrameUpdateHook sets
+// it to its value before the frame + the frame's game dt whenever ElapseTime moved it (a paused frame leaves it alone).
+// The clock's address: both operands of that sequence, equal. 0 = not found (logged once per Server.dll load).
+static const char* const kServerClockSig =
+    "B9 ?? ?? ?? ?? FF 15 ?? ?? ?? ?? DC 15 ?? ?? ?? ?? DF E0 F6 C4 05 7A 08 DD D8 DD 05 ?? ?? ?? ?? DD 05 ?? ?? ?? ?? 56 "
+    "8B 74 24 08 D8 C1 56 DD 1D";
+static bool ReadD(uintptr_t a, double& v)
+{
+    __try
+    {
+        v = *reinterpret_cast<const double*>(a);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+static bool WriteD(uintptr_t a, double v)
+{
+    __try
+    {
+        *reinterpret_cast<double*>(a) = v;
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+static uintptr_t ServerClock()
+{
+    static HMODULE seen = nullptr;
+    static uintptr_t clock = 0;
+    const HMODULE s = GetModuleHandleA("server.dll");
+    if (s != seen)
+    {
+        seen = s, clock = 0;
+        const uintptr_t at = s ? hk::FindInModule("server.dll", kServerClockSig, 0) : 0;
+        u32 a = 0, b = 0;
+        if (at && safemem::Read(at + 34, &a, 4) && safemem::Read(at + 48, &b, 4) && a == b)
+            clock = a;
+        Log("fixeddt: the server clock %s (0x%08X)", clock ? "found" : "NOT found - it stays on wall time", clock);
+    }
+    return clock;
+}
+
+// v32: fps > 0 = fixed dt of 1/fps (refused, -1: multiplayer, the hook or a symbol missing, fps outside 10..1000); 0 =
+// off (the cap restored); < 0 = read only. Returns the fixed fps now (0 = off).
+static int HostFixedDt(int fps)
+{
+    const auto now = [] { return g_fixedDt > 0 ? static_cast<int>(1.0 / g_fixedDt + 0.5) : 0; };
+    if (fps < 0)
+        return now();
+    if (fps == 0)
+    {
+        if (g_fixedDt > 0 && g_fpsCapSaved > 0)
+            Mem<float>(exe::FpsCapF) = g_fpsCapSaved;
+        g_fixedDt = 0;
+        Log("fixeddt off");
+        return 0;
+    }
+    if (fps < 10 || fps > 1000 || !g_origFrameTimer || !exe::FpsCapF.ok() || !exe::FrameDt.ok() || !exe::FrameDtRaw.ok() ||
+        !exe::FrameDtAccum.ok() || HostMultiplayer())
+        return -1;
+    if (g_fixedDt <= 0)
+        g_fpsCapSaved = Mem<float>(exe::FpsCapF);
+    g_fixedDt = 1.0 / fps;
+    Log("fixeddt %d: game dt %.6f s per frame (the cap %.0f lifted)", fps, g_fixedDt, g_fpsCapSaved);
+    return fps;
 }
 
 static void __cdecl FrameUpdateHook(double dt)
 {
     if (ShmBlock* s = shm::Get())
         ++s->heartbeat;
+    ++g_frameSerial;
+    if (g_modal)
+    {
+        g_modal = false;
+        Log("modal loop: ended after %u frames", g_modalFrames);
+    }
     GuardedFrame(dt);
+    // fixed dt (TEST ONLY): the server's own clock follows the game dt too (ServerClock above)
+    const uintptr_t serverClock = g_fixedDt > 0 ? ServerClock() : 0;
+    double clockBefore = 0;
+    const bool haveClock = serverClock && ReadD(serverClock, clockBefore);
     g_origFrameUpdate(dt);
+    double clockAfter = 0;
+    if (haveClock && ReadD(serverClock, clockAfter) && clockAfter != clockBefore)
+        WriteD(serverClock, clockBefore + dt);
     // every DLL is loaded at the first frame: FLUF loaded after FLvibed moves FLvibed's hooks to its handlers; again
     // when a hook saw FLUF as its caller (a FLUF hook made later)
     static bool adopted = false;
@@ -416,6 +675,68 @@ static void HostSetSteer(bool active, float x, float y)
     g_steerY = Clampf(y, -1, 1);
 }
 
+// v28: the guns' aim point. Every player gun aims at the world point exe::GunAimPoint returns ([this+0x91C], from the
+// cursor ray through the current camera); while the logic sets one (the autopilot flying in turret view) the getter
+// returns that instead, so the guns follow the autopilot whatever the player's camera or cursor do.
+typedef void* (__fastcall* GunAimFn)(void* self, void* edx, float* out);
+static GunAimFn g_origGunAim = nullptr;
+static bool g_gunAimOn = false;
+static float g_gunAim[3] = {};
+
+static void* __fastcall GunAimHook(void* self, void* edx, float* out)
+{
+    if (!g_gunAimOn || !out)
+        return g_origGunAim(self, edx, out);
+    out[0] = g_gunAim[0], out[1] = g_gunAim[1], out[2] = g_gunAim[2];
+    return out;
+}
+
+static bool HostSetGunAim(bool on, const float* world)
+{
+    if (!g_origGunAim)
+        return false;
+    if (on && world && std::isfinite(world[0]) && std::isfinite(world[1]) && std::isfinite(world[2]))
+    {
+        g_gunAim[0] = world[0], g_gunAim[1] = world[1], g_gunAim[2] = world[2];
+        g_gunAimOn = true;
+    }
+    else
+        g_gunAimOn = false;
+    return true;
+}
+
+// The message pump's GetMessage (`pump_no_block`, installed with the game hooks): a message that is there is taken at
+// once (by the previous pointer when another plugin hooked the import, else PeekMessage PM_REMOVE - never a wait); none
+// within 2 ms = WM_NULL (no window: DispatchMessage does nothing), so the pump returns and the frame runs. WM_QUIT
+// still ends the loop (GetMessage's 0).
+typedef BOOL(WINAPI* GetMessageFn)(LPMSG, HWND, UINT, UINT);
+static GetMessageFn g_origGetMessage = nullptr;
+static volatile LONG g_pumpEmpty = 0;
+
+static BOOL WINAPI GetMessageHook(LPMSG msg, HWND wnd, UINT lo, UINT hi)
+{
+    static const GetMessageFn real =
+        reinterpret_cast<GetMessageFn>(GetProcAddress(GetModuleHandleA("user32.dll"), "GetMessageA"));
+    for (int pass = 0; pass < 2; ++pass)
+    {
+        if (g_origGetMessage != real) // another plugin's hook first: hand it the call once a message is there
+        {
+            if (PeekMessageA(msg, wnd, lo, hi, PM_NOREMOVE))
+                return g_origGetMessage(msg, wnd, lo, hi);
+        }
+        else if (PeekMessageA(msg, wnd, lo, hi, PM_REMOVE))
+            return msg->message != WM_QUIT;
+        if (pass == 0)
+            MsgWaitForMultipleObjectsEx(0, nullptr, 2, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+    }
+    ZeroMemory(msg, sizeof(*msg));
+    msg->message = WM_NULL;
+    const LONG n = InterlockedIncrement(&g_pumpEmpty);
+    if ((n & (n - 1)) == 0) // 1, 2, 4, 8 ...: the pump would have waited here
+        Log("message pump: nothing to take after a peek (%ld times) - not waited", n);
+    return TRUE;
+}
+
 // Freelancer steers towards the cursor (relative to the screen center) while mouse flight is
 // on. For the pad we feed the stick direction to that same code for the duration of the call,
 // so every game rule (trade lanes, autopilot, cutscenes, open windows) still applies, and the
@@ -439,7 +760,21 @@ static void __cdecl SteerHook()
     Mem<int>(exe::MouseY) = static_cast<int>(lroundf(halfH - g_steerY * halfH));
     Mem<u8>(exe::MouseFlightToggle) = 1;
     Mem<float>(exe::MouseFlightTimer) = 1.0f;
+    // Turret view locks the steering (exe::PlayerFlightState +0x5B9: the steering call skips the behaviour update): the
+    // player's view, not the ship's. While FLvibed steers (the autopilot flying, the owner 28 Oct 2026: it keeps full
+    // control in turret view) the lock is lifted for this call only - the camera stays the turret's.
+    u8* turretLock = nullptr;
+    u8 savedLock = 0;
+    if (exe::PlayerFlightState.ok())
+        if (const uintptr_t st = Mem<uintptr_t>(exe::PlayerFlightState))
+        {
+            turretLock = reinterpret_cast<u8*>(st + 0x5B9);
+            savedLock = *turretLock;
+            *turretLock = 0;
+        }
     g_origSteer();
+    if (turretLock)
+        *turretLock = savedLock;
     Mem<int>(exe::MouseX) = savedX;
     Mem<int>(exe::MouseY) = savedY;
     Mem<u8>(exe::MouseFlightToggle) = savedToggle;
@@ -459,7 +794,7 @@ static void GuardedOverlay()
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        g_faulted = true;
+        HostFailSafe();
         Log("FATAL: exception 0x%08X in overlay; logic disabled until reload", GetExceptionCode());
     }
 }
@@ -472,6 +807,9 @@ static void HostSetCursorHidden(bool on) { g_cursorHidden = on && exe::CursorSho
 // Freelancer polls the mouse and draws its cursor here, inside the frame's rendering.
 static void __cdecl CursorUpdateHook()
 {
+    if (g_cursorSerial == g_frameSerial && g_frameSerial)
+        ModalFrame();
+    g_cursorSerial = g_frameSerial;
     GuardedOverlay();
     dimouse::BackgroundCursor();
     if (g_cursorHidden && exe::CursorShown.ok())
@@ -506,7 +844,7 @@ static void GuardedUnderHud()
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        g_faulted = true;
+        HostFailSafe();
         Log("FATAL: exception 0x%08X in under-HUD drawing; logic disabled until reload", GetExceptionCode());
     }
 }
@@ -741,6 +1079,124 @@ static void __fastcall CommStartHook(void* self, void* edx, u32 a1, const u8* re
 {
     g_commPlayer = self;
     g_origCommStart(self, edx, a1, rec);
+}
+
+// v30 ChatLineAt: the chat window's lines as they arrive (exe::ChatFlush: every line the chat log gets - a server's
+// or a player's message in multiplayer, the game's own and FLvibed's chatter lines), sender and the RDL's text nodes:
+// a server says what it allows FLvibed through it (docs\MULTIPLAYER.md "Server permission").
+typedef void(__cdecl* ChatFlushFn)(int sender, const void* rdl, u32 size);
+static ChatFlushFn g_origChatFlush = nullptr;
+struct ChatLineRec
+{
+    u32 sender;
+    wchar_t text[256];
+};
+static ChatLineRec g_chat[32];
+static u32 g_chatSerial = 0; // lines seen; line n (1-based) is g_chat[(n - 1) % 32]
+
+// v31 ServerTag: the multiplayer session's last tag-only server line (core\mprules_tag.h), kept apart from the ring - a
+// logic reload re-reads the ring from the start, and the tag line (sent once, at login) had scrolled out of its 32
+// lines: the server's word fell back to the silent-server default until the next login (28 Oct 2026). Forgotten when
+// the mode changes (a new session), as the logic forgets it.
+static ChatLineRec g_tag = {};
+static u32 g_tagSerial = 0; // the tag line's chat serial, 0 = none this session
+typedef bool (*SinglePlayerFn)();
+
+static SinglePlayerFn SinglePlayerExport()
+{
+    static const SinglePlayerFn sp = reinterpret_cast<SinglePlayerFn>(
+        GetProcAddress(GetModuleHandleA("common.dll"), "?SinglePlayer@@YA_NXZ"));
+    return sp;
+}
+static bool HostMultiplayer()
+{
+    const SinglePlayerFn sp = SinglePlayerExport();
+    __try
+    {
+        return sp && !sp();
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+static void TagModeCheck() // per frame and per line: a mode change starts a new session
+{
+    static bool mp = false;
+    const bool now = HostMultiplayer();
+    if (now != mp)
+        mp = now, g_tagSerial = 0;
+}
+static void KeepServerTag(const ChatLineRec& r) // (no __try here: ParseMpTag builds strings)
+{
+    TagModeCheck();
+    int v = 0;
+    if ((r.sender == 0 || r.sender >= 0x10000) && HostMultiplayer() && ParseMpTag(r.text, v))
+        g_tag = r, g_tagSerial = g_chatSerial;
+}
+
+static void RecordChat(int sender, const u8* rdl, u32 size)
+{
+    ChatLineRec& r = g_chat[g_chatSerial % 32];
+    r.sender = static_cast<u32>(sender);
+    r.text[0] = 0;
+    size_t at = 0;
+    __try
+    {
+        for (u32 off = 0; rdl && off + 8 <= size && off < 0x4000;)
+        {
+            const u32 type = *reinterpret_cast<const u32*>(rdl + off), len = *reinterpret_cast<const u32*>(rdl + off + 4);
+            if (len > size - off - 8)
+                break;
+            if (type == 2) // text: UTF-16, NUL-terminated
+                for (const wchar_t* p = reinterpret_cast<const wchar_t*>(rdl + off + 8);
+                     *p && at + 1 < 256 && reinterpret_cast<const u8*>(p) < rdl + off + 8 + len; ++p)
+                    r.text[at++] = *p;
+            off += 8 + len; // nodes are packed (subtitles\src\impl\chat.cpp builds them so)
+        }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+    r.text[at] = 0;
+    ++g_chatSerial;
+    KeepServerTag(r);
+}
+
+static u32 HostServerTag(u32* sender, wchar_t* text, int max)
+{
+    TagModeCheck();
+    if (!g_tagSerial)
+        return 0;
+    if (sender)
+        *sender = g_tag.sender;
+    if (text && max > 0)
+        wcsncpy_s(text, max, g_tag.text, _TRUNCATE);
+    return g_tagSerial;
+}
+
+static void __cdecl ChatFlushHook(int sender, const void* rdl, u32 size)
+{
+    RecordChat(sender, static_cast<const u8*>(rdl), size);
+    // a server line that is only FLvibed's tag (the FLHook plugin server\flhook sends one at login) is for FLvibed
+    // alone: read above, not shown (a line with other text around the tag is shown as the server wrote it)
+    const ChatLineRec& r = g_chat[(g_chatSerial - 1) % 32];
+    const size_t n = wcslen(r.text);
+    if ((sender == 0 || static_cast<u32>(sender) >= 0x10000) && n > 20 && r.text[n - 1] == L']' &&
+        _wcsnicmp(r.text, L"[flvibed autopilot=", 19) == 0 && !wcschr(r.text + 1, L'['))
+        return;
+    g_origChatFlush(sender, rdl, size);
+}
+
+static u32 HostChatLineAt(u32 n, u32* sender, wchar_t* text, int max)
+{
+    if (n == 0 || n > g_chatSerial || g_chatSerial - n >= 32 || !text || max < 1)
+        return g_chatSerial;
+    const ChatLineRec& r = g_chat[(n - 1) % 32];
+    if (sender)
+        *sender = r.sender;
+    wcsncpy_s(text, max, r.text, _TRUNCATE);
+    return g_chatSerial;
 }
 
 static void* HostCommPlayer() { return g_commPlayer; }
@@ -1333,6 +1789,8 @@ static bool HostGuardEvade(void** vtable)
         }
     g_origEvadeUpdate = reinterpret_cast<EvadeUpdateFn>(
         hk::PatchVtable(vtable, kEvadeUpdateSlot, reinterpret_cast<void*>(EvadeUpdateGuard)));
+    if (!g_origEvadeUpdate)
+        return false; // the slot was not writable (logged; Evade stays off)
     g_evadeVtable = vtable;
     Log("evade guard installed (vtable %p, update %p)", vtable, fn);
     return true;
@@ -1363,7 +1821,7 @@ static void GuardedDeviceLost()
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        g_faulted = true;
+        HostFailSafe();
         Log("FATAL: exception 0x%08X in device-lost; logic disabled until reload", GetExceptionCode());
     }
 }
@@ -1376,7 +1834,7 @@ static void GuardedDeviceReset()
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        g_faulted = true;
+        HostFailSafe();
         Log("FATAL: exception 0x%08X in device-reset; logic disabled until reload", GetExceptionCode());
     }
 }
@@ -1449,8 +1907,10 @@ static HRESULT WINAPI CreateDeviceHook(void* d3d, UINT adapter, DWORD type, HWND
         if (pp)
             memcpy(g_lastPp, pp, sizeof(g_lastPp)), g_havePp = true;
         void** vt = *static_cast<void***>(g_d3dDevice);
+        // (a refused patch returns null: the previous pointer stays for a hook already installed elsewhere)
         if (vt[d3d8idx::Dev_Reset] != ResetHook)
-            g_origReset = static_cast<ResetFn>(hk::PatchVtable(vt, d3d8idx::Dev_Reset, ResetHook));
+            if (void* o = hk::PatchVtable(vt, d3d8idx::Dev_Reset, ResetHook))
+                g_origReset = static_cast<ResetFn>(o);
     }
     return hr;
 }
@@ -1463,8 +1923,8 @@ static void* WINAPI Direct3DCreate8Hook(UINT sdk)
     {
         void** vt = *static_cast<void***>(d3d);
         if (vt[d3d8idx::D3D_CreateDevice] != CreateDeviceHook)
-            g_origCreateDevice =
-                static_cast<CreateDeviceFn>(hk::PatchVtable(vt, d3d8idx::D3D_CreateDevice, CreateDeviceHook));
+            if (void* o = hk::PatchVtable(vt, d3d8idx::D3D_CreateDevice, CreateDeviceHook))
+                g_origCreateDevice = static_cast<CreateDeviceFn>(o);
     }
     return d3d;
 }
@@ -1544,12 +2004,24 @@ static void Init(HMODULE self)
     g_host.ObjectiveReread = events::ObjectiveReread;    // v25: the objective a load restores
     g_host.WindowMode = HostWindowMode;                  // v26: who provides borderless (winmode.cpp)
     g_host.RealMouseWheel = dimouse::RealWheel;          // v27: the options page's wheel
+    g_host.SetGunAim = HostSetGunAim;                    // v28: the guns' aim point (the autopilot in turret view)
+    g_host.DeferToFrameEnd = HostDeferToFrameEnd;        // v29: front-end clicks out of the logic's stack
+    g_host.ChatLineAt = HostChatLineAt;                  // v30: the chat's lines (a server's permission)
+    g_host.ServerTag = HostServerTag;                    // v31: the session's tag line (kept across logic reloads)
+    g_host.FixedDt = HostFixedDt;                        // v32: fixed dt (TEST ONLY: debug `fixeddt`)
+    g_host.SdlPad = sdlpad::Pad;                         // v33: the opt-in SDL3 gamepad backend (pad_backend 1; sdlpad.cpp)
+    g_host.SdlPadRumble = sdlpad::Rumble;                // v33
+    g_host.GameLoads = events::GameLoads;                // v34: the game loads (Content.dll loads)
+    g_host.MissionSave = events::MissionSave;            // v35: the story's checkpoint saves (speedrun save:<ids> splits)
     // DmgIndSource: sub esp,88h (6 bytes); DmgIndContact: sub esp,3Ch; push esi; mov esi,ecx (6 bytes)
     g_origDmgSource =
         static_cast<DmgPointFn>(hk::Detour(exe::DmgIndSource, DmgSourceHook, 6, "player hit points (shield cue)"));
     g_origDmgContact =
         static_cast<DmgPointFn>(hk::Detour(exe::DmgIndContact, DmgContactHook, 6, "player hit points (shield cue)"));
     g_origCommStart = static_cast<CommStartFn>(hk::Detour(exe::Comm, CommStartHook, 5, "comm player (dialogue state)"));
+    // ChatFlush: push ecx; mov eax,[esp+8] (5 bytes)
+    g_origChatFlush = static_cast<ChatFlushFn>(
+        hk::Detour(exe::ChatFlush, ChatFlushHook, 5, "chat lines (a multiplayer server's permission for FLvibed)"));
     // JumpInComplete: mov eax, ds:[0067ECD0] (5 bytes)
     g_origJumpIn = static_cast<JumpInCompleteFn>(
         hk::Detour(exe::JumpInComplete, JumpInCompleteHook, 5, "jump-in complete (autopilot travel)"));
@@ -1599,18 +2071,40 @@ static void Init(HMODULE self)
         g_origSteer = static_cast<SteerFn>(hk::Detour(exe::MouseSteer, SteerHook, 5, "pad steering"));
     else
         Log("Hook MouseSteer NOT installed: mouse-flight globals unresolved - pad steering off");
+    // GunAimPoint: mov eax,[esp+4]; add ecx,91Ch (10 bytes, no relative addressing)
+    g_origGunAim = static_cast<GunAimFn>(hk::Detour(exe::GunAimPoint, GunAimHook, 10, "the autopilot's guns in turret view"));
+    // FrameTimer: push ebp; mov ebp,esp; and esp,-8 (6 bytes). Passes through unless the debug `fixeddt` is on.
+    g_origFrameTimer = static_cast<FrameTimerFn>(hk::Detour(exe::FrameTimer, FrameTimerHook, 6, "fixed dt (test only)"));
+    LanListIpv4();
     // HitTest: sub esp,8; mov eax,ds:[0067DBE8] (8 bytes, no relative addressing)
     g_origHitTest = static_cast<HitTestFn>(hk::Detour(exe::HitTest, HitTestHook, 8, "HUD hit suppression"));
-    // CharCtor / CharDtor: push -1; push <SEH handler> (7 bytes). Both or neither (the list must stay consistent).
+    // CharCtor / CharDtor: push -1; push <SEH handler> (7 bytes). Both or neither (the list must stay consistent):
+    // the destructor first and the constructor only once it is in - a list filled without its removals would hand
+    // the bar strip freed pointers.
     if (exe::CharCtor.ok() && exe::CharDtor.ok())
     {
-        g_origCharCtor = static_cast<CharCtorFn>(hk::Detour(exe::CharCtor, CharCtorHook, 7, "room characters"));
         g_origCharDtor = static_cast<CharDtorFn>(hk::Detour(exe::CharDtor, CharDtorHook, 7, "room characters"));
+        if (g_origCharDtor)
+            g_origCharCtor = static_cast<CharCtorFn>(hk::Detour(exe::CharCtor, CharCtorHook, 7, "room characters"));
     }
     else
         Log("Hooks CharCtor/CharDtor NOT installed: signature mismatch - room characters off");
     Log("Game hooks: held=%p key=%p cursor=%p ui=%p frame=%p steer=%p", g_origIsCmdHeld, g_origHandleKey,
         g_origCursorUpdate, g_origUiRender, g_origFrameUpdate, g_origSteer);
+
+    // The game's message pump (0x5B0B60) peeks the queue (PeekMessage, PM_NOREMOVE) and then takes the message with the
+    // blocking GetMessage (0x5B0BA2); a peeked message that GetMessage cannot retrieve (one Windows generates on demand
+    // and then drops, or one consumed in between) leaves the main thread waiting there until any message comes - no frame
+    // meanwhile (gate mpb6, 28 Oct 2026, instance 1 in M07: frozen with the main thread at Freelancer.exe+0x1B0BA4 in
+    // win32u, the window not hung; the 4 m 40 s M05 freeze of 21 Oct and the 152 s M02 stall of gate mpb2 resumed by
+    // themselves). `pump_no_block` (default 1): GetMessage never waits - nothing retrievable within 2 ms = a WM_NULL
+    // (dispatched to no window), the pump returns and the frame runs; the count is logged.
+    if (GetPrivateProfileIntA("Controller", "pump_no_block", 1, (DllDir() + "FLController.ini").c_str()) != 0)
+    {
+        g_origGetMessage = reinterpret_cast<GetMessageFn>(
+            hk::PatchImport(GetModuleHandleA(nullptr), "user32.dll", "GetMessageA", GetMessageHook));
+        Log("message pump: GetMessageA import %s", g_origGetMessage ? "hooked (never blocks)" : "NOT FOUND");
+    }
 
     // Direct3D: Freelancer's render pipeline (RP8.dll) creates the D3D8 object.
     HMODULE rp8 = GetModuleHandleA("rp8.dll");

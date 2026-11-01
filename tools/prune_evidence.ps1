@@ -10,16 +10,25 @@
 # to no leg run older than -OlderThanDays - still never a screenshot, a log or the top 3 per leg.
 # Dry run by default (a report); -Apply deletes. Usage: tools\prune_evidence.ps1 [-OlderThanDays 3] [-All] [-Apply]
 param([double]$OlderThanDays = 3, [switch]$All, [switch]$Apply)
+# fails closed: an unreadable legs.tsv must stop the run, never leave the top-3 set empty
+$ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $legsDir = Join-Path $root 'research\experience\legs'
 $shotsDir = Join-Path $root 'research\experience\shots'
 $cut = (Get-Date).AddDays(-$OlderThanDays)
 # leg runs: folder yyyy-MM-dd_HHmm_<label>_i<n>, outcome / seconds / save from legs.tsv (date + label + instance)
 $hist = @(Import-Csv (Join-Path $legsDir 'legs.tsv') -Delimiter "`t")
+if ($hist.Count -eq 0 -or -not ($hist[0].PSObject.Properties.Name -contains 'outcome' -and
+        $hist[0].PSObject.Properties.Name -contains 'secs' -and $hist[0].PSObject.Properties.Name -contains 'label')) {
+    throw "legs.tsv is empty or lacks its label / outcome / secs columns: nothing pruned"
+}
+# every leg folder's start, matched to a legs.tsv row or not: -All never treats a session near one as tied to no leg
+$legStarts = @()
 $runs = foreach ($d in Get-ChildItem $legsDir -Directory) {
     if ($d.Name -notmatch '^(\d{4}-\d\d-\d\d)_(\d\d)(\d\d)_(.+)_i(\d+)$') { continue }
     $start = [datetime]::ParseExact("$($Matches[1]) $($Matches[2]):$($Matches[3])", 'yyyy-MM-dd HH:mm', $null)
     $label = $Matches[4]; $inst = $Matches[5]
+    $legStarts += [pscustomobject]@{ Start = $start; Inst = $inst }
     # its legs.tsv row: same label and instance, the first row written after the start
     $row = $hist | Where-Object { $_.label -eq $label -and $_.instance -eq $inst -and [datetime]$_.date -ge $start } |
         Sort-Object { [datetime]$_.date } | Select-Object -First 1
@@ -49,6 +58,8 @@ $pruneDirs = @($runs | Where-Object { ($_.Outcome -eq 'PASS' -or $All) -and $_.S
 if ($All) {
     $legSessions = @{}; foreach ($r in $runs) { if ($r.Session) { $legSessions[$r.Session.FullName] = 1 } }
     $pruneDirs += @($sessions | Where-Object { -not $legSessions.ContainsKey($_.Dir.FullName) -and $_.Start -lt $cut } |
+        Where-Object { $s = $_; -not ($legStarts | Where-Object { $_.Inst -eq $s.Inst -and
+            $s.Start -ge $_.Start.AddMinutes(-3) -and $s.Start -lt $_.Start.AddMinutes(3) }) } |
         ForEach-Object { $_.Dir.FullName })
 }
 foreach ($dir in ($pruneDirs | Sort-Object -Unique)) {

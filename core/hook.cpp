@@ -84,8 +84,9 @@ bool ParseSig(const char* sig, std::vector<u8>& bytes, std::vector<u8>& mask)
     return !bytes.empty();
 }
 
-// The bytes a detour may overwrite at a code address: JMP + NOP padding (FLvibed's longest steals 8).
-constexpr size_t kDetourSpan = 8;
+// The bytes a detour may overwrite at a code address: JMP + NOP padding (FLvibed's longest steals 10: GunAimPoint,
+// whose first instructions end at 4 and 10 - with 8 the logic part refused the symbol the host had just hooked).
+constexpr size_t kDetourSpan = 10;
 
 // Another hooker's jump at a function's start: E9 rel32 (5 bytes) or `mov ecx, imm32; jmp ecx` (B9 imm32 FF E1, 7 bytes:
 // FLUF 2.0.0's HandleKey). Its length, 0 = none; `to` = where it goes.
@@ -913,8 +914,12 @@ int AdoptRestoreStyle(const char* who)
                 // FLUF hooked this after FLvibed: FLvibed's JMP is its saved "original" (it restores it for every
                 // call, so FLvibed's hook runs inside FLUF's, with FLUF as the caller). Move the hook to FLUF's
                 // handler; the old JMP passes through to what followed it.
+                // a handler found unmovable once stays so (same bytes): no retry on every later key press / sound -
+                // each HookAt takes trampoline memory before it can refuse, and logs again
                 Installed n;
-                if (HookAt(e.site, e.dest, 5, e.name, nullptr, n))
+                if (e.insideLogged)
+                    ++stayed;
+                else if (HookAt(e.site, e.dest, 5, e.name, nullptr, n))
                 {
                     StubSet(e.stubIn, e.tramp);
                     StubSet(e.stubOut, n.tramp);
@@ -1188,7 +1193,12 @@ int Virtual::Slot()
 void* PatchVtable(void** vtable, int index, void* fn)
 {
     void* old = vtable[index];
-    Write(reinterpret_cast<uintptr_t>(&vtable[index]), &fn, sizeof(fn));
+    if (!Write(reinterpret_cast<uintptr_t>(&vtable[index]), &fn, sizeof(fn)))
+    {
+        Log("PatchVtable: slot %d of vtable %p not writable (error %lu): hook not installed", index, vtable,
+            GetLastError());
+        return nullptr;
+    }
     return old;
 }
 
@@ -1198,7 +1208,11 @@ void* PatchImport(HMODULE module, const char* dllName, const char* funcName, voi
     if (!slot)
         return nullptr;
     void* old = *slot;
-    Write(reinterpret_cast<uintptr_t>(slot), &fn, sizeof(fn));
+    if (!Write(reinterpret_cast<uintptr_t>(slot), &fn, sizeof(fn)))
+    {
+        Log("PatchImport: %s!%s slot not writable (error %lu): hook not installed", dllName, funcName, GetLastError());
+        return nullptr;
+    }
     return old;
 }
 

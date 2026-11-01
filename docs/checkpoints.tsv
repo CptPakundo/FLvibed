@@ -16,7 +16,7 @@ M01b	M01b.wp2	obj:22040	b:FLY TO THE WAYPOINT						fighter wave 2
 M01b	M01b.wave3	obj:22080	b:DESTROY THE HOSTILE FIGHTERS						waypoint leg 2
 M01b	M01b.wp3	obj:22085	b:FLY TO THE WAYPOINT						fighter wave 3
 M01b	M01b.platforms	obj:22050	b:DESTROY THE WEAPON PLATFORMS						waypoint leg 3 -> the Rogue base appears (turn ~120 deg left at the Beta-4 comm)
-M01b	M01b.end	obj:22055	end						the two weapon platforms only, base explosion scene, GAME SAVED (our leg flies on to land on Pittsburgh: not timed)
+M01b	M01b.end	save:32120	end						the two weapon platforms only, base explosion scene, GAME SAVED (our leg flies on to land on Pittsburgh: not timed)
 M02	M02.control	control	hud						Manhattan base, launch + the M02 space-enter scene (55 s)
 M02	M02.lane1	obj:22225	b:DOCK WITH THE TRADE LANE						to the first lane with King
 M02	M02.colorado	obj:22235	b:FLY TO THE WAYPOINT						lanes + the Colorado gate (King must follow)

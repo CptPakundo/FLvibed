@@ -2,7 +2,7 @@
 # test): the game in the background on a fixture, the event log, the screenshot sampler checked (a test without frames
 # stops at once), and at the end one run folder research\experience\runs\<session>_<name>\ with the test's own notes,
 # the full event stream and a manifest naming the session's archived logs (EXE\logs\<session>_*.log) and frames
-# (research\experience\shots\<session>). Optional benchmark rows (tools\flbench.ps1).
+# (research\experience\shots\<session>). Optional benchmark rows (tools\flbenchhist.ps1).
 # Usage (dot-source in the PowerShell tool):
 #   . tools\fltest.ps1
 #   $t = Start-FLTest repair-probe -Save SaveC707.fl [-NoBuild]
@@ -11,10 +11,10 @@
 $script:FLTestRoot = Split-Path $PSScriptRoot -Parent
 . (Join-Path $script:FLTestRoot 'controller\tools\flctl.ps1')
 . (Join-Path $script:FLTestRoot 'subtitles\tools\flsub.ps1')
-. (Join-Path $script:FLTestRoot 'tools\flbench.ps1')
+. (Join-Path $script:FLTestRoot 'tools\flbenchhist.ps1')
 
 function Get-FLSession {
-    $f = Join-Path $script:FLTestRoot 'Install\Freelancer HD Edition\EXE\logs\current-session.txt'
+    $f = Join-Path (Get-FLInstallDir) 'EXE\logs\current-session.txt'
     if (Test-Path $f) { (Get-Content $f -TotalCount 1).Trim() }
 }
 
@@ -59,7 +59,7 @@ function Write-FLTest($T, [string]$Line) {
 function Stop-FLTest($T, [switch]$KeepGame) {
     try { Get-FLEventLog $T.EventSeq | ForEach-Object { "$_" } | Set-Content (Join-Path $T.Run 'events.txt') }
     catch { Write-FLTest $T "events not read: $_" }
-    $logs = Join-Path $script:FLTestRoot 'Install\Freelancer HD Edition\EXE'
+    $logs = Join-Path (Get-FLInstallDir) 'EXE'
     @("name     $($T.Name)", "session  $($T.Session)", "commit   $($T.Commit)", "save     $($T.Save)",
       "start    $($T.Start.ToString('s'))", "end      $((Get-Date).ToString('s'))",
       "shots    $($T.Shots)",

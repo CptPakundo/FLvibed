@@ -1,6 +1,7 @@
 #include "game/route.h"
 
 #include "game/avoid.h"
+#include "game/geom.h"
 #include "hook.h"
 #include "log.h"
 
@@ -326,17 +327,11 @@ struct Planner
         return s;
     }
 
-    static float Dist(const float a[3], const float b[3])
-    {
-        const float d[3] = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
-        return std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
-    }
-
     // Free flight between two points: the faster of afterburner and cruise (the ship's model); `stop`: arrive at rest.
     float Fly(const float from[3], float v0, const float to[3], bool stop) const
     {
         // the way the avoidance flies it: round a planet's lethal zone in the way (Leeds' ring from the Iw03 hole)
-        const float d = bodies.empty() ? Dist(from, to)
+        const float d = bodies.empty() ? geom::Dist(from, to)
                                        : avoid::PathLength(from, to, bodies, shipRadius,
                                                            m.ok && m.cruiseSpeed > 0 ? m.cruiseSpeed : 300.0f,
                                                            m.turnRate > 0 ? m.turnRate : 1.6f);
@@ -374,8 +369,8 @@ struct Planner
                 for (size_t k = 0; k < L.rings.size(); ++k)
                 {
                     const float ring[3] = {L.x[k], L.y[k], L.z[k]};
-                    toLane = std::min(toLane, Dist(p, ring));
-                    fromLane = std::min(fromLane, Dist(ring, it.pos));
+                    toLane = std::min(toLane, geom::Dist(p, ring));
+                    fromLane = std::min(fromLane, geom::Dist(ring, it.pos));
                 }
                 if ((toLane + fromLane) / vmax + law.entryDelay >= std::min(direct, best.total))
                     continue;

@@ -37,6 +37,11 @@ int SpawnedShips(SpawnRec* out, int max);
 // v20: the mission results received (DisplayMissionMessage SUCCESS / FAILURE): a growing sequence, 0 none yet; `type`
 // (may be null) = 1 success / 2 failure of the latest.
 u32 MissionResult(u32* type);
+// v34: the game loads seen (each loads a fresh Content.dll; the host's title, marks and heard comms start over there).
+u32 GameLoads();
+// v35: the mission checkpoint saves made (pub::Save, the log's `mission-save`): a growing sequence, 0 none yet; `ids`
+// (may be null) = the latest save's description id (M01b's "Criminal Base Destroyed" 32120, at GAME SAVED).
+u32 MissionSave(u32* ids);
 // Text of a Freelancer string resource id (resources.dll + [Resources] DLLs), UTF-8.
 std::string IdsText(u32 ids);
 } // namespace events

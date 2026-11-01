@@ -10,7 +10,7 @@
 param([string]$Save = 'SaveC705', [string]$Tag = 'c705', [string[]]$Only, [int[]]$Cautions = @(1), [int]$MaxSec = 150)
 $fl = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 . (Join-Path $PSScriptRoot 'flctl.ps1')
-. (Join-Path $fl 'tools\flbench.ps1')
+. (Join-Path $fl 'tools\flbenchhist.ps1')
 $log = Join-Path (Get-FLInstallDir) 'EXE\FLController.log'   # this game instance's log (parallel test games)
 $out = Join-Path $fl ("research\experience\runs\fights_{0}_{1:yyyy-MM-dd_HHmm}.tsv" -f $Tag, (Get-Date))
 # The enemy kinds: n name, npc template, c count, d spawn distance (m)

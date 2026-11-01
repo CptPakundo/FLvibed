@@ -1,13 +1,28 @@
 # LLM-driven NPCs and AI assistants in games: SkyrimNet and its peers, and what the same would take in Freelancer
 Status: current
-Checked against: FLvibed bcbc3f2 (26 Oct 2026, coordinator's concurrency sweep: the only watched commit since, 35236ad, pages the intro movie lines on their force-aligned words - no N2 / N10 surface changes); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: the subtitles' priority and side chat as an N2 / N10 surface - first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 27 watched-path commits 073a665..855745b - HUD bus v2 lanes and the alert / dialogue one-owner rule, the room characters' walk / talk and name card, the fit rule, the game font, vanilla 1.1; building blocks only - point 5); before: 073a665 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 10 watched-path commits abf84ac..073a665 in `subtitles/src` (the HUD bus, the comm feed, Neural Net lines as HUD 2's alerts), `docs/FREELANCER_RE.md` "UI" and the 5.8 / 5.9 docs; none touches a conclusion; one building block noted at point 9); before: abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 11 watched-path commits 3cfa88c..abf84ac in `subtitles/src` (the settings bus, the MOVIES rows and `SetIntroOverride`, the display cleared on the return to the menu 0c2328e), `core/game/room.*` (pad screens' hotspot reads), `core/text.*`, `docs/FREELANCER_RE.md` (+264 lines of UI control names), `TASK_GLYPHS_HUD.md`; none touches a conclusion; one building block noted at point 5); before: 3cfa88c (25 Oct 2026 ~03:30: the 24 Oct refactors and the UI design docs; nothing touched)
-Dirty paths at check: none at the start (25 Oct 2026 ~23:05; during the round another session's uncommitted `controller/src/impl/padbases.cpp`, `controller/src/impl/promptbar.cpp`, `docs/UI_HUD2_EXTENDED.md` appeared - not judged); none (25 Oct 2026 ~12:15); none (25 Oct 2026 ~07:00); before: none at the start (24 Oct 2026, 1defa3f); at the end `controller/src/impl/autopilot_frame.cpp`, `controller/src/impl/autopilot_objective.cpp` (another session's uncommitted edits, appeared during the check; not judged here)
-Watch: subtitles/src, core/game/ai.*, core/game/room.*, core/text.*, docs/FREELANCER_RE.md, controller/docs/TASK_GLYPHS_HUD.md, docs/kb/world
+Checked against: FLvibed 4338909 (31 Oct 2026 ~05:10, short form: 1 watched-path commit (55d42263, hook / subtitle-loader robustness); no comm / dialog / NPC-speech content; no effect)
+Dirty paths at check: none (working tree clean at 4338909, 31 Oct 2026 ~05:10)
+Watch: subtitles/src, core/game/ai.*, core/game/room.*, core/text.*, docs/FREELANCER_RE.md#comm|dialog|voice|chatter|room|NPC|pilot|text, controller/docs/TASK_GLYPHS_HUD.md, docs/kb/world
 Evidence: none kept (the public repository was read from a shallow clone in the session scratchpad; the game facts come from the HDE install, the FLHook SDK on hand and the decomp note)
 Sources: [file] the SkyrimNet repository (README, LICENSE, CONTRIBUTING, docs/modding, Source/Scripts/SkyrimNetApi.psc, plugins/skyrimnet/base prompts and config, model-presets); [api] GitHub releases and commits; [page] https://goncalo22.github.io/SkyrimNet-GamePlugin/Features/overview/ ; [page] the other projects' GitHub pages, documentation sites and news coverage listed in "Other games" below; [file] FLvibed docs\FREELANCER_RE.md "Voices and dialogue audio", research\repos\FLHookSDK FLCoreServer.h, the HDE install's voices inis, the decomp's hud_comm / voice_profiles / character_info sources (docs\research\freelancer-decomp.md)
 
 ## What it means for FLvibed
 
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 3 watched-path commits 7518008..067bf32):* building blocks
+only. The scene mixes (a601534: the 19 room scenes recorded as one track) are subtitled on the track's own clock, and
+`room::InScene` tells a room scene from a plain room (the cutscene letterbox, or a shown NavBar with every room button
+hidden) - the gate a talking NPC or ship computer (point 6, N2, N10) needs to stay quiet while the story's own scene
+plays. 3c7dec9's hotspot pair tells which dealer room the player stands in (a context input, point 3). Nothing changes a
+conclusion.
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 16 watched-path commits 77d8655..7518008):* multiplayer
+(b09fcab..c69dad6, `docs\MULTIPLAYER.md`) sharpens point 1 and N2: there the story scripts and `pub::SpaceObj::SendComm`
+run on the server - a client mod can only display, so injected NPC speech (N1) is a single-player feature or a
+server-side one; and the chat input is real chat to every player there (FLHook relays it as a server line), so a text
+NPC chat over `CTID` (N2) must never send in a multiplayer session. The identity readers N6 would build on now work in
+both modes: speaker factions from the client's own reputation data (da018ac: `CEqObj::get_vibe`,
+`Reputation::Vibe::GetAffiliation`) and your own comm lines under your character's name (c69dad6). e99e5f5 keeps
+unfilled name templates out of the chat - a rule a generated line would inherit. Nothing contradicted; every N item
+stays later.
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 12 watched-path commits 855745b..e5c02cc):* one more building
 block - the subtitles' priority rule (915be52 / 034ee2e, `subtitles\docs\DISPLAY_PLAN.md` "Priority and the side chat"):
 story lines and portrait comms hold centre stage until their audio ends, other NPC lines go to the game's own chat log /

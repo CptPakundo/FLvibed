@@ -6,6 +6,7 @@
 #include "fldll.h"
 #include "flexe.h"
 #include "game/flight.h"
+#include "game/baseinfo.h"
 #include "game/hudinfo.h"
 #include "text.h"
 
@@ -84,7 +85,8 @@ static void EquipmentList(u32 client, char* out, size_t size)
         for (u32 node = Mem<u32>(head); node && node != head && n < 256; node = Mem<u32>(node), ++n)
         {
             const char* hp = Mem<const char*>(node + 0x10);
-            const int w = sprintf_s(out + used, size - used, "arch=%u id=%u count=%d mounted=%d hp=%s health=%.2f\n",
+            // _TRUNCATE: a long line cuts the list, never the CRT's fast-fail of sprintf_s (which __except cannot catch)
+            const int w = _snprintf_s(out + used, size - used, _TRUNCATE, "arch=%u id=%u count=%d mounted=%d hp=%s health=%.2f\n",
                                     Mem<u32>(node + 0x0C), Mem<u16>(node + 0x0A), Mem<int>(node + 0x1C),
                                     Mem<u8>(node + 0x14) ? 1 : 0, hp && !IsBadStringPtrA(hp, 64) ? hp : "-",
                                     Mem<float>(node + 0x18));
@@ -431,9 +433,10 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
                 break;
             char line[320];
             sprintf_s(line,
-                      "%u %s dist=%.0f%s%s%s%s%s base=%u health=%.2f att=%.2f target=%u maxhit=%.0f good=0x%08X "
+                      "%u %s dist=%.0f%s%s%s%s%s%s base=%u health=%.2f att=%.2f target=%u maxhit=%.0f good=0x%08X "
                       "units=%u fits=%d value=%.0f name=",
                       c.id, TypeName(c.type).c_str(), c.distance, c.dock ? " dock" : "", c.ship ? " ship" : "",
+                      c.player ? (" player=" + std::to_string(c.player)).c_str() : "",
                       c.dockPort ? " docking" : "", c.jumping ? " jumping" : "", c.lane ? " lane" : "", c.base,
                       c.health, c.attitude, c.targetId, c.maxHit, c.lootGood, c.lootUnits, c.lootFits, c.lootValue);
             // ships: the pilot's name as the game shows it (the reputation's name record); else the object's name
@@ -448,6 +451,39 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
         char buf[16384];
         EquipmentList(rest.empty() ? 1 : static_cast<u32>(strtoul(rest.c_str(), nullptr, 10)), buf, sizeof buf);
         *reply = buf;
+        return true;
+    }
+    if (cmd == "who") // who [ship id]: the owning client id of a ship (default ours), its speaker name, the player list's name
+    {
+        const u32 ship = rest.empty() ? PlayerShipId() : static_cast<u32>(strtoul(rest.c_str(), nullptr, 10));
+        const u32 owner = OwnerPlayer(ship);
+        *reply = "ship " + std::to_string(ship) + " owner " + std::to_string(owner) + " speaker \"" +
+                 text::Utf8(SpeakerName(ship)) + "\" playerlist \"" + text::Utf8(PlayerListName(owner)) + "\"";
+        return true;
+    }
+    if (cmd == "gunpoint") // gunpoint [id | x y z]: each player gun's own verdict on that point (default: the target's centre)
+    {
+        float p[3] = {};
+        std::istringstream in(rest);
+        std::vector<double> v;
+        for (double x; in >> x;)
+            v.push_back(x);
+        bool ok = false;
+        if (v.size() >= 3)
+            p[0] = float(v[0]), p[1] = float(v[1]), p[2] = float(v[2]), ok = true;
+        else if (v.empty())
+        {
+            float r = 0;
+            ok = TargetBody(p, r); // the current target's centre
+        }
+        else
+            ok = ObjectPos(static_cast<u32>(v[0]), p);
+        *reply = ok ? GunPointReport(p) : "gunpoint: no point (no target?)";
+        return true;
+    }
+    if (cmd == "docked") // docked: the docked readers' client-side sources against the server's (baseinfo.h)
+    {
+        *reply = baseinfo::CompareSources();
         return true;
     }
     if (cmd == "worth") // the player's net worth the way the story code computes it (Content.dll: asset value + cash)
@@ -638,17 +674,19 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
             return std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]) - o.radius;
         };
         std::sort(obs.begin(), obs.end(), [&](const Obstacle& x, const Obstacle& y) { return dist(x) < dist(y); });
-        int rocks = 0, mines = 0, solars = 0, ships = 0, debris = 0;
+        int rocks = 0, mines = 0, solars = 0, ships = 0, debris = 0, lethal = 0;
         for (const Obstacle& o : obs)
         {
             (o.mine ? mines : o.asteroid ? rocks : o.ship ? ships : solars)++;
             debris += o.breakable ? 1 : 0;
+            lethal += o.zone ? 1 : 0; // (counted among the solars too)
         }
         std::ostringstream o;
         o.setf(std::ios::fixed);
         o.precision(0);
         o << "obstacles within " << range << " m: " << obs.size() << " (rocks " << rocks << " - breakable debris "
-          << debris << ", mines " << mines << ", solars " << solars << ", ships " << ships << "), ship radius "
+          << debris << ", mines " << mines << ", solars " << solars << " - lethal zones " << lethal << ", ships " << ships
+          << "), ship radius "
           << PlayerRadius() << ", strict field: " << (StrictAt(p.pos).empty() ? "no" : StrictAt(p.pos)) << "\n";
         for (size_t i = 0; i < obs.size() && i < 12; ++i)
             o << " "

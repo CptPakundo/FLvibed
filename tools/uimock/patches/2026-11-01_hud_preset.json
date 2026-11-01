@@ -1,0 +1,10 @@
+{
+  "_about": "0.2.0 (1 Nov 2026): the advanced row hud_preset (0 Standard, 1 Focus, experimental; the registry caps it at 1: Speedrun and Guided are planned, not selectable). Apply with specpatch.py to part2_data.js, docs/UI_SPEC.json and the artifact's ui/spec (pinned set, after reading). Registry: controller/src/impl/controller.cpp hud_preset.",
+  "add_rows": {
+    "controller/HUD": {"after": "hud_style", "rows": [
+      {"key": "hud_preset", "label": "HUD 2 layout", "kind": "picker", "options": ["STANDARD", "FOCUS (EXPERIMENTAL)"], "def": "STANDARD",
+       "help": "Experimental: HUD 2's layout. Standard is today's HUD 2. Focus is calmer: in calm flight no ring, two thin shield and hull arcs and the instruments at the screen's edges. The Speedrun and Guided layouts are planned and cannot be chosen yet.",
+       "tier": "advanced", "needs": "live"}
+    ]}
+  }
+}

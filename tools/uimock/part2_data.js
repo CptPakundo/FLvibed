@@ -23,13 +23,13 @@ const TABS = [
       P('glyph_style', 'Button prompts', ['AUTOMATIC', 'XBOX', 'PLAYSTATION', 'NINTENDO'], 'AUTOMATIC', { help: 'Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro); choose one if yours is detected wrongly.' }),
       P('glyph_look', 'Glyph look', ['AUTOMATIC', 'COLOURED', 'HUD 2 GLYPHS'], 'AUTOMATIC', { help: 'How the button prompts look: Automatic = HUD 2 in its own colour, the classic HUD and menus in the buttons\' colours; Coloured everywhere; HUD 2 style everywhere. Sizes stay as each screen has them.' }),
       P('confirm_button', 'Confirm with', ['BOTTOM BUTTON (A / CROSS / B)', 'RIGHT BUTTON (NINTENDO)'], 'BOTTOM BUTTON (A / CROSS / B)', { help: 'Which face button accepts in menus. The bottom button is the Xbox and PlayStation habit; Nintendo players may prefer the right one.' }),
-      T('pause_on_disconnect', 'Pause when the pad disconnects in flight', true, { help: 'A pad that drops out mid-flight pauses the game; in menus the UI just switches to the keyboard.' }) ] },
+      T('pause_on_disconnect', 'Pause when the pad disconnects in flight', true, { help: 'A pad that drops out mid-flight pauses the game; in menus the UI just switches to the keyboard.' }),
+      P('pad_backend', 'Controller backend', ['XINPUT', 'SDL3 (EXPERIMENTAL)'], 'XINPUT', { help: 'How the controller is read. XInput (default): Xbox pads and pads that act as one. SDL3 (experimental): also PlayStation and Switch Pro pads, with their own button prompts, and the Xbox pad through SDL; if SDL cannot start, XInput keeps reading the pad. Not yet tested with real PlayStation or Switch pads.', tier: 'advanced' }) ] },
     { label: 'LAYOUT', rows: [
       P('pad_preset', 'Preset', ['FREELANCER', 'ACE', 'ASSISTED', 'CUSTOM'], 'FREELANCER', { preset: true, help: 'The whole flight layout. Freelancer: targets and weapons on the fingers, consumables on the D-pad. Ace: arcade flight (left stick steers, triggers are the throttle). Assisted: the autopilot flies, you aim and decide. Custom: edited on the Bindings screen.' }),
       B('edit_bindings', 'Bindings', { btn: 'EDIT BINDINGS AND SEE THE LAYOUT', help: 'The controller diagram with every binding per situation (flight, autopilot, menus, bases, dealers, map, text entry).' }),
-      P('weapon_groups', 'Weapon groups', ['SIMPLE (ONE FIRE BUTTON)', 'CYCLE ON Y HOLD', 'TWO GROUPS ON THE TRIGGERS'], 'CYCLE ON Y HOLD', { help: 'Simple: RT fires the active group (the game\'s default group), switching groups is in the action wheel, the HUD\'s group buttons show the current one. Cycle: Y held flips to the next group (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to L3 and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set on the HUD\'s group buttons, as in the game.' }),
-      T('holds_as_toggles', 'Holds as toggles', false, { help: 'Afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons.' }),
-      P('autopilot_pad', 'Autopilot on the pad', ['HOLD VIEW', 'L3 + R3', 'HOLD MENU'], 'HOLD VIEW', { help: 'How the Advanced Autopilot is switched on and off from the pad: a half-second hold with a ring, or the only chord in the layout. Any stick input hands the ship back.' }) ] },
+      P('weapon_groups', 'Weapon groups', ['SIMPLE (ONE FIRE BUTTON)', 'CYCLE ON Y HOLD', 'TWO GROUPS ON THE TRIGGERS'], 'CYCLE ON Y HOLD', { help: 'Simple: RT fires the active group (the game\'s default group), switching groups is in the action wheel, the HUD\'s group buttons show the current one. Cycle: Y held flips to the next group (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set on the HUD\'s group buttons, as in the game.' }),
+      T('holds_as_toggles', 'Holds as toggles', false, { help: 'Afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons.' }) ] },
     { label: 'AIM', rows: [
       P('aim_mode', 'Aim mode', ['GIMBAL', 'RETICLE'], 'GIMBAL', { help: 'Gimbal: the right stick steers and the reticle locks onto the selected hostile\'s lead cross. Reticle: the stick moves the reticle itself.' }),
       S('aim_cone', 'Lock-on cone', 0, 90, 5, 90, { unit: '°', help: 'Gimbal: how far from the screen centre a hostile\'s lead cross may be for the reticle to lock on. 90 = the whole screen.' }),
@@ -41,28 +41,29 @@ const TABS = [
       S('stick_deadzone', 'Stick deadzone', 0, 0.9, 0.01, 0.24, { help: 'Radial deadzone of both sticks (0..0.9). The device switch ignores stick motion inside it.' }),
       S('trigger_threshold', 'Trigger deadzone', 0, 0.9, 0.01, 0.12, { help: 'How far a trigger must be pulled before it counts.' }),
       S('throttle_rate', 'Throttle rate', 0.1, 5, 0.1, 0.9, { help: 'Throttle lever change per second at full left stick.' }),
-      S('rumble', 'Rumble', 0, 100, 10, 60, { unit: '%', help: 'Vibration strength: hits, the autopilot\'s hand-back, a confirmation request. 0 = off. Never the only cue.' }) ] },
+      S('rumble', 'Rumble', 0, 100, 10, 60, { unit: '%', help: 'Vibration strength: your ship being hit (heavier for hull than shield), your shield failing, the autopilot handing the ship back, and a game box waiting for your answer. 0 = off. Never the only cue. Silent while the game is in the background, paused (except those boxes), in menus and cutscenes, and while you play with keyboard and mouse.' }) ] },
     { label: 'TARGETING', rows: [
       P('auto_target', 'Auto-target', ['OFF', 'CLOSEST ENEMY', 'CLOSEST ENEMY, KEEP MINE'], 'OFF', { help: 'Off: you pick targets and a selected target is never changed. Otherwise the closest enemy is selected for you.' }),
       T('fire_target', 'Firing selects the target', true, { help: 'With nothing targeted, firing at a hostile or neutral ship under the reticle selects it.' }) ] },
     { label: 'MENUS AND PROMPTS', rows: [
-      P('ui_style', 'Screens', ['CLASSIC', 'HUD 2'], 'CLASSIC', { help: 'The look of the menus, rooms and dialogs: Classic = the game\'s own; HUD 2 = FLvibed\'s HUD 2 skin over the same screens (the game\'s controls stay as they are).' }),
+      P('ui_style', 'Menus and rooms look', ['CLASSIC', 'HUD 2'], 'HUD 2', { help: 'The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game\'s controls stay as they are); Classic = the game\'s own look in the menus. With the HUD row set to Classic, everything keeps the game\'s look whatever this says.', tier: 'advanced' }),
       P('pad_cursor', 'Pad cursor', ['OFF', 'ROOMS AND MAPS', 'EVERYWHERE'], 'EVERYWHERE', { help: 'FLvibed\'s own cursor on the left stick, on every screen by default: moving the stick shows it and the game reacts as to the mouse (a bar character lights up, a button highlights, a row focuses); it slows over and pulls toward targets; a D-pad or bumper press hides it and focus navigation carries on from there. A = click either way. Off = focus navigation only.' }),
       S('cursor_speed', 'Cursor speed', 0.1, 5, 0.1, 1.1, { parent: null, help: 'Pad cursor speed, screen heights per second.' }),
       S('cursor_magnet', 'Cursor magnetism', 0, 100, 10, 60, { unit: '%', help: 'How strongly the pad cursor slows over and pulls toward a clickable element.' }),
       P('prompt_bar', 'Prompt bar', ['CONTEXTUAL', 'ALWAYS', 'OFF'], 'CONTEXTUAL', { help: 'The bottom-right row of button prompts on controller screens. Contextual: only where a decision is pending or the screen is new to you; Always: on every screen.' }),
       P('world_prompts', 'World prompts', ['CONTEXTUAL', 'OFF'], 'CONTEXTUAL', { help: 'A prompt by the target when something unusual is possible now (dock in range, loot in reach). Never a permanent label.' }),
-      T('ap_hints', 'Autopilot hints', false, { help: 'Show the autopilot\'s prompts and status to players who have not used it yet. Off: nothing about the autopilot shows until you switch it on once.' }),
+      T('ap_hints', 'Autopilot hints', true, { help: 'Show the autopilot\'s prompts and status to players who have not used it yet. Off: nothing about the autopilot shows until you switch it on once.' }),
       S('text_size', 'Text size', 80, 150, 10, 100, { unit: '%', help: 'Size of FLvibed\'s own UI text (prompts, panels, the status strip). The subtitles have their own size.' }),
       S('wheel_rate', 'Scroll speed', 1, 50, 1, 10, { help: 'Right stick scrolling, notches per second.' }) ] },
     { label: 'HUD', rows: [
-      P('hud_style', 'HUD', ['CLASSIC', 'HUD 2 ON THE PAD', 'HUD 2 ALWAYS'], 'HUD 2 ON THE PAD', { help: 'Which flight HUD you see. HUD 2 is FLvibed\'s own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. On the pad = HUD 2 while you fly with the controller, the game\'s HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game\'s HUD (with the controller\'s glyphs and legend).' }),
+      P('hud_style', 'HUD', ['CLASSIC', 'HUD 2 ON THE PAD', 'HUD 2 ALWAYS'], 'HUD 2 ALWAYS', { help: 'Which flight HUD you see. HUD 2 is FLvibed\'s own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. It is the default for the controller and for keyboard and mouse alike, and it also covers the menus and rooms (the game\'s screens take its look; the row \'Menus and rooms look\' can keep the game\'s own). On the pad = HUD 2 while you fly with the controller, the game\'s HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game\'s own HUD and screens (with the controller\'s glyphs and legend).' }),
+      P('hud_preset', 'HUD 2 layout', ['STANDARD', 'FOCUS (EXPERIMENTAL)'], 'STANDARD', { help: 'Experimental: HUD 2\'s layout. Standard is today\'s HUD 2. Focus is calmer: in calm flight no ring, two thin shield and hull arcs and the instruments at the screen\'s edges. The Speedrun and Guided layouts are planned and cannot be chosen yet.', tier: 'advanced' }),
       P('hud_fade', 'Fade when calm', ['ALWAYS FULL', 'CALM DIMS', 'MINIMAL'], 'CALM DIMS', { help: 'HUD 2 in quiet flight. Calm dims: the ring and the side panels dim while nothing happens and come back the moment something changes or a fight starts. Minimal: calm flight shows almost nothing. Always full: no fading.' }),
       S('hud_opacity', 'HUD opacity', 40, 100, 10, 100, { help: 'How opaque HUD 2 is overall.', unit: '%' }),
       S('hud_scale', 'HUD size', 80, 130, 10, 100, { help: 'The size of HUD 2\'s panels, text and glyphs.', unit: '%' }),
       P('hud_numbers', 'Numbers on the ring', ['WHEN LOW', 'ALWAYS', 'NEVER'], 'WHEN LOW', { help: 'The shield, hull and power numbers at the ends of the ring\'s arcs: only when a value runs low, always, or never (the arcs alone).' }),
       T('hud_threats', 'Threat list', true, { help: 'In a fight, the nearest hostiles under the target card, with the buttons that pick them.' }),
-      P('hud_context', 'Context prompts', ['CONTEXTUAL', 'OFF'], 'CONTEXTUAL', { help: 'Under your ship, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons.' }),
+      P('hud_context', 'Context prompts', ['CONTEXTUAL', 'OFF'], 'CONTEXTUAL', { help: 'Beside the bottom panels, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons: moving the ship on the left, firing and using on the right.' }),
       T('hud_alerts', 'Alerts', true, { help: 'A short card at the top when something needs you now (shield failing, missile incoming, cruise disrupted, hold full), naming the button that helps; that slot lights up.' }),
       T('hud_info', 'Situation details', true, { help: 'Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers.' }),
       T('hud_wireframes', 'Wireframe views', true, { help: 'The game\'s wireframe pictures of your target and your ship in HUD 2\'s panels (else their icons).' }),
@@ -70,12 +71,12 @@ const TABS = [
       T('hud_glyphs', 'Glyphs on the HUD', true, { help: 'Classic HUD: in pad mode the HUD\'s own buttons carry the glyph of the button that acts on them (the maneuver bar, the cruise box, the NeuroNet box, the contact filters, repair and battery, the weapon groups).' }),
       P('button_legend', 'Button legend', ['ON', 'OFF'], 'ON', { help: 'Classic HUD: a small list in the empty right-middle of the screen with the actions available right now and their buttons, changing with the context (a dockable target, a fight, the autopilot flying). HUD 2 has its context prompts instead.' }),
       T('ap_status_line', 'Autopilot status line', true, { help: 'Classic HUD: the one line under the maneuver bar while the autopilot flies, cruise charges or turret view is on. HUD 2 shows it in its navigation block.' }),
-      T('shield_cue', 'Shield hit cue', false, { help: 'A screen-edge cue made of your shield\'s own hit effect when it is hit, and a flash when it fails.' }),
-      S('shield_cue_intensity', 'Shield cue intensity', 0, 2, 0.05, 0.75, { parent: 'shield_cue', help: 'Strength of the shield cue.' }),
-      T('hull_cue', 'Hull hit cue', false, { parent: 'shield_cue', help: 'With the shield cue: hull hits show your ship\'s own hull hit effect at the screen edge.' }),
-      T('reticle_cue', 'Reticle cue', false, { help: 'A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue).' }) ] },
+      T('shield_cue', 'Shield hit cue', true, { help: 'A screen-edge cue made of your shield\'s own hit effect when it is hit, and a flash when it fails.' }),
+      S('shield_cue_intensity', 'Shield cue intensity', 0, 2, 0.05, 1.0, { parent: 'shield_cue', help: 'Strength of the shield cue.' }),
+      T('hull_cue', 'Hull hit cue', true, { parent: 'shield_cue', help: 'With the shield cue: hull hits show your ship\'s own hull hit effect at the screen edge.' }),
+      T('reticle_cue', 'Reticle cue', true, { help: 'A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue).' }) ] },
     { label: 'SYSTEM', rows: [
-      T('focus_only', 'Controller only while the game is in focus', true, { help: 'Ignore the controller while the game is in the background.' }),
+      T('focus_only', 'Controller only while the game is in focus', true, { help: 'Ignore the controller while the game is in the background, in flight and in menus. A button held when you come back is ignored until you release it.' }),
       T('run_in_background', 'Keep the game running in the background', false, { help: 'The game keeps running while its window is not in focus (Freelancer pauses otherwise).' }),
       P('fluf_windows', 'FLUF windows', ['IGNORE', 'PLAYER WINDOWS', 'ALL'], 'ALL', { help: 'Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF\'s windows stay on top: FLvibed\'s HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command\'s or a module\'s window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed\'s layout as without FLUF. While FLUF\'s command palette is open (typing or not) FLvibed\'s keys all pass to FLUF, like a chat box.' }),
       P('borderless', 'Borderless window', ['OFF', 'AUTO', 'ALWAYS'], 'AUTO', { help: 'A window without frame covering the monitor at its resolution - never exclusive fullscreen. Auto: only when nothing else provides it (HD Edition does); Always: also then; Off: the game\'s own mode. With FLUF, Alt+Enter switches to a bordered window. Next start.', needs: 'restart' }) ] } ] },
@@ -118,7 +119,7 @@ const TABS = [
     { label: 'SPEAKERS', rows: [
       P('speaker_names', 'Speaker names', ['OWN ROW', 'INLINE', 'OFF'], 'OWN ROW', { parent: 'enabled', help: 'The name on its own row, inline as "Name: text", or off.' }),
       T('speaker_colors', 'Speaker colours', true, { parent: 'enabled', help: 'Story speakers\' names in their own colours (new key).' }),
-      T('hostile_marker', 'Hostile marker', false, { parent: 'enabled', help: 'A hostile speaker gets the HUD\'s red triangle before the name.' }) ] },
+      T('hostile_marker', 'Hostile marker', true, { parent: 'enabled', help: 'A hostile speaker gets the HUD\'s red triangle before the name.' }) ] },
     { label: 'CHANNELS', rows: [
       T('story', 'Story', true, { parent: 'enabled', help: 'Story cutscene lines.' }),
       T('comms', 'Comms', true, { parent: 'enabled', help: 'Mission comms.' }),
@@ -134,6 +135,7 @@ const TABS = [
       T('cinematic_single_speaker', 'One speaker at a time in cutscenes', true, { parent: 'enabled', help: 'Letterboxed scenes show one speaker at a time.' }) ] },
     { label: 'MOTION', rows: [
       T('motion', 'Motion', true, { parent: 'enabled', help: 'Lines fade in and out and the stack glides; off = instant.' }),
+      S('stack_fit', 'Stacked lines shrink to', 0.5, 1.0, 0.05, 0.7, { help: 'When several speakers\' lines are on screen together they shrink together, down to this size, so the stack keeps about one line\'s height; 1 = off.', parent: 'enabled' }),
       T('word_pop', 'Spoken-word pop', true, { parent: 'enabled', help: 'The word being spoken grows slightly (lines with word timings).' }),
       T('neural_net_severity', 'Neural Net severity colours', true, { parent: 'enabled', help: 'Neural Net lines coded by severity (colour, brightness pulses).' }),
       S('linger', 'Linger', 0, 5, 0.25, 1, { tier: 'advanced', unit: ' s', parent: 'enabled', help: 'Seconds a line stays after its audio.' }),
@@ -154,9 +156,9 @@ const PRESETS = {
     { name: 'NO CONSUMABLES', values: { knowledge: 'WHAT YOU HAVE SEEN', engage: 'TARGET, THEN NEAREST', auto_fire: true, missiles: false, countermeasures: 'NEVER', repair: 'NEVER', loot: true, caution: 'WHEN OUTMATCHED', avoid: true, fast_dock: false, skip_dock_scene: true } }
   ],
   controller: [
-    { name: 'FREELANCER', values: { holds_as_toggles: false, autopilot_pad: 'HOLD VIEW' } },
-    { name: 'ACE', values: { holds_as_toggles: false, autopilot_pad: 'HOLD VIEW' } },
-    { name: 'ASSISTED', values: { holds_as_toggles: true, autopilot_pad: 'HOLD VIEW' } }
+    { name: 'FREELANCER', values: { holds_as_toggles: false } },
+    { name: 'ACE', values: { holds_as_toggles: false } },
+    { name: 'ASSISTED', values: { holds_as_toggles: true } }
   ]
 };
 
@@ -212,7 +214,7 @@ const FLIGHT_ASSISTED = {
   DU: Bd('nanobot'), DD: Bd('battery'), DL: Bd('cm'), DR: Bd('mine'), VIEW: Bd('hub', 'autopilot'), MENU: Bd('pause')
 };
 const COMMON = {
-  flight_ap: { LS: Bd('handback'), RS: Bd('handback'), L3: Bd('none'), R3: Bd('target_smart', 'rear', 'clear_target'), LT: Bd('afterburner'), RT: Bd('fire'), LB: Bd('target_picker', 'action_wheel'), RB: Bd('missile'), A: Bd('accept'), B: Bd('handback'), X: Bd('goal_panel'), Y: Bd('cruise'), DU: Bd('nanobot'), DD: Bd('battery'), DL: Bd('cm'), DR: Bd('mine'), VIEW: Bd('hub', 'autopilot'), MENU: Bd('pause') },
+  flight_ap: { LS: Bd('handback'), RS: Bd('handback'), L3: Bd('none'), R3: Bd('target_smart', 'rear', 'clear_target'), LT: Bd('afterburner'), RT: Bd('fire'), LB: Bd('target_picker', 'action_wheel'), RB: Bd('missile'), A: Bd('accept'), B: Bd('handback'), X: Bd('goal_panel', 'turret'), Y: Bd('cruise'), DU: Bd('nanobot'), DD: Bd('battery'), DL: Bd('cm'), DR: Bd('mine'), VIEW: Bd('hub', 'autopilot'), MENU: Bd('pause') },
   menus: { LS: Bd('focus'), RS: Bd('scroll'), L3: Bd('cursor_toggle'), R3: Bd('reset_view'), LT: Bd('page_prev'), RT: Bd('page_next'), LB: Bd('tab_prev'), RB: Bd('tab_next'), A: Bd('accept'), B: Bd('back', 'back_all'), X: Bd('ctx_x'), Y: Bd('sec_y'), DU: Bd('focus'), DD: Bd('focus'), DL: Bd('focus'), DR: Bd('focus'), VIEW: Bd('hub'), MENU: Bd('pause') },
   rooms: { LS: Bd('cursor'), RS: Bd('scroll'), L3: Bd('cursor_toggle'), R3: Bd('none'), LT: Bd('none'), RT: Bd('none'), LB: Bd('room_prev'), RB: Bd('room_next'), A: Bd('talk'), B: Bd('back'), X: Bd('news'), Y: Bd('launch'), DU: Bd('repair_all'), DD: Bd('none'), DL: Bd('char_prev'), DR: Bd('char_next'), VIEW: Bd('hub'), MENU: Bd('pause') },
   dealers: { LS: Bd('focus'), RS: Bd('scroll'), L3: Bd('cursor_toggle'), R3: Bd('none'), LT: Bd('qty_dec'), RT: Bd('qty_inc'), LB: Bd('side'), RB: Bd('side'), A: Bd('buy_sell'), B: Bd('back'), X: Bd('filter'), Y: Bd('max', 'compare'), DU: Bd('focus'), DD: Bd('focus'), DL: Bd('side'), DR: Bd('side'), VIEW: Bd('hub'), MENU: Bd('pause') },
@@ -297,7 +299,7 @@ const DECISIONS = [
   { id: 'modules', q: '9. Module switches on the GENERAL tab', options: ['Show them (after restart)', 'Leave them to the ini'], answer: 0, note: '' },
   { id: 'order', q: '10. Build order', options: ['The bar button first, then the page', 'The page first', 'Both in parallel'], answer: 2, note: '' },
   { id: 'c_preset', q: '11. The default flight preset (Bindings screen)', options: ['FREELANCER as proposed', 'As I changed it in the mock-up', 'Needs a playtest first (note what to try)'], answer: null, note: '' },
-  { id: 'c_ap', q: '12. Autopilot on the pad', options: ['Hold View (half a second, ring)', 'L3 + R3', 'Hold Menu', 'Other (note)'], answer: null, note: '' },
+  { id: 'c_ap', q: '12. Autopilot on the pad', options: ['Hold View (half a second, ring)', 'L3 + R3', 'Hold Menu', 'Other (note)'], answer: null, note: 'Built: hold View only. The other two answers (an earlier proposal, never the owner\'s choice) were removed with the autopilot_pad row on 28 Oct 2026.' },
   { id: 'c_switch', q: '13. Device switching', options: ['Automatic by default, one-frame swap, lock in the options (as proposed)', 'Manual choice by default', 'Other (note)'], answer: null, note: '' },
   { id: 'c_glyphs', q: '14. Glyph families', options: ['Xbox / PlayStation / Switch, auto-detected by the pad\'s ids, overridable; confirm = bottom button with a Nintendo swap option', 'Xbox only for now', 'Other (note)'], answer: null, note: 'Built: the glyphs are drawn by FLvibed itself (GDI shapes and letters, the three families, sharp at any size, no art file); Kenney\'s CC0 set stays a possible art swap.' },
   { id: 'c_cursor', q: '15. The pad cursor', options: ['On by default in rooms and maps, off in lists (as mocked)', 'Off by default everywhere', 'Everywhere by default'], answer: null, note: 'Built: EVERYWHERE is the default (the row\'s def updated to the decision); the game\'s arrow is hidden while the focus drives (a D-pad / bumper press) and shown again by the stick.' },

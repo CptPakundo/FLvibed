@@ -2,7 +2,8 @@
 docs\\TESTING.md "Speedrun splits"): the in-game split detector (controller\\src\\impl\\livesplit.cpp) reaches the same
 checkpoints by the same conditions splits.py matches in the logs - `ours`: obj:<id> (the objective first shown),
 control / land / launch / cutscene (mode changes), kill:<n> (the n-th destroyed marked solar), success (the mission's
-result) - from the live game state, so one list drives the offline tables, the LiveSplit files and the in-game splits.
+result), save:<ids> (the mission's checkpoint save, pub::Save with that description id: GAME SAVED) - from the live
+game state, so one list drives the offline tables, the LiveSplit files and the in-game splits.
 
 Usage (the OCR venv python, -I):  tools\\checkpoints_gen.py            write the header
                                   tools\\checkpoints_gen.py --check    exit 1 when the header is stale (drift check)
@@ -15,7 +16,7 @@ FL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(FL, 'docs', 'checkpoints.tsv')
 OUT = os.path.join(FL, 'controller', 'src', 'impl', 'checkpoints_gen.h')
 KINDS = {'obj': 'Obj', 'control': 'Control', 'land': 'Land', 'launch': 'Launch', 'cutscene': 'Cutscene',
-         'success': 'Success', 'kill': 'Kill'}
+         'success': 'Success', 'kill': 'Kill', 'save': 'Save'}
 
 
 def cstr(s):
@@ -36,11 +37,12 @@ def generate():
            '    Cutscene, // mode space -> cutscene (a story scene in space)',
            '    Success,  // the mission\'s result: the objective list cleared (SetMissionObjectives count 0)',
            '    Kill,     // the `value`-th destroyed solar the mission marked (counted per leg)',
+           '    Save,     // the mission\'s checkpoint save with description id `value` (pub::Save: GAME SAVED; HostApi v35)',
            '};', 'struct Row', '{',
            '    const char* leg;     // "M01a"',
            '    const char* cp;      // "M01a.wing" (the LiveSplit segment name is the part after the dot)',
            '    Kind kind;',
-           '    u32 value;           // Obj: the text id; Kill: n; else 0',
+           '    u32 value;           // Obj: the text id; Kill: n; Save: the save\'s ids; else 0',
            '    const char* segment; // what happens in the segment this checkpoint ends',
            '};', 'constexpr Row kRows[] = {']
     for r in rows:

@@ -1,5 +1,8 @@
 #include "presets.h"
 
+#include "log.h"
+#include "ui_meta.h" // the spec's binding tables
+
 #include <sstream>
 
 namespace presets
@@ -57,110 +60,50 @@ const char* PresetName(int preset)
     return "?";
 }
 
-// ---------------------------------------------------------------- the tables (docs\UI_SPEC.json bindings, v2)
-using A = Action;
-#define BIND(id, tap, hold, dbl) t.b[glyphs::id] = {A::tap, A::hold, A::dbl}
+// ---------------------------------------------------------------- the tables
+// Straight from the spec (docs\UI_SPEC.json `bindings`, generated into core\ui_meta.h kBind_*): until 29 Oct 2026 this
+// file carried a hand transcription of them (identical then). ACE's triggers act as levers: LT throttle down and reverse
+// at full pull, RT throttle up and afterburner at full pull (controller.cpp RunPreset). A name the dispatcher does not
+// know fails loudly: logged once, that slot stays unbound.
+static Action SpecAction(const char* set, const char* button, const char* name)
+{
+    const Action a = ActionFromName(name);
+    if (a == Action::None && name && _stricmp(name, "none") != 0)
+        Log("presets: the spec's %s %s action '%s' is unknown to the dispatcher - unbound", set, button, name);
+    return a;
+}
 
-static Table MakeFreelancer()
+static Table FromSpec(const char* set, const uimeta::Bind* binds, int count)
 {
     Table t;
-    BIND(A, Context, Formation, None);
-    BIND(B, FreeFlight, Reverse, None);
-    BIND(X, Tractor, Turret, None);
-    BIND(Y, Cruise, WeaponGroup, None);
-    BIND(LB, TargetPicker, ActionWheel, None);
-    BIND(RB, Missile, Torpedo, None);
-    BIND(LT, Afterburner, None, None);
-    BIND(RT, Fire, None, None);
-    BIND(LS, Throttle, None, None);
-    BIND(RS, Steer, None, None);
-    BIND(L3, EngineKill, None, None);
-    BIND(R3, TargetSmart, Rear, ClearTarget);
-    BIND(DU, Nanobot, None, None);
-    BIND(DD, Battery, None, None);
-    BIND(DL, Cm, None, None);
-    BIND(DR, Mine, None, None);
-    BIND(VIEW, Hub, Autopilot, None);
-    BIND(MENU, Pause, None, None);
+    if (!binds)
+        Log("presets: the spec has no binding table %s - every button unbound", set);
+    for (int i = 0; binds && i < count; ++i)
+    {
+        const glyphs::Id id = glyphs::FromName(binds[i].button);
+        if (id == glyphs::COUNT)
+        {
+            Log("presets: the spec's %s button '%s' is unknown - skipped", set, binds[i].button);
+            continue;
+        }
+        t.b[id] = {SpecAction(set, binds[i].button, binds[i].tap), SpecAction(set, binds[i].button, binds[i].hold),
+                   SpecAction(set, binds[i].button, binds[i].dbl)};
+    }
     return t;
 }
 
-static Table MakeAce()
+static Table FromSpecPreset(const char* name)
 {
-    Table t;
-    BIND(A, Fire, None, None);
-    BIND(B, Missile, None, None);
-    BIND(X, Context, Goto, None);
-    BIND(Y, TargetNearest, TargetPicker, None);
-    BIND(LB, Cm, None, None);
-    BIND(RB, NextEnemy, None, None);
-    BIND(LT, Reverse, None, None);     // the trigger as a lever: throttle down, reverse at full pull
-    BIND(RT, Throttle, Afterburner, None); // throttle up, afterburner at full pull
-    BIND(LS, Steer, None, None);
-    BIND(RS, StrafeUd, None, None);
-    BIND(L3, EngineKill, None, None);
-    BIND(R3, NextEnemy, Rear, None);
-    BIND(DU, Nanobot, None, None);
-    BIND(DD, Battery, None, None);
-    BIND(DL, Cruise, None, None);
-    BIND(DR, Mine, None, None);
-    BIND(VIEW, Hub, Autopilot, None);
-    BIND(MENU, Pause, None, None);
-    return t;
+    for (const uimeta::BindSet& s : uimeta::kBindingPresets)
+        if (_stricmp(s.name, name) == 0)
+            return FromSpec(name, s.binds, s.count);
+    return FromSpec(name, nullptr, 0);
 }
-
-static Table MakeAssisted()
-{
-    Table t;
-    BIND(A, Context, None, None);
-    BIND(B, Handback, None, None);
-    BIND(X, GoalPanel, None, None);
-    BIND(Y, Cruise, ActionWheel, None);
-    BIND(LB, None, None, None);
-    BIND(RB, Missile, None, None);
-    BIND(LT, TargetPicker, None, None);
-    BIND(RT, Fire, None, None);
-    BIND(LS, None, None, None);
-    BIND(RS, Aim, None, None);
-    BIND(L3, None, None, None);
-    BIND(R3, TargetNearest, Rear, NextEnemy);
-    BIND(DU, Nanobot, None, None);
-    BIND(DD, Battery, None, None);
-    BIND(DL, Cm, None, None);
-    BIND(DR, Mine, None, None);
-    BIND(VIEW, Hub, Autopilot, None);
-    BIND(MENU, Pause, None, None);
-    return t;
-}
-
-static Table MakeFlightAp()
-{
-    Table t;
-    BIND(A, Accept, None, None);
-    BIND(B, Handback, None, None);
-    BIND(X, GoalPanel, None, None);
-    BIND(Y, Cruise, None, None);
-    BIND(LB, TargetPicker, ActionWheel, None);
-    BIND(RB, Missile, None, None);
-    BIND(LT, Afterburner, None, None);
-    BIND(RT, Fire, None, None);
-    BIND(LS, Handback, None, None);
-    BIND(RS, Handback, None, None);
-    BIND(L3, None, None, None);
-    BIND(R3, TargetSmart, Rear, ClearTarget);
-    BIND(DU, Nanobot, None, None);
-    BIND(DD, Battery, None, None);
-    BIND(DL, Cm, None, None);
-    BIND(DR, Mine, None, None);
-    BIND(VIEW, Hub, Autopilot, None);
-    BIND(MENU, Pause, None, None);
-    return t;
-}
-#undef BIND
 
 const Table& Flight(int preset)
 {
-    static const Table freelancer = MakeFreelancer(), ace = MakeAce(), assisted = MakeAssisted();
+    static const Table freelancer = FromSpecPreset("FREELANCER"), ace = FromSpecPreset("ACE"),
+                       assisted = FromSpecPreset("ASSISTED");
     switch (preset)
     {
     case ACE: return ace;
@@ -171,20 +114,14 @@ const Table& Flight(int preset)
 
 const Table& FlightAp()
 {
-    static const Table ap = MakeFlightAp();
+    static const Table ap = FromSpec("common.flight_ap", uimeta::kBind_common_flight_ap,
+                                     static_cast<int>(sizeof(uimeta::kBind_common_flight_ap) / sizeof(uimeta::Bind)));
     return ap;
 }
 
-Table Effective(int preset, int autopilotPad, int weaponGroups)
+Table Effective(int preset, int weaponGroups)
 {
     Table t = Flight(preset);
-    if (autopilotPad == 1) // L3 + R3: a chord the caller detects; no hold
-        t.b[glyphs::VIEW].hold = Action::None;
-    else if (autopilotPad == 2)
-    {
-        t.b[glyphs::VIEW].hold = Action::None;
-        t.b[glyphs::MENU].hold = Action::Autopilot;
-    }
     if (weaponGroups == 0)
     {
         if (t.b[glyphs::Y].hold == Action::WeaponGroup)
@@ -230,9 +167,10 @@ bool Find(const Table& t, Action a, glyphs::Id& btn, int& slot)
 }
 
 // ---------------------------------------------------------------- the dispatcher
+// (not Turret: since 26 Oct 2026 each turret hold toggles the view itself; a latch made every second hold a no-op)
 static bool Latchable(Action a)
 {
-    return a == Action::Afterburner || a == Action::Reverse || a == Action::Rear || a == Action::Turret;
+    return a == Action::Afterburner || a == Action::Reverse || a == Action::Rear;
 }
 
 void Dispatcher::Start(Action a, glyphs::Id btn, bool holdSlot, Phase phase, std::vector<Event>& out)
@@ -266,6 +204,13 @@ void Dispatcher::Update(float dt, const Table& t, const bool down[glyphs::COUNT]
         s.down = down[i];
         if (!wasDown)
             s.sinceRelease += dt;
+        // a deferred held-kind tap's pulse ends (kTapPulseSec after its release)
+        if (s.pulse > 0 && (s.pulse -= dt) <= 0 && s.heldTap != Action::None)
+        {
+            out.push_back({id, s.heldTap, Phase::HoldEnd});
+            s.heldTap = Action::None;
+        }
+        const bool deferTap = IsHeldKind(b.tap) && b.hold != Action::None; // waits for the hold threshold
         // a pending tap: delivered when the double-tap window closes without a second press
         if (s.tapPending && !s.down && s.sinceRelease > kDblSec)
         {
@@ -284,7 +229,7 @@ void Dispatcher::Update(float dt, const Table& t, const bool down[glyphs::COUNT]
                 s.lastWasTap = false;
                 out.push_back({id, b.dbl, Phase::Dbl});
             }
-            else if (IsHeldKind(b.tap))
+            else if (IsHeldKind(b.tap) && !deferTap)
                 Start(b.tap, id, false, Phase::Tap, out);
             else if (b.tap != Action::None && b.hold == Action::None && b.dbl == Action::None)
             {
@@ -306,6 +251,17 @@ void Dispatcher::Update(float dt, const Table& t, const bool down[glyphs::COUNT]
         else if (wasDown) // release
         {
             s.sinceRelease = 0;
+            if (deferTap && !s.holdFired && !s.consumed)
+            {
+                // released before the hold: the tap now, as a short hold (the game reads held commands per frame)
+                if (s.heldTap != Action::None) // a previous pulse still running: end it first
+                    out.push_back({id, s.heldTap, Phase::HoldEnd});
+                s.heldTap = Action::None;
+                Start(b.tap, id, false, Phase::Tap, out);
+                s.pulse = kTapPulseSec;
+                s.lastWasTap = false;
+                continue;
+            }
             if (s.heldTap != Action::None)
             {
                 out.push_back({id, s.heldTap, Phase::HoldEnd});
@@ -349,6 +305,7 @@ void Dispatcher::Cancel(glyphs::Id btn)
     s.tapPending = false;
     s.lastWasTap = false;
     s.heldTap = s.heldHold = Action::None;
+    s.pulse = 0;
 }
 
 void Dispatcher::Reset()

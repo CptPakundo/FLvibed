@@ -25,6 +25,10 @@ bool OwnsInput();
 void Idle(float dt);
 // Inside the overlay pass: the prompt, the OSK, the tags, the prompt bar (in this order, over the game's screen).
 void Draw();
+// The window a menu screen runs as a modal loop without holding the game's keyboard focus (ui::ModalRoot misses it):
+// the multiplayer LAN / INTERNET prompt - its root, else 0. The D-pad focus stays inside it (controller.cpp; found by
+// the focus crawler, controller\tools\flcrawl.ps1, 30 Oct 2026: the focus walked onto the main menu buttons behind).
+uintptr_t ModalRoot();
 // Debug: menus state
 std::string Command(std::istream& in);
 std::string Status();

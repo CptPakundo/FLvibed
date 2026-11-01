@@ -10,7 +10,11 @@ is doubtful. Menus keep the one grammar (A accept, B back, LB/RB tabs, View = Ne
 Status (25 Oct 2026): **superseded by the decided presets** FREELANCER / ACE / ASSISTED of `..\..\docs\UI_SPEC.json`
 (`bindings`; design `..\..\docs\UI_PLAN.md` 6.4), built in `..\src\impl\presets.*` (the tables and the tap / hold /
 double-tap dispatcher) and run by `controller.cpp` UpdateSpace; the summary is in `..\CLAUDE.md` ("Controls summary").
-Where this document differs from UI_SPEC, UI_SPEC wins. The research below (what other games do, the frequency
+The L3 + R3 autopilot chord proposed below never became a choice: the autopilot is View held in every preset (the
+leftover `autopilot_pad` setting with the chord and hold Menu was removed on 28 Oct 2026).
+The dispatcher's tap / hold rule for a held-kind tap with a hold action (FREELANCER's RB: missiles, hold torpedo; 29
+Oct 2026, `presets.h` kTapPulseSec): released before 0.4 s = the tap (the missiles, on the release), held = the torpedo
+alone - before, a torpedo also launched a missile. Where this document differs from UI_SPEC, UI_SPEC wins. The research below (what other games do, the frequency
 table, the reasoning) stays as the record behind the decisions.
 
 ## 1. What comparable games do (default gamepad layouts)

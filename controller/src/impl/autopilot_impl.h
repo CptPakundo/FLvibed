@@ -13,12 +13,16 @@
 #include "game/ai.h"
 #include "game/avoid.h"
 #include "game/flight.h"
+#include "game/gameclock.h" // the decision timers' clock (game time, 30 Oct 2026)
 #include "game/geom.h"
 #include "game/mission.h"
+#include "game/ordnance.h" // our rounds' flight and burst (WORK_QUEUE Q4 slice 1)
 #include "game/route.h"
 #include "game/space.h"
 #include "host.h"
 #include "log.h"
+#include "mprules.h"
+#include "strafe.h" // `strafe_pass`'s pure half (the hull, the pass lines, the schedule)
 #include <deque>
 #include <map>
 #include <set>
@@ -132,6 +136,7 @@ enum class PassPhase
     In = 0,
     Firing = 1,
     Out = 2,
+    Coast = 3, // `big_coast`: engine killed, coasting in on the target firing - until fire comes in
 };
 // the slash run: 0 the pass, 1 the extend
 enum class SlashPhase
@@ -176,6 +181,32 @@ struct Settings
     int dodge = 1;               // how to dodge: 1 = slide bursts while the nose stays on the target (keeps tracking),
                                  // 2 = the game's Evade behaviour (NPC style: turns away, loses the aim for 2-3 s)
     float fireCone = 0.5f;       // fire while the lead cross is within this offset from the screen centre (half-screen)
+    bool rollGuns = true;        // roll toward the angle where more guns can point at the lead (CanPointAt x 8 angles)
+    bool rollFlair = true;       // a barrel roll with a sideways slide, when no roll angle loses a gun
+    bool rollBank = false;       // bank into turns (stable since steer_level; off: ~0.2 s slower per 90 deg turn, SaveC705)
+    float rollTest = 0;          // debug: hold this roll rate (rad/s about the nose) while the autopilot flies
+    bool rollCommit = true;      // roll_guns flies a chosen angle to its end (rolled angle measured), then holds 0.5 s
+    bool followOwn = true;       // fly a follow ourselves once the game ended a re-issued one within 1 s (no op flips)
+    bool survivalCalm = true;     // the survival stance pursues nothing: only ships shooting at us are targets
+    bool survivalUntilJump = true; // an escape title's survival stance ends at the mission's first system change
+    bool followDefend = true;    // a player's follow under attack escorts its leader; a leader gone under attack: fight on
+    bool survivalStage = true;   // speedrun knowledge: the calm stance waits at the script's next place (M04: the next lane)
+    bool prestageNext = true;    // speedrun knowledge: a placeholder step after a lane ride flies to the next step's goal
+    float bigCoastLead = 1500;   // the coast starts this far beyond gun reach of the hull (m), still in cruise
+    bool bigCoast = true;        // a huge static target is opened by a coast in: cruise, engine kill, every weapon - until fire comes
+    bool bigCoastOwn = false;    // ... only a static the fight / a "Destroy" step's marks / the trip names (M13-MIMIC mm1)
+    // (big_standoff, big_jink, big_pass, hold_big_gap, hold_jink: off after their tests, deleted 31 Oct 2026, AUD-A1-5)
+    bool selfBurst = true;       // no round at a target from closer than where one burst at its launch (+150 m)
+    bool steerCheck = false;     // debug: the steering frame measured in fights (event steer-check)
+    int steerLevel = 2;          // the steering restated into the game's turn frame: 0 off, 1 level, 2 the camera's (aim::LevelSteer)
+    bool standoff = true;        // the pursuit keeps 1.3 x target speed / our turn rate off a ship (80 m .. 60 % reach)
+    bool headonReverse = true;
+    float headonShield = 0.25f;  // the head-on pass holds under fire down to this shield fraction (then the evasions)   // a ship flying at us: reverse thrust and a predictive turn, the guns on its lead
+    bool missileLead = true;     // missiles at a moving ship: launched on the line to its impact point, out of a burn
+    bool finishTarget = true;    // a live enemy ship stays the target until it dies (hull >= 35 %, within 1 km)
+    float lofCaution = 0.35f;    // the friendly-fire corridors' scale (guns 60 / 90 m, missiles 200 / 400 m at 1.0)
+    bool fireCovering = true;    // also fire, aimed at the lead, whenever a gun can point at it (CEGun::CanPointAt) -
+                                 // off the nose too: the static hold's orbit, evasion (the owner, 28 Oct 2026)
     float followDistance = 1500; // follow / escort: the game's follow max distance (m)
     float followOffset[3] = {0, 50, 250}; // follow / escort: offset from the leader (x right, y up, z behind)
     float escortRadius = 2500;            // escort: fight hostiles within this distance
@@ -190,23 +221,18 @@ struct Settings
                                // 60 %; 2 = leave sooner (outmatched at even odds, hull below 80 %)
     float retreatOdds = 0.05f; // free roam: leave a fight whose measured race (FightOdds) is lost this badly (0.05 =
                                // 20:1; the loadout prior alone at 0.4 x it; also the outmatched line); 0 = off
+    bool oddsShield = true;    // OurDps / PointsLeft count shield points (9212cc3); off = hull only as before, for A/B
     int repair = 1; // nanobots / shield batteries: 0 never; 1 only when needed (the player's way: a battery when
                     // the shield is low and still falling, nanobots when the hull is low and being hit, or
                     // critical); 2 at the personality's damage thresholds (NPC style)
-    float repairShieldAt = 0.25f; // repair 1: cap - never a battery above this shield fraction
     float batteryHorizon = 0.6f;  // repair 1: battery when the shield left is below the loss rate x this (s) or the
                                   // largest recent single hit
-    float repairHullAt = 0.6f;    // repair 1: nanobots below this hull fraction while being hit (always below 0.35)
     bool loot = true;         // collect loot near the fight once no enemy is left (the game's Loot behaviour): what the
                               // hold takes, the most valuable first
     float lootMinValue = 0;   // leave loot worth less than this (credits at the base price, goods.ini)
-    bool extend = false;      // extend under sustained fire (afterburner away, jinking) and resume when the hits stop
-                              // (off: 16-run benchmark 17 Oct 2026 - kills/min 2.47 vs 4.10, on target 58 vs 80 %,
-                              // no less damage per kill; needs a smarter trigger)
-    float extendQuiet = 1.5f; // extend: resume after this long without a hit (s)
-    float extendMax = 8.0f;   // extend: at most this long (s)
-    float extendJink = 40.0f; // extend: jink offset from straight away (degrees)
-    float extendPatience = 3.0f; // extend: still hit after this long = futile, fight instead (s)
+    // (the `extend` switch and its knobs were deleted 31 Oct 2026, AUD-A1-5: it lost its benchmark - kills/min 2.47 vs
+    // 4.10. The extend itself stays under the objective mode's survival stance, with the knobs' values as constants:
+    // kExtendQuiet / kExtendMax / kExtendJink / kExtendPatience, autopilot_combat.cpp)
     bool stagger = true;      // staggered gun fire (the guns started one by one over their refire cycle, then fire-all;
                               // benchmark: dps 85 vs 82, lost per kill 0.21 vs 0.28 - small samples, user: benefit of
                               // the doubt)
@@ -226,6 +252,31 @@ struct Settings
     // state first - an objective -> the objective mode, else the waypoint list -> travel along it, else the target;
     // 0 = the target alone (the start before 26 Oct 2026). StartSmart, autopilot.cpp.
     int startSmart = 1;
+    // Multiplayer, a server that says nothing about FLvibed (mprules.h, docs\MULTIPLAYER.md "Server permission"): 0 = no
+    // autopilot, 1 = travel only (flying, docking, lanes, gates - no combat), 2 = everything. 1 = the owner's decision (28 Oct
+    // 2026, "good enough for now"): the game's own goto / dock already fly the ship, combat automation is what servers'
+    // rules forbid (bots, aim assistance).
+    int mpAutopilot = 1;
+    // a Hold the player started (not the objective mode's) fights ships that attack it where fighting is allowed, then
+    // holds again at its point (28 Oct 2026: two multiplayer clients holding near Manhattan sat still under Rogue fire
+    // for 1.5-5 min, spent every nanobot and battery and died - Hold had no threat branch)
+    bool holdDefend = true;
+    // multiplayer leans to survival (the owner, 28 Oct 2026, watching autopilot PvP: "PvP should probably default to an
+    // increased focus on the ship's survivability, as unlike in single player there's no save reload, and there are
+    // consequences for ship destruction"): on a server these replace `caution` and the flee floor (CautionNow / FleeAtNow);
+    // the duels before ran to a death or a 10-18 % survivor at point-blank range
+    // the duel flight against another player (the owner, 28 Oct 2026: "PvP fights need to balance extreme evasive
+    // maneuvers and making full use of chances to inflict maximum damage while taking minimal damage in return. Human
+    // players don't always wait until their hull is under 40% to start extreme survival action"): 0 off, 1 against
+    // players' ships, 2 against every ship (trials); pvp_min_dist = the break-off distance (the duels rammed: a kill by
+    // collision at 4-15 m)
+    // default 0 (experimental): two A/B rounds lost against the plain fight - the stand-off cannot hold against an
+    // opponent who closes in, the fight still ran at 12-70 m (MULTIPLAYER.md "Several clients")
+    int pvpDuel = 0;
+    float pvpMinDist = 120.0f;
+    float pvpRange = 300.0f; // the duel's stand-off distance (m; at most 0.8 x the gun range)
+    int mpCaution = 2;
+    float mpFlee = 0.4f; // hull fraction; -1 = as in single player (`flee`, else the personality's)
     // Fast dock (user, 18 Oct 2026: the player's shortcut when time or survival matter): fly player-style - full
     // throttle, afterburner when lined up, braking late - to the outer approach point (p2) of the bay the game will
     // assign, and request the dock just before it, so the docking cutscene starts at once instead of after the game's
@@ -234,12 +285,20 @@ struct Settings
     // a fast dock's request dropped when the distance to the target keeps growing 4 s after it (the game's dock losing
     // a moving target: M06's Hood, session 11) - the approach lines up again; 0 = the game's dock as it goes (off until
     // tested: the game's dock may swing away from a big station's centre to a far bay)
-    bool dockRegain = false;
+    bool dockRegain = true; // (on since 29 Oct 2026: gate mpb18, M06's Hood - a grant the game's dock crawled 64 s after)
+    bool bayArrive = true;  // fast dock at a bay: arrive no faster than the hull ahead of p2 allows (2 s of it, >= 1.25 x engine top)
+    // the queue shortcut's rush at gates / holes (a ship going in first: to the entrance, no request, formation on the
+    // locked-in ship); 0 = the request at the fast-dock point at speed, the game's queue answer decides (30 Oct 2026,
+    // docs\research\gap_decomposition.md 4: 0 formation successes in 125 leg tries, the rush +91 s over its own ETA on gate s7arb3)
+    bool shortcutRush = true;
     // Fast dock: where to request the dock, along the bay's axis from p2 (m; 0 = at p2, negative = past it towards the
     // mount). Only the position at the request matters (user, 18 Oct 2026): requested earlier, the game's dock takes
     // the ship and slows it (Fort Bush at full afterburner: 120 m out 4.2 s to the cutscene, 40 m 0.8 s, 5 m 0.4 s).
     float dockRequestDistance = 5;
     float dockArriveSpeed = 0; // fast dock: brake to this speed before the request point (m/s); 0 = no braking
+    // fast dock at a bay: the request only within 40 m of the bay's axis (the Osiris: requested 300 m off it, the game's
+    // dock flew the rest in 10 s; M13-MIMIC). Off until gated
+    bool bayRequestLined = false;
     // fast dock at a planet's docking ring, straight in: the request this far from p2 (m) at full speed,
     // as at stations; 0 = the request ~1.4 s / at least 400 m out (the game's dock then flies the rest: 6.6-7.0 s from
     // the request in 80+ archived landings, whatever the speed or angle; the top-3 runners reach the ring at 299 m/s,
@@ -300,6 +359,7 @@ struct Settings
     // ~40 m/s at gaps of ~0-70 m, reverse taps only for the pad layout's convenience) - near the hull, sliding along it,
     // mines dropped on the way: 20 m (was 60, the runners' HUD reading, CALIBRATION #4)
     float staticHoldGap = 20;
+    bool staticHoldGuns = true; // the hold backs off until every gun can point at the target (CEGun::CanPointAt)
     // ...slid round the target at this rate (deg/s), one way per hold, the slide thrusters doing it while the nose and
     // guns stay on (the user: "light orbit movements"; measured in run 1 / M09 / M13: ~5 deg/s, no reversals); 0 = still
     float staticHoldSlide = 5;
@@ -317,6 +377,119 @@ struct Settings
     // A step's flying condition from the mission script (mission::AdvanceGoals; Source::Hidden): travel there instead of
     // fighting or flying to a waypoint that does not advance the step - "objectives are triggers" (IDEAS A21)
     bool scriptGoals = true;
+    // A37 S3 shadow (a measurement, decides nothing): the arbiter's ported rules run beside ObjectiveDecide at the exits
+    // they cover and log `situation shadow agree|differ` (situation_snap.cpp); 0 = nothing runs
+    bool situationShadow = false;
+    // A37 S7 the switch (controller\docs\A37_PLAN.md): the objective mode's decision from the arbiter - Decide over the
+    // goal queue, the executor's game-first starts, the player's stop pausing the queue (D10); 0 = today's path exactly
+    bool situationArbiter = false;
+    // LOOK L0 (controller\docs\LOOK_PLAN.md; a measurement, decides nothing): at each objective decision log what the
+    // look-ahead would do - "autopilot look kill|fly|none ..." once per change of the verdict (lookahead.h, the adapter
+    // autopilot_objective.cpp LookLog) - and the game's GetInvincible of a kill candidate under the script's Act_Invulnerable
+    bool lookLog = false;
+    // TIMER-DESTROY (docs\WORK_QUEUE.md; lookahead.h TimerDestroy): a "Destroy ..." step the script advances by itself
+    // (mission::StepAdvanceOf "timer": M13 "Destroy the Nomads") is not fought - the speedrun preset stages toward the next
+    // step's place and answers only what shoots at it; the default preset fights while it is safe. Off until its verdict
+    bool timerDestroy = false;
+    // ALLY-KILL (docs\research\runners\M13_gate_allykill.md; lookahead.h AllyKill; Source::Hidden): a step the script ends
+    // on a mission solar's death by any killer whose kill unlocks the next step's dock (M13's gate battleship, check_cap)
+    // is not fought - wait at that dock, answer only attackers, dock on the unlock; the fight as before after 20 s there
+    // with no friendly on it and no hull lost. Off until its verdict
+    bool allyKill = false;
+    // M13-MIMIC item 1 (docs\research\runners\M13.md "## Plan"; mission::EscortByPlace): an escort step the player ends by
+    // reaching a place (the live table's armed goal; no armed leash, no armed death FAIL) is flown straight to that goal
+    // with speedrun knowledge - M13's Osiris: all three runners cruise the 29.7 km and leave Sinclair. Off until its verdict
+    bool escortByPlace = false;
+    // M13-MIMIC item 2 (with timer_destroy): TIMER-DESTROY's window - from the kill before the step (a placeholder after a
+    // kill step whose next objective is a timer "Destroy ..."), and dock the moment the script takes the dock (an armed
+    // Cnd_BaseEnter row: M13's ring unlocks ~5 s before "Dock with Planet Toledo"). Off until its verdict
+    bool tdWindow = false;
+    // M13-MIMIC item 3 (docs\research\runners\M13.md "## Plan" 3; mission::KillAheadSafe): a step with no place of its own
+    // whose script destroy goal is a later step's (unmarked: stale_destroy_wait skips it) flies to its nearest object
+    // (PreStage: no threat detour - M13 24470 "Head to the Barrier" chased Nomads 9.7 km off, all runners ignore them) and
+    // fights it once the kill switches off no trigger on the way to the next objective (R1 kills barrier generator 1 in
+    // the 16.9 s after juni_near_center). Off until its verdict
+    bool killAhead = false;
+    // ASH-START (docs\research\runners\M02.md "## Plan" 1; lookahead.h ChaseStep; Source::Hidden + Meta): an armed later-step
+    // kill ship that is alive, hostile and targetable now is fought now in a step with no fight of its own (M02 "Follow
+    // Ashcroft": today a navmarker trip behind him), cruising after a target faster than our engine at once and firing by
+    // engine-kill coasts at cruise speed; no missile at him under half hull. Off until its verdict
+    bool chaseKill = false;
+    // ...and (with chaseKill; lookahead.h StagePoint / FleeingSpawn; Source::Hidden): while a fight step's last kill is
+    // pending and that kill spawns a later step's FLEEING kill ship at a known place, wait beside that spawn inside the
+    // fight's leaving nag (M02: the runners are cruising near Ashcroft's spawn when the 4th escort dies); 25 s there without
+    // the kill: today's fight. Off until its verdict
+    bool spawnStage = false;
+    // ...and (with spawnStage and chaseKill; lookahead.h StagePoint(leashes) / ChaseFacts::fleeing / ChargeKeep;
+    // Source::Hidden; docs\research\runners\M02_ashcroft_consensus.md "The ONE design"): the stage point 250 m behind the
+    // spawn on his line inside every leash and nag, the last ship fought within ~400 m of it, the cruise charge pressed at
+    // his spawn (no wait for him to outrun the engine), no missile at him beyond 600 m while he flees. Off until its verdict
+    bool spawnCharge = false;
+    // ...and (with spawnCharge, spawnStage and chaseKill; ash_ride.h, autopilot_ashride.cpp; Source::Hidden;
+    // docs\research\runners\M02_ashcroft_datapass.md "The ONE proposal" after its P0 and the owner's 31 Oct correction):
+    // the last ship left at shield 0 / hull <= 0.6 to the NPCs, a cruise loop near the fleeing ship's spawn until he
+    // appears, a timed intercept at cruise to a station behind him, the coast only at equal cruise speed with him dead
+    // ahead on our velocity line and the gap 90-220 m stable 1 s. Off until its verdict
+    bool ashRide = false;
+    // the supervisor's distance leashes from the game's live trigger table (mission::ArmedLeashes) instead of every leash
+    // the script lists (M02: need_to_dock's 3 km from King, armed only by comm_1330_king at the end, turned the stage trips
+    // back in as3 / as4 - 31 Oct 2026). Off until a gate
+    bool leashLive = false;
+    // LOCK-TRAP (mission::LockTrapsOfLive; Source::Hidden; M13 31 Oct 2026): while an armed "within R of <ship> -> lock
+    // <dock>" row waits and that dock's unlock is still to come, the step first flies within 0.8 R of the condition's ship
+    // or point (wait_for_trent: 320 m of Orillion before the hole), so the lock happens before the unlock as the script
+    // means it. Off until its verdict
+    bool lockTrap = false;
+    // M13-MIMIC item 6 (with escortByPlace; mission::ObjectiveObjectOf): the place that ends the escort step is the next
+    // step's dock (M13: 1 km of the Osiris -> "Dock with the Battleship Osiris") - docked with on the way. Off until its verdict
+    bool placeDock = false;
+    // M13-MIMIC item 3 (mission::FightsAhead): the consumables split over the big fights left before the next base dock -
+    // at a big static the step's share 1 / (k + 1) of the batteries it began with, k = the other fights ahead; on fighters
+    // none unless death is near or the hull is under half; nanobots keep k / (k + 1) while the hull is above half (the
+    // study's two windows: Toledo -> Osiris all on the battleship, Osiris -> end <= ~1/3 at the gate, ~1/2 at the barrier,
+    // the rest in the city; td1 entered the city with 0 batteries and 7 nanobots and died). Off until its verdict
+    // (reworked 31 Oct 2026 after mm6 / mm9: the share weighted by the kills each fight needs, bursts only on a failing
+    // shield while fights lie ahead, a failing shield under fire at a big target always refilled)
+    bool batteryBudget = false;
+    // At a static target the overkill rule (no missile that lands after the target is dead) counts only the rounds already
+    // homing: OurDps() over a 9-16 s flight counted the launchers twice and stopped the missiles at the M13 city
+    // generators with 51k of 75k left (mm9, salvo-check dead-first=1 in ~40 % of the barrier / city checks). Off until gated
+    bool staticFullDps = false;
+    // M13-MIMIC 4c (the owner, 31 Oct 2026: "attack from range or dash as fast as possible to a blind spot"): the run to a
+    // blind spot at afterburner speed down to the braking distance (no crawl under the turrets), the spots scored by the
+    // hull gap along the line to the centre (a round holds the whole target and bursts at the first hull it meets: from a
+    // spot with >= bs_approach_gap clear our launches pass launch_site_check). Off until gated
+    bool bsApproach = false;
+    // the cruise in to a huge static target (radius >= 500 m) goes on under fire (R1 at the Nomad battleship). Off until gated
+    bool bigCruiseIn = false;
+    // at a blind-spot target no torpedo with any hull - the target's too - within its blast reach beside us (ab8-b_i5:
+    // dead 33 ms after a torpedo at a 51 m line gap, the hull 11 m beside). (Its first build also ran the simulated
+    // launch check there: probe bsc0 died at +38 s with a missile passed at a predicted 56 m - removed.) Off until gated
+    bool blindSiteCheck = false;
+    // no torpedo at a big / static target unless the hull along the line and the nose lies at least this far (m; 0 = the
+    // blast rule alone, ~47 m): our torpedo's burst reached us from 80-95 m. Off until gated
+    float torpReach = 0;
+    // ...and the same for missiles (probe tr0: two launched 148 m out burst 14 / 23 m from us, -2,828). Off until gated
+    float missileReach = 0;
+    // blind_site_check's hull-beside torpedo hold at a static hold too (the M13 city deaths: own torpedoes, a hull 31-51 m
+    // off). Off until gated
+    bool staticSiteCheck = false;
+    // self_burst learns only from a round launched within 400 m (ab8-b_i3 learned "inside 1201 m" from one at 1,051 m
+    // during a coast and held 19 launches). Off until gated
+    bool selfBurstNear = false;
+    // with battery_budget's look-ahead: while big fights lie ahead in the window, missiles are free to use only at a big
+    // or static target (probe ch1: 46 of 50 spent on fighters before the city, none left for its generators; the runners
+    // fire every launcher at the generators and ignore the city's fighters). Off until gated
+    bool missileKeepBig = false;
+    // a travel's "close but no progress" arrival after 2 s at cruise speed, not 8 (M13 city trips orbit the arrive point
+    // ~7.4 s at 290 m/s). Off until gated
+    bool arriveWalledFast = false;
+    float bsApproachGap = 100; // m
+    // (the set needs launch_site_check on: self_burst's learned distance held the rush's launches 7-33 times - blind_rush)
+    // D10's silent resume (A37 S7, placeholders S9's panel may tune): a pause longer than this asks (s) ...
+    float resumeSilentS = 30;
+    // ... and so does a ship that moved farther than this meanwhile (m)
+    float resumeMovedM = 5000;
     // Knowledge scope (user, 22 Oct 2026; AUTOPILOT_UX.md section 2a): 1 = everything (hidden game data, the speedrun
     // preset; the default until the UI build of 25 Oct 2026 - the legs apply `ap preset speedrun`), 0 = what the player
     // was exposed to (seen in play, plus general skill; the COMPETENT preset and the spec's default, UI_SPEC.json
@@ -324,10 +497,53 @@ struct Settings
     int knowledge = 0;
     // close-quarter flight over every mode: the way ahead tested against real hulls (GeometryGuard, avoid::RayFan)
     bool geometryGuard = true;
-    bool motionTrace = true; // FLMotion.tsv: 10 rows / s of the flight while the autopilot flies (autopilot_frame.cpp)
+    bool levelOff = true;    // a banked straight travel run is levelled by the game's Goto (autopilot_frame.cpp LevelOff)
+    bool motionTrace = false; // `motion_log`: FLMotion.tsv, 10 rows / s (autopilot_frame.cpp; always on in test starts)
     // blind spots that also shelter us: a spot the other hostiles have no clear line to wins among those the target's
     // turrets cannot reach (user: the Rheinland battleship's bow trench) - BlindSpot
     bool blindShelter = true;
+    // (blind_rush - the last 800 m to a blind spot at full speed - tested, not kept: deleted 31 Oct 2026, AUD-A1-5)
+    // The rest of the speedrunners' battleship shape (M13 "Order base", fights.tsv; run-judge 29 Oct 2026 on blind_rush):
+    // all off until gated.
+    bool rushHoldFire = false;    // no missile / torpedo launch while blind_rush closes (the rounds end where we fly to)
+    bool selfBurstDamage = false; // self_burst learns only from a round end that cost us >= 70 % of its damage in 0.35 s
+    bool blindContact = false;    // blind spots at hull contact too (the runners' 0 m), kept unless >= 5 % lost a second
+    float blindContactGap = 55;   // ...this far off the hull (m): outside our own torpedo's blast rule (HDE: full damage)
+    bool batteryReserve = false;  // a marked big static ahead: 70 % of the batteries kept until its hold is reached
+    // Big-target ordnance from where its burst is clear of us (WORK_QUEUE Q4 slice 1; the owner, 29 Oct 2026: full DPS,
+    // splash avoided by WHERE we fire from; core\game\ordnance.h). All off until an sprt KEEP.
+    bool launchSiteCheck = false;  // a launch at a static / big target only if its round bursts clear of where we will be
+    float launchSiteMargin = 20;   // ...beyond its blast + our radius (m)
+    bool ordnanceKeepout = false;  // our live rounds' impact spheres bend the movement goal
+    bool ordnanceSite = false;     // a firing position >= ordnance_standoff off the hull, held while a launcher refires
+    float ordnanceStandoff = 150;  // ...its hull gap (m)
+    bool blindNoPass = false;      // no attack pass (afterburner exit run) at a target with a blind-spot scan
+    // M13-MIMIC item 4 (the owner's direction, docs\research\runners\M13.md Plan 4): the firing site is the one hold for
+    // guns and launchers, reached at rush speed, held with a slide round it of standoff_slide m at standoff_slide_speed
+    bool standoffHold = false;
+    // M13-MIMIC item 5: static_hold_guns counts the guns at the hull point they fire at, not the centre (a city
+    // generator's centre lies ~430 m behind its hull). Off until its verdict
+    bool holdGunsHull = false;
+    // M13-MIMIC item 3b (the owner, 31 Oct 2026, the barrier generators): the static hold's points scored by open sky too
+    // (26 rays to 400 m: fighters move, the shelter is the structure round the point). Off until its verdict
+    bool holdShelter = false;
+    // `city_hold_side` (set M13-ab11-b, run-judged 31 Oct 2026: every death at the city's first generator held 31-67 m
+    // off its outward face in front of the weapons platforms; docs\research\runners\M13_city_hold.md): at a static target
+    // hostile armed solars guard, the hold on the side away from their centroid (+/-45 deg) at a 120-130 m hull gap,
+    // no re-anchor off that side or inside 100 m, ordnance only with the burst and the nearest hull >= 100 m off, the
+    // target's height band unless a deeper point is clearly safer by the platform-cover score (city_hold.h). Off until
+    // its probe
+    bool cityHoldSide = false;
+    float standoffSlide = 60;
+    float standoffSlideSpeed = 20;
+    // `strafe_pass` (docs\research\runners\M13_bsdown_datapass.md "Proposal", escalation step 2; strafe.h; Source::Hidden
+    // + Meta): at a big armed hull (4+ guns by the game's turret test, elongated by its ray test, not dockable, still) no
+    // hold - lengthwise passes along its long axis 150-250 m off the hull by real rays, afterburner pulses, the nose and
+    // every launcher on the hull ahead, turns ~1 km out; anything unreadable falls back to today's fight for that
+    // target (the runners survive by motion: no still point 100-400 m off the Nomad battleship has under 4 guns). Off
+    // until its probe
+    bool strafePass = false;
+    // (static_volley, Q4 slice 2: SPRT REVERT, deleted 31 Oct 2026, AUD-A1-5)
     // (a dock in a hurry needs none)
     float dockStage = 250; // fast dock: coming from the side or behind, line up this far out on the bay's axis
     // Fast lane entry: request when the game's stop would leave the ship within this distance of the aim point next to
@@ -432,10 +648,24 @@ struct State
         bool turning = false;
         float turnSlideTimer = 0, turnStart = 0, turnCooldown = 0;
         float dealt = 0, dealtHp = 0; // hull points taken off our targets; the current target's points last frame
+        // shield points taken off our targets: gun accuracy, the damage rate (OurDps), the duel's tally and the wedge
+        // check count hull + shield (`dealt` alone stays hull in the log). 28 Oct 2026, autopilot PvP: a duel spent its
+        // first 13 s on shields - 99 shots, the opponent's shield 1.0 -> 0.42, `dealt` 0 and gun-accuracy 0.00
+        float dealtShield = 0, dealtShieldPrev = -1;
         u32 dealtTarget = 0;
         // The duel's geometry, sampled at 10 Hz while an enemy is engaged (the tactics model's data): seconds sampled, with
         // its nose on us (within 15 deg, inside 900 m: its guns bear), ours on it, both; the turn-rate ratio (ours / its)
         float duelT = 0, duelTheyOn = 0, duelWeOn = 0, duelBoth = 0, duelTurnRatio = 0, duelSampleAt = 0;
+        // pvp_duel: the last sample's geometry (who has whom in the 15-degree cone, the distance), the target's kind, the
+        // current jink (a slide direction, its end, an afterburner burst or not) and seconds per duel state
+        bool nowValid = false, nowTheyOn = false, nowWeOn = false;
+        float nowDist = 0, prevDist = 0;
+        u32 pvpTarget = 0;
+        bool pvpPlayer = false;
+        int jinkSlide = 0, pvpState = -1;
+        float jinkUntil = 0;
+        bool jinkBurn = false;
+        float pvpT[5] = {}; // maneuver, defend, trade, punish, break
         // The duel option (DuelChoose): 0 close turn, 1 wide turn, 2 slash; since when, what each option measured this fight
         // (seconds, target points taken as a fraction of its total, ours lost as a fraction of ours), the slash's phase
         int duelOpt = -1;
@@ -451,6 +681,21 @@ struct State
         bool shWasUp = true;
         bool wantFire = false;              // last frame's out.fire
         float lineCheckAt = -10;            // guns' line-of-fire check: last time (g.time)
+        float coverAt = -10;                // `fire_covering`: the guns' CanPointAt check, last time (every 0.2 s)
+        bool headOn = false;                // `headon_reverse`: the head-on pass is being flown
+        float headOnEndAt = -10;            // ...its end (g.time): the 0.8 s hand-over to the pursuit glides from there
+        float headOnLead = 0;               // ...its last lead time (s) - where the hand-over starts
+        float rollCheckAt = -10;            // `roll_guns`: the 8-angle gun check, last time (every 0.25 s)
+        int rollCounts[8] = {};             // guns that could point at the lead with the ship rolled k x 45 deg
+        int rollWhy = 0;                    // the roll flown now: 0 none, 1 guns, 2 flair (logged on change)
+        bool rollGoalOn = false;            // `roll_commit`: a roll toward a chosen angle is flown to its end
+        float rollGoal = 0;                 // ...the angle still to roll (rad, + = RollApply's +)
+        float rollGoalAt = -10;             // ...when it was chosen (g.time)
+        int rollFrom = 0, rollGain = 0;     // ...the guns reaching at the start / at the chosen angle
+        float rollDir = 0;                  // ...its sign (+1 / -1): arrived once the angle left changes sign
+        int rollWorse = 0;                  // ...checks in a row where the chosen angle reaches no more than now
+        float rollHoldUntil = -10;          // ...after an arrival or a drop, no new choice before this (g.time)
+        int covering = 0;                   // how many guns can point at the lead (the last check)
         bool lineBlocked = false;           // ... a friendly / neutral ship is in it
         u32 lineBlocker = 0;                // ... the solar last found on the line (logged once per change)
         u32 assessments = 0, quietFrom = 0; // quietFrom: the first assessment that counts for "the fight is over"
@@ -463,6 +708,17 @@ struct State
         int blindCover = -1, blindGuns = 0;
         float blindLostAt = 0; // g.combat.lost at the last reading: what a held spot costs per second
         int blindHits = 0;     // readings in a row at the spot with hull / shield lost
+        float blindDist = 1e9f; // our distance to the held spot at the last reading (battery_reserve: "at the hold")
+        bool rushing = false;   // the rush is closing on the spot this frame (rush_hold_fire: no launches)
+        // `ordnance_site`: the firing position the blind-spot scan chose (the target's frame), its hull gap and cover;
+        // fireUsed = stationed at it this frame (else the guns spot; logged on a change)
+        bool fireOn = false, fireUsed = false;
+        float fireLocal[3] = {}, fireGap = -1;
+        int fireCover = -1;
+        bool bigAhead = false;  // battery_reserve: a big static target lies ahead, its hold not reached (1 Hz)
+        int fightsAheadW = 0;   // battery_budget: the kills of the big fights still ahead in the window (1 Hz)
+        float fightsAheadAt = -10; // battery_budget: when fightsAheadW was read (g.time)
+        float bigNext = 0;      // battery_reserve: the next check (g.time; reset with g at Start)
         float targetSince = 0; // when the combat target was last switched (target_dwell)
         // the orbit round a static target (StaticOrbit): its plane (radial r0 at the start, tangent t0), the angle, the
         // direction and when it flips next
@@ -494,6 +750,10 @@ struct State
         int gunShots = 0;
         float gunMaxShots = 0, gunShotDamage = 0;
         std::map<u16, float> gunElapsed;
+        // Ordnance (WORK_QUEUE Q4: DPS logged per fight): homing rounds launched, and the seconds a launcher had ammo with
+        // its refire ready (summed per launcher) while fighting - the launches that could have been
+        int ordLaunches = 0;
+        float ordPossible = 0;
     } stats;
 
     // Missile outcome statistics: munitions homing on us (id -> damage, our points last seen), the ones gone awaiting
@@ -509,8 +769,17 @@ struct State
         u32 target = 0;
         float launched = 0, targetHp = -1, damage = 0, blast = 0, closest = 1e9f, launchDist = 0, flightPred = 0,
               closing = 0;
+        float targetSh = -1; // the target's shield points in the last live reading (a shield takes the round too)
+        float lastToUs = 1e9f; // its distance to our ship in its last live frame (`self_burst`: an end within its blast of us)
+        bool solar = false;  // the target is a solar: `closest` is to its real hull (the ray test), not its centre
         bool planned = false; // launched by the planner (else: some other source - fire-all, the player)
+        bool torp = false;    // a torpedo tap's round (else a missile's or unknown)
         MissileGeom geom;     // at the launch
+        // `ordnance_keepout`: where it will burst (the ray from it to its target's hull, 10 Hz), when (g.time), and the
+        // distance its burst must keep from us; impactOk = read
+        bool impactOk = false;
+        float impact[3] = {}, tImpact = -1, need = 0;
+        float lastPos[3] = {}, lastAt = -1, rayAt = -10; // its last position / time (its speed), the last ray (g.time)
     };
     struct OwnGone
     {
@@ -544,6 +813,8 @@ struct State
         float ownMissileDealt = 0;
         float runSeen = -10;  // when the run's conditions last held (g.time)
         u32 tapFrame = 0;     // the frame our last missile tap was asked
+        u32 torpFrame = 0;    // the frame our last torpedo tap was asked (its rounds are the planner's too)
+        float torpDist = 0;   // the target's distance at that torpedo tap
         u32 shieldTarget = 0; // the target whose shield is sampled (missile planner: shield down at impact)
         std::deque<std::pair<float, float>> shieldHist; // (time, shield points)
     } missiles;
@@ -554,7 +825,36 @@ struct State
         u32 target = 0;
         PassPhase phase = PassPhase::In;
         float since = 0, exit[3] = {};
+        float coastHull = -1, coastShield = -1; // `big_coast`: our hull / shield at the coast's start
+        bool killTapped = false;               // ...engine kill pressed for this coast
+        u32 coastDone = 0;                     // ...the target whose coast is over (the hold, or passes, from then on)
     } pass;
+    // `strafe_pass` (StrafeFly, strafe.h): the lengthwise passes along a big armed hull
+    struct Strafe
+    {
+        u32 target = 0;          // the hull the passes are flown at (0 none)
+        u32 failTarget = 0;      // ...fallen back at this one: today's fight for it from then on
+        bool on = false;         // flown this frame (UpdateCombat clears it first): the fire and launch rules read it
+        bool aimOn = false;      // ...the nose on the hull point `aim` (world, confirmed by the game's ray test)
+        bool aimInGuns = false;  // ...within the guns' range
+        bool aimed = false;      // the last step's aim (strafe::StepIn::aimed)
+        float aim[3] = {};
+        strafe::Hull hull;
+        strafe::Phase phase = strafe::Phase::Join;
+        int side = 0, dir = 1, passes = 0;
+        float startAt = 0, since = 0, passAt = 0, lastAt = 0; // g.time: the strafe's start (the pulse clock), the phase's,
+                                                              // the pass's, the last frame flown
+        // this pass's samples (the `strafe pass` line)
+        int frames = 0, aimFrames = 0, gapN = 0, launches = 0;
+        float gapSum = 0, gapMin = 1e9f, speedSum = 0, speedMin = 1e9f, speedMax = 0;
+    } strafe;
+    // `big_coast`: the coast in on a huge static target (BigCoast): 0 not yet, 1 coasting, 2 over (for this target)
+    struct Coast
+    {
+        u32 target = 0;
+        int phase = 0;
+        float at = 0, killAt = 0, hull = 1;
+    } coast;
 
     // The Hold mode (_hold.cpp) and the hold-and-salvo at a static target (StaticHold)
     struct Hold
@@ -578,6 +878,16 @@ struct State
         float flipAt = -10;               // the lateral run's last reversal (g.time)
         float evadeUntil = -1;            // exposed at the hold: the slide runs three times as fast until then
         float slideT = 0;                 // the slide's last update (s)
+        float gunGap = 0, gunGapAt = -10; // `static_hold_guns`: extra hull gap so every gun can point (m), last check
+        int gunN = -1;                    // guns that could point at the last check; -1 none yet
+        bool gunDone = false;             // a step brought no gun more: the gap stays
+        int open = -1;                    // `hold_shelter`: the chosen point's open directions of 26 (-1: not scored)
+        // `city_hold_side`: the rule applies to this hold (hostile armed solars near the target), the side's direction
+        // (horizontal unit, from their centroid to the target), how many guard it, its last re-anchor refusal (g.time)
+        bool city = false;
+        float cityAway[3] = {};
+        int cityPlatforms = 0;
+        float citySaidAt = -10;
         std::vector<float> badDirs;
     } hold;
 
@@ -716,6 +1026,7 @@ struct State
         u32 destObject = 0, destSystem = 0;
         std::vector<u32> listBefore; // the list's sequence numbers when the best path was asked for
         bool plotted = false;        // our route replaced the player's list (restored at the stop)
+        bool direct = false;         // the game plotted no way to a near dock object: a one-entry list, straight to it
         u32 plotFrame = 0;
         float listWaitSince = -1; // g.time the list was first found empty (-1: not waiting)
         route::Plan plan;
@@ -792,6 +1103,45 @@ struct ObjectiveRun
     // formation while the leader lives; 0 none.
     u32 missionLeader = 0;
     bool fightObjective = false; // the objective's words ask for a fight ("Destroy ..."): its marks outrank everything
+    // TIMER-DESTROY (`timer_destroy`): this step's fight is not needed - only a ship shooting at us within kSurvivalReach is
+    // a target (autopilot_target.cpp); `tdVerdict` the last TimerDestroy verdict (lookahead::TdVerdict, the supervisor
+    // re-decides when it changes)
+    bool defendOnly = false;
+    int tdVerdict = 0;
+    // ALLY-KILL (`ally_kill`): the last AllyKill verdict (lookahead::TdVerdict; the supervisor re-decides when it changes),
+    // the kill's solar while it is not fought (battery_budget leaves it and its group out), and the step (text) whose
+    // fallback fired (the fight is kept for it)
+    int akVerdict = 0;
+    u32 allyKillTarget = 0;
+    u32 akFellBack = 0;
+    // `kill_ahead`: the object it stages at while the script does not allow the kill yet (the supervisor re-reads the
+    // safety every second), 0 none; `killAheadNo` the kill it would be (of its label)
+    u32 killAheadWait = 0;
+    int killAheadNo = 0;
+    // `chase_kill`: the later step's kill ship the chase fights (the combat's cruise charge, the coast guard's moving-ship
+    // coast and the missile hold read it), 0 none; `chaseSaid` the one the chase line was logged for
+    u32 chaseShip = 0, chaseSaid = 0;
+    u32 chaseAsked = 0;      // the candidate the supervisor last asked a decision for (once per ship and step)
+    std::string stageAsked;  // ...and the kill trigger it asked a spawn_stage decision for (once per trigger and step)
+    // `spawn_stage`: the kill trigger staged for this step ("" none), the stage point and the nose's direction there,
+    // when the ship first came within kStageArrive of it (0 not yet), the last verdict (1 travel, 2 fight, 3 hold; the
+    // supervisor re-decides on a change), the hold's nose rule on, and the triggers whose stage timed out this step
+    std::string stageTrigger;
+    float stagePos[3] = {}, stageDir[3] = {};
+    ULONGLONG stageAt = 0;
+    int stageVerdict = 0;
+    int stageLast = 0; // the verdict the stage last acted on (kept across decisions: StageVerdict's hysteresis)
+    bool stageNose = false;
+    std::set<std::string> stageTimedOut;
+    // `spawn_charge`: the staged fight's last ship (the stage's fight keeps within kChargeKeep of stagePos), whether the
+    // stage running is a charge stage, and the keep's station on; the fleeing ship the stage expects (its [MsnShip]
+    // nickname, "" none), his spawn and run point - kept across the step change (the chase is the next step's) - his
+    // contact once the chase fights him (0 not yet), and the contact the cruise-at-spawn line was logged for
+    u32 stageLastShip = 0;
+    bool chargeStage = false, chargeKeepOn = false;
+    std::string chargeShip;
+    float chargeSpawn[3] = {}, chargeRun[3] = {};
+    u32 chargeId = 0, chargeSaid = 0;
     // The script's own destroy condition for this step (mission::Goal kind 3, Source::Hidden): its live objects count as
     // the mission's marks and the step as a fight (M13 "Head to the Barrier" advances when the 4 generators die)
     u32 scriptMarks[8] = {};
@@ -801,7 +1151,7 @@ struct ObjectiveRun
     std::set<std::string>
         deadGoals;        // script goals reached without the step advancing (not armed): skipped for the step
     float leave[27] = {}; // where the ship goes after the current kill: the destroy goal's live objects and
-    int leaveN = 0;       // ... the next step's place (StaticHold's side); leaveAt: when read (GetTickCount64)
+    int leaveN = 0;       // ... the next step's place (StaticHold's side); leaveAt: when read (NowMs64)
     ULONGLONG leaveAt = 0;
     bool cruiseLock = false; // cruise kept come what may (steering only) from an airlock transit to the next jump /
                              // dock (user, 23 Oct 2026: M12 core entrance -> Omicron Minor hole, "must not drop")
@@ -830,6 +1180,15 @@ struct ObjectiveRun
     Action action = Action::None; // the running sub-action (ActionName: its text)
 };
 extern ObjectiveRun g_obj; // the objective run (autopilot.cpp)
+// hold_defend: the Hold a fight interrupted, started again where it was when that fight ends with nothing left to fight
+// (StopImpl); any other end of the fight (a command, a death, another start) forgets it
+struct HoldResume
+{
+    bool on = false;
+    bool hasPos = false;
+    float pos[3] = {};
+};
+extern HoldResume g_holdResume;
 
 constexpr float kSurvivalReach = 1200; // m
 
@@ -893,12 +1252,20 @@ inline bool Knows(Source s) { return g_set.knowledge >= 1 || s == Source::Seen |
 extern ai::Personality g_p;
 extern bool g_pReady;
 extern std::map<u32, float> g_missileGate;
+extern std::map<u32, float> g_selfBurst; // per target: no round from closer to its centre (m) - rounds burst at launch
 extern State g;
+void ResetSystemEntry(); // autopilot_frame.cpp: the way into the current system forgotten (a load, NoteMenu)
 extern u32 g_survivalTitle;
 extern bool g_survivalMission;
+extern u32 g_survivalSystem;
+extern bool g_survivalEnded;
+bool CoastActive(); // `big_coast`: the coast guard flies the ship (autopilot_frame.cpp)
+// `spawn_charge`: the chased ship `id` is the staged fleeing ship, alive and not yet at his run point (lookahead.h
+// ChaseFacts::fleeing; autopilot_objective.cpp)
+bool ChargeFleeing(u32 id);
 extern Situation g_sit;
 extern u32 g_subjectId;
-extern ULONGLONG g_subjectTick; // last seen as the subject (GetTickCount64)
+extern ULONGLONG g_subjectTick; // last seen as the subject (gameclock::NowMs64)
 
 // Functions used across the parts (defined in their section file)
 Mode ModeFromName(const std::string& s);
@@ -926,6 +1293,14 @@ void SetPreHostile(const std::vector<u32>& ships, float range);
 space::Contact FindContact(u32 id);
 int MissionObjectIds(u32* out, int max, const std::vector<space::Contact>& all);
 bool Start(Mode m, u32 target, const float* pos);
+// How many starts succeeded so far (the objective's start event: a start of its own, not a kept trip)
+u32 StartSeq();
+// A37 S7 (the side-effect gate's "no formation request when already led"): Start without the restart's free flight and
+// with the maneuver marked started - the game already flies the ship under `target`, our mode takes it over unrequested.
+bool StartAdopt(Mode m, u32 target);
+// A37 S7 (situation_arbiter): an activation of the objective mode (ap start objective / arm, the smart start) - a running
+// one is paused first (its queue kept), the next decision resumes the paused queue (D10). Off: nothing.
+void ArbiterActivation();
 bool FriendlyContact(const space::Contact& c);
 // The objective asks for a destruction (a Fight verb in any entry); the nearest mission-marked loot it then names to
 // destroy (0 none) - shot by the Shoot mode, never tractored (autopilot_objective.cpp; the frame drops a tractor-all
@@ -934,6 +1309,18 @@ bool ObjectiveAsksDestroy();
 u32 DestroyMarkedLoot(const std::vector<space::Contact>& all, float* dist);
 void ObjectiveDecide(const char* reason);
 void ObjectiveSupervise();
+// The newest spawn when the game was last in its menu (NoteMenu; false none yet) - read by the situation snapshot.
+bool MenuSpawn(SpawnRec& out);
+// The destroy conditions' objects seen alive / in the contact list (ObjectiveDecide's DestroyFired memory), sorted - read
+// by the situation snapshot's queue (A37 S3).
+void SeenDestroyed(std::vector<u32>& alive, std::vector<u32>& listed);
+// ObjectiveDecide's last objective text that was no placeholder (prestage_next, survival_stage) - read by the situation
+// snapshot's queue (A37 S4). Set from the goal queue's story memory under situation_arbiter (A37 S7: the resume, and
+// before each decision).
+u32 ObjectiveLastReal();
+void SetObjectiveLastReal(u32 v);
+// `ap look` (LOOK L0): the look-ahead's verdict now and every fact it read (autopilot_objective.cpp; lookahead.h).
+std::string LookCommand();
 // The game docks the ship on its own: a dock port held with no request of ours (a mission's Act_DockRequest).
 bool GameDocksUs();
 ULONGLONG SinceGameGrant(); // ms since the last dock grant we did not request (a mission's Act_DockRequest); ~0 none
@@ -946,7 +1333,7 @@ constexpr ULONGLONG kGameGrantDockMs = 4000;
 // autopilot_objective.cpp)
 constexpr ULONGLONG kGameGrantWayInMs = 20000;
 bool SystemEntry(float pos[3]); // where the ship first showed in its current system (an airlock's or a jump's way in)
-ULONGLONG SystemEntryTick();    // when the system last changed (GetTickCount64), 0 none seen
+ULONGLONG SystemEntryTick();    // when the system last changed (gameclock::NowMs64), 0 none seen
 // the last airlock door line read (any trip), when its p2 lies within `within` of `near` and the door is in this system
 bool LastAirlockDoor(const float near[3], float within, float p2[3], float axis[3]);
 // ref_line: the reference flight's aim for a trip to `dest` (autopilot_travel.cpp)
@@ -962,7 +1349,8 @@ void BreakAway(const aim::Target& t);
 void ResetSituation();
 void Reassess();
 u32 PickTarget();
-float OurHullDps();
+float OurDps();      // hull + shield points per second we take off our targets
+float PointsLeft(const space::Contact& c); // hull + shield (while up) left
 Situation Assess();
 float Strength(const ai::Self& s);
 const Odds& FightOdds(const ai::Self& self);
@@ -970,7 +1358,13 @@ float RecentDamage(float hull);
 const MissileEconomy& Economy();
 void TrackOwnMissiles();
 bool LineOfFireBlocked(u32 target, const float tpos[3], float radius, float past, float pastRadius);
+void RollApply(float dt, float want, float maxRate); // hold a roll rate about the nose (rad/s), at most maxRate
+bool BarrelRoll(float dt, float rate);               // a barrel roll in progress: flown this frame (true)
+void BarrelStart(float minGap, const char* where);    // begin one (a full turn) unless one runs or the gap is not up
+void BarrelStop();                                    // end one in progress (a turn begins)
+bool BankIntoTurn(float dt, const fl::Kinematics& k, const float aim[3], float rate); // roll the turn's aim toward up
 float MissileFlightTime(const space::Weapon& w, float dist, float closing0);
+ordnance::Round RoundOf(const space::Weapon& w); // a launcher's round for core\game\ordnance.h
 MissileGeom MissileGeometry(u32 target, const space::Weapon& w, float flight, float targetRadius);
 int DuelChoose(unsigned long long key, float ratio, int attackers);
 void DuelLog();
@@ -983,6 +1377,10 @@ void ApplyAvoid(const fl::Kinematics& k, Out& out, u32 ignore, bool solidsClear 
 bool PassageVia(const fl::Kinematics& k, float aim[3]);
 // The straight line from `a` to `b` clear of real hulls for a ship of `radius` (centre + 4 side rays, the game's ray test).
 bool LineClear(const float a[3], const float b[3], float radius);
+// A point the autopilot wants to sit at, moved out of every lethal sphere's berth (planet / sun cores: space::LethalZones)
+// to the edge + `berth` along the line from the sphere's centre (`toward`: the direction used when the point is the
+// centre itself). True when it moved; `radius` (optional) gets the last sphere's radius. (autopilot_geo.cpp)
+bool OutOfLethalBerth(float p[3], float berth, const float toward[3], float* radius = nullptr);
 // Fly `p` toward `dest` through real geometry: planned (avoid::RayPath; again when the destination moves > 100 m, or 3 s
 // after no way was found), on to the farthest point in plain sight. True with `aim` (the point to steer at) and `rest`
 // (the way left along it); false when no way is known (the caller steers straight). `ignore`: the target (0 none);

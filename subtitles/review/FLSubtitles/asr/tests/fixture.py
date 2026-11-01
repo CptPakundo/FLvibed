@@ -72,12 +72,14 @@ def make(tmp: Path = None):
     write_tsv(out / "gamenames.tsv", ["prefix", "name", "short", "kind", "file"],
               [(p, n, s, "test", "") for p, n, s in GAMENAMES])
     # the aligner's rows (FLSubtitles/aligner): one current line with its last two words piled at the clip's end,
-    # one timed for an earlier text (stale), the rest without timings; one line it could not match
+    # one timed for an earlier text (stale), the rest without timings; one line it could not match; word ends (ends_ms)
+    # on "this is" only: a pause after "this" (the older rows have none: a word runs to the next)
     import review_server
-    write_tsv(out / "word_times_cache.tsv", ["id", "voice", "text_fnv", "audio_sha1", "end_ms", "starts_ms", "collapsed"],
-              [("DX_M01_0110_JUNI", "juni", review_server.fnv1a("Copy that, Trent."), "x", "1500", "0,1490,-1", "2"),
-               ("DX_M01_0100_TRENT", "trent", "00000000", "x", "2000", "0,300,600,900,1200", "0"),
-               ("gcs_misc_thisis+", V, review_server.fnv1a("this is"), "x", "500", "0,250", "0")])
+    write_tsv(out / "word_times_cache.tsv",
+              ["id", "voice", "text_fnv", "audio_sha1", "end_ms", "starts_ms", "collapsed", "ends_ms"],
+              [("DX_M01_0110_JUNI", "juni", review_server.fnv1a("Copy that, Trent."), "x", "1500", "0,1490,-1", "2", ""),
+               ("DX_M01_0100_TRENT", "trent", "00000000", "x", "2000", "0,300,600,900,1200", "0", ""),
+               ("gcs_misc_thisis+", V, review_server.fnv1a("this is"), "x", "500", "0,250", "0", "120,500")])
     write_tsv(out / "word_times_failed.tsv", ["id", "voice", "text"],
               [("gcs_combat_cheer_01", "pilot_m_other_m03", "Got him, he's going down!")])
     for f in ("style_rules.tsv", "name_rules.tsv", "chatter_rules.tsv"):

@@ -200,14 +200,15 @@ size_t MovableInsnLength(const u8* code, bool* terminal = nullptr);
 // the symbol is unresolved, not code, or its signature does not cover the `stolen` bytes.
 void* Detour(Sym& target, void* dest, size_t stolen, const char* feature);
 
-// Replace one entry of a COM vtable; returns the previous function pointer.
+// Replace one entry of a COM vtable; returns the previous function pointer, or null (logged) when the slot could
+// not be written (the entry is then unchanged: the hook never runs).
 void* PatchVtable(void** vtable, int index, void* fn);
 
 // The import address table slot of `funcName` (imported by name from `dllName`) in `module`, or null.
 void** ImportSlot(HMODULE module, const char* dllName, const char* funcName);
 
 // Replace an imported function in `module`'s import address table.
-// Returns the previous pointer, or null if the import was not found.
+// Returns the previous pointer, or null if the import was not found or its slot could not be written (logged).
 void* PatchImport(HMODULE module, const char* dllName, const char* funcName, void* fn);
 } // namespace hk
 

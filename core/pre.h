@@ -32,8 +32,25 @@
 #include <fstream>
 #include <istream>
 #include <map>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+// SDL3 (WORK_QUEUE Q5: the opt-in gamepad backend, controller\src\host\sdlpad.cpp): only for the controller host's sources,
+// whose wrappers define FLV_SDL3 (build.cmd :wrap; the headers come from build\sdl3\<version>\include as external
+// headers). The logic and the other modules never see SDL: the logic reads the backend through HostApi v33. SDL's
+// headers declare everything at global scope (extern "C"), so the host's namespace finds them as ::SDL_*.
+#ifdef FLV_SDL3
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_gamepad.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_joystick.h>
+#include <SDL3/SDL_revision.h>
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_version.h>
+#endif

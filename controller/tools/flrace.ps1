@@ -1,5 +1,5 @@
 # Race practice and lap-time benchmark (22 Oct 2026; user: racing is a general capability, M06's course its benchmark -
-# memory racing-general, docs\LEGS.md): the free-roam fixture SaveC707 (Br05 at the M06 start point, the M06 br_elite) and
+# docs\LEGS.md): the free-roam fixture SaveC707 (Br05 at the M06 start point, the M06 br_elite) and
 # `ap start pass <first ring>` - the autopilot flies through the ring and on along the course by its own look-ahead. The
 # official order is M06's objective chain (read from a real race's log, 22 Oct 2026): a pass out of order is reported
 # (the mission would not count it). Prints the splits and the lap (start -> the second crossing of the first ring).

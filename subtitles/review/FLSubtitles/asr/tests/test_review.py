@@ -112,6 +112,16 @@ class Saving(Base):
         self.save("DX_M01_0100_TRENT", "trent", "We fly to Rheinland now!")
         self.assertEqual([r[:3] for r in self.rows()], [["DX_M01_0100_TRENT", "*", "We fly to Rheinland now!"]])
 
+    def test_reason_kept_in_the_note(self):  # the page's optional "why it needed a change" (C)
+        self.save("DX_M01_0110_JUNI", "juni", "Copy that, Trent!", "reason: misheard")
+        self.assertEqual(self.rows()[0][4], "reason: misheard")
+
+    def test_rereview_keep_with_a_reason_stays_exact(self):  # a reason must not turn "kept exactly" off
+        ln = self.ln("DX_M01_0100_TRENT", "trent")
+        self.d.rereview_now[self.d.rr_key(ln)] = ("We fly to Rheinland now", "We fly to Rheinland now.")
+        self.save("DX_M01_0100_TRENT", "trent", "We fly to Rheinland now", "reason: punctuation")
+        self.assertEqual(self.rows()[0][4], "kept exactly as typed; reason: punctuation")
+
     def test_reload_reads_what_was_saved(self):
         self.save("DX_M01_0110_JUNI", "juni", "Copy that, Trent!")
         self.d.corr = {}
@@ -157,6 +167,12 @@ class WordTimings(Base):
         self.assertEqual(self.d.word_info(self.ln("gcs_combat_cheer_01", "pilot_m_other_m03"))["state"], "failed")
         self.assertEqual(self.d.word_info(self.ln("gcs_misc_to", V))["state"], "none")
 
+    def test_word_ends_show_pauses(self):  # ends_ms (align_words.word_ends): a pause is a gap, not a long word
+        w = self.d.word_info(self.ln("gcs_misc_thisis+", V))
+        self.assertEqual([(x["ms"], x["end"]) for x in w["words"]], [(0, 120), (250, 500)])
+        w = self.d.word_info(self.ln("DX_M01_0110_JUNI", "juni"))  # no ends_ms: a word runs to the next
+        self.assertEqual([x["end"] for x in w["words"]], [1490, 1500, -1])
+
     def test_fnv_matches_the_aligner(self):  # FNV-1a 32 of the UTF-8 text (align_words.py, the runtime)
         self.assertEqual(review_server.fnv1a(""), "811c9dc5")
         self.assertEqual(review_server.fnv1a("a"), "e40c292c")
@@ -186,6 +202,20 @@ class NotSure(Base):
         self.d.set_unsure(ln, False)
         self.d.load_unsure()
         self.assertEqual(self.d.unsure, {})
+
+
+class ByteRanges(unittest.TestCase):
+    """The clips are served with byte ranges: without them a browser cannot seek in the audio (every seek -> 0)."""
+
+    def test_ranges(self):
+        br = review_server.byte_range
+        self.assertEqual(br("bytes=0-", 1000), (0, 999))          # the browser's first request
+        self.assertEqual(br("bytes=500-599", 1000), (500, 599))
+        self.assertEqual(br("bytes=900-5000", 1000), (900, 999))  # an end past the body is cut to it
+        self.assertEqual(br("bytes=-100", 1000), (900, 999))      # the last 100 bytes
+        self.assertEqual(br("bytes=1000-", 1000), "unsatisfiable")
+        self.assertIsNone(br("", 1000))
+        self.assertIsNone(br("bytes=0-1,5-9", 1000))              # several ranges: the whole body
 
 
 class Stats(Base):

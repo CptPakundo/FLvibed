@@ -195,42 +195,30 @@ static bool FindTemplate(const std::string& npc, Template& t)
     GetModuleFileNameA(nullptr, path, MAX_PATH); // EXE\Freelancer.exe -> DATA\MISSIONS\npcships.ini
     std::string p(path);
     p = p.substr(0, p.find_last_of("\\/") + 1) + "..\\DATA\\MISSIONS\\npcships.ini";
-    std::ifstream in(p);
-    std::string line;
-    bool inside = false, found = false;
-    auto trim = [](std::string s)
+    bool found = false;
+    for (const ini::Section& s : ini::Read(p)) // text or BINI (vanilla 1.1: SWEEP #5)
     {
-        const size_t a = s.find_first_not_of(" \t\r"), b = s.find_last_not_of(" \t\r");
-        return a == std::string::npos ? std::string() : s.substr(a, b - a + 1);
-    };
-    while (std::getline(in, line))
-    {
-        line = trim(line.substr(0, line.find(';')));
-        if (line.empty())
+        if (s.type != "npcshiparch")
             continue;
-        if (line[0] == '[')
+        for (const auto& kv : s.kv)
         {
-            if (found)
-                break;
-            inside = _stricmp(line.c_str(), "[NPCShipArch]") == 0;
-            continue;
+            const std::string& k = kv.first;
+            const std::string& v = kv.second;
+            if (k == "nickname")
+                found = _stricmp(v.c_str(), npc.c_str()) == 0;
+            else if (found && k == "ship_archetype")
+                t.ship = v;
+            else if (found && k == "loadout")
+                t.loadout = v;
+            else if (found && k == "pilot")
+                t.pilot = v;
+            else if (found && k == "state_graph")
+                t.graph = v;
+            else if (found && k == "level" && v.size() > 1)
+                t.level = static_cast<u32>(atoi(v.c_str() + 1)); // "d2" -> 2
         }
-        const size_t eq = line.find('=');
-        if (!inside || eq == std::string::npos)
-            continue;
-        const std::string k = trim(line.substr(0, eq)), v = trim(line.substr(eq + 1));
-        if (_stricmp(k.c_str(), "nickname") == 0)
-            found = _stricmp(v.c_str(), npc.c_str()) == 0;
-        else if (found && k == "ship_archetype")
-            t.ship = v;
-        else if (found && k == "loadout")
-            t.loadout = v;
-        else if (found && k == "pilot")
-            t.pilot = v;
-        else if (found && k == "state_graph")
-            t.graph = v;
-        else if (found && k == "level" && v.size() > 1)
-            t.level = static_cast<u32>(atoi(v.c_str() + 1)); // "d2" -> 2
+        if (found)
+            break;
     }
     return found && !t.ship.empty() && !t.loadout.empty();
 }

@@ -117,7 +117,10 @@ function Invoke-FLBaseRepair([int]$TimeoutSec = 15) {
     # the room's NavBar ignores clicks while busy (right after a window closed: a second repair visit answered "busy:
     # navbar+34C", 21 Oct 2026) - wait for it as every room click does
     $null = Wait-FLRoomReady -TimeoutSec $TimeoutSec
-    $cash0 = [int][regex]::Match((Send-FL 'worth'), 'cash=(-?\d+)').Groups[1].Value
+    # the player's cash as the client holds it (hudinfo: Freelancer.exe's own value) - `worth` asks server.dll, which in
+    # multiplayer has no answer (28 Oct 2026: cash=0 rc=-2, so the charge was never seen though the repair was paid)
+    $cash = { $m = [regex]::Match((Send-FL 'hudinfo'), 'credits (-?\d+)'); if ($m.Success) { [int64]$m.Groups[1].Value } else { [int64][regex]::Match((Send-FL 'worth'), 'cash=(-?\d+)').Groups[1].Value } }
+    $cash0 = & $cash
     $r = Send-FL 'goto REPAIR'
     if ($r -notmatch '^clicked') { return "repair button: $r" }
     # the window: its OK button with item rows, or the toggle alone (nothing damaged)
@@ -129,7 +132,7 @@ function Invoke-FLBaseRepair([int]$TimeoutSec = 15) {
     } 'the repair window' $TimeoutSec
     if ($state -eq 'none') { $null = Send-FL 'click RepairCancelButton'; return 'nothing to repair' }
     $null = Send-FL 'click RepairOkButton'
-    $paid = Wait-FLUntil { $c = [int][regex]::Match((Send-FL 'worth'), 'cash=(-?\d+)').Groups[1].Value; if ($c -ne $cash0) { $cash0 - $c } } 'the repair charge' 5
+    $paid = Wait-FLUntil { $c = & $cash; if ($c -ne $cash0) { $cash0 - $c } } 'the repair charge' 10
     if ((Send-FL 'uiitems') -match '(?m)^\s*RepairCancelButton\s') { $null = Send-FL 'click RepairCancelButton' }
     "repaired $paid"
 }

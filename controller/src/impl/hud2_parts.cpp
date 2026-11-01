@@ -1,8 +1,9 @@
 // HUD 2's components, drawn as tools\uimock\hud2_states.py draws them (iteration 3): the same fractions of H, sizes,
 // colours and behaviours; deviations are noted where they are (docs\UI_HUD2.md). Every text >= 0.024 H at scale 100.
 #include "hud2_impl.h"
-#include "debug.h"
+#include "hud2_layout.h"
 #include "osk.h"
+#include "safemem.h"
 #include "ui.h"
 #include "uiopt.h"
 
@@ -15,10 +16,10 @@ using namespace hud2kit;
 
 static float Now() { return GetTickCount() / 1000.0f; }
 
-float DrawPrompt(const Prompt& p, float cx, float cy, float h, u32 argb, bool measure)
+float DrawPrompt(const Prompt& p, float cx, float cy, float h, u32 argb, bool measure, bool tight)
 {
     if (!p.key.empty())
-        return Keycap(p.key, cx, cy, h, argb, measure);
+        return Keycap(p.key, cx, cy, h, argb, measure, tight);
     if (p.btn == glyphs::COUNT)
         return 0;
     if (!measure)
@@ -30,24 +31,33 @@ float DrawPrompt(const Prompt& p, float cx, float cy, float h, u32 argb, bool me
 void DrawRing(const Model& m, const Layout& L, float a, float dim)
 {
     const float H = L.H, k = L.k, cx = L.cx, cy = L.cy, R = L.R;
-    const float w = 0.0065f * H * k, T = 0.024f * H * k;
+    const float w = hud2layout::kRingArcW * H * k, T = 0.024f * H * k;
     const int numbers = uiopt::Get().hudNumbers;
     SetAlpha(a * dim);
+    // (the lint's recorder, hud2_kit.h Record: each element of the centre stack its own tag - a number belongs to its arc)
     const float shield = std::max(0.0f, m.shield);
     const bool lowShield = m.shield >= 0 ? m.shield <= 0.25f : true;
+    RecordTag("ring.shield");
     if (m.shield > -2) // shield left (red at <= 25 %), filling from the top
         SegArc(cx, cy, R, 138, 222, w, shield, lowShield ? kHostile : kShield, 14, 1.6f, true);
+    RecordTag("ring.hull");
     if (m.hull >= 0) // hull right
         SegArc(cx, cy, R, -42, 42, w, m.hull, m.hull > 0.2f ? kInk : kHull, 14, 1.6f, true);
-    if (m.cruise != 1 && m.power >= 0) // power below
+    RecordTag("ring.power");
+    // power below - not while cruise charges or runs: the cruise readout (the charge seconds, CRUISE ON) holds the ring's
+    // bottom then (UI_HUD2.md 5.23; the game takes the weapons offline while the engine charges, FREELANCER_RE "The cruise
+    // line"; while cruise runs it is this package's choice - the power arc returns with the drop - open for the owner)
+    if (m.cruise == 0 && m.power >= 0)
         SegArc(cx, cy, R, 68, 112, w * 0.8f, m.power, kPower, 8, 2.2f, false);
     auto show = [&](float v) { return v >= 0 && (numbers == 1 || (numbers == 0 && v < 0.4f)); };
     wchar_t buf[32];
+    RecordTag("ring.shield");
     if (show(shield) && m.shield > -2)
     {
         swprintf_s(buf, L"%d", static_cast<int>(shield * 100 + 0.5f));
         Text(cx - R * 0.72f, cy - R * 0.92f, buf, T, Argb(lowShield ? kHostile : kShield, 1), Right);
     }
+    RecordTag("ring.hull");
     if (show(m.hull))
     {
         swprintf_s(buf, L"%d", static_cast<int>(m.hull * 100 + 0.5f));
@@ -56,56 +66,40 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
     // the speed and the throttle dim with the arcs in calm flight, but less (they stay readable at a glance: 60 %)
     const float sa = a * std::max(dim, 0.6f);
     SetAlpha(a);
+    RecordTag("ring.charge");
     if (m.cruise == 1) // the cruise charge: the whole bottom arc (between the shield's and the hull's) in cyan
     {
         SegArc(cx, cy, R, 48, 132, w, m.charge, kCyan, 14, 1.8f, true);
         swprintf_s(buf, L"%.1f s", m.chargeLeft); // centred under the speed, inside the ring
         Text(cx, cy + 0.083f * H * k, buf, T, Argb(kCyan, 1), Center);
     }
-    SetAlpha(m.cruise == 1 ? a : sa);
+    // CRUISE ON in the charge seconds' slot (the owner, 31 Oct 2026: "The CRUISE ON text still hides the ship ... the
+    // lower center of the screen ... devoid of HUD elements"; UI_HUD2.md 5.23): the cruise state reads in ONE place, inside
+    // the ring under the speed - "3.2 s" while the engine charges (the arc filling), CRUISE ON while it runs (the power
+    // arc yields its slot, above), nothing while off; no word under the ring any more (the reticle lane under it, R + 0.092
+    // H, sat on the ship's nose). As Speedrun's spec places its cruise state (ring.cruise, +0.083). The hull / shield arcs
+    // end at 42 / 138 degrees: the word's box (~0.11 H wide at 0.024) keeps > 0.01 H from their inner corners.
+    RecordTag("ring.cruise");
+    if (m.cruise == 2)
+        Text(cx, cy + 0.083f * H * k, L"CRUISE ON", T, Argb(kCyan, 1), Center);
+    SetAlpha(m.cruise != 0 ? a : sa);
+    RecordTag("ring.speed");
     swprintf_s(buf, L"%d", static_cast<int>(m.speed + 0.5f));
-    Text(cx, cy + (m.cruise == 1 ? 0.050f : 0.058f) * H * k, buf, 0.030f * H * k, Argb(kInk, 1), Center);
-    // The spots under the ring (the owner, 26 Oct 2026: the cruise toggle "deserves a permanent prompt spot of its own",
-    // so does the tractor): [Y] CRUISE always - dim CRUISE when off, cyan CHARGING / CRUISE ON; [X] TRACTOR n only while
-    // loot is in the tractor's reach (as the game's own tractor button lights). One row, centred as a group.
-    {
-        SetAlpha(a);
-        // (below the throttle's BOOST / KILL / REV word under the ring, whose bottom is ~R + 0.058 H: the owner, 26 Oct 2026,
-        // "BOOST text should not overlap with Cruise")
-        // (R + 0.092 H: at 0.082 BOOST and the row touched at 720p, the spec recapture 26 Oct 2026; while charging the row
-        // is the cancel - the context line no longer repeats it: one prompt, one place)
-        const float y = cy + R + 0.092f * H * k, gh = T * 1.3f, gap = 0.006f * H * k, sep = 0.03f * H * k;
-        const wchar_t* cw = m.cruise == 2 ? L"CRUISE ON" : m.cruise == 1 ? L"CANCEL CRUISE" : L"CRUISE";
-        const u32 cc = m.cruise ? Argb(kCyan, 1) : Argb(kInk, 0.55f);
-        wchar_t tw[32] = {};
-        if (m.loot > 0)
-            swprintf_s(tw, m.loot > 1 ? L"TRACTOR %d" : L"TRACTOR", m.loot);
-        auto width = [&](const Prompt& p, const wchar_t* s)
-        {
-            const float g = DrawPrompt(p, 0, 0, gh, 0, true);
-            return (g > 0 ? g + gap : 0) + TextWidth(s, T, 0.1f);
-        };
-        auto draw = [&](const Prompt& p, const wchar_t* s, float x, u32 col)
-        {
-            const float g = DrawPrompt(p, 0, 0, gh, 0, true);
-            if (g > 0)
-                DrawPrompt(p, x + g / 2, y, gh, col), x += g + gap;
-            Text(x, y, s, T, col, Left, 0.1f);
-        };
-        const float w1 = width(m.cruiseBtn, cw), w2 = *tw ? width(m.tractorBtn, tw) : 0;
-        float x = cx - (w1 + (w2 > 0 ? sep + w2 : 0)) / 2;
-        draw(m.cruiseBtn, cw, x, cc);
-        if (w2 > 0)
-            draw(m.tractorBtn, tw, x + w1 + sep, Argb(kInk, 1));
-        SetAlpha(m.cruise == 1 ? a : sa);
-    }
+    // while the cruise readout shows (charging: its seconds; running: CRUISE ON), raised over it by the centre stack's
+    // 0.01 H gap (the lint's centre.overlap; UI_HUD2_PRESETS.md 6 item 3, 1.3): at +0.050 the speed (0.030) and the
+    // seconds (0.024 at +0.083) stood 0.006 H apart; the readout cannot go lower (the seconds' box's bottom corners meet
+    // the charge arc's inner edge), so the speed goes up 0.005 H
+    Text(cx, cy + (m.cruise != 0 ? 0.045f : 0.058f) * H * k, buf, 0.030f * H * k, Argb(kInk, 1), Center);
+    // (the tractor's spot that stood under the ring beside the cruise word - [X] TRACTOR n - is a context prompt in the
+    // right lane since 5.23: hud2.cpp TractorCtx)
     // the throttle at the ring's 5 o'clock (the coverage table; the round 3 critique): a short segmented arc outside
     // the ring filling with the throttle, yellow and full with BOOST while the afterburner fires (the owner, 26 Oct 2026:
     // BOOST, not BURN), empty with KILL while the engine
     // is killed, REV in reverse; the word beyond the arc's lower end
     SetAlpha(sa);
+    RecordTag("ring.throttle");
     {
-        const float rt = R + 0.022f * H * k, tw = w * 0.75f;
+        const float rt = R + hud2layout::kThrottleDR * H * k, tw = w * hud2layout::kThrottleW;
         const float thr = m.kill ? 0.0f : m.burner ? 1.0f : std::clamp(fabsf(m.throttle), 0.0f, 1.0f);
         const u32 tc = m.burner ? kActive : m.kill ? kAmber : m.reverse ? kAmber : kChrome;
         // 50..66 degrees: an 8 degree gap after the hull arc's end (42) and its empty blocks a third as thick (the round
@@ -113,11 +107,16 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
         // (bottom centre, 82..98 degrees, with its word centred under it: the owner, 26 Oct 2026, "keep it bottom center
         // of the center circle" - was 50..66 with the word at 5 o'clock)
         SegArc(cx, cy, rt, 82, 98, tw, thr, tc, 5, 2.2f, true, 0x283050, tw * 0.35f);
+        // the word beside the arc, right of it, its box's bottom on the arc's outer edge (the ring's lowest drawn edge,
+        // hud2layout::RingBottom): centred under the arc (to R + 0.058 H) it sat in the lower centre over the ship's nose
+        // (the owner, 31 Oct 2026, UI_HUD2.md 5.23). From cx + 0.068 H: > 0.01 H from the power arc's (68 degrees) and the
+        // charge arc's (48..132) outer edges and from CRUISE ON's box (up to ~0.12 H wide) - the lint's centre.overlap
         const wchar_t* drive = m.kill ? L"KILL" : m.burner ? L"BOOST" : m.reverse ? L"REV" : nullptr;
         if (drive)
-            Text(cx, cy + rt + 0.024f * H * k, drive, T, Argb(tc, 1), Center, 0.08f);
+            Text(cx + 0.068f * H * k, cy + rt + tw * 0.5f - T * 0.5f, drive, T, Argb(tc, 1), Left, 0.08f);
     }
     SetAlpha(a);
+    RecordTag("ring.hit");
     // a hit's side: a transient amber flash at 0.13 H - one 0.008 H arc fading over 300 ms, no glow band (the round 4
     // critique: the 0.018 H glow under a 0.006 H core read as a ~0.04 H outlined mark, the heaviest on the screen)
     if (m.hitAge >= 0 && m.hitAge < 0.3f)
@@ -127,6 +126,7 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
     }
     // missiles homing on the player: red chevrons on the ring's outside at their bearing, pulsing
     const float pulse = 0.65f + 0.35f * sinf(Now() * 10.0f);
+    RecordTag("ring.missiles");
     for (int i = 0; i < m.missiles && i < 3; ++i)
     {
         const float ang = m.missileAng[i] * 3.14159265f / 180.0f, ux = cosf(ang), uy = sinf(ang), vx = -uy, vy = ux;
@@ -153,8 +153,12 @@ static void Chip(float x, float y, const std::wstring& s, float T, u32 rgb)
     Text(x + T / 3, y, s, T, Argb(rgb, 1), Left, 0.1f, false);
 }
 
-float DrawNav(const Model& m, const Layout& L, float a)
+float DrawNav(const Model& m, const Layout& L, float a, const NavStyle& ns, float* bottom)
 {
+    // Focus's lean nav (PRESETS 2.2 Calm: "headline 1 line + timer"; "chip lines as Standard"): the NeuroNet chip, the
+    // standing place line, the info line and the keyboard form's maneuver row are held back (the peek shows them: ns.full),
+    // the keyboard form gets a dim MANEUVERS tag instead; the cruise charge's chip goes (its home is the band)
+    const bool held = ns.lean && !ns.full;
     SetAlpha(a);
     const float H = L.H, k = L.k, T = 0.024f * H * k;
     const float x = L.mx, top = L.my + 0.02f * H;
@@ -163,20 +167,24 @@ float DrawNav(const Model& m, const Layout& L, float a)
     // a nav line to the nav's width cap by the fit rule (smaller to the 0.024 H floor, then cut); `reserve` = room kept
     // right of the text (the protect bar)
     auto fit = [&](float x0, float y0, const std::wstring& s, float size, u32 argb, float track, float reserve = 0)
-    { return TextFit(x0, y0, s, size, L.navMaxX - x0 - reserve, argb, Left, track); };
+    { return TextMarquee(x0, y0, s, size, L.navMaxX - x0 - reserve, argb, Left, track); };
     auto ext = [&](float x1) { right = std::max(right, x1); };
     // The fixed rows first (the round 4 critique: NEURONET moved from line 1 to line 4 between states): the NeuroNet chip
     // pinned on the nav's top line, the keyboard form's maneuver row pinned under it; the objective / place / chip /
     // info lines stack below them on their own. In the game's letterbox only the maneuver chip stays (in the upper bar).
     float yy = top;
-    if (!m.cine)
+    if (!m.cine && !held)
     {
         const float g = 0.032f * H * k;
         const bool hov = m.kbm && HotHovered() == kHotNeuro;
         const u32 nc = Argb(hov ? kInk : kChrome, 1);
         const float gw = DrawPrompt(m.neuro, tx + g / 2, yy, g, nc, true);
-        DrawPrompt(m.neuro, tx + gw / 2, yy, g, nc);
-        const float nw = Text(tx + gw + g * 0.25f, yy, L"NEURONET", T, nc, Left, 0.1f);
+        float nw = 0;
+        {
+            const RecUnit unit; // (the chip's glyph and its word)
+            DrawPrompt(m.neuro, tx + gw / 2, yy, g, nc);
+            nw = Text(tx + gw + g * 0.25f, yy, L"NEURONET", T, nc, Left, 0.1f);
+        }
         ext(tx + gw + g * 0.25f + nw);
         if (m.news) // the game's NeuroNet flash: a yellow dot beside the chip (the mock-up's)
         {
@@ -197,7 +205,33 @@ float DrawNav(const Model& m, const Layout& L, float a)
     const float y = yy; // the text block's first line
     const float chipRight = right;
     right = tx;
-    if (!m.objective.empty() && !m.cine)
+    if (ns.lean && !m.cine && (!m.objective.empty() || !m.timer.empty()))
+    {
+        // the headline on one line (cut by the fit rule) and the mission timer as its own field at its end (1.4 "Its own
+        // field on the headline line, TIME 1:42"), the protected ship's bar between them
+        const float d = 0.01f * H * k;
+        if (!m.objective.empty())
+        {
+            const float dia[8] = {x + d, y - d, x + 2 * d, y, x + d, y + d, x, y};
+            Outline(dia, 4, 0.002f * H * k, Argb(kActive, 1));
+        }
+        const float barW = m.protect >= 0 && !m.objective.empty() ? 0.096f * H * k : 0.0f;
+        const float tw = m.timer.empty() ? 0.0f : TextWidth(m.timer, T, 0.06f) + 0.016f * H * k;
+        float ow = 0;
+        if (!m.objective.empty())
+            ow = TextMarquee(tx, y, m.objective, ns.headline * H * k, L.navMaxX - tx - barW - tw, Argb(kInk, 1));
+        if (barW > 0)
+            SegBar(tx + ow + 0.016f * H * k, y - 0.005f * H * k, 0.08f * H * k, 0.010f * H * k, m.protect, kFriend, 8, 2);
+        float tx2 = tx + ow + barW;
+        if (tw > 0)
+        {
+            tx2 += ow > 0 ? 0.016f * H * k : 0.0f;
+            tx2 += Text(tx2, y, m.timer, T, Argb(kChrome, 1), Left, 0.06f);
+        }
+        ext(tx2);
+        yy += 0.05f * H * k;
+    }
+    else if (!m.objective.empty() && !m.cine)
     {
         const float d = 0.01f * H * k;
         const float dia[8] = {x + d, y - d, x + 2 * d, y, x + d, y + d, x, y};
@@ -207,15 +241,32 @@ float DrawNav(const Model& m, const Layout& L, float a)
         // step down or cut per box - "Protect the a..." at 4:3 with text_size 150)
         std::wstring lines[2];
         float os = 0;
-        const int nl = FitLines(m.objective, 0.032f * H * k, L.navMaxX - tx - barW, 0, lines, 2, os);
-        float ow = Text(tx, y, lines[0], os, Argb(kInk, 1));
+        const float room = L.navMaxX - tx - barW;
+        const int nl = FitLines(m.objective, 0.032f * H * k, room, 0, lines, 2, os);
+        // the last line, where FitLines cut it, is a marquee of the rest of the headline (the owner's decision 1, 31 Oct
+        // 2026: no permanent "..."): the words the lines before it hold are skipped, the rest scrolls in the room
+        auto line = [&](int i, float ly)
+        {
+            if (i != nl - 1 || lines[i].empty() || lines[i].back() != textfit::kEllipsis)
+                return Text(tx, ly, lines[i], os, Argb(kInk, 1));
+            size_t at = 0;
+            for (int j = 0; j < i; ++j)
+            {
+                const size_t p = m.objective.find(lines[j], at);
+                at = p == std::wstring::npos ? at : p + lines[j].size();
+                while (at < m.objective.size() && m.objective[at] == L' ')
+                    ++at;
+            }
+            return TextMarquee(tx, ly, m.objective.substr(at), os, room, Argb(kInk, 1), Left, 0, true, os);
+        };
+        float ow = line(0, y);
         ext(tx + ow + barW);
         if (m.protect >= 0)
             SegBar(tx + ow + 0.016f * H * k, y - 0.005f * H * k, 0.08f * H * k, 0.010f * H * k, m.protect, kFriend, 8, 2);
         for (int i = 1; i < nl; ++i)
         {
             yy += os * 1.25f;
-            ext(tx + Text(tx, yy, lines[i], os, Argb(kInk, 1)));
+            ext(tx + line(i, yy));
         }
         yy += 0.05f * H * k;
     }
@@ -223,14 +274,15 @@ float DrawNav(const Model& m, const Layout& L, float a)
     // system / zone line - dim, left out in a fight (the headline and the maneuver matter there)
     // (one fight rule, the threat list's: hostiles near - also while the autopilot fights; the round 4 critique)
     const bool event = !m.place.empty() && m.placeLeft > 0;
-    if (!m.cine && (event || (!m.where.empty() && !m.fight)))
+    if (!m.cine && (event || (!m.where.empty() && !m.fight && !held))) // (Focus: the arrival event only - an event wakes)
     {
         SetAlpha(a * (event ? std::min(1.0f, m.placeLeft) : 1.0f));
         ext(tx + fit(tx, yy, event ? m.place : m.where, T, Argb(kDim, 1), 0.08f));
         SetAlpha(a);
         yy += 0.04f * H * k;
     }
-    if (m.ap || m.man || m.turret)
+    const bool manChip = m.man && !(ns.lean && m.manName == L"CRUISE CHARGING");
+    if (m.ap || manChip || m.turret)
     {
         float chipX = tx;
         if (m.ap)
@@ -243,16 +295,25 @@ float DrawNav(const Model& m, const Layout& L, float a)
             Chip(chipX, yy, L"TURRET VIEW", T, kChrome);
             chipX += TextWidth(L"TURRET VIEW", T, 0.1f) + 0.03f * H * k;
         }
-        if (m.man)
+        if (manChip)
         {
-            if (!Icon(m.manIcon, chipX + 0.016f * H * k, yy, 0.032f * H * k, Argb(m.manCol, 1)))
-                Disc(chipX + 0.016f * H * k, yy, 0.006f * H * k, Argb(m.manCol, 1));
-            const float mw = Text(chipX + 0.038f * H * k, yy, m.manName, T * 1.1f, Argb(m.manCol, 1), Left, 0.06f);
+            float mw = 0;
+            {
+                const RecUnit unit; // (the maneuver's icon and its word)
+                if (!Icon(m.manIcon, chipX + 0.016f * H * k, yy, 0.032f * H * k, Argb(m.manCol, 1)))
+                    Disc(chipX + 0.016f * H * k, yy, 0.006f * H * k, Argb(m.manCol, 1));
+                mw = Text(chipX + 0.038f * H * k, yy, m.manName, T * 1.1f, Argb(m.manCol, 1), Left, 0.06f);
+            }
             ext(chipX + 0.038f * H * k + mw);
             if (!m.manDest.empty())
             {
+                // handed over to the target card while it names the same object (hud2.cpp Render destOnCard; the lint's
+                // value.twice, UI_HUD2_PRESETS.md 1.7): faded with the card, its room kept (the nav's edge and the
+                // dialogue panel's topFree do not jump when the card comes and goes)
                 const float dx0 = chipX + 0.038f * H * k + mw + 0.012f * H * k;
+                SetAlpha(a * (1 - m.destOnCard));
                 ext(dx0 + fit(dx0, yy, m.manDest, T * 1.1f, Argb(kInk, 1), 0));
+                SetAlpha(a);
             }
         }
         else if (m.ap && !m.apMode.empty())
@@ -278,14 +339,30 @@ float DrawNav(const Model& m, const Layout& L, float a)
     }
     // the dock / lane / jump answer, unless the comm surface says it now (the round 4 critique: DOCKING GRANTED in the
     // nav while the comm card said it - one value, one place), then the other contextual information
-    std::wstring info = m.comm ? std::wstring() : m.event;
-    if (!m.info.empty())
-        info += (info.empty() ? L"" : L" \x00B7 ") + m.info;
+    // (Focus: the dock / lane / jump answer with its chip - "chip lines as Standard", the queue and the bay - the rest of
+    // the info line held back; its timer is the headline's field)
+    std::wstring info = m.comm || (held && !manChip && !m.ap) ? std::wstring() : m.event;
+    std::wstring more = m.info; // (the lean nav's timer is the headline's field: not twice - Slow puts it first)
+    if (ns.lean && !m.timer.empty() && more.compare(0, m.timer.size(), m.timer) == 0)
+    {
+        more.erase(0, m.timer.size());
+        if (more.compare(0, 3, L" \x00B7 ") == 0)
+            more.erase(0, 3);
+    }
+    if (!more.empty() && !held)
+        info += (info.empty() ? L"" : L" \x00B7 ") + more;
     if (!info.empty() && !m.cine)
     {
         ext(tx + fit(tx, yy, info, T, Argb(kChrome, 1), 0.06f));
         yy += 0.04f * H * k;
     }
+    if (held && m.kbm && !m.cine) // the keyboard form's maneuver row, held back: a dim tag (the peek shows the row)
+    {
+        ext(tx + Text(tx, yy, L"MANEUVERS", T, Argb(kDim, 0.8f), Left, 0.1f));
+        yy += 0.04f * H * k;
+    }
+    if (bottom)
+        *bottom = std::max(top, yy - 0.02f * H * k);
     const bool texts = yy > y + 0.001f;
     const float textRight = right, textBottom = yy - 0.02f * H * k;
     right = std::max(right, chipRight);
@@ -336,6 +413,22 @@ static void WindowPlate(float x0, float y0, float x1, float y1, float c, int cor
 }
 
 // ---------------------------------------------------------------- top-right: what you are looking at
+// The room a card text at x gets so that its end never lands in the `gap` just short of `start`, the left edge of a
+// text in the row above or below (diagonal neighbours: the lint's panel.overlap wants 0.01 H between them; the in-game
+// lint, 31 Oct 2026: "Manhattan" ended 0.0079 H before "PLANET", 0.0088 H diagonally). A text ending at least `gap`
+// before `start`, or reaching past it (then the two share the column: lines of one block), keeps its room; one ending
+// inside the band is fitted into the room that ends `gap` before `start` (the fit rule: smaller, then cut).
+// A text the fit rule would cut is a marquee (TextMarquee, the owner's decision 1, 31 Oct 2026): it fills its whole room
+// while it scrolls (and the lint records the room), so its end is the room's end, not the cut form's.
+static float ClearRoom(const std::wstring& s, float size, float track, float x, float room, float start, float gap)
+{
+    if (s.empty() || start <= x || start - gap - x <= 0)
+        return room;
+    const textfit::Result& r = FitText(s, size, room, track);
+    const float end = x + (r.cut ? room : r.width);
+    return end > start - gap && end < start + 1.0f ? start - gap - x : room;
+}
+
 void DrawTarget(const Model& m, const Layout& L, float a)
 {
     SetAlpha(a);
@@ -376,6 +469,7 @@ void DrawTarget(const Model& m, const Layout& L, float a)
         const float gh = T * 1.2f, gw = DrawPrompt(m.clearBtn, 0, 0, gh, 0, true), fy = y1 - 0.022f * H * k;
         const wchar_t* lbl = L"x2 CLEAR";
         const float lw = TextWidth(lbl, T, 0.06f);
+        const RecUnit unit; // (the prompt and its own label)
         DrawPrompt(m.clearBtn, right - lw - 0.006f * H * k - gw / 2, fy, gh, Argb(kDim, 1));
         Text(right, fy, lbl, T, Argb(kDim, 1), Right, 0.06f);
     }
@@ -388,21 +482,24 @@ void DrawTarget(const Model& m, const Layout& L, float a)
         cls = m.tClass + lv;
     }
     if (!cls.empty())
-        TextFit(tx + cw + 0.012f * H * k, yy, cls, T, clsRoom, Argb(kDim, 1), Left, 0.06f);
+        TextMarquee(tx + cw + 0.012f * H * k, yy, cls, T, clsRoom, Argb(kDim, 1), Left, 0.06f);
     yy += 0.040f * H * k;
     // a long name (a lane's "Colorado Jump Gate->Fort Bush") steps down by the fit rule before it is cut
     // no faction (a waypoint, loot, a lane ring): its row collapses - the distance moves onto the name's row (the round
     // 4 critique: a blank faction row)
     const bool facRow = !m.tFaction.empty();
     const float distW = TextWidth(m.tDist, 0.032f * H * k) + 0.016f * H * k;
-    const float nameRoom = right - tx - (facRow ? 0 : distW);
-    TextFit(tx, yy, m.tName, 0.032f * H * k, nameRoom, Argb(kInk, 1));
+    float nameRoom = right - tx - (facRow ? 0 : distW);
+    if (facRow) // (the distance on the faction row under it: diagonal neighbours keep 0.01 H - ClearRoom)
+        nameRoom = ClearRoom(m.tName, 0.032f * H * k, 0, tx, nameRoom, right - TextWidth(m.tDist, 0.032f * H * k),
+                             0.011f * H * k);
+    TextMarquee(tx, yy, m.tName, 0.032f * H * k, nameRoom, Argb(kInk, 1));
     if (!facRow)
         Text(right, yy, m.tDist, 0.032f * H * k, Argb(kInk, 1), Right);
     yy += 0.036f * H * k;
     if (facRow)
     {
-        TextFit(tx, yy, m.tFaction, 0.026f * H * k, right - tx - distW, Argb(m.tCol, 1));
+        TextMarquee(tx, yy, m.tFaction, 0.026f * H * k, right - tx - distW, Argb(m.tCol, 1));
         Text(right, yy, m.tDist, 0.032f * H * k, Argb(kInk, 1), Right);
         yy += 0.034f * H * k;
     }
@@ -430,12 +527,12 @@ void DrawTarget(const Model& m, const Layout& L, float a)
 // The left bumper's two modals where the target card would be, ALWAYS while no target is selected (the pad only):
 // [LB] TARGETS  [LB hold] WHEEL, right-aligned on the card's top line - faded in calm flight, full in combat (the
 // owner, 26 Oct 2026; kept off the reticle ring: "let's not make the ring TOO busy")
-void DrawCalmHints(const Model& m, const Layout& L, float a)
+void DrawCalmHints(const Model& m, const Layout& L, float a, float textH)
 {
     if (m.kbm || m.target)
         return;
     SetAlpha(a * (m.state == State::Combat ? 1.0f : 0.45f));
-    const float H = L.H, k = L.k, T = 0.024f * H * k, gh = T * 1.3f, gap = 0.006f * H * k, sep = 0.03f * H * k;
+    const float H = L.H, k = L.k, T = textH * H * k, gh = T * 1.3f, gap = 0.006f * H * k, sep = 0.03f * H * k;
     const float y = L.tgtY0 + 0.02f * H * k;
     float x = L.tgtX1;
     const struct
@@ -447,6 +544,7 @@ void DrawCalmHints(const Model& m, const Layout& L, float a)
     {
         if (it.p->btn == glyphs::COUNT)
             continue;
+        const RecUnit unit; // (the prompt and its own label)
         const float g = DrawPrompt(*it.p, 0, 0, gh, 0, true);
         x -= TextWidth(it.s, T, 0.1f);
         Text(x, y, it.s, T, Argb(kDim, 1), Left, 0.1f);
@@ -462,7 +560,13 @@ void DrawShip(const Model& m, const Layout& L, float a)
     SetAlpha(a);
     const float H = L.H, k = L.k, T = 0.024f * H * k;
     const float x0 = L.shipX0, y0 = L.shipY0, x1 = L.shipX1, y1 = L.shipY1;
-    const float h = y1 - y0, vw = h * 0.80f;
+    // the icon column sized to its content (the owner, 31 Oct 2026: "some wasted space in there. Reduce it", UI_HUD2.md
+    // 5.22): hud2layout::std_ov::kShipViewW 0.085 (was 0.80 x h = 0.12) from 0.012 in, the icon half the panel's height
+    // (0.075: the owner's glyph rule; it was 0.0744 in the wider column, 0.035 / 0.041 H of air beside it), the texts
+    // 0.010 after the column (tx 0.107, was 0.150; 0.015 from the icon), the values right-aligned 0.014 before the edge
+    // (was 0.018): the text column 0.189 in the 0.31 panel
+    const float vw = hud2layout::std_ov::kShipViewW * H * k;
+    const float icon = hud2layout::std_ov::kShipH * 0.5f * H * k;
     // the player's ship: the game's own status view (its wireframe with the damage) in the panel's window when hudvis
     // draws it (hud_wireframes), else the flat ship icon
     if (m.shipView)
@@ -470,45 +574,52 @@ void DrawShip(const Model& m, const Layout& L, float a)
                     x0 + 0.012f * H * k + vw + 0.006f * H * k);
     else
         Plate(x0, y0, x1, y1, 0.012f * H * k, kTL | kBR, 200 / 255.0f);
-    if (!m.shipView && !Icon(flicons::Fighter, x0 + 0.012f * H * k + vw / 2, (y0 + y1) / 2, vw * 0.62f, Argb(kChrome, 0.9f)))
-        Disc(x0 + 0.012f * H * k + vw / 2, (y0 + y1) / 2, vw * 0.1f, Argb(kChrome, 0.9f));
-    const float tx = x0 + vw + 0.03f * H * k, right = x1 - 0.018f * H * k;
-    float yy = y0 + 0.032f * H * k;
+    if (!m.shipView && !Icon(flicons::Fighter, x0 + 0.012f * H * k + vw / 2, (y0 + y1) / 2, icon, Argb(kChrome, 0.9f)))
+        Disc(x0 + 0.012f * H * k + vw / 2, (y0 + y1) / 2, icon * 0.16f, Argb(kChrome, 0.9f));
+    const float tx = x0 + 0.012f * H * k + vw + 0.010f * H * k, right = x1 - 0.014f * H * k;
+    // the rows in the 0.15 H panel (the owner, 31 Oct 2026, A5: "keep these panels at identical height" - the loadout's
+    // 0.15; was 0.17 with rows at 0.032 / +0.040 / +0.060 and escorts at a 0.05 pitch): the name 0.030, HOLD 0.068 (its
+    // bar 0.020 below), CREDITS 0.120; up to 3 escorts at a 0.042 pitch from 0.026, each bar 0.018 under its name - the
+    // texts' boxes never overlap (the lint's panel.overlap), the last bar ends 0.015 H above the panel's edge
+    float yy = y0 + 0.030f * H * k;
     wchar_t buf[48];
     if (m.nEscorts > 0)
     {
-        for (int i = 0; i < m.nEscorts; ++i)
+        yy = y0 + 0.026f * H * k;
+        for (int i = 0; i < m.nEscorts && i < 3; ++i)
         {
-            TextFit(tx, yy, m.escorts[i].name, T, right - tx, Argb(kInk, 1)); // (a long name: the fit rule)
-            SegBar(tx, yy + 0.02f * H * k, right - tx, 0.007f * H * k, m.escorts[i].hull, kFriend, 10, 2);
-            yy += 0.05f * H * k;
+            TextMarquee(tx, yy, m.escorts[i].name, T, right - tx, Argb(kInk, 1)); // (a long name: the fit rule)
+            SegBar(tx, yy + 0.018f * H * k, right - tx, 0.007f * H * k, m.escorts[i].hull, kFriend, 10, 2);
+            yy += 0.042f * H * k;
         }
         return;
     }
     if (!m.shipName.empty() || !m.shipClass.empty()) // the player's ship and its class above HOLD
     {
         const float cw = m.shipClass.empty() ? 0 : TextWidth(m.shipClass, T, 0.08f) + 0.012f * H * k;
-        TextFit(tx, yy, m.shipName, 0.026f * H * k, right - tx - cw, Argb(kInk, 1));
+        TextMarquee(tx, yy, m.shipName, 0.026f * H * k, right - tx - cw, Argb(kInk, 1));
         if (cw > 0)
             Text(right, yy, m.shipClass, T, Argb(kDim, 1), Right, 0.08f);
-        yy += 0.040f * H * k;
     }
+    yy = y0 + 0.068f * H * k;
     if (m.holdUsed >= 0)
     {
-        Text(tx, yy, L"HOLD", T, Argb(kDim, 1), Left, 0.08f);
+        // (a label and its value never meet in the narrower column: the label takes the room the value leaves, less
+        // 0.012 H - a huge value scrolls the label, the marquee rule; at today's values nothing moves)
         swprintf_s(buf, L"%d / %d", m.holdUsed, m.holdCap);
+        TextMarquee(tx, yy, L"HOLD", T, right - tx - TextWidth(buf, T) - 0.012f * H * k, Argb(kDim, 1), Left, 0.08f);
         Text(right, yy, buf, T, Argb(kInk, 1), Right);
         SegBar(tx, yy + 0.02f * H * k, right - tx, 0.007f * H * k, m.holdCap > 0 ? m.holdUsed / static_cast<float>(m.holdCap) : 0,
                kChrome, 16, 2);
-        yy += 0.06f * H * k;
     }
+    yy = y0 + 0.120f * H * k;
     if (m.credits >= 0)
     {
-        Text(tx, yy, L"CREDITS", T, Argb(kDim, 1), Left, 0.08f);
         // thousands with a thin space, as the mock-up
         std::wstring s = std::to_wstring(m.credits);
         for (int i = static_cast<int>(s.size()) - 3; i > 0; i -= 3)
             s.insert(static_cast<size_t>(i), L" ");
+        TextMarquee(tx, yy, L"CREDITS", T, right - tx - TextWidth(s, T) - 0.012f * H * k, Argb(kDim, 1), Left, 0.08f);
         Text(right, yy, s, T, Argb(kInk, 1), Right);
     }
 }
@@ -536,70 +647,114 @@ static void BatteryShape(float cx, float cy, float s, u32 c)
     Line(cx + w * 0.14f, cy - h * 0.02f, cx - w * 0.12f, cy + h * 0.3f, lw, c);
 }
 
+// A weapon group's numeral in a cell of its own, ch tall at (ccx, yy) (Agency FB's "1" is a bare stroke: ">1" read as
+// ">|"; a one is drawn with its flag and foot); lit = the active group (DrawLoadout, DrawFireStrip)
+static void GroupCell(float ccx, float yy, float ch, int num, bool lit, float H, float k)
+{
+    const u32 nc = Argb(lit ? kActive : kDim, 1);
+    Plate(ccx - ch * 0.5f, yy - ch * 0.5f, ccx + ch * 0.5f, yy + ch * 0.5f, ch * 0.18f, kTL | kTR | kBR | kBL,
+          lit ? 0.35f : 0.2f, lit ? kActive : kDim, lit ? 0.9f : 0.6f);
+    if (num == 1)
+    {
+        const float lw = std::max(1.5f, ch * 0.09f), h = ch * 0.62f;
+        Line(ccx + h * 0.08f, yy - h * 0.5f, ccx + h * 0.08f, yy + h * 0.5f, lw, nc);
+        Line(ccx + h * 0.08f, yy - h * 0.5f, ccx - h * 0.26f, yy - h * 0.22f, lw, nc);
+        Line(ccx - h * 0.26f, yy + h * 0.5f, ccx + h * 0.40f, yy + h * 0.5f, lw, nc);
+    }
+    else
+    {
+        wchar_t n[8];
+        swprintf_s(n, L"%d", num);
+        Text(ccx, yy, n, 0.024f * H * k, nc, Center, 0, false);
+    }
+}
+
+// One consumable slot (DrawLoadout, DrawFireStrip): its plate, a lit slot's glow (`glow`), the icon and the count - drawn
+// as one designed unit with the caller's key (the caller holds the RecUnit). The count at the text floor at the slot's
+// right, beside the icon; when its digits leave the icon less room than stacking does (three digits), at the lower right
+// under an icon at the upper left. Two digits' room is always kept, so a count crossing 10 does not move the icon. The
+// icon never lies under the count (the lint's panel.overlap; the owner, 31 Oct 2026, A1: "it's not fine for the glyphs
+// to overlap ... tightening the glyphs themselves so that everything fits nicely" - before, the count at 0.030 hung
+// over the slot's lower right edge and over a 0.0285 icon). `iconMax` = the icon's size where it has the room.
+static void Slot(const Model& m, int i, int count, float px, float py, float sz, float iconMax, float chamfer, bool glow,
+                 float H, float k)
+{
+    const bool hot = m.hot[i];
+    const u32 hc = m.hotCol[i] ? m.hotCol[i] : kHostile;
+    const bool none = count < 0; // not fitted / unknown: the slot dims
+    Plate(px - sz / 2, py - sz / 2, px + sz / 2, py + sz / 2, chamfer, kTL | kTR | kBR | kBL, hot ? 220 / 255.0f : 150 / 255.0f,
+          hot ? hc : kChrome, hot ? 1.0f : 0.43f, hot ? 'b' : 0, hc);
+    if (hot && glow) // a lit slot glows in its meaning's colour
+    {
+        const float g = 0.004f * H * k;
+        const float o[8] = {px - sz / 2 - g, py - sz / 2 - g, px + sz / 2 + g, py - sz / 2 - g,
+                            px + sz / 2 + g, py + sz / 2 + g, px - sz / 2 - g, py + sz / 2 + g};
+        Outline(o, 4, g * 1.5f, Argb(hc, 0.35f + 0.25f * sinf(Now() * 6)));
+    }
+    // a lit slot's icon in the lit colour (amber when its answer is used up or missing: the round 4 critique)
+    const u32 ic = hot ? Argb(hc, 1) : Argb(kChrome, none ? 0.35f : 1.0f);
+    // an empty or missing answer reads "0" (no dash: the round 4 critique read it as a ~0.004 H mark), amber when used up
+    // or when an alert names the missing slot, dim when it is simply not fitted
+    wchar_t buf[16];
+    swprintf_s(buf, L"%d", std::max(0, count));
+    const float cs = std::max(0.024f * H * k, TextFloor()), in = 0.0015f * H * k;
+    const float cw = std::max(TextWidth(buf, cs), TextWidth(L"88", cs));
+    const float beside = sz - 3 * in - cw, above = sz - 2 * in - cs;
+    const bool side = beside >= above;
+    const float isz = std::max(0.0f, std::min(iconMax, side ? beside : above));
+    const float ix = px - sz / 2 + in + isz / 2, iy = side ? py : py - sz / 2 + in + isz / 2;
+    if (i == 0)
+        NanoShape(ix, iy, isz, ic);
+    else if (i == 1)
+        BatteryShape(ix, iy, isz, ic);
+    else if (!Icon(i == 2 ? flicons::Star : flicons::Mine, ix, iy, isz, ic))
+        Ring(ix, iy, isz * 0.3f, 2, ic);
+    const bool warn = count == 0 || (none && hot);
+    Text(px + sz / 2 - in, side ? py : py + sz / 2 - cs / 2, buf, cs, warn ? Argb(kWarn, 1) : Argb(kInk, none ? 0.5f : 1.0f),
+         Right);
+}
+
 void DrawLoadout(const Model& m, const Layout& L, float a)
 {
     SetAlpha(a);
     const float H = L.H, k = L.k, T = 0.024f * H * k;
     const float x0 = L.loX0, y0 = L.loY0, x1 = L.loX1, y1 = L.loY1;
     Plate(x0, y0, x1, y1, 0.012f * H * k, kTR | kBL, 190 / 255.0f);
+    // the consumables' cross in its own plate stacked on the base panel's right end (the owner's decision 3, 31 Oct 2026:
+    // "LOADOUT too wide because of the consumables" - the base holds the weapons only), the cross itself unchanged,
+    // centred in its plate (hud2_layout.h std_ov::kConsW / kConsH)
+    const float qx0 = L.consX0, qy0 = L.consY0, qx1 = L.consX1, qy1 = L.consY1;
+    if (qx1 > qx0 && qy1 > qy0)
+        Plate(qx0, qy0, qx1, qy1, 0.012f * H * k, kTR | kBL, 190 / 255.0f);
     const float d = 0.050f * H * k, sz = 0.046f * H * k;
-    const float cx = x0 + 0.03f * H * k + d * 1.15f + sz / 2, cy = (y0 + y1) / 2;
+    const float cx = (qx0 + qx1) / 2, cy = (qy0 + qy1) / 2;
     if (!m.kbm)
         Glyph(glyphs::COUNT, cx, cy, 0.028f * H * k, Argb(kChrome, 220 / 255.0f));
     static const float kDir[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}}; // nanobots up, batteries down, CM left, mines right
     const int counts[4] = {m.nano, m.batt, m.cm, m.mines};
     // the keyboard form: a 2 x 2 grid of [key] slot (the keys at the 0.024 H floor no longer fit a slot's corner):
     // nanobots / batteries in the left column, countermeasures / mines in the right
-    float kKeyW = 0;
-    if (m.kbm)
-        for (int i = 0; i < 4; ++i)
-            kKeyW = std::max(kKeyW, DrawPrompt(m.slotBtn[i], 0, 0, 0.026f * H * k, 0, true));
-    const float cellW = kKeyW + 0.008f * H * k + sz, gx0 = x0 + 0.03f * H * k;
-    float leftRight = cx + d * 1.15f + sz / 2; // the right edge of the consumables (the weapons start after it)
-    if (m.kbm)
-        leftRight = gx0 + 2 * cellW + 0.016f * H * k;
+    // (the keys tight: hud2kit::Keycap - the owner's A1, 31 Oct 2026); 0.018 H x k from the plate's left edge (the
+    // plate's width is the grid's: hud2_layout.h kConsWKbm + 2 keys)
+    const float kKeyW = SlotKeyWidth(m, L, false);
+    const float cellW = kKeyW + 0.008f * H * k + sz, gx0 = qx0 + 0.018f * H * k;
+    // (the cross's vertical arm 0.88 d, as in the 0.15 H plate it sat in before: the slots keep their size; the counts
+    // inside their slots (Slot) clear the centre glyph by 0.018 H)
     for (int i = 0; i < 4; ++i)
     {
-        float px = cx + kDir[i][0] * d * 1.15f, py = cy + kDir[i][1] * d * 0.98f;
+        float px = cx + kDir[i][0] * d * 1.15f, py = cy + kDir[i][1] * d * 0.88f;
         if (m.kbm)
         {
             const int col = i >= 2, row = i & 1;
             px = gx0 + col * (cellW + 0.016f * H * k) + kKeyW + 0.008f * H * k + sz / 2;
             py = cy + (row ? 1.0f : -1.0f) * (sz * 0.5f + 0.01f * H * k);
         }
-        const bool hot = m.hot[i];
-        const u32 hc = m.hotCol[i] ? m.hotCol[i] : kHostile;
-        const bool none = counts[i] < 0; // not fitted / unknown: the slot dims
-        Plate(px - sz / 2, py - sz / 2, px + sz / 2, py + sz / 2, 0.008f * H * k, kTL | kTR | kBR | kBL,
-              hot ? 220 / 255.0f : 150 / 255.0f, hot ? hc : kChrome, hot ? 1.0f : 0.43f, hot ? 'b' : 0, hc);
-        if (hot) // a lit slot glows in its meaning's colour
-        {
-            const float g = 0.004f * H * k;
-            const float o[8] = {px - sz / 2 - g, py - sz / 2 - g, px + sz / 2 + g, py - sz / 2 - g,
-                                px + sz / 2 + g, py + sz / 2 + g, px - sz / 2 - g, py + sz / 2 + g};
-            Outline(o, 4, g * 1.5f, Argb(hc, 0.35f + 0.25f * sinf(Now() * 6)));
-        }
-        // a lit slot's icon in the lit colour (amber when its answer is used up or missing: the round 4 critique)
-        const u32 ic = hot ? Argb(hc, 1) : Argb(kChrome, none ? 0.35f : 1.0f);
-        const float ix = px - sz * 0.10f, iy = py - sz * 0.08f;
-        if (i == 0)
-            NanoShape(ix, iy, sz * 0.6f, ic);
-        else if (i == 1)
-            BatteryShape(ix, iy, sz * 0.6f, ic);
-        else if (!Icon(i == 2 ? flicons::Star : flicons::Mine, ix, iy, sz * 0.62f, ic))
-            Ring(ix, iy, sz * 0.18f, 2, ic);
-        // the count at the slot's lower right, above the text floor (0.028 H: digits are ~0.6 of the em)
-        // an empty or missing answer reads "0" (no dash: the round 4 critique read it as a ~0.004 H mark), amber when
-        // used up or when an alert names the missing slot, dim when it is simply not fitted
-        wchar_t buf[16];
-        swprintf_s(buf, L"%d", std::max(0, counts[i]));
-        const bool warn = counts[i] == 0 || (none && hot);
-        Text(px + sz * 0.62f, py + sz * 0.30f, buf, 0.030f * H * k, warn ? Argb(kWarn, 1) : Argb(kInk, none ? 0.5f : 1.0f),
-             Right);
+        const RecUnit unit; // (the slot, its icon, its count and its key: one designed unit)
+        Slot(m, i, counts[i], px, py, sz, sz * 0.62f, 0.008f * H * k, true, H, k);
         if (m.kbm && !m.slotBtn[i].key.empty()) // the keyboard form: the key left of the slot
         {
-            const float kw = DrawPrompt(m.slotBtn[i], 0, 0, 0.026f * H * k, 0, true);
-            DrawPrompt(m.slotBtn[i], px - sz / 2 - 0.008f * H * k - kw / 2, py, 0.026f * H * k, Argb(kChrome, 1));
+            const float kw = DrawPrompt(m.slotBtn[i], 0, 0, 0.026f * H * k, 0, true, true);
+            DrawPrompt(m.slotBtn[i], px - sz / 2 - 0.008f * H * k - kw / 2, py, 0.026f * H * k, Argb(kChrome, 1), false, true);
         }
         if (m.kbm) // a click uses it (hud2_click.cpp)
         {
@@ -611,16 +766,30 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
             HotRect(kHotSlot + i, px - sz / 2, py - sz / 2, px + sz / 2, py + sz / 2);
         }
     }
-    // the weapons
-    const float wx = leftRight + 0.04f * H * k;
-    Rect(wx - 0.02f * H * k, y0 + 0.02f * H * k, std::max(1.5f, 0.001f * H), (y1 - y0) - 0.04f * H * k, Argb(kChrome, 0.8f));
+    // the weapons: the base panel's whole width (no divider: the cross has its own plate since decision 3)
+    const float wx = x0 + 0.03f * H * k;
     const float g = 0.036f * H * k;
-    float yy = y0 + 0.032f * H * k;
+    // the keyboard form's group keys (USER_WEAPON_GROUPn, tight keycaps at the rows' right end): their column's width
+    // (0 = none bound, or the pad)
+    const bool click = m.kbm && m.realGroups;
+    float keyCol = 0;
+    for (int i = 0; click && i < m.nGroups && i < 3; ++i)
+        keyCol = std::max(keyCol, DrawPrompt(m.groupBtn[i], 0, 0, 0.024f * H * k, 0, true, true));
+    const bool keyed = keyCol > 0;
+    // the rows in the 0.15 H plate (hud2.cpp loH; was 0.17 H: first row 0.032, pitch 0.032, launcher 0.140): first row
+    // 0.028, pitch 0.030 (0.026 text, 0.028 numeral cells), the launcher row 0.122 (its LOCKED chip 0.012 above the edge).
+    // With group keys (the keyboard form; the owner, 31 Oct 2026, A1: the NUM 1 / 2 / 3 keycaps touched each other and
+    // the weapon names at the 0.030 pitch - 0.039 H floor-grown caps): first row 0.022, pitch 0.039 (a 0.0288 tight cap +
+    // the lint's 0.01 H between stacked caps), the launcher row 0.128; the names end 0.012 H before their key, the
+    // launcher row's texts before the key column
+    const float rowP = (keyed ? 0.039f : 0.030f) * H * k;
+    float yy = y0 + (keyed ? 0.022f : 0.028f) * H * k;
     if (m.nGroups > 0)
     {
-        const float fw = DrawPrompt(m.fireBtn, 0, 0, g, 0, true);
+        const float fw = DrawPrompt(m.fireBtn, 0, 0, g, 0, true, true);
         // RT beside the group rows (between the first two, as the mock-up; on the row when there is one)
-        DrawPrompt(m.fireBtn, wx + fw / 2, yy + (m.nGroups > 1 ? 0.02f * H * k : 0.0f), g, Argb(kChrome, 1));
+        DrawPrompt(m.fireBtn, wx + fw / 2, yy + (m.nGroups > 1 ? (keyed ? rowP * 0.5f : 0.02f * H * k) : 0.0f), g,
+                   Argb(kChrome, 1), false, true);
         const float tx = wx + std::max(g, fw) + 0.02f * H * k, rx = x1 - 0.018f * H * k;
         const float ts = 0.026f * H * k, nameX = tx + 0.052f * H * k;
         // Three lines above the launcher: a row whose guns do not fit wraps one gun per line onto a spare line (at most
@@ -633,7 +802,7 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
             static const std::wstring kSep = L"  \x00B7  "; // (an escape: the build reads the source as cp1252)
             if (TextWidth(s, std::min(ts, TextFloor())) <= room || spare <= 0 || s.find(kSep) == std::wstring::npos)
             {
-                TextFit(nameX, yy, s, ts, room, col);
+                TextMarquee(nameX, yy, s, ts, room, col);
                 return;
             }
             // the first line takes the guns that fit (at least one), the second line the rest
@@ -647,65 +816,50 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
                 first = cand;
                 rest = rest.substr(at + kSep.size());
             }
-            TextFit(nameX, yy, first, ts, room, col);
-            yy += 0.032f * H * k, --spare;
-            TextFit(nameX, yy, rest, ts, room, col);
+            TextMarquee(nameX, yy, first, ts, room, col);
+            yy += rowP, --spare;
+            TextMarquee(nameX, yy, rest, ts, room, col);
         };
         for (int i = 0; i < m.nGroups && i < 3; ++i)
         {
             const bool lit = i == m.activeGroup;
-            const bool click = m.kbm && m.realGroups, hov = click && HotHovered() == kHotGroup + i;
+            const bool hov = click && HotHovered() == kHotGroup + i;
             const float rowY = yy;
             // the group's numeral in a cell of its own (Agency FB's "1" is a bare stroke: ">1" read as ">|"); a one is
             // drawn with its flag and foot; the active group's marker a yellow triangle left of the cell
             const float ch = 0.028f * H * k, ccx = tx + 0.012f * H * k + ch * 0.5f;
-            const u32 nc = Argb(lit ? kActive : kDim, 1);
-            Plate(ccx - ch * 0.5f, yy - ch * 0.5f, ccx + ch * 0.5f, yy + ch * 0.5f, ch * 0.18f, kTL | kTR | kBR | kBL,
-                  lit ? 0.35f : 0.2f, lit ? kActive : kDim, lit ? 0.9f : 0.6f);
-            const int num = m.realGroups ? m.groupNum[i] : i + 1;
-            if (num == 1)
-            {
-                const float lw = std::max(1.5f, ch * 0.09f), h = ch * 0.62f;
-                Line(ccx + h * 0.08f, yy - h * 0.5f, ccx + h * 0.08f, yy + h * 0.5f, lw, nc);
-                Line(ccx + h * 0.08f, yy - h * 0.5f, ccx - h * 0.26f, yy - h * 0.22f, lw, nc);
-                Line(ccx - h * 0.26f, yy + h * 0.5f, ccx + h * 0.40f, yy + h * 0.5f, lw, nc);
-            }
-            else
-            {
-                wchar_t n[8];
-                swprintf_s(n, L"%d", num);
-                Text(ccx, yy, n, 0.024f * H * k, nc, Center, 0, false);
-            }
+            GroupCell(ccx, yy, ch, m.realGroups ? m.groupNum[i] : i + 1, lit, H, k);
             if (lit)
             {
                 const float s = 0.008f * H * k;
                 Tri(tx - s * 0.2f, yy - s, tx - s * 0.2f, yy + s, tx + s * 1.1f, yy, Argb(kActive, 1));
             }
             // the keyboard form: the group's key at the row's end (USER_WEAPON_GROUPn), when one is bound
-            const float kw = click ? DrawPrompt(m.groupBtn[i], 0, 0, 0.024f * H * k, 0, true) : 0;
+            const float kw = click ? DrawPrompt(m.groupBtn[i], 0, 0, 0.024f * H * k, 0, true, true) : 0;
             if (kw > 0)
-                DrawPrompt(m.groupBtn[i], rx - kw / 2, yy, 0.024f * H * k, Argb(kChrome, 0.9f));
-            const float room = rx - nameX - (kw > 0 ? kw + 0.008f * H * k : 0);
+                DrawPrompt(m.groupBtn[i], rx - kw / 2, yy, 0.024f * H * k, Argb(kChrome, 0.9f), false, true);
+            const float room = rx - nameX - (kw > 0 ? kw + 0.012f * H * k : 0);
             drawNames(m.groups[i], room, Argb(lit ? kInk : kDim, 1));
+            const float hh = std::min(0.015f * H * k, rowP * 0.5f); // (the hover / click row: half a pitch)
             if (hov)
-                Plate(tx - 0.008f * H * k, rowY - 0.015f * H * k, rx + 0.006f * H * k, yy + 0.015f * H * k, 0.004f * H * k,
-                      kTL | kTR | kBR | kBL, 0.45f, kInk, 0.6f);
+                Plate(tx - 0.008f * H * k, rowY - hh, rx + 0.006f * H * k, yy + hh, 0.004f * H * k, kTL | kTR | kBR | kBL,
+                      0.45f, kInk, 0.6f);
             if (click)
-                HotRect(kHotGroup + i, tx - 0.008f * H * k, rowY - 0.015f * H * k, rx + 0.006f * H * k, yy + 0.015f * H * k);
-            yy += 0.032f * H * k;
+                HotRect(kHotGroup + i, tx - 0.008f * H * k, rowY - hh, rx + 0.006f * H * k, yy + hh);
+            yy += rowP;
         }
         if (!m.ungrouped.empty()) // the guns in no group, dimmed under the groups (no label: no placeholder text)
         {
             drawNames(m.ungrouped, rx - nameX, Argb(kDim, 0.8f));
-            yy += 0.032f * H * k;
+            yy += rowP;
         }
     }
     // the launcher row where the mock-up puts it (under three rows), whatever the group count
-    yy = y0 + 0.140f * H * k; // (at most three rows above it: groups + the guns in no group)
+    yy = y0 + (keyed ? 0.128f : 0.122f) * H * k; // (at most three rows above it: groups + the guns in no group)
     if (m.ammo >= 0 || !m.launcher.empty())
     {
-        const float lw = DrawPrompt(m.launchBtn, 0, 0, g, 0, true);
-        DrawPrompt(m.launchBtn, wx + lw / 2, yy, g, Argb(kChrome, 1));
+        const float lw = DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true);
+        DrawPrompt(m.launchBtn, wx + lw / 2, yy, g, Argb(kChrome, 1), false, true);
         const float tx = wx + std::max(g, lw) + 0.02f * H * k;
         // the missile: an arrow (the mock's icon)
         const float ax = tx + 0.002f * H * k, al = 0.028f * H * k, lt = std::max(1.5f, 0.003f * H * k);
@@ -713,8 +867,9 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
         Line(ax, yy, ax + al * 0.3f, yy - al * 0.22f, lt, Argb(kInk, 1));
         Line(ax, yy, ax + al * 0.3f, yy + al * 0.22f, lt, Argb(kInk, 1));
         // three columns (the round 3 critique: the ammo dropped and the name cut when LOCKED showed): the name (cut to
-        // its room), the ammo always, LOCKED in its own column at the right edge (its room kept while a launcher is on)
-        const float rx = x1 - 0.018f * H * k;
+        // its room), the ammo always, LOCKED in its own column at the right edge (its room kept while a launcher is on);
+        // with the group keys, the right edge is the key column's left - 0.012 H (nothing under the keys: panel.overlap)
+        const float rx = x1 - 0.018f * H * k - (keyed ? keyCol + 0.012f * H * k : 0.0f);
         const float lockW = TextWidth(L"LOCKED", T, 0.06f) + 0.016f * H * k;
         const float ammoR = rx - lockW - 0.012f * H * k;
         std::wstring ammo = m.ammo >= 0 ? std::to_wstring(m.ammo) : L"";
@@ -722,11 +877,9 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
         if (!ammo.empty())
             Text(ammoR, yy, ammo, 0.026f * H * k, Argb(m.ammo > 0 ? kInk : kAmber, 1), Right);
         const float nx = tx + 0.038f * H * k, room = ammoR - aw - 0.010f * H * k - nx;
-        // the name's last words go first ("JAVELIN MISSILE" -> "JAVELIN", the mock-up's), then the ellipsis
-        std::wstring name = m.launcher;
-        while (TextWidth(name, std::min(0.026f * H * k, TextFloor())) > room && name.find(L' ') != std::wstring::npos)
-            name.resize(name.rfind(L' '));
-        TextFit(nx, yy, name, 0.026f * H * k, room, Argb(kInk, 1));
+        // the full name by the fit rule, a marquee where it would be cut (the owner's decision 1, 31 Oct 2026: no
+        // permanent cut - the mock-up's word drop, "JAVELIN MISSILE" -> "JAVELIN", hid the rest for good)
+        TextMarquee(nx, yy, m.launcher, 0.026f * H * k, room, Argb(kInk, 1));
         if (m.locked)
         {
             const float lx = rx - lockW;
@@ -753,7 +906,7 @@ static bool Typing()
         at = now;
         u8 st = 0;
         const uintptr_t c = ui::FindControl("CTID");
-        cache = c && debug::SafeRead(c + 0x6C, &st, 1) && (st & 2);
+        cache = c && safemem::Read(c + 0x6C, &st, 1) && (st & 2);
     }
     return cache;
 }
@@ -777,7 +930,8 @@ bool ContextWidths(const Model& m, const Layout& L, float* widths, float* glyphW
     d.word = TextWidth(L"HOLD", CtxHold(L), 0.06f), d.gapBefore = promptfit::GapBefore(g), d.ringChord = promptfit::RingChord(g);
     for (int i = 0; i < m.nCtx && i < 3; ++i)
     {
-        const float gw = DrawPrompt(m.ctx[i], 0, 0, g, 0, true), lw = TextWidth(m.ctx[i].label, CtxLabel(L), 0.06f);
+        // (the keyboard form's keycap tight, as DrawContext draws it: UI_HUD2.md 5.22)
+        const float gw = DrawPrompt(m.ctx[i], 0, 0, g, 0, true, true), lw = TextWidth(m.ctx[i].label, CtxLabel(L), 0.06f);
         widths[i] = promptfit::ContextPromptWidth(gw, g, lw);
         glyphW[i] = gw, labelW[i] = lw;
         hold[i] = m.ctx[i].hold && m.ctx[i].key.empty(); // (the keyboard form's keycaps: no hold mark)
@@ -785,7 +939,20 @@ bool ContextWidths(const Model& m, const Layout& L, float* widths, float* glyphW
     return true;
 }
 
-// Draws the line ComputeLayout placed (L.ctxPlan / L.ctxW); measure = its width alone.
+// The keyboard form's consumables keys as the cross draws them (the stacked cross's width: hud2_layout.h slotKeyW)
+float SlotKeyWidth(const Model& m, const Layout& L, bool focus)
+{
+    if (!m.kbm)
+        return 0;
+    float w = 0;
+    for (int i = 0; i < 4; ++i)
+        w = std::max(w, DrawPrompt(m.slotBtn[i], 0, 0, (focus ? 0.024f : 0.026f) * L.H * L.k, 0, true, true));
+    return w;
+}
+
+// Draws the prompts ComputeLayout placed in their lanes (the owner's decision 4, 31 Oct 2026: L.ctxX / ctxPY / ctxW,
+// L.ctxPlan); a prompt placed narrower than it asked (a lane's room) draws its label as a marquee in what is left (the
+// owner's decision 1). measure = the prompts' summed width alone.
 float DrawContext(const Model& m, const Layout& L, float a, bool measure)
 {
     const float H = L.H, k = L.k, g = CtxGlyph(L), lab = CtxLabel(L), gap = ContextGap(L), ws = ContextWordSize(L);
@@ -798,18 +965,20 @@ float DrawContext(const Model& m, const Layout& L, float a, bool measure)
     if (measure || !n)
         return total;
     SetAlpha(a);
-    float x = L.cx - total / 2;
-    const float y = L.ctxY;
     const u32 wordArgb = Argb(kChrome, 0.85f); // the small dim word: the chrome, not the label's ink
     for (int i = 0; i < n; ++i)
     {
+        const float x = L.ctxX[i], y = L.ctxPY[i];
+        const RecUnit unit; // (a pill: its HOLD word, its glyph and its label)
         Plate(x - 0.012f * H * k, y - 0.026f * H * k, x + L.ctxW[i] + 0.012f * H * k, y + 0.026f * H * k, 0.026f * H * k,
               kTL | kTR | kBR | kBL, 150 / 255.0f, kChrome, 0);
         const promptfit::WordAt at = L.ctxPlan.at[i];
         float cx = x;
         if (at == promptfit::WordAt::Before)
             cx += Text(cx, y, L"HOLD", CtxHold(L), wordArgb, Left, 0.06f) + promptfit::GapBefore(g);
-        const float gw = DrawPrompt(m.ctx[i], 0, 0, g, 0, true);
+        // the keyboard form's keycap is the TIGHT cap (UI_HUD2.md 5.22: the regular SHIFT+W cap, 0.10 H, pushed "[SHIFT+W]
+        // CANCEL CRUISE" past the left lane at 16:9 and its label scrolled; the tight one is 0.086 H)
+        const float gw = DrawPrompt(m.ctx[i], 0, 0, g, 0, true, true);
         const float extra = at == promptfit::WordAt::Above ? std::max(0.0f, TextWidth(L"HOLD", CtxHold(L), 0.06f) - gw) : 0.0f;
         if (at == promptfit::WordAt::Above) // stacked above the glyph, centred on it, just over the plate
             Text(cx + (gw + extra) / 2, y - 0.026f * H * k - 0.001f * H - ws / 2, L"HOLD", CtxHold(L), wordArgb, Center,
@@ -817,12 +986,14 @@ float DrawContext(const Model& m, const Layout& L, float a, bool measure)
         else if (at == promptfit::WordAt::Ring) // (b): in the broken ring's top gap (only where it fits at the floor)
             Text(cx + gw / 2, y - g * 0.62f, L"HOLD", CtxHold(L), wordArgb, Center, 0.06f);
         cx += extra / 2;
-        DrawPrompt(m.ctx[i], cx + gw / 2, y, g, Argb(kChrome, 1));
+        DrawPrompt(m.ctx[i], cx + gw / 2, y, g, Argb(kChrome, 1), false, true);
         cx += gw + extra / 2;
         if (at == promptfit::WordAt::OverLabel) // (b2): over the label's start, just over the plate
             Text(cx + g * 0.3f, y - 0.026f * H * k - 0.001f * H - ws / 2, L"HOLD", CtxHold(L), wordArgb, Left, 0.06f);
-        Text(cx + g * 0.3f, y, m.ctx[i].label, lab, Argb(kInk, 1), Left, 0.06f);
-        x += L.ctxW[i] + gap;
+        // the label in the pill's room (its own width, or less where the lane squeezed the pill: then the fit rule,
+        // then the marquee; + 0.5 px: the measure's own rounding never cuts a label that fits)
+        const float lx = cx + g * 0.3f, room = x + L.ctxW[i] - lx + 0.5f;
+        TextMarquee(lx, y, m.ctx[i].label, lab, room, Argb(kInk, 1), Left, 0.06f);
     }
     return total;
 }
@@ -844,12 +1015,16 @@ float DrawAlert(const Model& m, const Layout& L, float a, bool measure)
     SetAlpha(a);
     const float x0 = L.cx - w / 2, y0 = L.alertY, h = 0.05f * H * k, yc = y0 + h / 2;
     Plate(x0, y0, x0 + w, y0 + h, 0.012f * H * k, kTL | kTR | kBR | kBL, 205 / 255.0f, kChrome, 0.43f, 'l', m.alertCol);
-    if (!Icon(flicons::Important, x0 + 0.03f * H * k, yc, 0.03f * H * k, Argb(m.alertCol, 1)))
-        Ring(x0 + 0.03f * H * k, yc, 0.012f * H * k, 0.002f * H * k, Argb(m.alertCol, 1));
-    Text(x0 + 0.056f * H * k, yc, m.alert, 0.028f * H * k, Argb(m.alertCol, 1), Left, 0.1f, false);
+    {
+        const RecUnit unit; // (the alert's mark and its words)
+        if (!Icon(flicons::Important, x0 + 0.03f * H * k, yc, 0.03f * H * k, Argb(m.alertCol, 1)))
+            Ring(x0 + 0.03f * H * k, yc, 0.012f * H * k, 0.002f * H * k, Argb(m.alertCol, 1));
+        Text(x0 + 0.056f * H * k, yc, m.alert, 0.028f * H * k, Argb(m.alertCol, 1), Left, 0.1f, false);
+    }
     float x = x0 + 0.056f * H * k + tw + 0.03f * H * k;
     for (int i = 0; i < m.nAlertPrompts; ++i)
     {
+        const RecUnit unit; // (the answer's prompt and its own label)
         const float pw1 = DrawPrompt(m.alertPrompts[i], 0, 0, g, 0, true);
         DrawPrompt(m.alertPrompts[i], x + pw1 / 2, yc, g, Argb(kChrome, 1));
         x += pw1 + g * 0.25f;
@@ -858,5 +1033,405 @@ float DrawAlert(const Model& m, const Layout& L, float a, bool measure)
     if (!m.alertNone.empty()) // the answer used up / not fitted: amber words instead of a glyph
         Text(x, yc, m.alertNone, T, Argb(kWarn, 1), Left, 0.06f, false); // the lit slot's amber: one meaning, one colour
     return w;
+}
+
+// ================================================================ Focus (docs\UI_HUD2_PRESETS.md 2.2 "glass and edges";
+// UI_HUD2.md 5.18): the parts Standard's cannot draw. Geometry from the layout core (hud2_layout.h FocusCorners), the
+// reticle's numbers from the data (ui_meta.h "reticle" rows), visibility from its reveal (hud2_layout.h Reveal).
+namespace
+{
+const uimeta::hud2p::Preset& FocusData() { return uimeta::hud2p::kPresets[hud2preset::Focus]; }
+float FocusNum(const char* elem, const char* key, float fallback)
+{
+    return uimeta::hud2p::Num(FocusData(), "reticle", elem, key, fallback);
+}
+} // namespace
+
+// The split arcs (shield left, hull right: 50 degrees each on the arcs' circle R, the drawn preset's reticle radius 0.12),
+// their numbers outside each arc's middle (below 40 %, hud_numbers as Standard's), the power / cruise charge arc at the
+// bottom inside the circle (it must keep the centre stack's 0.01 H from the band), the hit segment on the circle, the
+// missile chevrons at 0.15 / 0.17; then the band at the centre + 0.078 (inside the circle since 5.23, the owner's lower
+// centre rule - it was + 0.14, over the ship; its rows pass through the gaps between the split arcs and the bottom arc,
+// > 0.01 H from each): the speed in the middle, the throttle (tick, the lever's % while it rests partial, BOOST / KILL /
+// REV) to its left, the cruise state, LOOT n and in combat MSL n to its right - fixed anchors, so nothing slides when
+// another item comes or goes.
+void DrawSplitArcs(const Model& m, const Layout& L, float a, const FocusVis& v)
+{
+    const float H = L.H, k = L.k, cx = L.cx, cy = L.cy, R = L.R;
+    const float w = hud2layout::kRingArcW * H * k, T = 0.024f * H * k;
+    const float half = FocusNum("reticle", "arc_deg", 50.0f) * 0.5f;
+    const int numbers = uiopt::Get().hudNumbers;
+    auto show = [&](float x) { return x >= 0 && (numbers == 1 || (numbers == 0 && x < 0.4f)); };
+    wchar_t buf[40];
+    const float shield = std::max(0.0f, m.shield);
+    const bool lowShield = m.shield >= 0 ? m.shield <= 0.25f : true;
+    RecordTag("ring.shield");
+    if (v.shield > 0.004f)
+    {
+        SetAlpha(a * v.shield);
+        SegArc(cx, cy, R, 180 - half, 180 + half, w, shield, lowShield ? kHostile : kShield, 8, 1.6f, true);
+        if (show(shield) && m.shield >= 0)
+        {
+            swprintf_s(buf, L"%d", static_cast<int>(shield * 100 + 0.5f));
+            Text(cx - R - 0.014f * H * k, cy, buf, T, Argb(lowShield ? kHostile : kShield, 1), Right);
+        }
+    }
+    RecordTag("ring.hull");
+    if (v.hull > 0.004f && m.hull >= 0)
+    {
+        SetAlpha(a * v.hull);
+        SegArc(cx, cy, R, -half, half, w, m.hull, m.hull > 0.2f ? kInk : kHull, 8, 1.6f, true);
+        if (show(m.hull))
+        {
+            swprintf_s(buf, L"%d", static_cast<int>(m.hull * 100 + 0.5f));
+            Text(cx + R + 0.014f * H * k, cy, buf, T, Argb(kInk, 1), Left);
+        }
+    }
+    // the bottom arc on the arcs' circle (the ring's lowest drawn edge, hud2layout::RingBottom): the band moved inside the
+    // circle above it (5.23 - at the centre + 0.14 it sat in the lower centre over the ship; the arc was 0.012 inside then)
+    const float rp = R;
+    if (m.cruise == 1)
+    {
+        RecordTag("ring.charge");
+        SetAlpha(a);
+        SegArc(cx, cy, rp, 66, 114, w, m.charge, kCyan, 10, 1.8f, true);
+    }
+    else if (v.power > 0.004f && m.power >= 0)
+    {
+        RecordTag("ring.power");
+        SetAlpha(a * v.power);
+        SegArc(cx, cy, rp, 70, 110, w * 0.8f, m.power, kPower, 6, 2.2f, false);
+    }
+    SetAlpha(a);
+    RecordTag("ring.hit"); // "a segment on the arc circle at the hit bearing" (an overlay, 1.3)
+    if (m.hitAge >= 0 && m.hitAge < 0.3f)
+        Arc(cx, cy, R, m.hitAng - 16, m.hitAng + 16, 0.008f * H * k, Argb(kAmber, 0.85f * (1 - m.hitAge / 0.3f)));
+    RecordTag("ring.missiles");
+    {
+        const float pulse = 0.65f + 0.35f * sinf(Now() * 10.0f);
+        const float rr[2] = {FocusNum("reticle", "chevron_r_0", 0.15f) * H * k, FocusNum("reticle", "chevron_r_1", 0.17f) * H * k};
+        const float sz = 0.02f * H * k, lw = 0.0065f * H * k;
+        for (int i = 0; i < m.missiles && i < 3; ++i)
+        {
+            const float ang = m.missileAng[i] * 3.14159265f / 180.0f, ux = cosf(ang), uy = sinf(ang), vx = -uy, vy = ux;
+            for (int c = 0; c < 2; ++c)
+            {
+                const float px = cx + rr[c] * ux, py = cy + rr[c] * uy;
+                const u32 col = Argb(kHostile, pulse * (c ? 0.69f : 1.0f));
+                Line(px + vx * sz, py + vy * sz, px - ux * sz * 0.8f, py - uy * sz * 0.8f, lw, col);
+                Line(px - ux * sz * 0.8f, py - uy * sz * 0.8f, px - vx * sz, py - vy * sz, lw, col);
+            }
+        }
+    }
+    // ---- the band
+    if (v.band <= 0.004f || L.bandY <= 0)
+        return;
+    const float by = L.bandY, bt = 0.026f * H * k, gap = 0.012f * H * k, sep = 0.03f * H * k, gh = bt * 1.3f;
+    const float side = 0.045f * H * k; // from the centre to each side's near edge (a 4-digit speed at 0.030 is ~0.055 wide)
+    RecordTag("ring.band");
+    if (v.speed > 0.004f)
+    {
+        SetAlpha(a * v.band * v.speed);
+        swprintf_s(buf, L"%d", static_cast<int>(m.speed + 0.5f));
+        Text(cx, by, buf, 0.030f * H * k, Argb(kInk, 1), Center);
+    }
+    // left of the speed, right to left: the throttle word (a state word: always while it holds), the lever's %, the tick
+    float lx = cx - side;
+    SetAlpha(a * v.band);
+    const wchar_t* drive = m.kill ? L"KILL" : m.burner ? L"BOOST" : m.reverse ? L"REV" : nullptr;
+    const u32 tc = m.burner ? kActive : (m.kill || m.reverse) ? kAmber : kChrome;
+    if (drive)
+        lx -= Text(lx, by, drive, bt, Argb(tc, 1), Right, 0.08f) + gap;
+    const float thr = m.kill ? 0.0f : m.burner ? 1.0f : std::clamp(fabsf(m.throttle), 0.0f, 1.0f);
+    if (v.readout && !drive)
+    {
+        swprintf_s(buf, L"%d %%", static_cast<int>(thr * 100 + 0.5f));
+        lx -= Text(lx, by, buf, bt, Argb(kChrome, 1), Right, 0.04f) + gap;
+    }
+    const float tickA = std::max(v.speed, v.readout ? 1.0f : 0.0f);
+    if (tickA > 0.004f) // the 3-segment throttle tick (the lever's reading: the lint's analog readout)
+    {
+        RecordTag("ring.throttle");
+        SetAlpha(a * v.band * tickA);
+        const float tw = 0.036f * H * k, th = 0.008f * H * k;
+        SegBar(lx - tw, by - th / 2, tw, th, thr, tc, static_cast<int>(FocusNum("reticle", "throttle_tick_segments", 3)), 2);
+        RecordTag("ring.band");
+    }
+    // right of the speed: the cruise state word (CRUISE 3.2 while it charges, CRUISE ON: state words, no glyph - the
+    // prompt itself lives in the context line at the screen's bottom edge, the owner, 31 Oct 2026, B13: "the cruise
+    // prompt itself can live at the edge of the screen rather than at the center. It's crowded."; hud2.cpp's context
+    // line), LOOT n with the tractor's glyph, in combat the active launcher's count (1.7 pair 5: its one home there)
+    float rx = cx + side;
+    auto item = [&](const Prompt* p, const wchar_t* s, u32 col, float alpha)
+    {
+        const RecUnit unit; // (a prompt and its own label)
+        SetAlpha(a * v.band * alpha);
+        const float g = p ? DrawPrompt(*p, 0, 0, gh, 0, true) : 0;
+        if (g > 0)
+            DrawPrompt(*p, rx + g / 2, by, gh, col), rx += g + 0.006f * H * k;
+        rx += Text(rx, by, s, bt, col, Left, 0.08f) + sep;
+    };
+    if (m.cruise == 1)
+    {
+        swprintf_s(buf, L"CRUISE %.1f", m.chargeLeft);
+        item(nullptr, buf, Argb(kCyan, 1), 1);
+    }
+    else if (m.cruise == 2)
+        item(nullptr, L"CRUISE ON", Argb(kCyan, 1), 1);
+    if (m.loot > 0)
+    {
+        swprintf_s(buf, L"LOOT %d", m.loot);
+        item(&m.tractorBtn, buf, Argb(kInk, 1), 1);
+    }
+    if (v.fight && m.ammo >= 0 && !m.launcher.empty())
+    {
+        swprintf_s(buf, L"MSL %d", m.ammo);
+        item(nullptr, buf, Argb(m.ammo > 0 ? kInk : kAmber, 1), 1);
+    }
+}
+
+// The compact card (PRESETS 2.2 Calm 0.34 x 0.095 / Combat 0.34 x 0.167): the flat type icon in a narrow column (no 3D
+// view: a compact card has no window for one), row 1 the name and the distance (the off-screen form's line, drawn
+// always until step 6's on / off-screen state), row 2 the attitude chip and the class / level, row 3 the faction in the
+// reputation's colour and the pad's target lane at its right end ([RS] x2 CLEAR; in a fight [RS] NEXT before it, CLEAR
+// dropped first when the faction would lose its room); in the fight form the pad's 2 threat rows under a hairline.
+void DrawTargetCompact(const Model& m, const Layout& L, float a, float rowsA, bool fight)
+{
+    SetAlpha(a);
+    const float H = L.H, k = L.k, T = 0.024f * H * k;
+    const float x0 = L.tgtX0, y0 = L.tgtY0, x1 = L.tgtX1, y1 = L.tgtY1;
+    Plate(x0, y0, x1, y1, 0.012f * H * k, kTR | kBL, 170 / 255.0f, kChrome, 0.43f, 'l', m.tCol);
+    const float iw = 0.046f * H * k, icx = x0 + 0.012f * H * k + iw / 2, icy = y0 + 0.037f * H * k;
+    if (!Icon(m.tIcon, icx, icy, 0.040f * H * k, Argb(m.tCol, 1)))
+    {
+        const float d = iw * 0.3f;
+        const float dia[8] = {icx, icy - d, icx + d, icy, icx, icy + d, icx - d, icy};
+        Outline(dia, 4, 0.003f * H * k, Argb(m.tCol, 1));
+    }
+    const float tx = x0 + 0.012f * H * k + iw + 0.010f * H * k, right = x1 - 0.016f * H * k;
+    // the columns the rows share: row 2's class starts after the attitude chip, row 1's distance ends at the right; a
+    // text of the next row ending just short of one is fitted to end 0.011 H before it (ClearRoom: diagonal neighbours,
+    // the lint's panel.overlap - the in-game lint, 31 Oct 2026: "Manhattan" / "PLANET", "POLICE BASE" / "Liberty Police"
+    // 0.0088 H apart)
+    const float cw = TextWidth(m.tAtt, T, 0.1f) + 0.014f * H * k, clsX = tx + cw + 0.010f * H * k, colGap = 0.011f * H * k;
+    // row 1
+    float yy = y0 + 0.022f * H * k;
+    const float ds = 0.026f * H * k, distW = m.tDist.empty() ? 0 : TextWidth(m.tDist, ds) + 0.012f * H * k;
+    TextMarquee(tx, yy, m.tName, 0.030f * H * k, ClearRoom(m.tName, 0.030f * H * k, 0, tx, right - tx - distW, clsX, colGap),
+            Argb(kInk, 1));
+    if (distW > 0)
+        Text(right, yy, m.tDist, ds, Argb(kInk, 1), Right);
+    // row 2
+    yy = y0 + 0.052f * H * k;
+    Plate(tx, yy - 0.013f * H * k, tx + cw, yy + 0.013f * H * k, 0.005f * H * k, kTL | kTR | kBR | kBL, 230 / 255.0f,
+          m.tCol, 1.0f);
+    Text(tx + 0.007f * H * k, yy, m.tAtt, T, Argb(m.tCol, 1), Left, 0.1f, false);
+    std::wstring cls = m.tClass;
+    if (m.tLevel >= 0)
+    {
+        wchar_t lv[24];
+        swprintf_s(lv, L"  LV %d", m.tLevel);
+        cls += lv;
+    }
+    if (!cls.empty())
+    {
+        const float room = distW > 0 ? ClearRoom(cls, T, 0.06f, clsX, right - clsX, right - TextWidth(m.tDist, ds), colGap)
+                                     : right - clsX;
+        TextMarquee(clsX, yy, cls, T, room, Argb(kDim, 1), Left, 0.06f);
+    }
+    // row 3: the faction and the target lane (the pad). The owner, 31 Oct 2026, B4-B7: "It is important for HUD elements
+    // inside cards to not overlap, neither glyphs nor contextual data" - the pad's lane glyph (now 0.0264, still above
+    // the 0.024 text beside it) at 0.089 keeps the lint's 0.01 H under row 2's texts (was 0.078 with a 0.0288 glyph: its
+    // top 0.0636 met row 2's 0.064; the card grows 0.012 for it: hud2_layout.h focus_ns::kCardLaneRow); the keyboard form
+    // keeps 0.078 (its row 3 is text only) and its click row under it (DrawCardIcons compact: focus_ns::kCardFooterKbm),
+    // where the faction line ran over the CTRL+R / CTRL+T keycaps
+    yy = y0 + (m.kbm ? 0.078f : 0.089f) * H * k;
+    float laneX = right;
+    if (!m.kbm)
+    {
+        const float gh = T * 1.1f;
+        const struct
+        {
+            const Prompt* p;
+            const wchar_t* s;
+        } lane[2] = {{&m.clearBtn, L"x2 CLEAR"}, {fight ? &m.nextBtn : nullptr, L"NEXT"}}; // right to left
+        auto width = [&](int i)
+        {
+            if (!lane[i].p || lane[i].p->btn == glyphs::COUNT)
+                return 0.0f;
+            return DrawPrompt(*lane[i].p, 0, 0, gh, 0, true) + 0.005f * H * k + TextWidth(lane[i].s, T, 0.06f);
+        };
+        const float w0 = width(0), w1 = width(1), minFaction = m.tFaction.empty() ? 0.0f : 0.06f * H * k;
+        const bool both = w1 > 0 && w0 > 0 && (right - tx) - (w0 + w1 + 0.02f * H * k) >= minFaction;
+        for (int i = 0; i < 2; ++i)
+        {
+            const float wi = i == 0 ? w0 : w1;
+            if (wi <= 0 || (i == 0 && w1 > 0 && !both)) // (CLEAR first to go)
+                continue;
+            const float lw = TextWidth(lane[i].s, T, 0.06f), g = DrawPrompt(*lane[i].p, 0, 0, gh, 0, true);
+            const RecUnit unit; // (the prompt and its own label)
+            Text(laneX, yy, lane[i].s, T, Argb(kDim, 1), Right, 0.06f);
+            DrawPrompt(*lane[i].p, laneX - lw - 0.005f * H * k - g / 2, yy, gh, Argb(kDim, 1));
+            laneX -= wi + 0.02f * H * k;
+        }
+    }
+    if (!m.tFaction.empty()) // (the keyboard form's row 3 sits 0.002 H under row 2: clear of the class's column; the
+    {                        // pad's 0.089 row is 0.013 H under it)
+        const float room = laneX - tx - 0.004f * H * k;
+        TextMarquee(tx, yy, m.tFaction, T, m.kbm ? ClearRoom(m.tFaction, T, 0, tx, room, clsX, colGap) : room, Argb(m.tCol, 1));
+    }
+    // the threat rows (the pad's fight form; faded in once the plate has grown to 80 %: PRESETS 1.2)
+    if (L.listInCard && rowsA > 0.004f && m.nThreats > 0 && L.thrY1 > L.thrY0)
+    {
+        RecordTag("list");
+        SetAlpha(a * rowsA);
+        const float sepY = L.thrY0 + 0.004f * H * k, pitch = 0.032f * H * k;
+        Rect(x0 + 0.016f * H * k, sepY, (x1 - x0) - 0.032f * H * k, std::max(1.0f, 0.0015f * H), Argb(kChrome, 0.35f));
+        for (int i = 0; i < m.nThreats && i < 2; ++i)
+        {
+            const float ry = sepY + 0.004f * H * k + pitch * (i + 0.5f);
+            // (0.021, was 0.024: the two rows' icons stacked at the 0.032 pitch keep the lint's 0.01 H - B4-B7)
+            if (!Icon(m.threats[i].icon, x0 + 0.030f * H * k, ry, 0.021f * H * k, Argb(m.threats[i].col, 1)))
+                Disc(x0 + 0.030f * H * k, ry, 0.005f * H * k, Argb(m.threats[i].col, 1));
+            const float dw = TextWidth(m.threats[i].dist, T) + 0.012f * H * k;
+            TextMarquee(tx, ry, m.threats[i].name, T, right - tx - dw, Argb(kInk, 1));
+            Text(right, ry, m.threats[i].dist, T, Argb(kInk, 1), Right);
+        }
+        RecordTag("card");
+    }
+}
+
+// The bottom-left free text (PRESETS 2.2: no ship panel; Combat "escorts as free text, 0.042 rows with inline bars"):
+// the escort rows - a formation's leader and members, the protected ship - the last on the old hold strip's line (0.93).
+// The owner, 31 Oct 2026, B9: cargo hold / credits are not needed in flight - the hold strip ("CARGO 12/40 . CREDITS
+// 4 250", 4 s on a change, on a peek) is gone; the block holds the escort rows alone (in a fight, on an escort's hull
+// change, on a peek) and is held back without them.
+void DrawShipStrip(const Model& m, const Layout& L, float a, float escortsA)
+{
+    const float H = L.H, k = L.k, T = 0.026f * H * k;
+    const float x = L.shipX0, right = L.shipX1;
+    if (escortsA > 0.004f && m.nEscorts > 0)
+    {
+        SetAlpha(a * escortsA);
+        const float pitch = uimeta::hud2p::Num(FocusData(), "combat", "ship", "row_h", 0.042f) * H * k;
+        const float barW = 0.07f * H * k;
+        const int n = std::min(m.nEscorts, 3);
+        for (int i = 0; i < n; ++i)
+        {
+            const float y = L.holdY - pitch * (n - 1 - i);
+            TextMarquee(x, y, m.escorts[i].name, T, right - x - barW - 0.012f * H * k, Argb(kInk, 1));
+            SegBar(right - barW, y - 0.004f * H * k, barW, 0.008f * H * k, m.escorts[i].hull, kFriend, 8, 2);
+        }
+    }
+}
+
+// The fire strip (PRESETS 2.2 Combat: 0.36 x 0.14, K&M 0.40; "cross 0.12, slots 0.04, icons 0.02; the active group as
+// numeral + short name; launcher name and lock, torpedo"): the D-pad cross (the keyboard form: its 2 x 2 grid of keys),
+// then ALL the weapons (the owner, 31 Oct 2026, B16: "show all weapons incl. launchers - launchers are often in no
+// active group; the player wants armament status even when focused - with a smaller font and adapted spacing so all
+// fit; active group highlighted"; was the active group's first gun + the launcher): every group's row (its numeral
+// cell, its guns; the active group lit, the others dim), the guns in no group (dim), the launcher's row (name, count out
+// of a fight, LOCKED). Text at the 0.024 H floor (was 0.026); the rows share the plate's 0.12 H inner height at up to
+// 0.040 apart, centred. No torpedo row: HUD 2 has no torpedo reader yet (1.4, step 6).
+void DrawFireStrip(const Model& m, const Layout& L, float a, bool countHere)
+{
+    SetAlpha(a);
+    const float H = L.H, k = L.k, T = 0.024f * H * k;
+    const float x0 = L.loX0, y0 = L.loY0, x1 = L.loX1, y1 = L.loY1;
+    Plate(x0, y0, x1, y1, 0.012f * H * k, kTR | kBL, 190 / 255.0f);
+    // the cross in its own plate stacked on the strip's right end (the owner's decision 3, 31 Oct 2026; Standard's
+    // loadout likewise): slots 0.042 at 0.044 (was 0.038 at 0.040: a slot holds its icon beside a floor-sized count
+    // without the two overlapping - Slot; the lint's panel.overlap), 0.130 tall in its 0.14 plate
+    const float qx0 = L.consX0, qy0 = L.consY0, qx1 = L.consX1, qy1 = L.consY1;
+    if (qx1 > qx0 && qy1 > qy0)
+        Plate(qx0, qy0, qx1, qy1, 0.012f * H * k, kTR | kBL, 190 / 255.0f);
+    const float cell = 0.044f * H * k, sz = 0.042f * H * k, pad = 0.014f * H * k;
+    const float cx = (qx0 + qx1) / 2, cy = (qy0 + qy1) / 2;
+    if (!m.kbm)
+        Glyph(glyphs::COUNT, cx, cy, 0.022f * H * k, Argb(kChrome, 220 / 255.0f));
+    static const float kDir[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}}; // nanobots up, batteries down, CM left, mines right
+    const int counts[4] = {m.nano, m.batt, m.cm, m.mines};
+    const float keyW = SlotKeyWidth(m, L, true);
+    const float cellW = keyW + 0.006f * H * k + sz, gx0 = qx0 + pad;
+    const float leftRight = x0; // (the weapons start at the strip's left edge: the cross is no longer beside them)
+    const float isz = uimeta::hud2p::Num(FocusData(), "combat", "loadout", "icon", 0.02f) * H * k;
+    for (int i = 0; i < 4; ++i)
+    {
+        float px = cx + kDir[i][0] * cell, py = cy + kDir[i][1] * cell;
+        if (m.kbm)
+        {
+            const int col = i >= 2, row = i & 1;
+            px = gx0 + col * (cellW + 0.010f * H * k) + keyW + 0.006f * H * k + sz / 2;
+            py = cy + (row ? 1.0f : -1.0f) * (sz * 0.5f + 0.004f * H * k);
+        }
+        const RecUnit unit; // (the slot, its icon, its count and its key: one designed unit)
+        Slot(m, i, counts[i], px, py, sz, isz, 0.007f * H * k, false, H, k);
+        if (m.kbm)
+        {
+            if (!m.slotBtn[i].key.empty())
+            {
+                const float kw = DrawPrompt(m.slotBtn[i], 0, 0, T, 0, true, true);
+                DrawPrompt(m.slotBtn[i], px - sz / 2 - 0.006f * H * k - kw / 2, py, T, Argb(kChrome, 1), false, true);
+            }
+            if (HotHovered() == kHotSlot + i)
+            {
+                const float o[8] = {px - sz / 2, py - sz / 2, px + sz / 2, py - sz / 2, px + sz / 2, py + sz / 2, px - sz / 2, py + sz / 2};
+                Outline(o, 4, std::max(1.5f, 0.002f * H * k), Argb(kInk, 0.9f));
+            }
+            HotRect(kHotSlot + i, px - sz / 2, py - sz / 2, px + sz / 2, py + sz / 2);
+        }
+    }
+    // the weapons: every group, the guns in no group, the launcher - the strip's whole width (no divider: decision 3)
+    const float wx = leftRight + 0.020f * H * k, rx = x1 - 0.014f * H * k, g = 0.028f * H * k, ts = T;
+    const int ng = std::min(m.nGroups, 3);
+    const bool ug = !m.ungrouped.empty(), ln = m.ammo >= 0 || !m.launcher.empty();
+    const int rows = ng + (ug ? 1 : 0) + (ln ? 1 : 0);
+    if (rows == 0)
+        return;
+    // the pitch: the inner height shared, at most 0.040 (two prompts a row apart keep the lint's 0.01 H: 0.028 glyphs,
+    // 0.0288 tight keycaps); the block centred in the plate
+    const float p = std::min(0.040f * H * k, ((y1 - y0) - 0.020f * H * k) / rows);
+    const float top = (y0 + y1) / 2 - p * rows * 0.5f; // (the strip's centre: the cross has its own plate)
+    auto rowY = [&](int j) { return top + p * (j + 0.5f); };
+    const float fw = ng > 0 ? DrawPrompt(m.fireBtn, 0, 0, g, 0, true, true) : 0.0f;
+    const float lw = ln ? DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true) : 0.0f;
+    const float ch = std::min(0.026f * H * k, p - 0.004f * H * k); // the numeral cells
+    const float cellX = wx + std::max(g, std::max(fw, lw)) + 0.010f * H * k, nameX = cellX + ch + 0.010f * H * k;
+    if (ng > 0)
+    {
+        // RT beside the group rows, centred on them
+        DrawPrompt(m.fireBtn, wx + fw / 2, (rowY(0) + rowY(ng - 1)) * 0.5f, g, Argb(kChrome, 1), false, true);
+        for (int i = 0; i < ng; ++i)
+        {
+            const bool lit = i == m.activeGroup;
+            GroupCell(cellX + ch * 0.5f, rowY(i), ch, m.realGroups ? m.groupNum[i] : i + 1, lit, H, k);
+            TextMarquee(nameX, rowY(i), m.groups[i], ts, rx - nameX, Argb(lit ? kInk : kDim, 1));
+        }
+    }
+    if (ug) // the guns in no group, dimmed under the groups (no label: no placeholder text)
+        TextMarquee(nameX, rowY(ng), m.ungrouped, ts, rx - nameX, Argb(kDim, 0.8f));
+    if (ln)
+    {
+        const float r2 = rowY(rows - 1);
+        const RecUnit unit; // (the launcher's prompt and its row)
+        DrawPrompt(m.launchBtn, wx + lw / 2, r2, g, Argb(kChrome, 1), false, true);
+        const float lockW = TextWidth(L"LOCKED", T, 0.06f) + 0.014f * H * k;
+        // the count in the numeral cells' column, right-aligned to its edge (the launcher has no cell): one column with
+        // the group digits above it, 0.010 H from the names' column - right-aligned before LOCKED it sat diagonally
+        // 0.006 H from the last group's digit (the in-game lint, Focus combat at 4K K&M, 31 Oct 2026)
+        std::wstring ammo = countHere && m.ammo >= 0 ? std::to_wstring(m.ammo) : L"";
+        if (!ammo.empty())
+            Text(cellX + ch, r2, ammo, ts, Argb(m.ammo > 0 ? kInk : kAmber, 1), Right);
+        // the name in the names' column, before LOCKED; left out where it would be a stub (a lock on the narrow strip)
+        const float nx = nameX, room = rx - (m.locked ? lockW + 0.010f * H * k : 0.0f) - nx;
+        if (room >= 0.03f * H * k) // (the full name, a marquee where it would be cut: decision 1)
+            TextMarquee(nx, r2, m.launcher, ts, room, Argb(kInk, 1));
+        if (m.locked)
+        {
+            const float lx = rx - lockW, lh = std::min(0.015f * H * k, p * 0.5f); // (the chip within its row)
+            Plate(lx, r2 - lh, rx, r2 + lh, 0.005f * H * k, kTL | kTR | kBR | kBL, 230 / 255.0f, kHostile, 1.0f);
+            Text(lx + 0.007f * H * k, r2, L"LOCKED", T, Argb(kHostile, 1), Left, 0.06f, false);
+        }
+    }
 }
 } // namespace hud2

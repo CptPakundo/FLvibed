@@ -23,8 +23,9 @@ struct Target
     float screenX = 0, screenY = 0; // projection of `world` (pixels), valid if onScreen
 };
 
-// The player's current target, evaluated now.
-Target Current();
+// The player's current target, evaluated now. flightFrame: screenX / Y / onScreen on the screen the ship is flown by
+// (fl::WorldToFlightScreen - the autopilot's view, the same in turret view), else on the screen the player sees (the HUD).
+Target Current(bool flightFrame = false);
 
 // Steering (Freelancer mouse-flight units, see SetSteer) that turns the nose towards a world
 // point at full rate: a unit direction scaled by `scale`. False when not in space.
@@ -32,6 +33,14 @@ bool TurnTowards(const float world[3], float scale, float& sx, float& sy);
 // The same, proportional: full rate only beyond `fullAngle` (radians), less as the nose closes in - a calm, steady
 // approach without overshoot (navigation: fast dock). The full-rate version suits a fight (between targets).
 bool SteerTowards(const float world[3], float scale, float fullAngle, float& sx, float& sy);
+// A steering computed in the ship's own frame (sx along its right, sy along its up) restated for the game's mouse
+// flight, which turns the nose in a LEVEL frame - its right = nose x the system's up - not the ship's banked one
+// (measured 28 Oct 2026: banked by b, the ship turned b off the steering). The same steering on a level ship; near
+// the vertical (nose within ~11 deg of it) left as it is.
+// `frame` = the axes the steering was computed along (rot columns right, up, back; nullptr = the ship's): Pursue's screen
+// offsets are the chase camera's (fl::FlightScreenAxes), whose roll trails the ship's.
+// `into` = the turn frame's axes (nullptr = the level frame; the camera's: `steer_level` 2).
+void LevelSteer(float& sx, float& sy, const float* frame = nullptr, const float* into = nullptr);
 
 // Keep the aim cursor off every UI control (HUD bars, panels...): hovering one switches flight to
 // UI mode and held fire would click it. Uses Freelancer's hit test, so any HUD layout works.

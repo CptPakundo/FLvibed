@@ -1,13 +1,42 @@
 # The upstream HD Edition as a test install: switch now or later?
 Status: current
-Checked against: FLvibed 01fcfa9 (26 Oct 2026, the step 3 short form re-confirmed: the only watched commits since, 9327f86 / 01fcfa9, are doc and handoff edits recording what this note already says); before: FLvibed e5c02cc (26 Oct 2026, step 3 short form: 202 / 202 on four exes; borderless and Reset fixes - first "What it means" line); before: FLvibed 855745b (25 Oct 2026 ~23:05, whole-set check-up: 15 watched-path commits 073a665..855745b - the vanilla 1.1 support and the signature re-cut (4042c7d..0d0bcb7, 68755f1), Extended HUD 2 / HUD 2's 36 new symbols, the FLUF co-residency; 195 / 195 static on the upstream exe - point 1); before: 073a665 (25 Oct 2026 ~12:15, short form after the HUD 2 build: 5 watched-path commits abf84ac..073a665 in `core/flexe.h` (+8 symbols, 159) and `docs/TESTING.md` (e3edc6a: the display-matrix sweep checks HUD 2); the decision stands; point 1 re-measured statically - all parseable symbols match on the upstream exe); before: abf84ac (25 Oct 2026 ~07:00, short form after the UI build: 2 watched-path commits 3cfa88c..abf84ac in `core/flexe.h` (+24 UI symbols, dd5bce6 / 28dd009); the decision stands, point 1's symbol count is stale - marked in place); before: 3cfa88c (25 Oct 2026 ~03:30: the 24 Oct refactors and the UI design docs; nothing touched)
-Dirty paths at check: none at the start (25 Oct 2026 ~23:05; during the round another session's uncommitted `controller/src/impl/padbases.cpp`, `controller/src/impl/promptbar.cpp`, `docs/UI_HUD2_EXTENDED.md` appeared - not judged); none (25 Oct 2026 ~12:15); none (25 Oct 2026 ~07:00); before: none at the start (24 Oct 2026, 1defa3f); at the end `controller/src/impl/autopilot_frame.cpp`, `controller/src/impl/autopilot_objective.cpp` (another session's uncommitted edits, appeared during the check; not judged here); before: tools/ocr/__pycache__/ (untracked; 22 Oct 2026 check-up)
+Checked against: FLvibed fc379a3 (31 Oct 2026 ~04:00, short form: 6 watched-path commits (all `docs/TESTING.md`: the AFK_PLAYBOOK pointer, the segment-DNF rule, `tools\reach.py` / reach-short); no HDE, FLSharp, install or signature content (grep of the diff); decision unchanged)
+Dirty paths at check: another session's uncommitted `HANDOFF.txt`, `controller/src/host/main.cpp`, `controller/src/impl/autopilot_{combat,target,travel}.cpp`, `controller/src/impl/livesplit.cpp`, `controller/src/impl/uiskin.cpp`, `core/hook.{cpp,h}`, `subtitles/src/host/main.cpp`, `subtitles/src/impl/{data,impl,movie}.cpp` (not judged) (31 Oct 2026 ~04:00)
 Watch: docs/HDE_UPSTREAM.md, docs/MOD_COMPATIBILITY.md, tools/install-hde.ps1, docs/TESTING.md, core/flexe.h, docs/kb/display.md
 Evidence: the two installs' `EXE` folders compared file by file; `build\sigtool\sigtool.exe check` on both exes; the clone's git history since the 0.7.1 tag; GitHub milestones and releases of FLHDE/freelancer-hd-edition and -installer
 Sources: [file] docs\HDE_UPSTREAM.md (the project's own list of what changed, 17 Oct 2026); [file] the clone and the install; [api] GitHub; `flsharp.md`
 
 ## What it means for FLvibed
 
+*Check-up 30 Oct 2026 ~23:30 (short form + HDE re-fetched, HEAD 5eb7bcb; 7 watched-path commits bf4d1d1..5eb7bcb):*
+**v0.8 has a date.** The milestone is due 19 Dec 2026 (5 open / 8 closed, the same five as below). BC46 on the HDE
+Discord: "0.8 will be released this year", with half the nebula textures and general testing left (`starport.md`
+section 10). Work is on `feature/new-solar-textures` (pushed 30 Oct); main's last commit is 25 Aug 2026. M8's switch
+of the primary is therefore about seven weeks away. **The owner deferred M7, the second install (30 Oct 2026),
+"until the mod is closer to feature complete".** At v0.8 the primary is re-installed from the release installer
+(Plan step 7); M7's sweeps then run against v0.8 itself rather than a repository state. The upstream exe's patching
+is now read in full:
+- FLStaticPatch runs in HDE's CI on every push to main (`.github/workflows/update.yml`, over FLHDE/OriginalFLBinaries).
+- `BinaryEdits.patch` has 79 active offset lines in 9 file blocks (exe and 8 DLLs).
+- A bad patch fails the job before anything is committed, so a published upstream exe is always the whole patch set
+  (`starport.md` section 10).
+The 7 commits are harness and process lines (save fitness, the launch check, the save checkpoint kind) with no
+effect on the decision.
+*Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 3 watched-path commits 7518008..067bf32):* no effect on the
+decision. Point 1 is firmer: after ca2ef92 no signature holds alignment padding as literals, so a later HDE exe that
+differs only there (NOPs, leftover bytes) no longer breaks one by that difference - 211 / 211 on the upstream exe and 0.7.1's
+(`research\evidence\discovery\sigcheck_067bf32.txt`), and `drift_check`'s new "signatures" line checks the test
+install's exe on every run. `TESTING.md` gained the build lock and the run-judge hand-off (07294d8, 373634a): process,
+nothing about the second install.
+*Check-up 29 Oct 2026 (whole set, HEAD 7518008; 9 watched-path commits 77d8655..7518008):* **211 / 211 statically** on
+the upstream exe, 0.7.1's, Discovery's and vanilla 1.1's (`research\evidence\discovery\sigcheck_7518008.txt`); the
+decision below is unchanged. New ground for both HDE targets: **multiplayer**, verified on HDE 0.7.1's FLServer + HDE's
+FLHook (`docs\MULTIPLAYER.md`), with the server plugin `flvibed_server.dll` built against FLHDE/FLHook 8829534
+(`server\flhook\README.md`). The upstream repository's `EXE\FLHook.dll` is byte-identical to 0.7.1's (MD5 2cd3618a...,
+checked 29 Oct 2026), so the plugin's FLHook is the same on both targets today. The LAN list fix (0689c29) stays out on
+both HDE exes (adoxa's 13 bytes already there, `FLDOCS\BinaryEdits.patch` 103). `pump_no_block` (e89b007) sits beside
+FLSharp 0.9.2's `QuitMessageFix` on the message pump (`flsharp.md`, U4 h) - one more item for the second install's sweep
+(M7).
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 14 watched-path commits 855745b..e5c02cc):* **202 / 202
 statically** on the upstream exe, 0.7.1's, Discovery's and vanilla 1.1's (`research\evidence\discovery\sigcheck_e5c02cc.txt`).
 FLvibed's borderless window (90a8b7f, `docs\kb\display.md` "Window mode path") stays out under HDE's DxWrapper /
@@ -69,6 +98,8 @@ its next release (v0.8), which is when players move.** The reasons:
    (the open ones: reputation softlocks, nebula and station textures, pilot voices, a licence), the repository quiet
    since 30 Aug 2026. A v0.8 within months is plausible, not scheduled. Switching the primary at that release aligns
    the benchmark baseline with what players run and costs the re-measure once.
+   *30 Oct 2026:* now scheduled: milestone due 19 Dec 2026, and the developer says "this year" (`starport.md`
+   section 10).
 5. **An upstream install is not a download away.** No installer exists for the repository state; the installer repo
    documents the build (clone, 7-Zip the mod files under 2.05 GB, compile `setup.iss` with Inno Setup, which is not on
    this machine). `tools\install-hde.ps1` then drives that installer unattended with the project's options. The test
@@ -97,6 +128,10 @@ its next release (v0.8), which is when players move.** The reasons:
   25 Aug 2025. Milestones: v0.8 open (8 closed, 5 open), v1.0 open (6 closed, 12 open), Backlog (26 closed, 62 open).
   97 open issues and PRs. Last push 30 Aug 2026 (repository), 22 Aug 2026 (installer: an M13 OpenSP warning, "general
   fixes"). No announced date.
+  *30 Oct 2026 (re-fetched):* v0.8 is due 19 Dec 2026 (milestone updated 30 Oct; the same 5 open / 8 closed: #337,
+  #285, #280, #116, #90), with no release since 0.7.1. v1.0 has 12 open / 6 closed; Backlog 62 / 26. Pushed 30 Oct 2026
+  on `feature/new-solar-textures`; main's last commit 25 Aug 2026; wiki edited 27 and 30 Oct.
+  (`research\evidence\community_2026-10-30\hde_milestones.json`)
 
 ### Plan for the second install (adopted 21 Oct 2026; for the working session, in order)
 1. **Build the upstream installer** (one-off, repeatable): install Inno Setup 6 (not on this machine; a download,

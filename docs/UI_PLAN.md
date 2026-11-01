@@ -38,13 +38,13 @@ registry (`core\settings.h`, `docs\SETTINGS.md`). Mock-ups over the real 4K scre
 
 ## 2. The autopilot button on the maneuver bar
 **What the player sees.** A fifth button after Formation (`mock_maneuver_bar_autopilot.png`). A click toggles the
-Advanced Autopilot exactly as LB + L3 does: with a target, the smart start (hostile -> fight, friendly ship -> escort,
+Advanced Autopilot exactly as the pad's autopilot toggle does (View hold since 28 Oct 2026; LB + L3 before): with a target, the smart start (hostile -> fight, friendly ship -> escort,
 dockable -> dock, else fly to); without one, the objective / auto mode; a click while it flies hands the ship back.
 While the autopilot flies the button is lit (the active maneuver's yellow); unlit otherwise; grey when the autopilot
 cannot start (the maneuvers are locked, a cutscene, the ship is docking). The game's "Auto hide maneuver bar" option
 hides it with the bar. The bar's frame grows by one button pitch; the cruise box and the tab keep their place under
 the bar's left end. In pad mode the later pad HUD replaces the bar (TASK_GLYPHS_HUD section 5); the button is the mouse
-twin of LB + L3.
+twin of the pad's toggle.
 
 **Mechanism** (facts: `FREELANCER_RE.md` "Options screen", the maneuver bar paragraph). The game builds its four
 buttons from `hud.ini [Maneuvers]` through the icon-button factory 0x5A0C90 into four fixed slots and lays them out
@@ -276,7 +276,7 @@ while steering, the wheel's selection input.
 `weapon_groups`. **SIMPLE (default)**: RT fires the active group (the game's default group), group switching in the
 action wheel, the HUD's group buttons badge the current one; **CYCLE ON Y HOLD**: Y held flips to the next group (Y tap
 stays cruise), the badge and the combat legend show it; **TWO GROUPS ON THE TRIGGERS**: RT fires group 1, LT group 2
-(the Armored Core / MechWarrior pattern; afterburner moves to L3, engine kill into the wheel; ACE: A / B). In every
+(the Armored Core / MechWarrior pattern; afterburner moves to the LS click, engine kill into the wheel; ACE: A / B). In every
 mode launchers fire only on their own buttons; groups are assigned in the inventory (D-pad left / right ticks a focused
 weapon's group boxes, the game's own checkboxes).
 **Turret view** (the game's H; the owner's question, 25 Oct): in FREELANCER **X held** (the owner's call), in ACE a
