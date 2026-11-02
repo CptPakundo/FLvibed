@@ -167,7 +167,9 @@ struct Box
 bool RectOf(u32 ctl, Box& b)
 {
     ui::Item it;
-    if (!ctl || !ui::ControlRect(ctl, it))
+    u32 vt = 0;
+    const bool front = ctl && R32(ctl, vt) && exe::VtFrontButton.is(vt); // (the main menu's buttons: their own layout)
+    if (!ctl || !(front ? ui::FrontButtonRect(ctl, it) : ui::ControlRect(ctl, it)))
         return false;
     b.cx = it.x, b.cy = it.y;
     b.box = it.hw > 0.5f && it.hh > 0.5f;
@@ -326,6 +328,16 @@ const FamilyDef kFamilies[] = {
     {"navbar", &exe::VtNavBar, false, false, {"ManeuverFrame", "ManeuverTab"}, {}, false, {}, {}, FocusButton, nullptr,
      nullptr, 0},
     {"nnbox", &exe::VtNNMainButton, false, false, {"NNBackground"}, {}, false, {}, {}, FocusButton, nullptr, nullptr, 0},
+    // the main menu (root vt 0x5E27CC = VtMainMenu, the static object 0x67B780): same layout, HUD 2 look - its five `bImg`
+    // static images (FRONT_button.cmp, the button frames; re-created on each appearance, all of the same name) hidden,
+    // a tab plate under each front button (VtFrontButton: rect from its +0x60 / +0xB4, ui::FrontButtonRect), the
+    // captions and the clicks the game's own. Resolved in Apply (the names are not unique). hud2x_feasibility.md 72
+    {"mainmenu", &exe::VtMainMenu, false, false, {}, {}, true, {}, {}, FocusButton, nullptr, nullptr, 0},
+    // the mission message box (pub::Player::PopUpDialog - M01's tutorial boxes, the story's YES / NO / LATER boxes; vt
+    // 0x5D24F4 = VtMissionMessage): its root draws its own art like the NeuroNet windows - one plate from the root's own
+    // rect, hidden only while that rect is known (HideOwnAll: else native)
+    {"popup", &exe::VtMissionMessage, false, true, {}, {}, false,
+     {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0, 0, 0, Always, 0.85f}}, {}, FocusButton, nullptr, nullptr, 0},
 };
 constexpr int kFamilyCount = sizeof(kFamilies) / sizeof(kFamilies[0]);
 int FamilyIndex(const char* label)
@@ -339,7 +351,7 @@ const int kFamDealer = FamilyIndex("dealer"), kFamInventory = FamilyIndex("inven
           kFamNNBox = FamilyIndex("nnbox"), kFamOptions = FamilyIndex("options"),
           kFamOffer = FamilyIndex("offer"), kFamConfirm = FamilyIndex("confirm"), kFamLog = FamilyIndex("log"),
           kFamNavMap = FamilyIndex("navmap"), kFamShipDealer = FamilyIndex("shipdealer"), kFamPause = FamilyIndex("pause"),
-          kFamJobBoard = FamilyIndex("jobboard");
+          kFamJobBoard = FamilyIndex("jobboard"), kFamMainMenu = FamilyIndex("mainmenu"), kFamPopup = FamilyIndex("popup");
 
 // ---------------------------------------------------------------- the registry
 struct Art
@@ -613,7 +625,9 @@ void HideOwnAll(Win& w)
     const FamilyDef& f = kFamilies[w.fam];
     if (!g_on || (g_scene && !f.modal))
         return;
-    if (f.ownRoot)
+    Box rb;
+    // (the mission box: its art goes only while its plate can stand in - the root's own rect known; else native)
+    if (f.ownRoot && (w.fam != kFamPopup || (RectOf(w.root, rb) && rb.box)))
         HideOwn(w, w.root);
     if (w.partner)
         HideOwn(w, w.partner);
@@ -643,6 +657,21 @@ void Apply(Win& w)
                     if (r)
                         HideArt(w, Child(r, n));
     HideOwnAll(w);
+    if (w.fam == kFamMainMenu) // its direct children: every `bImg` (art) and every front button (a tab plate each)
+    {
+        u32 c = 0;
+        R32(w.root + kChild, c);
+        for (int guard = 0; c && guard < 64; ++guard)
+        {
+            u32 vt = 0;
+            if (R32(c, vt) && exe::VtFrontButton.is(vt))
+                w.tabs.push_back(c), w.tabCaps.push_back(0);
+            else if (g_on && exe::VtImage.is(vt) && NameIs(c, "bImg"))
+                HideArt(w, c);
+            if (!R32(c + kSibling, c))
+                break;
+        }
+    }
     for (const char* n : f.own)
         if (n)
             if (const u32 c = Child(w.root, n))
@@ -1425,7 +1454,8 @@ void Geometry(void* device)
         DrawDocked(*bar, nn && Shown(nn->root) ? nn : nullptr, !conversation);
     }
     for (const Win& w : g_wins)
-        if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || kFamilies[w.fam].modal))
+        if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || kFamilies[w.fam].modal) &&
+            !(w.fam == kFamMainMenu && g_modalOpen)) // (the main menu's plates never over a modal screen's scrim)
             DrawWindow(w, 0);
 }
 
@@ -1476,7 +1506,8 @@ void Draw(void* device)
     const u32 hov = FocusedControl();
     bool focused = false, window = false;
     for (const Win& w : g_wins)
-        if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || kFamilies[w.fam].modal))
+        if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || kFamilies[w.fam].modal) &&
+            !(w.fam == kFamMainMenu && g_modalOpen)) // (the main menu's plates never over a modal screen's scrim)
             focused |= DrawWindow(w, hov), window = true;
     // one focus mark per screen (critique 3, 1): while a window owns the input, no mark on the room bar / its sub-row
     // (Player Status / Inventory left a second bar on the room's sub-tab under the resting cursor)

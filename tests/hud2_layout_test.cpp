@@ -112,10 +112,13 @@ RefOut Ref(const Frame& f)
         else
             L.ctxPlan = promptfit::HoldPlan();
         L.ctxTop = L.ctxY - 0.03f * H;
-        for (int i = 0; i < L.nCtx && i < 3; ++i)
+        for (int i = 0; i < L.nCtx && i < 3; ++i) // (0.2.1: a squeezed prompt's label wraps, its plate rises by tall)
+        {
+            const float tall = c.wrap[i] ? g.tall : 0.0f;
             L.ctxTop = std::min(L.ctxTop, promptfit::Raised(L.ctxPlan.at[i])
-                                              ? L.ctxPY[i] - 0.026f * H * k - 0.001f * H - f.m.ctxWord
-                                              : L.ctxPY[i] - 0.03f * H);
+                                              ? L.ctxPY[i] - 0.026f * H * k - tall - 0.001f * H - f.m.ctxWord
+                                              : L.ctxPY[i] - 0.03f * H - tall);
+        }
     }
     L.alertY = L.my;
     if (f.dlg.comm)
@@ -267,8 +270,21 @@ void Test_hud2_layout()
         CHECK_NEAR(o.ship.x0, MX, 0.01);
         CHECK_NEAR(o.ship.x1, MX + 0.31 * 2160, 0.01); // 0.31 H (5.22; was 1056, 0.40)
         CHECK_NEAR(o.ship.y1, BY, 0.01);
-        CHECK_NEAR(o.ship.y0, BY - 0.15 * 2160, 0.01); // 0.80 H at 5 %: the loadout's top (A5: both panels 0.15 H)
-        CHECK_NEAR(o.ship.y0, o.loadout.y0, 0.01);
+        CHECK_NEAR(o.ship.y0, BY - 0.15 * 2160, 0.01); // unmeasured: both at their 0.15 H maximum (A5's equal height
+        CHECK_NEAR(o.ship.y0, o.loadout.y0, 0.01);     //   dropped in 0.2.1 round 6: each fits its own rows)
+        {
+            // the heights to content (0.2.1 round 6): measured below the maximum wins, anchored to the bottom margin;
+            // the cross stacks on the loadout's new top; above the maximum the 0.15 H
+            Frame fh = Base(3840, 2160, false);
+            fh.m.loadH = 0.086f * 2160, fh.m.shipH = 0.107f * 2160;
+            const Out h = Compute(fh, S);
+            CHECK_NEAR(h.loadout.y1, BY, 0.01);
+            CHECK_NEAR(h.loadout.y0, BY - 0.086 * 2160, 0.05);
+            CHECK_NEAR(h.ship.y0, BY - 0.107 * 2160, 0.05);
+            CHECK_NEAR(h.cons.y1, h.loadout.y0 - 0.012 * 2160, 0.05);
+            fh.m.loadH = 0.2f * 2160;
+            CHECK_NEAR(Compute(fh, S).loadout.y0, BY - 0.15 * 2160, 0.01);
+        }
         CHECK_NEAR(o.loadout.x0, RX - 0.40 * 2160, 0.01); // the base: the weapons (decision 3; was 2308.8, 0.62)
         CHECK_NEAR(o.loadout.y0, BY - 0.15 * 2160, 0.01); // 0.80 H: S1's bottom (5.16)
         CHECK_NEAR(o.cons.x1, RX, 0.01);    // the cross stacked on its right end, right-aligned
@@ -291,6 +307,57 @@ void Test_hud2_layout()
         // at k 1, the reticle lane's 0.692 (CRUISE ON) far inside; it scales with the ring (k), the gap does not
         CHECK_NEAR(o.clearY0, 1080 + (0.10 + 0.022 + 0.5 * 0.75 * 0.0065) * 2160 + 0.01 * 2160, 0.01);
         CHECK(o.clearY0 < 0.692f * 2160 - 0.012f * 2160);
+        // the panels sized to their content (0.2.1 round 3, UI_HUD2.md 5.26): a measured width below the spec's wins,
+        // anchored to the corners; above it the spec's maximum; the lanes hug the narrower panels
+        {
+            Frame fit = Base(3840, 2160, false);
+            fit.m.cardW = 0.32f * 2160, fit.m.shipW = 0.24f * 2160, fit.m.loadW = 0.90f * 2160; // (the loadout over its max)
+            const Out c = Compute(fit, S);
+            CHECK_NEAR(c.card.x1, o.card.x1, 0.01);
+            CHECK_NEAR(c.card.x0, c.card.x1 - 0.32 * 2160, 0.01);
+            CHECK_NEAR(c.ship.x0, MX, 0.01);
+            CHECK_NEAR(c.ship.x1, MX + 0.24 * 2160, 0.01);
+            CHECK_NEAR(c.loadout.x0, RX - 0.40 * 2160, 0.01);
+            CHECK(c.nCtx == o.nCtx);
+            // the easing: snaps from 0, grows fast, holds inside the hysteresis, shrinks past it
+            CHECK(hud2layout::EaseContent(0, 500, 0.016f, 26) == 500);
+            CHECK(hud2layout::EaseContent(500, 600, 1.0f, 26) == 600);
+            CHECK(hud2layout::EaseContent(500, 490, 0.016f, 26) == 500);
+            const float s = hud2layout::EaseContent(500, 400, 0.016f, 26);
+            CHECK(s < 500 && s > 400);
+            CHECK(hud2layout::EaseContent(500, 0, 0.016f, 26) == 500); // (nothing measured: keeps its width)
+            // a row label's real room (0.2.1 round 4): the tag's column only while it shows, the value's when it has one
+            CHECK_NEAR(hud2layout::RowRoom(100, 900, 60, 20, false, 150, 25), 900 - 80 - 100, 0.01);
+            CHECK_NEAR(hud2layout::RowRoom(100, 900, 60, 20, true, 150, 25), 900 - 175 - 80 - 100, 0.01);
+            CHECK_NEAR(hud2layout::RowRoom(100, 900, 0, 20, false, 150, 25), 800, 0.01);
+            CHECK(hud2layout::RowRoom(100, 150, 60, 20, true, 150, 25) == 0);
+            // the second line in a panel's spare height (round 5): 10 px a character
+            {
+                auto w10 = [](const std::wstring& t) { return 10.0f * static_cast<float>(t.size()); };
+                const std::wstring npos = L"", sp = L" ";
+                using hud2layout::TwoLineSplit;
+                CHECK(TwoLineSplit(L"JAVELIN MISSILE", 150, sp, w10) == std::wstring::npos); // fits: one line
+                CHECK(TwoLineSplit(L"JAVELIN MISSILE", 100, sp, w10) == 8);                  // "JAVELIN" / "MISSILE"
+                CHECK(TwoLineSplit(L"A BB CCC DDDD", 80, sp, w10) == 9);                     // most parts that fit
+                CHECK(TwoLineSplit(L"LONGWORDONLY", 50, sp, w10) == std::wstring::npos);     // no break: it scrolls
+                CHECK(TwoLineSplit(L"VERYLONGFIRST X", 50, sp, w10) == 14);                  // at least one part
+                CHECK(TwoLineSplit(L"A  .  B", 30, L"  .  ", w10) == 6);                     // the guns' separator
+                CHECK(TwoLineSplit(L"", 10, sp, w10) == std::wstring::npos);
+                CHECK(TwoLineSplit(L"AB ", 20, sp, w10) == std::wstring::npos); // (nothing after the break)
+                (void)npos;
+            }
+            // the nav's height sized to its content (round 4): its drawn bottom + the edge, floored, capped at today's
+            {
+                Frame nv = Base(3840, 2160, false);
+                nv.navBottom = static_cast<float>(MY + 0.12 * 2160);
+                const Out cn = Compute(nv, S);
+                CHECK_NEAR(cn.nav.y1, MY + 0.12 * 2160 + 0.01 * 2160, 0.5);
+                nv.navBottom = static_cast<float>(MY + 0.01 * 2160); // (under the floor)
+                CHECK_NEAR(Compute(nv, S).nav.y1, MY + 0.10 * 2160, 0.5);
+                nv.navBottom = static_cast<float>(MY + 0.60 * 2160); // (over today's 0.29: the maximum)
+                CHECK_NEAR(Compute(nv, S).nav.y1, o.nav.y1, 0.01);
+            }
+        }
         {
             Frame big = Base(3840, 2160, false);
             big.hudScale = 130;

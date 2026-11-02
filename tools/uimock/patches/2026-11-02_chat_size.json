@@ -1,0 +1,10 @@
+{
+  "_about": "0.2.1 (2 Nov 2026, the owner): HUD 2's side chat size - the 0.2.0 size becomes LARGE, the new default NORMAL is smaller (still above the vanilla chat text). Code: subtitles chat_size.h, [Subtitles] chat_size 0 normal / 1 large. Apply with specpatch.py to part2_data.js and docs/UI_SPEC.json.",
+  "add_rows": {
+    "subtitles/CHANNELS": {"after": "chat_all_dialogue", "rows": [
+      {"key": "chat_size", "label": "Side chat size", "kind": "picker", "options": ["NORMAL", "LARGE"], "def": "NORMAL",
+       "help": "The text size of HUD 2's side chat (the comm feed beside the HUD): Normal is a little larger than the game's own chat text, Large the bigger size of earlier versions.",
+       "tier": "player", "needs": "live", "parent": "enabled"}
+    ]}
+  }
+}

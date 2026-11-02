@@ -777,10 +777,12 @@ static std::string Command(const std::string& line)
     }
     if (cmd == "chat") // chat <name>|<text>
     {
+        // (as a chatter line: the chat log, and HUD 2's side chat while it shows - the chat_size check, 2 Nov 2026)
         const size_t bar = rest.find('|');
-        chat::Print(data::Widen(bar == std::string::npos ? "" : rest.substr(0, bar)), 0xF2E3B3,
-                    data::Widen(rest.substr(bar + 1)));
-        return "printed";
+        const std::wstring name = data::Widen(bar == std::string::npos ? "" : rest.substr(0, bar)),
+                           text = data::Widen(rest.substr(bar + 1));
+        chat::Print(name, 0xF2E3B3, text);
+        return display::Hud2Feed(name, 0xF2E3B3, text, 3.0f) ? "printed + side chat" : "printed";
     }
     if (cmd == "controls") // controls [vtable hex]: walk Freelancer's flat control list (exe::UiControls)
     {

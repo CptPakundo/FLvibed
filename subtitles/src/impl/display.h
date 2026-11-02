@@ -114,6 +114,9 @@ struct Settings
     // the same choice on wider screens (16:10 and wider): 1 = the header row (default since the user's 16:9 comparison,
     // 22 Oct 2026), 0 = the column
     int chatLayoutWide = 1;
+    // HUD 2's side chat (the comm feed) text size: 0 Normal, 1 Large (the 0.2.0 size). The owner, 2 Nov 2026, for 0.2.1:
+    // the old size is Large, the default a smaller Normal, still above the vanilla chat text (chat_size.h, the measurement).
+    int chatSize = 0;
     // The UI build (25 Oct 2026, docs\UI_SPEC.json; the defaults = the spec's `def`). Story speakers' names in their own
     // colours (data\speaker_colors.tsv); 0 = every name by the speaker's relation to the player only.
     bool speakerColors = true;

@@ -449,6 +449,24 @@ uintptr_t FindControl(const char* name) { return hk::Call<uintptr_t(__cdecl*)(co
 
 namespace ui
 {
+bool FrontButtonRect(uintptr_t ctl, Item& out)
+{
+    float t[3] = {}, b[2] = {}, sx = 0, sy = 0;
+    if (!ctl || !Read(ctl + 0x60, t, 12) || !Read(ctl + OFS_BOX, b, 8) || b[0] <= 0 || b[1] <= 0 ||
+        !Project(t[0] + b[0] * 0.5f, t[1] - b[1] * 0.5f, t[2], sx, sy))
+        return false;
+    out = Item();
+    out.ctl = ctl;
+    out.root = ctl;
+    out.x = sx, out.y = sy;
+    const float kx = fabsf(UiCam(0x78)), ky = fabsf(UiCam(0x7C));
+    out.hw = kx * b[0] * 0.5f / -t[2];
+    out.hh = ky * b[1] * 0.5f / -t[2];
+    out.depth = -t[2];
+    strcpy_s(out.name, "FrontButton");
+    return true;
+}
+
 bool ControlRect(uintptr_t ctl, Item& out)
 {
     if (!ctl)

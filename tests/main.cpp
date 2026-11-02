@@ -16,6 +16,9 @@ void Test_ini();
 void Test_utf();
 void Test_textfit();
 void Test_marquee();
+void Test_promptlabel();
+void Test_promptshow();
+void Test_hudwake();
 void Test_movie_words();
 void Test_mix_cues();
 void Test_avoid();
@@ -28,6 +31,7 @@ void Test_fluf_hooks();
 void Test_fluf_probe();
 void Test_press_gate();
 void Test_focus_gate();
+void Test_maneuver_watch();
 void Test_pad_slots();
 void Test_pad_backend();
 void Test_sdl_testpad();
@@ -42,6 +46,7 @@ void Test_str();
 void Test_universe();
 void Test_linebreak();
 void Test_stack_fit();
+void Test_chat_size();
 void Test_mission_live();
 void Test_mission_live_goals();
 void Test_mission_lock_trap();
@@ -198,6 +203,9 @@ int main(int argc, char** argv)
         {"utf", Test_utf},
         {"textfit", Test_textfit},
         {"marquee", Test_marquee},
+        {"promptlabel", Test_promptlabel},
+        {"promptshow", Test_promptshow},
+        {"hudwake", Test_hudwake},
         {"movie_words", Test_movie_words},
         {"mix_cues", Test_mix_cues},
         {"avoid", Test_avoid},
@@ -210,6 +218,7 @@ int main(int argc, char** argv)
         {"fluf_probe", Test_fluf_probe},
         {"press_gate", Test_press_gate},
     {"focus_gate", Test_focus_gate},
+    {"maneuver_watch", Test_maneuver_watch},
     {"pad_slots", Test_pad_slots},
         {"pad_backend", Test_pad_backend},
         {"sdl_testpad", Test_sdl_testpad},
@@ -224,6 +233,7 @@ int main(int argc, char** argv)
         {"universe", Test_universe},
         {"linebreak", Test_linebreak},
         {"stack_fit", Test_stack_fit},
+        {"chat_size", Test_chat_size},
         {"mission_live", Test_mission_live},
         {"mission_live_goals", Test_mission_live_goals},
         {"mission_lock_trap", Test_mission_lock_trap},

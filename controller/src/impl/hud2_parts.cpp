@@ -288,11 +288,13 @@ float DrawNav(const Model& m, const Layout& L, float a, const NavStyle& ns, floa
         if (m.ap)
         {
             Chip(chipX, yy, L"AUTOPILOT", T, kCyan);
+            ext(chipX + TextWidth(L"AUTOPILOT", T, 0.1f) + T * 0.67f); // (the chip's plate: Chip)
             chipX += TextWidth(L"AUTOPILOT", T, 0.1f) + 0.03f * H * k;
         }
         if (m.turret)
         {
             Chip(chipX, yy, L"TURRET VIEW", T, kChrome);
+            ext(chipX + TextWidth(L"TURRET VIEW", T, 0.1f) + T * 0.67f);
             chipX += TextWidth(L"TURRET VIEW", T, 0.1f) + 0.03f * H * k;
         }
         if (manChip)
@@ -322,13 +324,14 @@ float DrawNav(const Model& m, const Layout& L, float a, const NavStyle& ns, floa
         if (m.progress >= 0)
         {
             SegBar(tx, yy - 0.005f * H * k, 0.24f * H * k, 0.009f * H * k, m.progress, m.man ? m.manCol : kCyan, 24, 2);
+            ext(tx + 0.24f * H * k); // (the bar and its ETA count in the content's extent: 0.2.1 round 4)
             if (!m.eta.empty())
-                Text(tx + 0.255f * H * k, yy, m.eta, T, Argb(kInk, 1));
+                ext(tx + 0.255f * H * k + Text(tx + 0.255f * H * k, yy, m.eta, T, Argb(kInk, 1)));
             yy += 0.04f * H * k;
         }
         else if (!m.eta.empty())
         {
-            Text(tx, yy, m.eta, T, Argb(kInk, 1));
+            ext(tx + Text(tx, yy, m.eta, T, Argb(kInk, 1)));
             yy += 0.04f * H * k;
         }
         if (!m.wait.empty())
@@ -364,7 +367,10 @@ float DrawNav(const Model& m, const Layout& L, float a, const NavStyle& ns, floa
     if (bottom)
         *bottom = std::max(top, yy - 0.02f * H * k);
     const bool texts = yy > y + 0.001f;
-    const float textRight = right, textBottom = yy - 0.02f * H * k;
+    if (ns.textOut)
+        ns.textOut[0] = texts ? right : 0.0f, ns.textOut[1] = texts ? yy - 0.02f * H * k : 0.0f;
+    // the scrim sized to the text block, eased (0.2.1 round 4: hud2.cpp eases ns.scrimR / B; never under this frame's text)
+    const float textRight = std::max(right, ns.scrimR), textBottom = std::max(yy - 0.02f * H * k, ns.scrimB);
     right = std::max(right, chipRight);
     // The soft scrim behind the text block (the owner, 25 Oct 2026: no visible rectangle anywhere): none while the
     // chip is all there is; else the drawn text's extent, feathered on every side (a centre block, four edge ramps and
@@ -473,7 +479,7 @@ void DrawTarget(const Model& m, const Layout& L, float a)
         DrawPrompt(m.clearBtn, right - lw - 0.006f * H * k - gw / 2, fy, gh, Argb(kDim, 1));
         Text(right, fy, lbl, T, Argb(kDim, 1), Right, 0.06f);
     }
-    // cut to the card ("FIGHTER · LEVEL 1" ran past its edge beside a wide chip): the short level form first, then cut
+    // cut to the card ("FIGHTER - LEVEL 1" ran past its edge beside a wide chip): the short level form first, then cut
     const float clsRoom = right - (tx + cw + 0.012f * H * k);
     if (m.tLevel >= 0 && TextWidth(cls, T, 0.06f) > clsRoom)
     {
@@ -597,7 +603,7 @@ void DrawShip(const Model& m, const Layout& L, float a)
     if (!m.shipName.empty() || !m.shipClass.empty()) // the player's ship and its class above HOLD
     {
         const float cw = m.shipClass.empty() ? 0 : TextWidth(m.shipClass, T, 0.08f) + 0.012f * H * k;
-        TextMarquee(tx, yy, m.shipName, 0.026f * H * k, right - tx - cw, Argb(kInk, 1));
+        TextMarquee(tx, yy, m.shipName, 0.026f * H * k, hud2layout::RowRoom(tx, right, cw, 0, false, 0, 0), Argb(kInk, 1));
         if (cw > 0)
             Text(right, yy, m.shipClass, T, Argb(kDim, 1), Right, 0.08f);
     }
@@ -714,6 +720,11 @@ static void Slot(const Model& m, int i, int count, float px, float py, float sz,
          Right);
 }
 
+// The loadout's drawn gun lines (Standard): the first unused line's offset from the panel's top in H x k units (wraps
+// included), and whether the keyboard form's group keys set the pitch - LoadoutContentHeight reads them (one frame late).
+static float g_loGunEnd = 0;
+static bool g_loKeyed = false;
+
 void DrawLoadout(const Model& m, const Layout& L, float a)
 {
     SetAlpha(a);
@@ -784,6 +795,7 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
     // launcher row's texts before the key column
     const float rowP = (keyed ? 0.039f : 0.030f) * H * k;
     float yy = y0 + (keyed ? 0.022f : 0.028f) * H * k;
+    auto widthAt = [](float size) { return [size](const std::wstring& t) { return TextWidth(t, size); }; };
     if (m.nGroups > 0)
     {
         const float fw = DrawPrompt(m.fireBtn, 0, 0, g, 0, true, true);
@@ -805,20 +817,16 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
                 TextMarquee(nameX, yy, s, ts, room, col);
                 return;
             }
-            // the first line takes the guns that fit (at least one), the second line the rest
-            std::wstring first, rest = s;
-            for (size_t at = rest.find(kSep); at != std::wstring::npos; at = rest.find(kSep))
+            // the first line takes the guns that fit (at least one), the second line the rest (hud2layout::TwoLineSplit)
+            const size_t at = hud2layout::TwoLineSplit(s, room, kSep, widthAt(ts));
+            if (at == std::wstring::npos)
             {
-                const std::wstring head = rest.substr(0, at);
-                const std::wstring cand = first.empty() ? head : first + kSep + head;
-                if (!first.empty() && TextWidth(cand, ts) > room)
-                    break;
-                first = cand;
-                rest = rest.substr(at + kSep.size());
+                TextMarquee(nameX, yy, s, ts, room, col);
+                return;
             }
-            TextMarquee(nameX, yy, first, ts, room, col);
+            TextMarquee(nameX, yy, s.substr(0, at - kSep.size()), ts, room, col);
             yy += rowP, --spare;
-            TextMarquee(nameX, yy, rest, ts, room, col);
+            TextMarquee(nameX, yy, s.substr(at), ts, room, col);
         };
         for (int i = 0; i < m.nGroups && i < 3; ++i)
         {
@@ -855,7 +863,17 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
         }
     }
     // the launcher row where the mock-up puts it (under three rows), whatever the group count
+    const float freeY = yy;                       // (the first gun line the rows above left unused)
     yy = y0 + (keyed ? 0.128f : 0.122f) * H * k; // (at most three rows above it: groups + the guns in no group)
+    // the panel's height fits its rows (0.2.1 round 6; LoadoutContentHeight): Standard's launcher row keeps its pad above
+    // the bottom edge, so a shorter panel lifts it under the last gun row (at the full 0.15 the same place as before)
+    if (m.presetDrawn != hud2preset::Focus)
+    {
+        yy = std::min(yy, y1 - (keyed ? 0.022f : 0.028f) * H * k);
+        g_loGunEnd = (freeY - y0) / (H * k), g_loKeyed = keyed;
+    }
+    // the gun line above the launcher row is the panel's spare height when the rows did not use it (0.2.1 round 5)
+    const bool lineAbove = freeY <= yy - rowP + 0.5f;
     if (m.ammo >= 0 || !m.launcher.empty())
     {
         const float lw = DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true);
@@ -871,15 +889,34 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
         // with the group keys, the right edge is the key column's left - 0.012 H (nothing under the keys: panel.overlap)
         const float rx = x1 - 0.018f * H * k - (keyed ? keyCol + 0.012f * H * k : 0.0f);
         const float lockW = TextWidth(L"LOCKED", T, 0.06f) + 0.016f * H * k;
-        const float ammoR = rx - lockW - 0.012f * H * k;
+        // (0.2.1 round 4, the owner: a label scrolls only past its row's REAL free room - LOCKED's column is taken only
+        // while it shows; unlocked, the ammo sits at the right edge and the name gets the room the gun rows above use)
+        const float ammoR = rx - (m.locked ? lockW + 0.012f * H * k : 0.0f);
         std::wstring ammo = m.ammo >= 0 ? std::to_wstring(m.ammo) : L"";
         const float aw = ammo.empty() ? 0 : TextWidth(ammo, 0.026f * H * k);
         if (!ammo.empty())
             Text(ammoR, yy, ammo, 0.026f * H * k, Argb(m.ammo > 0 ? kInk : kAmber, 1), Right);
-        const float nx = tx + 0.038f * H * k, room = ammoR - aw - 0.010f * H * k - nx;
+        const float nx = tx + 0.038f * H * k,
+                    room = hud2layout::RowRoom(nx, rx, aw, 0.010f * H * k, m.locked, lockW, 0.012f * H * k);
         // the full name by the fit rule, a marquee where it would be cut (the owner's decision 1, 31 Oct 2026: no
         // permanent cut - the mock-up's word drop, "JAVELIN MISSILE" -> "JAVELIN", hid the rest for good)
-        TextMarquee(nx, yy, m.launcher, 0.026f * H * k, room, Argb(kInk, 1));
+        // too long for its row: its first words on the free gun line above (the whole width to the right edge: no ammo
+        // or LOCKED there), the rest on its own row; a marquee only when it still does not fit (0.2.1 round 5)
+        const float ls = 0.026f * H * k;
+        const size_t at = lineAbove && TextWidth(m.launcher, ls) > room
+                              ? hud2layout::TwoLineSplit(m.launcher, hud2layout::RowRoom(nx, rx, 0, 0, false, 0, 0),
+                                                         std::wstring(L" "), widthAt(ls))
+                              : std::wstring::npos;
+        if (at == std::wstring::npos)
+            TextMarquee(nx, yy, m.launcher, ls, room, Argb(kInk, 1));
+        else
+        {
+            std::wstring first = m.launcher.substr(0, at);
+            while (!first.empty() && first.back() == L' ')
+                first.pop_back();
+            TextMarquee(nx, yy - rowP, first, ls, hud2layout::RowRoom(nx, rx, 0, 0, false, 0, 0), Argb(kInk, 1));
+            TextMarquee(nx, yy, m.launcher.substr(at), ls, room, Argb(kInk, 1));
+        }
         if (m.locked)
         {
             const float lx = rx - lockW;
@@ -888,6 +925,132 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
             Text(lx + 0.008f * H * k, yy, L"LOCKED", T, Argb(kHostile, 1), Left, 0.06f, false);
         }
     }
+}
+
+// ---------------------------------------------------------------- the panels' content widths (0.2.1 round 3)
+// Each mirrors its Draw* function's columns: the left inset + the icon / view column + the widest row + the right pad.
+float CardContentWidth(const Model& m, const Layout& L)
+{
+    if (!m.target)
+        return 0;
+    const float H = L.H, k = L.k, T = 0.024f * H * k;
+    const float lead = 0.13f * H * k + 0.026f * H * k, pad = 0.018f * H * k; // DrawTarget's tx, right
+    std::wstring cls = m.tClass;
+    if (m.tLevel >= 0)
+    {
+        wchar_t lv[24];
+        swprintf_s(lv, L"  \x00B7  LEVEL %d", m.tLevel);
+        cls += lv;
+    }
+    const float chip = TextWidth(m.tAtt, T, 0.1f) + 0.016f * H * k;
+    float w = chip + (cls.empty() ? 0.0f : 0.012f * H * k + TextWidth(cls, T, 0.06f));
+    const float distW = TextWidth(m.tDist, 0.032f * H * k) + 0.016f * H * k;
+    w = std::max(w, TextWidth(m.tName, 0.032f * H * k) + distW); // (the name clear of the distance, on its row or under it)
+    if (!m.tFaction.empty())
+        w = std::max(w, TextWidth(m.tFaction, 0.026f * H * k) + distW);
+    if (m.tBars)
+        w = std::max(w, 0.15f * H * k + 0.052f * H * k); // (the bars keep 0.15 H x k)
+    if (!m.kbm && m.clearBtn.btn != glyphs::COUNT)
+        w = std::max(w, DrawPrompt(m.clearBtn, 0, 0, T * 1.2f, 0, true) + 0.006f * H * k + TextWidth(L"x2 CLEAR", T, 0.06f));
+    float total = lead + w + pad;
+    if (m.kbm)
+        total = std::max(total, CardIconsContentWidth(m, L));
+    return total;
+}
+
+float ShipContentWidth(const Model& m, const Layout& L)
+{
+    const float H = L.H, k = L.k, T = 0.024f * H * k;
+    const float lead = 0.012f * H * k + hud2layout::std_ov::kShipViewW * H * k + 0.010f * H * k, pad = 0.014f * H * k;
+    float w = 0;
+    if (m.nEscorts > 0)
+    {
+        for (int i = 0; i < m.nEscorts && i < 3; ++i)
+            w = std::max(w, TextWidth(m.escorts[i].name, T));
+        return lead + std::max(w, 0.10f * H * k) + pad;
+    }
+    if (!m.shipName.empty() || !m.shipClass.empty())
+        w = TextWidth(m.shipName, 0.026f * H * k) +
+            (m.shipClass.empty() ? 0.0f : TextWidth(m.shipClass, T, 0.08f) + 0.012f * H * k);
+    wchar_t buf[48];
+    if (m.holdUsed >= 0)
+    {
+        swprintf_s(buf, L"%d / %d", m.holdUsed, m.holdCap);
+        w = std::max(w, TextWidth(L"HOLD", T, 0.08f) + 0.012f * H * k + TextWidth(buf, T));
+    }
+    if (m.credits >= 0)
+    {
+        std::wstring s = std::to_wstring(m.credits);
+        for (int i = static_cast<int>(s.size()) - 3; i > 0; i -= 3)
+            s.insert(static_cast<size_t>(i), L" ");
+        w = std::max(w, TextWidth(L"CREDITS", T, 0.08f) + 0.012f * H * k + TextWidth(s, T));
+    }
+    return w > 0 ? lead + w + pad : 0.0f;
+}
+
+// The panels' content heights (0.2.1 round 6, the owner: "a loadout with one gun row and no launcher has a big empty
+// area below"; UI_HUD2.md 5.29), pixels, floored at hud2layout::kShipMinH / kLoadMinH; the layout caps them at the full
+// 0.15 H. The ship panel: its rows' fixed places (DrawShip) + 0.015 H under the last; the loadout: its drawn gun lines
+// (DrawLoadout's g_loGunEnd), the launcher row one pitch under the last + its pad, else the last row + the pad.
+float ShipContentHeight(const Model& m, const Layout& L)
+{
+    float h;
+    if (m.nEscorts > 0)
+        h = 0.026f + (std::min(m.nEscorts, 3) - 1) * 0.042f + 0.0215f + 0.015f;
+    else if (m.credits >= 0)
+        h = 0.15f;
+    else if (m.holdUsed >= 0)
+        h = 0.068f + 0.0235f + 0.015f;
+    else
+        h = 0.058f;
+    return std::max(h, hud2layout::kShipMinH) * L.H * L.k;
+}
+
+float LoadoutContentHeight(const Model& m, const Layout& L)
+{
+    if (g_loGunEnd <= 0)
+        return 0; // not drawn yet: the maximum
+    const float pad = g_loKeyed ? 0.022f : 0.028f, rowP = g_loKeyed ? 0.039f : 0.030f;
+    const bool launcher = m.ammo >= 0 || !m.launcher.empty();
+    const float h = launcher ? g_loGunEnd + pad : (m.nGroups > 0 || !m.ungrouped.empty() ? g_loGunEnd - rowP + pad : 0.0f);
+    return std::max(h, hud2layout::kLoadMinH) * L.H * L.k;
+}
+
+float LoadoutContentWidth(const Model& m, const Layout& L)
+{
+    const float H = L.H, k = L.k, T = 0.024f * H * k, ts = 0.026f * H * k, g = 0.036f * H * k;
+    const float wx = 0.03f * H * k, pad = 0.018f * H * k;
+    const bool click = m.kbm && m.realGroups;
+    float keyCol = 0;
+    for (int i = 0; click && i < m.nGroups && i < 3; ++i)
+        keyCol = std::max(keyCol, DrawPrompt(m.groupBtn[i], 0, 0, 0.024f * H * k, 0, true, true));
+    float right = 0; // the widest row's right end from the panel's left edge
+    if (m.nGroups > 0)
+    {
+        const float fw = DrawPrompt(m.fireBtn, 0, 0, g, 0, true, true);
+        const float nameX = wx + std::max(g, fw) + 0.02f * H * k + 0.052f * H * k;
+        // a row's names on one line (0.2.1 round 5, the owner: the panel's allotted width is used first - DrawLoadout's
+        // drawNames wraps onto a spare line only past the width the panel keeps anyway, its maximum)
+        auto namesW = [&](const std::wstring& s) { return TextWidth(s, ts); };
+        for (int i = 0; i < m.nGroups && i < 3; ++i)
+        {
+            const float kw = click ? DrawPrompt(m.groupBtn[i], 0, 0, 0.024f * H * k, 0, true, true) : 0;
+            right = std::max(right, nameX + namesW(m.groups[i]) + (kw > 0 ? kw + 0.012f * H * k : 0.0f));
+        }
+        if (!m.ungrouped.empty())
+            right = std::max(right, nameX + namesW(m.ungrouped));
+    }
+    if (m.ammo >= 0 || !m.launcher.empty())
+    {
+        const float lw = DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true);
+        const float nx = wx + std::max(g, lw) + 0.02f * H * k + 0.038f * H * k;
+        const float aw = m.ammo >= 0 ? TextWidth(std::to_wstring(m.ammo), ts) : 0.0f;
+        const float lockW = TextWidth(L"LOCKED", T, 0.06f) + 0.016f * H * k;
+        right = std::max(right, nx + TextWidth(m.launcher, ts) + 0.010f * H * k + aw +
+                                    (m.locked ? 0.012f * H * k + lockW : 0.0f) + // (LOCKED's column only while it shows)
+                                    (keyCol > 0 ? keyCol + 0.012f * H * k : 0.0f));
+    }
+    return right > 0 ? right + pad : 0.0f;
 }
 
 // ---------------------------------------------------------------- the context line under the player's ship
@@ -939,6 +1102,14 @@ bool ContextWidths(const Model& m, const Layout& L, float* widths, float* glyphW
     return true;
 }
 
+void ContextLabelMins(const Model& m, const Layout& L, float* out)
+{
+    for (int i = 0; i < 3; ++i)
+        out[i] = i < m.nCtx ? promptfit::LabelMinWidth(m.ctx[i].label, CtxLabel(L), TextFloor(),
+                                                       [](const std::wstring& s, float z) { return TextWidth(s, z, 0.06f); })
+                            : 0.0f;
+}
+
 // The keyboard form's consumables keys as the cross draws them (the stacked cross's width: hud2_layout.h slotKeyW)
 float SlotKeyWidth(const Model& m, const Layout& L, bool focus)
 {
@@ -970,30 +1141,44 @@ float DrawContext(const Model& m, const Layout& L, float a, bool measure)
     {
         const float x = L.ctxX[i], y = L.ctxPY[i];
         const RecUnit unit; // (a pill: its HOLD word, its glyph and its label)
-        Plate(x - 0.012f * H * k, y - 0.026f * H * k, x + L.ctxW[i] + 0.012f * H * k, y + 0.026f * H * k, 0.026f * H * k,
-              kTL | kTR | kBR | kBL, 150 / 255.0f, kChrome, 0);
         const promptfit::WordAt at = L.ctxPlan.at[i];
+        // the glyph's width and where the label starts (the same walk as below, measured first: the label's fit decides
+        // the plate's height)
+        const float gw = DrawPrompt(m.ctx[i], 0, 0, g, 0, true, true);
+        const float hw = TextWidth(L"HOLD", CtxHold(L), 0.06f);
+        const float extra = at == promptfit::WordAt::Above ? std::max(0.0f, hw - gw) : 0.0f;
+        const float lx = x + (at == promptfit::WordAt::Before ? hw + promptfit::GapBefore(g) : 0.0f) + gw + extra + g * 0.3f;
+        // the label in the pill's room (its own width, or less where the lane squeezed the pill): never a marquee (the
+        // owner, 2 Nov 2026, 0.2.1) - one line, shrunk, else two lines at a smaller size >= the floor, the ellipsis only
+        // as the last resort (promptfit FitLabel); + 0.5 px: the measure's own rounding never cuts a label that fits
+        const float room = x + L.ctxW[i] - lx + 0.5f;
+        const promptfit::LabelFit lf = promptfit::FitLabel(
+            m.ctx[i].label, lab, TextFloor(), room, [](const std::wstring& s, float z) { return TextWidth(s, z, 0.06f); });
+        const float tall = lf.lines == 2 ? L.ctxTall : 0.0f, top = y - 0.026f * H * k - tall, yc = y - tall * 0.5f;
+        Plate(x - 0.012f * H * k, top, x + L.ctxW[i] + 0.012f * H * k, y + 0.026f * H * k, 0.026f * H * k,
+              kTL | kTR | kBR | kBL, 150 / 255.0f, kChrome, 0);
         float cx = x;
         if (at == promptfit::WordAt::Before)
-            cx += Text(cx, y, L"HOLD", CtxHold(L), wordArgb, Left, 0.06f) + promptfit::GapBefore(g);
+            cx += Text(cx, yc, L"HOLD", CtxHold(L), wordArgb, Left, 0.06f) + promptfit::GapBefore(g);
         // the keyboard form's keycap is the TIGHT cap (UI_HUD2.md 5.22: the regular SHIFT+W cap, 0.10 H, pushed "[SHIFT+W]
         // CANCEL CRUISE" past the left lane at 16:9 and its label scrolled; the tight one is 0.086 H)
-        const float gw = DrawPrompt(m.ctx[i], 0, 0, g, 0, true, true);
-        const float extra = at == promptfit::WordAt::Above ? std::max(0.0f, TextWidth(L"HOLD", CtxHold(L), 0.06f) - gw) : 0.0f;
         if (at == promptfit::WordAt::Above) // stacked above the glyph, centred on it, just over the plate
-            Text(cx + (gw + extra) / 2, y - 0.026f * H * k - 0.001f * H - ws / 2, L"HOLD", CtxHold(L), wordArgb, Center,
-                 0.06f);
+            Text(cx + (gw + extra) / 2, top - 0.001f * H - ws / 2, L"HOLD", CtxHold(L), wordArgb, Center, 0.06f);
         else if (at == promptfit::WordAt::Ring) // (b): in the broken ring's top gap (only where it fits at the floor)
-            Text(cx + gw / 2, y - g * 0.62f, L"HOLD", CtxHold(L), wordArgb, Center, 0.06f);
+            Text(cx + gw / 2, yc - g * 0.62f, L"HOLD", CtxHold(L), wordArgb, Center, 0.06f);
         cx += extra / 2;
-        DrawPrompt(m.ctx[i], cx + gw / 2, y, g, Argb(kChrome, 1), false, true);
+        DrawPrompt(m.ctx[i], cx + gw / 2, yc, g, Argb(kChrome, 1), false, true);
         cx += gw + extra / 2;
         if (at == promptfit::WordAt::OverLabel) // (b2): over the label's start, just over the plate
-            Text(cx + g * 0.3f, y - 0.026f * H * k - 0.001f * H - ws / 2, L"HOLD", CtxHold(L), wordArgb, Left, 0.06f);
-        // the label in the pill's room (its own width, or less where the lane squeezed the pill: then the fit rule,
-        // then the marquee; + 0.5 px: the measure's own rounding never cuts a label that fits)
-        const float lx = cx + g * 0.3f, room = x + L.ctxW[i] - lx + 0.5f;
-        TextMarquee(lx, y, m.ctx[i].label, lab, room, Argb(kInk, 1), Left, 0.06f);
+            Text(cx + g * 0.3f, top - 0.001f * H - ws / 2, L"HOLD", CtxHold(L), wordArgb, Left, 0.06f);
+        if (lf.lines == 2)
+        {
+            const float d = lf.size * promptfit::kWrapPitch * 0.5f;
+            Text(lx, yc - d, lf.line[0], lf.size, Argb(kInk, 1), Left, 0.06f);
+            Text(lx, yc + d, lf.line[1], lf.size, Argb(kInk, 1), Left, 0.06f);
+        }
+        else
+            Text(lx, yc, lf.line[0], lf.size, Argb(kInk, 1), Left, 0.06f);
     }
     return total;
 }

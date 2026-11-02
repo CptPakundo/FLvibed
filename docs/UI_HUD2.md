@@ -788,3 +788,148 @@ CRUISE ON text still hides the ship. We should really make sure the lower center
   the reticle lane" (`UI_SPEC.json` value_ids alert `second`) needs a new home. The living spec mock
   (`tools\uimock\hud2_states.py`, not edited) must show CRUISE ON inside the ring, TRACTOR n in the right lane, the
   throttle word beside its arc and Focus's band inside the circle.
+
+### 5.24 The 0.2.1 hotfix: prompts wrap, show on change, the maneuver lock answers (2 Nov 2026; built; run in game: lint 0 FAIL)
+- **Prompts never marquee** (the owner): a context prompt's label too long for its lane wraps onto two lines
+  (`core\game\promptfit.h` FitLabel: one line; one line shrunk down to 0.85 x nominal; two lines at the best word split,
+  0.85 x nominal, shrunk to the floor where needed - never under `textfit::MinSize`; the ellipsis at the floor only as the
+  last resort). A lane squeezes a prompt no narrower than its label's two-line width at the floor (LabelMinWidth); a
+  squeezed prompt (`wrap` in `hud2 state`) grows its plate 0.008 H x k upward (0.060 tall, bottoms aligned) and the row
+  above in its lane moves up by the same (PlaceLanes `tall`), so two-line prompts never meet each other or the panels;
+  the lines' centres 1.0 em apart (0.95 overlapped by 2.6 px: the lint's panel.overlap). Panel names keep the marquee.
+- **`hud_prompts`** (Int 0..1, default 1; `core\game\promptshow.h`, the Focus preset's "gone when not needed"): 1 = the
+  lanes show on a change of the prompt set (its signature as the model built it, before the layout's trim) or after a
+  player action (`hud2::NoteAction`: the pad's maneuvers, cruise, targeting, the wheel's actions through Apply; the
+  keyboard's through ImplApi v4 OnKeyCmd; a target switch / clear by any input), 4 s, then the context fade (tau 0.12 s);
+  0 = always (0.2.0). The modal prompt bar (game boxes, pickers) is not affected.
+- **The maneuver lock's answer** (a player report, M01 after joining Brandt's formation): while `space::Pilot::locked`
+  (IBehaviorManager +0xBC, Act_LockManeuvers) a pad or key free flight / formation / dock / goto logs `event maneuvers
+  locked: <action> refused` and shows the alert card LOCKED BY THE MISSION (warning amber, 2.5 s, not gated by
+  `hud_alerts`); the request still reaches the game. The classic HUD: log only (the game greys its maneuver bar).
+- Evidence: `research\experience\runs\hotfix_021_2026-11-02\` (run.txt; `j_` the K&M CTRL+R TARGET AHEAD on two lines at
+  4K, `b_` the lanes hidden in calm, `c_` shown after a target switch, `e_` / `l_` the lock card after pad B in formation).
+  Lint at 4K calm: 0 FAIL at 100 % and at hud_scale 130 x text_size 150; in formation one pre-existing FAIL (value.twice:
+  the leader's name on the card and in the ship panel), not the lanes.
+
+### 5.25 The 0.2.1 hotfix, second round: the contextual HUD, the wheel's look (2 Nov 2026; built; run in game: lint 0 FAIL)
+- **`hud_fade` = 0 FULL / 1 CONTEXTUAL** (the default; the owner's decisions of 2 Nov 2026). CALM DIMS and MINIMAL retired
+  (the registry clamps a stored 2 to 1; the code reads anything but 0 as 1). Rule: `core\game\hudwake.h` (test
+  `tests\hudwake_test.cpp`): per-element wake timers (ring + speed, ship panel, loadout, target card + list, nav), 4 s
+  after the last trigger, then the existing ease. Triggers: the pad's steering past 0.15 (Context::steer), boost (the
+  model's burner), fire / launcher (Context::firing) and any change of the loadout's counts, a target switch / clear (any
+  input), the maneuver chip's change (goto, dock, formation, free flight, any input) and the pad / key actions
+  (NoteAction's wake bits), cruise on / off / charging and engine kill, a hit, an objective change. Always up: a fight
+  (the state not calm), a modal / NeuroNet window (everything), low shield (< 25 %) / hull (< 50 %) (ring + ship),
+  incoming missiles (ring); the alert card is never faded; the prompts follow `hud_prompts`, the card corner's LB hints
+  with them, the K&M list without a target with the target element. Under CONTEXTUAL the ring's speed / cruise readout
+  go with the ring (DrawRing kept them at 60 % of a dimmed ring). Focus keeps its own reveal. The nav now has a fade
+  (`g_f.nav`). Gap: K&M mouse steering is not a steer trigger (the pad's only); keys / clicks wake through their actions.
+  The spec's `hud2_presets` bundles still name Focus's hud_fade 2 (read as 1).
+- **The action wheel's look** (`wheel.cpp`): under HUD 2 drawn by HUD 2's kit - each command on a glass plate (chamfer
+  TL / BR, hairline rim; the pick: yellow rim + accent edge + yellow text), outlined HUD 2 text, a 22 % glass disc with a
+  faint rim behind (the scene shows through), the stick's path ring, the pick's name below the reticle ring; under the
+  classic HUD the game's space-HUD panel (`uidraw::HudPanel`, 55 % / 80 % picked) over a ~15 % navy disc.
+- Evidence (`research\experience\runs\hotfix_021_2026-11-02\`, free-roam SaveC705, popups stepped): `k_ctx_idle_hud_gone-012517`,
+  `k_ctx_steering_ring_speed-012519`, `k_ctx_boost-012526`, `k_full_mode-012536`, `w_wheel_hud2-012541`,
+  `w_wheel_classic-012545`; the card waking on a target switch `k_ctx_target_switch_card-012314` (M01 save: SaveC705 had
+  nothing in the ring's cone). Lint: contextual idle PASS, target card PASS / WARN, full WARN - 0 FAIL throughout.
+
+### 5.26 The 0.2.1 hotfix, third round: panels sized to content, the compact wheel, the mouse wakes the ring (2 Nov 2026; built; partly verified)
+- **Panels sized to their content** (the owner: "they only need to be as big as the content they display"): Standard's
+  target card (with the threat / contact list under it: the wider of the two), ship panel and loadout base panel take
+  the width their texts, icons and paddings need (`hud2_parts.cpp` / `hud2_click.cpp` `*ContentWidth`, mirroring the
+  Draw functions' columns; the loadout counts a gun row's two-line wrap while a spare line is left), floored at
+  0.30 / 0.22 / 0.26 H x k (`hud2_layout.h` kCardMinW / kShipMinW / kLoadMinW), eased in `hud2.cpp` (grows at 14 / s,
+  shrinks at 5 / s and only past 0.012 H x k: kContentHyst - a ticking value never breathes the panel; a new scale or
+  screen snaps), anchored to their corners, margins unchanged; the prompt lanes follow the panels' edges as before.
+  **Maxima, not fixed widths now:** `std_ov::kCardW` 0.44, `kShipW` 0.31, `kLoadW` 0.40 / `kLoadWKbm` 0.44 (and the
+  spec's card / ship / loadout widths they stand in for). Fixed as before: every height, the stacked consumables' cross
+  (`kConsW` / `kConsWKbm`), Focus's corners (its compact card, free-text bottom-left and fire strip keep their widths).
+  The layout core takes the eased widths as `Measures::cardW / shipW / loadW` (0 = unmeasured = the maxima: the pinned
+  geometry tests unchanged; `hud2_layout_test` pins the fit, the cap and the easing).
+- **The compact wheel** (both looks, the owner's addition): a label of two or more words on two lines
+  (`promptfit::SplitLabel`, the prompts' two-line rule: AUTOPILOT / GOALS, CRUISE / DISRUPTOR, CONTACT / FILTER ...) at
+  the same size; the radius the smallest at which every plate clears the reticle ring + 0.035 H x k (its arcs and
+  chevrons; the classic: 0.09 H) and every other plate by 0.010 H x k (`wheel.cpp` CompactRadius), at most the old
+  0.2 H; the disc fits the plates' outer corners. The picked name repeated under the ring is gone in both looks (it
+  crossed CONTACT FILTER / FORMATION; the picked plate is highlighted).
+- **The mouse wakes the ring** (hud_fade 1): `hudwake::Steer` also fires while the pad does not own the input in space
+  and the game's mouse flight is engaged (`exe::MouseFlightEngaged`) with the cursor 0.03 H off centre, or the game's
+  cursor moved over 0.004 H in a frame.
+- **The mouse cursor hides too** (hud_fade 1; the owner: "100% full contextual hiding and re-appearance"): in flight
+  with the keyboard and mouse the game's cursor hides after 3 s without mouse movement or a button
+  (`hudwake::CursorStep`, `kCursorIdleS`; test `tests\hudwake_test.cpp`) and shows the frame either comes. Shown in
+  every other context: not Mode::Space, the pad owning the input (its virtual cursor), a flight modal, HUD 2 not
+  active or a menu over it, a cinematic, any non-HUD window (`OnlyHudOpen`: the pause menu, popups, NeuroNet windows),
+  the options page, a FLUF input window (`flufaware::InputWindowOpen`), mouse flight engaged, an unresolved mouse
+  symbol. Mechanism: the game's own cursor-shown flag through HostApi v20 `SetCursorHidden` (the pad screens' path,
+  `FREELANCER_RE.md` "Hiding the arrow"), the two sources OR-ed in `impl\host.h` `HostCursorHide`. `hud2 state` prints
+  `cursor=shown|hidden`.
+- `docs\UI_SPEC.json` bundles: Focus's hud_fade 2 -> 1 (2 is retired), `core\ui_meta.h` regenerated.
+- Evidence (release, main install, SaveC705): `r3_panels_calm-013621`, `r3_panels_combat-013627` (the ship panel
+  narrower: 0.31 -> its content; the loadout stays at its 0.40 maximum: the launcher row "JAVELIN MISSILE 36" + LOCKED's
+  column need more). Lint calm / combat / wheel: 0 FAIL (1-2 WARN). **Not verified:** the wheel frames
+  (`r3_wheel_hud2-013628`, `r3_wheel_classic-013631`) caught no open wheel (the debug `wheel open` did not show it this
+  run - not diagnosed); the mouse wake - the harness's virtual mouse (`mouse x y`, `mbtn`) did not reach the game's cursor
+  in the background run (`state` read mouse=(1920,1080) buttons=0x0 throughout), so the trigger never saw motion.
+
+### 5.27 The 0.2.1 hotfix, fourth round: the nav and the picker sized to content, real free room (2 Nov 2026; built; partly verified)
+- **The nav** (Standard and Focus): its box's right edge and bottom and its soft scrim follow the drawn lines
+  (`hud2.cpp` ComputeLayout: at once when they grow, `EaseContent` when they shrink - gently, only past kContentHyst);
+  Standard's box height = the drawn bottom + 0.01 H, floored at `kNavMinH` 0.10 H x k, today's 0.29 / 0.338 the maximum
+  (`hud2_layout.h`; 0 = unmeasured = the maximum). The formation / waypoint bar, its ETA and the AUTOPILOT / TURRET VIEW
+  chips now count in the nav's extent (they were outside it). The text cap `navMaxX` is unchanged.
+- **The target picker** (`picker.cpp`): width = header / category strip / the widest row over EVERY category (switching
+  categories never resizes it), rows = the fullest category's (floor 3, at most 7); the old 0.42 H x ts / 0.45 W and 7
+  rows the maxima; eased the same way, right edge and screen middle anchored; columns from the measured widths.
+- **Real free room** (the owner: "make full use of horizontal and vertical space that is allotted and won't be scaled
+  down and removed"; a label scrolls / wraps / shrinks only past the room its element keeps anyway): the rule for every
+  HUD 2 marquee. Applied: the loadout's launcher row (`hud2layout::RowRoom`, unit-tested) takes LOCKED's column only
+  while LOCKED shows. **Not yet applied** (open): a second line in a panel's spare height before a marquee, and an audit
+  of the other marquees (ship names, card name, threat list) - they already take their row's width to the panel edge.
+- Tests 0 failures (hud2_layout: nav height fit / floor / cap, RowRoom). In game (release, main install, SaveC705):
+  `hud2 lint` K&M calm ran (first finding WARN prompts.pairs); cursor: idle 4.5 s -> hidden; nav map
+  (`tap USER_NAV_MAP`) -> shown, and still shown after it closed. **Not verified:** the pause menu - `key 0x1B` did
+  not open it in the background game (mode stayed space, cursor stayed hidden), so the menu re-appearance is untested;
+  the r4_ frames - the capture helper failed (no PNGs written), so there are no before / after frames.
+
+### 5.28 The 0.2.1 hotfix, fifth round: real room everywhere, a second line before a marquee, the cursor's fail-safe (2 Nov 2026; built; verified in game except the long-launcher wrap)
+- **The rule** (closes 5.27's open items): a HUD 2 label scrolls only past the room its element keeps anyway. Panels
+  size to their one-line content up to their maximum (`LoadoutContentWidth`'s gun rows now measure one line: round 4
+  measured the narrowest two-line split, so a row wrapped inside a panel that could still grow); where the panel keeps
+  spare height a too-long row takes a second line before it scrolls: `hud2layout::TwoLineSplit` (pure, unit-tested:
+  the most whole parts that fit line one, at least one; no break = marquee) for the gun rows (`drawNames`, split at the
+  separator) and the launcher row (`DrawLoadout`: its first words on the free gun line above it, the whole width to the
+  right edge; only when the rows above left that line unused). The other marquees audited: ship name, card name /
+  faction (`ClearRoom`), threat list, nav lines already take their row's real room; the ship name and the threat list
+  rows now go through `hud2layout::RowRoom` (the threat row reserves its distance gap only when a distance shows).
+- **The target picker** (`picker.cpp`): the category strip neither scrolls nor wraps, so it is the width's floor up to
+  0.45 W (at the 0.42 H x ts cap it ran past both edges at 4K, frame r5_picker_full); the rows use that width too
+  (the lane names no longer cut).
+- **The cursor's fail-safe** (`controller.cpp`): eligible for the idle hide only when the debounced AND this frame's
+  detected mode are space and the game is not paused (`fl::GamePaused`), so every non-flight screen shows it the same
+  frame; a disabled logic releases the idle source before its early return.
+- Verified (release, main install, SaveC705, 4K, `run hotfix_021_2026-11-02`): tests 0 failures (59 tests); cursor
+  idle 4.5 s -> hidden; `Send-FL pause` -> paused=1, shown (still shown 4 s later); resumed (`click PauseButtonBox0`) ->
+  shown at +0 and +1.5 s, hidden at +4.5 s. `hud2 lint` 0 FAIL: K&M calm WARN prompts.pairs (13 prompts, cap 5); pad
+  with the picker open WARN budget (boxed 11.5 %, budget 10 %: the wider picker counts). Frames r5_flight_full,
+  r5_nav, r5_ship, r5_loadout (live "JAVELIN MISSILE" fits one line), r5_picker_full (before the picker fix),
+  r5_picker2_full / r5_picker (after). **Not verified in game:** the launcher's second line (no live or sim launcher
+  name is long enough; unit-tested only).
+
+### 5.29 The 0.2.1 hotfix, sixth round: the pad's cursor, heights to content, turret view, fire wakes all (2 Nov 2026; built; verified in game except the K&M fire keys)
+The owner's test findings: (1) the game's cursor now hides with the pad in control too (`core\game\hudwake.h`
+CursorStep: 3 s, the same rule; the pad's own aim / steering are not activity, a real mouse hands the device back and
+shows it; menus / map / modals stay the fail-safe; controller.cpp). (2) The ship panel and the loadout base panel fit
+their HEIGHT to their rows (`hud2_parts.cpp` ShipContentHeight / LoadoutContentHeight; floors `hud2layout::kShipMinH`
+0.09 / `kLoadMinH` 0.075, the old 0.15 the maximum, eased with the widths' hysteresis, anchored to the bottom margin;
+Standard's launcher row keeps its pad over the bottom edge); A5's equal-height rule (5.19) is dropped, the
+consumables' cross stacks on the loadout's new top. (3) Turret view out of a fight is calm flight for CONTEXTUAL (it
+forced the whole HUD before); entering / leaving it wakes nav, ship and ring (the chip), then the HUD fades. (4) Any
+fire input's PRESS - guns, launcher, CM / mine / torpedo / disruptor, fire-all, a group trigger, locked or empty -
+wakes every element (`hudwake::FireInput`; the pad's in controller.cpp, the K&M keymap's keys in hud2.cpp, only with
+the game's window in front). Run hotfix_021_2026-11-02 (release, SaveC705, pad): idle 4.5 s cursor=hidden kbm=0; an
+RT tap from shown=0 -> shown=31, back to 0 after the linger; turret entry shown=19, idle 6 s shown=0; frame
+r6_loadout (Starflier: one group + an ungrouped gun + the launcher: loadout 264 px = 0.122 H, the cross on its top;
+ship panel full 0.15 with CREDITS). **Not verified:** the K&M fire keys in game (the test game runs in the background:
+the foreground gate holds them off), the live `hud2 lint` (only armed; unit tests 0 failures).

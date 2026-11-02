@@ -1,0 +1,10 @@
+{
+  "_about": "0.2.1 hotfix (2 Nov 2026): the player row hud_prompts (0 always shown, 1 shown on a change or an action, the default), after hud_context. Apply with specpatch.py to part2_data.js and docs/UI_SPEC.json (and the artifact's ui/spec, pinned set, after reading). Registry: controller/src/impl/controller.cpp hud_prompts; rule: core/game/promptshow.h.",
+  "add_rows": {
+    "controller/HUD": {"after": "hud_context", "rows": [
+      {"key": "hud_prompts", "label": "Show context prompts", "kind": "picker", "options": ["ALWAYS", "ON CHANGE"], "def": "ON CHANGE",
+       "help": "When the context prompts show in flight. On change: they appear when they change or right after you act (dock, cruise, a target, a maneuver), stay four seconds, then fade out. Always: they stay on screen.",
+       "tier": "player", "needs": "live"}
+    ]}
+  }
+}

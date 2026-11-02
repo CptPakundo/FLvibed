@@ -5,7 +5,7 @@ in the source and regenerate.** `set <name> <value>` / `ap set` change a value l
 help lines; `config settings` / `ap settings` / `settings` list them in the game. Behaviour, measurements and the why of
 each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, `controller\docs\HUD_CUES.md`.
 
-## [Controller] - EXE\FLController.ini [Controller] (69 keys; source `controller\src\impl\controller.cpp`)
+## [Controller] - EXE\FLController.ini [Controller] (71 keys; source `controller\src\impl\controller.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -31,6 +31,7 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `aim_rotation` | float | 0 .. 1 | 0.6 | aim_mode 0: rotational assist strength |
 | `aim_rotation_max` | float | 0 .. 1 | 0.15 | aim_mode 0: rotational assist cap |
 | `focus_only` | bool | 0 \| 1 | true | ignore the controller while the game is in the background, in flight and menus alike (a button held when the game comes back is ignored until it is released) |
+| `maneuver_watchdog` | bool | 0 \| 1 | true | 1 = if your ship stalls during a formation, goto or dock (nearly stopped for 3 s, its goal more than 150 m away and not getting closer, you not steering), FLvibed issues the same maneuver again (up to 3 times, 10 s apart) and logs what happened |
 | `run_in_background` | bool | 0 \| 1 | false | 1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back to Windows meanwhile |
 | `shield_cue` | bool | 0 \| 1 | true | screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it fails |
 | `shield_cue_intensity` | float | 0 .. 2 | 1.0 | shield_cue strength (alpha and size) |
@@ -65,12 +66,13 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `livesplit_gametime` | bool | 0 \| 1 | true | pause LiveSplit's game time during loads (a loadless comparison); real time keeps running |
 | `autopilot_key` | string | - | K | the keyboard key that toggles the autopilot (a key name: K, F10, Insert); a key the game binds is refused |
 | `hud_style` | int | 0 .. 2 | 2 | the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 1 HUD 2 on the pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always (default); HUD 2 includes its look over the menus and rooms (ui_style) |
-| `hud_fade` | int | 0 .. 2 | 1 | HUD 2 in calm flight: 0 always full, 1 calm dims (the ring and the side panels fade back), 2 minimal (calm flight hides the side panels and the ring; anything that changes brings its part back for a few seconds) |
+| `hud_fade` | int | 0 .. 1 | 1 | HUD 2 in flight: 0 full (always shown), 1 contextual (fades out in calm flying; each part comes back for 4 s when it matters: steering, boost, a target, firing, a maneuver, a new objective; alerts, low shield / hull, missiles and fights always show) |
 | `hud_opacity` | int | 40 .. 100 | 100 | HUD 2's overall opacity in percent |
 | `hud_scale` | int | 80 .. 130 | 100 | HUD 2's size in percent |
 | `hud_numbers` | int | 0 .. 2 | 0 | the numbers at the ring's shield and hull arcs: 0 only when low, 1 always, 2 never |
 | `hud_threats` | bool | 0 \| 1 | true | HUD 2 lists the next hostiles under the target card during a fight |
 | `hud_context` | int | 0 .. 1 | 0 | the buttons for what you can do now, under your ship: 0 contextual, 1 off |
+| `hud_prompts` | int | 0 .. 1 | 1 | when the context prompts show in flight: 0 always, 1 when they change or right after you act (dock, cruise, a target, a maneuver), then they fade out after 4 seconds |
 | `hud_alerts` | bool | 0 \| 1 | true | short warning cards at the top (shield failing, missile incoming, cargo hold full) with the buttons that answer them |
 | `hud_info` | bool | 0 \| 1 | true | extra information when it matters: docking queue, jump countdown, mission timers, formation, tractor |
 | `hud_wireframes` | bool | 0 \| 1 | true | the game's wireframe views in the target card and the ship panel where they can be kept (else flat icons) |
@@ -249,7 +251,7 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `consumables` | word | needed | never | needed | sets missiles, repair and countermeasures together (user, 18 Oct 2026) |
 | `p.<field>` | string | - | - | a personality field of the [Pilot] by its ini name (e.g. p.trail_distance = 200) |
 
-## [Subtitles] - EXE\FLSubtitles.ini [Subtitles] (41 keys; source `subtitles\src\impl\display.cpp`)
+## [Subtitles] - EXE\FLSubtitles.ini [Subtitles] (42 keys; source `subtitles\src\impl\display.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -289,6 +291,7 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `stack_fit` | float | 0.5f .. 1 | 0.7 | stacked speakers' lines shrink together (down to this size) so the stack keeps about one line's height; 1 = off |
 | `chat_layout_narrow` | int | 0 .. 1 | 1 | chat log NPC lines on narrow screens: 1 a header row with name and faction, 0 the column layout |
 | `chat_layout_wide` | int | 0 .. 1 | 1 | the same on wider screens |
+| `chat_size` | int | 0 .. 1 | 0 | HUD 2's side chat text size: 0 normal (a little larger than the game's chat text), 1 large |
 | `speaker_colors` | bool | 0 \| 1 | true | story speakers' names in their own colours; 0 = every name by the speaker's relation to you |
 | `movie_fit` | bool | 0 \| 1 | true | movies keep their aspect ratio and the encoded black bars are zoomed out of view |
 | `movie_skip` | int | 0 .. 1 | 0 | the startup movies: 0 play, 1 skip (natively, as a finished movie) |

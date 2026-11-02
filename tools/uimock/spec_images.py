@@ -35,6 +35,17 @@ S020_NAMES = {
     'm_lane': 'final_lane',
 }
 
+# the 0.2.1 hotfix frames (2 Nov 2026, release build): wheel, contextual HUD, prompts, stack fit, chat sizes, panels
+S021 = os.path.join(RUNS, 'hotfix_021_2026-11-02')
+S021_NAMES = {
+    'p_wheel': 'r3v_wheel_hud2-013842', 'w_wheel_classic': 'r3v_wheel_classic-013845',
+    'k_idle': 'k_ctx_idle_hud_gone-012517', 'k_steer': 'k_ctx_steering_ring_speed-012519', 'k_boost': 'k_ctx_boost-012526',
+    'k_full': 'k_full_mode-012536', 'k_wrap': 'crop_j_wrap', 'k_lock': 'crop_e_alert', 's_stack_new': 's_settled-012426',
+    'c_chat_normal': 'chat_normal', 'c_chat_large': 'chat_large', 'k_panels': 'r6_loadout-025350',
+    'p_picker': 'r5_picker2_full-021844', 'x_mainmenu_h2': 'm_mainmenu_hud2-022305', 'x_popup_h2': 'm_popup_hud2-022346',
+    'x_mainmenu_cl': 'm_mainmenu_classic-022442',
+}
+
 # page name -> source
 FLIGHT = {
     'f_combat_h2': os.path.join(REFRESH, 'final_combat.png'),
@@ -162,6 +173,8 @@ def main():
         save(os.path.join(X, k + '.png'), 'a_' + k.replace('final', ''), 1200)
     for n, f in S020_NAMES.items():   # last: the 0.2.0 captures replace the older sources of these names
         save(os.path.join(S020, f + '.png'), n)
+    for n, f in S021_NAMES.items():   # the 0.2.1 captures last
+        save(os.path.join(S021, f + '.png'), n)
     print(len(os.listdir(OUT)), 'images in', OUT)
 
 

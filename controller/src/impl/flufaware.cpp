@@ -111,6 +111,17 @@ bool PaletteOpen() { return (g_state.kinds & (1u << FlufPalette)) != 0; }
 
 bool HoldsKeys() { return fluf::HoldsKeys(g_state); }
 bool OwnsPad() { return fluf::OwnsPad(g_state, g_haveExtra ? &g_extra : nullptr); }
+bool InputWindowOpen()
+{
+    if (!g_state.present)
+        return false;
+    if (g_state.textInput || g_state.palette)
+        return true;
+    for (int i = 0; i < g_state.count && i < kHudFlufMax; ++i)
+        if (fluf::TakesInput(g_state, g_haveExtra ? &g_extra : nullptr, i))
+            return true;
+    return false;
+}
 
 bool CloseTarget(bool& byEscape, float& fx, float& fy, std::string& name)
 {

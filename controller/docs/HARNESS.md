@@ -207,6 +207,11 @@ part of their topic; `deploy.ps1` parse-checks every `*.ps1` in the tool folders
   Enter-FLScenario <name>, Invoke-FLBenchRun -UntilSpawnsDead, Invoke-FLScenarioAB; results in `research\bench`),
   `..\tools\flfights.ps1` (fight matrix), `..\tools\flsweep.ps1` (regression sweep), `..\..\tools\flbenchhist.ps1`
   (timing history across sweeps), `..\..\tools\fltest.ps1` (one test start with run folder + manifest).
+- Sweep section `target-churn` (0.2.1, 2 Nov 2026): SaveC705, a game formation on the nearest friendly, a game goto to
+  a station > 4 km and the Advanced Autopilot's dock, each with 6 s of target churn (next enemy, clear, double clear,
+  station / planet / sun / farthest object, 0.15 stick nudges); PASS = maneuver kept (or ended at its goal), no stall
+  (< 5 m/s > 3 s with the goal > 150 m), formation held within 300 m, goal not receding, FLvibed answering; reports the
+  maneuver watchdog's lines (`event maneuver stalled`, `maneuver watchdog: re-issue ...`; setting `maneuver_watchdog`).
 
 ## subtitles\tools\flsub.ps1
 `Send-FLS`, `Watch-FLGame` (`-LinePattern`, `-ShotMs`), `Wait-FLSShown` + `Get-FLSLast` (for `-After`; works during

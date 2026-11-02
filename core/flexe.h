@@ -375,6 +375,8 @@
     X(VtDealer, Data, 0x5D192C, 0x47FC7B, 9, "44 24 1C 03 00 00 00 C7 06 ?? ?? ?? ?? C7 46 7C") /* NN_Dealer (commodity / equipment dealer; draw 0x479700, no own art) */ \
     X(VtInventory, Data, 0x5D0EEC, 0x477DC4, 1, \
       "06 ?? ?? ?? ?? C7 46 7C ?? ?? ?? ?? 8B 86 60 03 00 00 33 DB") /* NN_Inventory (the dealers' panels: own INV_biginforcard.cmp at +0x84) */ \
+    X(VtMissionMessage, Data, 0x5D24F4, 0x48A45F, 6, \
+      "89 74 24 04 C7 06 ?? ?? ?? ?? C7 46 7C ?? ?? ?? ?? 33 C0 A3") /* the NeuroNet mission message box (pub::Player::PopUpDialog: M01's tutorial boxes, MMOkButton / MMYes / MMNo / MMLater; uiskin's "popup" family, 2 Nov 2026) */ \
     X(VtMissionVendor, Data, 0x5D26BC, 0x48B37B, 7, \
       "44 24 2C ?? ?? ?? ?? ?? ?? ?? ?? C7 45 7C ?? ?? ?? ?? C7 85 2C 03 00 00") /* NN_MissionVendor (the job board; layer 100, its art children) */ \
     X(VtNews, Data, 0x5D3FDC, 0x4A404B, 3, "CF C7 06 ?? ?? ?? ?? C7 46 7C ?? ?? ?? ?? C7 86 2C 03 00 00") /* NN_News */ \

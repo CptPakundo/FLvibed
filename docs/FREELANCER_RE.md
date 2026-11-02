@@ -1640,6 +1640,9 @@ and HDE 0.7.1 / upstream: same TimeDateStamp 0x3ECBB142, same RVAs; v1.0's diffe
 - **Front-end buttons** (main menu and its screens) are FlControls with their own mouse handlers; a release does
   `parent->vt[0x5C](0x3004, id, 0)` if enabled (the screen plays the click sound): handler 0x5664A0 (main menu:
   enabled byte +0xE6, id +0xEC) and 0x59A3D0 (character select etc.: enabled +0x498, id +0x4A4).
+- **Mission / tutorial message box** (M01's "Enter formation with the USV Brandt" etc.): its window's vtable is 0x5D24F4
+  (`exe::VtMissionMessage`, signed 2 Nov 2026 with sigtool on the 0.7.1 install; its OK button = `MMOkButton`); the HUD 2
+  skin draws its plate from the box's own rect (89042a3e). Not yet checked against the upstream HDE exe.
 - **Main menu** = static object 0x67B780 (vt 0x5E27CC, handler vt[0x5C] = 0x566BD0). Unnamed buttons with ids
   0x10 New Game, 0x03 Load Game, 0x04 Multiplayer (confirmation dialog 0x4740F0), 0x0A Options, 0x0B Exit
   (0x471F30; **asks "EXIT GAME?"** - verified 28 Oct 2026, HDE and vanilla: `ExitButtonBox0` = YES (left),

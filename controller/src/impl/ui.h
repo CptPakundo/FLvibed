@@ -71,4 +71,7 @@ std::vector<uintptr_t> VisibleRoots();
 // +0x3C frame), whatever its class and state: the passive panels Collect skips (the Options screen's "big box") can be
 // measured. False when the control cannot be read or projects behind the camera.
 bool ControlRect(uintptr_t ctl, Item& out);
+// A main-menu front button's (VtFrontButton) projected rect: its translation +0x60 and its hit size +0xB4 spanning right
+// and down (Collect's rule); false when it is not projectable or has no size.
+bool FrontButtonRect(uintptr_t ctl, Item& out);
 } // namespace ui

@@ -149,6 +149,19 @@ static bool TextFieldFocused()
     return true;
 }
 
+static void GuardedKeyCmd(int cmd, bool down)
+{
+    __try
+    {
+        g_impl->OnKeyCmd(cmd, down);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        HostFailSafe();
+        Log("FATAL: exception 0x%08X in OnKeyCmd; logic disabled until reload", GetExceptionCode());
+    }
+}
+
 static bool GuardedRawKey(int vk, bool down, bool textField)
 {
     __try
@@ -656,6 +669,9 @@ static HandleKeyFn g_origHandleKey = nullptr;
 static bool __cdecl HandleKeyHook(int cmd, int category)
 {
     const bool handled = g_origHandleKey(cmd, category);
+    // ImplApi v4: the logic sees the key command after the game handled it (the maneuver lock's answer, 0.2.1)
+    if (g_impl && !g_faulted && g_impl->version >= 4 && g_impl->OnKeyCmd && cmd != fl::USER_MOVE)
+        GuardedKeyCmd(cmd, exe::KeyIsDown.ok() ? Mem<u8>(exe::KeyIsDown) != 0 : true);
     if (g_traceKeys && cmd != fl::USER_MOVE)
         Log("HandleKey %s(%d) cat=%d down=%d vk=0x%X -> %d", fl::CmdNameRaw(cmd), cmd, category,
             Mem<u8>(exe::KeyIsDown), Mem<u32>(exe::KeyCurVk), handled);

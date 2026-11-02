@@ -570,6 +570,104 @@ Section 'combat-missiles' {
     "kills $kills, stray rounds 0, missiles: $($out -join ' ')"
 }
 
+Section 'target-churn' {
+    # Ship controls and autopilots stay robust to capricious targeting (the owner, 2 Nov 2026, after the M01 formation
+    # stall at LockManeuvers; the maneuver watchdog, controller\src\impl\maneuver_watch.h): from free roam (SaveC705)
+    # a game formation on a nearby friendly, a game goto to a station and the Advanced Autopilot's dock each get 6 s of
+    # target churn (next enemy, clear, double clear, a station, a planet, the sun, the farthest object, back) with small
+    # pad stick nudges (0.15 for 0.3 s). PASS per leg: the maneuver kept running (or ended at its goal), no stall
+    # (< 5 m/s for > 3 s with the goal > 150 m away), the distance to the leader / goal not growing (formation: held
+    # within 300 m), FLvibed answering.
+    Boot SaveC705.fl
+    $null = Step-FLPopups -Now
+    $start = $script:FLLogSeq
+    $cs = @(Get-FLContacts -All)
+    $friend = $cs | Where-Object { $_.Ship -and $_.Attitude -gt 0.2 -and $_.Distance -lt 6000 } | Sort-Object Distance | Select-Object -First 1
+    $stations = @($cs | Where-Object { $_.Dock -and -not $_.Ship -and $_.Type -notmatch 'lane|ring|gate|hole' } | Sort-Object Distance)
+    $planet = $cs | Where-Object { $_.Type -match 'planet' } | Select-Object -First 1
+    $sun = $cs | Where-Object { $_.Type -match 'sun|star' } | Select-Object -First 1
+    $far = $cs | Sort-Object Distance -Descending | Select-Object -First 1
+    $gotoTo = $stations | Where-Object { $_.Distance -gt 4000 } | Select-Object -First 1
+    if (-not $gotoTo) { $gotoTo = $stations | Select-Object -Last 1 }
+    $dockTo = $stations | Select-Object -First 1
+    if (-not $friend -or -not $gotoTo -or -not $dockTo) { throw "fixture: friend=$($friend.Id) station=$($gotoTo.Id) dock=$($dockTo.Id) in $($cs.Count) contacts" }
+    $churn = @({ Send-FL 'tap USER_NEXT_ENEMY' }, { Send-FL 'tap USER_CLEAR_TARGET' },
+               { Send-FL 'tap USER_CLEAR_TARGET'; Send-FL 'tap USER_CLEAR_TARGET' },
+               { Send-FL "settarget $($stations[-1].Id)" }, { if ($planet) { Send-FL "settarget $($planet.Id)" } },
+               { if ($sun) { Send-FL "settarget $($sun.Id)" } }, { Send-FL "settarget $($far.Id)" },
+               { Set-FLPad -RX 0.15; $null = Wait-FLFramesPassed 18 1; Set-FLPad },
+               { Set-FLPad -LX 0.15; $null = Wait-FLFramesPassed 18 1; Set-FLPad }, { Send-FL "settarget $($gotoTo.Id)" })
+    $dist = { param($id) $c = @(Get-FLContacts -All) | Where-Object Id -eq $id | Select-Object -First 1; if ($c) { [double]$c.Distance } else { -1 } }
+    $leg = {
+        param($name, $goalOf, $running, [double]$hold)
+        $p0 = Get-FLPilot; $g = & $goalOf $p0; $d0 = & $dist $g
+        $t0 = Get-Date; $last = $p0; $lastT = $t0; $slowSince = $null; $stall = 0.0; $maxD = $d0; $minV = 999.0; $i = 0; $diag = ''
+        $seq0 = $script:FLLogSeq; $trace = [Collections.Generic.List[string]]::new()
+        while (((Get-Date) - $t0).TotalSeconds -lt 6) {
+            $null = & $churn[$i % $churn.Count]; $i++
+            $null = Wait-FLFramesPassed 20 2
+            $p = Get-FLPilot; $now = Get-Date
+            if (-not $p) { throw "$name`: not in flight after churn $i" }
+            $dt = ($now - $lastT).TotalSeconds
+            $v = if ($dt -gt 0) { [Math]::Sqrt((0..2 | ForEach-Object { [Math]::Pow($p.Pos[$_] - $last.Pos[$_], 2) } | Measure-Object -Sum).Sum) / $dt } else { 0 }
+            $g = & $goalOf $p; if (-not $g) { $g = & $goalOf $p0 }
+            $d = & $dist $g
+            $minV = [Math]::Min($minV, $v); $maxD = [Math]::Max($maxD, $d)
+            $trace.Add(("churn {0} op {1} sel {2} v {3:N1} d {4:N0} | {5} | {6}" -f $i, $p.Op, $p.Target, $v, $d, (Send-FL 'ai state'), (Send-FL 'ai dockport')))
+            if ($v -lt 5 -and $d -gt 150) {
+                if (-not $slowSince) { $slowSince = $lastT; $diag += " [slow at churn $i, op $($p.Op), sel $($p.Target): $(Send-FL 'ap status')]" }
+                $stall = [Math]::Max($stall, ($now - $slowSince).TotalSeconds)
+            } else { $slowSince = $null }
+            $last = $p; $lastT = $now
+            if (-not (& $running $p $d)) { break }
+        }
+        $null = Send-FL 'tap USER_CLEAR_TARGET'
+        $p1 = Get-FLPilot; $d1 = & $dist $g
+        $ok = (& $running $p1 $d1); $alive = [bool](Send-FL 'state')
+        $line = "{0}: op {1}->{2} dist {3:N0}->{4:N0} (max {5:N0}) min speed {6:N1} stall {7:N1}s churns {8}" -f $name, $p0.Op, $p1.Op, $d0, $d1, $maxD, $minV, $stall, $i
+        $why = @()
+        if (-not $ok) { $why += 'maneuver lost' }
+        # The game's dock queue is no stall of ours (2 Nov 2026, churn_stall_2026-11-02_032149_ap-dock.txt: the reused
+        # game's failures were the server's "dock in use - entering queue" - kind 0 response 3, an NPC docking at the same
+        # station - and the game's own dock holding the ship at rest in the queue, op 7 and the autopilot's goal unchanged
+        # through every churn). The client gets only its own replies; queued = the leg's last dock reply is 3.
+        $replies = @(Get-FLEventLog $seq0 | Where-Object { "$_" -match 'request-reply ship=\d+ kind=0 response=(\d+)' } | ForEach-Object { [int]$Matches[1] })
+        if ($stall -gt 3 -and $replies.Count -and $replies[-1] -eq 3) { $line += ' (held in the game''s dock queue)'; $stall = 0 }
+        if ($stall -gt 3) {
+            # the evidence for a stall (2 Nov 2026: ap-dock stalled at 0 m/s in a reused game): the autopilot's state
+            # when it slowed and its own events in the leg
+            $ev = @(Get-FLEventLog $seq0 | Select-Object -Last 40)
+            $file = Join-Path $PSScriptRoot ("..\..\research\experience\runs\churn_stall_{0:yyyy-MM-dd_HHmmss}_{1}.txt" -f (Get-Date), $name)
+            Set-Content -Path $file -Value (@($line, "diag:$diag", '--- trace') + $trace + @('--- events') + $ev)
+            $why += "stalled (trace $file)"
+        }
+        if ($hold -gt 0 -and $maxD -gt $hold) { $why += "left the formation (> $hold m)" }
+        if ($hold -le 0 -and $d1 -gt $d0 + 100) { $why += 'goal receding' }
+        if (-not $alive) { $why += 'FLvibed silent' }
+        [pscustomobject]@{ Line = $line; Fail = ($why -join ', ') }
+    }
+    $results = @()
+    $null = Start-FLFormation $friend.Id
+    # churn once formed (the join flies in from the friend's distance: 863 m on 2 Nov 2026)
+    $null = Wait-FLUntil { $null = Step-FLPopups; $p = Get-FLPilot; if (-not $p -or -not $p.Leader) { return $false }; $d = & $dist $p.Leader; $d -ge 0 -and $d -le 250 } 'formed (leader within 250 m)' 40
+    $results += & $leg 'formation' { param($p) $p.Leader } { param($p, $d) $p.Op -eq 'formation' } 300
+    $null = Stop-FLManeuver
+    $null = Set-FLTarget $gotoTo.Id
+    $null = Start-FLManeuver USER_MANEUVER_GOTO goto
+    $results += & $leg 'goto' { param($p) $gotoTo.Id } { param($p, $d) $p.Op -eq 'goto' -or ($d -ge 0 -and $d -lt 600) } 0
+    $null = Stop-FLManeuver
+    $null = Start-FLAutopilot dock $dockTo.Id
+    # (the autopilot holds its own goal through the churn: a selection change never becomes its dock target)
+    $results += & $leg 'ap-dock' { param($p) $dockTo.Id } { param($p, $d) $a = Get-FLAutopilot; if ($a.Mode -notin 'off', '') { $a.Target -eq $dockTo.Id } else { $p.Op -eq 'dock' } } 0
+    $null = Send-FL 'ap stop'
+    $null = Stop-FLManeuver
+    $wd = @(Get-FLEventLog $start | Where-Object { "$_" -match 'maneuver (stalled|watchdog)' }).Count
+    $sum = ($results.Line -join ' | ') + " | watchdog lines $wd"
+    $bad = @($results | Where-Object Fail | ForEach-Object { "$($_.Line.Split(':')[0]): $($_.Fail)" })
+    if ($bad) { throw "$($bad -join '; ') :: $sum" }
+    $sum
+} -budget 150
+
 Section 'base-repair' {
     # Repair at a base like the player (user, 20 Oct 2026; playthrough "DAMAGED ITEMS" window): damaged in a real fight
     # (hull below 60 %, parts too), the autopilot's travel docks at Manhattan, Invoke-FLBaseRepair repairs natively.
@@ -923,7 +1021,9 @@ Section 'display-subtitles' {
                                 name = $_.Groups[5].Value; speaker = $_.Groups[6].Value } })
         # the top panel (space_position 2) and the objective banner, when present
         $p = [regex]::Match($t, 'panel x=([\d.-]+) w=([\d.-]+) h=([\d.-]+) yoff=([\d.e-]+) s=([\d.]+) bar-moved=(\d) bar-right=([\d.-]+) nn-left=([\d.-]+)(?: top=([\d.-]+))?')
-        $q = [regex]::Match($t, 'tab=([\d.-]+) body=([\d.-]+) cruise=([\d.-]+),([\d.-]+)')
+        # (tab-noroom since fix-text 5, 25 Oct 2026: without it optional here the match failed and every tab read 0)
+        $q = [regex]::Match($t, 'tab=([\d.-]+) body=([\d.-]+)(?: tab-noroom=\d+)? cruise=([\d.-]+),([\d.-]+)')
+        if ($p.Success -and -not $q.Success) { $bad.Add("layout: the panel line's tab / body / cruise fields not found (format changed?)") }
         $panel = if ($p.Success) {
             @{ x = [double]$p.Groups[1].Value; w = [double]$p.Groups[2].Value; h = [double]$p.Groups[3].Value; yoff = [double]$p.Groups[4].Value
                s = [double]$p.Groups[5].Value; moved = $p.Groups[6].Value -eq '1'; barRight = [double]$p.Groups[7].Value; nnLeft = [double]$p.Groups[8].Value
@@ -933,11 +1033,18 @@ Section 'display-subtitles' {
         }
         $bn = [regex]::Match($t, 'banner x=([\d.-]+) y=([\d.-]+)')
         $banner = if ($bn.Success) { @{ y = [double]$bn.Groups[2].Value } }
-        @{ sw = $sw; sh = $sh; px = [int]$g.Groups[3].Value; context = $g.Groups[5].Value; lb = [int]$g.Groups[6].Value; anchor = [double]$g.Groups[7].Value / $sh; fromTop = $g.Groups[8].Value -eq 'top'; blocks = $blocks; panel = $panel; banner = $banner }
+        # HUD 2 (hud_style 1 / 2, the default since 0.2.0, on with K&M too): it hides the game's bar and NeuroNet box and
+        # gives the dialogue a free band at the top (hud2-place band=L..R px)
+        $h2 = $t -match 'hud2 bus=1 on=1'
+        $hb = [regex]::Match($t, 'hud2-place band=([\d.-]+)\.\.([\d.-]+)')
+        $band = if ($hb.Success) { @{ l = [double]$hb.Groups[1].Value; r = [double]$hb.Groups[2].Value } }
+        @{ sw = $sw; sh = $sh; px = [int]$g.Groups[3].Value; context = $g.Groups[5].Value; lb = [int]$g.Groups[6].Value; anchor = [double]$g.Groups[7].Value / $sh; fromTop = $g.Groups[8].Value -eq 'top'; blocks = $blocks; panel = $panel; banner = $banner; hud2 = $h2; band = $band }
     }
     function Judge([string]$tag, $lay) {
-        $want = [Math]::Round($lay.sh * 0.036)
-        if ([Math]::Abs($lay.px - $want) -gt 1) { $bad.Add("${tag}: font $($lay.px) px, expected $want (3.6 % of $($lay.sh))") }
+        # the flight top panel draws 10 % under the size table since 0.2.1 (display.cpp DrawImpl fontScale 0.9)
+        $pct = if ($lay.context -eq 'flight' -and $lay.panel) { 0.036 * 0.9 } else { 0.036 }
+        $want = [Math]::Round($lay.sh * $pct)
+        if ([Math]::Abs($lay.px - $want) -gt 1) { $bad.Add("${tag}: font $($lay.px) px, expected $want ($($pct * 100) % of $($lay.sh))") }
         foreach ($b in $lay.blocks) {
             if ($b.top -lt -0.001 -or $b.bottom -gt 1.001) { $bad.Add("${tag}: a block off screen ($($b.top.ToString('0.000'))..$($b.bottom.ToString('0.000')) H)") }
             if ($b.w -gt 0.801) { $bad.Add("${tag}: a row wider than 0.8 W ($($b.w.ToString('0.000')))") }
@@ -958,7 +1065,16 @@ Section 'display-subtitles' {
             $want = 0.016 + $pn.top / $sh
             if ([Math]::Abs($lay.anchor - $want) -gt 0.003) { $bad.Add("${tag}: top panel rows start at $($lay.anchor.ToString('0.000')) H ($($want.ToString('0.000')) expected)") }
             if ($pn.top -gt 0 -and $pn.top / $sh -lt 0.083) { $bad.Add("${tag}: the panel below the top row starts at $(($pn.top / $sh).ToString('0.000')) H, inside the bar's row (0.083)") }
-            if ($pn.s -ge 1 -and $pn.tab -gt 0) {
+            if ($lay.hud2) {
+                # HUD 2: no name tab (narrow or not), the panel inside HUD 2's free band (the game's bar and NeuroNet box
+                # are hidden, their readings stale)
+                if ($pn.s -ge 1 -and $pn.tab -gt 0) { $bad.Add("${tag}: the name-tab layout under HUD 2") }
+                if ($pn.s -ge 1 -and $lay.band) {
+                    $left = $pn.x - $pn.w / 2; $right = $pn.x + $pn.w / 2
+                    if ($pn.w -le $lay.band.r - $lay.band.l + 1 -and ($left -lt $lay.band.l - 1 -or $right -gt $lay.band.r + 1)) { $bad.Add("${tag}: HUD 2 panel ($([int]$left)..$([int]$right) px) leaves its band ($([int]$lay.band.l)..$([int]$lay.band.r))") }
+                }
+                $script:hud2Seen++
+            } elseif ($pn.s -ge 1 -and $pn.tab -gt 0) {
                 # the name-tab layout (narrow screens, space_narrow 5): the tab between the bar and the NeuroNet box, the
                 # body below the bar's row, clear of the cruise box under the bar's left end, on screen
                 $tl = $pn.x - $pn.tab / 2; $tr = $pn.x + $pn.tab / 2; $bl = $pn.x - $pn.w / 2; $br = $pn.x + $pn.w / 2
@@ -1028,14 +1144,30 @@ Section 'display-subtitles' {
             $r = Send-FL 'goto launch'; if ($r -notmatch '^clicked') { throw "launch: $r" }
             $summary.Add((Capture-Lines "$($m.name) cutscene" 150 10 "subs_$($m.name)_cutscene"))
             if (-not (Wait-FLSpace 60)) { throw "not in flight after the cutscene: $(Get-FLStoryState)" }
-            $script:panelSeen = 0; $script:tabSeen = 0
+            # the classic HUD's expectations (the bar moved, the name tab on narrow screens) pinned to hud_style 0: the
+            # default since 0.2.0 is HUD 2 (on with K&M too), whose placement has no tab (hotfix 2 Nov 2026)
+            $null = Send-FL 'set hud_style 0'
+            $script:panelSeen = 0; $script:tabSeen = 0; $script:hud2Seen = 0
             $summary.Add((Capture-Lines "$($m.name) flight" 90 4 "subs_$($m.name)_flight"))
             # space_position 2 is the default: in flight the lines go to the top panel; narrow screens (4:3: aspect
             # < ~1.42) use the name-tab layout (space_narrow 5, the default), wide ones the plain panel
             if ($script:panelSeen -eq 0) { $bad.Add("$($m.name): no flight line in the top panel (space_position 2)") }
+            if ($script:hud2Seen -gt 0) { $bad.Add("$($m.name): HUD 2 on with hud_style 0") }
             $wh = [double[]]($m.size -split ',\s*'); $narrow = $wh[0] / $wh[1] -lt 1.42
             if ($narrow -and $script:tabSeen -eq 0) { $bad.Add("$($m.name): narrow screen without the name-tab layout (space_narrow 5)") }
             if (-not $narrow -and $script:tabSeen -gt 0) { $bad.Add("$($m.name): the name-tab layout on a wide screen") }
+            # HUD 2 (hud_style 2, the default): a two-speaker stack (King + Newark Station, long lines) in its band, no tab
+            $null = Send-FL 'set hud_style 2'
+            $null = Send-FLS 'clear'
+            $null = Wait-FLUntil { (Send-FLS 'layout') -match 'hud2 bus=1 on=1' } 'HUD 2 on' 10
+            $script:hud2Seen = 0
+            $null = Send-FLS 'say DX_M01_0120_KING king'; $null = Send-FLS 'say DX_M01_0190_STATION_NEWARK m01a_newark'
+            $null = Wait-FLUntil { (Send-FLS 'layout') -match 'panel x=\S+ w=\S+ h=\S+ yoff=\S+ s=1 ' } 'the HUD 2 panel' 10
+            $lay = Read-Layout
+            if ($lay -and $lay.blocks.Count -ge 2) { Judge "$($m.name) hud2 stack" $lay; $null = Save-FLShot "subs_$($m.name)_hud2_stack" -Dir $shotDir }
+            else { $bad.Add("$($m.name): HUD 2 two-speaker stack not shown") }
+            if ($script:hud2Seen -eq 0) { $bad.Add("$($m.name): HUD 2 did not place the stack (hud_style 2)") }
+            $summary.Add("$($m.name) hud2 stack $(if ($lay) { $lay.blocks.Count } else { 0 }) blocks")
         }
     } finally {
         Get-FLGameProcess | Stop-Process -Force -ErrorAction SilentlyContinue

@@ -5,8 +5,10 @@
 #include "game/room.h" // uiclick: the HUD's own filter buttons, clicked natively
 #include "goals.h"
 #include "hud2.h" // CycleListFilter: HUD 2's own contact list while it hides the game's filters
+#include "hud2_kit.h" // the wheel's HUD 2 look (0.2.1)
 #include "log.h"
 #include "text.h"
+#include "game/promptfit.h" // SplitLabel: the wheel's two-line labels (0.2.1 round 3)
 
 #include <algorithm>
 #include <sstream>
@@ -158,6 +160,50 @@ presets::Action Commit()
     return presets::Action::None;
 }
 
+// The wheel's compact form (0.2.1 round 3, the owner: "multi-word commands split onto two lines ... a smaller wheel radius
+// with plates that clear the ring and each other"): a label of two or more words on two lines (promptfit::SplitLabel, the
+// prompts' two-line rule: the split whose wider half is narrowest), one word on one.
+struct Lines
+{
+    std::wstring a, b; // b empty = one line
+};
+template <class WidthFn>
+static Lines TwoLines(const std::wstring& s, WidthFn width)
+{
+    Lines l;
+    float wide = 0;
+    if (!promptfit::SplitLabel(s, 1.0f, width, l.a, l.b, wide))
+        l.a = s, l.b.clear();
+    return l;
+}
+// The smallest radius (from rMin, pixels) at which every plate (half sizes hw[i] x hh[i], slot i at i / n of a turn,
+// clockwise from the top) keeps `clear` from the centre (the reticle ring and its arcs) and `gap` from its neighbours.
+static float CompactRadius(const std::vector<float>& hw, const std::vector<float>& hh, float clear, float gap, float rMin,
+                           float rMax, float step)
+{
+    const int n = static_cast<int>(hw.size());
+    if (n == 0 || step <= 0)
+        return rMin;
+    auto px = [&](int i, float r) { return r * sinf(i * 6.2831853f / n); };
+    auto py = [&](int i, float r) { return -r * cosf(i * 6.2831853f / n); };
+    for (float r = rMin; r < rMax; r += step)
+    {
+        bool ok = true;
+        for (int i = 0; i < n && ok; ++i)
+        {
+            const float dx = std::max(0.0f, fabsf(px(i, r)) - hw[i]), dy = std::max(0.0f, fabsf(py(i, r)) - hh[i]);
+            if (dx * dx + dy * dy < clear * clear)
+                ok = false;
+            for (int j = i + 1; j < n && ok; ++j) // (every pair: a plate clears all the others)
+                if (fabsf(px(i, r) - px(j, r)) < hw[i] + hw[j] + gap && fabsf(py(i, r) - py(j, r)) < hh[i] + hh[j] + gap)
+                    ok = false;
+        }
+        if (ok)
+            return r;
+    }
+    return rMax;
+}
+
 static void Step(int dir)
 {
     const int n = static_cast<int>(g_items.size());
@@ -207,40 +253,124 @@ void Render(void* device)
     const uikit::Fonts& f = *s.f;
     std::vector<Prompt> prompts = {{GlyphToken(glyphs::RS) + L" PICK"}, {GlyphToken(glyphs::LB) + L" RELEASE = DO"}};
     PromptBar(s, prompts, "flight.wheel");
-    // the wheel round the screen centre (the reticle stays visible inside it)
+    // the wheel round the screen centre (the reticle stays visible inside it); its radius the smallest at which the
+    // two-line plates clear the reticle ring and each other (CompactRadius), at most the old 0.2 H
     const float cx = W * 0.5f, cy = H * 0.5f;
-    const float R = std::min(H * 0.2f * ts, W * 0.3f);
+    const float Rmax = std::min(H * 0.2f * ts, W * 0.3f);
     const int n = static_cast<int>(g_items.size());
+    const float mag = sqrtf(g_rx * g_rx + g_ry * g_ry);
+    // HUD 2 (0.2.1, the owner: "nice and on brand"): each command on a HUD 2 plate (glass, chamfer, hairline rim, the
+    // selected one's yellow rim and accent edge), outlined text in HUD 2's font, over a clearly more transparent HUD 2
+    // disc (the scene shows through) - drawn by HUD 2's own kit in its own pass
+    if (hud2::Active())
+    {
+        render::End(false);
+        namespace hk = hud2kit;
+        const uiopt::UiOptions& o = uiopt::Get();
+        const float k = std::min(1.3f, std::max(0.8f, o.hudScale / 100.0f)) * std::min(1.5f, std::max(0.8f, o.textSize / 100.0f));
+        if (!hk::Begin(device, static_cast<int>(W), static_cast<int>(H), std::max(8, static_cast<int>(0.026f * H * k + 0.5f))))
+            return;
+        hk::SetAlpha(1), hk::SetOffset(0, 0);
+        // two lines of 0.026 (the HUD's label size) at a 0.028 pitch in a 0.066 plate (one line: 0.044)
+        const float T = 0.026f * H * k, lp = 0.028f * H * k, pad = 0.014f * H * k, ch = 0.012f * H * k;
+        auto tw = [&](const std::wstring& s, float) { return hk::TextWidth(s, T, 0.06f); };
+        std::vector<Lines> lines(n);
+        std::vector<float> hw(n), hh(n);
+        for (int i = 0; i < n; ++i)
+        {
+            lines[i] = TwoLines(g_items[i].label, tw);
+            hw[i] = 0.5f * std::max(tw(lines[i].a, T), lines[i].b.empty() ? 0.0f : tw(lines[i].b, T)) + pad;
+            hh[i] = (lines[i].b.empty() ? 0.022f : 0.033f) * H * k;
+        }
+        // clear of the ring's arcs and their chevrons / numbers (0.035 H x k beyond the ring) and 0.010 H x k apart
+        const float R = CompactRadius(hw, hh, hud2::RingRadius() + 0.035f * H * k, 0.010f * H * k,
+                                      hud2::RingRadius() * 0.8f, std::max(Rmax, hud2::RingRadius() * 3.0f), 0.002f * H);
+        float reach = 0; // the disc reaches past the plates' outer corners
+        for (int i = 0; i < n; ++i)
+        {
+            const float a = i * (6.2831853f / std::max(1, n));
+            reach = std::max(reach, sqrtf(powf(fabsf(R * sinf(a)) + hw[i], 2) + powf(fabsf(R * cosf(a)) + hh[i], 2)));
+        }
+        const float Rd = reach + 0.012f * H * k;
+        hk::Disc(cx, cy, Rd, hk::Argb(hk::kGlass, 0.22f));
+        hk::Ring(cx, cy, Rd, std::max(1.0f, 0.0018f * H), hk::Argb(hk::kChrome, 0.30f));
+        const float sr = hud2::RingRadius() * 0.55f; // the stick's path inside the reticle ring
+        hk::Ring(cx, cy, sr, std::max(1.0f, 0.0014f * H), hk::Argb(hk::kChrome, 0.18f));
+        for (int i = 0; i < n; ++i)
+        {
+            const Item& it = g_items[i];
+            const float a = i * (6.2831853f / std::max(1, n));
+            const float x = cx + R * sinf(a), y = cy - R * cosf(a);
+            const bool sel = i == g_sel;
+            hk::Plate(x - hw[i], y - hh[i], x + hw[i], y + hh[i], ch, hk::kTL | hk::kBR, sel ? 0.85f : 0.62f,
+                      sel ? hk::kActive : hk::kChrome, sel ? 0.9f : 0.43f, sel ? 'l' : 0, hk::kActive);
+            const u32 col = hk::Argb(!it.enabled ? hk::kDim : sel ? hk::kActive : hk::kInk, 1);
+            if (lines[i].b.empty())
+                hk::Text(x, y, lines[i].a, T, col, hk::Center, 0.06f);
+            else
+            {
+                hk::Text(x, y - lp * 0.5f, lines[i].a, T, col, hk::Center, 0.06f);
+                hk::Text(x, y + lp * 0.5f, lines[i].b, T, col, hk::Center, 0.06f);
+            }
+        }
+        if (mag >= kDeadZone)
+            hk::Disc(cx + g_rx / std::max(mag, 1.0f) * sr, cy - g_ry / std::max(mag, 1.0f) * sr, std::max(2.0f, 0.005f * H),
+                     hk::Argb(hk::kActive, 0.9f));
+        // (no name repeated under the ring: the picked plate is highlighted - it overlapped the lower plates, round 3)
+        hk::End();
+        return;
+    }
+    // the classic HUD (0.2.1): the game's own space-HUD panel look (uidraw::HudPanel: its violet-navy base, edge glow and
+    // top line), translucent, over a faint navy disc; the selected command framed in the game's selected yellow
+    // (the compact form as HUD 2's: two-line labels, the smallest radius that clears the game's reticle - 0.09 H - and
+    // the plates' neighbours)
     render::SetFont(f.label);
-    const float lh = static_cast<float>(f.label.lineHeight), padX = H * 0.012f, boxH = lh * 1.5f;
+    const float lh = static_cast<float>(f.label.lineHeight), padX = H * 0.014f;
+    auto cw = [&](const std::wstring& s, float) { return static_cast<float>(render::TextWidth(f.label, s)); };
+    std::vector<Lines> lines(n);
+    std::vector<float> hw(n), hh(n);
+    for (int i = 0; i < n; ++i)
+    {
+        lines[i] = TwoLines(g_items[i].label, cw);
+        hw[i] = 0.5f * std::max(cw(lines[i].a, 0), lines[i].b.empty() ? 0.0f : cw(lines[i].b, 0)) + padX;
+        hh[i] = 0.5f * lh * (lines[i].b.empty() ? 1.6f : 2.5f);
+    }
+    const float R = CompactRadius(hw, hh, H * 0.09f, H * 0.010f, H * 0.08f, std::max(Rmax, H * 0.3f), 0.002f * H);
+    float reach = 0;
+    for (int i = 0; i < n; ++i)
+    {
+        const float a = i * (6.2831853f / std::max(1, n));
+        reach = std::max(reach, sqrtf(powf(fabsf(R * sinf(a)) + hw[i], 2) + powf(fabsf(R * cosf(a)) + hh[i], 2)));
+    }
+    uidraw::Dot(cx, cy, reach + H * 0.01f, 0x26101830); // (0xAARRGGBB: ~15 % navy - the scene shows through)
+    const double now = GetTickCount() / 1000.0;
     for (int i = 0; i < n; ++i)
     {
         const Item& it = g_items[i];
         const float a = i * (6.2831853f / std::max(1, n));
         const float x = cx + R * sinf(a), y = cy - R * cosf(a);
-        const float tw = static_cast<float>(render::TextWidth(f.label, it.label));
-        const float bw = tw + 2 * padX;
-        const float bx = x - bw * 0.5f, by = y - boxH * 0.5f;
+        const float bw = 2 * hw[i], boxH = 2 * hh[i];
+        const float bx = x - hw[i], by = y - hh[i];
         const bool sel = i == g_sel;
-        uidraw::SoftPanel(bx, by, bw, boxH, sel ? 0.92f : 0.7f, std::max(2.0f, H * 0.004f));
+        uidraw::HudPanel(bx, by, bw, boxH, sel ? 0.8f : 0.55f, H, now);
         if (sel)
             uidraw::Frame(bx, by, bw, boxH, std::max(1.0f, H * 0.0014f), Argb(kSelected, 0.95f));
-        uidraw::TextShadow(bx + padX, by + (boxH - lh) * 0.5f, it.label,
-                           Argb(!it.enabled ? kGrey : sel ? kSelected : kHud, 0.95f), std::max(1.0f, H * 0.001f));
+        const u32 col = Argb(!it.enabled ? kGrey : sel ? kSelected : kHud, 0.95f);
+        const float sh = std::max(1.0f, H * 0.001f);
+        if (lines[i].b.empty())
+            uidraw::TextShadow(x - cw(lines[i].a, 0) * 0.5f, y - lh * 0.5f, lines[i].a, col, sh);
+        else
+        {
+            uidraw::TextShadow(x - cw(lines[i].a, 0) * 0.5f, y - lh * 1.0f, lines[i].a, col, sh);
+            uidraw::TextShadow(x - cw(lines[i].b, 0) * 0.5f, y, lines[i].b, col, sh);
+        }
     }
-    // the stick's direction (a dot inside the ring) and the pick's name under the reticle
-    const float mag = sqrtf(g_rx * g_rx + g_ry * g_ry);
+    // the stick's direction (a dot inside the reticle); no name repeated under it: the picked plate is framed, and
+    // in the compact wheel the name would cross the lower plates (round 3)
+    const float sr = H * 0.06f;
     if (mag >= kDeadZone)
-        uidraw::Dot(cx + g_rx / std::max(mag, 1.0f) * R * 0.55f, cy - g_ry / std::max(mag, 1.0f) * R * 0.55f,
-                    std::max(2.0f, H * 0.004f), Argb(kSelected, 0.9f));
-    if (g_sel >= 0 && g_sel < n)
-    {
-        render::SetFont(f.title);
-        const std::wstring name = g_items[g_sel].label;
-        const float tw = static_cast<float>(render::TextWidth(f.title, name));
-        uidraw::TextShadow(cx - tw * 0.5f, cy + H * 0.055f, name, Argb(g_items[g_sel].enabled ? kSelected : kGrey, 0.95f),
-                           std::max(1.0f, H * 0.001f));
-    }
+        uidraw::Dot(cx + g_rx / std::max(mag, 1.0f) * sr, cy - g_ry / std::max(mag, 1.0f) * sr, std::max(2.0f, H * 0.004f),
+                    Argb(kSelected, 0.9f));
     render::End(false);
 }
 

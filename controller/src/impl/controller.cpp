@@ -34,6 +34,7 @@
 // D-MENUS (25 Oct 2026): the menu screens on the pad, the New Game prompt, speedrun mode (clock, splits, LiveSplit)
 // and the HUD timer (padmenus.h / newgame.h / livesplit.h / runtimer.h)
 #include "livesplit.h"
+#include "maneuver_watch.h" // the maneuver watchdog's rule (0.2.1 hotfix)
 #include "newgame.h"
 #include "padmenus.h"
 #include "runtimer.h"
@@ -83,6 +84,7 @@ struct Options
 {
     bool enabled = true;
     bool focusOnly = true;    // ignore the real pad while Freelancer is not the foreground window
+    bool maneuverWatchdog = true; // a formation / goto / dock stalled far from its goal is issued again (maneuver_watch.h)
     float cursorSpeed = 1.1f; // screen heights per second at full stick deflection
     float wheelRate = 10.0f;  // wheel notches per second at full deflection
     float steerExpo = 1.5f;   // steering response curve exponent (1 = linear)
@@ -138,7 +140,7 @@ struct Options
     std::string autopilotKey = "K"; // the keyboard key that toggles the autopilot (UI_PLAN.md 2: K is unbound)
     bool maneuverButton = true;    // the fifth maneuver-bar button
     // HUD 2 (docs\UI_HUD2.md 5.3; the codings: kOptions)
-    int hudStyle = 2, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0;
+    int hudStyle = 2, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0, hudPrompts = 1;
     bool hudThreats = true, hudAlerts = true, hudInfo = true, hudWireframes = true;
     int hudTransition = 120;
     int hudPreset = 0; // hud_preset: HUD 2's layout preset (UI_HUD2_PRESETS.md 6 step 4; registry-only until step 5)
@@ -204,13 +206,57 @@ static void Hold(int cmd, bool want)
         fl::FireCommand(cmd, false);
 }
 
+static bool g_inTap = false; // a pad tap is being fired (OnKeyCmd skips it: Apply answered it)
 static void Tap(int cmd)
 {
     const u32 flags = fl::CommandFlags(cmd);
+    g_inTap = true;
     if (flags & fl::CMDF_KEYDOWN)
         fl::FireCommand(cmd, true);
     if (flags & fl::CMDF_KEYUP)
         fl::FireCommand(cmd, false);
+    g_inTap = false;
+}
+
+// The maneuver lock's answer (0.2.1; a player report: in M01, after joining Brandt's formation, the mission's
+// Act_LockManeuvers made B / free flight do nothing, which looked like a malfunction): while the game's maneuvers are
+// locked (IBehaviorManager +0xBC: space::Pilot::locked, `Get-FLPilot` Locked) a requested maneuver is logged and HUD 2's
+// alert card says LOCKED BY THE MISSION. The request still goes to the game (it refuses it itself: no game logic changed).
+// The log line at most once a second per action (a held key repeats).
+static bool LockAnswer(const char* what)
+{
+    space::Pilot p;
+    if (!space::ReadPilot(p) || !p.locked)
+        return false;
+    static const char* lastWhat = nullptr;
+    static DWORD lastAt = 0;
+    const DWORD now = GetTickCount();
+    if (what != lastWhat || now - lastAt > 1000)
+        events::Push("maneuvers locked: %s refused%s", what, hud2::LockNotice() ? "" : " (HUD 2 not shown)");
+    else
+        hud2::LockNotice();
+    lastWhat = what, lastAt = now;
+    return true;
+}
+
+void OnKeyCmd(int cmd, bool down)
+{
+    if (g_inTap || !down || g_mode != Mode::Space)
+        return;
+    const char* what = cmd == fl::USER_MANEUVER_FREE_FLIGHT ? "free flight"
+                       : cmd == fl::USER_MANEUVER_FORMATION ? "formation"
+                       : cmd == fl::USER_MANEUVER_DOCK      ? "dock"
+                       : cmd == fl::USER_MANEUVER_GOTO      ? "goto"
+                                                            : nullptr;
+    if (what)
+        LockAnswer(what);
+    // (hud_prompts: the lanes show after the player acts; hud_fade CONTEXTUAL: what the action touches wakes)
+    if (what)
+        hud2::NoteAction(hudwake::Maneuver);
+    else if (cmd == fl::USER_CRUISE || cmd == fl::USER_MANEUVER_ENGINEKILL)
+        hud2::NoteAction(hudwake::Cruise);
+    else if (cmd == fl::USER_CLEAR_TARGET || cmd == fl::USER_NEXT_ENEMY || cmd == fl::USER_CLOSEST_ENEMY)
+        hud2::NoteAction(hudwake::TargetChg);
 }
 
 // Freelancer's ship behaviour keeps the last steering direction it was given, and its own mouse-flight
@@ -218,12 +264,14 @@ static void Tap(int cmd)
 // override sends "no turn" for a few frames; otherwise the ship keeps spinning.
 static int g_steerStopFrames = 0;
 static bool g_steerActive = false;
+static float g_steerX = 0, g_steerY = 0; // the last override sent (the maneuver watchdog's snapshot)
 
 static void SetSteer(float x, float y)
 {
     HostSteer(true, x, y);
     g_steerActive = true;
     g_steerStopFrames = 0;
+    g_steerX = x, g_steerY = y;
 }
 
 static void ReleaseSteer()
@@ -233,7 +281,92 @@ static void ReleaseSteer()
         HostSteer(true, 0, 0);
         g_steerActive = false;
         g_steerStopFrames = 3;
+        g_steerX = g_steerY = 0;
     }
+}
+
+// The maneuver watchdog (setting `maneuver_watchdog`; rule and the why: maneuver_watch.h). The owner's M01 report: a
+// formation with the Brandt stalled at the mission's LockManeuvers (constant hard turn, 0 m/s, the convoy gone). While a
+// game formation / goto / dock runs outside the Advanced Autopilot, a stall far from the goal logs one snapshot and
+// issues the same maneuver again the game's way (target the leader / goal, the player's maneuver dispatcher
+// ai::Maneuver = the maneuver bar's call, as the harness's Start-FLFormation), then puts the player's target back.
+static void WatchManeuver()
+{
+    static mwatch::Watch watch;
+    static int lastOp = -1;
+    static u32 goal = 0;      // goto / dock: the target when the op began; formation: the ship the player formed on
+    static float lastSteerAt = -100;
+    const float t = static_cast<float>(GetTickCount()) * 0.001f;
+    mwatch::Sample s;
+    s.t = t;
+    space::Pilot p;
+    const bool flying = g_opt.maneuverWatchdog && space::ReadPilot(p);
+    if (!flying)
+    {
+        lastOp = -1, goal = 0;
+        watch.Step(s);
+        return;
+    }
+    const bool kind = p.op == ai::OpGoto || p.op == ai::OpDock || p.op == ai::OpFormation;
+    if (p.op != lastOp)
+        goal = kind ? (p.op == ai::OpFormation && !p.target ? p.leader : p.target) : 0;
+    lastOp = p.op;
+    // the distance is to the formation's leader (the wing), else to the goal
+    const u32 to = p.op == ai::OpFormation ? (p.leader ? p.leader : goal) : goal;
+    float gp[3];
+    const bool known = kind && to && !p.lane && !p.jumping && space::ObjectPos(to, gp);
+    space::ShipMotion m;
+    const PadState& pad = g_pad.Cur();
+    const float stick = (std::max)((std::max)(fabsf(pad.lx), fabsf(pad.ly)), (std::max)(fabsf(pad.rx), fabsf(pad.ry)));
+    const u32 mouseAt = dimouse::LastRealTick();
+    if (stick > 0.2f || (mouseAt && GetTickCount() - mouseAt < 1000))
+        lastSteerAt = t;
+    s.maneuver = known && space::ShipMotionOf(space::PlayerShipId(), m) && m.ok;
+    s.key = (static_cast<unsigned>(p.op) << 24) ^ to;
+    s.autopilot = autopilot::Active();
+    s.steering = t - lastSteerAt < 1.0f;
+    if (s.maneuver)
+    {
+        s.speed = m.speed;
+        const float d[3] = {gp[0] - p.pos[0], gp[1] - p.pos[1], gp[2] - p.pos[2]};
+        s.dist = sqrtf(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+    }
+    const mwatch::Decision dec = watch.Step(s);
+    const char* opName = p.op == ai::OpGoto ? "goto" : p.op == ai::OpDock ? "dock" : "formation";
+    if (dec.snapshot)
+    {
+        const u32 now = GetTickCount();
+        const u32 padAt = device::LastPadTick(), kbmAt = device::LastKbmTick();
+        events::Push("event maneuver stalled: op=%s locked=%d leader=%u goal=%u target=%u dist=%.0f speed=%.1f "
+                     "throttle lt=%.2f rt=%.2f steer active=%d x=%.2f y=%.2f device=%s last inputs pad=%dms kbm=%dms "
+                     "mouse=%dms sticks l=%.2f,%.2f r=%.2f,%.2f buttons=0x%X cruise=%d",
+                     opName, p.locked ? 1 : 0, p.leader, goal, p.target, s.dist, s.speed, pad.lt, pad.rt,
+                     g_steerActive ? 1 : 0, g_steerX, g_steerY, device::Pad() ? "pad" : "kbm",
+                     padAt ? static_cast<int>(now - padAt) : -1, kbmAt ? static_cast<int>(now - kbmAt) : -1,
+                     mouseAt ? static_cast<int>(now - mouseAt) : -1, pad.lx, pad.ly, pad.rx, pad.ry, pad.buttons,
+                     p.cruise ? 1 : 0);
+    }
+    if (dec.retry)
+    {
+        // the ship to issue it on: the one the player formed on / the goal; a formation whose ship is gone -> the leader
+        float tmp[3];
+        u32 on = goal && space::ObjectPos(goal, tmp) ? goal : p.op == ai::OpFormation ? p.leader : 0;
+        const u32 before = p.target;
+        bool targeted = on && (before == on || space::SetTarget(on));
+        const bool ok = targeted && ai::Maneuver(p.op, false);
+        if (before && before != on && targeted)
+            space::SetTarget(before); // the player's target as it was (the maneuver keeps its own)
+        space::Pilot after;
+        const bool read = space::ReadPilot(after);
+        events::Push("maneuver watchdog: re-issue %s on %u try %d/%d: %s (op now %d, locked=%d, leader=%u)", opName,
+                     on, dec.attempt, mwatch::kMaxTries,
+                     !on ? "no goal" : !targeted ? "target refused" : ok ? "accepted" : "refused",
+                     read ? after.op : -1, read && after.locked ? 1 : 0, read ? after.leader : 0);
+    }
+    if (dec.gaveUp)
+        events::Push("maneuver watchdog: %s still stalled after %d tries (dist=%.0f speed=%.1f locked=%d): giving up "
+                     "until it moves",
+                     opName, mwatch::kMaxTries, s.dist, s.speed, p.locked ? 1 : 0);
 }
 
 // The player ship's state once a second, as an event when it changed (hull to 0.1 %, shield to 1 %, consumables):
@@ -1767,11 +1900,17 @@ static void ContextAction()
             lootInReach = true;
     }
     if (tid && dockable)
+    {
+        LockAnswer("dock");
         Tap(fl::USER_MANEUVER_DOCK);
+    }
     else if (targetLoot || (!tid && lootInReach))
         Tap(fl::USER_COLLECT_LOOT);
     else if (tid)
+    {
+        LockAnswer("goto");
         Tap(fl::USER_MANEUVER_GOTO);
+    }
     else
         events::Push("pad context: nothing applies (no target, no loot in reach)");
 }
@@ -1817,6 +1956,19 @@ static void Apply(const presets::Event& e)
     using presets::Action;
     using presets::Phase;
     const bool start = e.phase == Phase::Tap || e.phase == Phase::Dbl || e.phase == Phase::HoldStart;
+    // hud_prompts (0.2.1): the context lanes show after a player action (core\game\promptshow.h)
+    if (start)
+        switch (e.action)
+        {
+        case Action::Context: case Action::FreeFlight: case Action::Formation: case Action::Goto:
+        case Action::Autopilot: case Action::Handback: hud2::NoteAction(hudwake::Maneuver); break;
+        case Action::EngineKill: case Action::Cruise: hud2::NoteAction(hudwake::Cruise); break;
+        case Action::TargetSmart: case Action::TargetNearest: case Action::NextEnemy: case Action::ClearTarget:
+            hud2::NoteAction(hudwake::TargetChg);
+            break;
+        case Action::Tractor: hud2::NoteAction(hudwake::Fire); break;
+        default: break;
+        }
     switch (e.action)
     {
     case Action::Context:
@@ -1826,6 +1978,7 @@ static void Apply(const presets::Event& e)
     case Action::FreeFlight: // the cancel button: free flight, and the cruise dropped (the game's free flight alone
         if (start)           // leaves the cruise engine engaged - verified 25 Oct 2026)
         {
+            LockAnswer("free flight");
             Tap(fl::USER_MANEUVER_FREE_FLIGHT);
             flight::Model fm;
             if (flight::ReadModel(fm) && fm.cruiseEngaged)
@@ -1838,11 +1991,17 @@ static void Apply(const presets::Event& e)
         break;
     case Action::Formation:
         if (start)
+        {
+            LockAnswer("formation");
             Tap(fl::USER_MANEUVER_FORMATION);
+        }
         break;
     case Action::Goto:
         if (start)
+        {
+            LockAnswer("goto");
             Tap(fl::USER_MANEUVER_GOTO);
+        }
         break;
     case Action::EngineKill:
         if (start)
@@ -1886,7 +2045,10 @@ static void Apply(const presets::Event& e)
             if (autopilot::Active())
                 autopilot::Stop("pad");
             else
+            {
+                LockAnswer("free flight");
                 Tap(fl::USER_MANEUVER_FREE_FLIGHT); // nothing to hand back: the cancel button's own meaning
+            }
         }
         break;
     case Action::Hub:
@@ -2323,6 +2485,8 @@ void OnFrame(double dtd)
     spawn::CheckClearAt(ai::PlayerHealth()); // `spawn clearat`: test spawns go at a hull threshold (no harness lag)
     space::InvalidateFrame();                // that may have despawned ships (spawn.cpp knows nothing of the memo)
     TrackSelf();
+    if (g_mode == Mode::Space || g_mode == Mode::SpaceUi)
+        WatchManeuver(); // a stalled formation / goto / dock is issued again (setting maneuver_watchdog)
     flight::RecordFrame();
     debug::Frame();
     options_page::Update(dt); // the options page's input and hosting state, before the pad flight / menu code (PAGE)
@@ -2345,7 +2509,10 @@ void OnFrame(double dtd)
         space::TrackRounds(); // learns which incoming rounds hit (the damage model's hit chance)
     HostSetKeepRunning(g_opt.runInBackground);
     if (!g_opt.enabled)
+    {
+        HostCursorHide(kCursorHideIdle, false); // (the idle cursor's fail-safe: a disabled logic never leaves it hidden)
         return;
+    }
 
     // Whoever was used last (pad, or the physical mouse / keyboard) owns the cursor, the steering and the UI: the
     // input-device service (device.cpp; was: the pad's tick against the mouse's, without the keyboard).
@@ -2364,7 +2531,8 @@ void OnFrame(double dtd)
         u.buttonLegend = g_opt.buttonLegend, u.apStatusLine = g_opt.apStatusLine;
         u.hudStyle = g_opt.hudStyle, u.hudFade = g_opt.hudFade, u.hudOpacity = g_opt.hudOpacity;
         u.hudScale = g_opt.hudScale, u.hudNumbers = g_opt.hudNumbers, u.hudThreats = g_opt.hudThreats;
-        u.hudContext = g_opt.hudContext, u.hudAlerts = g_opt.hudAlerts, u.hudInfo = g_opt.hudInfo;
+        u.hudContext = g_opt.hudContext, u.hudPrompts = g_opt.hudPrompts, u.hudAlerts = g_opt.hudAlerts;
+        u.hudInfo = g_opt.hudInfo;
         u.hudWireframes = g_opt.hudWireframes, u.hudTransition = g_opt.hudTransition, u.hudPreset = g_opt.hudPreset;
     }
     device::Update(dt, g_pad, g_mode == Mode::Space);
@@ -2539,7 +2707,52 @@ void OnFrame(double dtd)
         hc.weaponGroup = g_weaponGroup;
         hc.apKnown = g_apUsed || uiopt::Get().apHints || newgame::Session() == newgame::ASSISTED;
         hc.modal = picker::IsOpen() || wheel::IsOpen() || goals::IsOpen();
+        hc.steer = sqrtf(g_lastSteerX * g_lastSteerX + g_lastSteerY * g_lastSteerY); // (CONTEXTUAL's triggers, 0.2.1)
+        hc.firing = padOwns && (g_dispatch.Held(presets::Action::Fire) || g_dispatch.Held(presets::Action::Missile));
+        // any fire input's PRESS wakes the whole HUD under hud_fade 1 (0.2.1 round 6, the owner: the press itself, even
+        // with the weapons locked / nothing able to fire; core\game\hudwake.h FireInput) - the pad's here, the keyboard
+        // and mouse's in hud2.cpp (the game's keymap)
+        {
+            using A = presets::Action;
+            static bool fireWas = false;
+            const bool fireNow = padOwns && (g_dispatch.Held(A::Fire) || g_dispatch.Held(A::Missile) ||
+                                             g_dispatch.Held(A::Torpedo) || g_dispatch.Held(A::Cm) ||
+                                             g_dispatch.Held(A::Mine) || g_dispatch.Held(A::FireGroup1) ||
+                                             g_dispatch.Held(A::FireGroup2) || g_dispatch.Held(A::CruiseDisruptor));
+            if (fireNow && !fireWas)
+                hud2::NoteAction(hudwake::FireInput);
+            fireWas = fireNow;
+        }
         hud2::Update(dt, hc);
+        // The game's mouse cursor under hud_fade 1 (0.2.1, core\game\hudwake.h CursorStep): in flight with the keyboard
+        // and mouse it hides after 3 s without mouse movement or a button and shows again the frame either comes; shown
+        // in every other context (a menu, the map, a dialog / popup = any non-HUD window, the options page, a FLUF window,
+        // the pad's cursor, mouse flight engaged) and whenever a symbol it reads is unresolved.
+        {
+            static hudwake::CursorState cs;
+            static int mxWas = -1, myWas = -1;
+            static u32 bWas = 0;
+            const bool known = exe::MouseX.ok() && exe::MouseY.ok() && exe::MouseButtons.ok() && exe::MouseFlightEngaged.ok();
+            const int mx = known ? fl::MouseX() : 0, my = known ? fl::MouseY() : 0;
+            const u32 b = known ? (fl::MouseButtons() & 7u) : 0;
+            // the pad in control (0.2.1 round 6, the owner: the cursor did not hide with the pad): the pad's own aim moves
+            // the game's cursor and its steering engages mouse flight, so neither counts - a real mouse hands the device
+            // back to the keyboard and mouse (padOwns false: the K&M rule at once)
+            const bool activity = padOwns ? !known
+                                          : !known || mx != mxWas || my != myWas || b != 0 || b != bWas ||
+                                                Mem<u8>(exe::MouseFlightEngaged) != 0;
+            mxWas = mx, myWas = my, bWas = b;
+            // (the fail-safe, 0.2.1 round 5: every non-flight state shows it the same frame - the pause menu by the
+            // game's own paused flag too, a mode change at once, before the mode's 3-frame debounce settles)
+            const bool eligible = g_opt.enabled && g_mode == Mode::Space && detected == Mode::Space &&
+                                  !fl::GamePaused() && !hc.modal &&
+                                  hud2::CursorIdleEligible() && OnlyHudOpen() && !options_page::IsOpen() &&
+                                  !flufaware::InputWindowOpen();
+            const int fade = uiopt::Get().hudFade <= 0 ? 0 : 1;
+            const bool hide = hudwake::CursorStep(cs, fade, eligible, activity, dt);
+            HostCursorHide(kCursorHideIdle, hide);
+            hud2::NoteCursorHidden(hide);
+        }
     }
     // The goal panel, every device (its keyboard + mouse form's keys, clicks and click box; after HUD 2, which stood its
     // own click box down while the panel is open)
@@ -2766,6 +2979,10 @@ static const settings::Def kOptions[] = {
     {"focus_only", settings::Bool, &g_opt.focusOnly, 0, 1,
      "ignore the controller while the game is in the background, in flight and menus alike (a button held when the "
      "game comes back is ignored until it is released)"},
+    {"maneuver_watchdog", settings::Bool, &g_opt.maneuverWatchdog, 0, 1,
+     "1 = if your ship stalls during a formation, goto or dock (nearly stopped for 3 s, its goal more than 150 m away "
+     "and not getting closer, you not steering), FLvibed issues the same maneuver again (up to 3 times, 10 s apart) and "
+     "logs what happened"},
     {"run_in_background", settings::Bool, &g_opt.runInBackground, 0, 1,
      "1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back "
      "to Windows meanwhile"},
@@ -2865,9 +3082,10 @@ static const settings::Def kOptions[] = {
      "the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 1 HUD 2 on the "
      "pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always (default); HUD 2 includes its look over the menus "
      "and rooms (ui_style)"},
-    {"hud_fade", settings::Int, &g_opt.hudFade, 0, 2,
-     "HUD 2 in calm flight: 0 always full, 1 calm dims (the ring and the side panels fade back), 2 minimal (calm "
-     "flight hides the side panels and the ring; anything that changes brings its part back for a few seconds)"},
+    {"hud_fade", settings::Int, &g_opt.hudFade, 0, 1,
+     "HUD 2 in flight: 0 full (always shown), 1 contextual (fades out in calm flying; each part comes back for 4 s when "
+     "it matters: steering, boost, a target, firing, a maneuver, a new objective; alerts, low shield / hull, missiles "
+     "and fights always show)"},
     {"hud_opacity", settings::Int, &g_opt.hudOpacity, 40, 100, "HUD 2's overall opacity in percent"},
     {"hud_scale", settings::Int, &g_opt.hudScale, 80, 130, "HUD 2's size in percent"},
     {"hud_numbers", settings::Int, &g_opt.hudNumbers, 0, 2,
@@ -2876,6 +3094,9 @@ static const settings::Def kOptions[] = {
      "HUD 2 lists the next hostiles under the target card during a fight"},
     {"hud_context", settings::Int, &g_opt.hudContext, 0, 1,
      "the buttons for what you can do now, under your ship: 0 contextual, 1 off"},
+    {"hud_prompts", settings::Int, &g_opt.hudPrompts, 0, 1,
+     "when the context prompts show in flight: 0 always, 1 when they change or right after you act (dock, cruise, "
+     "a target, a maneuver), then they fade out after 4 seconds"},
     {"hud_alerts", settings::Bool, &g_opt.hudAlerts, 0, 1,
      "short warning cards at the top (shield failing, missile incoming, cargo hold full) with the buttons that answer them"},
     {"hud_info", settings::Bool, &g_opt.hudInfo, 0, 1,

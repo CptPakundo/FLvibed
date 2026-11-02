@@ -15,6 +15,8 @@
 #include "game/render.h"
 #include "game/shipname.h"
 #include "game/space.h"
+#include "game/promptshow.h"
+#include "game/hudwake.h"
 #include "host.h"
 #include "hud2_impl.h"
 #include "hud2_layout.h"
@@ -122,6 +124,7 @@ static std::wstring Clock(float s)
 // 5 s (the player may rebind in the Options screen).
 static std::map<int, std::wstring> g_keys;
 static DWORD g_keysAt = 0;
+static int g_fireVk[32] = {}, g_fireVkN = 0; // the keymap's fire commands' keys (FireKeyPressed)
 static std::wstring VkName(int vk, u32 mods)
 {
     std::wstring s;
@@ -223,9 +226,40 @@ static void RefreshKeys()
         return;
     static RawKey raw[512];
     const int n = ReadKeymap(raw, 512);
+    g_fireVkN = 0;
     for (int i = 0; i < n; ++i)
+    {
         if (g_keys.find(raw[i].cmd) == g_keys.end())
             g_keys[raw[i].cmd] = VkName(raw[i].vk, raw[i].mods);
+        const int c = raw[i].cmd;
+        const bool fire = (c >= fl::USER_FIRE_WEAPON1 && c <= fl::USER_FIRE_WEAPON_GROUP6) || c == fl::USER_FIRE_FORWARD ||
+                          c == fl::USER_LAUNCH_MISSILES || c == fl::USER_LAUNCH_MINES ||
+                          c == fl::USER_LAUNCH_COUNTERMEASURES || c == fl::USER_LAUNCH_TORPEDOS ||
+                          c == fl::USER_LAUNCH_CRUISE_DISRUPTORS || c == fl::USER_FIRE_WEAPONS;
+        const int vk = raw[i].vk == -1 ? VK_LBUTTON : raw[i].vk == -2 ? VK_RBUTTON : raw[i].vk == -3 ? VK_MBUTTON : raw[i].vk;
+        if (fire && vk > 0 && vk < 256 && g_fireVkN < 32)
+            g_fireVk[g_fireVkN++] = vk;
+    }
+}
+// Any of the keymap's fire keys / buttons went down this frame (the keyboard and mouse's fire input, 0.2.1 round 6:
+// core\game\hudwake.h FireInput) - only while the game's window is in front (a background game hears nothing).
+static bool FireKeyPressed()
+{
+    static bool was[32] = {};
+    RefreshKeys();
+    DWORD pid = 0;
+    const HWND fg = GetForegroundWindow();
+    if (fg)
+        GetWindowThreadProcessId(fg, &pid);
+    const bool front = pid == GetCurrentProcessId();
+    bool pressed = false;
+    for (int i = 0; i < 32; ++i)
+    {
+        const bool down = front && i < g_fireVkN && (GetAsyncKeyState(g_fireVk[i]) & 0x8000) != 0;
+        pressed |= down && !was[i];
+        was[i] = down;
+    }
+    return pressed;
 }
 static std::wstring KeyOf(int cmd)
 {
@@ -415,6 +449,8 @@ static u32 g_laneKey[2] = {}, g_laneFinal = 0; // the lane ride fallback (Slow)
 static std::vector<u32> g_laneRings, g_laneEnds[2];
 static float g_move[3] = {}; // the ship's last 10 Hz step (server position)
 static float g_navRight = 0; // the nav's drawn right edge (last frame)
+// the nav's scrim: [0] [1] its text block's drawn right / bottom (last frame), [2] [3] as ComputeLayout eased them
+static float g_navScrim[4] = {};
 static float g_posSpeed = 0; // the ship's speed from its server position (10 Hz; the lane ride)
 static u32 g_objSeq = 0xFFFFFFFF;
 static std::vector<u32> g_objRefs;
@@ -430,6 +466,26 @@ static float g_prevShield = 1, g_prevHull = 1, g_prevFree = 1;
 static int g_prevMissiles = 0;
 static double g_spaceSince = 0; // when the ship last entered space (a load, a launch): the alerts arm after it
 
+// hud_prompts (0.2.1): the context prompts shown on a change or an action (core\game\promptshow.h)
+static promptshow::State g_promptShow;
+static unsigned g_ctxSig = promptshow::kSeed; // the prompt set's signature as the model built it (before the layout's trim)
+static bool g_promptAction = false;           // NoteAction since the last Update
+static u32 g_promptTarget = 0;                // the target last frame (a switch / clear is an action, by any input)
+// hud_fade 1 CONTEXTUAL (0.2.1, core\game\hudwake.h): each element's wake timer, this frame's triggers so far
+static hudwake::State g_wake;
+static unsigned g_wakeTrig = 0, g_wakeShown = hudwake::All;
+void NoteAction(unsigned wake) { g_promptAction = true, g_wakeTrig |= wake; }
+static bool g_cursorEligible = false, g_cursorHiddenNote = false; // the idle cursor (CursorIdleEligible)
+bool CursorIdleEligible() { return g_cursorEligible; }
+void NoteCursorHidden(bool hidden) { g_cursorHiddenNote = hidden; }
+static unsigned CtxSig(const Model& m)
+{
+    unsigned h = promptshow::Mix(promptshow::kSeed, m.nCtx);
+    for (int i = 0; i < m.nCtx && i < 3; ++i)
+        h = promptshow::Mix(promptshow::Mix(promptshow::Mix(h, static_cast<int>(m.ctx[i].btn)), m.ctx[i].key), m.ctx[i].label);
+    return h;
+}
+
 static void Alert(const wchar_t* title, u32 col)
 {
     if (!uiopt::Get().hudAlerts)
@@ -437,6 +493,18 @@ static void Alert(const wchar_t* title, u32 col)
     g_m.alert = title, g_m.alertCol = col, g_m.alertLeft = 3.0f, g_m.nAlertPrompts = 0, g_m.alertNone.clear();
     g_m.alertSlots = 0;
 }
+// The maneuver lock's answer (0.2.1; a player report: in M01 the mission's Act_LockManeuvers made B / free flight do
+// nothing, which read as a malfunction): the card in the warning amber, glyph-free, 2.5 s - not gated by hud_alerts,
+// since it answers the player's own press
+bool LockNotice()
+{
+    if (!Active())
+        return false;
+    g_m.alert = L"LOCKED BY THE MISSION", g_m.alertCol = kWarn, g_m.alertLeft = 2.5f, g_m.nAlertPrompts = 0;
+    g_m.alertNone.clear(), g_m.alertSlots = 0;
+    return true;
+}
+
 // The alert's answer when it is used up or not fitted: an amber word in the card instead of a glyph (the round 3
 // critique: every alert carries its answer or says there is none)
 static void AlertNone(const wchar_t* s)
@@ -1631,19 +1699,63 @@ static void ComputeLayout(float W, float H)
     f.listRows = g_m.kbm ? g_m.nThreats : 2;
     f.listMore = g_m.list && g_m.listTotal > g_m.nThreats;
     f.alert = g_m.alertLeft > 0 && !g_m.alert.empty();
-    f.navRight = g_navRight;
-    if (g_m.presetDrawn == hud2preset::Focus) // (Focus: its nav's drawn height, its reveal's form and held parts)
-        f.navBottom = g_navBottom, f.form = g_rv.form, f.held = g_rv.held;
+    // the nav sized to its content (0.2.1 round 4, UI_HUD2.md 5.27): its box's right edge and bottom and its scrim's extent
+    // follow the drawn lines - at once when they grow (the box always holds the text), gently and only past the
+    // hysteresis when they shrink (hud2_layout.h EaseContent: a ticking value or a 5 s place line never breathes it)
+    {
+        static float r = 0, b = 0, sr = 0, sb = 0, hWas = 0;
+        static ULONGLONG at = 0;
+        const ULONGLONG now = GetTickCount64();
+        const float ndt = at ? Clampf((now - at) / 1000.0f, 0.0f, 0.25f) : 0.0f;
+        at = now;
+        if (H != hWas)
+            r = b = sr = sb = 0, hWas = H;
+        const float hyst = hud2layout::kContentHyst * H;
+        auto ease = [&](float& cur, float raw)
+        {
+            cur = raw > 0 ? std::max(raw, hud2layout::EaseContent(cur, raw, ndt, hyst)) : 0.0f;
+            return cur;
+        };
+        f.navRight = ease(r, g_navRight), f.navBottom = ease(b, g_navBottom);
+        g_navScrim[2] = ease(sr, g_navScrim[0]), g_navScrim[3] = ease(sb, g_navScrim[1]);
+    }
+    if (g_m.presetDrawn == hud2preset::Focus) // (Focus: its reveal's form and held parts)
+        f.form = g_rv.form, f.held = g_rv.held;
     // the measures need this frame's scale (the parts size their texts by L.H x L.k)
     Layout& L = g_L;
     L.W = W, L.H = H, L.k = hud2layout::Scale(f);
     f.m.nCtx = g_m.nCtx;
     f.m.ctxMeasured = ContextWidths(g_m, L, f.m.base, f.m.glyph, f.m.label, f.m.hold, f.m.dims);
+    if (f.m.ctxMeasured)
+        ContextLabelMins(g_m, L, f.m.labelMin); // (a squeezed prompt's label wraps, never scrolls: 0.2.1)
     for (int i = 0; i < g_m.nCtx && i < 3; ++i) // (each prompt's lane: CtxSide, the owner's decision 4)
         f.m.side[i] = g_m.ctx[i].side;
     f.m.ctxGap = ContextGap(L), f.m.ctxWord = ContextWordSize(L);
     f.m.slotKeyW = SlotKeyWidth(g_m, L, g_m.presetDrawn == hud2preset::Focus); // (the stacked cross's width: decision 3)
     f.m.alertW = g_m.alert.empty() ? 0 : DrawAlert(g_m, L, 1, true);
+    // Standard's panels sized to their content (0.2.1 round 3, UI_HUD2.md 5.26): measured, floored, eased with hysteresis
+    // (hud2_layout.h EaseContent); the layout caps them at the spec's widths. A new scale or screen snaps them.
+    if (g_m.presetDrawn != hud2preset::Focus)
+    {
+        static float cardW = 0, shipW = 0, loadW = 0, kWas = 0, hWas = 0;
+        static ULONGLONG at = 0;
+        const ULONGLONG now = GetTickCount64();
+        const float cdt = at ? Clampf((now - at) / 1000.0f, 0.0f, 0.25f) : 0.0f;
+        at = now;
+        static float shipH = 0, loadH = 0; // (round 6: the heights, the same ease / hysteresis)
+        if (L.k != kWas || H != hWas)
+            cardW = shipW = loadW = shipH = loadH = 0, kWas = L.k, hWas = H;
+        shipH = hud2layout::EaseContent(shipH, ShipContentHeight(g_m, L), cdt, hud2layout::kContentHyst * H * L.k);
+        loadH = hud2layout::EaseContent(loadH, LoadoutContentHeight(g_m, L), cdt, hud2layout::kContentHyst * H * L.k);
+        f.m.shipH = shipH, f.m.loadH = loadH;
+        const float hk = H * L.k, hyst = hud2layout::kContentHyst * hk;
+        const float cw = std::max(g_m.target ? CardContentWidth(g_m, L) : 0.0f, f.list ? ListContentWidth(g_m, L) : 0.0f);
+        const float sw = ShipContentWidth(g_m, L), lw = LoadoutContentWidth(g_m, L);
+        cardW = hud2layout::EaseContent(cardW, cw > 0 ? std::max(cw, hud2layout::kCardMinW * hk) : 0.0f, cdt, hyst);
+        shipW = hud2layout::EaseContent(shipW, sw > 0 ? std::max(sw, hud2layout::kShipMinW * hk) : 0.0f, cdt, hyst);
+        loadW = hud2layout::EaseContent(loadW, lw > 0 ? std::max(lw, hud2layout::kLoadMinW * hk) : 0.0f, cdt, hyst);
+        f.m.cardW = cardW, f.m.shipW = shipW, f.m.loadW = loadW;
+    }
     // the subtitles' dialogue panel (the alert goes under it, or to the first clear place)
     HudSubtitles subs = {};
     const HudBus* bus = HostAtLeast(21) && g_host->GetHudBus ? g_host->GetHudBus() : nullptr;
@@ -1673,7 +1785,8 @@ static void ComputeLayout(float W, float H)
     L.consX0 = c.cons.x0, L.consY0 = c.cons.y0, L.consX1 = c.cons.x1, L.consY1 = c.cons.y1;
     L.ctxY = c.ctxY, L.ctxX0 = c.ctxX0, L.ctxX1 = c.ctxX1, L.ctxTop = c.ctxTop, L.ctxPlan = c.ctxPlan;
     for (int i = 0; i < 3; ++i)
-        L.ctxW[i] = c.ctxW[i], L.ctxX[i] = c.ctxX[i], L.ctxPY[i] = c.ctxPY[i];
+        L.ctxW[i] = c.ctxW[i], L.ctxX[i] = c.ctxX[i], L.ctxPY[i] = c.ctxPY[i], L.ctxWrap[i] = c.ctxWrap[i];
+    L.ctxTall = c.ctxTall;
     L.alertY = c.alertY, L.alertX0 = c.alertX0, L.alertX1 = c.alertX1, L.alertY1 = c.alertY1;
     L.listInCard = c.listInCard, L.form = c.form, L.bandY = c.bandY, L.holdY = c.holdY, L.clearY0 = c.clearY0;
     g_m.nCtx = c.nCtx; // (the last prompts that did not fit gave way; a preset's pill cap too)
@@ -1771,6 +1884,7 @@ void Update(float dt, const Context& c)
     perf::Scope ps("hud2.Update");
     const double t0 = perf::Now();
     g_ctx = c;
+    g_cursorEligible = false; // (set by the CONTEXTUAL wake below when it runs)
     const uiopt::UiOptions& o = uiopt::Get();
     // the layout preset and the controller setup it adapts to (UI_HUD2_PRESETS.md 6 step 4, hud2_preset.h): kept current
     // in and out of flight, so `hud2 state` and the lint read the live choice; step 5 lays out from it
@@ -1832,24 +1946,38 @@ void Update(float dt, const Context& c)
     g_slow += dt;
     if (HotRefreshWanted())
         g_slow = 1;
+    bool built = !g_sim.empty(); // (the debug states build the model every frame)
     if (g_slow >= 0.1f)
     {
         g_slow = 0;
         Slow();
+        built = true;
     }
     Simulate(g_m);
+    if (built) // the prompt set's signature as built (the layout trims nCtx every frame after: not a change)
+        g_ctxSig = CtxSig(g_m);
     if (c.modal)
         g_m.nCtx = 0; // the context line steps aside while a modal shows its prompt bar
     // the fades
     const bool calm = g_m.state == State::Calm || g_m.state == State::CruiseCharge || g_m.state == State::Maneuver ||
-                      (g_m.state == State::Autopilot && !g_combat); // the autopilot travelling is calm flight too
-    const int fade = o.hudFade;
+                      (g_m.state == State::Autopilot && !g_combat) || // the autopilot travelling is calm flight too
+                      (g_m.state == State::Turret && !g_combat);      // turret view out of a fight (0.2.1 round 6)
+    const int fade = o.hudFade <= 0 ? 0 : 1; // (0.2.1: 0 FULL, 1 CONTEXTUAL; the retired 2 MINIMAL falls back to 1)
     Fades tgt;
-    tgt.ring = fade == 0 || !calm ? 1.0f : fade == 1 ? 0.4f : 0.0f;
-    tgt.ship = fade == 0 || !calm ? 1.0f : fade == 1 ? 0.65f : 0.0f;
-    tgt.loadout = fade == 0 || !calm ? 1.0f : fade == 1 ? 0.6f : 0.0f;
+    tgt.ring = tgt.ship = tgt.loadout = tgt.nav = 1; // (CONTEXTUAL's wake below)
+    bool targetChanged = false;
     tgt.target = g_m.target ? (g_m.state == State::Maneuver && g_m.manName == L"TRADE LANE" ? 0.75f : 1.0f) : 0.0f;
     tgt.context = g_m.nCtx ? 1.0f : 0.0f;
+    // hud_prompts 1 (0.2.1, core\game\promptshow.h): the lanes show on a change of their prompts or after a player action
+    // (NoteAction; a target switch / clear by any input), 4 s, then fade out with the context's ease
+    {
+        const u32 tid = fl::TargetId();
+        targetChanged = tid != g_promptTarget;
+        const bool action = g_promptAction || targetChanged;
+        g_promptAction = false, g_promptTarget = tid;
+        if (!promptshow::Step(g_promptShow, o.hudPrompts, g_ctxSig, action, c.modal, dt))
+            tgt.context = 0;
+    }
     tgt.alert = g_m.alertLeft > 0 ? 1.0f : 0.0f;
     // The game's cinematics (a jump's tunnel, a lane's entry, a dock's approach: the letterbox, exe::LetterboxAmount): HUD 2
     // collapses to the nav's chip (in the upper bar) and the ring - the side panels and the context line go (the round 3
@@ -1859,27 +1987,78 @@ void Update(float dt, const Context& c)
     g_letterbox = (exe::LetterboxAmount.ok() && Mem<float>(exe::LetterboxAmount) > 0.0f) || simCine;
     g_m.cine = g_letterbox && (g_sim.empty() || simCine);
     const bool focus = g_m.presetDrawn == hud2preset::Focus;
-    // MINIMAL: anything that changes brings its part back for a few seconds (Focus: its own reveal, below)
-    if (fade == 2 && !focus)
+    // CONTEXTUAL (hud_fade 1, the default since 0.2.1; core\game\hudwake.h): HUD 2 fades out while idle / in simple
+    // flying, each element wakes on its triggers and lingers 4 s; a fight, a modal, low shield / hull and incoming
+    // missiles keep theirs up; the alert is always shown, the prompts follow hud_prompts (Focus: its own reveal, below)
     {
-        static float wakeShip = 0, wakeLo = 0, wakeRing = 0;
-        static int sigShip = 0, sigLo = 0;
-        static float lastHull = 0, lastShield = 0;
-        const int sShip = g_m.holdUsed * 7 + g_m.nEscorts;
-        const int sLo = g_m.nano * 1000003 + g_m.batt * 1009 + g_m.cm * 31 + g_m.mines + g_m.ammo * 7 + g_m.activeGroup;
-        if (sShip != sigShip)
-            sigShip = sShip, wakeShip = 4;
-        if (sLo != sigLo)
-            sigLo = sLo, wakeLo = 4;
-        if (fabsf(g_m.hull - lastHull) > 0.01f || fabsf(g_m.shield - lastShield) > 0.01f)
-            wakeRing = 4, lastHull = g_m.hull, lastShield = g_m.shield;
-        wakeShip -= dt, wakeLo -= dt, wakeRing -= dt;
-        if (wakeShip > 0 && !g_letterbox)
-            tgt.ship = 1;
-        if (wakeLo > 0 && !g_letterbox)
-            tgt.loadout = 1;
-        if (wakeRing > 0)
-            tgt.ring = 1;
+        static long long loSig = 0;
+        static unsigned objSig = 0, manSig = 0;
+        static int cruiseWas = 0;
+        static bool killWas = false;
+        unsigned trig = g_wakeTrig;
+        g_wakeTrig = 0;
+        if (c.steer > 0.15f)
+            trig |= hudwake::Steer;
+        // the keyboard-and-mouse player's steering wakes the ring as the stick does (0.2.1 round 3; HUD 2 is their default):
+        // the game's mouse flight engaged (exe::MouseFlightEngaged, the u8 its steering sets each frame) with the cursor
+        // off the centre, or the game's cursor moving while in space (the free cursor aims the guns)
+        {
+            static int mxWas = -1, myWas = -1;
+            const int mx = fl::MouseX(), my = fl::MouseY();
+            const float Hs = static_cast<float>(std::max(1, fl::ScreenHeight())), Ws = static_cast<float>(std::max(1, fl::ScreenWidth()));
+            const bool engaged = exe::MouseFlightEngaged.ok() && Mem<u8>(exe::MouseFlightEngaged) != 0;
+            const float off = sqrtf((mx - Ws / 2) * (mx - Ws / 2) + (my - Hs / 2) * (my - Hs / 2));
+            const bool moved = mxWas >= 0 && abs(mx - mxWas) + abs(my - myWas) > 0.004f * Hs;
+            if (c.space && !c.pad && ((engaged && off > 0.03f * Hs) || moved))
+                trig |= hudwake::Steer;
+            mxWas = mx, myWas = my;
+        }
+        if (g_m.burner)
+            trig |= hudwake::Boost;
+        if (c.firing)
+            trig |= hudwake::Fire;
+        if (c.space && !c.pad && FireKeyPressed()) // a K&M fire input's press: everything (the pad's: controller.cpp)
+            trig |= hudwake::FireInput;
+        // turret view (0.2.1 round 6, the owner: the contextual HUD stayed up there): calm flight like any other, its
+        // entry / exit wakes the panels that say so (the TURRET VIEW chip), then the HUD fades by the same rules
+        {
+            static bool turretWas = false;
+            if (c.turret != turretWas)
+                trig |= hudwake::Maneuver;
+            turretWas = c.turret;
+        }
+        if (targetChanged)
+            trig |= hudwake::TargetChg;
+        // the state's own edges (any input: the keyboard, the mouse, the autopilot, the mission)
+        const long long lo = static_cast<long long>(g_m.nano) * 1000003LL + g_m.batt * 1009LL + g_m.cm * 31LL + g_m.mines +
+                             g_m.ammo * 7LL + g_m.activeGroup * 131071LL;
+        if (lo != loSig)
+            loSig = lo, trig |= hudwake::Fire;
+        const unsigned obj = promptshow::Mix(promptshow::kSeed, g_m.objective);
+        if (obj != objSig)
+            objSig = obj, trig |= hudwake::Objective;
+        const unsigned man = promptshow::Mix(promptshow::Mix(promptshow::kSeed, g_m.man ? 1 : 0), g_m.manName);
+        if (man != manSig)
+            manSig = man, trig |= hudwake::Maneuver;
+        if (g_m.cruise != cruiseWas || g_m.kill != killWas || g_m.cruise == 1) // (the charge's seconds stay up)
+            cruiseWas = g_m.cruise, killWas = g_m.kill, trig |= hudwake::Cruise;
+        if (g_m.hitAge >= 0 && g_m.hitAge < 0.3f)
+            trig |= hudwake::Hit;
+        hudwake::In in;
+        in.trig = trig, in.dt = dt, in.combat = !calm || g_combat, in.modal = c.modal || c.spaceUi;
+        in.lowShield = g_m.shield >= 0 && g_m.shield < 0.25f, in.lowHull = g_m.hull > 0 && g_m.hull < 0.5f;
+        in.missiles = g_m.missiles > 0;
+        g_wakeShown = hudwake::Step(g_wake, focus ? 0 : fade, in);
+        g_cursorEligible = g_active && c.space && !c.spaceUi && !c.modal && !g_menuOver && !g_m.cine;
+        if (!focus && fade == 1)
+        {
+            tgt.ring = (g_wakeShown & hudwake::Ring) ? 1.0f : 0.0f;
+            tgt.ship = (g_wakeShown & hudwake::Ship) ? 1.0f : 0.0f;
+            tgt.loadout = (g_wakeShown & hudwake::Loadout) ? 1.0f : 0.0f;
+            tgt.nav = (g_wakeShown & hudwake::Nav) ? 1.0f : 0.0f;
+            if (!(g_wakeShown & hudwake::Target))
+                tgt.target = 0;
+        }
     }
     // Focus (UI_HUD2_PRESETS.md 2.2; hud2_layout.h Reveal): its bundle's reveal decides what shows (hud_fade is not read:
     // Focus's bundle is hud_fade 2's reveal, written by the bundles of step 4 - until then the preset applies it itself)
@@ -1952,6 +2131,12 @@ void Update(float dt, const Context& c)
             tgt.alert = 0;
     }
     Ease(g_f.ring, tgt.ring, dt), Ease(g_f.ship, tgt.ship, dt), Ease(g_f.loadout, tgt.loadout, dt);
+    Ease(g_f.nav, tgt.nav, dt);
+    {
+        const bool ctxMode = fade == 1 && g_m.presetDrawn != hud2preset::Focus;
+        Ease(g_f.wakeTarget, !ctxMode || (g_wakeShown & hudwake::Target) ? 1.0f : 0.0f, dt);
+        Ease(g_f.wakeHints, !ctxMode || tgt.context > 0 ? 1.0f : 0.0f, dt, 0.12f);
+    }
     Ease(g_f.target, tgt.target, dt, 0.12f), Ease(g_f.context, tgt.context, dt, 0.12f), Ease(g_f.alert, tgt.alert, dt, 0.15f);
     g_f.slide = 1 - g_t;
     ComputeLayout(static_cast<float>(fl::ScreenWidth()), static_cast<float>(fl::ScreenHeight()));
@@ -2095,7 +2280,8 @@ void Render(void* device)
         if (focus)
             ns.lean = true, ns.full = g_rv.navFull,
             ns.headline = uimeta::hud2p::Num(hud2preset::Data(hud2preset::Focus), "calm", "nav", "text_h", 0.030f);
-        g_navRight = DrawNav(g_m, L, base * fNav, ns, &g_navBottom); // (the slide is an offset: the edge is without it)
+        ns.scrimR = g_navScrim[2], ns.scrimB = g_navScrim[3], ns.textOut = g_navScrim;
+        g_navRight = DrawNav(g_m, L, base * fNav * g_f.nav, ns, &g_navBottom); // (the slide is an offset: the edge is without it)
     }
     if (g_f.target > 0.01f)
     {
@@ -2117,7 +2303,7 @@ void Render(void* device)
     {
         part(1, -1);
         RecordTag("hints");
-        DrawCalmHints(g_m, L, base * (1 - g_f.target) * fTgt,
+        DrawCalmHints(g_m, L, base * (1 - g_f.target) * g_f.wakeHints * fTgt,
                       focus ? uimeta::hud2p::Num(hud2preset::Data(hud2preset::Focus), "calm", "hints", "text_h", 0.026f)
                             : 0.024f);
     }
@@ -2125,7 +2311,7 @@ void Render(void* device)
     {
         part(1, -1);
         RecordTag("list");
-        DrawList(g_m, L, base * (g_m.target ? std::max(g_f.target, 0.5f) : 1.0f) * listDim * fTgt);
+        DrawList(g_m, L, base * (g_m.target ? std::max(g_f.target, 0.5f) : 1.0f) * g_f.wakeTarget * listDim * fTgt);
     }
     if (g_f.ship > 0.01f)
     {
@@ -2156,7 +2342,9 @@ void Render(void* device)
         DrawSplitArcs(g_m, L, base * fRing, v);
     }
     else if (g_f.ring > 0.01f || true)
-        DrawRing(g_m, L, base * fRing, g_f.ring);
+        DrawRing(g_m, L, base * fRing * (g_m.presetDrawn == hud2preset::Focus || uiopt::Get().hudFade <= 0 ? 1.0f : g_f.ring),
+                 g_f.ring); // (CONTEXTUAL, 0.2.1: the speed and the cruise readout go with the ring - DrawRing keeps
+                            // them at 60 % of a dimmed ring, the old CALM DIMS)
     if (g_f.context > 0.01f && g_m.nCtx)
     {
         part(0, 1);
@@ -2271,10 +2459,11 @@ std::string Command(std::istream& in)
     const uiopt::UiOptions& u = uiopt::Get();
     o << "hud2 active=" << g_active << " visible=" << g_visible << " t=" << g_t << " force=" << g_force
       << " sim=" << hud2sim::Label(g_sim, g_simComm) << " switches=" << g_switches << " state=" << StateName(g_m.state)
-      << " kbm=" << g_m.kbm << " combat=" << g_combat << "\n";
+      << " kbm=" << g_m.kbm << " combat=" << g_combat << " cursor=" << (g_cursorHiddenNote ? "hidden" : "shown")
+      << "\n";
     o << "settings style=" << u.hudStyle << " fade=" << u.hudFade << " opacity=" << u.hudOpacity << " scale="
       << u.hudScale << " numbers=" << u.hudNumbers << " threats=" << u.hudThreats << " context=" << u.hudContext
-      << " alerts=" << u.hudAlerts << " info=" << u.hudInfo << " wireframes=" << u.hudWireframes
+      << " prompts=" << u.hudPrompts << (g_promptShow.left > 0 ? "(shown)" : "(hidden)") << " alerts=" << u.hudAlerts << " info=" << u.hudInfo << " wireframes=" << u.hudWireframes
       << " transition=" << u.hudTransition << "\n";
     // the layout preset (UI_HUD2_PRESETS.md 6 step 4): asked / drawn, its data's size, the controller setup's read
     o << "preset=" << hud2preset::Label(g_m.preset) << " hud_preset=" << g_m.preset << " drawn=" << g_m.presetDrawn
@@ -2310,7 +2499,8 @@ std::string Command(std::istream& in)
     o << " | alert='" << text::Utf8(g_m.alert) << "' left=" << g_m.alertLeft << " loot=" << g_m.loot << "\n";
     o << "lane entry=" << g_laneKey[0] << " exit=" << g_laneKey[1] << " final=" << g_laneFinal << " rings="
       << g_laneRings.size() << "\n";
-    o << "fades ring=" << g_f.ring << " target=" << g_f.target << " ship=" << g_f.ship << " loadout=" << g_f.loadout
+    o << "wake shown=" << g_wakeShown << " (1 ring 2 ship 4 loadout 8 target 16 nav)\n";
+    o << "fades nav=" << g_f.nav << " ring=" << g_f.ring << " target=" << g_f.target << " ship=" << g_f.ship << " loadout=" << g_f.loadout
       << " context=" << g_f.context << " alert=" << g_f.alert << "\n";
     {
         // the layout's zones and whether any two meet (the corners, the ring between them): the aspect check's evidence
@@ -2334,7 +2524,7 @@ std::string Command(std::istream& in)
         for (int i = 0; i < g_core.nCtx && i < 3; ++i)
             o << " [" << (g_core.ctxSide[i] < 0 ? "C" : g_core.ctxSide[i] ? "R" : "L")
               << (g_core.ctxPY[i] < g_core.ctxY - 1 ? "1" : "0") << " " << static_cast<int>(g_core.ctxX[i]) << "+"
-              << static_cast<int>(g_core.ctxW[i]) << "]";
+              << static_cast<int>(g_core.ctxW[i]) << (g_core.ctxWrap[i] ? " wrap" : "") << "]";
         o << " overlaps=";
         int n = 0;
         for (size_t i = 0; i < std::size(z); ++i)

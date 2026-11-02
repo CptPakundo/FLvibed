@@ -32,6 +32,9 @@ int PadBackend();
 // `focus_only`: the physical pad is ignored while the game is in the background - flight and menus alike, one gate
 // (focus_gate.h; the owner, 29 Oct 2026); 0 lets it act in the background in both.
 bool FocusOnly();
+// ImplApi v4: a key command the game's key handler just handled (the keyboard's maneuvers: the lock's answer, hud_prompts'
+// actions; 0.2.1). The pad's own taps (Tap) are skipped: Apply answers them.
+void OnKeyCmd(int cmd, bool down);
 // "set <name> <value>" from the debug channel; returns a message.
 std::string SetOption(std::istream& in);
 std::string BotCommand(std::istream& in);       // debug: bot fight|off|status
