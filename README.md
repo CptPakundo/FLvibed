@@ -72,11 +72,6 @@ the picture, and an autopilot that no longer stays stuck. Everything below is on
 
 ## In 0.2.0
 
-**Hello, and welcome.** FLvibed is a free mod for Freelancer (2003) and Freelancer: HD Edition that lets you play the
-whole game with a controller (or keep your keyboard and mouse), read every spoken line as a subtitle, and see the
-movies fitted to your screen - one file in the game folder, nothing else to install. 0.2.0 is the second preview, and
-the best moment to try it: more is on by default, the HUD got a tidy-up, and the Advanced Autopilot learned a lot.
-
 **🛰️ HUD 2, everywhere**
 - HUD 2 is now the default with the pad **and** with keyboard and mouse, and its look carries over the menus, bases,
   dealers and dialogs. `hud_style = 0` brings the game's own HUD and screens back.
@@ -281,7 +276,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | 🧩 **Compatibility** | HD Edition 0.7.1, the original 1.1, FLUF beside it | Newer HD Edition releases, more mods |
 
 > [!IMPORTANT]
-> 🧪 **0.2.0 is an early preview - expect rough edges and change.**
+> 🧪 **0.2.5 is an early preview - expect rough edges and change.**
 > - **Some features are incomplete:** the Advanced Autopilot is work in progress, a few screens and controls are not
 >   built yet, and some are proven only by the test harness so far.
 > - **Design choices are still subject to change:** button layouts, HUD 2's look, setting names
