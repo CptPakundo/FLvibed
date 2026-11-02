@@ -31,12 +31,13 @@ struct UiOptions
     bool apStatusLine = true;       // ap_status_line
     // HUD 2 (docs\UI_HUD2.md 5.3)
     int hudStyle = 2;               // hud_style: 0 CLASSIC, 1 HUD 2 on the pad, 2 HUD 2 always (default since 0.2.0)
-    int hudFade = 1;                // hud_fade: 0 always full, 1 calm dims, 2 minimal
+    int hudFade = 1;                // hud_fade: 0 full, 1 contextual (0.2.1; core\game\hudwake.h)
     int hudOpacity = 100;           // hud_opacity %
     int hudScale = 100;             // hud_scale %
     int hudNumbers = 0;             // hud_numbers: 0 when low, 1 always, 2 never
     bool hudThreats = true;         // hud_threats
     int hudContext = 0;             // hud_context: 0 contextual, 1 off
+    int hudPrompts = 1;             // hud_prompts: 0 always shown, 1 shown on a change / an action (0.2.1)
     bool hudAlerts = true;          // hud_alerts
     bool hudInfo = true;            // hud_info
     bool hudWireframes = true;      // hud_wireframes

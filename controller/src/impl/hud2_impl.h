@@ -164,6 +164,8 @@ struct Model
 struct Fades
 {
     float nav = 1, ring = 1, target = 1, ship = 1, loadout = 1, context = 1, alert = 1;
+    float wakeTarget = 1, wakeHints = 1; // CONTEXTUAL (0.2.1): the target element woken (the K&M list without a target),
+                                         // the card corner's LB hints (with the prompts: hud_prompts)
     float slide = 0; // 0..1: how far each part sits off its place toward its corner (the transition)
     // Focus (hud2_layout.h Reveal's targets, eased): the split arcs, the band, its speed, the bottom-left's rows
     float arcShield = 1, arcHull = 1, arcPower = 1, band = 1, speed = 1, escorts = 1;
@@ -185,6 +187,10 @@ struct NavStyle
     bool lean = false;
     bool full = false;
     float headline = 0.032f; // the headline's size (H x k): Focus's text_h 0.030
+    // the scrim's eased extent (pixels: its text block's right / bottom as hud2.cpp eased them, 0.2.1 round 4); never
+    // smaller than this frame's text; 0 = the drawn text's
+    float scrimR = 0, scrimB = 0;
+    float* textOut = nullptr; // out (optional): this frame's text block's right [0] and bottom [1] (the scrim's raw extent)
 };
 
 // The layout in pixels (fractions of H x scale), from hud2.cpp; the parts draw inside it.
@@ -208,6 +214,8 @@ struct Layout
     promptfit::HoldPlan ctxPlan;
     float ctxW[3];
     float ctxX[3] = {}, ctxPY[3] = {}; // each prompt's left edge and centre line (the lanes: the owner's decision 4)
+    bool ctxWrap[3] = {};              // squeezed: its label wraps onto two lines (0.2.1: prompts never marquee)
+    float ctxTall = 0;                 // ... and its plate grows upward by this
     float ctxTop;
     float alertY, alertX0, alertX1, alertY1;
     // Focus (hud2_layout.h Out; Standard leaves them 0 / false)
@@ -253,11 +261,24 @@ float DrawContext(const Model& m, const Layout& L, float a, bool measure);
 // and which are holds (the pad form), and the word's dimensions; false while the player types (the line steps aside).
 bool ContextWidths(const Model& m, const Layout& L, float* widths, float* glyphW, float* labelW, bool* hold,
                    promptfit::HoldDims& d);
+// Each context label's narrowest room it reads whole in (two lines at the floor: promptfit LabelMinWidth).
+void ContextLabelMins(const Model& m, const Layout& L, float* out);
 float ContextGap(const Layout& L);
 float ContextWordSize(const Layout& L);
 // The keyboard form: the widest of the 4 consumables' keycaps (tight) as the cross draws them (Standard 0.026 H x k,
 // Focus's 0.024), 0 on the pad - the stacked cross's width (hud2_layout.h Measures::slotKeyW; the owner's decision 3).
 float SlotKeyWidth(const Model& m, const Layout& L, bool focus);
+// The panels sized to their content (0.2.1 round 3, the owner: "they only need to be as big as the content they
+// display"): the width (pixels) Standard's target card, ship panel and loadout base panel need for this frame's texts,
+// icons and paddings as DrawTarget / DrawShip / DrawLoadout lay them out (hud2.cpp eases them; hud2_layout.h caps them
+// at the spec's widths). 0 = nothing to measure.
+float CardContentWidth(const Model& m, const Layout& L);
+float ShipContentWidth(const Model& m, const Layout& L);
+float LoadoutContentWidth(const Model& m, const Layout& L);
+float ShipContentHeight(const Model& m, const Layout& L);    // (0.2.1 round 6: the heights to content)
+float LoadoutContentHeight(const Model& m, const Layout& L); //   0 = not drawn yet (the maximum)
+float ListContentWidth(const Model& m, const Layout& L);   // hud2_click.cpp: the threat / contact list under the card
+float CardIconsContentWidth(const Model& m, const Layout& L); // hud2_click.cpp: the K&M card's click row (short form)
 // The alert card; returns its width (measure).
 float DrawAlert(const Model& m, const Layout& L, float a, bool measure);
 // A prompt's glyph or keycap centred at (cx, cy), h tall; returns its width. `tight` = the dense panels' keycap

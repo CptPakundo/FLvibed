@@ -1,0 +1,10 @@
+{
+  "_about": "0.2.1 hotfix (2 Nov 2026; the owner's M01 report: a formation with the Brandt stalled at the mission's LockManeuvers): the player row maneuver_watchdog (on by default), after focus_only. Apply with specpatch.py to part2_data.js and docs/UI_SPEC.json (and the artifact's ui/spec, pinned set, after reading). Registry: controller/src/impl/controller.cpp maneuver_watchdog; rule: controller/src/impl/maneuver_watch.h.",
+  "add_rows": {
+    "controller/SYSTEM": {"after": "focus_only", "rows": [
+      {"key": "maneuver_watchdog", "label": "Restart stalled maneuvers", "kind": "toggle", "def": true,
+       "help": "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed starts the same maneuver again, up to 3 times, and logs what happened.",
+       "tier": "player", "needs": "live"}
+    ]}
+  }
+}

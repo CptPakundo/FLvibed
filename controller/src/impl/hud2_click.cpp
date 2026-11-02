@@ -6,6 +6,7 @@
 // Also here: the keyboard form's maneuver row, the threat / contact list (both forms draw the threat list here) and the
 // target card's close / next-enemy icons. The set is placed by the host only when it changes (memcmp there).
 #include "hud2_impl.h"
+#include "hud2_layout.h"
 
 #include "../fl.h"
 #include "aim.h"
@@ -371,6 +372,43 @@ void DrawCardIcons(const Model& m, const Layout& L, float a, bool compact)
     }
 }
 
+// The K&M card's click row in its short form (CLEAR / NEXT) right of the view's column (DrawCardIcons, compact false)
+float CardIconsContentWidth(const Model& m, const Layout& L)
+{
+    const float H = L.H, k = L.k, s = 0.028f * H * k, kh = 0.026f * H * k, T = 0.024f * H * k;
+    float w = 0;
+    for (int i = 0; i < 2; ++i)
+        w += TextWidth(i == 0 ? L"CLEAR" : L"NEXT", T, 0.08f) + 0.006f * H * k + s +
+             DrawPrompt(i == 0 ? m.clearBtn : m.nextEnemyBtn, 0, 0, kh, 0, true, false) + 0.006f * H * k + 0.024f * H * k;
+    return (0.13f + 0.03f) * H * k + w + 0.018f * H * k;
+}
+
+// The list's width (DrawList): its header (the filter words, or TARGETS / NEXT and the filter) and its rows
+float ListContentWidth(const Model& m, const Layout& L)
+{
+    const float H = L.H, k = L.k, T = 0.024f * H * k, g = 0.036f * H * k * 0.9f;
+    float head = g * 0.2f;
+    if (m.kbm)
+        head += 0.028f * H * k + 0.012f * H * k + (!m.list && m.nThreats == 0 ? TextWidth(L"CONTACTS", T, 0.08f) : 0.0f);
+    if (m.list)
+        for (int i = 0; i < 5; ++i)
+            head += TextWidth(kFilters[i], T, 0.02f) + 0.014f * H * k;
+    else if (m.nThreats > 0 || !m.kbm)
+    {
+        const float w1 = DrawPrompt(m.threatsBtn, 0, 0, g, 0, true);
+        if (w1 > 0)
+            head += w1 + g * 0.3f + TextWidth(L"TARGETS", T, 0.08f) + 0.03f * H * k;
+        if (!(m.kbm && m.target))
+            head += DrawPrompt(m.nextBtn, 0, 0, g, 0, true) + g * 0.35f + TextWidth(L"NEXT", T, 0.08f);
+        head += 0.012f * H * k + TextWidth(m.filter, T, 0.08f);
+    }
+    float rows = 0;
+    for (int i = 0; i < m.nThreats && i < 10; ++i)
+        rows = std::max(rows, 0.05f * H * k + TextWidth(m.threats[i].name, 0.026f * H * k) + 0.02f * H * k +
+                                  TextWidth(m.threats[i].dist, 0.026f * H * k));
+    return std::max(head, rows) + 0.018f * H * k;
+}
+
 void DrawList(const Model& m, const Layout& L, float a)
 {
     SetAlpha(a);
@@ -437,7 +475,8 @@ void DrawList(const Model& m, const Layout& L, float a)
         if (!Icon(m.threats[i].icon, x0 + 0.024f * H * k, yy, 0.028f * H * k, Argb(m.threats[i].col, 1)))
             Disc(x0 + 0.024f * H * k, yy, 0.006f * H * k, Argb(m.threats[i].col, 1));
         const float dw = TextWidth(m.threats[i].dist, 0.026f * H * k);
-        TextMarquee(x0 + 0.05f * H * k, yy, m.threats[i].name, 0.026f * H * k, right - dw - 0.02f * H * k - (x0 + 0.05f * H * k),
+        TextMarquee(x0 + 0.05f * H * k, yy, m.threats[i].name, 0.026f * H * k,
+                    hud2layout::RowRoom(x0 + 0.05f * H * k, right, dw, 0.02f * H * k, false, 0, 0), // (real room)
                 Argb(tgt ? kActive : kInk, 1));
         Text(right, yy, m.threats[i].dist, 0.026f * H * k, Argb(kInk, 1), Right);
         HotRect(kHotRow + i, x0, yy - 0.019f * H * k, x1, yy + 0.019f * H * k);

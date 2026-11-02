@@ -14,6 +14,7 @@
 #include "game/uidraw.h"
 #include "linebreak.h"
 #include "stack_fit.h"
+#include "chat_size.h"
 
 #include "../api.h"
 #include "hud_bus.h"
@@ -112,6 +113,8 @@ static const settings::Def kDefs[] = {
     {"chat_layout_narrow", Int, &g_set.chatLayoutNarrow, 0, 1,
      "chat log NPC lines on narrow screens: 1 a header row with name and faction, 0 the column layout"},
     {"chat_layout_wide", Int, &g_set.chatLayoutWide, 0, 1, "the same on wider screens"},
+    {"chat_size", Int, &g_set.chatSize, 0, 1,
+     "HUD 2's side chat text size: 0 normal (a little larger than the game's chat text), 1 large"},
     // The UI build's rows (docs\UI_SPEC.json SUBTITLES / MOVIES; the page shows them with their words, core\ui_meta.h)
     {"speaker_colors", Bool, &g_set.speakerColors, 0, 0,
      "story speakers' names in their own colours; 0 = every name by the speaker's relation to you"},
@@ -201,6 +204,7 @@ struct Block
     bool comm = false; // came through the comm player (comms may overlap: the game plays them at once)
     bool chatter = false; // ambient chatter shown as a subtitle (chatter 1): never displaces a dialogue line
     float movieBox = 1; // a movie line's backing (0 none .. 1 the full box): SetMovieBox, eased (movie.cpp decides)
+    float fit = 1;      // the stack fit's eased scale (stack_fit.h: the newest main-stack block 1, older ones shrink)
 };
 
 static std::deque<Block> g_blocks;
@@ -901,6 +905,13 @@ static float BarRight(float sh)
 static float g_barRight = -1, g_nnLeft = 0;         // the last TopRoom's readings (debug `layout`)
 static float g_cruiseRight = 0, g_cruiseBottom = 0; // the cruise box's right / bottom edge (0 = none)
 static ULONGLONG g_topRoomAt = 0, g_keepOutsAt = 0; // the HUD reads' last times (0 = read at the next call: HUD 2 left)
+// HUD 2's comm feed cards as last drawn (DrawHud2Feed; px): the off-screen arrows keep clear of them (HudKeepOuts)
+struct FeedDrawn
+{
+    float x0, y0, x1, y1;
+    ULONGLONG at;
+};
+static FeedDrawn g_feedDrawn = {};
 static float TopRoom(int sw, int sh)
 {
     static float room = 0;
@@ -1926,6 +1937,7 @@ struct LayoutBlock
     float x = 0;          // the widest row's left edge (the arrows keep clear of the blocks)
     u32 name = 0;         // the speaker's name colour (0xAARRGGBB)
     bool hostile = false; // the hostile marker drawn
+    float fit = 1;        // the stack fit's drawn scale (y, h, w, x stay unscaled: the block's place)
 };
 static struct
 {
@@ -1940,7 +1952,7 @@ static struct
     float portraitX = 0, portraitY = 0, portraitS = 0; // the comm portrait's slot (0 = none)
     bool hud2 = false; // placed in HUD 2's room: the band, the stack's limit, the Neural Net column (px)
     float freeL = 0, freeR = 0, limit = 0, nnLeft = 0, nnTop = 0;
-    float stackFit = 1; // the stack fit's drawn scale (stack_fit; every other number here is unscaled)
+    float stackFit = 1; // the stack fit's smallest drawn block scale (stack_fit; per block: `fit`; the rest unscaled)
     std::vector<LayoutBlock> blocks;
     ULONGLONG at = 0;
 } g_layout;
@@ -2418,10 +2430,12 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
                 bottom = std::min(bottom, ay0 - gap);
         }
     }
-    // HUD 2's sizes, not the dialogue's (the feed is secondary to the top panel; the mock-up's feed: the line ~0.034 H,
-    // the name ~0.030 H in Agency FB): the fonts drawn scaled to them, whatever subtitle size is set
-    const float ts = std::min(1.0f, sh * 0.034f / std::max(1, g_font.px)),
-                ns = std::min(1.0f, sh * 0.030f / std::max(1, nameFont.px));
+    // HUD 2's sizes, not the dialogue's (the feed is secondary to the top panel; `chat_size`, chat_size.h: Large = the
+    // mock-up's feed, the line ~0.034 H, the name ~0.030 H in Agency FB; Normal smaller): the fonts drawn scaled to them,
+    // whatever subtitle size is set; the wrapping and the cards' heights below follow ts / ns
+    const chatsize::Em em = chatsize::ForSetting(g_set.chatSize);
+    const float ts = std::min(1.0f, sh * em.line / std::max(1, g_font.px)),
+                ns = std::min(1.0f, sh * em.name / std::max(1, nameFont.px));
     const float nameH = nameFont.lineHeight * 1.02f * ns, lineH = g_font.lineHeight * 1.04f * ts;
     struct Laid
     {
@@ -2456,6 +2470,7 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
         return;
     // bottom-anchored in the band (newest lowest, nearest the ship panel), as the mock-up's feed
     float y = bottom;
+    float feedX0 = 0, feedY0 = 0, feedX1 = 0, feedY1 = 0;
     for (size_t i = laid.size(); i-- > 0;)
     {
         const Laid& L = laid[i];
@@ -2469,6 +2484,12 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
         if (a > 0.01f)
         {
             const float bx = x0, by = y - pad * 0.5f, bw = accent + 2 * pad + L.w, bh = L.h + pad;
+            // the cards' drawn area (scrim + feather): a keep-out for the off-screen arrows (HudKeepOuts)
+            if (feedX1 <= feedX0)
+                feedX0 = bx, feedY0 = by, feedX1 = bx + bw + fe, feedY1 = by + bh;
+            else
+                feedX0 = std::min(feedX0, bx), feedY0 = std::min(feedY0, by), feedX1 = std::max(feedX1, bx + bw + fe),
+                feedY1 = std::max(feedY1, by + bh);
             // the navy scrim, feathered on the right (no hard box over a planet), the accent bar in the name's colour
             const u32 navy = 0x00081422;
             const u32 base = static_cast<u32>(std::clamp(g_set.bgOpacity + 15, 40, 90) * 255 / 100 * a);
@@ -2499,6 +2520,8 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
         }
         y -= gap;
     }
+    if (feedX1 > feedX0)
+        g_feedDrawn = {feedX0, feedY0, feedX1, feedY1, GetTickCount64()};
     render::End(ownScene);
 }
 
@@ -2652,6 +2675,10 @@ static void HudKeepOuts(float sw, float sh, std::vector<KeepOut>& out)
     }
     if (!h2)
         out = hud;
+    // HUD 2's comm feed (the chat cards at the left edge, drawn by DrawHud2Feed): its cards' drawn area, reaching to the
+    // left screen edge (an arrow pinned there must not stand in the margin beside it)
+    if (h2 && GetTickCount64() - g_feedDrawn.at < 100 && g_feedDrawn.x1 > g_feedDrawn.x0)
+        out.push_back({g_feedDrawn.x0 < sw * 0.07f ? -1.0f : g_feedDrawn.x0, g_feedDrawn.y0, g_feedDrawn.x1, g_feedDrawn.y1});
     if (GetTickCount64() - g_layout.at < 100) // the subtitles of the last frame drawn
     {
         if (g_layout.topPanel && g_panel.alpha > 0.05f)
@@ -2839,7 +2866,7 @@ std::string LayoutReport()
         char name[8];
         sprintf_s(name, "%06X", b.name & 0xFFFFFF);
         o << "block y=" << b.y << " h=" << b.h << " w=" << b.w << (b.corner ? " corner" : "") << " name=" << name
-          << (b.hostile ? " hostile" : "") << " speaker=" << b.speaker << "\n";
+          << (b.hostile ? " hostile" : "") << " fit=" << b.fit << " speaker=" << b.speaker << "\n";
     }
     return o.str();
 }
@@ -2880,6 +2907,12 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
         (Hud2Layout() || TopRoom(sw, sh) > 0) &&
         Mem<u32>(exe::CurrentCamera) && hk::Call<void*(__cdecl*)()>(exe::GetPlayerIObj))
         fontScale = g_set.size > 0 ? kSizes[g_set.size - 1] / kSizes[g_set.size] : 0.85f;
+    // the flight top panel (space_position 2, not a cutscene): 10 % under the size table - the owner, 2 Nov 2026 (0.2.1):
+    // "mostly right, just a bit too big"; rooms, story scenes and movies keep the table's size
+    else if (!soft && g_set.spacePosition == 2 && (Hud2Layout() || TopRoom(sw, sh) > 0))
+        if (const u32 cam = Mem<u32>(exe::CurrentCamera))
+            if (!exe::CamCutscene.is(cam) && hk::Call<void*(__cdecl*)()>(exe::GetPlayerIObj))
+                fontScale = 0.9f;
     const int px = std::max(8, static_cast<int>(sh * kSizes[g_set.size] * fontScale + 0.5f));
     // (Agency FB text while HUD 2 shows, in flight - not over a movie)
     const bool agency = !soft && Hud2Layout() != nullptr;
@@ -3285,30 +3318,59 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
     const float k = fresh ? 1.0f : 1.0f - std::exp(-dt / kGlideTau);
     anchor += (place.bottom - anchor) * k;
     // Stack fit (stack_fit; the owner, 1 Nov 2026: at 4:3 and in letterboxed story scenes a two-speaker stack covered a
-    // large part of the picture): two or more blocks in the main stack - not the Neural Net corner, not lines fading out
-    // or released - shrink together so the stack keeps about the tallest block's height, down to the setting; gliding as
-    // the stack does. Drawn through render::ZoomBegin / ZoomEnd below; every placement, keep-out, the crosshair limit and
-    // the retiring above stay unscaled (the scale only shrinks: the drawn stack lies inside its unscaled place). Movies
-    // (the software target) unscaled.
-    static float fitScale = 1.0f;
+    // large part of the picture; 2 Nov 2026 after playing it: "too fast and sudden", shrink the older lines and never the
+    // newest): with two or more blocks in the main stack - not the Neural Net corner, not lines fading out or released -
+    // the newest (the most recently started line) stays at 1 and the older ones shrink to one common scale so the stack
+    // keeps about its tallest block's height, down to the setting (stackfit::Targets), each easing at stackfit::kTau
+    // (0.5 s); a line fading out keeps the scale it had, a block that becomes the newest grows back. Each block is drawn
+    // through render::ZoomBegin / ZoomEnd about its own anchor (top-anchored stacks: its top edge - the tab layout's
+    // first block: the body's top -, bottom-anchored: its bottom edge; x = the rows' centre), and the slots below follow
+    // the eased heights. Every placement, keep-out, the crosshair limit and the retiring above stay unscaled (a scale only
+    // shrinks: the drawn stack lies inside its unscaled place). Movies (the software target) unscaled.
+    std::vector<float> fitS(g_blocks.size(), 1.0f), pivotOff(g_blocks.size(), 0.0f);
     {
         std::vector<float> stacked;
+        std::vector<size_t> which;
+        size_t newest = 0;
+        double newestStart = -1e300;
         for (size_t i = 0; i < g_blocks.size(); ++i)
             if (!inCorner(g_blocks[i]) && !released[i] && g_blocks[i].leaving < 0)
-                stacked.push_back(heights[i]);
-        const float target = soft ? 1.0f : stackfit::Target(stacked, gap, g_set.stackFit);
-        fitScale = stackfit::Ease(fitScale, target, dt, kGlideTau, fresh);
-        g_layout.stackFit = soft ? 1.0f : fitScale;
+            {
+                if (g_blocks[i].start >= newestStart)
+                    newestStart = g_blocks[i].start, newest = stacked.size();
+                which.push_back(i), stacked.push_back(heights[i]);
+            }
+        const std::vector<float> targets = stackfit::Targets(stacked, newest, g_set.stackFit);
+        std::vector<float> target(g_blocks.size(), -1.0f);
+        for (size_t j = 0; j < which.size() && j < targets.size(); ++j)
+            target[which[j]] = targets[j];
+        float smallest = 1.0f;
+        for (size_t i = 0; i < g_blocks.size(); ++i)
+        {
+            Block& b = g_blocks[i];
+            if (soft || inCorner(b))
+                b.fit = 1.0f;
+            else if (target[i] > 0.0f)
+                b.fit = stackfit::Ease(b.fit, target[i], dt, stackfit::kTau, fresh);
+            b.fit = std::clamp(b.fit, 0.05f, 1.0f); // (fading out: held)
+            fitS[i] = b.fit;
+            if (!inCorner(b) && !released[i])
+                smallest = std::min(smallest, b.fit);
+            // the block's zoom anchor, from its unscaled top: top-anchored its top (the tab layout's first block: the
+            // body's top, so its name shrinks inside the tab and its rows inside the body), bottom-anchored its bottom
+            pivotOff[i] = !place.fromTop ? heights[i]
+                          : static_cast<int>(i) == tabBlock && bodyTop > anchor ? std::min(heights[i], bodyTop - anchor)
+                                                                                : 0.0f;
+        }
+        g_layout.stackFit = smallest;
     }
-    const float zoomS = soft ? 1.0f : fitScale;
-    // unscaled coordinates of a point drawn at screen v (the game's comm window is placed on screen, the panel unscaled)
-    auto unzoom = [&](float v, float o) { return zoomS < 1.0f ? o + (v - o) / zoomS : v; };
-    auto zoomed = [&](float v, float o) { return o + (v - o) * zoomS; }; // and back
-    // the zoom's centre (set below, once the panel and the rows' centre are placed): top-anchored stacks about their top,
-    // bottom-anchored about their bottom, centred on the panel / the rows
-    float zoomX = place.centerX, zoomY = anchor;
-    // slots: top-anchored oldest first downwards; bottom-anchored newest at the bottom, older above; the corner hangs
-    // from its own top
+    // a block's drawn height in the stack: top-anchored from its top down, bottom-anchored from its bottom up
+    auto fitH = [&](size_t i)
+    { return place.fromTop ? pivotOff[i] + (heights[i] - pivotOff[i]) * fitS[i] : heights[i] * fitS[i]; };
+    // a point drawn unscaled at v, on screen after a zoom by s about o
+    auto zoomed = [](float v, float o, float s) { return o + (v - o) * s; };
+    // slots (each block's unscaled top, where it is drawn before its zoom): top-anchored oldest first downwards;
+    // bottom-anchored newest at the bottom, older above; spaced by the drawn heights; the corner hangs from its own top
     std::vector<float> slot(g_blocks.size());
     if (place.fromTop)
     {
@@ -3318,7 +3380,7 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             {
                 slot[i] = y;
                 if (!released[i])
-                    y += heights[i] + gap;
+                    y += fitH(i) + gap;
             }
     }
     else
@@ -3326,7 +3388,7 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
         float y = anchor;
         for (size_t i = g_blocks.size(); i-- > 0;)
             if (!inCorner(g_blocks[i]))
-                y -= heights[i], slot[i] = y, y -= gap;
+                slot[i] = y - heights[i], y -= fitH(i) + gap;
     }
     {
         float y = cornerTop;
@@ -3338,9 +3400,8 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
     // stack (widest row, every block still holding a slot); it slides in from the top edge while a line shows and back
     // out after the last one; its width and height glide as the stack changes. Leaving flight hides it at once (the
     // HUD goes with it).
-    // everything of the main stack from here on (the panel, its dividers, the rows, names, markers, the word pop, the
-    // portrait's animations) is zoomed by the stack fit at the end; the Neural Net corner is drawn after it, unscaled
-    const size_t zoomFrom = render::ZoomBegin();
+    // the panel and its dividers are drawn unscaled, sized by the drawn stack; each block (and the portrait's animations
+    // with its block) is zoomed by its own stack-fit scale below; the Neural Net corner is never zoomed
     float panelPartition[4] = {};
     int partitions = 0;
     // the rows' centre; the tab names' room right of the portrait (left edge, width; -1 without the portrait); the
@@ -3362,10 +3423,10 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
                     continue;
                 want = want || g_blocks[i].leaving < 0;
                 for (const Row& r : blockRows[i])
-                    rowsW = std::max(rowsW, r.w);
+                    rowsW = std::max(rowsW, r.w * fitS[i]);
                 if (mains++ && partitions < 4)
                     panelPartition[partitions++] = slot[i] - gap * 0.5f - anchor;
-                stackH += heights[i] + (mains > 1 ? gap : 0);
+                stackH += fitH(i) + (mains > 1 ? gap : 0);
             }
             const float line = std::max(1.5f, sh * kFrameLine);
             if (mains > 0)
@@ -3419,8 +3480,12 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
                     tabNameRoom = tabTarget - 2 * panelSide - tabSlot;
                 g_panel.bodyTop = tabBlock >= 0 ? bodyTop : 0.0f;
                 float th = anchor + stackH + sh * kPanelBottom + line;
-                if (slotS > 0 && !portraitInTab) // deep enough for the portrait beside its line
-                    th = std::max(th, slot[portraitBlock] + slotS + sh * kPanelBottom + line);
+                if (slotS > 0 && !portraitInTab) // deep enough for the portrait beside its line (zoomed with it)
+                {
+                    const float py = slot[portraitBlock] + pivotOff[portraitBlock];
+                    th = std::max(th, zoomed(slot[portraitBlock] + slotS, py, fitS[portraitBlock]) +
+                                          sh * kPanelBottom + line);
+                }
                 if (!g_panel.sized || g_panel.s <= 0 || !g_set.motion)
                     g_panel.x = panelCx, g_panel.w = bodyW, g_panel.h = th, g_panel.tabW = tabTarget,
                     g_panel.sized = true;
@@ -3448,26 +3513,18 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             // last frame)
             // (the game's outline as written - it grows with the opening line -, or the closing animation's own, from
             // the last frame)
-            // the stack fit's zoom centre: the panel's centre line at its top edge - flush: the screen's (riding the
-            // slide); below the top row (space_narrow 3): its own; the tab layout: the body's top, so the body shrinks
-            // inside its own place and the tab reaches up to the screen's edge from it (DrawTopPanel, Unzoomed)
-            zoomX = g_panel.x;
-            zoomY = g_panel.bodyTop > 0 ? g_panel.bodyTop + g_panel.yoff
-                    : g_panel.top > 0   ? g_panel.top + g_panel.yoff
-                                        : g_panel.yoff;
             if (g_comm.moved && g_comm.s > 0)
             {
                 // while it opens only the picture's part (the panel stays behind the growing outline), then the outline
-                // (the game's window is on screen, the panel drawn unscaled: the hole in the panel's coordinates)
+                // (the game's window and the panel are both in screen coordinates: the panel is never zoomed)
                 const bool whole = g_comm.w >= g_comm.s - 0.5f && g_comm.h >= g_comm.s - 0.5f;
                 const float c = g_comm.s * 0.5f, fx = (whole ? g_comm.f : g_comm.w) * 0.5f,
                             fy = (whole ? g_comm.f : g_comm.h) * 0.5f;
-                g_hole = {true, unzoom(g_comm.x + c - fx, zoomX), unzoom(g_comm.y + c - fy, zoomY),
-                          unzoom(g_comm.x + c + fx, zoomX), unzoom(g_comm.y + c + fy, zoomY)};
+                g_hole = {true, g_comm.x + c - fx, g_comm.y + c - fy, g_comm.x + c + fx, g_comm.y + c + fy};
             }
             else
                 g_hole = g_closingHole;
-            g_zoom = {zoomS, zoomX, zoomY};
+            g_zoom = {}; // (the panel unscaled: Unzoomed is the identity)
             DrawTopPanel(static_cast<float>(sh), g_set.bgOpacity / 100.0f, now);
             g_zoom = {};
             g_hole.on = false;
@@ -3488,10 +3545,10 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
         shownCx = fresh || std::fabs(shownCx - textCx) > sw * 0.5f ? textCx : shownCx + (textCx - shownCx) * k;
         textCx = shownCx;
     }
-    if (!place.topPanel) // (the panel's zoom centre: above) the rows' centre at the anchor - the stack's top or bottom
-        zoomX = textCx, zoomY = anchor;
     float portraitAlpha = 0;
     float commBoxL = -1, commBoxR = 0, commBoxT = 0; // the newest comm-with-portrait block's box outside the top panel
+    int commBlock = -1;                              // (that block)
+    std::vector<float> pivX(g_blocks.size(), textCx), pivY(g_blocks.size(), anchor); // each block's zoom anchor (drawn)
     std::vector<size_t> laidOut; // the block each g_layout.blocks entry is (the corner is drawn last: reordered below)
     auto drawBlock = [&](size_t bi)
     {
@@ -3508,6 +3565,7 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
         const bool corner = inCorner(b);
         // inside the top panel: the lines ride its slide and share its fade
         const bool inPanel = place.topPanel && !corner;
+        pivX[bi] = textCx, pivY[bi] = b.y + (inPanel ? g_panel.yoff : 0.0f) + pivotOff[bi];
         const float a =
             (!g_set.motion ? (b.leaving < 0 ? 1.0f : 0.0f)
                            : smooth((now - b.start) / kFadeIn) *
@@ -3606,6 +3664,7 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             // the resting place (the top panel's slide offset is on the report's panel line)
             g_layout.blocks.push_back({data::Narrow(b.speaker), b.y, heights[bi], wmax, corner,
                                        corner ? cornerLeft + padX : textCx - wmax * 0.5f, b.nameArgb, b.hostile});
+            g_layout.blocks.back().fit = fitS[bi];
             laidOut.push_back(bi);
         }
         // a row's left edge: centred (right of the portrait's column when it is in the panel), or left-aligned in the
@@ -3618,6 +3677,7 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             for (const Row& r : rows)
                 w = std::max(w, r.w);
             commBoxL = rowX(w) - padX, commBoxR = commBoxL + w + 2 * padX, commBoxT = by - padY;
+            commBlock = static_cast<int>(bi);
         }
         // backing: one soft panel per speaker in the HUD's dark blue (its panels are translucent navy), feathered
         // over a few pixels instead of hard boxes per row
@@ -3786,9 +3846,18 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             ry += r.h;
         }
     };
-    for (size_t bi = 0; bi < g_blocks.size(); ++bi) // the main stack (zoomed); the corner after the zoom, below
+    for (size_t bi = 0; bi < g_blocks.size(); ++bi) // the main stack, each block zoomed by its own scale; the corner below
         if (!inCorner(g_blocks[bi]))
+        {
+            const size_t from = render::ZoomBegin();
             drawBlock(bi);
+            render::ZoomEnd(from, fitS[bi], pivX[bi], pivY[bi]);
+        }
+    // the portrait's animations and the game's window zoom with the block the portrait belongs to
+    const int zoomBlock = slotS > 0 && portraitBlock >= 0 ? portraitBlock : commBlock;
+    const float zoomS = zoomBlock >= 0 ? fitS[zoomBlock] : 1.0f;
+    const float zoomX = zoomBlock >= 0 ? pivX[zoomBlock] : textCx, zoomY = zoomBlock >= 0 ? pivY[zoomBlock] : anchor;
+    const size_t zoomFrom = render::ZoomBegin();
     // the comm window into its slot (PlaceCommWindow writes it with the frame update): beside its line, riding the
     // panel's slide, never above the screen's top edge (the game's viewport must stay on screen)
     // It glides between places as the rows do (the line's slot in the body -> the tab when the older line leaves), and
@@ -3853,7 +3922,8 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             }
             // the game draws the window itself: its slot zoomed with the stack (the animations here are drawn unscaled
             // and zoomed with it); never above the screen's top edge
-            CommSlotRequest(zoomed(gx, zoomX), std::max(1.0f, zoomed(shownY, zoomY)), gs * zoomS, sx, sy, fs);
+            CommSlotRequest(zoomed(gx, zoomX, zoomS), std::max(1.0f, zoomed(shownY, zoomY, zoomS)), gs * zoomS, sx, sy,
+                            fs);
             g_liveBlock = g_blocks[portraitBlock].start;
         }
         else if (g_held.img.texture)
@@ -3864,7 +3934,9 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             const float shrink =
                 t < kFoldTime ? 0.0f : ease((t - static_cast<float>(kFoldTime)) / static_cast<float>(kLineTime));
             const float F = gs * kCommFrameRatio * (1.0f - shrink), edge = std::max(1.0f, sh / 2160.0f);
-            g_closingHole = {F > 2.0f, cx - F * 0.5f, cy - F * 0.5f, cx + F * 0.5f, cy + F * 0.5f};
+            // (the hole in screen coordinates: the panel is unscaled, this outline zoomed with its block)
+            g_closingHole = {F > 2.0f, zoomed(cx - F * 0.5f, zoomX, zoomS), zoomed(cy - F * 0.5f, zoomY, zoomS),
+                             zoomed(cx + F * 0.5f, zoomX, zoomS), zoomed(cy + F * 0.5f, zoomY, zoomS)};
             if (F > 2.0f)
             {
                 const u32 oc = argb(0x82C9F3, 0.9f * (1.0f - shrink) * la);
@@ -3899,7 +3971,8 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
         const float s = std::min(nativePortrait, sh * 0.11f), pg = sh * kPanelGap;
         const float x = commBoxL - pg - s >= pg ? commBoxL - pg - s : commBoxR + pg;
         const float y = std::max(1.0f, commBoxT);
-        CommSlotRequest(zoomed(x, zoomX), std::max(1.0f, zoomed(y, zoomY)), s * zoomS); // beside its zoomed line
+        CommSlotRequest(zoomed(x, zoomX, zoomS), std::max(1.0f, zoomed(y, zoomY, zoomS)),
+                        s * zoomS); // beside its zoomed line
         g_layout.portraitX = x, g_layout.portraitY = y, g_layout.portraitS = s;
         gs = 0, wasLive = false, g_closingHole.on = false;
     }

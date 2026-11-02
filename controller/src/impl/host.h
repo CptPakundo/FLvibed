@@ -61,12 +61,26 @@ inline u32 HostPlayerHit(float pos[3], u32* kind, u32* tick)
     return HostAtLeast(12) ? g_host->PlayerHit(pos, kind, tick) : 0;
 }
 
-// v20: the game's cursor arrow hidden while on (the pad screens; a no-op with older hosts).
-inline void HostSetCursorHidden(bool on)
+// v20: the game's cursor arrow hidden while any source asks (a no-op with older hosts). Sources: 1 the pad screens
+// (padbases), 2 the flight's idle cursor (hud_fade 1, core\game\hudwake.h CursorStep). The host hears only the OR.
+enum : unsigned
 {
+    kCursorHidePad = 1u,
+    kCursorHideIdle = 2u
+};
+inline void HostCursorHide(unsigned source, bool on)
+{
+    static unsigned mask = 0;
+    static int sent = -1; // -1 = unknown (a reloaded logic: the host may still hold an old state), first call sends
+    mask = on ? (mask | source) : (mask & ~source);
+    const int want = mask != 0 ? 1 : 0;
+    if (want == sent)
+        return;
+    sent = want;
     if (HostAtLeast(20))
-        g_host->SetCursorHidden(on);
+        g_host->SetCursorHidden(want != 0);
 }
+inline void HostSetCursorHidden(bool on) { HostCursorHide(kCursorHidePad, on); }
 // v20: the mission results received (sequence, 0 = none / older host; type 1 success / 2 failure).
 inline u32 HostMissionResult(u32* type) { return HostAtLeast(20) ? g_host->MissionResult(type) : 0; }
 

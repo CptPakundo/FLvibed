@@ -48,8 +48,9 @@ struct SpawnRec
 // must check `version` before using functions added in later versions.
 constexpr u32 kHostApiVersion = 35;
 // Logic DLL API version, checked by the host when loading the logic DLL (exact match): v2 adds OnRenderUnderHud, v3
-// adds OnUiButton and OnRawKey (the UI build).
-constexpr u32 kImplApiVersion = 3;
+// adds OnUiButton and OnRawKey (the UI build), v4 OnKeyCmd (the game's key commands after it handled them: the maneuver
+// lock's answer and hud_prompts' actions for the keyboard, 0.2.1).
+constexpr u32 kImplApiVersion = 4;
 
 // v18: FLvibed's native buttons, created by the host through the game's own icon-button factory (0x5A0C90) so the game's
 // hit test, hover, click sound and click-vs-fire arbitration apply (UI_PLAN.md 2, 3.1): the host creates, places and
@@ -343,6 +344,9 @@ struct ImplApi
     // typing, not commands. Returns true to swallow the key (the game does not see it): the autopilot key, the options
     // page's keyboard navigation while it is open. Called on the game's thread.
     bool (*OnRawKey)(int vk, bool down, bool textField);
+    // v4: a key command (fl::USER_*) the game's key handler (exe::HandleKey) just handled, `down` = its key went down.
+    // Observation only (the game already acted). Called on the game's thread.
+    void (*OnKeyCmd)(int cmd, bool down);
 };
 
 // Exported by FLControllerImpl.dll (dev build)

@@ -169,20 +169,22 @@ static constexpr Row kRows_controller_5[] = {
 // CONTROLLER / HUD
 static constexpr const char* kOpt_hud_style[] = {"CLASSIC", "HUD 2 ON THE PAD", "HUD 2 ALWAYS"};
 static constexpr const char* kOpt_hud_preset[] = {"STANDARD", "FOCUS (EXPERIMENTAL)"};
-static constexpr const char* kOpt_hud_fade[] = {"ALWAYS FULL", "CALM DIMS", "MINIMAL"};
+static constexpr const char* kOpt_hud_fade[] = {"FULL", "CONTEXTUAL"};
 static constexpr const char* kOpt_hud_numbers[] = {"WHEN LOW", "ALWAYS", "NEVER"};
 static constexpr const char* kOpt_hud_context[] = {"CONTEXTUAL", "OFF"};
+static constexpr const char* kOpt_hud_prompts[] = {"ALWAYS", "ON CHANGE"};
 static constexpr const char* kOpt_button_legend[] = {"ON", "OFF"};
 static constexpr const char* kVal_button_legend[] = {"0", "1"};
 static constexpr Row kRows_controller_6[] = {
     {"hud_style", "Controller", "hud_style", Picker, "HUD", kOpt_hud_style, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. It is the default for the controller and for keyboard and mouse alike, and it also covers the menus and rooms (the game's screens take its look; the row 'Menus and rooms look' can keep the game's own). On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's own HUD and screens (with the controller's glyphs and legend)."},
     {"hud_preset", "Controller", "hud_preset", Picker, "HUD 2 layout", kOpt_hud_preset, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Advanced, Live, nullptr, false, nullptr, "Experimental: HUD 2's layout. Standard is today's HUD 2. Focus is calmer: in calm flight no ring, two thin shield and hull arcs and the instruments at the screen's edges. The Speedrun and Guided layouts are planned and cannot be chosen yet."},
-    {"hud_fade", "Controller", "hud_fade", Picker, "Fade when calm", kOpt_hud_fade, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "HUD 2 in quiet flight. Calm dims: the ring and the side panels dim while nothing happens and come back the moment something changes or a fight starts. Minimal: calm flight shows almost nothing. Always full: no fading."},
+    {"hud_fade", "Controller", "hud_fade", Picker, "HUD visibility", kOpt_hud_fade, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Contextual: in flight HUD 2 fades out while you fly calmly; each part comes back when it matters - the ring and speed when you steer or boost, the target card when you switch targets, the weapons when you fire, the objectives when they change - and fades again 4 seconds later. Alerts, low shield or hull, incoming missiles and fights always show. Full: everything always shown."},
     {"hud_opacity", "Controller", "hud_opacity", Slider, "HUD opacity", nullptr, 0, nullptr, 40.0f, 100.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "How opaque HUD 2 is overall."},
     {"hud_scale", "Controller", "hud_scale", Slider, "HUD size", nullptr, 0, nullptr, 80.0f, 130.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "The size of HUD 2's panels, text and glyphs."},
     {"hud_numbers", "Controller", "hud_numbers", Picker, "Numbers on the ring", kOpt_hud_numbers, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The shield, hull and power numbers at the ends of the ring's arcs: only when a value runs low, always, or never (the arcs alone)."},
     {"hud_threats", "Controller", "hud_threats", Toggle, "Threat list", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "In a fight, the nearest hostiles under the target card, with the buttons that pick them."},
     {"hud_context", "Controller", "hud_context", Picker, "Context prompts", kOpt_hud_context, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Beside the bottom panels, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons: moving the ship on the left, firing and using on the right."},
+    {"hud_prompts", "Controller", "hud_prompts", Picker, "Show context prompts", kOpt_hud_prompts, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "When the context prompts show in flight. On change: they appear when they change or right after you act (dock, cruise, a target, a maneuver), stay four seconds, then fade out. Always: they stay on screen."},
     {"hud_alerts", "Controller", "hud_alerts", Toggle, "Alerts", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A short card at the top when something needs you now (shield failing, missile incoming, cruise disrupted, hold full), naming the button that helps; that slot lights up."},
     {"hud_info", "Controller", "hud_info", Toggle, "Situation details", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers."},
     {"hud_wireframes", "Controller", "hud_wireframes", Toggle, "Wireframe views", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "The game's wireframe pictures of your target and your ship in HUD 2's panels (else their icons)."},
@@ -200,6 +202,7 @@ static constexpr const char* kOpt_fluf_windows[] = {"IGNORE", "PLAYER WINDOWS", 
 static constexpr const char* kOpt_borderless[] = {"OFF", "AUTO", "ALWAYS"};
 static constexpr Row kRows_controller_7[] = {
     {"focus_only", "Controller", "focus_only", Toggle, "Controller only while the game is in focus", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Ignore the controller while the game is in the background, in flight and in menus. A button held when you come back is ignored until you release it."},
+    {"maneuver_watchdog", "Controller", "maneuver_watchdog", Toggle, "Restart stalled maneuvers", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed starts the same maneuver again, up to 3 times, and logs what happened."},
     {"run_in_background", "Controller", "run_in_background", Toggle, "Keep the game running in the background", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The game keeps running while its window is not in focus (Freelancer pauses otherwise)."},
     {"fluf_windows", "Controller", "fluf_windows", Picker, "FLUF windows", kOpt_fluf_windows, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command's or a module's window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. While FLUF's command palette is open (typing or not) FLvibed's keys all pass to FLUF, like a chat box."},
     {"borderless", "Controller", "borderless", Picker, "Borderless window", kOpt_borderless, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "A window without frame covering the monitor at its resolution - never exclusive fullscreen. Auto: only when nothing else provides it (HD Edition does); Always: also then; Off: the game's own mode. With FLUF, Alt+Enter switches to a bordered window. Next start."},
@@ -211,8 +214,8 @@ static constexpr Section kSections_controller[] = {
     {"STICKS", kRows_controller_3, 4},
     {"TARGETING", kRows_controller_4, 2},
     {"MENUS AND PROMPTS", kRows_controller_5, 9},
-    {"HUD", kRows_controller_6, 19},
-    {"SYSTEM", kRows_controller_7, 4},
+    {"HUD", kRows_controller_6, 20},
+    {"SYSTEM", kRows_controller_7, 5},
 };
 
 // AUTOPILOT / (no header)
@@ -286,6 +289,7 @@ static constexpr Row kRows_subtitles_2[] = {
 };
 // SUBTITLES / CHANNELS
 static constexpr const char* kOpt_chatter[] = {"CHAT WINDOW", "SUBTITLES", "OFF"};
+static constexpr const char* kOpt_chat_size[] = {"NORMAL", "LARGE"};
 static constexpr Row kRows_subtitles_3[] = {
     {"story", "Subtitles", "story", Toggle, "Story", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Story cutscene lines."},
     {"comms", "Subtitles", "comms", Toggle, "Comms", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Mission comms."},
@@ -293,6 +297,7 @@ static constexpr Row kRows_subtitles_3[] = {
     {"neural_net", "Subtitles", "neural_net", Toggle, "Neural Net", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Neural Net lines."},
     {"chatter", "Subtitles", "chatter", Picker, "Radio chatter", kOpt_chatter, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "NPC lines that do not open their comm portrait - generic radio chatter between others, broadcasts, announcements: to the chat window (default; every line kept in its log, under HUD 2 also in its comm feed), as subtitles (only while the dialogue leaves room - never over a story line), or off. Story lines and anyone speaking to you with their portrait are always the subtitles."},
     {"chat_all_dialogue", "Subtitles", "chat_all_dialogue", Toggle, "Dialogue also in the chat window", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "Also copy every story, mission and Neural Net line into the chat window, so its log holds every spoken line - a rolling history to scroll back through. The subtitles stay as they are."},
+    {"chat_size", "Subtitles", "chat_size", Picker, "Side chat size", kOpt_chat_size, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "The text size of HUD 2's side chat (the comm feed beside the HUD): Normal is a little larger than the game's own chat text, Large the bigger size of earlier versions."},
 };
 // SUBTITLES / PLACEMENT
 static constexpr const char* kOpt_space_position[] = {"TOP PANEL", "TOP THIRD", "BOTTOM"};
@@ -318,7 +323,7 @@ static constexpr Section kSections_subtitles[] = {
     {"TEXT", kRows_subtitles_0, 5},
     {"BACKGROUND", kRows_subtitles_1, 2},
     {"SPEAKERS", kRows_subtitles_2, 3},
-    {"CHANNELS", kRows_subtitles_3, 6},
+    {"CHANNELS", kRows_subtitles_3, 7},
     {"PLACEMENT", kRows_subtitles_4, 5},
     {"MOTION", kRows_subtitles_5, 6},
 };
@@ -896,7 +901,7 @@ static constexpr ElemNum kNums_focus[] = {
     {"reticle", "reticle", "throttle_tick_segments", 3.0f},
     {"reticle", "cruise_row", "alpha_calm", 0.45f},
     {"reticle", "cruise_row", "retire_after", 2.0f},
-    {"bundle", "existing", "hud_fade", 2.0f},
+    {"bundle", "existing", "hud_fade", 1.0f},
     {"bundle", "existing", "hud_numbers", 0.0f},
     {"bundle", "existing", "hud_threats", 1.0f},
     {"bundle", "existing", "hud_context", 0.0f},

@@ -3,6 +3,7 @@
 #include "../events.h"
 #include "autopilot_impl.h" // read-only: MissionObjectIds (the objects the mission points at, as the autopilot reads them)
 #include "flightmodal.h"
+#include "hud2_layout.h" // (EaseContent: the panels' easing, 0.2.1 round 4)
 #include "host.h"
 #include "log.h"
 
@@ -356,9 +357,54 @@ void Render(void* device)
     const float barTop = PromptBar(s, prompts, "flight.picker");
     // the panel: right-middle, where the legend sits (padhud steps aside while a modal is open)
     const float pitch = H * 0.036f * ts, headH = H * 0.048f * ts, catsH = f.body.lineHeight * 1.4f;
-    const float pad = H * 0.012f;
-    const float w = std::min(H * 0.42f * ts, W * 0.45f);
-    const float h = headH + catsH + kVisible * pitch + pad * 2.5f;
+    const float pad = H * 0.012f, gap = H * 0.012f;
+    // Sized to its content (0.2.1 round 4, UI_HUD2.md 5.27; the owner: "only as big as the content they display"): the
+    // width the header, the category strip and the widest row of EVERY category need (switching categories never
+    // resizes it), the rows the fullest category shows (floor 3, at most kVisible); the old 0.42 H x ts / 0.45 W and
+    // kVisible rows are the maxima. Eased as HUD 2's panels (hud2_layout.h EaseContent: grows fast, shrinks gently past
+    // the hysteresis); anchored to the right edge and the screen's middle as before. Snaps at an open and a new screen.
+    const float wMax = std::min(H * 0.42f * ts, W * 0.45f);
+    float nameColW = 0, distColW = 0, actColW = 0, stripW = 0;
+    size_t most = 0;
+    render::SetFont(f.label);
+    const float distMin = static_cast<float>(render::TextWidth(f.label, L"00.0 KM"));
+    for (int c = 0; c < CatCount; ++c)
+    {
+        most = std::max(most, g_rows[c].size());
+        for (const Row& r : g_rows[c])
+        {
+            nameColW = std::max(nameColW, static_cast<float>(render::TextWidth(f.label, r.attacker ? L"! " + r.name : r.name)));
+            distColW = std::max(distColW, static_cast<float>(render::TextWidth(f.label, Dist(r.dist))));
+            actColW = std::max(actColW, static_cast<float>(render::TextWidth(f.label, r.action)));
+        }
+    }
+    distColW = std::max(distColW, distMin);
+    render::SetFont(f.body);
+    for (int c = 0; c < CatCount; ++c)
+    {
+        wchar_t b[40];
+        swprintf_s(b, L"%ls %u", kCatNames[c], static_cast<unsigned>(g_rows[c].size()));
+        stripW += static_cast<float>(render::TextWidth(f.body, b)) + gap;
+    }
+    stripW -= gap;
+    const float rowsW = pad * 1.6f + nameColW + gap + distColW + gap * 1.5f + actColW + pad * 1.6f +
+                        (most > static_cast<size_t>(kVisible) ? pad : 0.0f); // (the scroll arrows' column)
+    const float wantW = std::max({rowsW, stripW + pad * 2, H * 0.24f * ts});
+    const int shownRows = std::max(3, std::min(static_cast<int>(most), kVisible));
+    const float wantH = headH + catsH + shownRows * pitch + pad * 2.5f;
+    static float ew = 0, eh = 0, hWas = 0;
+    static ULONGLONG at = 0;
+    const ULONGLONG nowMs = GetTickCount64();
+    if (H != hWas || !at || nowMs - at > 500) // (a new screen or a fresh open: snap)
+        ew = eh = 0, hWas = H;
+    const float edt = at ? std::min(0.25f, (nowMs - at) / 1000.0f) : 0.0f;
+    at = nowMs;
+    // (0.2.1 round 5: the category strip neither scrolls nor wraps - it ran past both edges at the 0.42 H x ts cap,
+    // r5_picker frame - so it is the width's floor up to the screen's 0.45 W; the rows then use that room too)
+    ew = hud2layout::EaseContent(ew, std::min(W * 0.45f, std::max(stripW + pad * 2, std::min(wMax, wantW))), edt,
+                                 hud2layout::kContentHyst * H);
+    eh = hud2layout::EaseContent(eh, wantH, edt, hud2layout::kContentHyst * H);
+    const float w = ew, h = eh;
     const float x1 = W - W * 0.02f, x0 = x1 - w;
     float y0 = H * 0.5f - h * 0.5f;
     if (y0 + h > barTop - H * 0.01f)
@@ -382,7 +428,6 @@ void Render(void* device)
     render::SetFont(f.body);
     {
         float total = 0;
-        const float gap = H * 0.012f;
         std::wstring names[CatCount];
         for (int c = 0; c < CatCount; ++c)
         {
@@ -402,7 +447,10 @@ void Render(void* device)
     y += catsH + pad * 0.5f;
     // the rows
     render::SetFont(f.label);
-    const float nameX = x0 + pad * 1.6f, distR = x0 + w * 0.70f, actR = x1 - pad * 1.6f;
+    // the columns: the action right-aligned at the right, the distance right-aligned left of the widest action, the name
+    // in the rest (cut only where the panel is at its maximum)
+    const float actR = x1 - pad * 1.6f - (most > static_cast<size_t>(kVisible) ? pad : 0.0f), distR = actR - actColW - gap * 1.5f,
+                nameX = x0 + pad * 1.6f;
     if (rows.empty())
     {
         const std::wstring none = L"NOTHING HERE";
@@ -417,7 +465,7 @@ void Render(void* device)
             uidraw::FocusFrame(x0 + pad * 0.7f, ry, w - pad * 1.4f, pitch, H, Argb(uidraw::kFrame & 0xFFFFFF, 0.9f));
         const float ty = ry + (pitch - f.label.lineHeight) * 0.5f;
         std::wstring name = r.attacker ? L"! " + r.name : r.name;
-        name = Fit(f.label, name, distR - nameX - static_cast<float>(render::TextWidth(f.label, L" 00.0 KM")) - pad);
+        name = Fit(f.label, name, distR - distColW - gap - nameX);
         uidraw::TextShadow(nameX, ty, name, Argb(r.colour, 0.95f), std::max(1.0f, H * 0.001f));
         const std::wstring d = Dist(r.dist);
         render::Text(distR - render::TextWidth(f.label, d), ty, d, Argb(kWhite, 0.9f));
@@ -429,7 +477,7 @@ void Render(void* device)
     {
         const float ax = x1 - pad * 0.9f, a = H * 0.009f;
         uidraw::Triangle(ax, y + a, a, 0, g_scroll > 0 ? uidraw::kText : uidraw::kDisabled);
-        uidraw::Triangle(ax, y + kVisible * pitch - a, a, 1, g_scroll + kVisible < n ? uidraw::kText : uidraw::kDisabled);
+        uidraw::Triangle(ax, y + shownRows * pitch - a, a, 1, g_scroll + kVisible < n ? uidraw::kText : uidraw::kDisabled);
     }
     render::End(false);
 }

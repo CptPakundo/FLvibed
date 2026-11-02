@@ -1,0 +1,12 @@
+{
+  "_about": "0.2.1 hotfix (2 Nov 2026, the owner's decisions): hud_fade has two modes, 0 FULL and 1 CONTEXTUAL (the default); CALM DIMS and MINIMAL retired (a stored 2 falls back to 1). Rule: core/game/hudwake.h; registry: controller/src/impl/controller.cpp hud_fade. Apply with specpatch.py to part2_data.js and docs/UI_SPEC.json (and the artifact's ui/spec, pinned set, after reading). The hud2_presets bundles still name Focus's hud_fade 2 (read as 1).",
+  "rows": {
+    "hud_fade": {
+      "label": "HUD visibility",
+      "options": ["FULL", "CONTEXTUAL"],
+      "def": "CONTEXTUAL",
+      "value": "CONTEXTUAL",
+      "help": "Contextual: in flight HUD 2 fades out while you fly calmly; each part comes back when it matters - the ring and speed when you steer or boost, the target card when you switch targets, the weapons when you fire, the objectives when they change - and fades again 4 seconds later. Alerts, low shield or hull, incoming missiles and fights always show. Full: everything always shown."
+    }
+  }
+}

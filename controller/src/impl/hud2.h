@@ -9,6 +9,7 @@
 #pragma once
 #include "common.h"
 #include "presets.h"
+#include "game/hudwake.h" // NoteAction's wake bits (pure, no system headers)
 
 #include <istream>
 #include <string>
@@ -27,6 +28,8 @@ struct Context
     int weaponGroup = 1;    // the active group as the pad last set it (1..3)
     bool apKnown = false;   // the autopilot's prompts may show (used once / ap_hints)
     bool modal = false;     // the picker / wheel / goal panel is open (its prompt bar: the context line steps aside)
+    float steer = 0;        // the pad's steering this frame (0..~1.4: |x, y|): CONTEXTUAL's steer trigger (hudwake.h)
+    bool firing = false;    // the pad holds fire / a launcher: CONTEXTUAL's fire trigger
 };
 
 // Once per frame from OnFrame (inside the space memo): the state machine, the data at its own rate, the transition.
@@ -63,6 +66,18 @@ void OnHotspot(int slot);
 // older host: the raw text with its format codes dropped, never shown raw); "" when there is none. Shared with the goal
 // panel (its MISSION OBJECTIVE row and queue).
 std::wstring ObjectiveLine(u32 textId);
+// A player action this frame (goto, dock, formation, free flight, cruise, a target switch / clear, a wheel action): the
+// context prompts show again for a while under hud_prompts 1 (core\game\promptshow.h; 0.2.1).
+// `wake` = core\game\hudwake.h Trig bits: what the action wakes under hud_fade 1 CONTEXTUAL (0.2.1).
+void NoteAction(unsigned wake = 0);
+// The idle mouse cursor (hud_fade 1, core\game\hudwake.h CursorStep): HUD 2 ran its CONTEXTUAL wake this frame (active,
+// in flight, no menu over it) - the caller adds the rest of the context; `NoteCursorHidden` = the caller's decision, shown
+// by `hud2 state` (cursor=shown|hidden).
+bool CursorIdleEligible();
+void NoteCursorHidden(bool hidden);
+// The mission locked the maneuvers (Act_LockManeuvers) and the player asked for one: HUD 2's alert card says LOCKED BY
+// THE MISSION for 2.5 s (shown whatever hud_alerts says: it answers the player's press). False when HUD 2 is not shown.
+bool LockNotice();
 // Debug: hud2 on|off|auto|state|sim <state>|perf|hot|click <slot>|list [on|off|0..4]|lint [off]
 std::string Command(std::istream& in);
 void OnDeviceLost();

@@ -29,6 +29,14 @@ also copies the story lines into the chat (`chat_all_dialogue`, default off: the
   broadcasts (to=0: "Attention, all ships ... This is Trenton Outpost"), a story character's own chatter voice ("King ·
   LSF: Trent, I have a ship on my tail!" is a broadcast), a costume-less comm. Before: any comm to the player counted as
   dialogue. Neural Net, scenes and bars unchanged.
+- **The side chat's size** (the owner, 2 Nov 2026, 0.2.1: "the current side chat size should be considered 'Large' ... a
+  new default 'Normal' which is smaller"): `chat_size` 0 Normal (default) / 1 Large, HUD 2's feed only (the classic HUD's
+  chat window is the game's own text). Measured from the spec captures (`research\evidence\controller_ui\mockup\img\cap`,
+  1600x900): the game's chat text cap height 0.0156 H (`x_chat_space_cl.jpg`, "Console->"), the 0.2.0 feed ~0.023 H
+  (`x_chat_space_h2.jpg`) = 1.47x vanilla. Large = the line em 0.034 H, the name 0.030 H (as before); Normal = 0.027 /
+  0.0238 H (~1.17x vanilla). `src\impl\chat_size.h` (tests\chat_size_test.cpp); the wrapping and card heights follow it.
+  In game (instance 9, 4K, HUD 2): `research\experience\runs\hotfix_021_2026-11-02\chat_normal.png` / `chat_large.png`.
+  Debug `chat <name>|<text>` also feeds the side chat since.
 - **Nothing lost:** every side-chat line goes into the game's chat log (`chat.cpp` Print through ChatFlush 0x46A150, the
   name and colour as the subtitles'); while HUD 2 shows (its chat window hidden) its comm feed draws it too, and what the
   feed drops as stale stays in the log (the chat input shows it). `chatter 1` (as subtitles) takes only free room: with
@@ -278,6 +286,17 @@ Decisions (built 19 Oct 2026):
     where it reaches further (was ManeuverButton3 alone: the comm portrait overlapped the fifth button); a hidden bar
     gives no top room (the panel goes below the top row). Debug `say <id> [voice] as <speaker>` shows a line under any
     name. Frames `research\experience\runs\fix_text4_2026-10-25\` (run.log).
+  - **Sweep report "narrow screen without the name-tab layout" (hotfix, 2 Nov 2026): a test fault, not a placement
+    one.** Measured on instance 9, 1600x1200 windowed, release 964b51a: `hud_style 0` gives the tab (`layout`: tab=192
+    body=114 tab-noroom=0, bar-right 674, nn-left 1261: room 587 px >= 0.16 H; frame
+    `research\experience\runs\hotfix_021_2026-11-02\c43_classic_hud0_stack-*.png`); `hud_style 2` (the default since
+    0.2.0, on with K&M too: `hud2 bus=1 on=1`) places the stack in HUD 2's band (511..1264 px), no tab by design. Two
+    faults in the sweep's `display-subtitles`: (1) its `layout` regex expected `body=.. cruise=` adjacent, but fix-text 5
+    put `tab-noroom=` between them, so the match failed and every tab read 0 (the tab layout then judged as a plain
+    panel "overlapping the bar"; the frames showed the tab); (2) it ran with the default HUD 2 and judged it by the
+    classic rules. Now: the field optional (a missing match is reported), `hud_style 0` pinned for the real flight comms
+    (the classic expectations), and a King + Newark Station stack under `hud_style 2` checked against HUD 2's band (no
+    tab).
   - **Fix-text 5 (25 Oct 2026):** the bar's frame, widened for the fifth button, ends in a top right ear 0.023 H beyond
     that button's box (measured 1600x1200 and 4K; was taken as 0.008 H): the ear ran 4 px under the 4:3 name tab at its
     leftmost (long names, the portrait tab: tab edge at bar edge + gap) and 3 px under the 4K panel's top left corner.
@@ -438,7 +457,27 @@ Decisions (built 19 Oct 2026):
   ends. ~~Not yet seen: bases / cutscenes / movies with the new look (bottom-anchored, same code).~~ (Seen since: the
   letterboxed scenes, bases and movies, 21 Oct 2026 - "Next" 3 below.)
 
-### Stack fit (the owner, 1 Nov 2026, for 0.2.0; built, in game pending)
+### Stack fit (the owner, 1 Nov 2026, for 0.2.0; reworked for 0.2.1 on 2 Nov 2026, in game on instance 9)
+
+**0.2.1 rule (the owner played 0.2.0: "too fast and sudden"; shrink the older lines, never the newest)** - it replaces
+the whole-stack zoom described below where they differ:
+- The newest main-stack block (the most recently started line) is always drawn at scale 1. The older ones shrink to
+  one common scale s = (tallest block - newest's height) / (older blocks' heights), clamped to [stack_fit, 1] (the
+  budget = the tallest block + the gaps; gaps unscaled): newest the tallest -> the older at the floor; under a much
+  taller older block they shrink only as needed. `stackfit::Targets`.
+- Each block eases on its own at `stackfit::kTau` = 0.5 s (was the 0.07 s glide); a line fading out keeps its scale; a
+  block that becomes the newest (the newer one left) grows back smoothly.
+- Each older block is zoomed about its own anchor (top-anchored stacks: its top edge, the tab layout's first block the
+  body's top; bottom-anchored: its bottom edge; x = the rows' centre); the slots follow the eased heights, so blocks
+  never overlap or jump. The top panel and its dividers are drawn unscaled, sized by the drawn stack; the comm
+  portrait (its animations and the game's window slot) zooms with its own block (newest: unscaled).
+- `layout`: each `block` line adds `fit=<scale>`; `stackfit=` on the screen line = the smallest block scale.
+- Verified 2 Nov 2026 (instance 9, 4K, SaveC705, two `say` lines; `research\experience\runs\hotfix_021_2026-11-02\`
+  s_*.png): the older block 0.98 -> 0.84 (0.37 s) -> 0.72 (1.4 s) -> 0.70, the newest fit=1 throughout, panel height
+  following. Known edge: in the tab layout with the portrait in the body column the tab's name shrinks about the rows'
+  centre, a few px off the tab's centre.
+
+0.2.0 (the first version):
 - **What:** while two or more speakers' blocks are stacked (the dialogue stack, not the Neural Net corner), the whole
   stack - the top panel with its dividers and the comm portrait's slot, the rows, names, markers, the word pop - shrinks
   together so its height stays about the tallest block's: scale = tallest / (all blocks + gaps), never below the

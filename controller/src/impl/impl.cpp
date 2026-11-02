@@ -110,9 +110,12 @@ static bool ImplOnRawKey(int vk, bool down, bool textField)
 #endif
 }
 
+// v4: a key command the game handled (the maneuver lock's answer, hud_prompts' actions: controller.cpp OnKeyCmd)
+static void ImplOnKeyCmd(int cmd, bool down) { ctl::OnKeyCmd(cmd, down); }
+
 static const ImplApi g_api = {kImplApiVersion,  ImplInit,          ImplShutdown,         ImplOnFrame,
                               ImplCommand,      ImplOnRenderOverlay, ImplOnDeviceLost,   ImplOnDeviceReset,
-                              ImplOnRenderUnderHud, ImplOnUiButton, ImplOnRawKey};
+                              ImplOnRenderUnderHud, ImplOnUiButton, ImplOnRawKey, ImplOnKeyCmd};
 
 #ifdef FLV_STATIC
 // Release build: linked into FLvibed.dll; the host takes the API through this (unique, unexported) name.

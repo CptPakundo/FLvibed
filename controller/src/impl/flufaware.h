@@ -25,6 +25,8 @@ bool HoldsKeys();
 // module's window that ImGui hit-tests; not the Debug Window or a toast - core\fluf_rules.h): the pad drives it this
 // frame instead of FLvibed's own dispatch.
 bool OwnsPad();
+// The same windows (or FLUF's text keys / palette) open whatever `fluf_windows` says: the idle cursor never hides then.
+bool InputWindowOpen();
 // The window B closes (the focused input window, else the frontmost): by FLUF's Escape (`byEscape`), else by its close
 // button at (fx, fy) in fractions of the back buffer. False = none. `name` = its ImGui name (bus v5).
 bool CloseTarget(bool& byEscape, float& fx, float& fy, std::string& name);

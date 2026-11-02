@@ -5,6 +5,7 @@
 // and their keep-out queries. Pixels in, pixels out; every size a fraction of H.
 #pragma once
 #include <algorithm>
+#include <string>
 #include <vector>
 
 namespace promptfit
@@ -502,6 +503,128 @@ inline float KeycapTightWidth(float nameW, float ts)
     return w > hc ? w : hc;
 }
 
+// ---------------------------------------------------------------- a prompt's label: never a marquee (0.2.1, 2 Nov 2026)
+// The owner (2 Nov 2026): a button prompt's label is always readable whole - a label too long for its room wraps onto two
+// lines in a somewhat smaller font (never under the legibility floor) instead of scrolling (panel names keep their
+// marquee). The order: (1) one line at the nominal size; (2) one line shrunk, down to the two-line size; (3) two lines
+// split at the word boundary that makes the wider line narrowest, at the two-line size (0.85 x nominal, never under the
+// floor), shrunk to the floor where needed; (4) the last resort: at the floor, the line(s) cut with the ellipsis.
+// `width(text, size)` = the caller's measure (linear in size: hud2kit::TextWidth); `floor` = textfit::MinSize.
+constexpr float kWrapScale = 0.85f; // the two-line size against the nominal one
+constexpr float kWrapTall = 0.008f; // a two-line prompt's plate grows upward by this (H x k): 0.060 instead of 0.052 tall
+constexpr float kWrapPitch = 1.0f;  // the two lines' centres this many ems apart (their text boxes touch: the lint's
+                                    // panel.overlap minimum; 0.95 overlapped by 2.6 px at 4K)
+struct LabelFit
+{
+    int lines = 1;         // 1 or 2
+    float size = 0;        // every line's text size
+    std::wstring line[2];  // the line(s); a cut one ends in the ellipsis (textfit::kEllipsis)
+    float width = 0;       // the widest line at `size`
+    bool cut = false;
+};
+inline float WrapSize(float nominal, float floor)
+{
+    const float z = nominal * kWrapScale, f = floor < nominal ? floor : nominal;
+    return z > f ? z : f;
+}
+// The best two-line split: the space whose halves' wider one is narrowest at `size` (false: no space - one word).
+template <class WidthFn>
+inline bool SplitLabel(const std::wstring& s, float size, WidthFn width, std::wstring& a, std::wstring& b, float& wide)
+{
+    bool any = false;
+    for (size_t sp = s.find(L' '); sp != std::wstring::npos; sp = s.find(L' ', sp + 1))
+    {
+        size_t e = sp, st = sp;
+        while (e > 0 && s[e - 1] == L' ')
+            --e;
+        while (st < s.size() && s[st] == L' ')
+            ++st;
+        if (e == 0 || st >= s.size())
+            continue;
+        const std::wstring x = s.substr(0, e), y = s.substr(st);
+        const float wx = width(x, size), wy = width(y, size), m = wx > wy ? wx : wy;
+        if (!any || m < wide)
+            a = x, b = y, wide = m, any = true;
+    }
+    return any;
+}
+// The longest prefix + the ellipsis that fits `room` at `size` (trailing spaces dropped; "" when not even the ellipsis).
+template <class WidthFn>
+inline std::wstring CutLabel(const std::wstring& s, float size, float room, WidthFn width)
+{
+    if (width(s, size) <= room + 0.5f)
+        return s;
+    const std::wstring ell(1, static_cast<wchar_t>(0x2026));
+    size_t best = 0;
+    for (size_t k = 1; k < s.size(); ++k)
+    {
+        if (width(s.substr(0, k) + ell, size) > room + 0.5f)
+            break;
+        best = k;
+    }
+    while (best > 0 && s[best - 1] == L' ')
+        --best;
+    if (best == 0)
+        return width(ell, size) <= room + 0.5f ? ell : std::wstring();
+    return s.substr(0, best) + ell;
+}
+template <class WidthFn>
+inline LabelFit FitLabel(const std::wstring& s, float nominal, float floor, float room, WidthFn width)
+{
+    LabelFit r;
+    r.size = nominal, r.line[0] = s;
+    if (s.empty() || nominal <= 0)
+        return r;
+    const float lo = floor < nominal ? floor : nominal; // never larger than asked
+    const float w1 = width(s, nominal), z2 = WrapSize(nominal, lo);
+    r.width = w1;
+    if (w1 <= room + 0.5f) // (1)
+        return r;
+    const float z1 = room / (w1 / nominal) * 0.999f; // (2) one line shrunk (the measure is linear in size)
+    if (z1 >= z2)
+    {
+        r.size = z1, r.width = width(s, z1);
+        return r;
+    }
+    std::wstring a, b;
+    float wide = 0;
+    if (SplitLabel(s, z2, width, a, b, wide)) // (3) two lines
+    {
+        float z = z2;
+        if (wide > room + 0.5f)
+            z = z2 * room / wide * 0.999f;
+        if (z >= lo)
+        {
+            if (z != z2)
+                SplitLabel(s, z, width, a, b, wide);
+            r.lines = 2, r.size = z, r.line[0] = a, r.line[1] = b, r.width = wide;
+            return r;
+        }
+        // (4) at the floor, two lines cut
+        SplitLabel(s, lo, width, a, b, wide);
+        r.lines = 2, r.size = lo, r.cut = true;
+        r.line[0] = CutLabel(a, lo, room, width), r.line[1] = CutLabel(b, lo, room, width);
+        const float wa = width(r.line[0], lo), wb = width(r.line[1], lo);
+        r.width = wa > wb ? wa : wb;
+        return r;
+    }
+    // (4) one word: one line at the floor, cut
+    r.size = lo, r.line[0] = CutLabel(s, lo, room, width), r.cut = r.line[0] != s, r.width = width(r.line[0], lo);
+    return r;
+}
+// The narrowest room a label reads whole in: its best two-line split's wider line at the floor (one word: its width at
+// the floor) - a lane squeezes a prompt no further (PlaceContextLanes' minW).
+template <class WidthFn>
+inline float LabelMinWidth(const std::wstring& s, float nominal, float floor, WidthFn width)
+{
+    const float lo = floor < nominal ? floor : nominal;
+    std::wstring a, b;
+    float wide = 0;
+    if (SplitLabel(s, lo, width, a, b, wide))
+        return wide;
+    return width(s, lo);
+}
+
 // ---------------------------------------------------------------- HUD 2's context lanes (the owner, 31 Oct 2026)
 // The owner's decision 4 (docs\UI_HUD2.md 5.20): the prompts tight to the bottom-left and the bottom-right, the very centre
 // bottom clear "for aesthetic purposes" (the centred line's cruise / dock / context pills hid the ship). Two lanes beside
@@ -517,6 +640,8 @@ struct LaneGeom
     float y0 = 0;           // the baseline row's centre line
     float pitch = 0;        // the rows' pitch (the row above at y0 - pitch)
     int rows = 2;
+    float tall = 0;         // what a wrapped prompt's plate grows upward (two label lines: FitLabel, 0.2.1) - the row
+                            // above moves up by it where its lane's baseline row holds a wrapped prompt
 };
 // The lanes for a frame: `lineY` the baseline (H), `shipX1` / `loX0` the panels' facing edges, the band x0 / x1 (W), the
 // pill's plate pad 0.012 H x k and 0.012 H x k between a plate and its panel (HUD 2's gap), a plate may reach the band's
@@ -528,7 +653,7 @@ inline LaneGeom ContextLanes(float W, float H, float k, float shipX1, float loX0
     const float pad = 0.012f * H * k, panelGap = 0.012f * H * k;
     g.lx0 = shipX1 + panelGap + pad, g.lx1 = bandX0W * W - pad;
     g.rx1 = loX0 - panelGap - pad, g.rx0 = bandX1W * W + pad;
-    g.y0 = lineY * H, g.pitch = 0.06f * H * k, g.rows = 2;
+    g.y0 = lineY * H, g.pitch = 0.06f * H * k, g.rows = 2, g.tall = kWrapTall * H * k;
     return g;
 }
 // The lanes above the bottom panels: where the beside-the-panels lanes have no room for even the first prompt (4:3 / 5:4
@@ -543,7 +668,7 @@ inline LaneGeom LanesAbove(float W, float H, float k, float mx, float panelsTop,
     const float pad = 0.012f * H * k;
     g.lx0 = mx + pad, g.lx1 = bandX0W * W - pad;
     g.rx1 = W - mx - pad, g.rx0 = bandX1W * W + pad;
-    g.y0 = panelsTop - 0.04f * H * k, g.pitch = 0.06f * H * k, g.rows = 2;
+    g.y0 = panelsTop - 0.04f * H * k, g.pitch = 0.06f * H * k, g.rows = 2, g.tall = kWrapTall * H * k;
     return g;
 }
 struct LanesPlaced
@@ -553,6 +678,7 @@ struct LanesPlaced
     float asked[3] = {};                   // ... and as asked (w < asked: squeezed, its label scrolls: TextMarquee)
     int side[3] = {}, row[3] = {};         // 0 the left lane, 1 the right; the row (0 the baseline, 1 above it)
     bool moved[3] = {};                    // placed in the other lane (its own was full)
+    bool wrap[3] = {};                     // squeezed: its label may take two lines (FitLabel) - its plate g.tall taller
     bool none = false;                     // prompts asked but not even the first one had a place (both lanes closed)
     float x0 = 0, x1 = 0;                  // the kept prompts' extent with the line's 0.015 H x k margin
 };
@@ -567,7 +693,7 @@ inline LanesPlaced PlaceLanes(const float* w, const float* minW, const int* side
     n = n < 0 ? 0 : (n > 3 ? 3 : n);
     const int rows = g.rows < 1 ? 1 : (g.rows > 2 ? 2 : g.rows);
     float cur[2][2] = {{g.lx0, g.lx0}, {g.rx1, g.rx1}}; // the left rows' next left edge, the right rows' next right edge
-    bool used[2][2] = {};
+    bool used[2][2] = {}, tall[2] = {};
     for (int i = 0; i < n; ++i)
     {
         const float wi = w ? w[i] : 0.0f, mi = minW ? std::min(minW[i], wi) : wi;
@@ -588,7 +714,10 @@ inline LanesPlaced PlaceLanes(const float* w, const float* minW, const int* side
                     o.x[i] = cur[s][r] + g0, cur[s][r] = o.x[i] + width;
                 else
                     o.x[i] = cur[s][r] - g0 - width, cur[s][r] = o.x[i];
-                o.y[i] = g.y0 - r * g.pitch, o.w[i] = width, o.asked[i] = wi, o.side[i] = s, o.row[i] = r;
+                o.y[i] = g.y0 - r * (g.pitch + (tall[s] ? g.tall : 0.0f)), o.w[i] = width, o.asked[i] = wi;
+                o.side[i] = s, o.row[i] = r, o.wrap[i] = width < wi - 0.5f;
+                if (r == 0 && o.wrap[i])
+                    tall[s] = true; // (a wrapped prompt is alone in its row: the row above is still empty here)
                 o.moved[i] = s != own, used[s][r] = true, placed = true;
             };
             for (int r = 0; r < rows && !placed; ++r) // whole
@@ -650,11 +779,12 @@ inline LanesHold PlaceLanesHold(const float* base, const float* minW, const floa
                                     return false;
                                 if (!Raised(p.at[i]))
                                     continue;
-                                const float y1 = c.y[i] - half - 0.001f * H, y0 = y1 - wordH;
+                                const float y1 = c.y[i] - half - (c.wrap[i] ? g.tall : 0.0f) - 0.001f * H,
+                                            y0 = y1 - wordH;
                                 const float x0 = c.x[i] - pad, x1 = c.x[i] + c.w[i] + pad;
                                 for (int j = 0; j < c.n; ++j)
                                     if (j != i && c.x[j] - pad < x1 && c.x[j] + c.w[j] + pad > x0 &&
-                                        c.y[j] - half < y1 && c.y[j] + half > y0)
+                                        c.y[j] - half - (c.wrap[j] ? g.tall : 0.0f) < y1 && c.y[j] + half > y0)
                                         return false;
                             }
                             return true;

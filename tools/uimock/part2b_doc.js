@@ -48,23 +48,40 @@ const DOC = [
 <p>Rules that bind every UI part: sizes in fractions of H (safe margin 0.05 W at the sides, 0.05 H top and bottom); one text-fit rule (<code>core\\game\\textfit.h</code>: a text that does not fit its box steps down only as far as needed, to the floor, and only then is cut with an ellipsis or wraps where its box takes lines) and a legibility floor of 0.024 H, never under 14 px, whatever <code>text_size</code> / <code>hud_scale</code> say; readers fail closed (unknown = nothing shown, never a guess); the game's own data first; a switch restores every byte at once; event-driven, no polling. Budgets: flight HUD 2 0.12 ms per frame in a release fight at 4K; HUD 2 in the menus 67-84 us per frame at 4K.</p>` },
     ] },
 
-  { id: 'upcoming', nav: 'New in 0.2.0', title: 'New in 0.2.0: what changed since 0.1.0',
-    lead: `The released build is <b>FLvibed 0.2.0</b> (1 Nov 2026). Everything below is new since 0.1.0 (26 Oct 2026); in the other sections a ${UP()} tag marks it. The list follows <code>CHANGELOG.md</code> ("0.2.0").`,
+  { id: 'upcoming', nav: 'New in 0.2.5', title: 'New in 0.2.5: what changed since 0.1.0',
+    lead: `The released build is <b>FLvibed 0.2.5</b> (2 Nov 2026), a hotfix on 0.2.0 (1 Nov 2026). The first group is what 0.2.5 changed; the groups after it are what 0.2.0 changed since 0.1.0 (26 Oct 2026); in the other sections a ${UP()} tag marks what is new since 0.1.0. The list follows <code>CHANGELOG.md</code> ("0.2.5" and "0.2.0").`,
     dv: { same: 'The list covers every device; the controller-only changes say so.' },
     blocks: [
-      { t: 'table', title: 'HUD 2, everywhere', head: ['Highlight', 'Where'], rows: [
+      { t: 'table', title: 'In 0.2.5', head: ['Highlight', 'Where'], rows: [
+        ['<b>Contextual HUD (the new default):</b> the HUD setting has two modes, FULL and CONTEXTUAL. Contextual fades HUD 2 out while you fly calmly and brings each part back for four seconds when it matters: the ring and speed when you steer or boost, the target card when you switch targets, the weapons when you fire, the objectives when they change. Alerts, low shield or hull, incoming missiles and fights always show. The old "calm dims" and "minimal" modes are gone; a saved 2 reads as contextual.', 'Flight HUD 2'],
+        ['Mouse steering and cursor movement in flight wake the reticle and speed, as the stick does.', 'Flight HUD 2'],
+        ['<b>Button prompts no longer scroll:</b> a label too long for its place wraps onto two lines in a slightly smaller, still readable font. Ship and weapon names keep their scrolling.', 'Flight HUD 2'],
+        ['Context prompts show when they change or right after you act (dock, cruise, a target, a maneuver), stay four seconds and fade out. The setting <code>hud_prompts</code> (0 = always shown, as in 0.2.0) brings back the old way.', 'Flight HUD 2'],
+        ['When a mission locks your maneuvers (for example while you fly in Brandt\'s formation in the first mission), pressing free flight, formation, dock or goto shows LOCKED BY THE MISSION at the top instead of silently doing nothing.', 'Flight HUD 2'],
+        ['HUD 2\'s target card, contact list, ship panel and loadout panel are only as wide as what they show (up to their old widths), easing gently when the content changes.', 'Flight HUD 2'],
+        ['<b>HUD 2\'s look now also covers the main menu and the mission / tutorial popups</b> (same layout and controls; the classic look is unchanged).', 'Menus and bases'],
+        ['<b>Panels sized to their content:</b> the NeuroNet readout and the target picker are only as large as what they show (up to their old sizes); text uses the space a panel keeps before scrolling.', 'Flight HUD 2'],
+        ['The mouse cursor hides in flight with the contextual HUD when you leave the mouse alone, and returns as soon as you move it (at once in the pause menu and other non-flight screens).', 'Flight HUD 2'],
+        ['<b>The action wheel is more compact:</b> two-word commands on two lines, a smaller ring whose plates clear the reticle and each other, and no repeated name under the reticle. Under HUD 2 each command sits on a HUD 2 plate over a see-through disc; under the classic HUD it uses the game\'s own panel look, lighter than before.', 'Controls, Flight HUD 2'],
+        ['<b>Subtitles:</b> the dialogue panel at the top in flight is 10 % smaller (rooms, story scenes and movies keep their size); when lines stack, the newest stays full size and only the older ones shrink, more gently; the side chat is smaller by default (Normal), the old size is Large (<code>chat_size</code>).', 'Subtitles &amp; movies'],
+        ['<b>Formation, goto and dock no longer stay stuck:</b> if your ship stalls during one, FLvibed restarts the maneuver and logs what happened (setting <code>maneuver_watchdog</code>, on by default).', 'Autopilot'],
+        ['<b>Panel heights fit their rows:</b> the ship panel and the loadout panel are only as tall as their rows, so a short loadout no longer leaves an empty area (the two bottom panels are no longer equal in height).', 'Flight HUD 2'],
+        ['The game\'s cursor also hides in flight while you fly with the controller (after 3 s; any real mouse movement brings it back).', 'Flight HUD 2'],
+        ['The contextual HUD also fades in turret view, and pressing any fire button (even with nothing able to fire) brings back the whole HUD.', 'Flight HUD 2'],
+      ] },
+      { t: 'table', title: 'In 0.2.0: HUD 2, everywhere', head: ['Highlight', 'Where'], rows: [
         ['<b>HUD 2 is the default</b> with the pad <b>and</b> with keyboard and mouse, and its look carries over the menus, bases, dealers and dialogs. Setting the HUD row to Classic brings the game\'s own HUD and screens back.', 'Flight HUD 2, Menus and bases'],
         ['<b>The bottom of the HUD was rearranged:</b> the lower centre stays clear so your ship is never covered, button prompts sit in two lanes (bottom left and right), a name too long for its room scrolls like a public display, and CRUISE ON and the cruise countdown show inside the ring.', 'Flight HUD 2'],
         ['Nothing overlaps inside a panel or card any more; the ship and loadout panels share one height.', 'Flight HUD 2, Menus and bases'],
         ['<b>Closer to the edges:</b> 3 % margins instead of 5 %, so more of the view is yours.', 'Flight HUD 2'],
         ['<b>Focus layout</b> (experimental, among the options page\'s advanced rows): in calm flight no ring, two thin shield and hull arcs and the instruments at the screen\'s edges.', 'Flight HUD 2, Options page'],
       ] },
-      { t: 'table', title: 'Feel and feedback', head: ['Highlight', 'Where'], rows: [
+      { t: 'table', title: 'In 0.2.0: Feel and feedback', head: ['Highlight', 'Where'], rows: [
         ['<b>Hit effects are on by default:</b> screen-edge cues in your shield\'s and hull\'s look when you are hit, and crosshair pulses for the autopilot and consumables. Each can be switched off.', 'Hit effects'],
         ['<b>Rumble on the pad:</b> a hit (the hull heavier than the shield), a failing shield, and two ticks when one of the game\'s boxes waits for you. Strength under Rumble, 0 = off; only while you play with the pad and the game is in front. ' + NO() + ' verified by the test harness so far, not on a real pad yet.', 'Controls, Options page'],
         ['The autopilot\'s hints for players who have not used it yet are on by default.', 'Autopilot'],
       ] },
-      { t: 'table', title: 'Subtitles and story', head: ['Highlight', 'Where'], rows: [
+      { t: 'table', title: 'In 0.2.0: Subtitles and story', head: ['Highlight', 'Where'], rows: [
         ['<b>Every dialogue line was reviewed by ear</b> against the recordings: names, words and the bracketed sound cues.', 'Subtitles &amp; movies'],
         ['<b>The 19 room scenes</b> recorded as one track (the landing at Manhattan, Lonnigan on the pad, Tekagi\'s garden, ...) are now subtitled, with speaker names and word-timed pages. ' + NO('under review') + ' a few lines may differ slightly.', 'Subtitles &amp; movies'],
         ['<b>Stacked speakers shrink smoothly</b> (to 70 % at most, the new row <i>Stacked lines shrink to</i>) so the stack keeps about one line\'s height: no big covered parts of the picture at 4:3 or in story scenes.', 'Subtitles &amp; movies'],
@@ -72,7 +89,7 @@ const DOC = [
         ['The HD Edition intro now subtitles its opening radio exchange: five lines that were missing.', 'Subtitles &amp; movies'],
         ['With mods that replace a scene\'s recording (Crossfire ships some), the original scene\'s lines no longer show over it.', 'Subtitles &amp; movies, With FLUF'],
       ] },
-      { t: 'table', title: 'Controller', head: ['Highlight', 'Where'], rows: [
+      { t: 'table', title: 'In 0.2.0: Controller', head: ['Highlight', 'Where'], rows: [
         ['<b>Confirm with</b> works: set it to the right button (Nintendo layout) and every menu, list, picker and popup accepts with it and goes back with the bottom one, prompts included.', 'Controls'],
         ['Holding RB for a torpedo no longer also launches a missile; a tap launches the missiles on release.', 'Controls'],
         ['Hold X to look around from the turret camera while the autopilot keeps flying and fighting.', 'Flight &amp; aim, Autopilot'],
@@ -81,20 +98,20 @@ const DOC = [
         ['<b>SDL3 backend</b> (opt-in, <code>pad_backend = 1</code>, experimental): meant to read PlayStation and Switch pads directly, with their own prompts. ' + NO() + ' not tested with those pads yet; XInput stays the default.', 'Options page, Controls'],
         ['With another window in front, the pad is ignored in menus and flight alike and does not vibrate.', 'Controls'],
       ] },
-      { t: 'table', title: 'Autopilot (work in progress)', head: ['Highlight', 'Where'], rows: [
+      { t: 'table', title: 'In 0.2.0: Autopilot (work in progress)', head: ['Highlight', 'Where'], rows: [
         ['<b>Fights for time on target:</b> it finishes the enemy it is on, handles head-on passes, learns the best standoff distance per pair of ships and leads its missiles. Every gun fires on stations and generators.', 'Autopilot'],
         ['It rolls toward more guns and steers true when the ship is banked; follows and escorts without the flicker, and a Hold now defends itself.', 'Autopilot'],
         ['<b>Smarter in the details:</b> escapes flown as escapes, huge targets (the Dyson city\'s generators) approached in a coast, fewer missiles bursting on yourself, a fast dock that no longer rams the bay, fight odds that count shield damage.', 'Autopilot'],
         ['<b>A plain start on a targeted base, gate or hole</b> travels there by the game\'s best path, lanes included.', 'Autopilot'],
         ['On the original Freelancer 1.1 it now knows the minefields, dangerous zones and planets\' docking rings.', 'Autopilot, Install'],
       ] },
-      { t: 'table', title: 'Multiplayer and compatibility', head: ['Highlight', 'Where'], rows: [
+      { t: 'table', title: 'In 0.2.0: Multiplayer and compatibility', head: ['Highlight', 'Where'], rows: [
         ['<b>Multiplayer</b> (experimental) works, tested on a local HD Edition server: HUD 2, targeting, subtitle speaker names, missions and job boards, and the autopilot, as far as the server allows (<code>[flvibed autopilot=on|travel|off]</code>, else the setting <code>mp_autopilot</code>). Online it leans to survival. Server hosts get an FLHook plugin (<code>server/flhook/</code>).', 'With FLUF, Not implemented yet'],
         ['<b>Windows 7 SP1 and up:</b> no function newer than Windows 7 is imported any more. ' + NO() + ' checked, not yet played there.', 'Install'],
         ['The original game\'s LAN list connects to local servers; the chat never shows an unfilled name template.', 'Install'],
         ['The game no longer stops drawing for seconds to minutes.', 'Install'],
       ] },
-      { t: 'table', title: 'Under the hood', head: ['Highlight', 'Where'], rows: [
+      { t: 'table', title: 'In 0.2.0: Under the hood', head: ['Highlight', 'Where'], rows: [
         ['FLvibed\'s code is now licensed <b>GPL-3.0</b>, like the subtitle data.', 'Install'],
         ['Reads more of the game\'s data from its binary files, so the original 1.1 gets the same zone names, prices and pilots.', 'Install'],
         ['The autopilot no longer writes a flight trace into the game folder (<code>motion_log = 1</code> is the debugging aid).', 'Autopilot'],
@@ -175,8 +192,8 @@ const DOC = [
       { t: 'table', title: 'Install, update, uninstall', head: ['Step', 'What happens', 'State'], rows: [
         ['<b>On vanilla Freelancer</b>', '1. Install the game with its official installer (you accept the EULA there; it also installs the Agency FB fonts and the registry keys). 2. Apply the official 1.1 patch. 3. Replace <code>EXE\\Freelancer.exe</code> with a decrypted 1.1 program (SafeDisc does not run on Windows 10 / 11). 4. Install FLvibed as below: <code>FLvibed.dll</code>, the dacom.ini line, <code>FLvibed.ini</code> and the data files.', OK('the vanilla test install') + ' (<code>docs\\MOD_COMPATIBILITY.md</code>: its test-only additions - flplusplus for saving in the game folder, a windowed byte patch - are not player requirements)'],
         ['<b>On HD Edition</b>', '1. Install Freelancer: HD Edition 0.7.1 with its installer (it brings the decrypted exe, its plugins and the fonts). 2. Install FLvibed as below.', OK('every test install')],
-        ['<b>Install FLvibed</b>', 'Copy <code>FLvibed.dll</code> into <code>EXE\\</code>, add the line <code>FLvibed.dll</code> to <code>EXE\\dacom.ini</code> [Libraries] after the game\'s own plugins (on vanilla after <code>.\\flmaterials.dll</code>; with FLUF above or below its <code>fluf/FLUF.dll</code> line, see Compatibility), copy the data files above (<code>EXE\\FLSubtitles\\*.tsv</code>, <code>EXE\\FLvibed\\autopilot.3db</code>), write <code>EXE\\FLvibed.ini</code> ([Modules]: <code>subtitles = 1</code>, <code>controller = 1</code>). No game file is changed. <b>The one-click way:</b> <code>FLvibed-0.2.0-Setup.exe</code> does all of this - it finds the game (HD Edition\'s installer entry, the original game\'s registry key, the default folders, its own folder, else a folder picker), keeps an existing FLvibed.ini, backs up dacom.ini once, leaves an uninstaller in <code>EXE\\FLvibed\\</code> and an entry in Windows\' installed apps; no administrator rights unless the folder is protected (then it asks). Unsigned: SmartScreen may warn.', OK('release 0.1') + ' setup: 84 automated checks on copies of the HDE and vanilla dacom.ini, an HDE test install installed by it and played to the main menu; the zip by hand (its README.txt)'],
-        ['<b>Download</b>', 'The project\'s GitHub releases page, two files: <b>FLvibed-0.2.0-Setup.exe</b> (the installer / uninstaller) and <b>FLvibed-0.2.0.zip</b> (to install by hand: <code>EXE\\FLvibed.dll</code> - version 0.2.0 in its file properties, the logs and the options page\'s About - <code>EXE\\FLvibed.ini</code>, <code>EXE\\FLSubtitles\\*.tsv</code>, <code>EXE\\FLvibed\\autopilot.3db</code>, README.txt, CHANGELOG.md, LICENSES with GPL-3.0 for the subtitle data). Both from <code>tools\\package.ps1</code>. ' + UP() + ' The code is licensed GPL-3.0 too; LICENSES also holds SDL3\'s zlib licence (the experimental <code>pad_backend</code> 1).', OK('0.1.0, 26 Oct 2026; 0.2.0, 1 Nov 2026')],
+        ['<b>Install FLvibed</b>', 'Copy <code>FLvibed.dll</code> into <code>EXE\\</code>, add the line <code>FLvibed.dll</code> to <code>EXE\\dacom.ini</code> [Libraries] after the game\'s own plugins (on vanilla after <code>.\\flmaterials.dll</code>; with FLUF above or below its <code>fluf/FLUF.dll</code> line, see Compatibility), copy the data files above (<code>EXE\\FLSubtitles\\*.tsv</code>, <code>EXE\\FLvibed\\autopilot.3db</code>), write <code>EXE\\FLvibed.ini</code> ([Modules]: <code>subtitles = 1</code>, <code>controller = 1</code>). No game file is changed. <b>The one-click way:</b> <code>FLvibed-0.2.5-Setup.exe</code> does all of this - it finds the game (HD Edition\'s installer entry, the original game\'s registry key, the default folders, its own folder, else a folder picker), keeps an existing FLvibed.ini, backs up dacom.ini once, leaves an uninstaller in <code>EXE\\FLvibed\\</code> and an entry in Windows\' installed apps; no administrator rights unless the folder is protected (then it asks). Unsigned: SmartScreen may warn.', OK('release 0.1') + ' setup: 84 automated checks on copies of the HDE and vanilla dacom.ini, an HDE test install installed by it and played to the main menu; the zip by hand (its README.txt)'],
+        ['<b>Download</b>', 'The project\'s GitHub releases page, two files: <b>FLvibed-0.2.5-Setup.exe</b> (the installer / uninstaller) and <b>FLvibed-0.2.5.zip</b> (to install by hand: <code>EXE\\FLvibed.dll</code> - version 0.2.5 in its file properties, the logs and the options page\'s About - <code>EXE\\FLvibed.ini</code>, <code>EXE\\FLSubtitles\\*.tsv</code>, <code>EXE\\FLvibed\\autopilot.3db</code>, README.txt, CHANGELOG.md, LICENSES with GPL-3.0 for the subtitle data). Both from <code>tools\\package.ps1</code>. ' + UP() + ' The code is licensed GPL-3.0 too; LICENSES also holds SDL3\'s zlib licence (the experimental <code>pad_backend</code> 1).', OK('0.1.0, 26 Oct 2026; 0.2.0, 1 Nov 2026')],
         ['<b>Update</b>', 'Run the new version\'s setup (or merge the new zip\'s EXE folder over the old files); the settings files stay. ' + UP() + ' Updating from 0.1.0: the first start of 0.2.0 resets every FLvibed setting to its default (the old files kept as <code>&lt;name&gt;.before-0.2.0</code>; the per-save modes and speedrun bests stay).', OK('unit-tested')],
         ['<b>Uninstall</b>', 'Windows Settings &gt; Apps &gt; Installed apps &gt; FLvibed, or the setup\'s Uninstall: FLvibed\'s dacom.ini line out, FLvibed.dll, the data and the logs deleted; the player chooses whether FLvibed.ini, FLController.ini, FLSubtitles.ini and the per-save modes (<code>EXE\\FLvibed\\saves.ini</code>) go too. Saves stay valid. By hand: the same files and the dacom.ini line. ' + UP() + ' The motion trace and the speedrun bests file go with the data (kept with the settings on request); a hand-written <code>.\\FLvibed.dll</code> line in dacom.ini is recognised.', OK('setup, tested') + ' dacom.ini comes back byte for byte'],
         ['<b>Settings</b>', 'In game: Options &gt; FLVIBED (and the pause menu\'s FLVIBED button). Files: <code>EXE\\FLvibed.ini</code> (modules), <code>EXE\\FLController.ini</code> [Controller] / [Autopilot], <code>EXE\\FLSubtitles.ini</code> [Subtitles].', OK()],
@@ -251,6 +268,17 @@ const DOC = [
         { img: CAP('m_cruise'), title: 'Cruise charging', cap: 'The seconds inside the ring where the power arc was (the speed moves up), the bottom arc filling cyan; [Y] CANCEL CRUISE first in the left lane, whole.' },
         { img: CAP('m_dock'), title: 'Docking (autopilot)', cap: 'AUTOPILOT · DOCK FORT BUSH with progress and DOCK REQUESTED in the nav; GOALS and HOLD TAKE CONTROL stacked in the left lane\'s two rows.' },
         { img: CAP('m_lane'), title: 'Trade lane', cap: 'GOALS and HOLD TAKE CONTROL in the left lane; the lower centre empty.' },
+      ] },
+      { t: 'gal', title: 'The contextual HUD (0.2.5)', items: [
+        { img: CAP('k_idle'), title: 'Calm flight: HUD 2 fades out', cap: 'Nothing to report, nothing drawn: the view is yours.' },
+        { img: CAP('k_steer'), title: 'Steering: ring and speed return', cap: 'Steering (stick or mouse) brings the reticle ring and the speed back for four seconds.' },
+        { img: CAP('k_boost'), title: 'Boost: ring and speed', cap: 'Boosting wakes the ring and speed the same way, then they fade again.' },
+        { img: CAP('k_full'), title: 'FULL mode', cap: 'The HUD setting on FULL keeps every part of HUD 2 on screen all the time.' },
+      ] },
+      { t: 'gal', title: 'Prompts and panels (0.2.5)', items: [
+        { img: CAP('k_wrap'), title: 'A long prompt wraps', cap: 'A label too long for its place wraps onto two lines in a slightly smaller font; the whole text is always visible.' },
+        { img: CAP('k_lock'), title: 'LOCKED BY THE MISSION', cap: 'Pressing a maneuver the mission has locked shows this at the top instead of doing nothing.' },
+        { img: CAP('k_panels'), title: 'Panels sized to their content', cap: 'The target card, contact list, ship panel and loadout panel are only as wide as what they show.' },
       ] },
       { t: 'cmp', title: 'Combat (controller)', cl: CAP('f_combat_cl'), h2: CAP('f_combat_h2'), cap: 'A fight in Bretonia (M05): threat list under the target card, [B] REVERSE and [X] TURRET in the bottom lanes, escorts in the ship panel, the gun groups with the active one marked, the D-pad cross. Left: the classic HUD with the pad badges and the combat legend.',
         km: { title: 'Keyboard and mouse', cl: CAP('f_kbm_cl'), h2: CAP('f_kbm_h2'), cap: 'The keyboard form: the maneuver row under NEURONET as clickable chips with their keys (F2, F3, F4 ...), keycaps instead of glyphs (CTRL+R NEXT ENEMY), the consumables as a 2 x 2 grid of key + slot. Left: the game\'s default HUD.' } },
@@ -358,8 +386,11 @@ const DOC = [
         ['load_ingame', 'Load (in game)', ''], ['confirm_docked', 'Quit confirmation', 'Focus starts on NO: A NO · D-pad CHOOSE · B NO.'],
         ['options_ingame_video', 'Options (in game)', 'The page tabs on HUD 2 tab plates; A SELECT · B BACK.'], ['options_front_video', 'Options (main menu)', 'At 16:9 the pills take a column right of the plate; at 4:3 a bottom row or column since the fit-rule lane (FIX-TEXT, measured at 1600x1200 and vanilla 1280x960).'],
       ] },
+      { t: 'gal', title: 'Dialogs and popups (0.2.5)', items: [
+        { img: CAP('x_popup_h2'), title: 'Mission / tutorial popup', cap: 'The first mission\'s tutorial popup on a HUD 2 plate; same text and buttons as the game\'s.' },
+      ] },
       { t: 'family', title: 'Left as the game draws them', text: 'Decided against a restyle; they still get the pad\'s prompts and focus.', items: [
-        ['mainmenu', 'Main menu', 'Rebuilt by the game on every appearance with its slide-in: risk without gain.'], ['load_front', 'Load (main menu)', ''],
+        ['mainmenu', 'Main menu', 'Since 0.2.5 it takes HUD 2\'s look too (same layout and controls).'], ['load_front', 'Load (main menu)', ''],
         ['newgame_prompt', 'New Game prompt', 'FLvibed\'s own prompt (see Speedrun and New Game).'], ['navmap_docked', 'Nav map (docked)', 'The map\'s frame draws outside the path the skin can trust.'],
         ['navmap_space', 'Nav map (in space)', ''], ['death', 'Mission failed', 'Focus on LOAD AUTOSAVE.'],
         ['chat_space', 'Chat with the on-screen keyboard', 'The pills in a column right of the Console field.'],
@@ -407,7 +438,10 @@ const DOC = [
     blocks: [
       { t: 'cmp', title: 'The dialogue panel with the portrait', cl: CAP('s_portrait_cl'), h2: CAP('s_portrait_h2'), ll: 'CLASSIC HUD', rl: 'HUD 2', cap: 'Fort Bush\'s police answers a dock request: the speaker\'s portrait (the game\'s own comm window, placed inside the panel), name and faction in colour, the line on two rows. Left: the classic HUD, with the Neural Net column top right (DOCK IN USE - ENTERING QUEUE). Lower left in both: a chatter line in the chat band.' },
       { t: 'gal', items: [
-        { img: CAP('s_stack_h2'), title: 'Two speakers at once (HUD 2)', cap: 'When two lines overlap, both stay in the panel, one above the other, and shrink together so the stack keeps about one line\'s height (Subtitles: stack fit).' },
+        { img: CAP('s_stack_h2'), title: 'Two speakers at once (HUD 2)', cap: 'When two lines overlap, both stay in the panel, one above the other; since 0.2.5 the newest stays full size and only the older ones shrink, more gently.' },
+        { img: CAP('s_stack_new'), title: 'The stack settled (0.2.5)', cap: 'The newest line at full size, the older one smaller above it.' },
+        { img: CAP('c_chat_normal'), title: 'Side chat: Normal (default)', cap: 'The side chat is smaller by default since 0.2.5.' },
+        { img: CAP('c_chat_large'), title: 'Side chat: Large', cap: 'The old size, chosen with the chat_size setting.' },
         { img: CAP('s_stack_43'), title: 'Two speakers at once at 4:3', cap: '1600x1200: the stacked lines shrink together inside the narrower screen, each with its speaker\'s name.' },
         { img: CAP('s_nn_h2'), title: 'Neural Net column and chat band (HUD 2)', cap: 'A Neural Net line (SHIELDS LOW) in its column at the right, its colour and pulses by severity; comms in the chat band left; a long line wraps inside the panel (test line).' },
         { img: CAP('s_43_portrait_h2'), title: 'The portrait with its line at 4:3 (HUD 2)', cap: '1600x1200 at the largest subtitle size: where the rows beside the portrait would be too short, it sits above its line, centred, and the rows take the full width - the portrait never leaves its dialogue.' },
@@ -439,7 +473,8 @@ const DOC = [
       { t: 'gal', title: 'Its controls on the pad', items: [
         { img: CAP('p_goals'), title: 'The goal panel (X while it flies; Shift+K on the keyboard)', cap: 'ACTIONS: dock at, travel to, fly to the target, the mission objective, travel along the waypoints, hold here - each with what it will do. QUEUE and DO NEXT are greyed: there is no goal queue yet. On keyboard and mouse the same panel shows its keys at its foot and every row, tab and the ESC mark are clickable.' },
         { img: CAP('p_picker'), title: 'The target picker (LB)', cap: 'Categories on the bumpers (threats, mission, navigation, ships, loot), rows with distance and the action A starts.' },
-        { img: CAP('p_wheel'), title: 'The action wheel (LB held)', cap: 'Quick actions on the right stick.' },
+        { img: CAP('p_wheel'), title: 'The action wheel (LB held)', cap: 'Quick actions on the right stick; since 0.2.5 more compact, each command on a HUD 2 plate over a see-through disc.' },
+        { img: CAP('w_wheel_classic'), title: 'The action wheel under the classic HUD', cap: 'The game\'s own panel look, lighter than before.' },
       ] },
       { t: 'table', title: 'What it does', head: ['Part', 'What it does today'], rows: [
         ['<b>Modes</b>', 'Mission objective (the story\'s own trigger conditions read live), travel (lanes, gates, jump holes; route round minefields and damage zones), dock (fast dock, the queue shortcut, the docking scene skipped), hold (keep station, nose on the scene), escort / follow, fight (target choice by threat and odds, missiles by economy, evasion).'],
@@ -503,8 +538,7 @@ const DOC = [
         ['Mouse versions of the target picker and the action wheel (keyboard and mouse target through the game\'s contact list; the wheel\'s autopilot item, AUTOPILOT GOALS, is Shift+K). On HUD 2\'s keyboard form the SHIFT+K GOALS prompt gives way to TAKE CONTROL where the line between the panels is short (16:9).', NO('not built')],
         ['The unattended campaign run (New Game to the end of the story).', NO('not reached')],
       ] },
-      { t: 'table', title: 'Controller UI', head: ['Item', 'State'], rows: [
-        ['The Bindings screen (<code>edit_bindings</code>): the three presets apply; no remapping editor; CUSTOM = FREELANCER.', NO('not built')],
+      { t: 'table', title: 'Controller UI', head: ['Item', 'State'], rows: [        ['The Bindings screen (<code>edit_bindings</code>): the three presets apply; no remapping editor; CUSTOM = FREELANCER.', NO('not built')],
         ['The nav map\'s objects as controls: the stick drives the game\'s cursor, no D-pad snap to objects; zoom only through the map\'s buttons.', NO('not built')],
         ['The inventory\'s JETTISON hold and the equipment COMPARE line in the inventory.', NO('not built')],
         ['The real Elite pad in menus, bases, dealers, the OSK, the pickers (verified on the virtual pad only; a hands-on test on a real pad is pending); the K&amp;M half of the device switch verified by code and harness only.', NO()],

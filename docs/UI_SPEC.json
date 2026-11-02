@@ -4496,21 +4496,20 @@
        "value": "STANDARD"
       },
       {
-       "def": "CALM DIMS",
-       "help": "HUD 2 in quiet flight. Calm dims: the ring and the side panels dim while nothing happens and come back the moment something changes or a fight starts. Minimal: calm flight shows almost nothing. Always full: no fading.",
+       "def": "CONTEXTUAL",
+       "help": "Contextual: in flight HUD 2 fades out while you fly calmly; each part comes back when it matters - the ring and speed when you steer or boost, the target card when you switch targets, the weapons when you fire, the objectives when they change - and fades again 4 seconds later. Alerts, low shield or hull, incoming missiles and fights always show. Full: everything always shown.",
        "id": "hud_fade",
        "key": "hud_fade",
        "kind": "picker",
-       "label": "Fade when calm",
+       "label": "HUD visibility",
        "needs": "live",
        "options": [
-        "ALWAYS FULL",
-        "CALM DIMS",
-        "MINIMAL"
+        "FULL",
+        "CONTEXTUAL"
        ],
        "parent": null,
        "tier": "player",
-       "value": "CALM DIMS"
+       "value": "CONTEXTUAL"
       },
       {
        "def": 100,
@@ -4590,6 +4589,22 @@
        "parent": null,
        "tier": "player",
        "value": "CONTEXTUAL"
+      },
+      {
+       "id": "hud_prompts",
+       "key": "hud_prompts",
+       "label": "Show context prompts",
+       "kind": "picker",
+       "help": "When the context prompts show in flight. On change: they appear when they change or right after you act (dock, cruise, a target, a maneuver), stay four seconds, then fade out. Always: they stay on screen.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "options": [
+        "ALWAYS",
+        "ON CHANGE"
+       ],
+       "def": "ON CHANGE",
+       "value": "ON CHANGE"
       },
       {
        "def": true,
@@ -4752,6 +4767,18 @@
        "needs": "live",
        "parent": null,
        "tier": "player",
+       "value": true
+      },
+      {
+       "id": "maneuver_watchdog",
+       "key": "maneuver_watchdog",
+       "label": "Restart stalled maneuvers",
+       "kind": "toggle",
+       "help": "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed starts the same maneuver again, up to 3 times, and logs what happened.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "def": true,
        "value": true
       },
       {
@@ -5408,6 +5435,22 @@
        "parent": "enabled",
        "tier": "player",
        "value": false
+      },
+      {
+       "id": "chat_size",
+       "key": "chat_size",
+       "label": "Side chat size",
+       "kind": "picker",
+       "help": "The text size of HUD 2's side chat (the comm feed beside the HUD): Normal is a little larger than the game's own chat text, Large the bigger size of earlier versions.",
+       "needs": "live",
+       "tier": "player",
+       "parent": "enabled",
+       "options": [
+        "NORMAL",
+        "LARGE"
+       ],
+       "def": "NORMAL",
+       "value": "NORMAL"
       }
      ]
     },
@@ -7960,7 +8003,7 @@
    "existing": {
     "hud_fade": [
      1,
-     2,
+     1,
      1,
      1
     ],

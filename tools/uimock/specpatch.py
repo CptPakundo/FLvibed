@@ -110,6 +110,12 @@ def patch_js(src, patch):
                         line = re.sub(r"(, [-0-9.]+, [-0-9.]+, [-0-9.]+, )[-0-9.]+(, \{)", lambda mm: mm.group(1) + d + mm.group(2), line, count=1)
                 if 'help' in fields:
                     line = re.sub(r"help: '(?:[^'\\]|\\.)*'", "help: " + js_literal(fields['help']), line, count=1)
+                if 'label' in fields:  # (0.2.1: a row's label and a picker's options replaced too)
+                    line = re.sub(r"(\('%s', )'(?:[^'\\]|\\.)*'" % re.escape(key),
+                                  lambda mm: mm.group(1) + js_literal(fields['label']), line, count=1)
+                if 'options' in fields and kind == 'P':
+                    opts = '[' + ', '.join(js_literal(o) for o in fields['options']) + ']'
+                    line = re.sub(r"\[[^\]]*\]", lambda mm: opts, line, count=1)
         out.append(line)
     return '\n'.join(out)
 

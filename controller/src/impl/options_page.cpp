@@ -160,7 +160,7 @@ enum
     kBtnCancel = 1,
     kBtnClose = 2
 };
-static int ButtonCount() { return g_hostMode == Host::Standalone ? 3 : 2; }
+static int ButtonCount() { return 3; } // DEFAULT, CANCEL, CLOSE in every host (hotfix 0.2.5)
 
 // ------------------------------------------------------------------ the local bus (a host without one)
 namespace localbus
@@ -728,11 +728,28 @@ static void CloseAs(bool keep)
     Log("options page: closed (%s)", keep ? "kept" : "reverted");
 }
 
-void Open()
+// Opens the page where it belongs: with the game's Options screen up, hosted in its panel (the host switches to FLvibed's
+// page and Update opens it hosted) - never the standalone panel on top of the screen (hotfix 0.2.5: the spec capture's
+// "off-centre" page was the standalone panel, centred on the screen, over the Options screen's right-of-centre panel);
+// else the standalone panel. Returns false when the host switch was asked for (the page opens at the next Update).
+static bool OpenBest()
 {
     if (g_open)
-        return;
-    OpenAs(Host::Standalone);
+        return true;
+    const int state = HostAtLeast(18) && g_host->OptionsPageState ? g_host->OptionsPageState() : 0;
+    if (state == 1 && g_host->ShowOptionsPage)
+    {
+        g_host->ShowOptionsPage(true);
+        Log("options page: the Options screen is open - hosted there");
+        return false;
+    }
+    OpenAs(state == 2 ? Host::Options : Host::Standalone);
+    return true;
+}
+
+void Open()
+{
+    OpenBest();
 }
 void Close() { CloseAs(true); }
 bool IsOpen() { return g_open; }
@@ -808,8 +825,6 @@ static Layout ComputeLayout()
         l.rowsTop = (0.292f + ig * 0.012f) * H;
         l.rowsBottom = 0.858f * H;
         l.buttonY = 0.882f * H;
-        l.defaultX = l.left + 0.166f * H;
-        l.cancelX = l.right - 0.221f * H;
         l.labelX = l.left + 0.046f * H;
         l.controlRight = l.right - 0.054f * H;
         l.helpRight = l.cx + 0.565f * H;
@@ -828,9 +843,6 @@ static Layout ComputeLayout()
         l.rowsTop = 0.215f * H;
         l.rowsBottom = 0.805f * H;
         l.buttonY = 0.848f * H;
-        l.defaultX = l.cx - 0.27f * H;
-        l.cancelX = l.cx;
-        l.closeX = l.cx + 0.27f * H;
         l.labelX = l.left + 0.055f * H;
         l.controlRight = l.right - 0.06f * H;
         l.helpRight = l.right; // the rollover line above the panel, top right, as the game's sits at the screen's top
@@ -848,7 +860,16 @@ static Layout ComputeLayout()
     l.tabPitch = 0.1405f * H;
     l.tabH = std::min(0.038f * H * t, (l.rowsTop - l.tabsY) * 2 - 0.006f * H); // (never into the first row)
     l.tabX0 = l.labelX - 0.02f * H;
-    l.buttonW = 0.185f * H;
+    // the bottom row: DEFAULT, CANCEL, CLOSE in every host (hotfix 0.2.5: hosted, CLOSE was left out - the 4:3 spec
+    // capture showed two), centred on the panel, 0.27 H apart (0.185 H wide) where the panel has the room; a narrower
+    // panel (the Options screen's at 4:3, a portrait window) spaces them at a third of its width and narrows them to fit,
+    // so all three always show inside it (a caption that no longer fits takes the fit rule)
+    {
+        const float mid = (l.left + l.right) * 0.5f, inner = std::max(1.0f, l.right - l.left);
+        const float step = std::min(0.27f * H, inner / 3.0f);
+        l.defaultX = mid - step, l.cancelX = mid, l.closeX = mid + step;
+        l.buttonW = std::min(0.185f * H, step * 0.88f);
+    }
     l.buttonH = 0.037f * H * t;
     l.buttonY -= (l.buttonH - 0.037f * H) * 0.5f; // (taller upward: the bottom edge stays inside the screen's frame)
     l.rowsBottom = std::min(l.rowsBottom, l.buttonY - l.buttonH * 0.5f - 0.004f * H);
@@ -1759,8 +1780,7 @@ static void DrawHud2Back(const Layout& l, int n, int focusBtn)
     const float by = l.buttonY - l.buttonH * 0.5f;
     tab(l.defaultX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, false, g_hover == -2 - kBtnDefault);
     tab(l.cancelX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, false, g_hover == -2 - kBtnCancel);
-    if (g_hostMode == Host::Standalone)
-        tab(l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, false, g_hover == -2 - kBtnClose);
+    tab(l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, false, g_hover == -2 - kBtnClose);
     // the focus: a row (its label to the control's right end, as the classic frame) or a bottom button
     float fx0 = 0, fy0 = 0, fx1 = 0, fy1 = 0;
     if (g_focus >= 0 && g_focus < n && g_focus >= g_scroll && g_focus - g_scroll < l.visible &&
@@ -1886,8 +1906,7 @@ void Draw()
     {
         Hud2Caption(f, l.defaultX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"DEFAULT", false);
         Hud2Caption(f, l.cancelX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CANCEL", false);
-        if (g_hostMode == Host::Standalone)
-            Hud2Caption(f, l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CLOSE", false);
+        Hud2Caption(f, l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CLOSE", false);
         DrawHelp(f);
         render::End(false);
         return;
@@ -1896,8 +1915,7 @@ void Draw()
                   focusBtn == kBtnDefault || g_hover == -2 - kBtnDefault, true);
     uikit::Button(f, l.cancelX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CANCEL",
                   focusBtn == kBtnCancel || g_hover == -2 - kBtnCancel, true);
-    if (g_hostMode == Host::Standalone)
-        uikit::Button(f, l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CLOSE",
+    uikit::Button(f, l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CLOSE",
                       focusBtn == kBtnClose || g_hover == -2 - kBtnClose, true);
     DrawHelp(f);
     render::End(false);
@@ -1993,8 +2011,8 @@ std::string Command(std::istream& in)
         }
         else if (arg == "open" || !g_open)
         {
-            if (!g_open)
-                OpenAs(Host::Standalone);
+            if (!OpenBest())
+                return "hosting"; // the Options screen switches to FLvibed's page; Update opens it hosted
         }
         else
             CloseAs(true);
@@ -2054,7 +2072,11 @@ std::string Command(std::istream& in)
           << " bus=" << (Bus() ? Bus()->Count() : -1) << " pageState="
           << (HostAtLeast(18) && g_host->OptionsPageState ? g_host->OptionsPageState() : -1)
           << " pad=" << (g_input.PadConnected() ? 1 : 0) << " screen=" << g_layout.sw << "x" << g_layout.sh
-          << " tabs=" << uimeta::kTabCount << " settled=" << (g_settled ? 1 : 0);
+          << " tabs=" << uimeta::kTabCount << " settled=" << (g_settled ? 1 : 0) << " text=" << TextPercent()
+          << " panel=" << g_layout.left << ".." << g_layout.right << " cx=" << g_layout.cx << " tabX0=" << g_layout.tabX0
+          << " label=" << g_layout.labelX << " control=" << g_layout.controlLeft << ".." << g_layout.controlRight
+          << " buttons=" << g_layout.defaultX << "," << g_layout.cancelX << "," << g_layout.closeX << " w=" << g_layout.buttonW
+          << " y=" << g_layout.buttonY << " h=" << g_layout.buttonH << " help=" << g_layout.helpRight;
         return o.str();
     }
     return "ui: options [open|close|cancel] | tab <n|name> | rows | press <keys...> | focus <key> | default | state";

@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.2.5 - 2 Nov 2026
+
+- Note: the FLVIBED options page still needs the controller module (`controller = 1`, the default). This is
+  temporary: HUD 2, the menus' look and the options page will become their own core module in a later version.
+- The FLVIBED options page always shows its DEFAULT, CANCEL and CLOSE buttons, inside the Options screen too (CLOSE
+  was missing there), spaced to fit the panel at any aspect ratio and text size.
+- Opening the FLVIBED options page while the game's Options screen is up now shows it in the screen's panel, not as a
+  second, centred panel on top of it.
+- In flight the off-screen target arrows keep clear of HUD 2's comm feed cards at the left screen edge.
+- Checked: with the classic HUD on 4:3 screens the flight subtitles use the name-tab layout; the display test now checks
+  the classic HUD and HUD 2 separately.
+
+- HUD 2's look now also covers the main menu and the mission / tutorial popups (same layout and controls; the classic look unchanged).
+- The game's cursor now also hides in flight while you fly with the controller (after 3 s; any real mouse movement brings it back).
+- HUD 2's ship panel and loadout are now only as tall as their rows (a short loadout no longer leaves an empty area).
+- Contextual HUD: it now also fades in turret view, and pressing any fire button (even with nothing able to fire)
+  brings back the whole HUD.
+- HUD 2's NeuroNet / objectives readout and the target picker are only as large as what they show (up to their old
+  sizes), easing gently; the loadout's launcher name no longer scrolls while its row has room to spare.
+
+- Subtitles: the dialogue panel at the top of the screen in flight is a little smaller (10 %); rooms, story scenes and
+  movies keep their size.
+
+- Subtitles: the side chat is smaller by default (Normal); the old size is Large, under `chat_size`.
+- HUD 2's target card, contact list, ship panel and loadout panel are only as wide as what they show (up to their old
+  widths), easing gently when the content changes.
+- The action wheel is more compact: two-word commands on two lines, a smaller ring whose plates clear the reticle and
+  each other, and no repeated name under the reticle (both HUD looks).
+- Contextual HUD: mouse steering and cursor movement in flight wake the reticle and speed, as the stick does.
+- The mouse cursor also hides in flight when you leave the mouse alone, and comes back as soon as you move it.
+- Formation, goto and dock no longer stay stuck: if your ship stalls during one, FLvibed restarts the maneuver and logs
+  what happened (setting `maneuver_watchdog`, on by default).
+
+- HUD 2's button prompts no longer scroll: a label too long for its place wraps onto two lines in a slightly smaller
+  (still readable) font, so the whole text is always visible. Ship and weapon names keep their scrolling.
+- HUD 2's context prompts now show when they change or right after you act (dock, cruise, a target, a maneuver), stay
+  four seconds and fade out. The new setting `hud_prompts` (0 = always shown, as in 0.2.0) brings back the old way.
+- When a mission locks your maneuvers (for example while you fly in Brandt's formation in the first mission), pressing
+  free flight, formation, dock or goto now shows LOCKED BY THE MISSION at the top instead of silently doing nothing.
+- **Contextual HUD (new default):** `hud_fade` now has two modes, FULL and CONTEXTUAL. Contextual fades HUD 2 out while
+  you fly calmly and brings each part back for four seconds when it matters: the ring and speed when you steer or boost,
+  the target card when you switch targets, the weapons when you fire, the objectives when they change. Alerts, low
+  shield or hull, incoming missiles and fights always show. The old "calm dims" and "minimal" modes are gone (a saved 2
+  reads as contextual).
+- The action wheel matches the HUD: under HUD 2 each command sits on a HUD 2 plate over a see-through disc; under the
+  classic HUD it uses the game's own panel look, lighter than before.
+- Subtitles: when lines stack, the newest stays full size and only the older ones shrink, more gently.
+- HUD 2 uses the room it has before shortening anything: the weapons panel grows to fit a weapon row on one line and
+  only wraps it when the panel is already full width, a long missile name takes a free line above its row before it
+  scrolls, and the target picker is always wide enough for its category tabs (they ran past its edges).
+- The mouse cursor under the contextual HUD always comes back at once in the pause menu (and any other non-flight
+  screen) and hides again only after three idle seconds back in flight.
+
 ## 0.2.0 - 1 Nov 2026 - second preview
 
 - **HUD 2 is the default** with the controller and with keyboard and mouse (`hud_style = 2`), and HUD 2's look over the

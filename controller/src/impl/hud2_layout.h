@@ -102,6 +102,8 @@ struct Measures
     bool ctxMeasured = false; // false = the player types: the line measures 0 and steps aside (ContextWidths false)
     int nCtx = 0;             // the model's context prompts (0..3 are placed)
     float base[3] = {}, glyph[3] = {}, label[3] = {}; // each prompt's width without a HOLD word, its glyph's, its label's
+    float labelMin[3] = {}; // the narrowest the label reads whole in: two lines at the floor (promptfit LabelMinWidth;
+                            // 0 = not measured: two floor-sized ems, the old marquee's squeeze)
     bool hold[3] = {};
     int side[3] = {}; // each prompt's lane: 0 the left (beside the ship panel), 1 the right (beside the loadout): hud2.cpp
                       // CtxSide (the owner's decision 4, 31 Oct 2026)
@@ -111,6 +113,15 @@ struct Measures
     float ctxGap = 0;  // ContextGap (the space between prompts)
     float ctxWord = 0; // ContextWordSize (the HOLD word's text size)
     float alertW = 0;  // the alert card's width (DrawAlert measure), 0 = no alert text
+    // the panels sized to their content (0.2.1 round 3, the owner: "they only need to be as big as the content they
+    // display"; UI_HUD2.md 5.26): Standard's card (with the list under it), ship panel and loadout base panel widths
+    // (pixels) as hud2.cpp eased them from the measures (hud2_parts.cpp *ContentWidth, its minimum and hysteresis);
+    // the spec's widths (std_ov kCardW / kShipW / kLoadW(Kbm)) are their maxima. 0 = unmeasured: the maxima.
+    float cardW = 0, shipW = 0, loadW = 0;
+    // their HEIGHTS too (0.2.1 round 6, the owner: one gun row and no launcher left a big empty area): the ship panel and
+    // the loadout base panel (pixels, eased the same way; hud2_parts.cpp *ContentHeight), anchored to the bottom margin;
+    // std_ov::kShipH / the preset's loadout h their maxima, kShipMinH / kLoadMinH their floors. 0 = unmeasured.
+    float shipH = 0, loadH = 0;
 };
 // The subtitles' dialogue panel as the HUD bus last published it (fractions of the screen; hud2.cpp reads the bus).
 struct Dialogue
@@ -133,8 +144,10 @@ struct Frame
     bool listMore = false;              // the contact list has more rows than it shows (a "+n" line)
     bool alert = false;                 // the alert card shows (for the budget)
     float navRight = 0;                 // the nav's drawn right edge last frame (0 = none yet)
+    // the nav's drawn bottom last frame, eased (0 = none yet): Focus's nav grows with its chip lines; Standard's box is as
+    // tall as it up to its old height (0.2.1 round 4)
+    float navBottom = 0;
     // (Focus; Standard reads none of these)
-    float navBottom = 0; // the nav's drawn bottom last frame (0 = none yet): Focus's nav grows with its chip lines
     float form = -1;     // the card's fight form 0..1 as Reveal eased it (-1 = the context's: combat 1, else 0)
     u32 held = 0;        // the elements the reveal holds back this frame (not in the boxed area)
     Measures m;
@@ -159,6 +172,8 @@ struct Out
     float ctxW[3] = {};
     float ctxX[3] = {}, ctxPY[3] = {}; // each prompt's left edge and centre line (the lanes, decision 4)
     int ctxSide[3] = {};               // ... its lane (0 left, 1 right)
+    bool ctxWrap[3] = {};              // ... squeezed: its label may wrap onto two lines, its plate ctxTall taller (0.2.1)
+    float ctxTall = 0;                 // what a wrapped prompt's plate grows upward (pixels)
     bool ctxFallback = false;          // no lane beside the panels had room (4:3 / 5:4 at large scales): the lanes above
                                        // them (promptfit.h LanesAbove, 5.23)
     float alertY = 0, alertX0 = 0, alertX1 = 0, alertY1 = 0;
@@ -438,13 +453,17 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
     const float W = L.W, H = L.H, k = L.k;
     L.nCtx = 0, L.ctxY = lineY * H, L.ctxPlan = promptfit::HoldPlan(), L.ctxFallback = false, L.ctxX0 = L.ctxX1 = 0;
     for (int i = 0; i < 3; ++i)
-        L.ctxW[i] = L.ctxX[i] = L.ctxPY[i] = 0, L.ctxSide[i] = 0;
+        L.ctxW[i] = L.ctxX[i] = L.ctxPY[i] = 0, L.ctxSide[i] = 0, L.ctxWrap[i] = false;
     const promptfit::LaneGeom g =
         promptfit::ContextLanes(W, H, k, L.ship.x1, L.loadout.x0, lineY, kBottomBandX0W, kBottomBandX1W);
+    L.ctxTall = g.tall;
     const float floorPx = std::max(0.024f * H, 14.0f); // (textfit.h MinSize: the labels' floor)
+    // the narrowest a prompt is squeezed to: its label whole on two lines at the floor (0.2.1, the owner: prompts never
+    // marquee - promptfit FitLabel); unmeasured, the old two floor-sized ems
     float minW[3] = {};
     for (int i = 0; i < 3; ++i)
-        minW[i] = f.m.base[i] - f.m.label[i] + std::min(f.m.label[i], 2.0f * floorPx);
+        minW[i] = f.m.base[i] - f.m.label[i] +
+                  std::min(f.m.label[i], f.m.labelMin[i] > 0 ? f.m.labelMin[i] : 2.0f * floorPx);
     promptfit::LanesPlaced c;
     promptfit::HoldPlan plan;
     float w[3] = {};
@@ -478,13 +497,75 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
     {
         L.nCtx = c.n, L.ctxX0 = c.x0, L.ctxX1 = c.x1, L.ctxPlan = plan;
         for (int i = 0; i < c.n; ++i)
-            L.ctxX[i] = c.x[i], L.ctxPY[i] = c.y[i], L.ctxW[i] = w[i], L.ctxSide[i] = c.side[i];
+            L.ctxX[i] = c.x[i], L.ctxPY[i] = c.y[i], L.ctxW[i] = w[i], L.ctxSide[i] = c.side[i], L.ctxWrap[i] = c.wrap[i];
     }
     L.ctxTop = L.ctxY - 0.03f * H;
     for (int i = 0; i < L.nCtx && i < 3; ++i) // the highest row; a word above its glyph rises over its plate
+    {
+        const float tall = L.ctxWrap[i] ? L.ctxTall : 0.0f; // (a wrapped prompt's plate rises by it)
         L.ctxTop = std::min(L.ctxTop, promptfit::Raised(L.ctxPlan.at[i])
-                                          ? L.ctxPY[i] - 0.026f * H * k - 0.001f * H - f.m.ctxWord
-                                          : L.ctxPY[i] - 0.03f * H);
+                                          ? L.ctxPY[i] - 0.026f * H * k - tall - 0.001f * H - f.m.ctxWord
+                                          : L.ctxPY[i] - 0.03f * H - tall);
+    }
+}
+
+// ---- the panels sized to their content (0.2.1 round 3): the spec's width is the maximum, a measured (eased) content
+// width below it wins; 0 = unmeasured (the maximum: the tests' and the old frames' geometry)
+inline float ContentFit(float maxW, float measured) { return measured > 0 && measured < maxW ? measured : maxW; }
+// The content widths' floors (fractions of H x k: hud2.cpp eases toward max(content, floor)) and the hysteresis: a
+// narrower content shrinks the panel only past kContentHyst (a growing one follows at once, eased fast)
+constexpr float kCardMinW = 0.30f, kShipMinW = 0.22f, kLoadMinW = 0.26f, kContentHyst = 0.012f;
+constexpr float kShipMinH = 0.09f, kLoadMinH = 0.075f; // the heights' floors (round 6): the ship icon 0.075 + its air;
+                                                       //   a single gun row with its launcher's prompt room
+// A row label's real free room (0.2.1 round 4, the owner: a label scrolls only past the room its row keeps): from its
+// left edge to the row's right edge, less the row's items that actually show (a right-aligned value `valueW` + its
+// gap, a tag column `tagW` + its gap only while `tag`). Pixels; never negative.
+inline float RowRoom(float nameX, float rowRight, float valueW, float valueGap, bool tag, float tagW, float tagGap)
+{
+    const float r = rowRight - (tag ? tagW + tagGap : 0.0f) - (valueW > 0 ? valueW + valueGap : 0.0f) - nameX;
+    return r > 0 ? r : 0.0f;
+}
+// A too-long label's second line (0.2.1 round 5, the owner: a panel's spare height is used before a label scrolls):
+// where line two starts in `s` - the first line takes the most whole parts (split at `sep`, at least one) that fit
+// `room1`; npos = one line (it fits `room1`, or has no `sep`: the caller marquees it). `width(text)` measures a text
+// (pixels). Line two may still be too long for its room: then it scrolls (TextMarquee). Pure.
+template <class WidthFn>
+inline size_t TwoLineSplit(const std::wstring& s, float room1, const std::wstring& sep, WidthFn width)
+{
+    if (s.empty() || sep.empty() || width(s) <= room1)
+        return std::wstring::npos;
+    size_t cut = std::wstring::npos;
+    for (size_t at = s.find(sep); at != std::wstring::npos; at = s.find(sep, at + sep.size()))
+    {
+        if (cut != std::wstring::npos && width(s.substr(0, at)) > room1)
+            break;
+        cut = at;
+    }
+    if (cut == std::wstring::npos)
+        return std::wstring::npos;
+    size_t next = cut + sep.size();
+    while (next < s.size() && s[next] == L' ') // (a space separator's run: line two starts at its text)
+        ++next;
+    return next < s.size() ? next : std::wstring::npos;
+}
+// Standard's nav box's height floor (0.2.1 round 4: the NeuroNet chip + one line; fractions of H x k)
+constexpr float kNavMinH = 0.10f;
+// One panel's eased width (pixels) toward `target`: grows at 14 / s (never clipped for long), shrinks at 5 / s and only
+// when the target is kContentHyst x H x k below - a value ticking a digit does not breathe the panel. cur 0 = snap.
+inline float EaseContent(float cur, float target, float dt, float hystPx)
+{
+    if (target <= 0)
+        return cur;
+    if (cur <= 0)
+        return target;
+    if (target > cur)
+    {
+        const float n = cur + (target - cur) * std::min(1.0f, 14.0f * dt) + 0.5f; // (+ half a pixel: it arrives)
+        return n > target ? target : n;
+    }
+    if (target < cur - hystPx)
+        return cur + (target - cur) * std::min(1.0f, 5.0f * dt);
+    return cur;
 }
 
 // ---- the layout
@@ -511,13 +592,17 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     // the card: the top-right corner, its height the full form's off screen (today's card always carries the name and
     // the distance: the off-screen form, in every context), the K&M footer an override
     const float cardH = hp::Num(p, "combat", "card", "h_off_screen", 0.215f);
-    L.card.x1 = W - L.mx, L.card.x0 = L.card.x1 - std_ov::kCardW * H * k, L.card.y0 = L.my,
+    L.card.x1 = W - L.mx, L.card.x0 = L.card.x1 - ContentFit(std_ov::kCardW * H * k, f.m.cardW), L.card.y0 = L.my,
     L.card.y1 = L.my + (f.kbm ? std_ov::kCardHKbm : cardH) * H * k;
     // the nav (top-left; override: its width rule and box)
     L.navMaxX = std::max(L.mx + std_ov::kNavMinW * H * k,
                          std::min(L.mx + std_ov::kNavMaxW * H * k, L.card.x0 - std_ov::kNavDialogue * H));
     L.nav.x0 = L.mx - std_ov::kNavPadX * H, L.nav.y0 = L.my - std_ov::kNavPadY * H,
-    L.nav.y1 = L.my + (f.kbm ? std_ov::kNavHKbm : std_ov::kNavH) * H * k;
+    // its height sized to its content (0.2.1 round 4, UI_HUD2.md 5.27): the drawn bottom (hud2.cpp eases it) + the edge,
+    // floored at kNavMinH; today's 0.29 / 0.338 the maximum; 0 = unmeasured = the maximum (the pinned geometry)
+    L.nav.y1 = L.my + ContentFit((f.kbm ? std_ov::kNavHKbm : std_ov::kNavH) * H * k,
+                                 f.navBottom > 0 ? std::max(f.navBottom + std_ov::kNavEdge * H - L.my, kNavMinH * H * k)
+                                                 : 0.0f);
     L.nav.x1 = f.navRight > 0 ? std::min(f.navRight + std_ov::kNavEdge * H, L.navMaxX) : L.navMaxX;
     // the threat list: under the card, or where the card would be when no target shows (the keyboard form's header)
     L.thrY0 = f.target ? L.card.y1 : L.card.y0 - std_ov::kListLift * H * k;
@@ -527,11 +612,13 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     if (f.kbm && rows == 0)
         L.thrY1 = L.thrY0 + std_ov::kListHeadOnly * H * k; // the header alone
     // the ship (bottom-left) and the loadout (bottom-right; its height the fight form's: 5.16, its top at S1's bottom)
-    L.ship.x0 = L.mx, L.ship.x1 = L.mx + std_ov::kShipW * H * k, L.ship.y1 = H - myBottom,
-    L.ship.y0 = L.ship.y1 - std_ov::kShipH * H * k;
+    L.ship.x0 = L.mx, L.ship.x1 = L.mx + ContentFit(std_ov::kShipW * H * k, f.m.shipW), L.ship.y1 = H - myBottom,
+    L.ship.y0 = L.ship.y1 - ContentFit(std_ov::kShipH * H * k, f.m.shipH); // (round 6: heights to content too; A5's
+                                                                           //  equal height dropped)
     const float loH = hp::Num(p, "combat", "loadout", "h", 0.15f);
-    L.loadout.x1 = W - L.mx, L.loadout.x0 = L.loadout.x1 - (f.kbm ? std_ov::kLoadWKbm : std_ov::kLoadW) * H * k,
-    L.loadout.y1 = H - myBottom, L.loadout.y0 = L.loadout.y1 - loH * H * k;
+    L.loadout.x1 = W - L.mx,
+    L.loadout.x0 = L.loadout.x1 - ContentFit((f.kbm ? std_ov::kLoadWKbm : std_ov::kLoadW) * H * k, f.m.loadW),
+    L.loadout.y1 = H - myBottom, L.loadout.y0 = L.loadout.y1 - ContentFit(loH * H * k, f.m.loadH);
     // the consumables' cross stacked on the base panel's right end, right-aligned (decision 3): its bottom 0.012 H x k
     // above the base's top (S1's bottom edge 0.80 H stays the base's top; the cross lies right of S1, in the right rail's
     // lower end - the lint's S2 ends at its top: hud2_lint.h ZonesOf)
@@ -601,8 +688,9 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
         bool meet = false;
         for (int i = 0; i < L.nCtx && i < 3; ++i)
         {
-            const float top = promptfit::Raised(L.ctxPlan.at[i]) ? L.ctxPY[i] - ch - 0.001f * H - f.m.ctxWord
-                                                                  : L.ctxPY[i] - ch;
+            const float tall = L.ctxWrap[i] ? L.ctxTall : 0.0f;
+            const float top = promptfit::Raised(L.ctxPlan.at[i]) ? L.ctxPY[i] - ch - tall - 0.001f * H - f.m.ctxWord
+                                                                  : L.ctxPY[i] - ch - tall;
             meet |= L.ctxX[i] - pad < L.alertX1 && L.ctxX[i] + L.ctxW[i] + pad > L.alertX0 && L.ctxPY[i] + ch > L.alertY &&
                     top < L.alertY1;
         }

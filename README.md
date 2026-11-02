@@ -9,13 +9,13 @@
 One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller support with a controller-first interface, dialogue subtitles with speaker names, and better movie handling - in a single DLL.
 
 <p>
-<a href="../../releases/latest/download/FLvibed-0.2.0-Setup.exe"><img alt="Download FLvibed 0.2.0 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.2.0-5865f2?style=for-the-badge"></a>
+<a href="../../releases/latest/download/FLvibed-0.2.5-Setup.exe"><img alt="Download FLvibed 0.2.5 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.2.5-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.2.0.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.2.5.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.2.0 preview" src="https://img.shields.io/badge/version-0.2.0_preview-5865f2?style=for-the-badge">
+<img alt="Version 0.2.5 preview" src="https://img.shields.io/badge/version-0.2.5_preview-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -29,7 +29,48 @@ One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller
 > **Made with AI ("vibe coded").** The code, the tools and the documentation were written by an AI (Claude, by
 > Anthropic) under the author's direction and tested in game. It comes with no warranty.
 
-## 🆕 New in 0.2.0
+## 🆕 New in 0.2.5
+
+**0.2.5 is a polish release on 0.2.0** (the 0.2.1 hotfix, renamed): a calmer, tidier HUD 2, subtitles that cover less of
+the picture, and an autopilot that no longer stays stuck. Everything below is on by default unless it says otherwise.
+
+**🛰️ HUD 2: calmer and tidier**
+- **Contextual HUD (the new default).** `hud_fade` now has two modes, FULL and CONTEXTUAL. Contextual fades HUD 2 out
+  while you fly calmly and brings each part back for four seconds when it matters: the ring and speed when you steer or
+  boost, the target card when you switch targets, the weapons when you fire, the objectives when they change. Alerts,
+  low shield or hull, incoming missiles and fights always show. The old "calm dims" and "minimal" modes are gone (a
+  saved 2 reads as contextual). Mouse steering and cursor movement wake the reticle and speed, as the stick does.
+- The whole HUD, cursor included, fades when idle and wakes per action: it also fades in turret view, and pressing any
+  fire button (even with nothing able to fire) brings the whole HUD back. The game's cursor hides in flight after 3 s
+  of calm, with the mouse or the controller, and returns at once on any real mouse movement and in the pause menu.
+- Panels are only as big as what they show (up to their old sizes) and ease gently when the content changes: the target
+  card, contact list, ship panel, loadout panel, NeuroNet / objectives readout and target picker. A short loadout no
+  longer leaves an empty area, and the loadout's launcher name no longer scrolls while its row has room.
+- Button prompts never scroll: a label too long for its place wraps onto two lines in a slightly smaller, readable
+  font. Context prompts show when they change or right after you act (dock, cruise, a target, a maneuver), stay four
+  seconds and fade out (`hud_prompts = 0` brings back "always shown"). Ship and weapon names keep their scrolling.
+- HUD 2 uses the room it has before shortening anything: the weapons panel grows to fit a weapon row, a long missile
+  name takes a free line above its row first, and the target picker is always wide enough for its category tabs.
+- **A more compact action wheel:** two-word commands on two lines, a smaller ring whose plates clear the reticle and
+  each other, no repeated name under the reticle. HUD 2 puts each command on a HUD 2 plate over a see-through disc;
+  the classic HUD uses the game's own panel look, lighter than before.
+- **HUD 2's look now also covers the main menu and the mission / tutorial popups** (same layout and controls; the
+  classic look is unchanged).
+
+**💬 Subtitles**
+- When lines stack, the newest stays full size and only the older ones shrink, more gently.
+- The dialogue panel at the top in flight is 10 % smaller; rooms, story scenes and movies keep their size.
+- The side chat is smaller by default (Normal); the old size is Large (`chat_size`).
+
+**🤖 Robustness**
+- **Formation, goto and dock no longer stay stuck:** if your ship stalls during one, FLvibed restarts the maneuver and
+  logs what happened (`maneuver_watchdog`, on by default). Quickly changing targets during them was tested.
+- When a mission locks your maneuvers (for example while you fly in Brandt's formation in the first mission), pressing
+  free flight, formation, dock or goto now shows **LOCKED BY THE MISSION** at the top instead of doing nothing.
+
+**⬆️ Updating:** copy the new `FLvibed.dll` (or run the setup). The new options are on the FLVIBED page.
+
+## In 0.2.0
 
 **Hello, and welcome.** FLvibed is a free mod for Freelancer (2003) and Freelancer: HD Edition that lets you play the
 whole game with a controller (or keep your keyboard and mouse), read every spoken line as a subtitle, and see the
@@ -132,7 +173,8 @@ needs no network).
   lead by itself (or follows the stick, with aim assists). The ship is never steered for you.
 - 🛰️ **HUD 2.** FLvibed's own HUD, in Freelancer's art: shield, hull and power on a ring around the reticle, only the
   actions that apply now - and the same look over the menus, bases, dealers and dialogs (every window, row and button
-  stays the game's own). On by default with the pad and with keyboard and mouse. The classic HUD stays one setting
+  stays the game's own). On by default with the pad and with keyboard and mouse, and contextual by default since 0.2.5:
+  it fades out in calm flight and wakes per action. The classic HUD stays one setting
   away (`hud_style = 0`), with glyph badges on its buttons and a short list of what you can do now.
 - 💬 **Dialogue subtitles.** Story scenes, mission comms, bars and the Neural Net, with the speaker's name in their
   colour and their portrait, timed on the speaker's words. Story lines stay on screen until they are spoken; radio
@@ -270,7 +312,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 **2. Install FLvibed** - one click
 
-1. ⬇️ Download **[FLvibed-0.2.0-Setup.exe](../../releases/latest/download/FLvibed-0.2.0-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.2.5-Setup.exe](../../releases/latest/download/FLvibed-0.2.5-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders - else you pick the folder):
    choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -281,7 +323,7 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.2.0.zip](../../releases/latest/download/FLvibed-0.2.0.zip)** and unpack it.
+1. Download **[FLvibed-0.2.5.zip](../../releases/latest/download/FLvibed-0.2.5.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
    `FLvibed.dll`, `FLvibed.ini`, `FLSubtitles\` and `FLvibed\` land in `EXE\`.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins
@@ -343,6 +385,10 @@ ones most players touch:
 | `pad_preset` | 0 | flight layout: 0 Freelancer, 1 Ace (left stick steers, triggers throttle), 2 Assisted |
 | `aim_mode` | 1 | 1 gimbal (reticle locks onto the target's lead), 0 the reticle follows the right stick |
 | `hud_style` | 2 | 0 classic HUD and screens, 1 HUD 2 on the pad, 2 HUD 2 always (flight, menus and bases) |
+| `hud_fade` | 1 | 0 full (HUD 2 always shown), 1 contextual (fades in calm flight, wakes per action) |
+| `hud_prompts` | 1 | 1 context prompts show on change and fade, 0 always shown |
+| `chat_size` | 0 | side chat text: 0 Normal, 1 Large (the 0.2.0 size) |
+| `maneuver_watchdog` | 1 | restart a formation / goto / dock that stalls |
 | `ui_style` | 1 | menus and rooms while HUD 2 is on: 1 HUD 2's look, 0 the game's look |
 | `glyph_style` | 0 | button prompts: 0 automatic, 1 Xbox, 2 PlayStation, 3 Nintendo |
 | `input_mode` | 0 | 0 automatic (the last device used wins), 1 controller, 2 keyboard and mouse |
@@ -379,7 +425,8 @@ What 0.2.0 does not do yet, or does only in part. Anything here - and the design
 - 🎮 **XInput by default:** no DirectInput support; PlayStation / Nintendo pads need an XInput layer (Steam Input,
   DS4Windows ...) unless you try the experimental SDL3 backend (`pad_backend = 1`), not yet tested with those pads.
 - ⚙️ **The FLVIBED options page belongs to the controller module:** with `controller = 0` in `FLvibed.ini` the page is
-  gone; the subtitle settings are then changed in `EXE\FLSubtitles.ini`.
+  gone; the subtitle settings are then changed in `EXE\FLSubtitles.ini`. This is temporary: HUD 2 and the options page
+  will become their own core module in a later version, independent of the controller.
 - 📳 **Rumble** (new in 0.2.0) and **ignoring the pad while the game is in the background** are verified by the test
   harness only so far, not yet on a real pad.
 - 🤖 **The Advanced Autopilot is work in progress:** it still fails some runs, its goal queue (QUEUE / DO NEXT) is

@@ -37,7 +37,8 @@ The testing rules the user set, and how the test install, deploy and sweeps work
   1` - and the gate open) - `controller\docs\HARNESS.md`.
 - **Sweeps:** `controller\tools\flsweep.ps1 -Parallel <N>` builds once, splits the sections over N games by their median
   times and runs them at once (measured 20 Oct 2026: the full sweep 2688 s on 3 games vs ~7900 s serial, every mission
-  SUCCESS; 1 game 191 fps, 3 games 154-163 fps each). Under load the harness polls slower, so a test must never race
+  SUCCESS; 1 game 191 fps, 3 games 154-163 fps each). Section `target-churn` (0.2.1): formation / goto / autopilot
+  dock under target churn and stick nudges, ~2 min (`controller\docs\HARNESS.md`). Under load the harness polls slower, so a test must never race
   the game: a threshold the test depends on is enforced game-side (base-repair: `spawn clearat <hull>` despawns the
   attackers - and their missiles in flight, counted as damage already done - the frame the hull reaches it; harness
   polling missed it and the ship died). A sweep ends after the game has exited (a dying game counted as running for

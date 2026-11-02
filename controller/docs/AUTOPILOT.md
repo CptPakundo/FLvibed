@@ -40,6 +40,13 @@ As built (commit in brackets; game facts in `..\..\docs\missions\M12.md` and `FR
   (223e12d, b011598); a close static hull counts as on-line for launches (756ea21); the pursuit brakes for a big target
   by the flight model's stop x 1.5 + 40 m (05f6219).
 - **Docks under fire:** a lined-up run closing > 100 m/s keeps its speed to the normal request point (bf7dc5d).
+- **Dock / goal under target churn (2 Nov 2026):** the dock holds its own goal - the selection changes (next enemy,
+  clear, a station / planet / sun / far object) and 0.15 stick nudges left the game's Dock (op 7) and the autopilot's
+  target untouched (trace `research\experience\runs\churn_stall_2026-11-02_032149_ap-dock.txt`). The sweep's
+  intermittent `target-churn` "ap-dock stalled" (2 in 7 reused games, none fresh) was the server's "dock in use -
+  entering queue" (request-reply kind 0 response 3: an NPC docking at the same station) and the game's own Dock holding
+  the ship at rest in its queue - no autopilot code changed; the section now reads a queue hold as such and checks that
+  the autopilot's target stays the dock target. Open: with `fast_dock` 0 (default) a base queue is waited out at rest.
 - **Session 10 (24 Oct 2026; every switch off by default until the leg gate; verdicts `..\..\docs\LEG_DOSSIER.md` M12):**
   kept - `ring_request` (a planet ring requested at p2 at full speed; a pass beyond p2 requests at once - probe: the
   landing 0.03 s after the request, `..\..\docs\kb\navigation-and-hazards.md`), `airlock_charge_at` (the share of the charge

@@ -334,3 +334,18 @@ Commits 619dd22, c0e89fe, 33ffa96, e3fcb5d, 85fb446.
   FLUF nightly in both `[Libraries]` orders - B at 0 / 15 / 40 frames after the list showed (held, then closed), B with
   the transfer panel up, Escape, the native close click (what the mouse's release runs), a goto right after a close
   (`busy: nn-window`), the reopen: all pass; the close frames clean in all five (`grab\*_close*`, `shots\*_sheet.png`).
+
+## 16. The main menu and the mission / tutorial popups (2 Nov 2026, 0.2.1; evidence `research\experience\runs\hotfix_021_2026-11-02\` `m_*`)
+- **Main menu** (family `mainmenu`, root vt 0x5E27CC = `exe::VtMainMenu`): same positions and sizes - its five `bImg`
+  static images (`exe::VtImage`, the FRONT_button.cmp frames; all of one name, re-created per appearance) hidden by
+  bit 1, one HUD 2 tab plate under each front button (`exe::VtFrontButton`: `ui::FrontButtonRect` from +0x60 / +0xB4,
+  Collect's rule), the focus fill under the cursor; the captions, clicks and pad snapping the game's / padmenus' own.
+  Resolved in `Apply` over the root's direct children (names not unique); not drawn while a modal screen's scrim is up.
+- **Mission message box** (family `popup`, `exe::VtMissionMessage` 0x5D24F4, new signed symbol; pub::Player::PopUpDialog:
+  M01's tutorial boxes, `MMOkButton` / `MMYes` / `MMNo` / `MMLater`): its root's own art (+0x84, draw slot checked as
+  for the NeuroNet windows) replaced by one chamfered plate from the root's own rect - hidden only while that rect is
+  known (else native). The OK button's frame and the close X stay the game's.
+- Verified 2 Nov 2026, instance 9, release: `m_mainmenu_hud2` (plates, captions intact), `m_loadfront_hud2` (the
+  existing `loadfront` family), `m_popup_hud2` (M01 "Enter formation" box; `uiclick MMOkButton` closed it),
+  `m_mainmenu_classic` (hud_style 0: the native frames). Gaps: the front load screen's LOAD GAME / DELETE / MAIN MENU
+  front text buttons keep their native frames (no +0x84 path checked); the popup's title keeps its colour.
