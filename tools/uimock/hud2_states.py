@@ -95,7 +95,7 @@ def reticle(c, L, s, combat=True, charge=None, missile=None, damage=None, word=N
     c.op = 1.0 if combat else 0.4
     low_shield = s['shield'] <= 0.25
     c.arcbar(cx, cy, R, 138, 222, w, s['shield'], HOSTILE if low_shield else SHIELD, n=14, reverse=True)
-    c.arcbar(cx, cy, R, -42, 42, w, s['hull'], INK if s['hull'] > 0.2 else HULL, n=14, reverse=True)
+    c.arcbar(cx, cy, R, -42, 42, w, s['hull'], HULL, n=14, reverse=True)
     if not cruising:
         c.arcbar(cx, cy, R, 68, 112, w * 0.8, s['power'], POWER, n=8, gapdeg=2.2)
     c.arcbar(cx, cy, R + 0.022 * H, 82, 98, w * 0.75, s['throttle'], CHROME, n=5, gapdeg=1.2)   # throttle
@@ -103,7 +103,7 @@ def reticle(c, L, s, combat=True, charge=None, missile=None, damage=None, word=N
     if s['shield'] < 0.4:
         c.text((cx - R * 0.72, cy - R * 0.92), f"{int(s['shield'] * 100)}", f, fill=HOSTILE, anchor='rm')
     if s['hull'] < 0.4:
-        c.text((cx + R * 0.72, cy - R * 0.92), f"{int(s['hull'] * 100)}", f, fill=INK, anchor='lm')
+        c.text((cx + R * 0.72, cy - R * 0.92), f"{int(s['hull'] * 100)}", f, fill=HULL, anchor='lm')
     c.op = 1.0
     if word:   # beside the throttle arc: from cx + 0.068, its box's bottom on the arc's outer edge
         c.text((cx + 0.068 * H, cy + R + 0.022 * H + w * 0.375 - f / 2), word, f, fill=ACTIVE, anchor='lm', track=0.08)

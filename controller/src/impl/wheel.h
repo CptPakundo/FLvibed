@@ -1,5 +1,5 @@
 // The action wheel (docs\UI_SPEC.json `hud` state `wheel`; UI_PLAN.md 6.4 / 6.5): LB held past the hold threshold
-// opens a wheel of the rare, contextual actions - SCAN CARGO, WEAPON GROUP, CRUISE DISRUPTOR, FORMATION, COMMS, CONTACT
+// opens a wheel of the rare, contextual actions - SCAN CARGO, WEAPON GROUP, EDIT GROUPS, CRUISE DISRUPTOR, FORMATION, COMMS, CONTACT
 // FILTER, AUTOPILOT GOALS, REAR VIEW (and ENGINE KILL with weapon_groups = two groups on the triggers, which unbinds L3) -
 // picked with the right stick past a dead zone (angle -> slot; the D-pad steps too), done when LB is released. The
 // left stick keeps flying; the right stick belongs to the wheel while it is open (controller.cpp suppresses its

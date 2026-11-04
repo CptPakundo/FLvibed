@@ -232,7 +232,7 @@ The critique of the built HUD (`research\evidence\controller_ui\hud2_critiques.m
 | 2 comms | the ambient chatter (chatter 0) drawn by the subtitles module in HUD 2's chat band while HUD 2 shows (`display.cpp` DrawHud2Feed): at the 0.05 W margin, Agency FB name / faction / line at HUD 2's sizes (line 0.034 H, name 0.030 H), a navy scrim and a 0.003 H accent bar in the speaker's colour, newest lowest, three lines; **one comm surface at a time**: the feed hides while the top panel shows a line and its lines wait (time starts when shown; dropped after 6 s unseen); the game's chat window (`MsgWin`) hidden under HUD 2, kept while the chat input (`CTID`) is open; the top panel's text in Agency FB too while HUD 2 shows. **Faction: decided against a change** - it already is the live reputation (server.dll GetRep -> GetAffiliation -> GetShortGroupName and GetAttitude): "Escort 1 Rookie Emerson · Rogues" in red was a hostile Rogue wing whose formation role is "Escort" (seen again: "Off. Gordon Lampkin · Police" red once Liberty was hostile) |
 | 3 alerts | every card carries its answer glyph or an amber none state: NO COUNTERMEASURES · EVADE (no launcher) / NO FLARES · EVADE (empty), NO BATTERIES / NO NANOBOTS · BREAK OFF, CRUISE DISRUPTED + the cruise button RECHARGE, CARGO HOLD FULL · NO ROOM FOR LOOT; an empty slot lights amber |
 | 4 escorts | the ship panel in a fight / formation: the formation's members, then the friendly ships among the mission's objects (M03: "Transport Leader", "Transport 2", "Juni"), then friendly ships fighting within 3 km; names by `hudinfo::DisplayName` |
-| 5 weapons | a row per weapon group that has guns, numbered as the game numbers it (no "2 -" / "3 -" rows; the active group kept when more than three have guns; a click selects that group), the guns in no group dimmed in a row of their own without a label; the launcher row in three columns: the name (its last words dropped first: "JAVELIN", "SLINGSHOT"), the ammo always (amber at 0), LOCKED in its own column at the right edge; the loadout 0.62 H wide (0.66 H in the keyboard form) |
+| 5 weapons | a row per weapon group that has guns, numbered as the game numbers it (no "2 -" / "3 -" rows; the active group kept when more than three have guns, two with a torpedo row: 5.30; a click selects that group), the guns in no group dimmed in a row of their own without a label; the launcher row in three columns: the name (its last words dropped first: "JAVELIN", "SLINGSHOT"), the ammo always (amber at 0), LOCKED in its own column at the right edge; the loadout 0.62 H wide (0.66 H in the keyboard form) |
 | 6 throttle | a segmented arc outside the ring at 5 o'clock (24-62 degrees) filling with the throttle; full yellow + BOOST while the afterburner fires (`hudinfo::AfterburnerOn`), empty amber + KILL (`EngineKilled`), amber REV in reverse |
 | 7 cruise | the charge fills the whole bottom arc (48-132 degrees, between the shield's and the hull's), the seconds centred under the speed inside the ring |
 | 8 calm | the ring 40 %, the speed and the throttle 60 %, the side panels 60 / 65 % (plates and text): visible in the travel / cruise captures |
@@ -536,7 +536,7 @@ closes the focused one (`MOD_COMPATIBILITY.md` FLUF "Input", `core\fluf_rules.h`
       at 100 % as Standard's). **Owner: not mentioned - kept.**
   16. The fire strip's group row is the active group (its first gun + "+"); no torpedo row (no reader yet); the
       launcher's count in the strip only out of a fight. **Owner (B16): show ALL weapons incl. launchers, a smaller font
-      and adapted spacing so all fit, the active group highlighted** - built (5.19); no torpedo row still (no reader).
+      and adapted spacing so all fit, the active group highlighted** - built (5.19); the torpedo row since 5.30.
   - **The known fault:** ABORT DOCK's keycap read empty on K&M - fixed (5.19).
 - **Not verified:** nothing ran in game (the driver builds, runs `tools\hud2_lint_baseline.ps1 -Preset 1` and captures
   the frames); the band sits in the ship keep-out's top edge (0.627-0.653 H vs 0.63: the lint's WARN, the doc's own
@@ -933,3 +933,69 @@ RT tap from shown=0 -> shown=31, back to 0 after the linger; turret entry shown=
 r6_loadout (Starflier: one group + an ungrouped gun + the launcher: loadout 264 px = 0.122 H, the cross on its top;
 ship panel full 0.15 with CREDITS). **Not verified:** the K&M fire keys in game (the test game runs in the background:
 the foreground gate holds them off), the live `hud2 lint` (only armed; unit tests 0 failures).
+
+### 5.30 Reported issues: weapon groups on the pad, the torpedo row, the hull's colour (4 Nov 2026; GitHub issues 1, 4, 5; built; run in game: dev build, SaveC706, background)
+**Weapon groups on the pad** (`wgroups.*`): the action wheel's EDIT GROUPS opens a list of the ship's guns for the active
+group, over the HUD in both HUD styles: A switches the focused gun on / off (USER_TOGGLE_WEAPONn), D-pad up / down the
+gun, LB / RB the group 1..3 (USER_WEAPON_GROUPn: the group edited is the active group, the HUD's rows follow), B done;
+the sticks keep flying, RT keeps firing. The game stores the groups, no state of ours. Guns only: launchers fire on their
+own buttons in every mode (UI_PLAN 6.4). It replaces UI_PLAN's ticks in the inventory, which were never built. Y held
+(`weapon_groups` 1) and the wheel's WEAPON GROUP go to the next of the first three groups with guns, from the game's
+active group (`controller\src\impl\wgroups_rules.h` NextGroup: an empty group fired nothing). The game's number for a gun is its entry in
+HUD_Status's list, read through HUD 2's hiding since this round (FREELANCER_RE "HUD 2 readers"); without the list the
+rows grey out and A does nothing, never a guess.
+**The torpedo row:** the torpedo hardpoints' launcher left the launcher row (its rounds were added to the missiles' count
+under the missile's name) for a row of its own on the third gun line, in the gun names' column: `HOLD · name` on the pad,
+`key · name` in the keyboard form, the count at the right end (amber at 0). So a torpedo ship shows two group rows, the
+active group kept, the guns in no group dropped with two rows full. One RB glyph between the torpedo and launcher rows,
+as RT beside the gun rows: two 0.036 glyphs overlap at the 0.030 pitch, and a keycap in the row broke the lint in the
+keyboard form. A cruise disruptor on that hardpoint takes the row when no torpedo does (no prompt: it fires from the
+wheel). Focus's strip has the same row, its count always (the band's MSL n is the launcher's). Debug state `hud2 sim torpedo`.
+**The hull's colour:** the ring's arc and number and the target card's bar and number are the game's red (`kHull`), white
+gone (the owner, 4 Nov 2026: no option, no need to keep it). The escorts' bars stay friendly green. The low states (the
+owner, same day; `hud2_parts.cpp` LowPulse, 1.5 Hz): at 25 % and below the shield keeps its blue and pulses to hostile red,
+the hull pulses to bright red (`kHullHot`) with a bloom, two wider faint layers of the lit arc under it. Arc and number, in
+Standard and Focus; `shield_cue` / `hull_cue` 0 switch them off (the SHIELD FAILING / HULL CRITICAL cards stay). Debug
+state `hud2 sim critical`.
+Run: `hud2 lint` 0 FAIL over pad / keyboard x Standard / Focus x `torpedo` / `combat` / `notarget` / `travel`; frames of
+the row, the editor and the nine-slot wheel at 4K; every button of the editor on the virtual pad; two groups kept apart
+over switches; Y held 1 -> 2 -> 1, and staying on 1 with no other group armed. **Not verified:** a real pad, a save and
+reload of edited groups, a ship with more than ten weapons, a cruise disruptor on the row.
+
+### 5.31 The owner's play notes: the tractor's prompts, the right stick, the enemies cue, the NeuroNet box (4 Nov 2026; built; run in game: dev build, SaveC705, background, virtual pad)
+The owner, after playing the 4 Nov build: "I'd like the tractor prompts at the bottom of the screen to note the object's
+name and range. Also, it's not prompted anywhere that the A button also tractors something. Prompting should clarify which
+prompt does what (tractor specific, tractor all, etc)." / "Even when the target panel is hidden, when there are enemies
+nearby the top right corner of the screen should mention there are enemies nearby, and prompt the player to press the
+right stick to target nearest enemy. In general, right stick should default to target nearest enemy for a first press, and
+only consecutive presses should be 'next target'." / the classic NeuroNet box beside HUD 2 after loading the convoy save.
+- **A tractors one item, X all** (`controller.cpp` ContextAction): A on targeted loot in reach = USER_TRACTOR_BEAM (the
+  game's "Tractor Beam (Selected)"); with no target A targets the nearest loot in reach and tractors it; targeted loot out of
+  reach = GO TO. X = USER_COLLECT_LOOT (all). Until now A and X both sent COLLECT_LOOT. "In reach" = within the tractor's
+  max_length and `CShip::get_space_for_cargo_type` > 0 (loot the hold cannot take is not offered).
+- **The prompts** (`hud2.cpp` TractorCtx, right lane): `[A] TRACTOR <ITEM> · <range>` (the target, or the nearest with
+  no target; not in ASSISTED, where A starts the autopilot; the keyboard's one-item key only on a target), `[X] TRACTOR
+  ALL n` (one item that A does not name: its name and range). Focus keeps its band's LOOT n and gains A's item prompt.
+  The keyboard form: A's form shows USER_TRACTOR_BEAM's key, X's USER_COLLECT_LOOT's (it showed the one-item key for
+  "all"). The classic HUD (`padhud.cpp`): the same rows in the legend, the world prompt names the item and its range.
+- **RS: enemies first** (`target_cycle.h`, unit test `tests\target_cycle_test.cpp`; `controller.cpp` SmartTarget): with
+  a hostile ship within 10 km (`ctl::NearbyEnemy`), a cold press takes the nearest; a press within 3 s with the target
+  the last press left = the nearest enemy this run has not visited (all of them once, then again); with no enemy near,
+  TARGET AHEAD as before (the ring, then the game's nearest / next enemy). Set natively (space::SetTarget). Labels:
+  NEAREST ENEMY when enemies are near, else TARGET AHEAD (HUD 2's calm lane, the classic legend; the fight legend NEAREST /
+  NEXT ENEMY).
+- **The enemies cue** (`hud2_parts.cpp` DrawEnemyCue): the pad, nothing targeted, enemies near, not the autopilot or
+  the turret: under the LB hints in the card's corner, `n ENEMIES NEARBY` (hostile red) and `[RS] TARGET NEAREST`, eased
+  0.12 s, not under the contextual fade; the HUD bus's keep-out grows to 0.135 H below the card's top.
+- **The NeuroNet box** (`hudvis.cpp`): not reproduced in 44 harness reloads (space to space and docked, the convoy save
+  SaveB001). The one gap found: the switch buttons cached under the box's root were never re-checked, and a load that
+  put the new root at the old address (the allocator reused root addresses in the runs) would leave them pointing into
+  freed blocks whose bit 1 kept the box shown. Now a cached button counts only while its parent is still the root, the
+  buttons are found again every 2 s, and the box kept up logs `hudvis: the NeuroNet box stays shown: <button> is open`.
+- Run (`research\experience\runs\hud_notes_2026-11-04\`): RS on three pirates: cold 25 (nearest), 27, 26 in a run, cold
+  after 4 s 25 again; the cue at 4K (frames a_, e_ / g_sim_notarget); with no target `[A] TRACTOR DRAIL · 1.1 km`,
+  `[X] TRACTOR ALL 12`; K&M `[SHIFT+B] TRACTOR ZAPHIEL TURRET · 721 m`, `[B] TRACTOR ALL 3`. Six trials with the ship
+  stopped beside 18 items: a target set first, A pulled exactly it twice; the third (the farthest) had not arrived after
+  4 s; with no target A pulled the nearest three times, once with a second item. The nav map open keeps the box (logged),
+  closed hides it the next frame. `hud2 lint`: the cue's rows first 0.0061 H apart (FAIL) -> 0.01 H; after, 0 new FAIL
+  (the known `loadout '3' / 'JAVELIN'` FAIL stays). **Not verified:** a real pad, the classic HUD's rows on screen, Focus.

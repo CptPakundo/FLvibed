@@ -211,7 +211,8 @@ part of their topic; `deploy.ps1` parse-checks every `*.ps1` in the tool folders
   a station > 4 km and the Advanced Autopilot's dock, each with 6 s of target churn (next enemy, clear, double clear,
   station / planet / sun / farthest object, 0.15 stick nudges); PASS = maneuver kept (or ended at its goal), no stall
   (< 5 m/s > 3 s with the goal > 150 m), formation held within 300 m, goal not receding, FLvibed answering; reports the
-  maneuver watchdog's lines (`event maneuver stalled`, `maneuver watchdog: re-issue ...`; setting `maneuver_watchdog`).
+  maneuver watchdog's lines (`event maneuver stalled` - since 4 Nov 2026 with the leader / goal's `docking= lane=
+  jumping= speed=` -, `maneuver watchdog: re-issue ...` = free flight, then the maneuver again; setting `maneuver_watchdog`).
 
 ## subtitles\tools\flsub.ps1
 `Send-FLS`, `Watch-FLGame` (`-LinePattern`, `-ShotMs`), `Wait-FLSShown` + `Get-FLSLast` (for `-After`; works during
@@ -347,14 +348,14 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   the dark backing under the game's 3D views with the target panel's pulses and the view's object, `hud2 viewzoom <f>`
   the views' rectangles over their windows, 1.5 by default; `hud2 tree roots` every top-level control of the game's
 control list with its vtable and state, `hud2 tree <control name>` any named control's tree); `hudinfo [wg|engine|lock|
-  tractor|obj <id>|sys [id]|equip <arch>]` (HUD 2's readers, `core\game\hudinfo.h`, and their research dumps); `picker open|close|a|b|up|down|next|prev|cat <name>|state` (the target
+  tractor|obj <id>|sys [id]|equip <arch>]` (HUD 2's readers, `core\game\hudinfo.h`, and their research dumps); `stalls [hold <id|0>]` (the NPC stall recorder `stallrec.*`: its counts and file `EXE\FLvibed_npc_stalls.log`; `hold`, TEST ONLY, makes that ship's samples stand still: an NPC's brain overrides every directive, so a real ship cannot be stopped from here); `track [range]` (ships and loot near the player, one line each with position, target, health, attitude: a harness samples NPC motion from it); `wgroups open|close|up|down|a|next|prev|state` (the weapon group editor: the group, the groups with guns, each gun's toggle number and on / off); `picker open|close|a|b|up|down|next|prev|cat <name>|state` (the target
   picker); `awheel open|pick <n>|commit|cancel|rear|state` (the action wheel; `wheel` is the mouse wheel); `goals
   open|close|toggle|tab <0-2>|up|down|a|x|y|left|right|rebuild|click <slot>|state` (the autopilot goal panel; `state`
   says form=pad|kbm, clickbox= and the keyboard + mouse form's hotspots; `click` = a click of its click box as the host
   routes it: 0-2 tabs, 3 the ESC mark, 4 / 5 scroll, 6.. the visible rows); `postkey <vk> <0|1>` (one real
   WM_KEYDOWN / WM_KEYUP to the game window - a Shift held across a `post <vk>`: the keyboard + mouse tests' Shift+K);
   `ap start smart` (the plain start of every device: objective, else waypoints, else the target); `bases [rooms|chars]`
-  (the pad in bases: the screen, the room ring, the bar's characters, the prompt bar's state); `map [dest]` (the nav map:
+  (the pad in bases: the screen, the room ring, the bar's characters, the prompt bar's state); `map [dest]` (the nav map, `view=` 0 universe, 1 system, 2 sector, -1 closed:
   state, the destination list); `menus [row|prefill]` (the menu screens on the pad: state, the list row under the cursor,
   the save description prefill); `osk open [save|chat]|close|type <text>|shift|state` (FLvibed's on-screen keyboard);
   `newgame open|close|pick <n>|mode <n>|records|rescan|state` (the New Game prompt and the per-save mode records);

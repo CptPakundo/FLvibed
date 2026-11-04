@@ -277,8 +277,8 @@ while steering, the wheel's selection input.
 action wheel, the HUD's group buttons badge the current one; **CYCLE ON Y HOLD**: Y held flips to the next group (Y tap
 stays cruise), the badge and the combat legend show it; **TWO GROUPS ON THE TRIGGERS**: RT fires group 1, LT group 2
 (the Armored Core / MechWarrior pattern; afterburner moves to the LS click, engine kill into the wheel; ACE: A / B). In every
-mode launchers fire only on their own buttons; groups are assigned in the inventory (D-pad left / right ticks a focused
-weapon's group boxes, the game's own checkboxes).
+mode launchers fire only on their own buttons; groups are assigned with the action wheel's EDIT GROUPS (`wgroups.*`,
+UI_HUD2.md 5.30; the inventory's ticks planned here were never built).
 **Turret view** (the game's H; the owner's question, 25 Oct): in FREELANCER **X held** (the owner's call), in ACE a
 toggle in the action wheel (RS aims, RT fires, LS keeps the throttle and strafes, the ship flies straight on, B exits);
 **ASSISTED is built on it** - the autopilot flies and fights, the player aims and fires from the

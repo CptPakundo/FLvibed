@@ -12,7 +12,7 @@ namespace hud2sim
 // surface showing; "+comm" puts the comm surface over any of them (lane+comm, ap+comm).
 inline constexpr const char* kNames[] = {"combat",    "travel", "cruise",    "dock",    "lane",     "ap",
                                          "apwait",    "turret", "formation", "jump",    "letterbox", "loot",
-                                         "capital",   "notarget", "offscreen", "comm"};
+                                         "capital",   "notarget", "offscreen", "comm",   "torpedo",  "critical"};
 
 struct Parsed
 {

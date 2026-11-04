@@ -23,8 +23,13 @@ struct WeaponInfo
     u32 groups = 0;        // bit g-1 set = member of weapon group g (1..6); 0 = none / unknown
     bool launcher = false; // missile / torpedo / mine / countermeasure launcher
     int ammo = -1;         // -1 unlimited / unknown
+    bool on = false;       // switched on now (the active group's guns)
+    int slot = 0;          // its USER_TOGGLE_WEAPON<n> number in the game's list, 0 unknown
 };
 std::vector<WeaponInfo> Weapons();
+// A ship by object id with a reference; ReleaseShip() it after use. Null when it is not a ship.
+void* AcquireShip(u32 id);
+void ReleaseShip(void* ship);
 // Any equipment's display name by archetype id (cached), "" unknown.
 std::wstring EquipName(u32 arch);
 

@@ -9,13 +9,13 @@
 One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller support with a controller-first interface, dialogue subtitles with speaker names, and better movie handling - in a single DLL.
 
 <p>
-<a href="../../releases/latest/download/FLvibed-0.2.5-Setup.exe"><img alt="Download FLvibed 0.2.5 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.2.5-5865f2?style=for-the-badge"></a>
+<a href="../../releases/latest/download/FLvibed-0.2.6-Setup.exe"><img alt="Download FLvibed 0.2.6 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.2.6-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.2.5.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.2.6.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.2.5 preview" src="https://img.shields.io/badge/version-0.2.5_preview-5865f2?style=for-the-badge">
+<img alt="Version 0.2.6 preview" src="https://img.shields.io/badge/version-0.2.6_preview-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -29,7 +29,20 @@ One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller
 > **Made with AI ("vibe coded").** The code, the tools and the documentation were written by an AI (Claude, by
 > Anthropic) under the author's direction and tested in game. It comes with no warranty.
 
-## 🆕 New in 0.2.5
+## 🆕 New in 0.2.6
+
+**0.2.6 answers the first reports from players.** The full list is in [CHANGELOG.md](CHANGELOG.md).
+
+- **NeuroNet on the pad:** the cursor reaches the NeuroNet box's buttons in flight, also in cruise or on autopilot, and the
+  triggers zoom the nav map.
+- **Weapon groups on the pad:** EDIT GROUPS in the action wheel. Holding Y skips groups without guns.
+- **HUD 2:** torpedoes have their own row, the hull meters are red, and a low shield or hull flashes.
+- **Targeting:** the right stick's click takes the nearest enemy first, then the next ones. HUD 2 tells you when enemies
+  are near and nothing is targeted.
+- **Tractor:** A pulls one item, X pulls everything, and the prompts name the item and its range.
+- **Enemies sitting idle:** still being investigated. `EXE\FLvibed_npc_stalls.log` records it if you see one.
+
+## New in 0.2.5
 
 **0.2.5 is a polish release on 0.2.0** (the 0.2.1 hotfix, renamed): a calmer, tidier HUD 2, subtitles that cover less of
 the picture, and an autopilot that no longer stays stuck. Everything below is on by default unless it says otherwise.
@@ -276,7 +289,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | 🧩 **Compatibility** | HD Edition 0.7.1, the original 1.1, FLUF beside it | Newer HD Edition releases, more mods |
 
 > [!IMPORTANT]
-> 🧪 **0.2.5 is an early preview - expect rough edges and change.**
+> 🧪 **0.2.6 is an early preview - expect rough edges and change.**
 > - **Some features are incomplete:** the Advanced Autopilot is work in progress, a few screens and controls are not
 >   built yet, and some are proven only by the test harness so far.
 > - **Design choices are still subject to change:** button layouts, HUD 2's look, setting names
@@ -307,7 +320,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 **2. Install FLvibed** - one click
 
-1. ⬇️ Download **[FLvibed-0.2.5-Setup.exe](../../releases/latest/download/FLvibed-0.2.5-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.2.6-Setup.exe](../../releases/latest/download/FLvibed-0.2.6-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders - else you pick the folder):
    choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -318,7 +331,7 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.2.5.zip](../../releases/latest/download/FLvibed-0.2.5.zip)** and unpack it.
+1. Download **[FLvibed-0.2.6.zip](../../releases/latest/download/FLvibed-0.2.6.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
    `FLvibed.dll`, `FLvibed.ini`, `FLSubtitles\` and `FLvibed\` land in `EXE\`.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins
@@ -348,11 +361,11 @@ The default **FREELANCER** layout in flight:
 | LT | afterburner | |
 | RB | missile | torpedo |
 | LB | target picker | action wheel |
-| A | context: dock / lane / jump, tractor loot, else go to | formation |
+| A | context: dock / lane / jump, tractor one item (the targeted loot, with no target the nearest), else go to | formation |
 | B | free flight (drops cruise) | reverse |
-| X | tractor (shown under the reticle while loot is in reach) | turret view on / off: the reticle stays centred, the right stick turns the camera |
+| X | tractor everything in reach (the prompts name the item and its range) | turret view on / off: the reticle stays centred, the right stick turns the camera |
 | Y | cruise (its state always under the reticle) | next weapon group |
-| RS (click) | target ahead: the nearest object inside the reticle ring, again the next one; nothing there: closest / next enemy (double click: clear) | rear view |
+| RS (click) | the nearest enemy, clicks within 3 seconds the next ones; with no enemy near, the nearest object inside the reticle ring (double click: clear) | rear view |
 | LS (click) | engine kill | |
 | D-pad | ⬆️ nanobots · ⬇️ shield battery · ⬅️ countermeasures · ➡️ mine | |
 | View | NeuroNet / nav map | half a second: Advanced Autopilot |

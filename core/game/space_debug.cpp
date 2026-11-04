@@ -446,6 +446,22 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
         *reply = out.str();
         return true;
     }
+    if (cmd == "track") // track [range m]: ships and loot near the player with positions (a harness samples motion)
+    {
+        const float range = rest.empty() ? 8000.0f : static_cast<float>(atof(rest.c_str()));
+        std::ostringstream out;
+        char line[160];
+        for (const Contact& c : Contacts())
+        {
+            if ((!c.ship && !(c.type & kLoot)) || c.distance > range)
+                continue;
+            sprintf_s(line, "%s %u %.1f %.1f %.1f dist=%.0f target=%u health=%.2f att=%.2f\n", c.ship ? "ship" : "loot", c.id,
+                      c.pos[0], c.pos[1], c.pos[2], c.distance, c.targetId, c.health, c.attitude);
+            out << line;
+        }
+        *reply = out.str();
+        return true;
+    }
     if (cmd == "equipment") // equipment [client]: the player's whole equipment list (mounted + cargo), docked or not
     {
         char buf[16384];

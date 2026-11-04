@@ -35,11 +35,15 @@
 // and the HUD timer (padmenus.h / newgame.h / livesplit.h / runtimer.h)
 #include "livesplit.h"
 #include "maneuver_watch.h" // the maneuver watchdog's rule (0.2.1 hotfix)
+#include "target_cycle.h"   // the targeting press's enemy rule (4 Nov 2026)
 #include "newgame.h"
 #include "padmenus.h"
 #include "runtimer.h"
 #include "padbases.h" // phase D bases / dealers / NeuroNet windows (the D-BASES track),
 #include "padmap.h"   // the nav map,
+#include "wgroups.h"  // the weapon group editor,
+#include "game/hudinfo.h"
+#include "stallrec.h" // the NPC stall recorder
 #include "promptbar.h" // the shared prompt bar (D-MENUS)
 #include "presets.h"
 #include "press_gate.h" // press ownership between the pad's consumers (the attended run's B leak, 26 Oct 2026)
@@ -337,14 +341,28 @@ static void WatchManeuver()
     {
         const u32 now = GetTickCount();
         const u32 padAt = device::LastPadTick(), kbmAt = device::LastKbmTick();
+        // the leader / goal as the game reports it (the owner's 4 Nov report: the stall began as the convoy docked with
+        // a trade lane - a formation follower runs a copy of its leader's dock, docs\FREELANCER_RE.md "Formation")
+        int lDock = -1, lLane = -1, lJump = -1;
+        float lSpeed = -1;
+        for (const space::Contact& c : space::Contacts())
+            if (c.id == to)
+            {
+                lDock = c.dockPort ? 1 : 0, lLane = c.lane ? 1 : 0, lJump = c.jumping ? 1 : 0;
+                break;
+            }
+        space::ShipMotion lm;
+        if (space::ShipMotionOf(to, lm) && lm.ok)
+            lSpeed = lm.speed;
         events::Push("event maneuver stalled: op=%s locked=%d leader=%u goal=%u target=%u dist=%.0f speed=%.1f "
                      "throttle lt=%.2f rt=%.2f steer active=%d x=%.2f y=%.2f device=%s last inputs pad=%dms kbm=%dms "
-                     "mouse=%dms sticks l=%.2f,%.2f r=%.2f,%.2f buttons=0x%X cruise=%d",
+                     "mouse=%dms sticks l=%.2f,%.2f r=%.2f,%.2f buttons=0x%X cruise=%d | leader docking=%d lane=%d "
+                     "jumping=%d speed=%.1f",
                      opName, p.locked ? 1 : 0, p.leader, goal, p.target, s.dist, s.speed, pad.lt, pad.rt,
                      g_steerActive ? 1 : 0, g_steerX, g_steerY, device::Pad() ? "pad" : "kbm",
                      padAt ? static_cast<int>(now - padAt) : -1, kbmAt ? static_cast<int>(now - kbmAt) : -1,
                      mouseAt ? static_cast<int>(now - mouseAt) : -1, pad.lx, pad.ly, pad.rx, pad.ry, pad.buttons,
-                     p.cruise ? 1 : 0);
+                     p.cruise ? 1 : 0, lDock, lLane, lJump, lSpeed);
     }
     if (dec.retry)
     {
@@ -353,6 +371,11 @@ static void WatchManeuver()
         u32 on = goal && space::ObjectPos(goal, tmp) ? goal : p.op == ai::OpFormation ? p.leader : 0;
         const u32 before = p.target;
         bool targeted = on && (before == on || space::SetTarget(on));
+        // Left first, then issued again - the player's own way out (the owner's 4 Nov report: the same formation issued on
+        // a ship still in it got reply -1 twice and the ship kept turning in place; free flight twice, then FORMATION,
+        // got reply 0 and no stall followed). The op changes in the frame of the call (FREELANCER_RE "Maneuvers").
+        if (targeted)
+            ai::FreeFlight();
         const bool ok = targeted && ai::Maneuver(p.op, false);
         if (before && before != on && targeted)
             space::SetTarget(before); // the player's target as it was (the maneuver keeps its own)
@@ -1856,6 +1879,7 @@ static void CloseModals()
     picker::Close(true);
     wheel::Cancel();
     goals::Close();
+    wgroups::Close();
 }
 
 static void ToggleAutopilot(const char* why)
@@ -1875,8 +1899,11 @@ int PadBackend() { return g_pad.padBackend; }
 bool FocusOnly() { return g_opt.focusOnly; }
 
 // `context` (A): whatever applies to the target - dock / lane / jump when it is dockable (the game's dock maneuver,
-// a toggle: a second press cancels a running dock), tractor when it is loot or loot lies in the tractor's reach,
-// else fly to it (goto). The ASSISTED preset hands the whole thing to the autopilot (its smart start).
+// a toggle: a second press cancels a running dock), tractor ONE item when it is loot in the tractor's reach, with no
+// target the nearest loot in reach (targeted, then tractored: the game's "Tractor Beam (Selected)"), else fly to it
+// (goto; loot out of reach too). X tractors everything in reach (USER_COLLECT_LOOT). The HUDs name the item and its
+// range (the owner, 4 Nov 2026: "Prompting should clarify which prompt does what (tractor specific, tractor all, etc)";
+// until then A and X both tractored everything). The ASSISTED preset hands the whole thing to the autopilot.
 static void ContextAction()
 {
     if (uiopt::Get().padPreset == presets::ASSISTED)
@@ -1888,24 +1915,36 @@ static void ContextAction()
     const u32 tid = fl::TargetId();
     ai::Self self;
     const bool haveSelf = ai::ReadSelf(self);
-    bool lootInReach = false, targetLoot = false, dockable = false;
+    const float reach = haveSelf ? self.tractorRange : 0;
+    bool targetLoot = false, targetInReach = false, dockable = false;
+    u32 nearestLoot = 0;
+    float nearestD = 0;
     for (const space::Contact& c : space::Contacts())
     {
+        // (in reach = the tractor can take it: in range and the hold has room for it)
+        const bool loot = (c.type & space::kLoot) != 0, inReach = loot && reach > 0 && c.distance <= reach && c.lootFits != 0;
         if (c.id == tid && tid)
         {
             dockable = c.dock || (c.type & (space::kTradelaneRing | space::kJumpGate | space::kJumpHole)) != 0;
-            targetLoot = (c.type & space::kLoot) != 0;
+            targetLoot = loot, targetInReach = inReach;
         }
-        if ((c.type & space::kLoot) && haveSelf && self.tractorRange > 0 && c.distance <= self.tractorRange)
-            lootInReach = true;
+        if (inReach && (!nearestLoot || c.distance < nearestD))
+            nearestLoot = c.id, nearestD = c.distance;
     }
     if (tid && dockable)
     {
         LockAnswer("dock");
         Tap(fl::USER_MANEUVER_DOCK);
     }
-    else if (targetLoot || (!tid && lootInReach))
-        Tap(fl::USER_COLLECT_LOOT);
+    else if (targetLoot && targetInReach)
+        Tap(fl::USER_TRACTOR_BEAM);
+    else if (!tid && nearestLoot)
+    {
+        const bool set = space::SetTarget(nearestLoot);
+        Tap(set ? fl::USER_TRACTOR_BEAM : fl::USER_COLLECT_LOOT);
+        events::Push("pad context: tractor the nearest loot %u (%.0f m)%s", nearestLoot, nearestD,
+                     set ? "" : ": target refused, all loot instead");
+    }
     else if (tid)
     {
         LockAnswer("goto");
@@ -1915,16 +1954,44 @@ static void ContextAction()
         events::Push("pad context: nothing applies (no target, no loot in reach)");
 }
 
-// `target_smart` (RS tap, "TARGET AHEAD"): the object nearest the screen centre inside HUD 2's reticle ring (the cone,
-// the owner, 26 Oct 2026) - ships, loot, bases, rings, anything targetable - set natively (space::SetTarget,
-// filter-independent); again = the next one ahead (the current target is skipped). Nothing in the ring: the nearest
-// enemy, with a target already selected the next enemy.
+// `target_smart` (RS tap): enemies first (the owner, 4 Nov 2026: "right stick should default to target nearest enemy
+// for a first press, and only consecutive presses should be 'next target'") - with a hostile ship within
+// tcycle::kReach, a cold press takes the nearest, presses in a run the next ones (target_cycle.h), set natively
+// (space::SetTarget, filter-independent: the game's NEXT / CLOSEST ENEMY walk the contact list under its filter). With
+// no enemy near, "TARGET AHEAD": the object nearest the screen centre inside HUD 2's reticle ring (the cone, the owner,
+// 26 Oct 2026) - ships, loot, bases, rings, anything targetable; again = the next one ahead (the current target is
+// skipped). Nothing in the ring: the game's nearest / next enemy. The double tap (clear) is the preset's.
 // (Was: the game's click selection when the cursor's shape named an object exactly under the reticle - in calm flight
 // that almost never held and the fallback found no enemy: "target ahead just doesn't work at all", the owner, 26 Oct
-// 2026.)
+// 2026; then 26 Oct - 4 Nov the ring first, enemies only when the ring was empty.)
+bool NearbyEnemy(const space::Contact& c)
+{
+    return c.ship && c.id && !c.player && c.health != 0 && c.attitudeAsked && c.attitude <= aim::kHostileAttitude &&
+           c.distance < tcycle::kReach;
+}
+
 static void SmartTarget()
 {
+    static tcycle::Chain chain;
     const u32 cur = fl::TargetId();
+    {
+        tcycle::Enemy e[64];
+        int n = 0;
+        for (const space::Contact& c : space::Contacts())
+            if (n < 64 && NearbyEnemy(c))
+                e[n++] = {c.id, c.distance};
+        if (n > 0)
+        {
+            const u32 pick = chain.Press(static_cast<float>(GetTickCount()) * 0.001f, e, n, cur);
+            if (!pick)
+                events::Push("pad target_smart: the only enemy near is the target");
+            else if (space::SetTarget(pick))
+                events::Push("pad target_smart: enemy %u (%d near)", pick, n);
+            else
+                events::Push("pad target_smart: enemy %u refused", pick);
+            return;
+        }
+    }
     const float cx = fl::ScreenWidth() * 0.5f, cy = fl::ScreenHeight() * 0.5f, r = hud2::RingRadius();
     u32 best = 0;
     float bestD = r * r;
@@ -2075,10 +2142,18 @@ static void Apply(const presets::Event& e)
         if (start)
             Tap(fl::USER_LAUNCH_MINES);
         break;
-    case Action::WeaponGroup: // weapon_groups 1: Y held flips to the next of the three HUD groups
+    case Action::WeaponGroup: // weapon_groups 1: Y held flips to the next of the three HUD groups that have guns
         if (start)
         {
-            g_weaponGroup = g_weaponGroup % 3 + 1;
+            // (from the game's active group, not a count of our own: a load or a key may have changed it)
+            const int active = hudinfo::ActiveWeaponGroup();
+            const int next = wgroups::NextGroup(wgroups::GroupsWithGuns(), active >= 1 ? active : g_weaponGroup);
+            if (next == active)
+            {
+                events::Push("pad weapon group: no other group has guns");
+                break;
+            }
+            g_weaponGroup = next;
             Tap(static_cast<fl::Cmd>(fl::USER_WEAPON_GROUP1 + g_weaponGroup - 1));
             events::Push("pad weapon group %d", g_weaponGroup);
         }
@@ -2171,7 +2246,7 @@ static void UpdateSpace(float dt)
         for (int i = 0; i < glyphs::COUNT; ++i)
         {
             const glyphs::Id id = static_cast<glyphs::Id>(i);
-            owned[i] = picker::OwnsButton(id) || wheel::OwnsButton(id) || goals::OwnsButton(id);
+            owned[i] = picker::OwnsButton(id) || wheel::OwnsButton(id) || goals::OwnsButton(id) || wgroups::OwnsButton(id);
         }
         // the modals are menus: A / B as accept / back (confirm_button; both are owned alike, so the swallow below
         // stays positional and right)
@@ -2181,6 +2256,7 @@ static void UpdateSpace(float dt)
         picker::Update(dt, menu);
         wheel::Update(dt, menu, p.rx, p.ry);
         goals::Update(dt, menu);
+        wgroups::Update(dt, menu);
         for (int i = 0; i < glyphs::COUNT; ++i)
         {
             if (down[i] && owned[i])
@@ -2362,6 +2438,7 @@ void OnRenderOverlay()
         picker::Render(device); // the phase D flight modals over it (one open at a time by their buttons)
         wheel::Render(device);
         goals::Render(device);
+        wgroups::Render(device);
     }
     if (g_opt.enabled && (g_mode == Mode::Docked || g_mode == Mode::SpaceUi)) // (D-BASES) the bases' strip and the
     {                                                                         // dealers' line, the nav map's list
@@ -2487,6 +2564,7 @@ void OnFrame(double dtd)
     TrackSelf();
     if (g_mode == Mode::Space || g_mode == Mode::SpaceUi)
         WatchManeuver(); // a stalled formation / goto / dock is issued again (setting maneuver_watchdog)
+    stallrec::Update(static_cast<float>(dtd), ModeName(g_mode), fl::GamePaused());
     flight::RecordFrame();
     debug::Frame();
     options_page::Update(dt); // the options page's input and hosting state, before the pad flight / menu code (PAGE)
@@ -2706,7 +2784,7 @@ void OnFrame(double dtd)
         hc.turret = g_turret;
         hc.weaponGroup = g_weaponGroup;
         hc.apKnown = g_apUsed || uiopt::Get().apHints || newgame::Session() == newgame::ASSISTED;
-        hc.modal = picker::IsOpen() || wheel::IsOpen() || goals::IsOpen();
+        hc.modal = picker::IsOpen() || wheel::IsOpen() || goals::IsOpen() || wgroups::IsOpen();
         hc.steer = sqrtf(g_lastSteerX * g_lastSteerX + g_lastSteerY * g_lastSteerY); // (CONTEXTUAL's triggers, 0.2.1)
         hc.firing = padOwns && (g_dispatch.Held(presets::Action::Fire) || g_dispatch.Held(presets::Action::Missile));
         // any fire input's PRESS wakes the whole HUD under hud_fade 1 (0.2.1 round 6, the owner: the press itself, even
@@ -2805,7 +2883,7 @@ void OnFrame(double dtd)
         pc.apKnown = g_apUsed || uiopt::Get().apHints || newgame::Session() == newgame::ASSISTED; // (D-MENUS)
         padhud::Update(dt, pc);
         // a modal's own prompt bar: the legend steps aside (FLUF's windows on the pad too: A3, 26 Oct 2026)
-        padhud::SetModal(picker::IsOpen() || wheel::IsOpen() || goals::IsOpen() || flufaware::OwnsPad());
+        padhud::SetModal(picker::IsOpen() || wheel::IsOpen() || goals::IsOpen() || wgroups::IsOpen() || flufaware::OwnsPad());
     }
 
     // While the pad (or the test bot) flies, the HUD is transparent to the cursor: aiming can cross
@@ -2815,7 +2893,12 @@ void OnFrame(double dtd)
     if (autoFlew && !autoFlies && padOwns && (g_mode == Mode::Space || g_mode == Mode::SpaceUi)) // (never the player's mouse)
         dimouse::MoveTo(fl::ScreenWidth() * 0.5f, fl::ScreenHeight() * 0.5f); // aim cursor off the HUD when done
     autoFlew = autoFlies;
-    SetHudSuppression((g_mode == Mode::Space || g_mode == Mode::SpaceUi) && (padOwns || autoFlies));
+    // ... but an open NeuroNet window is the cursor's, whoever flies: the windows and the NeuroNet box's buttons hang
+    // under the HUD's root NN_MainButton, so the suppression also took the map's selection and the buttons to the
+    // inventory, log and player info from the cursor (GitHub issue 2, 3 Nov 2026). By the window, not by Mode::SpaceUi:
+    // that mode also means an arrow cursor over the HUD, which the suppression keeps from latching
+    SetHudSuppression((g_mode == Mode::Space || g_mode == Mode::SpaceUi) && (padOwns || autoFlies) &&
+                      !padbases::SpaceWindowOpen());
 
     // The flight HUD's windows, scanned while flying (whoever flies) and only while no window has the mouse (a window
     // opening switches the cursor to the arrow at once): DetectMode tells the HUD from NeuroNet windows by them.
@@ -2844,6 +2927,7 @@ void OnFrame(double dtd)
             g_dispatch.Reset();
             picker::Close(true); // the pad's modals end with the pad - the goal panel has its keyboard + mouse form
             wheel::Cancel();
+            wgroups::Close();
             if (g_turret && device::Switched()) // the pad's turret view ends with the pad (the player's H key is theirs:
                                                 // g_turret follows the game's camera, so only at the switch)
             {
@@ -2981,19 +3065,23 @@ static const settings::Def kOptions[] = {
      "game comes back is ignored until it is released)"},
     {"maneuver_watchdog", settings::Bool, &g_opt.maneuverWatchdog, 0, 1,
      "1 = if your ship stalls during a formation, goto or dock (nearly stopped for 3 s, its goal more than 150 m away "
-     "and not getting closer, you not steering), FLvibed issues the same maneuver again (up to 3 times, 10 s apart) and "
+     "and not getting closer, you not steering), FLvibed leaves it and issues it again (up to 3 times, 10 s apart) and "
      "logs what happened"},
     {"run_in_background", settings::Bool, &g_opt.runInBackground, 0, 1,
      "1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back "
      "to Windows meanwhile"},
+    {"npc_stall_log", settings::Bool, &stallrec::Get().on, 0, 1,
+     "writes EXE\\FLvibed_npc_stalls.log when a hostile ship near you stops moving: what the game says about it, for bug "
+     "reports; read only, it changes nothing in the game"},
     {"shield_cue", settings::Bool, &shieldcue::Get().on, 0, 1,
      "screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it "
-     "fails"},
+     "fails; HUD 2's shield meter flashes red when low"},
     {"shield_cue_intensity", settings::Float, &shieldcue::Get().intensity, 0, 2,
      "shield_cue strength (alpha and size)"},
     {"hull_cue", settings::Bool, &shieldcue::Get().hull, 0, 1,
      "with shield_cue: hull hits show your ship's own hull hit effect at the screen edge, and while the hull is "
-     "damaged the edges carry your ship's damage effects (sparks, fire, smoke) as the game lights them"},
+     "damaged the edges carry your ship's damage effects (sparks, fire, smoke) as the game lights them; HUD 2's hull "
+     "meter flashes bright red when low"},
     {"hull_cue_pattern", settings::Int, &shieldcue::Get().pattern, 0, 2,
      "pattern of the hull damage edge, so it never reads as a shield hit: 0 none, 1 armour plates, 2 hexagons "
      "(default)"},

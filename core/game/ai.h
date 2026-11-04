@@ -197,6 +197,8 @@ struct State
     u32 forced = 0;      // forced target set by ai::ForceTarget
 };
 bool ReadState(State& s);
+// Another ship's running behaviour by its object id (op, locked, priority, graph, behavior; read only).
+bool ReadShipState(u32 id, State& s);
 
 // ---- Maneuvers: the player's maneuver dispatcher (thiscall 0x4D8E20, this = [0x674A58]), on the current target.
 // Reports the maneuver to the server like the maneuver bar does (Cnd_PlayerManeuver sees it). False if refused.

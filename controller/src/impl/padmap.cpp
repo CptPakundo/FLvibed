@@ -70,6 +70,23 @@ static std::wstring Upper(std::wstring s)
     return s;
 }
 
+// The map's zoom buttons exist only in the popup of a selection (never with nothing selected: 0x49EA50 shows them), and
+// each view has one: the sector view the out button, the others the in button. So a trigger first selects what lies
+// under the cursor, the way the map's own click does; zooming out of a system's map is the universe button.
+static void Zoom(bool in)
+{
+    const char* name = in ? "NavMapInZoom" : "NavMapOutZoom";
+    const char* why = in ? "zoom in" : "zoom out";
+    if (!Vis(name))
+        uiclick::MapClick(Vis("NeuroNetNavMap"));
+    if (Vis(name))
+        ClickName(name, why);
+    else if (!in && Vis("NavMapUniverseButton"))
+        ClickName("NavMapUniverseButton", why);
+    else
+        events::Push("pad map: %s: nothing to zoom at the cursor", why), g_lastAction = std::string(why) + " none";
+}
+
 // This system's destinations from the game's object registry (space::Contacts): bases and planets with a dock, stations,
 // gates and holes; nearest first. (The player's "known" flag per object is not readable here: every object of the
 // current system is listed - reported.)
@@ -269,7 +286,7 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
         g_trigRepeat[i] -= dt;
         if (down && (!g_trigWas[i] || g_trigRepeat[i] <= 0))
         {
-            ClickName(i == 0 ? "NavMapOutZoom" : "NavMapInZoom", i == 0 ? "zoom out" : "zoom in");
+            Zoom(i == 1);
             g_trigRepeat[i] = g_trigWas[i] ? 0.25f : 0.45f;
         }
         g_trigWas[i] = down;
@@ -358,7 +375,9 @@ void Draw(void* device)
 std::string Status()
 {
     std::ostringstream o;
-    o << "map open=" << g_open << " list=" << g_list << " dests=" << g_dests.size() << " sel=" << g_sel
+    const u32 map = g_open ? Vis("NeuroNetNavMap") : 0;
+    o << "map open=" << g_open << " view=" << (map ? static_cast<int>(Mem<u32>(map + 0x7D0)) : -1) << " list=" << g_list
+      << " dests=" << g_dests.size() << " sel=" << g_sel
       << " owned=0x" << std::hex << g_owned << std::dec << " drawnRows=" << g_drawn.rows << " last='" << g_lastAction
       << "' waypoints=" << space::Waypoints().size();
     return o.str();

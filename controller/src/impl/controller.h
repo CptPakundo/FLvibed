@@ -4,8 +4,16 @@
 
 #include <istream>
 
+namespace space
+{
+struct Contact;
+}
+
 namespace ctl
 {
+// A hostile ship near enough for the targeting press (RS: target_smart takes these first, target_cycle.h): the HUDs
+// label the press by it.
+bool NearbyEnemy(const space::Contact& c);
 void Init();
 void Shutdown();
 // The settings bus (core\settings_bus.h): the [Controller] / [Autopilot] registries registered before Init loads the ini

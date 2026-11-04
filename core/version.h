@@ -5,5 +5,6 @@
 
 #define FLV_VERSION_MAJOR 0
 #define FLV_VERSION_MINOR 2
-#define FLV_VERSION_PATCH 5
-#define FLV_VERSION "0.2.5"
+#define FLV_VERSION_PATCH 6
+#define FLV_VERSION_BUILD 0
+#define FLV_VERSION "0.2.6"

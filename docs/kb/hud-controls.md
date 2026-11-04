@@ -25,8 +25,9 @@ on positions: HudShift moves them.
 - `USER_WEAPON_GROUP1..3` (keydown) make a group the active one; the HUD's group button lights it (group 2 lit
   after the pad sent GROUP2). `USER_FIRE_WEAPON_GROUP1..3` fire one group each (keydown only); the pad sends the
   keydown and marks them held (`SetHeld`) - that the game polls them as held like fire-all is **not verified yet**
-  (`weapon_groups` 2 needs a shot count on SaveC705). `USER_ASSIGN_WEAPON_GROUPn` is the inventory's assignment. No
-  key is bound to any of them by default (keymap.ini).
+  (`weapon_groups` 2 needs a shot count on SaveC705). `USER_ASSIGN_WEAPON_GROUPn` stores the current selection into a
+  group. The pad sets groups with the action wheel's EDIT GROUPS (USER_TOGGLE_WEAPONn + USER_WEAPON_GROUPn;
+  `..\FREELANCER_RE.md` "Weapon groups"). No key is bound to any of them by default (keymap.ini).
 - `USER_MANEUVER_FREE_FLIGHT` **does not disengage the cruise engine** (cruise stayed on after it, 25 Oct 2026): the
   pad's cancel button sends `USER_CRUISE` as well when the engine is engaged (`flight::ReadModel` cruiseEngaged).
 - `USER_REARVIEW_CAMERA_MODE` and `USER_AFTERBURN` / `USER_MANEUVER_BRAKE_REVERSE` are keydown + keyup commands: a
@@ -50,7 +51,8 @@ HUD 2 hides the six panel roots above (`HUD_Maneuvers`, `NN_MainButton`, `HUD_Ta
 `HUD_Core`) and the cruise line (`HUD_CruiseProgress`) by their state byte, so **none of these controls is drawn or
 hit-testable while HUD 2 shows**: commands still work (the keymap and the pad send them), clicks on the hidden buttons
 do not. Exceptions: the NeuroNet box returns while one of its windows is open (the nav map, inventory, log, player
-info, help live under `NN<name>Button`); the cruise line stays while the engine is disrupted ("Cruise Disrupted - n").
+info, help live under `NN<name>Button`), and it takes the cursor then: the pad's HUD hit suppression stops while a
+NeuroNet window is open, whoever flies (`..\FREELANCER_RE.md` "The pad's HUD hit suppression"); the cruise line stays while the engine is disrupted ("Cruise Disrupted - n").
 The arrival / zone line (`NN_ArrivalText`), the comm window, the scanner window, the chat, the indicators and the damage
 arcs stay native. The 3D target and ship views can be drawn without their panels (`hudvis::SetViewRect`). Facts:
 `..\FREELANCER_RE.md` "UI" > "The flight HUD's roots and hiding them".

@@ -247,7 +247,9 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
     runs only while the race is lost.
   - **Staggered fire** (`stagger` 1, user's trick, any loadout): each burst starts the N active non-homing guns one by
     one at k*r/N (r = slowest refire), by each gun's own FIRE_WEAPON slot - the game's HUD weapon list
-    (`Weapon::fireSlot`; the list index tapped a Javelin's slot until 18 Oct 2026) - then holds every gun's slot (not
+    (`Weapon::fireSlot`; the list index tapped a Javelin's slot until 18 Oct 2026; until 4 Nov 2026 HUD 2's hiding of
+    HUD_Status sent the read to the hardpoint-name fallback, wrong on SaveC706: now read hidden too, the fallback only
+    when the list is unreadable; a fight there: all four guns inside 0.25 s, no launcher fired) - then holds every gun's slot (not
     fire-all, which launches missiles too); verified 0.060 s phase on 2 x 0.12 s guns. Default on (user: benefit of the
     doubt - may raise amortized DPS by spreading projectiles). Theory: sustained DPS is refire-limited (2 x
     li_gun01_mark01 use 84.8 energy/s < ge_fighter_power01's 95/s), power-limited loadouts are set by the charge rate.

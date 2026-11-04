@@ -4,6 +4,7 @@
 #include "hud2_layout.h"
 #include "osk.h"
 #include "safemem.h"
+#include "shieldcue.h"
 #include "ui.h"
 #include "uiopt.h"
 
@@ -27,6 +28,38 @@ float DrawPrompt(const Prompt& p, float cx, float cy, float h, u32 argb, bool me
     return GlyphWidth(p.btn, h);
 }
 
+// The ring's low states (the owner, 4 Nov 2026; HUD_CUES.md: under 3 Hz, never colour alone - the number and the alert
+// card carry the state too -, an off switch): the arcs keep their base colour and pulse toward red. The shield flashes
+// hostile red, the hull its own bright red with a soft bloom under the arc.
+constexpr u32 kHullHot = 0xFF2A1C;
+constexpr float kHullLow = 0.25f; // (HULL CRITICAL's threshold)
+
+static float LowPulse() { return 0.5f - 0.5f * cosf(GetTickCount() / 1000.0f * 2 * 3.14159265f * 1.5f); }
+
+static u32 Mix(u32 from, u32 to, float t)
+{
+    auto c = [&](int s) { return static_cast<u32>(((from >> s) & 255) + (static_cast<float>((to >> s) & 255) - ((from >> s) & 255)) * t) << s; };
+    return c(16) | c(8) | c(0);
+}
+
+static u32 ShieldInk(bool low) { return low && shieldcue::Get().on ? Mix(kShield, kHostile, LowPulse()) : kShield; }
+static bool HullFlashes(float hull) { return hull >= 0 && hull <= kHullLow && shieldcue::Get().hull; }
+static u32 HullInk(float hull) { return HullFlashes(hull) ? Mix(kHull, kHullHot, LowPulse()) : kHull; }
+
+// The bloom: the lit part of the arc again, wider and faint, in two layers under it, no gaps, no empty blocks.
+static void HullBloom(float cx, float cy, float r, float a0, float a1, float w, float hull, int n)
+{
+    if (!HullFlashes(hull))
+        return;
+    const float was = Alpha(), p = LowPulse();
+    for (const float layer : {2.6f, 1.7f})
+    {
+        SetAlpha(was * (0.10f + 0.18f * p));
+        SegArc(cx, cy, r, a0, a1, w * layer, hull, kHullHot, n, 0, true, 0, 0.01f);
+    }
+    SetAlpha(was);
+}
+
 // ---------------------------------------------------------------- the reticle ring
 void DrawRing(const Model& m, const Layout& L, float a, float dim)
 {
@@ -39,10 +72,13 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
     const bool lowShield = m.shield >= 0 ? m.shield <= 0.25f : true;
     RecordTag("ring.shield");
     if (m.shield > -2) // shield left (red at <= 25 %), filling from the top
-        SegArc(cx, cy, R, 138, 222, w, shield, lowShield ? kHostile : kShield, 14, 1.6f, true);
+        SegArc(cx, cy, R, 138, 222, w, shield, ShieldInk(lowShield), 14, 1.6f, true);
     RecordTag("ring.hull");
     if (m.hull >= 0) // hull right
-        SegArc(cx, cy, R, -42, 42, w, m.hull, m.hull > 0.2f ? kInk : kHull, 14, 1.6f, true);
+    {
+        HullBloom(cx, cy, R, -42, 42, w, m.hull, 14);
+        SegArc(cx, cy, R, -42, 42, w, m.hull, HullInk(m.hull), 14, 1.6f, true);
+    }
     RecordTag("ring.power");
     // power below - not while cruise charges or runs: the cruise readout (the charge seconds, CRUISE ON) holds the ring's
     // bottom then (UI_HUD2.md 5.23; the game takes the weapons offline while the engine charges, FREELANCER_RE "The cruise
@@ -55,13 +91,13 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
     if (show(shield) && m.shield > -2)
     {
         swprintf_s(buf, L"%d", static_cast<int>(shield * 100 + 0.5f));
-        Text(cx - R * 0.72f, cy - R * 0.92f, buf, T, Argb(lowShield ? kHostile : kShield, 1), Right);
+        Text(cx - R * 0.72f, cy - R * 0.92f, buf, T, Argb(ShieldInk(lowShield), 1), Right);
     }
     RecordTag("ring.hull");
     if (show(m.hull))
     {
         swprintf_s(buf, L"%d", static_cast<int>(m.hull * 100 + 0.5f));
-        Text(cx + R * 0.72f, cy - R * 0.92f, buf, T, Argb(kInk, 1), Left);
+        Text(cx + R * 0.72f, cy - R * 0.92f, buf, T, Argb(HullInk(m.hull), 1), Left);
     }
     // the speed and the throttle dim with the arcs in calm flight, but less (they stay readable at a glance: 60 %)
     const float sa = a * std::max(dim, 0.6f);
@@ -522,9 +558,9 @@ void DrawTarget(const Model& m, const Layout& L, float a)
         yy += 0.024f * H * k;
         if (m.tHull >= 0)
         {
-            SegBar(tx, yy - 0.005f * H * k, bw, 0.009f * H * k, m.tHull, kInk, 20);
+            SegBar(tx, yy - 0.005f * H * k, bw, 0.009f * H * k, m.tHull, kHull, 20);
             swprintf_s(buf, L"%d", static_cast<int>(m.tHull * 100 + 0.5f));
-            Text(right, yy, buf, T, Argb(kInk, 1), Right);
+            Text(right, yy, buf, T, Argb(kHull, 1), Right);
         }
     }
     // (the threat list under the card: hud2_click.cpp DrawList; the keyboard form's close / next icons: DrawCardIcons)
@@ -558,6 +594,24 @@ void DrawCalmHints(const Model& m, const Layout& L, float a, float textH)
         DrawPrompt(*it.p, x, y, gh, Argb(kDim, 1));
         x -= g / 2 + sep;
     }
+}
+
+// The enemies cue (hud2.cpp EnemyCue: the owner, 4 Nov 2026): right-aligned under the hints' row, in the card's corner,
+// two lines - "ENEMIES NEARBY" with the count in hostile red, then the press that takes the nearest ([RS] TARGET
+// NEAREST); no plate (the hints have none). Both rows end at the card's right edge; the bottom row's bottom stays above
+// kEnemyCueBottom (the HUD bus's keep-out).
+void DrawEnemyCue(const Model& m, const Layout& L, float a)
+{
+    SetAlpha(a);
+    const float H = L.H, k = L.k, T = 0.026f * H * k, gh = T * 1.3f, gap = 0.006f * H * k;
+    const float right = L.tgtX1, y1 = L.tgtY0 + 0.068f * H * k, y2 = L.tgtY0 + 0.112f * H * k; // (0.01 H apart: lint)
+    wchar_t head[40];
+    swprintf_s(head, m.enemies > 1 ? L"%d ENEMIES NEARBY" : L"ENEMY NEARBY", m.enemies);
+    Text(right, y1, head, T, Argb(kHostile, 1), Right, 0.1f);
+    const RecUnit unit; // (the prompt and its own label)
+    const float tw = TextWidth(L"TARGET NEAREST", T, 0.1f), g = DrawPrompt(m.nearestBtn, 0, 0, gh, 0, true);
+    Text(right, y2, L"TARGET NEAREST", T, Argb(kInk, 1), Right, 0.1f);
+    DrawPrompt(m.nearestBtn, right - tw - gap - g / 2, y2, gh, Argb(kInk, 1));
 }
 
 // ---------------------------------------------------------------- bottom-left: your ship
@@ -806,7 +860,7 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
         const float ts = 0.026f * H * k, nameX = tx + 0.052f * H * k;
         // Three lines above the launcher: a row whose guns do not fit wraps one gun per line onto a spare line (at most
         // two lines a row) before anything is cut (the round 4 critique: "Azrael..." cut with lines left)
-        const int rows = std::min(m.nGroups, 3) + (m.ungrouped.empty() ? 0 : 1);
+        const int rows = std::min(m.nGroups, 3) + (m.ungrouped.empty() ? 0 : 1) + (m.torpedo.empty() ? 0 : 1);
         int spare = std::max(0, 3 - rows);
         // a row's text over one or two lines: the guns are joined by the loadout's separator (hud2.cpp addName)
         auto drawNames = [&](const std::wstring& s, float room, u32 col)
@@ -862,6 +916,27 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
             yy += rowP;
         }
     }
+    // the torpedo row on the next gun line (hud2.cpp gives it one: two group rows on a torpedo ship; GitHub issue 5,
+    // 4 Nov 2026), its name (with how it fires: "HOLD", the key) and count in the launcher row's columns. On the
+    // launcher's button (RB: tap missiles, held torpedoes) one glyph between the two rows, as RT beside the gun rows:
+    // two 0.036 glyphs do not fit the 0.030 pitch (the lint's panel.overlap)
+    const bool ordnanceShare = !m.torpedo.empty() && (m.ammo >= 0 || !m.launcher.empty()) &&
+                               m.torpedoBtn.btn != glyphs::COUNT && m.torpedoBtn.btn == m.launchBtn.btn;
+    const float torpedoY = yy;
+    const float ordW = std::max(DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true),
+                                m.torpedo.empty() ? 0.0f : DrawPrompt(m.torpedoBtn, 0, 0, g, 0, true, true));
+    if (!m.torpedo.empty())
+    {
+        if (!ordnanceShare)
+            DrawPrompt(m.torpedoBtn, wx + ordW / 2, yy, g, Argb(kChrome, 1), false, true);
+        const float nx = wx + std::max(g, ordW) + 0.02f * H * k + 0.052f * H * k; // (the gun names' column)
+        const float rx = x1 - 0.018f * H * k - (keyed ? keyCol + 0.012f * H * k : 0.0f), ls = 0.026f * H * k;
+        const std::wstring ammo = std::to_wstring(std::max(0, m.torpedoAmmo));
+        const float aw = TextWidth(ammo, ls);
+        Text(rx, yy, ammo, ls, Argb(m.torpedoAmmo > 0 ? kInk : kAmber, 1), Right);
+        TextMarquee(nx, yy, m.torpedo, ls, hud2layout::RowRoom(nx, rx, aw, 0.010f * H * k, false, 0, 0), Argb(kInk, 1));
+        yy += rowP;
+    }
     // the launcher row where the mock-up puts it (under three rows), whatever the group count
     const float freeY = yy;                       // (the first gun line the rows above left unused)
     yy = y0 + (keyed ? 0.128f : 0.122f) * H * k; // (at most three rows above it: groups + the guns in no group)
@@ -876,8 +951,8 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
     const bool lineAbove = freeY <= yy - rowP + 0.5f;
     if (m.ammo >= 0 || !m.launcher.empty())
     {
-        const float lw = DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true);
-        DrawPrompt(m.launchBtn, wx + lw / 2, yy, g, Argb(kChrome, 1), false, true);
+        const float lw = ordW;
+        DrawPrompt(m.launchBtn, wx + lw / 2, ordnanceShare ? (torpedoY + yy) * 0.5f : yy, g, Argb(kChrome, 1), false, true);
         const float tx = wx + std::max(g, lw) + 0.02f * H * k;
         // the missile: an arrow (the mock's icon)
         const float ax = tx + 0.002f * H * k, al = 0.028f * H * k, lt = std::max(1.5f, 0.003f * H * k);
@@ -1040,10 +1115,15 @@ float LoadoutContentWidth(const Model& m, const Layout& L)
         if (!m.ungrouped.empty())
             right = std::max(right, nameX + namesW(m.ungrouped));
     }
+    const float ordW = std::max(DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true),
+                                m.torpedo.empty() ? 0.0f : DrawPrompt(m.torpedoBtn, 0, 0, g, 0, true, true));
+    if (!m.torpedo.empty())
+        right = std::max(right, wx + std::max(g, ordW) + 0.02f * H * k + 0.052f * H * k + TextWidth(m.torpedo, ts) +
+                                    0.010f * H * k + TextWidth(std::to_wstring(std::max(0, m.torpedoAmmo)), ts) +
+                                    (keyCol > 0 ? keyCol + 0.012f * H * k : 0.0f));
     if (m.ammo >= 0 || !m.launcher.empty())
     {
-        const float lw = DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true);
-        const float nx = wx + std::max(g, lw) + 0.02f * H * k + 0.038f * H * k;
+        const float nx = wx + std::max(g, ordW) + 0.02f * H * k + 0.038f * H * k;
         const float aw = m.ammo >= 0 ? TextWidth(std::to_wstring(m.ammo), ts) : 0.0f;
         const float lockW = TextWidth(L"LOCKED", T, 0.06f) + 0.016f * H * k;
         right = std::max(right, nx + TextWidth(m.launcher, ts) + 0.010f * H * k + aw +
@@ -1254,22 +1334,23 @@ void DrawSplitArcs(const Model& m, const Layout& L, float a, const FocusVis& v)
     if (v.shield > 0.004f)
     {
         SetAlpha(a * v.shield);
-        SegArc(cx, cy, R, 180 - half, 180 + half, w, shield, lowShield ? kHostile : kShield, 8, 1.6f, true);
+        SegArc(cx, cy, R, 180 - half, 180 + half, w, shield, ShieldInk(lowShield), 8, 1.6f, true);
         if (show(shield) && m.shield >= 0)
         {
             swprintf_s(buf, L"%d", static_cast<int>(shield * 100 + 0.5f));
-            Text(cx - R - 0.014f * H * k, cy, buf, T, Argb(lowShield ? kHostile : kShield, 1), Right);
+            Text(cx - R - 0.014f * H * k, cy, buf, T, Argb(ShieldInk(lowShield), 1), Right);
         }
     }
     RecordTag("ring.hull");
     if (v.hull > 0.004f && m.hull >= 0)
     {
         SetAlpha(a * v.hull);
-        SegArc(cx, cy, R, -half, half, w, m.hull, m.hull > 0.2f ? kInk : kHull, 8, 1.6f, true);
+        HullBloom(cx, cy, R, -half, half, w, m.hull, 8);
+        SegArc(cx, cy, R, -half, half, w, m.hull, HullInk(m.hull), 8, 1.6f, true);
         if (show(m.hull))
         {
             swprintf_s(buf, L"%d", static_cast<int>(m.hull * 100 + 0.5f));
-            Text(cx + R + 0.014f * H * k, cy, buf, T, Argb(kInk, 1), Left);
+            Text(cx + R + 0.014f * H * k, cy, buf, T, Argb(HullInk(m.hull), 1), Left);
         }
     }
     // the bottom arc on the arcs' circle (the ring's lowest drawn edge, hud2layout::RingBottom): the band moved inside the
@@ -1569,8 +1650,8 @@ void DrawFireStrip(const Model& m, const Layout& L, float a, bool countHere)
     // the weapons: every group, the guns in no group, the launcher - the strip's whole width (no divider: decision 3)
     const float wx = leftRight + 0.020f * H * k, rx = x1 - 0.014f * H * k, g = 0.028f * H * k, ts = T;
     const int ng = std::min(m.nGroups, 3);
-    const bool ug = !m.ungrouped.empty(), ln = m.ammo >= 0 || !m.launcher.empty();
-    const int rows = ng + (ug ? 1 : 0) + (ln ? 1 : 0);
+    const bool ug = !m.ungrouped.empty(), ln = m.ammo >= 0 || !m.launcher.empty(), tp = !m.torpedo.empty();
+    const int rows = ng + (ug ? 1 : 0) + (tp ? 1 : 0) + (ln ? 1 : 0);
     if (rows == 0)
         return;
     // the pitch: the inner height shared, at most 0.040 (two prompts a row apart keep the lint's 0.01 H: 0.028 glyphs,
@@ -1579,7 +1660,9 @@ void DrawFireStrip(const Model& m, const Layout& L, float a, bool countHere)
     const float top = (y0 + y1) / 2 - p * rows * 0.5f; // (the strip's centre: the cross has its own plate)
     auto rowY = [&](int j) { return top + p * (j + 0.5f); };
     const float fw = ng > 0 ? DrawPrompt(m.fireBtn, 0, 0, g, 0, true, true) : 0.0f;
-    const float lw = ln ? DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true) : 0.0f;
+    const bool share = tp && ln && m.torpedoBtn.btn != glyphs::COUNT && m.torpedoBtn.btn == m.launchBtn.btn; // (one glyph)
+    const float lw = std::max(ln ? DrawPrompt(m.launchBtn, 0, 0, g, 0, true, true) : 0.0f,
+                              tp ? DrawPrompt(m.torpedoBtn, 0, 0, g, 0, true, true) : 0.0f);
     const float ch = std::min(0.026f * H * k, p - 0.004f * H * k); // the numeral cells
     const float cellX = wx + std::max(g, std::max(fw, lw)) + 0.010f * H * k, nameX = cellX + ch + 0.010f * H * k;
     if (ng > 0)
@@ -1595,11 +1678,22 @@ void DrawFireStrip(const Model& m, const Layout& L, float a, bool countHere)
     }
     if (ug) // the guns in no group, dimmed under the groups (no label: no placeholder text)
         TextMarquee(nameX, rowY(ng), m.ungrouped, ts, rx - nameX, Argb(kDim, 0.8f));
+    if (tp) // the torpedo row (GitHub issue 5, 4 Nov 2026): as the launcher's, without a lock
+    {
+        const float r1 = rowY(ng + (ug ? 1 : 0));
+        const RecUnit unit; // (the torpedo's prompt and its row)
+        const float kh = std::min(0.024f * H * k, p - 0.004f * H * k);
+        if (!share)
+            DrawPrompt(m.torpedoBtn, wx + lw / 2, r1, g, Argb(kChrome, 1), false, true);
+        // (always: the band's MSL n is the launcher's, the torpedoes' count has no other home in a fight)
+        Text(cellX + ch, r1, std::to_wstring(std::max(0, m.torpedoAmmo)), ts, Argb(m.torpedoAmmo > 0 ? kInk : kAmber, 1), Right);
+        TextMarquee(nameX, r1, m.torpedo, ts, rx - nameX, Argb(kInk, 1));
+    }
     if (ln)
     {
         const float r2 = rowY(rows - 1);
         const RecUnit unit; // (the launcher's prompt and its row)
-        DrawPrompt(m.launchBtn, wx + lw / 2, r2, g, Argb(kChrome, 1), false, true);
+        DrawPrompt(m.launchBtn, wx + lw / 2, share ? r2 - p * 0.5f : r2, g, Argb(kChrome, 1), false, true);
         const float lockW = TextWidth(L"LOCKED", T, 0.06f) + 0.014f * H * k;
         // the count in the numeral cells' column, right-aligned to its edge (the launcher has no cell): one column with
         // the group digits above it, 0.010 H from the names' column - right-aligned before LOCKED it sat diagonally
