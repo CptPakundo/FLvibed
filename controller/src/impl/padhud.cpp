@@ -3,6 +3,7 @@
 #include "../fl.h"
 #include "aim.h"
 #include "autopilot.h"
+#include "controller.h" // ctl::NearbyEnemy
 #include "autopilot_impl.h" // read-only: the objective run's action and the state (the status line's wait reason)
 #include "game/ai.h"
 #include "game/flight.h"
@@ -53,6 +54,12 @@ struct Shown
     bool dockInRange = false;
     bool lootInReach = false;
     float lootPos[3] = {};
+    // the tractor's rows name what they pull (the owner, 4 Nov 2026): the nearest loot in reach and its range, how many
+    // lie in reach, the targeted loot in reach (A tractors it; out of reach A flies to it)
+    std::wstring lootName, lootDist;
+    int lootCount = 0;
+    bool targetLootReach = false;
+    int enemies = 0; // hostiles within the targeting press's reach (ctl::NearbyEnemy: RS takes the nearest first)
     bool cruiseCharging = false, cruising = false;
     float chargeLeft = 0;
     int maneuverOp = -1; // the player's running maneuver (space::Pilot op): the bar lights that button
@@ -149,6 +156,16 @@ static void AddRow(Legend& l, presets::Action a, const std::wstring& label, int 
     l.rows.push_back({a, btn, hold, label, count});
 }
 
+// X: everything in the tractor's reach (USER_COLLECT_LOOT) - TRACTOR ALL n; one item that A does not name (a target that
+// is not it), by its name and range (as HUD 2's TractorCtx)
+static void TractorAllRow(Legend& l)
+{
+    if (g_s.lootCount > 1)
+        AddRow(l, presets::Action::Tractor, L"TRACTOR ALL " + std::to_wstring(g_s.lootCount));
+    else if (g_s.lootCount == 1 && g_s.targetValid && !g_s.targetLootReach && !g_s.lootName.empty())
+        AddRow(l, presets::Action::Tractor, L"TRACTOR " + g_s.lootName + Sep() + g_s.lootDist);
+}
+
 void Update(float, const Context& c)
 {
     g_ctx = c;
@@ -189,12 +206,23 @@ void Update(float, const Context& c)
         if (k.ship && k.attitude <= aim::kHostileAttitude && k.attitudeAsked && k.distance < 4000 &&
             (k.targetsPlayer || k.distance < 2000))
             anyHostileNear = true;
-        if ((k.type & space::kLoot) && k.distance < nearestLoot && haveSelf && self.tractorRange > 0 &&
-            k.distance <= self.tractorRange)
+        if (ctl::NearbyEnemy(k))
+            ++g_s.enemies;
+        const bool lootReach = (k.type & space::kLoot) && haveSelf && self.tractorRange > 0 &&
+                               k.distance <= self.tractorRange && k.lootFits != 0; // (the hold has room for it)
+        if (lootReach)
+        {
+            ++g_s.lootCount;
+            if (k.id == tid)
+                g_s.targetLootReach = true;
+        }
+        if (lootReach && k.distance < nearestLoot)
         {
             nearestLoot = k.distance;
             g_s.lootInReach = true;
             memcpy(g_s.lootPos, k.pos, sizeof(k.pos));
+            g_s.lootName = Upper(text::Ids(k.nameIds));
+            g_s.lootDist = Dist(k.distance);
         }
     }
     g_s.targetHostile = t.valid && t.hostile;
@@ -289,7 +317,7 @@ void Update(float, const Context& c)
             }
             AddRow(l, presets::Action::Afterburner, L"AFTERBURNER");
             AddRow(l, presets::Action::Missile, L"MISSILE", g_s.missiles);
-            AddRow(l, presets::Action::TargetSmart, L"NEXT ENEMY");
+            AddRow(l, presets::Action::TargetSmart, g_s.targetValid ? L"NEAREST / NEXT ENEMY" : L"NEAREST ENEMY");
             AddRow(l, presets::Action::NextEnemy, L"NEXT ENEMY");
             AddRow(l, presets::Action::TargetNearest, L"NEAREST ENEMY");
             AddRow(l, presets::Action::Nanobot, L"NANOBOT", g_s.nanobots);
@@ -309,18 +337,22 @@ void Update(float, const Context& c)
         {
             if (g_s.targetDockable)
                 AddRow(l, presets::Action::Context, L"DOCK AT " + g_s.targetName);
-            else if (g_s.targetLoot)
-                AddRow(l, presets::Action::Context, L"TRACTOR " + g_s.targetName);
+            else if (g_s.targetLootReach)
+                AddRow(l, presets::Action::Context, L"TRACTOR " + g_s.targetName + Sep() + Dist(g_s.targetDist));
             else
                 AddRow(l, presets::Action::Context, L"GO TO " + g_s.targetName);
+            TractorAllRow(l);
             AddRow(l, presets::Action::Cruise, L"CRUISE");
             AddRow(l, presets::Action::TargetPicker, L"TARGETS");
-            AddRow(l, presets::Action::TargetSmart, L"TARGET AHEAD");
+            AddRow(l, presets::Action::TargetSmart, g_s.enemies > 0 ? L"NEAREST ENEMY" : L"TARGET AHEAD");
             AddRow(l, presets::Action::Hub, L"MAP");
         }
         else
         {
-            AddRow(l, presets::Action::TargetSmart, L"TARGET AHEAD / NEAREST");
+            if (g_s.lootInReach && !g_s.lootName.empty()) // (A with no target: the nearest loot, ContextAction)
+                AddRow(l, presets::Action::Context, L"TRACTOR " + g_s.lootName + Sep() + g_s.lootDist);
+            TractorAllRow(l);
+            AddRow(l, presets::Action::TargetSmart, g_s.enemies > 0 ? L"NEAREST ENEMY" : L"TARGET AHEAD");
             AddRow(l, presets::Action::TargetNearest, L"NEAREST ENEMY");
             AddRow(l, presets::Action::TargetPicker, L"TARGETS");
             AddRow(l, presets::Action::Cruise, L"CRUISE");
@@ -651,8 +683,12 @@ void Render(void* device)
         };
         if (g_s.dockInRange && !g_s.cruising && !g_s.cruiseCharging)
             prompt(g_s.targetPos, presets::Action::Context, L"DOCK");
-        if (g_s.lootInReach)
-            prompt(g_s.lootPos, g_s.targetLoot ? presets::Action::Context : presets::Action::Tractor, L"LOOT");
+        if (g_s.lootInReach) // (A tractors the nearest with no target, the targeted loot when it is; X tractors them all)
+        {
+            const bool viaA = !g_s.targetValid || g_s.targetLootReach;
+            const std::wstring label = g_s.lootName.empty() ? std::wstring(L"LOOT") : g_s.lootName + Sep() + g_s.lootDist;
+            prompt(g_s.lootPos, viaA ? presets::Action::Context : presets::Action::Tractor, label.c_str());
+        }
     }
     render::End(false);
 }

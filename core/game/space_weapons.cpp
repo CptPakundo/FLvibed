@@ -58,6 +58,7 @@ int ReadWeapons(void* ship, Weapon* out, int max, int equipClass /* = kEquipClas
             {
                 MunitionDamage(proj, w.hullDamage, w.blastRadius);
                 w.homing = Mem<u32>(proj + kMunitionSeeker) == 2;
+                w.cruiseDisruptor = Mem<u8>(proj + kMunitionCruiseDisruptor) != 0;
                 w.projArch = proj;
                 w.lifetime = Mem<float>(proj + kProjLifetime);
                 if (w.homing)
@@ -96,8 +97,10 @@ int ReadWeapons(void* ship, Weapon* out, int max, int equipClass /* = kEquipClas
 // The game's fire slots (USER_FIRE_WEAPON1..10) are the HUD status window's weapon list, not the equipment order the
 // traverser walks (18 Oct 2026: the traverser gives the Javelin first, the game fires it on slot 2). Freelancer.exe:
 // the "HUD_Status" control's command handler (switch at 0x4DBACB, case USER_FIRE_WEAPON1 0x4DBEC2) fires entry n-1 of
-// the vector at object +0x590 / +0x594 (36-byte entries, u16 sub-object id first). Read from there and accepted only
-// when every entry is one of the ship's weapons; else (HUD hidden) by hardpoint name, which matched the measurement.
+// the vector at object +0x590 / +0x594 (36-byte entries, u16 sub-object id first); USER_TOGGLE_WEAPON1..10 (0x4DC252)
+// take the same entries. Read from there and accepted only when every entry is one of the ship's weapons; else by
+// hardpoint name, which matched the measurement on some ships only. Shown or not: HUD 2 hides HUD_Status and the list
+// stays the game's (SaveC706, 4 Nov 2026: by name HpWeapon06 read 7, the game's TOGGLE2 / list entry 2).
 static bool HudFireSlots(Weapon* w, int n)
 {
     // The control lookup walks every UI control: once per 2 s (the read below validates the cached one each time).
@@ -105,7 +108,7 @@ static bool HudFireSlots(Weapon* w, int n)
     static DWORD at = 0;
     if (!ctl || GetTickCount() - at > 2000)
     {
-        ctl = uiclick::FindVisible("HUD_Status");
+        ctl = uiclick::Find("HUD_Status");
         at = GetTickCount();
     }
     if (!ctl)
@@ -142,6 +145,7 @@ static bool HudFireSlots(Weapon* w, int n)
 }
 
 bool g_fireSlotsHud = false; // the last numbering came from the HUD list (debug `weapons`)
+bool FireSlotsAreTheGames() { return g_fireSlotsHud; }
 static void NumberFireSlots(Weapon* w, int n)
 {
     g_fireSlotsHud = HudFireSlots(w, n);

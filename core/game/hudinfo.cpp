@@ -800,6 +800,9 @@ int ActiveWeaponGroup()
     return g < 0 ? -1 : g + 1;
 }
 
+void* AcquireShip(u32 id) { return FindShip(id); }
+void ReleaseShip(void* ship) { Release(ship); }
+
 std::vector<WeaponInfo> Weapons()
 {
     static std::vector<WeaponInfo> cache;
@@ -829,6 +832,8 @@ std::vector<WeaponInfo> Weapons()
         i.name = EquipName(i.arch);
         i.launcher = w.homing;
         i.ammo = w.ammo;
+        i.on = w.active;
+        i.slot = space::FireSlotsAreTheGames() ? w.fireSlot : 0;
         if (n >= 0 && cur >= 0)
         {
             u32 bits = 0;

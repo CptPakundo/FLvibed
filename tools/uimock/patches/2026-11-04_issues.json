@@ -1,0 +1,35 @@
+{
+  "_about": "GitHub issues 4, 5 (4 Nov 2026): the weapon group editor (the wheel's EDIT GROUPS, controllersrcimplwgroups.*); HUD 2's torpedo row. The spec's old inventory ticks were never built. Issue 1, red hull meters, has no setting.",
+  "rows": {
+    "weapon_groups": {
+      "help": "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one. Cycle: Y held flips to the next group that has guns (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse)."
+    }
+  },
+  "states": {
+    "hud/wheel": {
+      "extras": {
+        "wheel": {
+          "items": [
+            "SCAN CARGO",
+            "WEAPON GROUP",
+            "EDIT GROUPS",
+            "CRUISE DISRUPTOR",
+            "FORMATION",
+            "COMMS",
+            "CONTACT FILTER",
+            "AUTOPILOT GOALS",
+            "REAR VIEW"
+          ]
+        }
+      },
+      "notes": [
+        "Built: EDIT GROUPS opens the weapon group editor over the HUD: the ship's guns with a tick each, A switches the focused gun on or off in the group, D-pad up / down the gun, LB / RB the group (which also makes it the active group), B done; the sticks keep flying and RT keeps firing. The game stores the groups. Guns only: launchers fire on their own buttons."
+      ]
+    },
+    "inventory/default": {
+      "notes": [
+        "Superseded: the group boxes above were never built; weapon groups are set with the action wheel's EDIT GROUPS (GitHub issue 4, 4 Nov 2026)."
+      ]
+    }
+  }
+}

@@ -401,6 +401,8 @@
       "56 57 8B 7C 24 0C 57 8B F1 E8 ?? ?? ?? ?? 8B 8E 60 03 00 00 85 C9 74 06") /* NN_Inventory / NN_Dealer's vt[0x14] (ret 4): ControlSetPosition on itself, then the partner window's (+0x360) vt[0x14] with the same position - the dealers' panel pair moves as one */ \
     X(NavMapSetPosition, Code, 0x4948A0, 0, 0, \
       "83 EC 0C 56 8B 74 24 14 57 56 8B F9 E8 ?? ?? ?? ?? D9 06 D8 05") /* NeuroNetNavMap's vt[0x14] (ret 4): ControlSetPosition, then keeps the position plus a fixed offset at +0x3C8. Vanilla 1.1: the padding before the entry differs (vanilla E8 call bytes, HDE NOPs; never executed), so the signature starts at the entry; no behaviour change */ \
+    X(NavMapMouse, Code, 0x497D30, 0, 0, \
+      "83 EC 1C 53 56 57 8B 7C 24 2C 8B 07 83 F8 FF 8B F1 74 10 83") /* NeuroNetNavMap's mouse handler vt[0x4C] (thiscall(this, const int ev[2]), ret 4): ev[0] -1 / -2, ev[1] 1 = the left click, which selects what lies under the game's cursor (0x49EA50) inside the map's rectangle and shows the popup with NavMapInZoom / NavMapOutZoom */ \
     X(ControlSetOrientation, Code, 0x5A0950, 0, 0, \
       "53 55 8B 6C 24 0C 56 8B D9 57 8D 7B 3C B9 09 00 00 00 8B F5") /* void thiscall(FlControl*, const float m[9]), ret 4: the base vt[0x1C] - stores the 3x3 orientation at +0x3C, same pass to mesh and children */ \
     X(VtToolTip, Data, 0x5D5F7C, 0x4BD6AE, 10, "00 83 EC 0C 89 4C 24 00 C7 01 ?? ?? ?? ?? 8B 15") /* the ToolTip control (the global 0x67244C; its dtor 0x4BD690 stores it): the mouse-over box and the room characters' name card; its draw projects +0x60 each frame with the text's size in pixels at +0xB4 / +0xB8 - uistrip's NativeCard writes +0x60 under ui_style 0 only on a control of this class */ \

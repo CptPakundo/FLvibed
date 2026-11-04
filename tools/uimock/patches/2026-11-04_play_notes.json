@@ -1,0 +1,26 @@
+{
+  "_about": "0.2.6 (4 Nov 2026; docs/UI_HUD2.md 5.31 and the watchdog change): the owner's play notes - the tractor's two prompts (A one item, X all), the right stick's enemies-first rule, the enemies cue; the maneuver watchdog now leaves the maneuver before it starts it again. Apply with specpatch.py to part2_data.js, docs/UI_SPEC.json and the artifact's ui/spec (pinned set, after reading). Tested on a virtual pad, not a real one.",
+  "rows": {
+    "maneuver_watchdog": {
+      "help": "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed leaves the maneuver and starts it again, up to 3 times, and logs what happened."
+    }
+  },
+  "states": {
+    "hud/manual": {
+      "extras": {
+        "legend": {
+          "items": [["R3", "TARGET AHEAD"], ["LB", "TARGETS"], ["Y", "CRUISE"], ["VIEW", "MAP"]]
+        }
+      },
+      "notes": [
+        "Built 4 Nov 2026 (0.2.6, the owner's play notes): the right-stick click (RS) takes the nearest enemy first. A hostile ship within 10 km: a cold press takes the nearest, presses within 3 s take the next ones (every enemy once, then again), after a pause it starts again from the nearest. No enemy near: the nearest object inside the reticle ring, else the game's nearest / next enemy (the label then reads TARGET AHEAD; NEAREST ENEMY while enemies are near). Double click clears.",
+        "Built 4 Nov 2026 (0.2.6): the enemies cue. On the pad, with nothing targeted and enemies near, the card's corner shows, under the LB hints, 'n ENEMIES NEARBY' (hostile red) and '[RS] TARGET NEAREST'. Tested on a virtual pad, not a real one."
+      ]
+    },
+    "hud/pad": {
+      "notes": [
+        "Built 4 Nov 2026 (0.2.6, the owner's play notes): the tractor has two prompts. A tractors one item: the targeted loot or, with nothing targeted, the nearest loot in reach ([A] TRACTOR <ITEM> · <range>, e.g. TRACTOR DRAIL · 730 m). X tractors everything in reach ([X] TRACTOR ALL n). Before, both pulled everything. Loot the hold cannot take is not offered. HUD 2 and the classic HUD; the keyboard form shows the key of each. Tested on a virtual pad, not a real one."
+      ]
+    }
+  }
+}

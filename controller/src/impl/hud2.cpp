@@ -5,6 +5,7 @@
 #include "../fl.h"
 #include "aim.h"
 #include "autopilot.h"
+#include "controller.h" // ctl::NearbyEnemy
 #include "autopilot_impl.h" // read-only: the objective run's action (the wait reason, as padhud's status line)
 #include "flexe.h"
 #include "flufaware.h" // FLUF's windows: the parts under them step back
@@ -278,13 +279,13 @@ static std::wstring AutopilotKey()
     return s;
 }
 
-// The command an action sends from the keyboard (the K&M form's keycap).
-static int CmdOf(presets::Action a, bool dock)
+// The command an action sends from the keyboard (the K&M form's keycap); `loot`: the context's tractor form (one item).
+static int CmdOf(presets::Action a, bool dock, bool loot = false)
 {
     using A = presets::Action;
     switch (a)
     {
-    case A::Context: return dock ? fl::USER_MANEUVER_DOCK : fl::USER_MANEUVER_GOTO;
+    case A::Context: return loot ? fl::USER_TRACTOR_BEAM : dock ? fl::USER_MANEUVER_DOCK : fl::USER_MANEUVER_GOTO;
     case A::Goto: return fl::USER_MANEUVER_GOTO;
     case A::FreeFlight: return fl::USER_MANEUVER_FREE_FLIGHT;
     case A::Formation: return fl::USER_MANEUVER_FORMATION;
@@ -295,10 +296,12 @@ static int CmdOf(presets::Action a, bool dock)
     case A::Cm: return fl::USER_LAUNCH_COUNTERMEASURES;
     case A::Mine: return fl::USER_LAUNCH_MINES;
     case A::Missile: return fl::USER_LAUNCH_MISSILES;
+    case A::Torpedo: return fl::USER_LAUNCH_TORPEDOS;
+    case A::CruiseDisruptor: return fl::USER_LAUNCH_CRUISE_DISRUPTORS;
     case A::Fire: return fl::USER_FIRE_WEAPONS;
     case A::Reverse: return fl::USER_MANEUVER_BRAKE_REVERSE;
     case A::Turret: return fl::USER_AUTO_TURRET;
-    case A::Tractor: return fl::USER_TRACTOR_BEAM;
+    case A::Tractor: return fl::USER_COLLECT_LOOT; // X: everything in reach (the targeted item: Context's loot form)
     case A::TargetSmart:
     case A::NextEnemy: return fl::USER_NEXT_ENEMY;
     case A::TargetNearest: return fl::USER_CLOSEST_ENEMY;
@@ -310,7 +313,7 @@ static int CmdOf(presets::Action a, bool dock)
 
 // A prompt for an action in the current form: the preset's button (pad), or the keymap's key (K&M). False when the
 // action has no button / key: the prompt is not offered.
-static bool MakePrompt(Prompt& p, presets::Action a, const wchar_t* label, bool dock = false)
+static bool MakePrompt(Prompt& p, presets::Action a, const wchar_t* label, bool dock = false, bool loot = false)
 {
     p = Prompt();
     p.label = label ? label : L"";
@@ -322,7 +325,7 @@ static bool MakePrompt(Prompt& p, presets::Action a, const wchar_t* label, bool 
             p.key = L"SHIFT+" + AutopilotKey();
         else
         {
-            const int cmd = CmdOf(a, dock);
+            const int cmd = CmdOf(a, dock, loot);
             if (cmd >= 0)
                 p.key = KeyOf(cmd);
         }
@@ -354,17 +357,17 @@ static int CtxSide(presets::Action a, const wchar_t* label)
     case A::Tractor: // ([X] TRACTOR n: TractorCtx, 5.23)
     case A::TargetSmart:
     case A::TargetPicker: return 1;
-    case A::Context: return label && wcscmp(label, L"TRACTOR") == 0 ? 1 : 0;
+    case A::Context: return label && wcsncmp(label, L"TRACTOR", 7) == 0 ? 1 : 0;
     default: return 0;
     }
 }
 
-static void AddCtx(presets::Action a, const wchar_t* label, bool dock = false)
+static void AddCtx(presets::Action a, const wchar_t* label, bool dock = false, bool loot = false)
 {
     if (g_m.nCtx >= 3)
         return;
     Prompt p;
-    if (!MakePrompt(p, a, label, dock))
+    if (!MakePrompt(p, a, label, dock, loot))
         return;
     p.side = CtxSide(a, label);
     for (int i = 0; i < g_m.nCtx; ++i)
@@ -373,25 +376,55 @@ static void AddCtx(presets::Action a, const wchar_t* label, bool dock = false)
     g_m.ctx[g_m.nCtx++] = p;
 }
 
-// [X] TRACTOR n while loot is in the tractor's reach (as the game's own tractor button lights): a context prompt in the
-// right lane (CtxSide: what you use) since the owner's lower-centre rule (31 Oct 2026, UI_HUD2.md 5.23: "make sure the
-// lower center of the screen is devoid of HUD elements") - it stood under the reticle ring, over the ship's nose, since
-// 26 Oct. The count joins a TRACTOR prompt already in the line (the targeted loot's A TRACTOR): one value, one place. Not
-// in Focus: its band shows LOOT n with the tractor's glyph (PRESETS 2.2). Within the line's three prompts and its
-// one-prompt-per-button rule (combat's X-hold TURRET keeps the X: the round 3 critique).
-static void TractorCtx()
+// The torpedo row's prompt: the pad's glyph and "HOLD" in the row's text when it is a hold (RB: not a tap, GitHub issue
+// 5), the keyboard form's key in the text (a keycap does not fit the 0.030 pitch beside the launcher's).
+static void TorpedoPrompt(Model& m, presets::Action a)
 {
+    MakePrompt(m.torpedoBtn, a, nullptr);
+    const std::wstring sep = std::wstring(L"  ") + static_cast<wchar_t>(0x00B7) + L"  ";
+    if (!m.torpedoBtn.key.empty())
+        m.torpedo = m.torpedoBtn.key + sep + m.torpedo, m.torpedoBtn = Prompt();
+    else if (m.torpedoBtn.hold)
+        m.torpedo = L"HOLD" + sep + m.torpedo;
+}
+
+// The tractor's prompts in the right lane (CtxSide: what you use; they left the spot under the reticle ring on 31 Oct
+// 2026, UI_HUD2.md 5.23). The owner, 4 Nov 2026: "the tractor prompts at the bottom of the screen [should] note the
+// object's name and range. Also, it's not prompted anywhere that the A button also tractors something. Prompting should
+// clarify which prompt does what (tractor specific, tractor all, etc)". So: [A] TRACTOR <item> . <range> - one item, the
+// targeted loot in reach or, with no target, the nearest loot in reach (ContextAction; `aFree`: the state leaves A to
+// the context, and not in ASSISTED, whose A starts the autopilot; the keyboard's key tractors only a target). [X] TRACTOR
+// ALL n - everything in reach; with one item in reach that A does not name, [X] names it. Focus: A's prompt only (its
+// band shows LOOT n with X's glyph, PRESETS 2.2). Within the line's three prompts and its one-prompt-per-button rule
+// (combat's X-hold TURRET keeps the X: the round 3 critique); idempotent.
+static std::wstring TractorItem(const std::wstring& name, const std::wstring& dist)
+{
+    return L"TRACTOR " + Upper(name) + L" " + static_cast<wchar_t>(0x00B7) + L" " + dist;
+}
+
+static void TractorCtx(bool aFree)
+{
+    std::wstring one;
+    if (aFree && uiopt::Get().padPreset != presets::ASSISTED)
+    {
+        if (g_m.target && g_m.tLootReach)
+            one = TractorItem(g_m.tName, g_m.tDist);
+        else if (!g_m.target && !g_m.kbm && g_m.loot > 0 && !g_m.lootName.empty())
+            one = TractorItem(g_m.lootName, g_m.lootDist);
+    }
+    if (!one.empty())
+        AddCtx(presets::Action::Context, one.c_str(), false, true);
     if (g_m.loot <= 0 || g_m.presetDrawn == hud2preset::Focus)
         return;
-    wchar_t lbl[24];
-    swprintf_s(lbl, g_m.loot > 1 ? L"TRACTOR %d" : L"TRACTOR", g_m.loot);
-    for (int i = 0; i < g_m.nCtx; ++i)
-        if (g_m.ctx[i].label.compare(0, 7, L"TRACTOR") == 0)
-        {
-            g_m.ctx[i].label = lbl;
-            return;
-        }
-    AddCtx(presets::Action::Tractor, lbl);
+    std::wstring all;
+    if (g_m.loot > 1)
+        all = L"TRACTOR ALL " + std::to_wstring(g_m.loot);
+    else if (one.empty() && !g_m.lootName.empty())
+        all = TractorItem(g_m.lootName, g_m.lootDist);
+    else if (one.empty())
+        all = L"TRACTOR ALL";
+    if (!all.empty())
+        AddCtx(presets::Action::Tractor, all.c_str());
 }
 
 static const wchar_t* ModeVerb(autopilot::Mode m)
@@ -724,13 +757,31 @@ static void Slow()
     int loot = 0;
     bool hostileNear = false;
     m.nThreats = 0;
+    m.enemies = 0, m.tLootReach = false;
+    m.lootName.clear(), m.lootDist.clear();
+    float nearestLoot = 0;
     for (const space::Contact& c : all)
     {
         const bool hostile = c.ship && c.attitudeAsked && c.attitude <= aim::kHostileAttitude;
         if (hostile && c.distance < 4000 && (c.targetsPlayer || c.distance < 2000))
             hostileNear = true;
-        if ((c.type & space::kLoot) && lootRange > 0 && c.distance <= lootRange)
+        if (ctl::NearbyEnemy(c))
+            ++m.enemies;
+        // (loot the hold cannot take - CShip::get_space_for_cargo_type 0 - is not offered: nothing would come in)
+        if ((c.type & space::kLoot) && lootRange > 0 && c.distance <= lootRange && c.lootFits != 0)
+        {
             ++loot;
+            if (c.id == tid)
+                m.tLootReach = true;
+            if (m.lootName.empty() || c.distance < nearestLoot)
+            {
+                nearestLoot = c.distance;
+                m.lootName = hudinfo::DisplayName(c.id);
+                if (m.lootName.empty())
+                    m.lootName = text::Ids(c.nameIds);
+                m.lootDist = Dist(c.distance);
+            }
+        }
         if (hostile && c.id != tid && m.nThreats < 2 && c.distance < 10000)
         {
             Model::Threat& t = m.threats[m.nThreats++];
@@ -794,12 +845,13 @@ static void Slow()
         m.targetId = 0;
     g_combat = tHostile || hostileNear;
     m.fight = g_combat;
-    const int hl = hudinfo::LootInReach();
-    m.loot = hl >= 0 ? hl : loot;
+    m.loot = loot; // (was the game's own count, hudinfo::LootInReach: it counts what the hold cannot take)
     m.filter = L"HOSTILES";
     MakePrompt(m.threatsBtn, presets::Action::TargetPicker, nullptr);
     if (!MakePrompt(m.nextBtn, presets::Action::TargetSmart, nullptr))
         MakePrompt(m.nextBtn, presets::Action::NextEnemy, nullptr);
+    if (!MakePrompt(m.nearestBtn, presets::Action::TargetSmart, nullptr))
+        MakePrompt(m.nearestBtn, presets::Action::TargetNearest, nullptr);
     // the contact list mode replaces the threats (hud2_click.cpp): the keyboard form's header click, or the pad's action
     // wheel (CONTACT FILTER, CycleListFilter below); out of combat no threat rows
     if (g_L.H > 0) // the rows that fit between the list's header and the loadout (the last frame's layout) - its cross
@@ -898,6 +950,30 @@ static void Slow()
     if (!MakePrompt(m.launchBtn, presets::Action::Missile, nullptr))
         MakePrompt(m.launchBtn, presets::Action::Torpedo, nullptr);
     m.nGroups = 0;
+    // the torpedo hardpoints' launcher has a row of its own and is not one of the missiles: its rounds were added to the
+    // launcher's count under the missile's name (GitHub issue 5, 4 Nov 2026). Those hardpoints also take cruise
+    // disruptors: a torpedo wins the row, a disruptor shows when alone, with its own button (the wheel's: none on the row)
+    m.torpedo.clear();
+    m.torpedoAmmo = -1;
+    bool torpedoIsRound = false;
+    for (const space::Weapon& w : space::PlayerWeapons())
+    {
+        if (!w.homing || _strnicmp(w.hardpoint, "HpTorpedo", 9) != 0 || (torpedoIsRound && w.cruiseDisruptor))
+            continue;
+        if (!w.cruiseDisruptor && !torpedoIsRound)
+            m.torpedo.clear(), m.torpedoAmmo = -1, torpedoIsRound = true;
+        if (m.torpedo.empty())
+        {
+            m.torpedo = Upper(hudinfo::EquipName(w.ammoArch));
+            if (m.torpedo.empty())
+                m.torpedo = w.cruiseDisruptor ? L"CRUISE DISRUPTOR" : L"TORPEDOES";
+        }
+        m.torpedoAmmo = std::max(0, m.torpedoAmmo) + std::max(0, w.ammo);
+    }
+    if (!m.torpedo.empty())
+        TorpedoPrompt(m, torpedoIsRound ? presets::Action::Torpedo : presets::Action::CruiseDisruptor);
+    // the lines above the launcher row (three): the torpedo row takes one
+    const int groupRows = m.torpedo.empty() ? 3 : 2;
     const std::vector<hudinfo::WeaponInfo> wi = hudinfo::Weapons();
     // a row's guns: each kind once in mount order, identical guns as one entry with their count ("Justice Mk I \u00D72";
     // fix-text 25 Oct 2026: the vanilla run showed one "Justice Mk I" for two, and the old de-duplication by substring
@@ -954,11 +1030,11 @@ static void Slow()
             if (!names[g].empty())
                 nums[n++] = g + 1;
         bool activeIn = false;
-        for (int i = 0; i < n && i < 3; ++i)
+        for (int i = 0; i < n && i < groupRows; ++i)
             activeIn |= nums[i] == activeNum;
-        if (n > 3 && !activeIn && activeNum >= 1 && activeNum <= 6 && !names[activeNum - 1].empty())
-            nums[2] = activeNum;
-        m.nGroups = std::min(n, 3);
+        if (n > groupRows && !activeIn && activeNum >= 1 && activeNum <= 6 && !names[activeNum - 1].empty())
+            nums[groupRows - 1] = activeNum;
+        m.nGroups = std::min(n, groupRows);
         for (int i = 0; i < m.nGroups; ++i)
             m.groups[i] = names[nums[i] - 1], m.groupNum[i] = nums[i];
         Guns loose;
@@ -966,7 +1042,7 @@ static void Slow()
             if (!w.launcher && w.groups == 0)
                 addName(loose, w.name.empty() ? std::wstring(L"GUN") : w.name);
         m.ungrouped = joined(loose);
-        if (m.nGroups >= 3)
+        if (m.nGroups >= groupRows)
             m.ungrouped.clear(); // three rows are all the panel holds (the guns in no group are rarer than a third group)
     }
     // the guns and launchers as the game mounts them (names from hudinfo when it has them)
@@ -976,6 +1052,8 @@ static void Slow()
     {
         if (w.homing)
         {
+            if (_strnicmp(w.hardpoint, "HpTorpedo", 9) == 0)
+                continue; // (the torpedo row above)
             if (w.ammo >= 0)
                 m.ammo = std::max(0, m.ammo) + w.ammo;
             if (m.launcher.empty())
@@ -1358,22 +1436,21 @@ static void Slow()
                 AddCtx(A::FreeFlight, L"DROP CRUISE");
             if (m.target && tDock)
                 AddCtx(A::Context, L"DOCK", true);
-            else if (m.target && tLoot)
-                AddCtx(A::Context, L"TRACTOR");
-            TractorCtx(); // (loot in reach: before the teaching prompts, as its ring spot had precedence)
+            TractorCtx(true); // (loot in reach: before the teaching prompts, as its ring spot had precedence)
             if (m.cruise == 0) // (the cruise prompt, above)
                 AddCtx(A::Cruise, L"CRUISE");
-            if (m.target && !tDock && !tLoot)
+            if (m.target && !tDock && !m.tLootReach) // (loot out of reach: A flies to it)
                 AddCtx(A::Context, L"GO TO");
-            else if (!m.target)
-                AddCtx(A::TargetSmart, L"TARGET AHEAD");
+            else if (!m.target) // (RS: enemies first, else what is ahead - controller.cpp SmartTarget)
+                AddCtx(A::TargetSmart, m.enemies > 0 ? L"NEAREST ENEMY" : L"TARGET AHEAD");
             if (m.kbm) // (the pad's LB TARGETS / WHEEL sit under the reticle ring in calm flight)
                 AddCtx(A::TargetPicker, L"TARGETS");
             break;
         }
-        // the tractor's [X] TRACTOR n in every other state (calm placed it above), after the state's own prompts - it left
-        // its spot under the reticle ring on 31 Oct 2026 (5.23); idempotent
-        TractorCtx();
+        // the tractor's prompts in every other state (calm placed them above), after the state's own prompts - they left
+        // their spot under the reticle ring on 31 Oct 2026 (5.23); A's one-item form only where A is the context's (a
+        // fight: B / X are REVERSE / TURRET); idempotent
+        TractorCtx(m.state == State::Combat);
     }
 
     // ---- alerts (edges) and the slots they light
@@ -1441,14 +1518,19 @@ static void Simulate(Model& m)
 {
     if (g_sim.empty())
         return;
-    const bool combat = g_sim == "combat";
+    const bool combat = g_sim == "combat" || g_sim == "torpedo" || g_sim == "critical";
     m.hull = combat ? 0.88f : 1, m.shield = combat ? 0.22f : 1, m.power = combat ? 0.64f : 1;
+    if (g_sim == "critical") // (the ring's low states: the flashes, the hull's bloom)
+        m.hull = 0.18f, m.shield = 0.10f;
     m.speed = combat ? 84.0f : g_sim == "dock" ? 300.0f : g_sim == "lane" ? 2600.0f : 80.0f;
     m.cruise = g_sim == "cruise" ? 1 : g_sim == "dock" ? 2 : 0;
     m.charge = 0.58f, m.chargeLeft = 2.1f;
     m.nano = 3, m.batt = 3, m.cm = 12, m.mines = 8, m.ammo = 36, m.launcher = L"JAVELIN";
     m.groups[0] = L"Azrael  \u00B7  Lavablade Mk II", m.groups[1] = L"Azrael", m.groups[2] = L"Lavablade Mk II";
     m.nGroups = 3, m.activeGroup = 0, m.realGroups = true, m.ungrouped.clear();
+    m.torpedo.clear(), m.torpedoAmmo = -1;
+    if (g_sim == "torpedo") // (the torpedo row takes the third group's line)
+        m.nGroups = 2, m.torpedo = L"TORPEDO MK I", m.torpedoAmmo = 6, TorpedoPrompt(m, presets::Action::Torpedo);
     m.holdUsed = 12, m.holdCap = 40, m.credits = 4250;
     m.nEscorts = 0;
     m.man = false, m.ap = false, m.progress = -1, m.eta.clear(), m.wait.clear(), m.info.clear(), m.event.clear();
@@ -1521,12 +1603,12 @@ static void Simulate(Model& m)
     // list, the calm fades) and m.fight are the sim's own here - Slow recomputes them live every 10 Hz pass.
     else
     {
-        auto calm = [&]() { g_combat = false, m.fight = false, m.loot = 0, m.turret = false; };
+        auto calm = [&]() { g_combat = false, m.fight = false, m.loot = 0, m.turret = false, m.enemies = 0; };
         // a fight as Slow reads it: hostiles near (g_combat), the threat rows (hostiles other than the target, 2 rows),
         // the Combat state's context line (REVERSE, TURRET)
         auto fight = [&]()
         {
-            g_combat = true, m.fight = true, m.loot = 0, m.turret = false;
+            g_combat = true, m.fight = true, m.loot = 0, m.turret = false, m.enemies = 0;
             m.state = State::Combat;
             m.hull = 0.88f, m.shield = 0.55f, m.power = 0.64f, m.speed = 84.0f, m.cruise = 0;
             m.objective = L"Destroy the Hostile Ships";
@@ -1601,8 +1683,9 @@ static void Simulate(Model& m)
             m.tName = L"Scrap Metal", m.tFaction.clear(), m.tClass = L"LOOT", m.tDist = L"180 m";
             m.tAtt = L"NEUTRAL", m.tCol = kNeutral, m.tIcon = flicons::Loot;
             m.info = L"TRACTOR ACTIVE";
-            AddCtx(A::Context, L"TRACTOR");
-            TractorCtx(); // (its count joins the targeted loot's TRACTOR: "TRACTOR 3")
+            m.tLootReach = true;
+            m.lootName = L"Scrap Metal", m.lootDist = L"180 m";
+            TractorCtx(true); // ([A] TRACTOR SCRAP METAL . 180 m, [X] TRACTOR ALL 3)
         }
         else if (g_sim == "capital") // a fight with a capital ship targeted (ClassName: BATTLESHIP); no sub-target row:
         {                            // HUD 2 draws none yet (UI_HUD2_PRESETS.md 1.4, step 6)
@@ -1616,9 +1699,10 @@ static void Simulate(Model& m)
             AddCtx(A::Turret, L"TURRET");
         }
         else if (g_sim == "notarget") // a fight with nothing targeted (hostiles near, no target: the pad's LB hints at full
-        {                             // alpha in the card's corner, no threat list - ListShown wants a target on the pad)
-            fight();
+        {                             // alpha in the card's corner, no threat list - ListShown wants a target on the pad;
+            fight();                  // under them the enemies cue, DrawEnemyCue: the owner, 4 Nov 2026)
             m.target = false;
+            m.enemies = 3;
             AddCtx(A::Reverse, L"REVERSE");
             AddCtx(A::Turret, L"TURRET");
         }
@@ -1648,6 +1732,16 @@ static void Simulate(Model& m)
 // ---------------------------------------------------------------- layout, fades, the bus
 // The threat list under the target card: the pad's in combat (with a target, as built); the keyboard form's header
 // always (its contact list toggle), its rows in combat or in the contact list mode.
+// The enemies cue (the owner, 4 Nov 2026: "Even when the target panel is hidden, when there are enemies nearby the top
+// right corner of the screen should mention there are enemies nearby, and prompt the player to press the right stick to
+// target nearest enemy"): the pad with nothing targeted (a target brings the card, which says it), hostiles within the
+// targeting press's reach, the player flying (not the autopilot, which picks its own targets; not the turret view).
+static bool EnemyCue()
+{
+    return !g_m.kbm && !g_m.target && g_m.enemies > 0 && g_m.state != State::Autopilot && g_m.state != State::Turret &&
+           g_m.nearestBtn.btn != glyphs::COUNT;
+}
+
 static bool ListShown()
 {
     if (!uiopt::Get().hudThreats)
@@ -2031,7 +2125,7 @@ void Update(float dt, const Context& c)
             trig |= hudwake::TargetChg;
         // the state's own edges (any input: the keyboard, the mouse, the autopilot, the mission)
         const long long lo = static_cast<long long>(g_m.nano) * 1000003LL + g_m.batt * 1009LL + g_m.cm * 31LL + g_m.mines +
-                             g_m.ammo * 7LL + g_m.activeGroup * 131071LL;
+                             g_m.ammo * 7LL + g_m.torpedoAmmo * 524287LL + g_m.activeGroup * 131071LL;
         if (lo != loSig)
             loSig = lo, trig |= hudwake::Fire;
         const unsigned obj = promptshow::Mix(promptshow::kSeed, g_m.objective);
@@ -2078,7 +2172,7 @@ void Update(float dt, const Context& c)
             g_entrySeen = true;
         // (no hold signature: the hold strip is gone - the owner's B9, 31 Oct 2026)
         in.loadSig = static_cast<long long>(m.nano) * 1000003LL + m.batt * 1009LL + m.cm * 31LL + m.mines + m.ammo * 7LL +
-                     m.activeGroup * 131071LL;
+                     m.torpedoAmmo * 524287LL + m.activeGroup * 131071LL;
         in.escortSig = m.nEscorts;
         for (int i = 0; i < m.nEscorts && i < 3; ++i)
             in.escortSig = in.escortSig * 101 + static_cast<int>(m.escorts[i].hull * 20 + 0.5f);
@@ -2138,6 +2232,7 @@ void Update(float dt, const Context& c)
         Ease(g_f.wakeHints, !ctxMode || tgt.context > 0 ? 1.0f : 0.0f, dt, 0.12f);
     }
     Ease(g_f.target, tgt.target, dt, 0.12f), Ease(g_f.context, tgt.context, dt, 0.12f), Ease(g_f.alert, tgt.alert, dt, 0.15f);
+    Ease(g_f.enemyCue, EnemyCue() ? 1.0f : 0.0f, dt, 0.12f);
     g_f.slide = 1 - g_t;
     ComputeLayout(static_cast<float>(fl::ScreenWidth()), static_cast<float>(fl::ScreenHeight()));
     RequestViews(c);
@@ -2204,10 +2299,10 @@ bool TargetCardAnchor(float& right, float& bottom)
     if (!g_visible || g_t < 0.5f || g_menuOver)
         return false;
     right = g_L.tgtX1;
-    // (no target on the pad: under the left bumper's hints, DrawCalmHints)
+    // (no target on the pad: under the left bumper's hints, DrawCalmHints, and the enemies cue under them, DrawEnemyCue)
     const bool hints = !g_m.target && !g_m.kbm;
-    bottom = (ListShown() ? g_L.thrY1 : g_m.target ? g_L.tgtY1 : g_L.my + (hints ? 0.04f * g_L.H * g_L.k : 0)) +
-             0.012f * g_L.H;
+    const float below = hints ? (EnemyCue() ? kEnemyCueBottom : 0.04f) * g_L.H * g_L.k : 0;
+    bottom = (ListShown() ? g_L.thrY1 : g_m.target ? g_L.tgtY1 : g_L.my + below) + 0.012f * g_L.H;
     return true;
 }
 
@@ -2306,6 +2401,12 @@ void Render(void* device)
         DrawCalmHints(g_m, L, base * (1 - g_f.target) * g_f.wakeHints * fTgt,
                       focus ? uimeta::hud2p::Num(hud2preset::Data(hud2preset::Focus), "calm", "hints", "text_h", 0.026f)
                             : 0.024f);
+    }
+    if (g_f.enemyCue > 0.01f) // (not under the contextual fade: it shows for as long as enemies are near)
+    {
+        part(1, -1);
+        RecordTag("enemycue");
+        DrawEnemyCue(g_m, L, base * g_f.enemyCue * (1 - g_f.target) * fTgt);
     }
     if (g_m.kbm && ListShown()) // the keyboard form's list stands without a target too
     {
@@ -2490,13 +2591,21 @@ std::string Command(std::istream& in)
     o << "ship escorts=" << g_m.nEscorts << " hold=" << g_m.holdUsed << "/" << g_m.holdCap << " credits=" << g_m.credits
       << " | loadout nano=" << g_m.nano << " batt=" << g_m.batt << " cm=" << g_m.cm << " mines=" << g_m.mines
       << " groups=" << g_m.nGroups << " active=" << g_m.activeGroup + 1 << " '" << text::Utf8(g_m.groups[0])
-      << "' launcher='" << text::Utf8(g_m.launcher) << "' ammo=" << g_m.ammo << " locked=" << g_m.locked << "\n";
+      << "' launcher='" << text::Utf8(g_m.launcher) << "' ammo=" << g_m.ammo << " torpedo='" << text::Utf8(g_m.torpedo)
+      << "' torpedoAmmo=" << g_m.torpedoAmmo << " locked=" << g_m.locked << "\n";
     o << "context:";
     for (int i = 0; i < g_m.nCtx; ++i)
         o << " [" << (g_m.ctx[i].key.empty() ? glyphs::Name(g_m.ctx[i].btn) : text::Utf8(g_m.ctx[i].key))
           << (g_m.ctx[i].hold ? "(hold)" : "") << "] " << text::Utf8(g_m.ctx[i].label);
     o << " | hold=" << promptfit::HoldStepName(g_L.ctxPlan.step);
-    o << " | alert='" << text::Utf8(g_m.alert) << "' left=" << g_m.alertLeft << " loot=" << g_m.loot << "\n";
+    o << " | alert='" << text::Utf8(g_m.alert) << "' left=" << g_m.alertLeft << " loot=" << g_m.loot << " lootNearest='"
+      << text::Utf8(g_m.lootName) << "' " << text::Utf8(g_m.lootDist) << " enemies=" << g_m.enemies
+      << " enemyCue=" << (EnemyCue() ? 1 : 0) << " prompts=";
+    for (int i = 0; i < g_m.nCtx; ++i)
+        o << (i ? " | " : "") << (g_m.ctx[i].btn != glyphs::COUNT ? glyphs::Name(g_m.ctx[i].btn) : "")
+          << text::Utf8(g_m.ctx[i].key) << " "
+          << text::Utf8(g_m.ctx[i].label);
+    o << "\n";
     o << "lane entry=" << g_laneKey[0] << " exit=" << g_laneKey[1] << " final=" << g_laneFinal << " rings="
       << g_laneRings.size() << "\n";
     o << "wake shown=" << g_wakeShown << " (1 ring 2 ship 4 loadout 8 target 16 nav)\n";

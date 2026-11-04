@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.2.6 - 4 Nov 2026
+
+- Pad: the NeuroNet box's buttons (mission log, inventory, player info, help) can be reached with the cursor in flight,
+  and the nav map answers the cursor. A NeuroNet window now takes the cursor whoever flies, the pad, the autopilot or
+  nobody; the HUD's cursor block for aiming stops while one is open (GitHub issue 2).
+- Pad: the triggers zoom the nav map, in space and docked: RT zooms in on what lies under the cursor, LT zooms out, from
+  the sector to the system to the universe. They only ever worked with something already selected (GitHub issue 2).
+- Pad: weapon groups can be set up. EDIT GROUPS in the action wheel lists the ship's guns: A switches a gun on or off in
+  the group, D-pad up / down picks the gun, LB / RB the group, B is done. Holding Y now skips groups without guns, so it no longer lands on a group that fires nothing (GitHub issue 4).
+- HUD 2: torpedoes have their own row in the weapons list, with their count and how to fire them (HOLD on the pad, the
+  key in the keyboard form). They were counted with the missiles under the missile's name. A ship with torpedoes shows
+  two group rows instead of three, the active group always among them (GitHub issue 5).
+- HUD 2: the hull meters are red, the game's own HUD colour, on the ring and the target card (GitHub issue 1).
+- HUD 2: a low shield keeps its blue and flashes red at 25 % and below; a low hull flashes bright red with a soft bloom
+  at 25 % and below. `shield_cue` and `hull_cue` switch the flashes off.
+- New: when a hostile ship near you stops moving, FLvibed writes what the game says about it to
+  `EXE\FLvibed_npc_stalls.log`, for reports of enemies sitting idle (GitHub issue 3). It only reads and changes nothing in
+  the game; `npc_stall_log` 0 switches it off.
+- Pad: the right stick's click targets the nearest enemy first. Clicking again within three seconds takes the next
+  enemy, and so on through all of them; after a pause it starts again from the nearest. With no enemy near, it still
+  targets what is in front of the reticle. A double click still clears the target.
+- HUD 2, pad: with enemies near and nothing targeted, the top-right corner says how many enemies are near and shows the
+  right stick's TARGET NEAREST.
+- Pad: A tractors one item, the targeted loot or, with nothing targeted, the nearest loot. X tractors everything in
+  reach. Before, both pulled everything. The prompts say which does what and name the item with its range
+  (`A TRACTOR DRAIL · 730 m`, `X TRACTOR ALL 9`), in HUD 2 and the classic HUD. Loot your hold cannot take is no longer
+  offered. Keyboard: HUD 2 now shows the key for one item and the key for all loot, instead of the one-item key for both.
+- When a formation, goto or dock stalls, FLvibed now leaves the maneuver and starts it again, the way that got a
+  player out of it. Starting the same formation again on a ship that was still in it did nothing.
+- HUD 2: the game's NeuroNet box could stay on screen beside HUD 2 after loading a save. It now hides again. This could
+  not be reproduced in 44 test loads; if it comes back, `FLController.log` names the window that kept it up.
+- Autopilot: with HUD 2 on, it read the guns' fire slots from their hardpoint names, because HUD 2 hides the game's list.
+  On ships where the two orders differ it could leave a gun idle or fire a launcher's slot. It now reads the game's list.
+
 ## 0.2.5 - 2 Nov 2026
 
 - Note: the FLVIBED options page still needs the controller module (`controller = 1`, the default). This is

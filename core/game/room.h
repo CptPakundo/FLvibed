@@ -80,6 +80,8 @@ namespace uiclick
 // maneuvers, base rooms); false for others. Verified 17 Oct 2026 (nav map open/close in flight) and on
 // the M01 "Basics of Combat" tutorial in flight (closed it; the mouse was captured).
 u32 FindVisible(const char* name);
+// As FindVisible, shown or not (HUD 2 hides the game's HUD controls, which keep working underneath).
+u32 Find(const char* name);
 // The front end's button messages (main menu, character select, server list ...) go through the controller host's
 // DeferToFrameEnd when set (HostApi v29): the screen's answer may open a dialog with its own modal loop, whose frames
 // the host serves only with no logic call on the stack. Unset (subtitles, older host): sent at once.
@@ -95,6 +97,9 @@ bool SelectTableRow(u32 ctl, int row, bool activate);
 // Research: every visible control whose name contains `part` (debug `uinames [part]`), one per line.
 std::string VisibleNames(const char* part);
 bool Click(u32 ctl);
+// The nav map's own left click at the game's cursor (vt[0x4C] = exe::NavMapMouse; `map` = NeuroNetNavMap): selects what
+// lies there and shows the selection's popup (its zoom button among it). False for any other control.
+bool MapClick(u32 map);
 // Native scroll of a scroll bar (vt[0x4C] = exe::ScrollBarClick, e.g. the dealer's Inventory_Scroll): moves the
 // position by `delta` (in its units: list rows; `pages` = whole pages instead), as the bar's own page click does
 // (clamp, layout, then its list + window messages). Returns the new position, -1 when not a scroll bar. pos/min/max

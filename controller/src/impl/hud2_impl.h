@@ -142,14 +142,24 @@ struct Model
     int nGroups = 0, activeGroup = 0; // 0-based (the row index; -1 none of the rows is the active group)
     bool realGroups = false;          // the rows are the game's weapon groups (a click selects one), not "all guns"
     std::wstring ungrouped;           // the guns in no group (shown dimmed under the groups as "(no group) ...")
-    Prompt fireBtn, launchBtn;
+    Prompt fireBtn, launchBtn, torpedoBtn;
     std::wstring launcher;
     int ammo = -1;
+    std::wstring torpedo; // a row of its own: the torpedo hardpoints' launcher (on a cruise disruptor there, its name)
+    int torpedoAmmo = -1;
     bool locked = false;
     // ---- context line
     Prompt ctx[3];
     int nCtx = 0;
     int loot = 0; // loot in the tractor's reach
+    // the tractor's prompts name what they pull (the owner, 4 Nov 2026): the nearest loot in reach, as the game names it,
+    // and its range; the targeted loot is in reach (A tractors it, else A flies to it)
+    std::wstring lootName, lootDist;
+    bool tLootReach = false;
+    // hostile ships within the targeting press's reach (ctl::NearbyEnemy): RS takes the nearest first; with no target on
+    // the pad the card's corner says so (DrawEnemyCue)
+    int enemies = 0;
+    Prompt nearestBtn;
     // ---- alert
     std::wstring alert;
     u32 alertCol = hud2kit::kHostile;
@@ -164,6 +174,7 @@ struct Model
 struct Fades
 {
     float nav = 1, ring = 1, target = 1, ship = 1, loadout = 1, context = 1, alert = 1;
+    float enemyCue = 0; // the enemies cue in the card's corner (DrawEnemyCue)
     float wakeTarget = 1, wakeHints = 1; // CONTEXTUAL (0.2.1): the target element woken (the K&M list without a target),
                                          // the card corner's LB hints (with the prompts: hud_prompts)
     float slide = 0; // 0..1: how far each part sits off its place toward its corner (the transition)
@@ -245,6 +256,10 @@ float DrawNav(const Model& m, const Layout& L, float a, const NavStyle& ns = Nav
 void DrawTarget(const Model& m, const Layout& L, float a);
 // `textH` = the hints' text size (H x k): Standard 0.024, Focus 0.026 (PRESETS 2.2 Calm).
 void DrawCalmHints(const Model& m, const Layout& L, float a, float textH = 0.024f);
+// The enemies cue under the hints (no target, hostiles near, the pad): ENEMIES NEARBY n, [RS] TARGET NEAREST; its
+// bottom in H x k below the card's top (the HUD bus's keep-out)
+constexpr float kEnemyCueBottom = 0.135f;
+void DrawEnemyCue(const Model& m, const Layout& L, float a);
 void DrawShip(const Model& m, const Layout& L, float a);
 void DrawLoadout(const Model& m, const Layout& L, float a);
 // ---- Focus's parts (PRESETS 2.2; what Standard's parts cannot draw): the split arcs and the under-arc band; the compact

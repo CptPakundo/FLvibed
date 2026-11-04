@@ -357,6 +357,9 @@ in it (`hk::Sym`, `core\hook.h`).
   (a refused Create creates nothing) and keeps the accepted one. The accepted flag climbs with the session's object
   ids (19 Oct 2026: ~4090 after ~2 h of test spawns, ids past 4400 - a probe capped at 4095 then failed every spawn);
   the probe now runs upward from the last accepted flag, wrapping at 65535.
+- **Why the level matters (verified in game 4 Nov 2026, `research\npc-ai.md`):** an NPC compares hostile / (own +
+  hostile) ranks with the threshold; the player's rank is wealth through `PTough.ini`, not the save's `rank`. A lone HARD
+  pirate engages at every level on 1,000 credits, from level 5 on 500k, at 8 on 5M. It keeps flying when it declines.
 - **Spawned NPCs fight when their job's scene_toughness_threshold allows it (solved 18 Oct 2026).** A lone spawn
   with basic_job_no_formation (threshold HARD) of level 1-4 never picked the player (it judges the scene too tough;
   encounter NPCs come in groups); the same spawn engages within ~1 s with levels >= 5 (tested 5, 10, 19, 30, 50), or
@@ -706,7 +709,16 @@ in it (`hk::Sym`, `core\hook.h`).
 - **Formation (USER_MANEUVER_FORMATION on a ship):** op 10 at once when accepted; the player joins the target's wing,
   so `IObjInspect::get_formation_leader` reports the **wing leader** (target 117 -> leader 116), and cruise is shared
   with the wing. Some ships do not accept (two fighters: the op stayed 19, no NN line seen). Free flight
-  (USER_MANEUVER_FREE_FLIGHT) leaves it (leader 0).
+  (USER_MANEUVER_FREE_FLIGHT) leaves it (leader 0). **Issued again while in formation** (op still 10): reply kind 1
+  `-1` and nothing changes (the owner's M01a report, 4 Nov 2026, twice); free flight then formation in the same frame
+  (debug `ai man 19` / `ai man 10`, M01a SaveB001 on the Brandt): both accepted, reply 0, still formed 4 s later
+  (verified in game 4 Nov 2026). Replies found in the code: 0 accepted, -2 add_formation_follower refused, -3 no such
+  ship (decompiled: Common 0x062b4810, Server 0x06d5d7a0); what sends -1 is not established. **Decompiled, not
+  verified in game:** op 10's per-frame function (Common 0x062cb700, vtable 0x0639fb64 slot 7) steers through two owned
+  sub-behaviours, a Goto on the leader (100 m) and a Dock copied from the leader's own dock target - a follower docks
+  where its leader docks (the convoy's trade lanes); it ends (state 3) when the leader is gone, its op is 0x11 or 8, or
+  its leader chain reaches the follower. The owner's stall (formation joined as the convoy neared TL34, 0 m/s, a constant
+  hard turn) was not reproduced in two harness runs of the same steps (keyboard device, pad device): both rode TL34.
 - **HD Edition console (single player, chat):** `cspd <speed>` sets `EngineEquipConsts::CRUISING_SPEED` (Common.dll
   export, vanilla 300) and raises `PhySys::ANOM_LIMITS_MAX_VELOCITY` (the autopilots use the new value; faster cruise
   overshoots more); `pos x, y, z` relocates the ship; `jump [nickname]` relocates it next to an object (with no
@@ -811,7 +823,10 @@ in it (`hk::Sym`, `core\hook.h`).
   get_units; CShip::get_space_for_cargo_type(arch) = units the hold takes; CShip::get_cargo_hold_remaining (volume),
   Archetype::Ship +0x100 hold size (Starflier 20); base prices from goods.ini [Good] by CreateID(nickname).
   Tractor reach: the mounted tractor (equipment class 1 << 20, CEquip::EquipArch) -> [Tractor] max_length in
-  DATA\EQUIPMENT (Starflier 1500 m). USER_COLLECT_LOOT = "Tractor Beam (All Items)", USER_TRACTOR_BEAM = one item.
+  DATA\EQUIPMENT (Starflier 1500 m). USER_COLLECT_LOOT = "Tractor Beam (All Items)", USER_TRACTOR_BEAM = one item:
+  the targeted loot (verified in game 4 Nov 2026, SaveC705, ship beside 12-18 items: the target set frames before the
+  command, it pulled that item in 3 of 4 trials within 4 s - the fourth, the farthest, had not arrived after 4 s; the
+  target set in the same frame as the command, 3 of 3, once with a second item; UI_HUD2.md 5.31).
 - **Area danger:** pub::System::InZones at the ship + the system file's `encounter = <name>, <level>, <chance>` (zone
   nickname -> CreateID; universe.ini [system] file); pub::Player::GetRank(client 1) (near Fort Bush: level 2, rank 0).
 - **Slides:** USER_MANEUVER_SLIDE_EVADE_UP / DOWN work (33 m/s on the Starflier) as LEFT / RIGHT; HDE's keymap lists
@@ -840,6 +855,12 @@ Verified in game on instance 5 (SaveC705, HDE 0.7.1, 4K) unless marked; screensh
   weapons switched on now** (CEquip::IsActive). The HUD's group buttons (HudWeaponGroupButton x3) come from HDE's
   HudWeaponGroups.dll plugin; the 6 groups are the game's. Verified: `tap USER_WEAPON_GROUP2` -> group 2, the "2" lit
   yellow (group2-081150.png), back to 1 -> bits 0x1 on both group-1 weapons.
+  **USER_TOGGLE_WEAPON1..10** (0x4DC252..) flip entry n of the same list USER_FIRE_WEAPONn fires (HUD_Status object
+  +0x590, `space::Weapon::fireSlot`), which is neither the traverser's order nor the hardpoints' name order; both work
+  with HUD 2 hiding HUD_Status, and the list stays readable by `uiclick::Find` (verified on one ship, SaveC706, 4 Nov
+  2026: entry 2 = HpWeapon06, by name it read 7; the hardpoint name order did match on the M02 ship, see "Weapons").
+  Verified on the same ship: a toggle in the active group survives group switches, a missile launcher's too; not
+  verified: that edited groups survive a save and reload.
 - **Equipment display names:** Archetype::GetEquipment(id) -> Archetype::Root, id +8 (= Root::get_id), **ids_name
   +0x14** (Azrael, Javelin Missile, Lavablade Mk II = the HUD weapon list). The archetype of a mounted item: CEquip::
   EquipArch -> Root::get_id. (Root **+4** is an unrelated field: 426997752 for the Azrael whose id is 3058004237;
@@ -1302,8 +1323,8 @@ Every window is a root control named after its class; a window is open when its 
   `NavMapShipButton` (back to the ship's system) instead of the universe button; `NavMapSystemName`, the grid
   `NavMapGridLetterA..H` / `NavMapGridNumber1..8`, the base list `NavMapBaseText0..14` / `NavMapBaseSystemText0..14` +
   `NavMapBaseListScroll`, `NavMapInfoCard / InfoText / InfoTitle`, `NavMapLeftWindow` / `NavMapRightWindow`. **Not
-  FlControls while nothing is selected**: the zoom (`NavMapInZoom` / `NavMapOutZoom` exist in the string table but
-  were never visible), `NavMapSetWaypointButton`, `NavMapClearWaypointButton`, `NavMapClearAllWaypointsButton`,
+  FlControls while nothing is selected**: the zoom (`NavMapInZoom` / `NavMapOutZoom`, see the zoom below),
+  `NavMapSetWaypointButton`, `NavMapClearWaypointButton`, `NavMapClearAllWaypointsButton`,
   `NavMapBestPathButton`, `NavMapSelectObjectButton`, `NavMapJumpGateButton` (the string table also has
   `NavMapContinueButton` (the mission briefing's), `NavMapCloseInfocardButton`, `NavMapAllFilter / MissionFilter /
   FriendlyFilter / HostileFilter`, `NavMapMissionObjective1..3` + `...Scroll`, `NavMapAbortMissionButton` + `...Yes /
@@ -1311,6 +1332,19 @@ Every window is a root control named after its class; a window is open when its 
   `NAV_universebutton` ...), not FlControls. The pad's route: `space::PlotBestPath` to a chosen object fills the
   waypoint list the way the map's own best path does (Fort Bush -> Colorado gate: 3 entries), and the autopilot's
   travel flies it.
+- **The nav map's zoom and its mouse (verified in game 4 Nov 2026, SaveC706 / SaveC701, 4K):** the view is at +0x7D0: 0
+  universe, 1 system, 2 sector; it changes after the zoom's animation. The zoom buttons are made at 0x48F5D0 / 0x48F6AC
+  (+0x8E0 in, +0x8E4 out) and shown only in the popup of a selection, by 0x49EA50 (the left click's selection): the out
+  button in view 2, the in button else; a click runs 0x4943E1, which zooms what the selection +0x90C holds. Out of a
+  system there is no out button: `NavMapUniverseButton`. The map's mouse handler vt[0x4C] = `exe::NavMapMouse` 0x497D30
+  (thiscall(this, const int ev[2]), ret 4) takes ev[0] -1 and ev[1] 1 for the selection, and reads the game's cursor
+  (`exe::MouseX` / `MouseY`) against the map's rectangle (+0x424..+0x434): called natively it selects under the
+  cursor, focus or not (`uiclick::MapClick`). From decompiled code, not verified in game: ev[0] -2 is taken alike; ev[1] 2 in view 2 arms a drag
+  (+0x7D4, the start at +0x7D8 / +0x7DC), ev[1] 3 is another mouse event that opens the object under the selection.
+- **The pad's HUD hit suppression and the NeuroNet windows:** the windows and the NeuroNet box's buttons all hang under
+  the HUD root NN_MainButton, so `SetHudHitSuppression` over the HUD's roots took them from the cursor too: the game's
+  hit test answered 0 for the box's five buttons and the map, in flight with the pad or the autopilot (issue 2, verified
+  4 Nov 2026, `hit <x> <y>`). A map click is a hit-test click: nothing could be selected, so the zoom never showed.
 - **ToggleButtonControl (vt 0x5E1764: the player's `EquipToggle N` mount boxes, the Options screen's `opt_toggle N`;
   verified in game 25 Oct 2026, `uiclick::Click`):** its mouse handler vt[0x4C] = **0x55CD20** `exe::ToggleButtonClick`
   picks the click sound by the state (+0x3A0: 0 -> the std::string +0x3A4 / sound id +0x3C4, 1 -> +0x3B4 / +0x3C8) into

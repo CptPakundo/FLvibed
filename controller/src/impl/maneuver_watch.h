@@ -6,8 +6,9 @@
 // convoy flew away; leaving was refused (the lock). The owner: "ship controls and autopilot capabilities must be robust
 // to capricious ship/solar targeting changes". So while the player's ship runs a game maneuver with a leader / goal
 // (formation, goto, dock) and the Advanced Autopilot is not flying: a ship slower than kMinSpeed for kStallSecs while
-// the goal is farther than kFarDist and not getting closer is stalled -> one snapshot line, then the same maneuver is
-// issued again on the same leader / goal, at most once per kRetrySecs and kMaxTries times per stall. A player who is
+// the goal is farther than kFarDist and not getting closer is stalled -> one snapshot line, then the maneuver is left
+// (free flight) and issued again on the same leader / goal, at most once per kRetrySecs and kMaxTries times per stall
+// (since 4 Nov 2026: issuing a formation on a ship still in it got reply -1 and changed nothing). A player who is
 // steering (stick / mouse in the last second) is never fought: the stall clock stops while they steer.
 #pragma once
 

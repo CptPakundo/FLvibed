@@ -266,6 +266,14 @@ derives (S3-S7); S3-S5 (c79fc35..d0715f7): the arbiter's shadow rules read its a
 | M11 | **The FLHook plugin's other lines**: `flvibed_server.dll` is built against FLHDE/FLHook 8829534's 4.0 plugin API; Discovery runs its own fork ("FLHook Discovery 3.1.0", `discovery.md` 3.6) and TheStarport's 3.x is archived - each needs its own build or the chat tag; a two-way hello (the server knowing who runs FLvibed) not built | discovery, fluf, hde-upstream | later (the chat tag covers them) | 7518008 |
 | M12 | FLUF's `MiscFixes::StopIPV6` writes the LAN list's IPv4 bytes at **Common.dll** + 0x1ACF6A (the exe's offset; FLUF's `ClientPatches` writes the right site in Freelancer.exe) - a slip to report upstream beside the universe-pos bug | fluf | awaiting decision (the owner reports upstream, handoff decision c) | 7518008 |
 
+## NPC behaviour and difficulty (`npc-ai.md`)
+| Id | Idea | Source | Status | Checked |
+|---|---|---|---|---|
+| D1 | A stall recorder: log a stalled hostile's directive, state and neighbours, so a human session catches what the harness has not (0 stalls in 7 Donau runs, 6 fights) | npc-ai | built (`stallrec.*`, `npc_stall_log`), awaiting a record from a real session | f2cede02 |
+| D2 | The loot freeze: the native form of adoxa's Check Loot Volume (Common.dll, one check), after a test proves it in HDE | npc-ai, adoxa | candidate, needs the owner: it changes game logic | f2cede02 |
+| D3 | Dynamic difficulty as an opt-in module: recent combat outcomes in, encounter-boundary pacing levers out, story ships and timed runs untouched | npc-ai, the owner 4 Nov 2026 | awaiting the owner's scope | f2cede02 |
+| D4 | Take wealth out of the scene test (a job's threshold, or NPC rank at spawn), so rich players still get attacked | npc-ai | awaiting the owner's scope; the owner: declining is expected behaviour | f2cede02 |
+
 ## Conversational NPCs and AI assistants (`llm-npcs.md`; all far later, none for the current priorities)
 
 | Id | Idea | Source | Status | Checked |

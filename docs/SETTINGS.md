@@ -5,7 +5,7 @@ in the source and regenerate.** `set <name> <value>` / `ap set` change a value l
 help lines; `config settings` / `ap settings` / `settings` list them in the game. Behaviour, measurements and the why of
 each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, `controller\docs\HUD_CUES.md`.
 
-## [Controller] - EXE\FLController.ini [Controller] (71 keys; source `controller\src\impl\controller.cpp`)
+## [Controller] - EXE\FLController.ini [Controller] (72 keys; source `controller\src\impl\controller.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -31,11 +31,12 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `aim_rotation` | float | 0 .. 1 | 0.6 | aim_mode 0: rotational assist strength |
 | `aim_rotation_max` | float | 0 .. 1 | 0.15 | aim_mode 0: rotational assist cap |
 | `focus_only` | bool | 0 \| 1 | true | ignore the controller while the game is in the background, in flight and menus alike (a button held when the game comes back is ignored until it is released) |
-| `maneuver_watchdog` | bool | 0 \| 1 | true | 1 = if your ship stalls during a formation, goto or dock (nearly stopped for 3 s, its goal more than 150 m away and not getting closer, you not steering), FLvibed issues the same maneuver again (up to 3 times, 10 s apart) and logs what happened |
+| `maneuver_watchdog` | bool | 0 \| 1 | true | 1 = if your ship stalls during a formation, goto or dock (nearly stopped for 3 s, its goal more than 150 m away and not getting closer, you not steering), FLvibed leaves it and issues it again (up to 3 times, 10 s apart) and logs what happened |
 | `run_in_background` | bool | 0 \| 1 | false | 1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back to Windows meanwhile |
-| `shield_cue` | bool | 0 \| 1 | true | screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it fails |
+| `npc_stall_log` | bool | 0 \| 1 | true | writes EXE\FLvibed_npc_stalls.log when a hostile ship near you stops moving: what the game says about it, for bug reports; read only, it changes nothing in the game |
+| `shield_cue` | bool | 0 \| 1 | true | screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it fails; HUD 2's shield meter flashes red when low |
 | `shield_cue_intensity` | float | 0 .. 2 | 1.0 | shield_cue strength (alpha and size) |
-| `hull_cue` | bool | 0 \| 1 | true | with shield_cue: hull hits show your ship's own hull hit effect at the screen edge, and while the hull is damaged the edges carry your ship's damage effects (sparks, fire, smoke) as the game lights them |
+| `hull_cue` | bool | 0 \| 1 | true | with shield_cue: hull hits show your ship's own hull hit effect at the screen edge, and while the hull is damaged the edges carry your ship's damage effects (sparks, fire, smoke) as the game lights them; HUD 2's hull meter flashes bright red when low |
 | `hull_cue_pattern` | int | 0 .. 2 | 2 | pattern of the hull damage edge, so it never reads as a shield hit: 0 none, 1 armour plates, 2 hexagons (default) |
 | `reticle_cue` | bool | 0 \| 1 | true | a ring pulse at the crosshair: autopilot on (cyan, outward), handed back (amber, inward), nanobots (green) / batteries (blue) used (double ring) |
 | `autopilot_cancel` | float | 0 .. 1 | 0.35 | Advanced Autopilot (the pad hold, the key or the bar button starts it): stick deflection that hands the ship back to you (0 = never). Its own settings (pilot, engage rules, weapons, personality fields p.<name>) are in the [Autopilot] section |

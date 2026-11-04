@@ -32,6 +32,7 @@ void Test_fluf_probe();
 void Test_press_gate();
 void Test_focus_gate();
 void Test_maneuver_watch();
+void Test_target_cycle();
 void Test_pad_slots();
 void Test_pad_backend();
 void Test_sdl_testpad();
@@ -47,6 +48,8 @@ void Test_universe();
 void Test_linebreak();
 void Test_stack_fit();
 void Test_chat_size();
+void Test_wgroups();
+void Test_stallwatch();
 void Test_mission_live();
 void Test_mission_live_goals();
 void Test_mission_lock_trap();
@@ -219,6 +222,7 @@ int main(int argc, char** argv)
         {"press_gate", Test_press_gate},
     {"focus_gate", Test_focus_gate},
     {"maneuver_watch", Test_maneuver_watch},
+    {"target_cycle", Test_target_cycle},
     {"pad_slots", Test_pad_slots},
         {"pad_backend", Test_pad_backend},
         {"sdl_testpad", Test_sdl_testpad},
@@ -234,6 +238,8 @@ int main(int argc, char** argv)
         {"linebreak", Test_linebreak},
         {"stack_fit", Test_stack_fit},
         {"chat_size", Test_chat_size},
+        {"wgroups", Test_wgroups},
+        {"stallwatch", Test_stallwatch},
         {"mission_live", Test_mission_live},
         {"mission_live_goals", Test_mission_live_goals},
         {"mission_lock_trap", Test_mission_lock_trap},

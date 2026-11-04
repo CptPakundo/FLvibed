@@ -166,6 +166,7 @@ struct Weapon
     float power = 0;     // power_usage per shot
     float muzzleVelocity = 0;
     bool homing = false;   // its projectile is a homing munition (missile / torpedo launcher)
+    bool cruiseDisruptor = false; // its projectile is a cruise disruptor (Munition cruise_disruptor)
     float hullDamage = 0;  // the projectile's hull damage per hit (munition + its explosion)
     float blastRadius = 0; // the projectile's explosion radius (m), 0 none
     int ammo = -1;         // rounds left (CELauncher::GetAmmoCount)
@@ -178,9 +179,12 @@ struct Weapon
     float detonationDist = 0;
     uintptr_t projArch = 0;  // the munition archetype's address (diagnostics: debug `munition`)
     char hardpoint[32] = {}; // the hardpoint it is mounted on (CExternalEquip mountedHardpoint)
-    int fireSlot = 0;        // its USER_FIRE_WEAPON<n> number (hardpoint name order; 0 unknown) - player only
+    int fireSlot = 0;        // its USER_FIRE_WEAPON<n> / USER_TOGGLE_WEAPON<n> number (0 unknown) - player only; the
+                             // game's HUD list, FireSlotsAreTheGames(), else guessed from the hardpoint names
 };
 std::vector<Weapon> PlayerWeapons();
+// The fire slots of the last PlayerWeapons() read are the game's own list (false: guessed, never to be toggled by).
+bool FireSlotsAreTheGames();
 // Another ship's guns and launchers (an NPC in the player's system, by space id): what it carries (ammo) - the loot a
 // kill can drop.
 std::vector<Weapon> ShipWeapons(u32 id);

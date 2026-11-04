@@ -1682,7 +1682,8 @@
       "Built 25 Oct 2026: the badges are anchored to the HUD's controls by NAME (never by pixel) and sit half outside each control's top-right corner (the weapon-group badge above its button) so the face stays readable; the legend caps at 9 rows, HOLD = a thin bar under the glyph plus the word; a non-dockable target reads GO TO <name>, a loot target TRACTOR <name>; the AUTOPILOT row appears once the autopilot was used in this game or Autopilot hints is on. The bar's frame grows to the right by one button; the game's four buttons, the tab and the cruise box stay where they are.",
       "Rebuilt 25 Oct 2026 after the owner's review: a badge is 0.45 of its element's height (0.022..0.036 H, times Text size), centred on the element and sitting on its panel's frame line that faces the open screen - the bar's glyphs form a row on the bar's bottom edge (B free flight, A goto / dock whichever applies, A + hold formation, View + hold autopilot), Y on the cruise box's lower edge, View under the NeuroNet box, the D-pad glyphs (the pressed arm highlighted) and Y + hold on the bottom-right header's top line over the consumables and the active weapon group, LB and R3 inside the contact-list header; the HUD's own chrome and font, the HUD base only inside each glyph's silhouette, the game's yellow when the element is lit. The legend's glyphs at the HUD font's height; a long legend shifts up to clear the bottom panels.",
       "HUD 2 (approved 25 Oct 2026, docs\\UI_HUD2.md; the HUD row, default HUD 2 ON THE PAD): in pad flight FLvibed's own HUD replaces the game's panels - the reticle ring (shield left, hull right, power below, speed inside), the objective and maneuver top left, the target card top right with the threat list, the ship panel bottom left, the loadout with the D-pad cross bottom right, context prompts under the ship, one alert at a time; the subtitles' panel with the portrait top centre. The badges above remain the Classic HUD. Mock-ups: the HUD 2 proposal page (artifact D6XnaBvWLKHARfdvTQuj3Y).",
-      "The story / tutorial popup (NeuroNet message box, e.g. M01's Basics of Combat) on the pad: A OK (or YES), B CLOSE (or NO / LATER when the box has them) - the box's own buttons, natively; the prompt bar says so. The flight buttons stay the flight's while no box is up."
+      "The story / tutorial popup (NeuroNet message box, e.g. M01's Basics of Combat) on the pad: A OK (or YES), B CLOSE (or NO / LATER when the box has them) - the box's own buttons, natively; the prompt bar says so. The flight buttons stay the flight's while no box is up.",
+      "Built 4 Nov 2026 (0.2.6, the owner's play notes): the tractor has two prompts. A tractors one item: the targeted loot or, with nothing targeted, the nearest loot in reach ([A] TRACTOR <ITEM> · <range>, e.g. TRACTOR DRAIL · 730 m). X tractors everything in reach ([X] TRACTOR ALL n). Before, both pulled everything. Loot the hold cannot take is not offered. HUD 2 and the classic HUD; the keyboard form shows the key of each. Tested on a virtual pad, not a real one."
      ],
      "prompts": []
     },
@@ -1773,7 +1774,7 @@
        "items": [
         [
          "R3",
-         "TARGET AHEAD / NEAREST"
+         "TARGET AHEAD"
         ],
         [
          "LB",
@@ -1795,7 +1796,9 @@
      "label": "No target",
      "notes": [
       "Without a target the legend offers the ways to get one and the calm actions. The maneuver bar's A badge moves to whichever button applies once a target exists (GOTO for a point, DOCK for a dockable).",
-      "Built 26 Oct 2026 (0.1.0): the right-stick click (RS) = the nearest object inside HUD 2's reticle ring (the ring is the cone, the owner), set natively; again = the next one there; nothing in the ring = the nearest / next enemy; double click = clear ([RS] x2 CLEAR on the target card). Without a target the card's corner shows [LB] TARGETS and [LB held] WHEEL, faded outside combat."
+      "Built 26 Oct 2026 (0.1.0): the right-stick click (RS) = the nearest object inside HUD 2's reticle ring (the ring is the cone, the owner), set natively; again = the next one there; nothing in the ring = the nearest / next enemy; double click = clear ([RS] x2 CLEAR on the target card). Without a target the card's corner shows [LB] TARGETS and [LB held] WHEEL, faded outside combat.",
+      "Built 4 Nov 2026 (0.2.6, the owner's play notes): the right-stick click (RS) takes the nearest enemy first. A hostile ship within 10 km: a cold press takes the nearest, presses within 3 s take the next ones (every enemy once, then again), after a pause it starts again from the nearest. No enemy near: the nearest object inside the reticle ring, else the game's nearest / next enemy (the label then reads TARGET AHEAD; NEAREST ENEMY while enemies are near). Double click clears.",
+      "Built 4 Nov 2026 (0.2.6): the enemies cue. On the pad, with nothing targeted and enemies near, the card's corner shows, under the LB hints, 'n ENEMIES NEARBY' (hostile red) and '[RS] TARGET NEAREST'. Tested on a virtual pad, not a real one."
      ],
      "prompts": []
     },
@@ -2162,7 +2165,7 @@
      "label": "Target picker",
      "notes": [
       "Tap LB: a pad-native picker over the same contacts the game lists, in categories on the bumpers (Threats, Mission, Navigation, Ships, Loot), rows sorted by relevance with distance and attitude; moving the focus previews the target (the game's own target box follows); A selects natively, B keeps the previous target. A modal has its own prompt bar, so the legend steps aside.",
-      "The quick targeting is R3: tap = what the reticle points at (the screen centre with the reticle off), else the nearest enemy; tap again = the next of that kind; double tap = clear; hold = rear view.",
+      "The quick targeting is R3 (the 4 Nov 2026 rule): a first press takes the nearest enemy within 10 km, presses within 3 s take the next ones; with no enemy near it takes what the reticle ring points at (else the game's nearest / next enemy); double tap = clear; hold = rear view.",
       "Built: the panel sits right-middle (the legend's place) with a header <CATEGORY> <count>, a strip of the five categories with their counts, 7 rows with scroll arrows; attackers are prefixed '!'; D-pad left / right switch categories too; the left stick never walks rows (it keeps flying); every focus change selects natively, so the game's target box follows; the prompt bar lists CATEGORY, ROW, TARGET, KEEP OLD."
      ],
      "prompts": [
@@ -2284,6 +2287,7 @@
        "items": [
         "SCAN CARGO",
         "WEAPON GROUP",
+        "EDIT GROUPS",
         "CRUISE DISRUPTOR",
         "FORMATION",
         "COMMS",
@@ -2299,7 +2303,8 @@
      "label": "Action wheel (hold LB)",
      "notes": [
       "Rare and contextual actions live in one wheel: hold LB, pick with the right stick (a dead zone keeps steering noise out; the D-pad works too), release to do it. The left stick keeps flying meanwhile. Scan cargo lives here: contextual, still two motions away.",
-      "Built: nothing is pre-highlighted - the right stick (past a dead zone) or the D-pad picks, a bare hold and release does nothing; drawn as label boxes on a ring round the reticle, the pick repeated under it; with TWO GROUPS ON THE TRIGGERS an ENGINE KILL slot joins; COMMS = the game's hail (USER_RADIO); the right stick does not steer while the wheel is open."
+      "Built: nothing is pre-highlighted - the right stick (past a dead zone) or the D-pad picks, a bare hold and release does nothing; drawn as label boxes on a ring round the reticle, the pick repeated under it; with TWO GROUPS ON THE TRIGGERS an ENGINE KILL slot joins; COMMS = the game's hail (USER_RADIO); the right stick does not steer while the wheel is open.",
+      "Built: EDIT GROUPS opens the weapon group editor over the HUD: the ship's guns with a tick each, A switches the focused gun on or off in the group, D-pad up / down the gun, LB / RB the group (which also makes it the active group), B done; the sticks keep flying and RT keeps firing. The game stores the groups. Guns only: launchers fire on their own buttons."
      ],
      "prompts": [
       {
@@ -2817,7 +2822,7 @@
      "label": "Cruise",
      "notes": [
       "Y toggled cruise; the cruise box's badge lights and the legend offers B to drop it (the cancel button also leaves lanes and cancels docks).",
-      "Built 26 Oct 2026 (0.1.0): under HUD 2's ring always [Y] CRUISE (dim when off, CHARGING, CRUISE ON) and, while loot is in the tractor's reach, [X] TRACTOR n; the throttle arc and BOOST / KILL / REV at the ring's bottom centre."
+      "Built 26 Oct 2026 (0.1.0): under HUD 2's ring always [Y] CRUISE (dim when off, CHARGING, CRUISE ON) and, while loot is in the tractor's reach, [A] TRACTOR <ITEM> · <range> (one item: the targeted loot, else the nearest) and [X] TRACTOR ALL n (4 Nov 2026; before, one prompt for both); the throttle arc and BOOST / KILL / REV at the ring's bottom centre."
      ],
      "prompts": []
     }
@@ -3131,7 +3136,8 @@
       "D-pad / stick walks the item rows; the infocard on the right follows the focus and RS scrolls it. Jettison is a hold with a sweep.",
       "Weapon groups: on a focused weapon, D-pad left / right ticks its group boxes (the game's own checkboxes), so a granular loadout is set up here and fired by the Weapon groups setting's choice (one fire button, Y-hold cycling, or two groups on the triggers).",
       "View is the hub: from here LB / RB also switch to the other NeuroNet windows (map, log, status, info).",
-      "Built: the window has no CARGO / EQUIPMENT / SHIP tabs (filter buttons only): prompts D-pad ITEM, A USE / MOUNT, RS INFO, B CLOSE; weapon groups are set on the HUD's group buttons (Y hold cycles), not in this window; JETTISON hold is not built."
+      "Built: the window has no CARGO / EQUIPMENT / SHIP tabs (filter buttons only): prompts D-pad ITEM, A USE / MOUNT, RS INFO, B CLOSE; weapon groups are set on the HUD's group buttons (Y hold cycles), not in this window; JETTISON hold is not built.",
+      "Superseded: the group boxes above were never built; weapon groups are set with the action wheel's EDIT GROUPS (GitHub issue 4, 4 Nov 2026)."
      ],
      "prompts": [
       {
@@ -4066,7 +4072,7 @@
       },
       {
        "def": "CYCLE ON Y HOLD",
-       "help": "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one. Cycle: Y held flips to the next group (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set on the HUD's group buttons, as in the game.",
+       "help": "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one. Cycle: Y held flips to the next group that has guns (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse).",
        "id": "weapon_groups",
        "key": "weapon_groups",
        "kind": "picker",
@@ -4774,7 +4780,7 @@
        "key": "maneuver_watchdog",
        "label": "Restart stalled maneuvers",
        "kind": "toggle",
-       "help": "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed starts the same maneuver again, up to 3 times, and logs what happened.",
+       "help": "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed leaves the maneuver and starts it again, up to 3 times, and logs what happened.",
        "needs": "live",
        "tier": "player",
        "parent": null,

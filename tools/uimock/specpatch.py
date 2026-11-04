@@ -54,7 +54,8 @@ def patch_js(src, patch):
                             # the extra "{ t: 'wheel', ... sel: 0 }" -> replace the field inside that extra's braces
                             def rep(mm):
                                 body = mm.group(0)
-                                return re.sub(r"\b%s: [^,}]+" % re.escape(f), "%s: %s" % (f, js_literal(v)), body)
+                                return re.sub(r"\b%s: (?:\[(?:[^\[\]]|\[[^\]]*\])*\]|[^,}]+)" % re.escape(f),
+                                              lambda _: "%s: %s" % (f, js_literal(v)), body)
                             line, n = re.subn(r"\{ t: '%s'[^{}]*\}" % re.escape(t), rep, line)
                             if n == 0:
                                 sys.exit('extra %s not found in %s' % (t, key))

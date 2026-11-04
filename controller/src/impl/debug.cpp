@@ -40,6 +40,8 @@
 #include "runtimer.h"
 #include "goals.h"
 #include "picker.h"
+#include "stallrec.h"
+#include "wgroups.h"
 #include "wheel.h"
 #include "padbases.h"
 #include "padmap.h"
@@ -1026,6 +1028,10 @@ std::string Execute(const std::string& line)
         return wheel::Command(in);
     if (op == "goals")
         return goals::Command(in);
+    if (op == "wgroups")
+        return wgroups::Command(in);
+    if (op == "stalls")
+        return stallrec::Command(in);
     // ---- the phase D base screens and the nav map (D-BASES track): bases state|rooms|chars, map state|dest
     if (op == "bases")
         return padbases::Command(in);

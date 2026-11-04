@@ -45,15 +45,31 @@ static bool CruiseDisruptedNow(const Root&)
 // The NeuroNet windows (the nav map, inventory, mission log, player info, help) are children of the NeuroNet box's
 // switch buttons (NNNavmapButton > NeuroNetNavMap ..., verified 25 Oct 2026): hiding NN_MainButton hid an opened map
 // too. A window is open while its switch button (NN<name>Button, not ...ButtonRoot) is shown (bit 1): the root then
-// stays shown - the NeuroNet box with the window - until it closes. Five cached byte reads a frame.
+// stays shown - the NeuroNet box with the window - until it closes. Five cached reads a frame. A button no longer under
+// the root is a stale pointer: a save load rebuilds the HUD, and with the new root at the old one's address the root
+// passes Valid while its buttons' blocks hold anything, a set bit 1 among it - the owner, 4 Nov 2026: the classic NeuroNet
+// box beside HUD 2 after a load (not reproduced in 44 harness loads; the line below names the button if it comes back).
 static bool NeuroNetWindowOpen(const Root& r)
 {
+    static uintptr_t logged = 0;
     for (int i = 0; i < r.nAux; ++i)
     {
         u8 st = 0;
-        if (safemem::Read(r.aux[i] + kState, &st, 1) && (st & 2))
+        u32 parent = 0;
+        if (safemem::Read(r.aux[i] + kParent, &parent, 4) && parent == r.ctl &&
+            safemem::Read(r.aux[i] + kState, &st, 1) && (st & 2))
+        {
+            if (logged != r.aux[i])
+            {
+                char n[33] = {};
+                safemem::Read(r.aux[i] + kName, n, 32);
+                Log("hudvis: the NeuroNet box stays shown: %s is open (state %02X)", n, st);
+                logged = r.aux[i];
+            }
             return true;
+        }
     }
+    logged = 0;
     return false;
 }
 
@@ -563,6 +579,8 @@ static void Revalidate(DWORD now, bool hoverOnly)
             Drop(r);
         if (!r.ctl)
             missing = true;
+        else if (nameCheck && r.keep == NeuroNetWindowOpen) // (a root that outlived a rebuild: its buttons found again)
+            FindNeuroNetButtons(r);
     }
     if (missing && now - g_lastFind > 500) // the HUD is being built: look again twice a second
     {

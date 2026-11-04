@@ -2,6 +2,7 @@
 
 #include "fldll.h"
 #include "flexe.h"
+#include "game/hudinfo.h"
 #include "game/ini.h"
 #include "game/space.h"
 #include "log.h"
@@ -442,6 +443,30 @@ bool ReadState(State& s)
     s.pilot = g_brainLabel;
     s.forced = g_forced;
     return true;
+}
+
+static u8* ManagerOf(const Api& a, void* ship)
+{
+    __try
+    {
+        return static_cast<u8*>(a.behavior(ship, nullptr));
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return nullptr;
+    }
+}
+
+bool ReadShipState(u32 id, State& s)
+{
+    const Api& a = GetApi();
+    void* ship = a.ok ? hudinfo::AcquireShip(id) : nullptr;
+    if (!ship)
+        return false;
+    u8* m = ManagerOf(a, ship);
+    const bool ok = m && ReadManager(a, id, m, s);
+    hudinfo::ReleaseShip(ship);
+    return ok;
 }
 
 // ------------------------------------------------------------------ maneuvers

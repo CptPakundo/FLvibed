@@ -244,7 +244,7 @@ std::string VisibleNames(const char* part)
     return buf.data();
 }
 
-static u32 FindVisibleNth(const char* want, int nth)
+static u32 FindVisibleNth(const char* want, int nth, bool shownOnly = true)
 {
     __try
     {
@@ -253,8 +253,8 @@ static u32 FindVisibleNth(const char* want, int nth)
         for (int guard = 0; node && node != head && guard < 5000; ++guard, node = Mem<u32>(node + 4))
         {
             const u32 ctl = Mem<u32>(node + 8);
-            if (ctl && (Mem<u8>(ctl + 0x6C) & 1) && strncmp(reinterpret_cast<const char*>(ctl + 0x18), want, 32) == 0 &&
-                --nth <= 0)
+            if (ctl && (!shownOnly || (Mem<u8>(ctl + 0x6C) & 1)) &&
+                strncmp(reinterpret_cast<const char*>(ctl + 0x18), want, 32) == 0 && --nth <= 0)
                 return ctl;
         }
     }
@@ -276,6 +276,8 @@ u32 FindVisible(const char* want)
     strncpy_s(name, want, std::min<size_t>(32, static_cast<size_t>(hash - want)));
     return FindVisibleNth(name, std::max(1, atoi(hash + 1)));
 }
+
+u32 Find(const char* want) { return FindVisibleNth(want, 1, false); }
 
 // Exact signatures, as the game calls them (verified in the disassembly, 18 Oct 2026). Was: __fastcall stand-ins with
 // the wrong argument counts (the id getter takes none, a window message takes three) - two stack mismatches that
@@ -357,6 +359,23 @@ bool Click(u32 ctl)
         }
         else
             reinterpret_cast<ActionFn>(vt[0xB4 / 4])(ctl);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+bool MapClick(u32 map)
+{
+    __try
+    {
+        void** vt = *reinterpret_cast<void***>(map);
+        if (!exe::NavMapMouse.is(reinterpret_cast<u32>(vt[0x4C / 4])))
+            return false;
+        const int ev[2] = {-1, 1};
+        reinterpret_cast<u32(__thiscall*)(u32, const int*)>(vt[0x4C / 4])(map, ev);
         return true;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)

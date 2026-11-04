@@ -4,6 +4,7 @@
 #include "flightmodal.h"
 #include "game/room.h" // uiclick: the HUD's own filter buttons, clicked natively
 #include "goals.h"
+#include "wgroups.h"
 #include "hud2.h" // CycleListFilter: HUD 2's own contact list while it hides the game's filters
 #include "hud2_kit.h" // the wheel's HUD 2 look (0.2.1)
 #include "log.h"
@@ -22,6 +23,7 @@ enum class Slot
 {
     Scan,
     WeaponGroup,
+    EditGroups,
     CruiseDisruptor,
     Formation,
     Comms,
@@ -54,6 +56,7 @@ static void Build()
     g_items.clear();
     g_items.push_back({Slot::Scan, L"SCAN CARGO", true});
     g_items.push_back({Slot::WeaponGroup, L"WEAPON GROUP", true});
+    g_items.push_back({Slot::EditGroups, L"EDIT GROUPS", true});
     g_items.push_back({Slot::CruiseDisruptor, L"CRUISE DISRUPTOR", true});
     g_items.push_back({Slot::Formation, L"FORMATION", true});
     g_items.push_back({Slot::Comms, L"COMMS", true}); // USER_RADIO: "RADIO - Hails the targeted ship." (ids 1971 / 3239)
@@ -151,6 +154,7 @@ presets::Action Commit()
     case Slot::CruiseDisruptor: Tap(fl::USER_LAUNCH_CRUISE_DISRUPTORS); break;
     case Slot::Filter: CycleFilter(); break;
     case Slot::Goals: goals::Toggle(); break;
+    case Slot::EditGroups: wgroups::Open(); break;
     case Slot::Rear:
         g_rear = !g_rear;
         events::Push("wheel rear view %s", g_rear ? "on" : "off");
