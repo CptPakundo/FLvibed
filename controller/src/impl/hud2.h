@@ -20,6 +20,7 @@ struct Context
 {
     bool space = false;     // Mode::Space (flying, the HUD up)
     bool spaceUi = false;   // Mode::SpaceUi (a NeuroNet window over the HUD)
+    bool cutscene = false;  // Mode::Cutscene (an in-flight cutscene: a docking, a mission's scene)
     bool pad = false;       // the pad is the input device (device::Pad)
     bool bot = false;       // the test bot flies
     presets::Table table;   // the effective bindings (flight or flight_ap)

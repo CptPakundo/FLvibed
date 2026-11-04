@@ -217,6 +217,7 @@ constexpr float kListGap2 = 0.022f; //   header alone 0.06
 constexpr float kListRow = 0.042f;
 constexpr float kListMore = 0.03f;
 constexpr float kListHeadOnly = 0.06f;
+constexpr float kShipGrowW = 0.36f; // the ship panel's most for long content (4 Nov 2026: long credit counts clipped at kShipW)
 constexpr float kShipW = 0.31f;     // the ship panel: the spec's compact 0.30 x 0.12 (calm), fight 0.36 x 0.15; today
 constexpr float kShipH = 0.15f;     //   0.31 x 0.15 in every context (0.17 until the owner's A5, 31 Oct 2026: "keep these
                                     //   panels at identical height" - the loadout's 0.15; its rows: hud2_parts.cpp DrawShip).
@@ -612,7 +613,8 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     if (f.kbm && rows == 0)
         L.thrY1 = L.thrY0 + std_ov::kListHeadOnly * H * k; // the header alone
     // the ship (bottom-left) and the loadout (bottom-right; its height the fight form's: 5.16, its top at S1's bottom)
-    L.ship.x0 = L.mx, L.ship.x1 = L.mx + ContentFit(std_ov::kShipW * H * k, f.m.shipW), L.ship.y1 = H - myBottom,
+    L.ship.x0 = L.mx, L.ship.y1 = H - myBottom,
+    L.ship.x1 = L.mx + (f.m.shipW > 0 ? std::min(f.m.shipW, std_ov::kShipGrowW * H * k) : std_ov::kShipW * H * k),
     L.ship.y0 = L.ship.y1 - ContentFit(std_ov::kShipH * H * k, f.m.shipH); // (round 6: heights to content too; A5's
                                                                            //  equal height dropped)
     const float loH = hp::Num(p, "combat", "loadout", "h", 0.15f);

@@ -50,6 +50,15 @@ void Test_presets()
     CHECK(fl.b[glyphs::A].tap == Action::Context && fl.b[glyphs::A].hold == Action::Formation);
     CHECK(fl.b[glyphs::RT].tap == Action::Fire && fl.b[glyphs::LT].tap == Action::Afterburner);
     CHECK(fl.b[glyphs::RB].tap == Action::Missile && fl.b[glyphs::RB].hold == Action::Torpedo);
+    // every flight table reaches the torpedo: the hold of its missile button (GitHub issue 7)
+    for (const presets::Table* t : {&presets::Flight(presets::FREELANCER), &presets::Flight(presets::ACE),
+                                    &presets::Flight(presets::ASSISTED), &presets::FlightAp()})
+    {
+        glyphs::Id btn = glyphs::COUNT, missile = glyphs::COUNT;
+        int slot = -1, missileSlot = -1;
+        CHECK(presets::Find(*t, Action::Torpedo, btn, slot) && slot == 1);
+        CHECK(presets::Find(*t, Action::Missile, missile, missileSlot) && missile == btn);
+    }
     CHECK(fl.b[glyphs::R3].tap == Action::TargetSmart && fl.b[glyphs::R3].hold == Action::Rear &&
           fl.b[glyphs::R3].dbl == Action::ClearTarget);
     const presets::Table& ace = presets::Flight(presets::ACE);

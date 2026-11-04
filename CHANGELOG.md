@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.2.7 - 4 Nov 2026
+
+- HUD 2: Neural Net lines (Objective Reached, Tractor Failure, the docking lines and the rest), voice and subtitle, play
+  in flight. With HUD 2 on, only the first one played and the others waited until the NeuroNet opened (GitHub issue 8).
+- Pad, in bases: LB / RB step through every room on stations too. The Trader and Equipment rooms dropped out of the
+  bumpers there, which sent you back to the wrong room or never reached them (GitHub issue 9).
+- HUD 2's dealer screens: an item you cannot buy (no free hardpoint, say) keeps the full centre panel and the infocard's
+  backing, so its text fits and stays readable, and the prompts stay off it (GitHub issue 10). The comparison with your
+  mounted gun uses the panel's whole width, and a long heading takes a second line instead of being cut.
+- Pad, in bases: the prompts hold their place while a subtitle shows. This guards against the flicker reported with
+  Neural Net subtitles at the dealers, which could not be reproduced (GitHub issue 10).
+- HUD 2: the chat keeps its cards through in-flight cutscenes such as docking and launching. The game's plain chat window
+  came back in them, with bare lines at the screen's edge (GitHub issue 12).
+- HUD 2: the ship panel grows for a long credit count, so CREDITS stays whole and the number no longer clips. Only past
+  the panel's widest does the word shorten to CR (GitHub issue 11).
+- Pad: turret view follows Invert Y on the right stick; so does the aim cursor of the ASSISTED preset (GitHub issue 6).
+- Pad: holding the missile button fires the torpedo in every preset and while the autopilot flies: RB in ASSISTED, B in
+  ACE. Before, it only worked in FREELANCER with you flying (GitHub issue 7).
+- Pad: the same hold fires a cruise disruptor when the ship has one and no torpedo, and HUD 2's row says HOLD for it
+  (GitHub issue 7).
+- HUD 2: with one item in reach and targeted, the prompts no longer offer it on both A and X.
+- HUD 2: the tractor prompts fade like the others while you move; the changing range kept them on screen.
+- HUD 2, keyboard: NEAREST ENEMY now shows the game's nearest-enemy key, not the next-enemy key.
+- HUD 2: the enemies cue stays off during cinematic scenes (docking, lanes, jumps).
+- Classic HUD, ASSISTED preset: no tractor prompt on A, where A starts the autopilot.
+- Pad: if the game refuses the enemy the right stick picked, the next click takes another one. More than 32 enemies
+  near no longer stops the clicks from moving on.
+
 ## 0.2.6 - 4 Nov 2026
 
 - Pad: the NeuroNet box's buttons (mission log, inventory, player info, help) can be reached with the cursor in flight,
@@ -28,7 +56,8 @@
   (`A TRACTOR DRAIL · 730 m`, `X TRACTOR ALL 9`), in HUD 2 and the classic HUD. Loot your hold cannot take is no longer
   offered. Keyboard: HUD 2 now shows the key for one item and the key for all loot, instead of the one-item key for both.
 - When a formation, goto or dock stalls, FLvibed now leaves the maneuver and starts it again, the way that got a
-  player out of it. Starting the same formation again on a ship that was still in it did nothing.
+  player out of it. Starting the same formation again on a ship that was still in it did nothing. The cause of the stall
+  is not found yet, and this has not yet met a real stall in testing.
 - HUD 2: the game's NeuroNet box could stay on screen beside HUD 2 after loading a save. It now hides again. This could
   not be reproduced in 44 test loads; if it comes back, `FLController.log` names the window that kept it up.
 - Autopilot: with HUD 2 on, it read the guns' fire slots from their hardpoint names, because HUD 2 hides the game's list.

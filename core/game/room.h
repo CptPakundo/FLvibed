@@ -39,7 +39,8 @@ struct Hotspot
                          // or, for actions, the hotspot name
     std::string hotspot; // IDS_HOTSPOT_BAR, IDS_HOTSPOT_NEWSVENDOR, IDS_NN_REPAIR_YOUR_SHIP, ...
     std::string control; // RoomControlN / ButtonControlN
-    u32 behaviour;       // 1 room switch, 2 news, 3 mission vendor, 6 dealer front desk, 7 ship dealer, 12 repair
+    u32 behaviour;       // 1 room switch (11 in the rooms sharing its set), 2 news, 3 mission vendor, 6 dealer front desk,
+                         // 7 ship dealer, 12 repair
     u32 ctl;             // the FlControl (uiclick::Click)
 };
 std::vector<Hotspot> Hotspots();

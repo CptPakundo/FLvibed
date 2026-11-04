@@ -1447,6 +1447,35 @@ static void GimbalAim(float& x, float& y)
     aim::ClampToSafeArea(x, y);
 }
 
+// The torpedo hold fires what the torpedo hardpoint carries (UI_PLAN 6: "hold torpedo or cruise disruptor"; GitHub issue
+// 7). The game launches the two by different commands: USER_LAUNCH_TORPEDOS passes over a disruptor (0x4DD4E0), so a
+// ship with a disruptor and no torpedo gets the disruptor's command. A torpedo wins, as on HUD 2's row.
+static bool DisruptorOnly()
+{
+    bool disruptor = false;
+    for (const space::Weapon& w : space::PlayerWeapons())
+    {
+        if (w.cruiseDisruptor)
+            disruptor = true;
+        else if (_strnicmp(w.hardpoint, "HpTorpedo", 9) == 0)
+            return false;
+    }
+    return disruptor;
+}
+
+static void HoldTorpedoSlot()
+{
+    const bool slot = g_dispatch.Held(presets::Action::Torpedo);
+    const bool disruptor = slot && DisruptorOnly();
+    Hold(fl::USER_LAUNCH_TORPEDOS, slot && !disruptor);
+    Hold(fl::USER_LAUNCH_CRUISE_DISRUPTORS, disruptor || g_dispatch.Held(presets::Action::CruiseDisruptor));
+}
+
+// A stick's vertical value as what it points with: the camera and the cursor, which no Y inversion reaches by itself.
+// The stick's steering is flipped by `invert_y` (PadAim) and by the game's own option (its steering code), so both
+// count here and the two cancel as they do in flight (GitHub issue 6: turret view ignored Invert Y).
+static float LookY(float y) { return g_opt.invertY != fl::GameInvertY() ? -y : y; }
+
 // Runs the autopilot (autopilot.cpp decides, this applies its outputs). Returns true while it flies the ship.
 // Turret view's look (the owner, 26 Oct 2026), the same whether the player or the autopilot flies: the reticle stays at
 // the screen centre - gimbal mode's lock-on there as in flight (aim_mode 1: onto a hostile's lead cross inside the cone)
@@ -1481,8 +1510,9 @@ static bool TurretLook(const PadState& p)
         g_turretAimY = 0;
     Hold(fl::USER_LOOK_ROTATE_CAMERA_LEFT, onX && p.rx < 0);
     Hold(fl::USER_LOOK_ROTATE_CAMERA_RIGHT, onX && p.rx > 0);
-    Hold(fl::USER_LOOK_ROTATE_CAMERA_UP, onY && p.ry > 0);
-    Hold(fl::USER_LOOK_ROTATE_CAMERA_DOWN, onY && p.ry < 0);
+    const float lookY = LookY(p.ry);
+    Hold(fl::USER_LOOK_ROTATE_CAMERA_UP, onY && lookY > 0);
+    Hold(fl::USER_LOOK_ROTATE_CAMERA_DOWN, onY && lookY < 0);
     float x = fl::ScreenWidth() * 0.5f, y = fl::ScreenHeight() * 0.5f;
     if (g_opt.aimMode == 1)
         GimbalAim(x, y);
@@ -1711,7 +1741,7 @@ static bool UpdateAutopilot(float dt)
     if (!turret && rightAims && (p.rx != 0 || p.ry != 0))
     {
         float ax = fl::ScreenWidth() * 0.5f + p.rx * fl::ScreenWidth() * 0.5f;
-        float ay = fl::ScreenHeight() * 0.5f - p.ry * fl::ScreenHeight() * 0.5f;
+        float ay = fl::ScreenHeight() * 0.5f - LookY(p.ry) * fl::ScreenHeight() * 0.5f;
         aim::ClampToSafeArea(ax, ay);
         dimouse::MoveTo(ax, ay);
     }
@@ -1780,6 +1810,7 @@ static bool UpdateAutopilot(float dt)
     // Manual weapons stay available: the player's fire and missile buttons (the flight_ap bindings) as always.
     Hold(fl::USER_FIRE_WEAPONS, (fireAll && !slotsKnown) || g_dispatch.Held(presets::Action::Fire));
     Hold(fl::USER_LAUNCH_MISSILES, g_dispatch.Held(presets::Action::Missile));
+    HoldTorpedoSlot();
     if (o.missile)
         Tap(fl::USER_LAUNCH_MISSILES);
     if (o.torpedo)
@@ -1988,7 +2019,10 @@ static void SmartTarget()
             else if (space::SetTarget(pick))
                 events::Push("pad target_smart: enemy %u (%d near)", pick, n);
             else
+            {
+                chain.Refused(cur);
                 events::Push("pad target_smart: enemy %u refused", pick);
+            }
             return;
         }
     }
@@ -2315,7 +2349,7 @@ static void UpdateSpace(float dt)
         const float ax = aimStick < 0 ? p.lx : (aimStick > 0 || g_turret) ? p.rx : 0.0f;
         const float ay = aimStick < 0 ? p.ly : (aimStick > 0 || g_turret) ? p.ry : 0.0f;
         float x = fl::ScreenWidth() * 0.5f + ax * fl::ScreenWidth() * 0.5f;
-        float y = fl::ScreenHeight() * 0.5f - ay * fl::ScreenHeight() * 0.5f;
+        float y = fl::ScreenHeight() * 0.5f - LookY(ay) * fl::ScreenHeight() * 0.5f;
         aim::ClampToSafeArea(x, y);
         dimouse::MoveTo(x, y);
         g_lastSteerX = g_lastSteerY = 0;
@@ -2358,8 +2392,7 @@ static void UpdateSpace(float dt)
     Hold(fl::USER_FIRE_WEAPON_GROUP1, g_dispatch.Held(presets::Action::FireGroup1));
     Hold(fl::USER_FIRE_WEAPON_GROUP2, g_dispatch.Held(presets::Action::FireGroup2));
     Hold(fl::USER_LAUNCH_MISSILES, g_dispatch.Held(presets::Action::Missile));
-    Hold(fl::USER_LAUNCH_TORPEDOS, g_dispatch.Held(presets::Action::Torpedo));
-    Hold(fl::USER_LAUNCH_CRUISE_DISRUPTORS, g_dispatch.Held(presets::Action::CruiseDisruptor));
+    HoldTorpedoSlot();
     Hold(fl::USER_AFTERBURN, g_dispatch.Held(presets::Action::Afterburner) || aceBurn);
     Hold(fl::USER_MANEUVER_BRAKE_REVERSE, g_dispatch.Held(presets::Action::Reverse) || aceReverse);
     Hold(fl::USER_REARVIEW_CAMERA_MODE, g_dispatch.Held(presets::Action::Rear) || wheel::RearView());
@@ -2777,6 +2810,7 @@ void OnFrame(double dtd)
         hud2::Context hc;
         hc.space = g_mode == Mode::Space;
         hc.spaceUi = g_mode == Mode::SpaceUi;
+        hc.cutscene = g_mode == Mode::Cutscene;
         hc.pad = padOwns;
         hc.bot = g_bot.on;
         hc.table = g_table;

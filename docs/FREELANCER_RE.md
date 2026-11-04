@@ -395,6 +395,17 @@ in it (`hk::Sym`, `core\hook.h`).
   HpWeapon01, 38 Javelin HpWeapon02, 42 gun HpWeapon03, 43 other equipment). Hardpoint name order matched it there.
   CExternalEquip mountedHardpoint (char*) +0x20. **USER_FIRE_WEAPONS (fire all) fires the missile launcher too** (a
   launcher in the active group: 3 s held launched a Javelin, 18 Oct 2026) - the autopilot holds each gun's own slot.
+- **The three launch commands (HUD_Status, 0x4DD4E0(kind); decompiled + the results verified in game with the virtual
+  pad, 4 Nov 2026):** USER_LAUNCH_MISSILES (0xBC) kind 0, USER_LAUNCH_TORPEDOS (0xC0) kind 1,
+  USER_LAUNCH_CRUISE_DISRUPTORS (0xC1) kind 2. Each walks the guns whose munition has a seeker: a munition with
+  cruise_disruptor set is kind 2 wherever it sits; else a gun on a hardpoint the ship arch lists under hp_type 10, 0x23 or
+  0x24 is kind 1 (HDE lists HpTorpedo01 under hp_torpedo_special_1 / _2), every other is kind 0. So the torpedo command
+  passes over a disruptor on the torpedo hardpoint. HDE: torpedoes need hp_torpedo_special_1 (elite ships), disruptors
+  fit _2 (fighters too); the disruptor's round is the Wasp Missile by name. **Nothing launches in cruise**: missiles and
+  torpedoes alike, the commands reach the game and no round leaves (verified in game; the refusal's code not read).
+- **Option 0x17 (0x5792B0, exe::GameOption) flips the Y of mouse-flight steering** (0x4C7DCD, 0x4C7E76), so of the pad's
+  steering, which goes through that code; the turret camera (0x51A7D0) and the cursor do not read it. Its menu entry is
+  taken to be "Invert Mouse" (ids 1648). Decompiled, not verified in game.
 - **Munition flight (live archetype, matches weapon_equip.ini, 18 Oct 2026):** Projectile lifeTime +0x70 (13.75);
   Munition motorId +0x8C, seeker +0x90, seekerRange +0x98 (1000), **seeker_fov_deg stored as its cosine** +0x9C
   (35 -> 0.819152: a half-angle), maxAngularVelocity +0xA0 (2.90333); Common.dll `?GetMotor@Archetype@@YAPBUMotorData
@@ -1216,6 +1227,11 @@ subtitles' `background_style 1` reproduces it (subtitles\docs\DISPLAY_PLAN.md "B
   ship (planet: Cityscape, which has `[PlayerShipPlacement] launching_script`; stations: Deck). It exists only while
   launching is allowed: absent in story mission 1 before Juni's job is accepted. Clicking it natively launches
   (docked -> cutscene -> space, verified on a free-roam Manhattan save).
+- **Room buttons are hotspot behaviour 1 or 11 (read in game on Li01_12 and Ku01_05, 4 Nov 2026):** on a station the
+  Trader's and the Equipment dealer's buttons are 11 in the Deck, Trader and Equipment rooms, which share a set (a move
+  between them takes 1-2 s), and 1 in the Bar and at the ship dealer. Manhattan's are all 1. Entering a room with its own
+  set takes 8-13 s. Other kinds: 0 launch, 2 news, 3 job board, 5 trader, 6 front desk, 7 ship dealer, 8 / 9 equipment, 12
+  repair. Which room the player is in follows from those (`room_ring.h`).
 - **When the NavBar acts on a room button:** its click handler 0x43EE80 (vt 0x5CB584 slot 0xA8, message 0x26)
   returns without acting while [0x67DCC8] is set (written at 0x45C914/0x45C921), while NavBar +0x32C or +0x34C
   is busy (byte +0x18, read by 0x55E280; set during a room's entry transition, up to ~9 s), or while the room
@@ -2190,6 +2206,12 @@ and HDE 0.7.1 / upstream: same TimeDateStamp 0x3ECBB142, same RVAs; v1.0's diffe
   cargo_jettisoned, cancelled, trade lane disrupted, scanning_cargo, incoming missile/torpedo, objective_reached,
   danger / warning / sun corona / atmosphere, equipment destroyed, shield states, repair droids,
   target_out_of_range, waiting_to_dock, nnv_dock_too_far, click_on_characters_and_buttons. Room changes queue none.
+- **The Neural Net queue's step (exe::NNPump 0x489E00; verified in game 4 Nov 2026):** the head line ended = drop it and
+  play the next. Its one caller is 0x45C8C0, which does not run in flight while FLvibed hides the NeuroNet box: under
+  HUD 2 one line in four played, the classic HUD three in four; each later line waited until the box opened. A queued
+  line on an empty queue starts at once, so only the second and later ones showed the fault. FLvibed steps the queue itself
+  while it hides the box (hudvis.cpp), except in a cutscene, where 0x489A80 plays nothing and the line would be lost.
+  There is no native text for these lines: FLvibed's subtitles are their only text.
 
 Data facts verified by parsing the HDE files. The Freelancer.exe addresses are from static disassembly
 only (not traced in game yet).

@@ -349,7 +349,8 @@ void Update(float, const Context& c)
         }
         else
         {
-            if (g_s.lootInReach && !g_s.lootName.empty()) // (A with no target: the nearest loot, ContextAction)
+            // (A with no target: the nearest loot, ContextAction; ASSISTED's A starts the autopilot)
+            if (g_s.lootInReach && !g_s.lootName.empty() && o.padPreset != presets::ASSISTED)
                 AddRow(l, presets::Action::Context, L"TRACTOR " + g_s.lootName + Sep() + g_s.lootDist);
             TractorAllRow(l);
             AddRow(l, presets::Action::TargetSmart, g_s.enemies > 0 ? L"NEAREST ENEMY" : L"TARGET AHEAD");
@@ -685,7 +686,7 @@ void Render(void* device)
             prompt(g_s.targetPos, presets::Action::Context, L"DOCK");
         if (g_s.lootInReach) // (A tractors the nearest with no target, the targeted loot when it is; X tractors them all)
         {
-            const bool viaA = !g_s.targetValid || g_s.targetLootReach;
+            const bool viaA = (!g_s.targetValid || g_s.targetLootReach) && o.padPreset != presets::ASSISTED;
             const std::wstring label = g_s.lootName.empty() ? std::wstring(L"LOOT") : g_s.lootName + Sep() + g_s.lootDist;
             prompt(g_s.lootPos, viaA ? presets::Action::Context : presets::Action::Tractor, label.c_str());
         }

@@ -434,7 +434,7 @@ static constexpr Bind kBind_FREELANCER[] = {
 };
 static constexpr Bind kBind_ACE[] = {
     {"A", "fire", "none", "none"},
-    {"B", "missile", "none", "none"},
+    {"B", "missile", "torpedo", "none"},
     {"X", "context", "goto", "none"},
     {"Y", "target_nearest", "target_picker", "none"},
     {"LB", "cm", "none", "none"},
@@ -458,7 +458,7 @@ static constexpr Bind kBind_ASSISTED[] = {
     {"X", "goal_panel", "none", "none"},
     {"Y", "cruise", "action_wheel", "none"},
     {"LB", "none", "none", "none"},
-    {"RB", "missile", "none", "none"},
+    {"RB", "missile", "torpedo", "none"},
     {"LT", "target_picker", "none", "none"},
     {"RT", "fire", "none", "none"},
     {"L3", "none", "none", "none"},
@@ -506,7 +506,7 @@ static constexpr Bind kBind_common_flight_ap[] = {
     {"X", "goal_panel", "turret", "none"},
     {"Y", "cruise", "none", "none"},
     {"LB", "target_picker", "action_wheel", "none"},
-    {"RB", "missile", "none", "none"},
+    {"RB", "missile", "torpedo", "none"},
     {"LT", "afterburner", "none", "none"},
     {"RT", "fire", "none", "none"},
     {"L3", "none", "none", "none"},

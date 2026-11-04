@@ -260,6 +260,8 @@ inline int ScreenHeight() { return Mem<int>(exe::ScreenH); }
 inline int MouseX() { return Mem<int>(exe::MouseX); }
 inline int MouseY() { return Mem<int>(exe::MouseY); }
 inline u32 MouseButtons() { return Mem<u32>(exe::MouseButtons); }
+// The game's own Y inversion (option 0x17): its steering code reads it, the turret camera and the cursor do not.
+inline bool GameInvertY() { return exe::GameOption.ok() && hk::Call<int(__cdecl*)(int)>(exe::GameOption, 0x17) != 0; }
 inline HWND MainWindow() { return Mem<HWND>(exe::MainHwnd); }
 bool GamePaused();
 inline float GetThrottle() { return Mem<float>(exe::PlayerThrottle); }

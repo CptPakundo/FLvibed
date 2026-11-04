@@ -27,10 +27,11 @@ class Chain
     // (no enemies, or the only one is already the target).
     unsigned Press(float t, const Enemy* e, int n, unsigned cur)
     {
-        const bool chained = last_ && cur == last_ && t - at_ <= kChainSecs;
+        const bool chained = run_ && cur == last_ && t - at_ <= kChainSecs;
         if (!chained)
             seen_n_ = 0;
         at_ = t;
+        run_ = true;
         if (cur)
             Mark(cur);
         unsigned pick = Nearest(e, n);
@@ -51,6 +52,9 @@ class Chain
         return pick;
     }
 
+    // The game refused the pick: the run goes on from `cur` with the pick still visited, so the next press takes another.
+    void Refused(unsigned cur) { last_ = cur; }
+
   private:
     bool Seen(unsigned id) const
     {
@@ -61,8 +65,11 @@ class Chain
     }
     void Mark(unsigned id)
     {
-        if (!Seen(id) && seen_n_ < kMaxSeen)
-            seen_[seen_n_++] = id;
+        if (Seen(id))
+            return;
+        if (seen_n_ >= kMaxSeen) // (more enemies than the list holds: the run starts over)
+            seen_n_ = 0;
+        seen_[seen_n_++] = id;
     }
     unsigned Nearest(const Enemy* e, int n) const
     {
@@ -77,5 +84,6 @@ class Chain
     int seen_n_ = 0;
     unsigned last_ = 0;
     float at_ = 0;
+    bool run_ = false; // a press happened: last_ / at_ mean something
 };
 } // namespace tcycle

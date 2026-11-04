@@ -234,8 +234,23 @@ void CompareLine(float H)
         return;
     if (baseinfo::Find("QuantitySlider"))
         return; // (not a single item: the slider's place)
+    // the column takes the panel's whole inner width, from the item's icon on (the owner, 4 Nov 2026: "VS MOUNTED CATAPULT
+    // MIS..." was cut beside free room); a heading that still does not fit takes a second line, never an ellipsis
+    float colX0 = item.x - item.hw, colX1 = item.x + item.hw;
+    ui::Item button;
+    if (CtlRect(baseinfo::Find("TransferItemButton"), button))
+        colX0 = std::min(colX0, button.x - button.hw), colX1 = std::max(colX1, button.x + button.hw);
+    const float wordK = std::min(1.3f, std::max(0.8f, uiopt::Get().textSize / 100.0f));
     std::vector<std::wstring> lines;
-    lines.push_back(L"VS MOUNTED " + Upper(m.name));
+    const std::wstring head = L"VS MOUNTED " + Upper(m.name);
+    if (hud2kit::TextWidth(head, H * 0.024f * wordK, 0.06f) <= colX1 - colX0)
+        lines.push_back(head);
+    else
+    {
+        lines.push_back(L"VS MOUNTED");
+        lines.push_back(Upper(m.name));
+    }
+    const size_t heads = lines.size();
     // per second, not per shot (critique 3, 6: "DAMAGE +500 %" for a gun with +43 % hull DPS misled): hull DPS, shield
     // DPS, energy per second, projectile speed, range - each a signed delta from the game's own archetype numbers
     // (each with its priority: what does not fit above the game's "Quantity:" line drops, the lowest first)
@@ -262,12 +277,12 @@ void CompareLine(float H)
     if (cand.empty())
         return;
     // the room down to the game's "Quantity:" line (QuantityText: a text control's anchor = its box's top)
-    float top = item.y + item.hh + H * 0.012f, bottom = top + H * 0.032f * (cand.size() + 1);
+    float top = item.y + item.hh + H * 0.012f, bottom = top + H * 0.032f * (cand.size() + heads);
     ui::Item q;
     if (ui::ControlRect(baseinfo::Find("QuantityText"), q) && q.y > top)
         bottom = std::min(bottom, q.y - H * 0.004f);
     const size_t fit = static_cast<size_t>(std::max(0.0f, (bottom - top) / (H * 0.024f)));
-    while (cand.size() + 1 > fit && cand.size() > 1)
+    while (cand.size() + heads > fit && cand.size() > 1)
     {
         size_t low = 0;
         for (size_t i = 1; i < cand.size(); ++i)
@@ -283,10 +298,10 @@ void CompareLine(float H)
     {
         Word w;
         w.text = l;
-        w.x = item.x - item.hw;
+        w.x = colX0;
         w.y = y;
         w.align = Left;
-        w.maxW = item.hw * 2; // the item row's width (the panel's inner width at every aspect)
+        w.maxW = colX1 - colX0; // the panel's inner width at every aspect
         g.words.push_back(w);
         y += pitch;
     }

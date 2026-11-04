@@ -182,7 +182,8 @@ enum Cond
 {
     Always,
     AnchorShown, // drawn while the anchor control is shown (ErrorHelp, the save description field)
-    Xfer,        // dealer: the transfer panel is up (BuySellTradeButton shown)
+    Xfer,        // dealer: a row is selected: the buy button, or the item alone where the game refuses it (no free hardpoint
+                 // ...: no button, the item, its compare lines and its infocard all the same; GitHub issue 10)
     NoXfer,
     SellFull, // dealer: the player's list has rows (NN_Inventory ItemView01 shown)
     SellEmpty,
@@ -383,6 +384,7 @@ struct Win
     u32 field = 0;                    // the save description's field (LoadSave_DescripButton)
     u32 anchors[6] = {};              // per plate
     u32 condCtl = 0, condCtl2 = 0, condCtl3 = 0; // dealer: BuySellTradeButton, the partner's ItemView01, its Full_Cargobar
+    u32 condCtl4 = 0;                            // dealer: TransferItemView
     bool alive = true;
 };
 std::vector<Win> g_wins;
@@ -702,6 +704,7 @@ void Apply(Win& w)
     if (w.fam == kFamDealer)
     {
         w.condCtl = Child(w.root, "BuySellTradeButton");
+        w.condCtl4 = Child(w.root, "TransferItemView");
         w.condCtl2 = w.partner ? Child(w.partner, "ItemView01") : 0;
         w.condCtl3 = w.partner ? Child(w.partner, "Full_Cargobar") : 0;
     }
@@ -1005,8 +1008,8 @@ bool CondOk(const Win& w, const PlateDef& p, u32 anchor)
     {
     case Always: return true;
     case AnchorShown: return Shown(anchor);
-    case Xfer: return FullyShown(w.condCtl);
-    case NoXfer: return !FullyShown(w.condCtl);
+    case Xfer: return FullyShown(w.condCtl) || FullyShown(w.condCtl4);
+    case NoXfer: return !FullyShown(w.condCtl) && !FullyShown(w.condCtl4);
     // (an empty player list collapses its plate - unless the cargo bar shows: a plate covers every visible native child,
     // critique 3, 5 - the "Cargo Space" bar floated on the room under the collapsed plate)
     case SellFull: return !w.condCtl2 || FullyShown(w.condCtl2) || Shown(w.condCtl3);

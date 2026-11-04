@@ -615,6 +615,21 @@ void DrawEnemyCue(const Model& m, const Layout& L, float a)
 }
 
 // ---------------------------------------------------------------- bottom-left: your ship
+// The credits as the panel writes them: thousands with a thin space, as the mock-up.
+static std::wstring CreditsDigits(long long v)
+{
+    std::wstring s = std::to_wstring(v);
+    for (int i = static_cast<int>(s.size()) - 3; i > 0; i -= 3)
+        s.insert(static_cast<size_t>(i), L" ");
+    return s;
+}
+// The row's word: the panel grows for the whole word first (ShipContentWidth; the owner, 4 Nov 2026: use the room before
+// shortening), CR is the last resort past the panel's maximum, so a long number is never clipped (a player's suggestion).
+static const wchar_t* CreditsWord(float room, float numW, float size, float gap)
+{
+    return TextWidth(L"CREDITS", size, 0.08f) + gap + numW <= room ? L"CREDITS" : L"CR";
+}
+
 void DrawShip(const Model& m, const Layout& L, float a)
 {
     SetAlpha(a);
@@ -675,11 +690,9 @@ void DrawShip(const Model& m, const Layout& L, float a)
     yy = y0 + 0.120f * H * k;
     if (m.credits >= 0)
     {
-        // thousands with a thin space, as the mock-up
-        std::wstring s = std::to_wstring(m.credits);
-        for (int i = static_cast<int>(s.size()) - 3; i > 0; i -= 3)
-            s.insert(static_cast<size_t>(i), L" ");
-        TextMarquee(tx, yy, L"CREDITS", T, right - tx - TextWidth(s, T) - 0.012f * H * k, Argb(kDim, 1), Left, 0.08f);
+        const std::wstring s = CreditsDigits(m.credits);
+        const float numW = TextWidth(s, T), gap = 0.012f * H * k;
+        TextMarquee(tx, yy, CreditsWord(right - tx, numW, T, gap), T, right - tx - numW - gap, Argb(kDim, 1), Left, 0.08f);
         Text(right, yy, s, T, Argb(kInk, 1), Right);
     }
 }
@@ -1055,10 +1068,8 @@ float ShipContentWidth(const Model& m, const Layout& L)
     }
     if (m.credits >= 0)
     {
-        std::wstring s = std::to_wstring(m.credits);
-        for (int i = static_cast<int>(s.size()) - 3; i > 0; i -= 3)
-            s.insert(static_cast<size_t>(i), L" ");
-        w = std::max(w, TextWidth(L"CREDITS", T, 0.08f) + 0.012f * H * k + TextWidth(s, T));
+        // (the whole word: the panel grows for a long number; CR only past the panel's maximum)
+        w = std::max(w, TextWidth(L"CREDITS", T, 0.08f) + 0.012f * H * k + TextWidth(CreditsDigits(m.credits), T));
     }
     return w > 0 ? lead + w + pad : 0.0f;
 }

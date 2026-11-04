@@ -33,6 +33,7 @@ void Test_press_gate();
 void Test_focus_gate();
 void Test_maneuver_watch();
 void Test_target_cycle();
+void Test_room_ring();
 void Test_pad_slots();
 void Test_pad_backend();
 void Test_sdl_testpad();
@@ -223,6 +224,7 @@ int main(int argc, char** argv)
     {"focus_gate", Test_focus_gate},
     {"maneuver_watch", Test_maneuver_watch},
     {"target_cycle", Test_target_cycle},
+    {"room_ring", Test_room_ring},
     {"pad_slots", Test_pad_slots},
         {"pad_backend", Test_pad_backend},
         {"sdl_testpad", Test_sdl_testpad},

@@ -1,5 +1,7 @@
 #include "padbases.h"
 
+#include "room_ring.h"
+
 #include "../dimouse.h"
 #include "../events.h"
 #include "../fl.h"
@@ -337,7 +339,7 @@ static void RefreshRoom()
     std::string derived;
     for (const room::Hotspot& h : hs)
     {
-        if (h.behaviour == 1 && h.ctl)
+        if (roomring::IsRoomButton(h.behaviour) && h.ctl)
             g_ring.push_back({h.label, h.control, h.ctl, TrailingNumber(h.control)});
         else if (h.label == "IDS_HOTSPOT_LAUNCH" && h.ctl)
             g_launch = h;
@@ -354,18 +356,17 @@ static void RefreshRoom()
     }
     std::sort(g_ring.begin(), g_ring.end(), [](const Ring& a, const Ring& b) { return a.number < b.number; });
     // the current room: the one the room's own action hotspots name; else the launch area (Cityscape / Planetscape /
-    // Deck: the room with the ship) when a launch button or no dealer is here; the last room we went to breaks a tie
+    // Deck: the room with the ship) when a launch button is here; else the last room we went to
     auto find = [&](const std::string& label) { return RingIndex(label); };
-    int cur = derived.empty() ? -1 : find(derived);
-    if (cur < 0 && !g_lastGoto.empty())
-        cur = find(g_lastGoto);
-    if (cur < 0)
-        for (const char* area : {"Cityscape", "Planetscape", "Deck"})
-            if (cur < 0)
-                cur = find(area);
-    if (cur < 0 && !g_ring.empty())
-        cur = 0;
-    g_current = cur;
+    int area = -1;
+    for (const char* name : {"Cityscape", "Planetscape", "Deck"})
+        if (area < 0)
+            area = find(name);
+    const int last = g_lastGoto.empty() ? -1 : find(g_lastGoto);
+    g_current = roomring::Current(derived.empty() ? -1 : find(derived), g_launch.ctl != 0, area, last,
+                                  static_cast<int>(g_ring.size()));
+    if (g_busy.empty() && last >= 0 && g_current == last)
+        g_lastGoto.clear(); // arrived: the name must not outlive the trip (the next base has rooms of that name too)
 }
 
 static int RingIndex(const std::string& label)
