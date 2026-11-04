@@ -627,7 +627,7 @@ static std::wstring CreditsDigits(long long v)
 // shortening), CR is the last resort past the panel's maximum, so a long number is never clipped (a player's suggestion).
 static const wchar_t* CreditsWord(float room, float numW, float size, float gap)
 {
-    return TextWidth(L"CREDITS", size, 0.08f) + gap + numW <= room ? L"CREDITS" : L"CR";
+    return TextWidth(L"CREDITS", size, 0.08f) + gap + numW <= room + 1.0f ? L"CREDITS" : L"CR"; // (a panel sized to this sum)
 }
 
 void DrawShip(const Model& m, const Layout& L, float a)

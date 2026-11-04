@@ -38,6 +38,10 @@ Copy only the save a test needs. Never use this set's `AutoSave.fl` / `Restart.f
 one in replaces the install's). Saves in space mid-mission can sit inside a timed phase: read the mission's runbook first
 (`docs\missions\Mxx.md`), and check the objective with `Get-FLStoryState` after loading.
 
+A save's name is no proof of its content: the main install's `Save7e1c.fl` differs from this set's (it sits late in M01a;
+4 Nov 2026, a test for the owner started there by mistake). For a known state copy this set's file in under another name
+(`Saved0aa.fl` that day) and check the objective.
+
 Ships (archetype by `tools\flhash.ps1`): ge_fighter (starter), li_elite, br_elite, bh_elite, or_elite.
 
 | Save | MissionNum | Mission | Where | Rank | Credits | Ship |

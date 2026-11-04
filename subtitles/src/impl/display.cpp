@@ -1994,6 +1994,7 @@ static struct
 {
     bool on = false;              // HUD 2 replaces the game's HUD this frame
     bool feedOnly = false;        // an in-flight cutscene: no HUD 2, its comm feed stays (HudLayout.feed)
+    HudLayout feedL{};            // that layout (kept apart: l stays the last full one, Hud2Last)
     HudLayout l{};                // its layout (read this frame while on; the last one after)
     u32 frame = 0;                // our frame counter (Update)
     u32 busFrame = 0, seenAt = 0; // the bus's publish counter as last seen, and our frame when it last moved
@@ -2100,7 +2101,7 @@ static void Hud2Update()
             if (l.active)
                 g_hud2.l = l, g_hud2.on = g_set.enabled;
             else if (l.feed)
-                g_hud2.l = l, g_hud2.feedOnly = g_set.enabled;
+                g_hud2.feedL = l, g_hud2.feedOnly = g_set.enabled;
         }
         // the prompt lane (bus v2; an older bus has none): fresh = published within our last 2 frames
         g_hud2.laneOn = false;
@@ -2356,7 +2357,7 @@ static u32 g_feedShown = 0, g_feedDropped = 0;
 bool Hud2Feed(const std::wstring& speaker, u32 rgb, const std::wstring& text, float seconds)
 {
     const bool feedUp = g_hud2.feedOnly || (g_hud2.on && g_hud2.l.active);
-    if (!g_set.enabled || !feedUp || !Shown(g_hud2.l.chatFree) || text.empty())
+    if (!g_set.enabled || !feedUp || !Shown((g_hud2.feedOnly ? g_hud2.feedL : g_hud2.l).chatFree) || text.empty())
         return false;
     FeedLine f;
     const size_t dot = speaker.find(L" \x00B7 ");
@@ -2396,9 +2397,10 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
         !hk::Call<void*(__cdecl*)()>(exe::GetPlayerIObj) ||
         (!g_hud2.feedOnly && (exe::CamCutscene.is(cam) || LetterboxBar(sw, sh) > 0)))
         return;
-    const HudLayout& l = g_hud2.l;
+    const HudLayout& l = g_hud2.feedOnly ? g_hud2.feedL : g_hud2.l;
     const int px = std::max(8, static_cast<int>(sh * kSizes[g_set.size] + 0.5f));
-    if (g_font.px < 0 || g_fontsPx != px || !g_fontsAgency || !g_font.texture)
+    // (feedOnly with a line up: DrawImpl keeps its own face; asking for Agency here too rebuilt the fonts twice a frame)
+    if (g_font.px < 0 || g_fontsPx != px || (!g_fontsAgency && (g_hud2.on || g_blocks.empty())) || !g_font.texture)
     {
         std::wstring chars = g_chars;
         for (wchar_t c = 32; c < 127; ++c)

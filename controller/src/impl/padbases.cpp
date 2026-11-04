@@ -363,10 +363,12 @@ static void RefreshRoom()
         if (area < 0)
             area = find(name);
     const int last = g_lastGoto.empty() ? -1 : find(g_lastGoto);
-    g_current = roomring::Current(derived.empty() ? -1 : find(derived), g_launch.ctl != 0, area, last,
-                                  static_cast<int>(g_ring.size()));
-    if (g_busy.empty() && last >= 0 && g_current == last)
-        g_lastGoto.clear(); // arrived: the name must not outlive the trip (the next base has rooms of that name too)
+    const int own = derived.empty() ? -1 : find(derived);
+    g_current = roomring::Current(own, g_launch.ctl != 0, area, last, static_cast<int>(g_ring.size()));
+    // arrived in a room that names itself: the name must not outlive the trip (the next base has rooms of that name too).
+    // A room with nothing to name it (the Bars of Ku07_02 and Bw01_01: no news, no jobs) keeps it: it is all that says so
+    if (g_busy.empty() && last >= 0 && g_current == last && (own >= 0 || g_launch.ctl))
+        g_lastGoto.clear();
 }
 
 static int RingIndex(const std::string& label)

@@ -1,5 +1,6 @@
 #include "hudvis.h"
 
+#include "../fl.h"
 #include "flexe.h"
 #include "game/hudinfo.h"
 #include "log.h"
@@ -619,8 +620,8 @@ static void ApplyHoverHelp(bool menu)
 
 // The game steps its Neural Net queue from an update that stops with the NeuroNet box (exe::NNPump, its one caller): with
 // the box hidden the first line played and stayed at the head, so every later one waited, voice and subtitle, until the
-// box opened (GitHub issue 8). Stepped here instead while the box is hidden. Not in a cutscene or under a modal menu: a
-// line asked to play in a cutscene plays nothing and would be dropped; the queue waits for them.
+// box opened (GitHub issue 8). Stepped here instead while the box is hidden. Not in a cutscene, under a modal menu or in a
+// pause: a line asked to play in a cutscene plays nothing and would be dropped; the queue waits for them.
 static void StepNeuralNet()
 {
     __try
@@ -683,11 +684,16 @@ void Apply(bool hide)
     }
     DrawViews(!menu); // no 3D view under the menu (its requests lapse: the game's rectangles go back)
     const Root* nn = RootByLabel("neuronet");
-    if (!menu && nn && nn->hidden)
+    if (!menu && nn && nn->hidden && !fl::GamePaused())
         StepNeuralNet();
 }
 
-void HoldChat(bool on) { g_holdChat = on; }
+void HoldChat(bool on)
+{
+    if (g_holdChat && !on) // (HideChat re-found the roots in the cutscene: they go with it, as at the flight's end)
+        Invalidate();
+    g_holdChat = on;
+}
 
 static void HideChat()
 {

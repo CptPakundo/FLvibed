@@ -235,7 +235,8 @@ void CompareLine(float H)
     if (baseinfo::Find("QuantitySlider"))
         return; // (not a single item: the slider's place)
     // the column takes the panel's whole inner width, from the item's icon on (the owner, 4 Nov 2026: "VS MOUNTED CATAPULT
-    // MIS..." was cut beside free room); a heading that still does not fit takes a second line, never an ellipsis
+    // MIS..." was cut beside free room); a heading that still does not fit takes a second line (a name wider than the
+    // whole column alone is still fitted by TextFit)
     float colX0 = item.x - item.hw, colX1 = item.x + item.hw;
     ui::Item button;
     if (CtlRect(baseinfo::Find("TransferItemButton"), button))

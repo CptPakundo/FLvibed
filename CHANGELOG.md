@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.7a - 4 Nov 2026
+
+- Pad, in bases: the bumpers work in a Bar with no news or job board (two-room bases such as Ku07_02). 0.2.7 took that Bar
+  for the Deck, so LB / RB seemed to do nothing there.
+- Smoother cutscenes: a story line and a chat card on screen together no longer rebuild the text every frame.
+
 ## 0.2.7 - 4 Nov 2026
 
 - HUD 2: Neural Net lines (Objective Reached, Tractor Failure, the docking lines and the rest), voice and subtitle, play
