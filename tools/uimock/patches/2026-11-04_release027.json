@@ -1,0 +1,15 @@
+{
+  "_about": "Release 0.2.7 (4 Nov 2026), GitHub issue 7: the missile button held fires the torpedo in every preset and while the autopilot flies, and a cruise disruptor when the ship has one and no torpedo. docs\\UI_SPEC.json has carried the bindings since 88e761b8; this patch brings them to the mock-up source and to ui/spec. No row or help text changes: core\\ui_meta.h stays as shipped.",
+  "bindings": {
+    "presets/ACE/flight/B": { "hold": "torpedo" },
+    "presets/ASSISTED/flight/RB": { "hold": "torpedo" },
+    "common/flight_ap/RB": { "hold": "torpedo" }
+  },
+  "states": {
+    "hud/wheel": {
+      "notes": [
+        "Built 4 Nov 2026 (0.2.7): the wheel's CRUISE DISRUPTOR stays, and the missile button held (RB in FREELANCER, ASSISTED and under the autopilot, B in ACE) also fires a cruise disruptor when the ship has one and no torpedo; HUD 2's torpedo row then says HOLD for it. Tested on a virtual pad, not a real one."
+      ]
+    }
+  }
+}

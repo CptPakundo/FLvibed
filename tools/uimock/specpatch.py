@@ -9,7 +9,8 @@ help replaced, a state extra's field set. Nothing of the owner's other edits is 
 patch.json: { "add_rows": {"<tab id>/<section label>": {"first": true | "after": "<row key>", "rows": [{"key", "label", "kind": "toggle" | "picker" |
 "slider", "def", "options" | "min" / "max" / "step" / "unit", "help", "tier"}]}}, "rows": {"<key>": {"def": .., "value": ..,
 "help": ".."}}, "states": {"<screen>/<state>": {"notes": [".."],
-"extras": {"<t>": {"<field>": value}}}}, "decisions": {"<id>": {"note": ".."}}, "top": {"<key>": <block>} }. "top" sets a
+"extras": {"<t>": {"<field>": value}}}}, "decisions": {"<id>": {"note": ".."}}, "top": {"<key>": <block>},
+"bindings": {"presets/<PRESET>/flight/<input>" | "common/<context>/<input>": {"tap" | "hold" | "dbl": "<action>"}} }. "top" sets a
 spec-only top-level block (the spec half only; e.g. "hud2_presets", Q7). A decision note is appended to the
 existing note (" | " between). The spec file's top-level shape is either the artifact's document ({spec: {...}}) or the
 spec itself (docs\\UI_SPEC.json with an `_about` line).
@@ -184,8 +185,55 @@ def add_rows_js(src, patch):
     return src
 
 
+def binding_entry(spec, path):
+    """The spec's {tap, hold, dbl} of a binding path (patch['bindings'])."""
+    parts = path.split('/')
+    node = spec['bindings']
+    for p in parts:
+        if not isinstance(node, dict) or p not in node:
+            sys.exit('binding %s not in the spec' % path)
+        node = node[p]
+    return node
+
+
+def patch_bindings_js(src, patch):
+    """patch['bindings'] in the mock-up source: the const FLIGHT_<PRESET> block, or the context's line of COMMON."""
+    lines = src.split('\n')
+    for path, fields in patch.get('bindings', {}).items():
+        parts = path.split('/')
+        if parts[0] == 'presets' and len(parts) == 4 and parts[2] == 'flight':
+            start = next((i for i, l in enumerate(lines) if l.startswith('const FLIGHT_%s = {' % parts[1])), None)
+            end = None if start is None else next(i for i in range(start, len(lines)) if lines[i].startswith('};'))
+        elif parts[0] == 'common' and len(parts) == 3:
+            top = next(i for i, l in enumerate(lines) if l.startswith('const COMMON = {'))
+            start = next((i for i in range(top, len(lines)) if lines[i].startswith('  %s: {' % parts[1])), None)
+            end = start
+        else:
+            sys.exit('binding path %s: presets/<PRESET>/flight/<input> or common/<context>/<input>' % path)
+        if start is None:
+            sys.exit('binding %s not in the mock-up source' % path)
+        inp = parts[-1]
+        hits = 0
+        for i in range(start, end + 1):
+            def rep(mm):
+                args = re.findall(r"'([^']*)'", mm.group(1))
+                b = dict(zip(('tap', 'hold', 'dbl'), args + ['none'] * (3 - len(args))))
+                b.update(fields)
+                vals = [b['tap'], b['hold'], b['dbl']]
+                while len(vals) > 1 and vals[-1] == 'none':
+                    vals.pop()
+                return "%s: Bd(%s)" % (inp, ', '.join(js_literal(v) for v in vals))
+            lines[i], n = re.subn(r"\b%s: Bd\(([^)]*)\)" % re.escape(inp), rep, lines[i])
+            hits += n
+        if hits != 1:
+            sys.exit('binding %s: %d matches in the mock-up source' % (path, hits))
+    return '\n'.join(lines)
+
+
 def patch_spec(doc, patch):
     spec = doc['spec'] if 'spec' in doc and 'tabs' in doc['spec'] else doc
+    for path, fields in patch.get('bindings', {}).items():
+        binding_entry(spec, path).update(fields)
     for where, p in patch.get('add_rows', {}).items():
         tab, label = where.split('/', 1)
         t = next((t for t in spec['tabs'] if t['id'] == tab), None)
@@ -256,7 +304,7 @@ def main():
     patch = json.load(open(a.patch, encoding='utf-8'))
     if a.js:
         src = open(a.js, encoding='utf-8').read()
-        src = add_rows_js(src, patch)
+        src = patch_bindings_js(add_rows_js(src, patch), patch)
         open(a.js, 'w', encoding='utf-8', newline='\n').write(patch_js(src, patch))
         print('patched', a.js)
     if a.spec:

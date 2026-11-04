@@ -9,13 +9,13 @@
 One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller support with a controller-first interface, dialogue subtitles with speaker names, and better movie handling - in a single DLL.
 
 <p>
-<a href="../../releases/latest/download/FLvibed-0.2.6-Setup.exe"><img alt="Download FLvibed 0.2.6 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.2.6-5865f2?style=for-the-badge"></a>
+<a href="../../releases/latest/download/FLvibed-0.2.7-Setup.exe"><img alt="Download FLvibed 0.2.7 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.2.7-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.2.6.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.2.7.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.2.6 preview" src="https://img.shields.io/badge/version-0.2.6_preview-5865f2?style=for-the-badge">
+<img alt="Version 0.2.7 preview" src="https://img.shields.io/badge/version-0.2.7_preview-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -29,7 +29,23 @@ One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller
 > **Made with AI ("vibe coded").** The code, the tools and the documentation were written by an AI (Claude, by
 > Anthropic) under the author's direction and tested in game. It comes with no warranty.
 
-## 🆕 New in 0.2.6
+## 🆕 New in 0.2.7
+
+**0.2.7 answers six more reports from players and takes up one suggestion.** The full list is in [CHANGELOG.md](CHANGELOG.md).
+
+- **Turret view follows Invert Y** on the right stick, and so does the ASSISTED preset's aim cursor.
+- **Torpedoes on the pad:** holding the missile button fires them in every preset and while the autopilot flies: RB in
+  FREELANCER and ASSISTED, B in ACE. The same hold fires a cruise disruptor when the ship has one and no torpedo.
+- **Neural Net lines in flight:** with HUD 2 on, Objective Reached, Tractor Failure and the like now play as they happen,
+  voice and subtitle, not only once the NeuroNet opens.
+- **Bases on the pad:** LB / RB reach every room on stations too.
+- **Dealers:** an item you cannot buy keeps its full panel and the infocard's backing, and the comparison with your
+  mounted gun uses the whole panel.
+- **Credits:** the ship panel grows for a long balance, so the number no longer clips.
+- **Chat in cutscenes:** HUD 2's chat cards stay through in-flight cutscenes such as docking and launching.
+- **Smaller fixes:** clearer tractor prompts, and the right stick no longer gets stuck on an enemy the game refuses.
+
+## New in 0.2.6
 
 **0.2.6 answers the first reports from players.** The full list is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -289,7 +305,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | 🧩 **Compatibility** | HD Edition 0.7.1, the original 1.1, FLUF beside it | Newer HD Edition releases, more mods |
 
 > [!IMPORTANT]
-> 🧪 **0.2.6 is an early preview - expect rough edges and change.**
+> 🧪 **0.2.7 is an early preview - expect rough edges and change.**
 > - **Some features are incomplete:** the Advanced Autopilot is work in progress, a few screens and controls are not
 >   built yet, and some are proven only by the test harness so far.
 > - **Design choices are still subject to change:** button layouts, HUD 2's look, setting names
@@ -320,7 +336,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 **2. Install FLvibed** - one click
 
-1. ⬇️ Download **[FLvibed-0.2.6-Setup.exe](../../releases/latest/download/FLvibed-0.2.6-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.2.7-Setup.exe](../../releases/latest/download/FLvibed-0.2.7-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders - else you pick the folder):
    choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -331,7 +347,7 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.2.6.zip](../../releases/latest/download/FLvibed-0.2.6.zip)** and unpack it.
+1. Download **[FLvibed-0.2.7.zip](../../releases/latest/download/FLvibed-0.2.7.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
    `FLvibed.dll`, `FLvibed.ini`, `FLSubtitles\` and `FLvibed\` land in `EXE\`.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins

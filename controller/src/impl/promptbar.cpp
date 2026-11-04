@@ -150,8 +150,22 @@ static void CollectExtra(float W, float H, int priority)
             if (f != seen)
                 seen = f, movedAt = now;
             HudDockedSubs s{};
+            // The block's place follows the lane and the lane this keep-out: the two must not chase each other (GitHub
+            // issue 10: pills flickering with a Neural Net line up, not reproduced). While a block shows the keep-out
+            // only grows, and it lets go 0.5 s after the last block, so the lane moves at most once each way.
+            static KeepRect held{};
+            static ULONGLONG heldAt = 0;
             if (now - movedAt < 100 && bus->ReadDockedSubs(&s) && s.rect.x1 > s.rect.x0 && s.rect.y1 > s.rect.y0)
-                g_extra.push_back({s.rect.x0 * W, s.rect.y0 * H, s.rect.x1 * W, s.rect.y1 * H});
+            {
+                const KeepRect r{s.rect.x0 * W, s.rect.y0 * H, s.rect.x1 * W, s.rect.y1 * H};
+                if (heldAt && now - heldAt < 500)
+                    held = {std::min(held.x0, r.x0), std::min(held.y0, r.y0), std::max(held.x1, r.x1), std::max(held.y1, r.y1)};
+                else
+                    held = r;
+                heldAt = now;
+            }
+            if (heldAt && now - heldAt < 500)
+                g_extra.push_back(held);
         }
     if (priority >= 10 && g_screen != "chat" && HostAtLeast(21) && g_host->GetHudBus)
         if (const HudBus* bus = g_host->GetHudBus())
@@ -571,7 +585,9 @@ std::string Status()
     o << "promptbar screen=" << (g_screen.empty() ? "-" : g_screen) << " count=" << g_count << " pending=" << g_pending
       << " visible=" << g_visible << " drawn=" << g_drawn << " rows=" << g_rows << " dropped=" << g_dropped
       << " lane=" << ModeName(g_last.mode) << " mode=" << uiopt::Get().promptBar << " seen=" << g_seen.size()
-      << " widest=" << static_cast<int>(g_last.widest) << " column=" << static_cast<int>(g_last.column);
+      << " widest=" << static_cast<int>(g_last.widest) << " column=" << static_cast<int>(g_last.column)
+      << " area=" << static_cast<int>(g_last.rx0) << "," << static_cast<int>(g_last.ry0) << ".."
+      << static_cast<int>(g_last.rx1) << "," << static_cast<int>(g_last.ry1);
     o << " atFloor=" << g_last.atFloor << " hold=" << promptfit::HoldStepName(g_plan.step) << " holdRuns=" << g_holdRuns;
     // the prompts themselves ("Y LAUNCH, LB+RB ROOM"): what the screen offers, for the tests
     o << " items='";

@@ -617,6 +617,25 @@ static void ApplyHoverHelp(bool menu)
     }
 }
 
+// The game steps its Neural Net queue from an update that stops with the NeuroNet box (exe::NNPump, its one caller): with
+// the box hidden the first line played and stayed at the head, so every later one waited, voice and subtitle, until the
+// box opened (GitHub issue 8). Stepped here instead while the box is hidden. Not in a cutscene or under a modal menu: a
+// line asked to play in a cutscene plays nothing and would be dropped; the queue waits for them.
+static void StepNeuralNet()
+{
+    __try
+    {
+        if (exe::NNPump.ok() && exe::IsPlayerInCutscene.ok() && !hk::Call<int(__cdecl*)()>(exe::IsPlayerInCutscene))
+            hk::Call<void(__cdecl*)(float)>(exe::NNPump, 0.0f);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+}
+
+static bool g_holdChat = false; // HoldChat
+static void HideChat();
+
 void Apply(bool hide)
 {
     const DWORD now = GetTickCount();
@@ -629,7 +648,10 @@ void Apply(bool hide)
     {
         DrawViews(false);
         for (Root& r : g_roots)
-            Restore(r);
+            if (!g_holdChat || strcmp(r.label, "chat") != 0)
+                Restore(r);
+        if (g_holdChat)
+            HideChat();
         if (!g_hoverAllowed)
         {
             Revalidate(now, true);
@@ -660,6 +682,32 @@ void Apply(bool hide)
             r.hidden = true;
     }
     DrawViews(!menu); // no 3D view under the menu (its requests lapse: the game's rectangles go back)
+    const Root* nn = RootByLabel("neuronet");
+    if (!menu && nn && nn->hidden)
+        StepNeuralNet();
+}
+
+void HoldChat(bool on) { g_holdChat = on; }
+
+static void HideChat()
+{
+    Revalidate(GetTickCount(), false);
+    Root* r = RootByLabel("chat");
+    if (!r || !r->ctl)
+        return;
+    if (r->keep && r->keep(*r)) // (the player typing: the window stays theirs)
+    {
+        Restore(*r);
+        return;
+    }
+    u8 st = 0;
+    if (!ReadState(r->ctl, st) || !(st & 3))
+        return;
+    if (r->hidden)
+        ++r->rewrites;
+    r->saved = st & 3;
+    if (WriteState(r->ctl, static_cast<u8>(st & ~3)))
+        r->hidden = true;
 }
 
 void Invalidate()

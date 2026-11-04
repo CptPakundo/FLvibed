@@ -263,7 +263,7 @@ torpedo, Y the smart target (under the reticle else nearest, again next, double 
 button), X context / hold turret view, RB next enemy / hold previous, LB tap picker / hold the action wheel, R3
 cruise / hold rear view, L3 engine kill, D-pad consumables as above, View hub / hold autopilot, Menu pause. Favours one
 thumb flying and aiming with the other free for the weapons; sets aside the finger throttle lever and the D-pad's
-cheapness (the left thumb steers, so a nanobot mid-fight costs steering). **ASSISTED**: the autopilot flies; RS aims, RT guns, RB missile,
+cheapness (the left thumb steers, so a nanobot mid-fight costs steering). **ASSISTED**: the autopilot flies; RS aims, RT guns, RB missile / hold torpedo,
 A context / accept, B hand back, Y target / hold picker, X goal panel, D-pad consumables. Shared situations: menus
 (D-pad / LS focus, A accept, B back / hold close all, X context, Y secondary, LB / RB tabs, LT / RT pages, RS scroll, R3
 reset view, L3 pad cursor), bases (LB / RB rooms, D-pad left / right characters, A talk, Y launch or job board, X

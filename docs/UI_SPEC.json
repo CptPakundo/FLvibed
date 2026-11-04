@@ -164,7 +164,7 @@
     },
     "RB": {
      "dbl": "none",
-     "hold": "none",
+     "hold": "torpedo",
      "tap": "missile"
     },
     "RS": {
@@ -573,7 +573,7 @@
      },
      "B": {
       "dbl": "none",
-      "hold": "none",
+      "hold": "torpedo",
       "tap": "missile"
      },
      "DD": {
@@ -722,7 +722,7 @@
      },
      "RB": {
       "dbl": "none",
-      "hold": "none",
+      "hold": "torpedo",
       "tap": "missile"
      },
      "RS": {
@@ -2304,7 +2304,8 @@
      "notes": [
       "Rare and contextual actions live in one wheel: hold LB, pick with the right stick (a dead zone keeps steering noise out; the D-pad works too), release to do it. The left stick keeps flying meanwhile. Scan cargo lives here: contextual, still two motions away.",
       "Built: nothing is pre-highlighted - the right stick (past a dead zone) or the D-pad picks, a bare hold and release does nothing; drawn as label boxes on a ring round the reticle, the pick repeated under it; with TWO GROUPS ON THE TRIGGERS an ENGINE KILL slot joins; COMMS = the game's hail (USER_RADIO); the right stick does not steer while the wheel is open.",
-      "Built: EDIT GROUPS opens the weapon group editor over the HUD: the ship's guns with a tick each, A switches the focused gun on or off in the group, D-pad up / down the gun, LB / RB the group (which also makes it the active group), B done; the sticks keep flying and RT keeps firing. The game stores the groups. Guns only: launchers fire on their own buttons."
+      "Built: EDIT GROUPS opens the weapon group editor over the HUD: the ship's guns with a tick each, A switches the focused gun on or off in the group, D-pad up / down the gun, LB / RB the group (which also makes it the active group), B done; the sticks keep flying and RT keeps firing. The game stores the groups. Guns only: launchers fire on their own buttons.",
+      "Built 4 Nov 2026 (0.2.7): the wheel's CRUISE DISRUPTOR stays, and the missile button held (RB in FREELANCER, ASSISTED and under the autopilot, B in ACE) also fires a cruise disruptor when the ship has one and no torpedo; HUD 2's torpedo row then says HOLD for it. Tested on a virtual pad, not a real one."
      ],
      "prompts": [
       {

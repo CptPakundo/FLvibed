@@ -59,6 +59,27 @@ void Test_target_cycle()
         const Enemy again[3] = {{20, 900}, {10, 50}, {30, 100}};
         CHECK(c.Press(2, again, 3, 30) == 20);
     }
+    // the game refused the pick: the next press takes another, with or without a target
+    {
+        Chain c;
+        CHECK(c.Press(0, three, 3, 0) == 10);
+        c.Refused(0);
+        CHECK(c.Press(1, three, 3, 0) == 20);
+    }
+    // more enemies than the run's list: presses keep moving
+    {
+        Enemy many[40];
+        for (int i = 0; i < 40; ++i)
+            many[i] = {static_cast<unsigned>(100 + i), 100.0f + i};
+        Chain c;
+        unsigned cur = 0;
+        for (int i = 0; i < 80; ++i)
+        {
+            const unsigned next = c.Press(static_cast<float>(i), many, 40, cur);
+            CHECK(next != 0 && next != cur);
+            cur = next;
+        }
+    }
     // nothing to take
     {
         Chain c;

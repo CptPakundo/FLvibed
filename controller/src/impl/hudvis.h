@@ -27,6 +27,9 @@ namespace hudvis
 // Once per frame from OnRenderUnderHud (before the UI pass draws the controls): hide the panels (true) or restore what
 // was hidden (false; a no-op when nothing is hidden).
 void Apply(bool hide);
+// An in-flight cutscene with HUD 2 as the HUD: the game's chat window alone stays hidden through Apply(false), HUD 2's comm
+// feed takes its lines; off again = the next Apply gives it back.
+void HoldChat(bool on);
 // Whether the switch also hides the game's system arrival line ("New York System, Liberty Space.", typed top left)
 // while it hides the panels. Default false: HUD 2's place line shows the system and zone after a jump only, not the
 // house ("Liberty Space") and not at a launch / load; HUD 2 sets it once it shows the same line. One guarded read a

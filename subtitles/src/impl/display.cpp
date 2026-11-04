@@ -1993,6 +1993,7 @@ static void UpdateBanner()
 static struct
 {
     bool on = false;              // HUD 2 replaces the game's HUD this frame
+    bool feedOnly = false;        // an in-flight cutscene: no HUD 2, its comm feed stays (HudLayout.feed)
     HudLayout l{};                // its layout (read this frame while on; the last one after)
     u32 frame = 0;                // our frame counter (Update)
     u32 busFrame = 0, seenAt = 0; // the bus's publish counter as last seen, and our frame when it last moved
@@ -2093,8 +2094,14 @@ static void Hud2Update()
         if (f != g_hud2.busFrame)
             g_hud2.busFrame = f, g_hud2.seenAt = g_hud2.frame;
         HudLayout l;
-        if (g_hud2.frame - g_hud2.seenAt <= 2 && bus->ReadLayout(&l) && l.active)
-            g_hud2.l = l, g_hud2.on = g_set.enabled;
+        g_hud2.feedOnly = false;
+        if (g_hud2.frame - g_hud2.seenAt <= 2 && bus->ReadLayout(&l))
+        {
+            if (l.active)
+                g_hud2.l = l, g_hud2.on = g_set.enabled;
+            else if (l.feed)
+                g_hud2.l = l, g_hud2.feedOnly = g_set.enabled;
+        }
         // the prompt lane (bus v2; an older bus has none): fresh = published within our last 2 frames
         g_hud2.laneOn = false;
         if (bus->version >= 2 && bus->LaneFrame && bus->ReadLane)
@@ -2348,7 +2355,8 @@ static u32 g_feedShown = 0, g_feedDropped = 0;
 
 bool Hud2Feed(const std::wstring& speaker, u32 rgb, const std::wstring& text, float seconds)
 {
-    if (!g_set.enabled || !g_hud2.on || !g_hud2.l.active || !Shown(g_hud2.l.chatFree) || text.empty())
+    const bool feedUp = g_hud2.feedOnly || (g_hud2.on && g_hud2.l.active);
+    if (!g_set.enabled || !feedUp || !Shown(g_hud2.l.chatFree) || text.empty())
         return false;
     FeedLine f;
     const size_t dot = speaker.find(L" \x00B7 ");
@@ -2367,7 +2375,7 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
     if (g_feed.empty())
         return;
     const double now = Now();
-    if (!g_hud2.on || !g_set.enabled)
+    if ((!g_hud2.on && !g_hud2.feedOnly) || !g_set.enabled)
     {
         g_feed.clear(); // HUD 2 went: the chat window takes the next lines (impl.cpp)
         return;
@@ -2382,9 +2390,11 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
     // one comm surface at a time: nothing while the top panel shows (or slides), nor outside flight / in a cutscene
     const u32 cam = Mem<u32>(exe::CurrentCamera);
     // (nor while the game's letterbox is up - a jump's tunnel: HUD 2 collapses to its nav chip and ring then, and the
-    // band would straddle the bar; the lines wait)
-    if (g_feed.empty() || g_panel.alpha > 0.01f || g_panel.s > 0 || !cam || exe::CamCutscene.is(cam) ||
-        !hk::Call<void*(__cdecl*)()>(exe::GetPlayerIObj) || LetterboxBar(sw, sh) > 0)
+    // band would straddle the bar; the lines wait). An in-flight cutscene has its own bars and the feed is the chat there
+    // (feedOnly): its band ends inside them
+    if (g_feed.empty() || g_panel.alpha > 0.01f || g_panel.s > 0 || !cam ||
+        !hk::Call<void*(__cdecl*)()>(exe::GetPlayerIObj) ||
+        (!g_hud2.feedOnly && (exe::CamCutscene.is(cam) || LetterboxBar(sw, sh) > 0)))
         return;
     const HudLayout& l = g_hud2.l;
     const int px = std::max(8, static_cast<int>(sh * kSizes[g_set.size] + 0.5f));

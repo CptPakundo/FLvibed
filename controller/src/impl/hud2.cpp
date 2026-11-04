@@ -311,6 +311,8 @@ static int CmdOf(presets::Action a, bool dock, bool loot = false)
     }
 }
 
+static long long g_creditsTest = -1; // debug `hud2 credits <n>`: the ship panel's number (-1: the player's)
+
 // A prompt for an action in the current form: the preset's button (pad), or the keymap's key (K&M). False when the
 // action has no button / key: the prompt is not offered.
 static bool MakePrompt(Prompt& p, presets::Action a, const wchar_t* label, bool dock = false, bool loot = false)
@@ -356,6 +358,7 @@ static int CtxSide(presets::Action a, const wchar_t* label)
     case A::Turret:
     case A::Tractor: // ([X] TRACTOR n: TractorCtx, 5.23)
     case A::TargetSmart:
+    case A::TargetNearest:
     case A::TargetPicker: return 1;
     case A::Context: return label && wcsncmp(label, L"TRACTOR", 7) == 0 ? 1 : 0;
     default: return 0;
@@ -396,7 +399,8 @@ static void TorpedoPrompt(Model& m, presets::Action a)
 // the context, and not in ASSISTED, whose A starts the autopilot; the keyboard's key tractors only a target). [X] TRACTOR
 // ALL n - everything in reach; with one item in reach that A does not name, [X] names it. Focus: A's prompt only (its
 // band shows LOOT n with X's glyph, PRESETS 2.2). Within the line's three prompts and its one-prompt-per-button rule
-// (combat's X-hold TURRET keeps the X: the round 3 critique); idempotent.
+// (combat's X-hold TURRET keeps the X: the round 3 critique). Once a frame: a second call with `aFree` false would add
+// [X] naming the item [A] already names.
 static std::wstring TractorItem(const std::wstring& name, const std::wstring& dist)
 {
     return L"TRACTOR " + Upper(name) + L" " + static_cast<wchar_t>(0x00B7) + L" " + dist;
@@ -514,8 +518,9 @@ void NoteCursorHidden(bool hidden) { g_cursorHiddenNote = hidden; }
 static unsigned CtxSig(const Model& m)
 {
     unsigned h = promptshow::Mix(promptshow::kSeed, m.nCtx);
-    for (int i = 0; i < m.nCtx && i < 3; ++i)
-        h = promptshow::Mix(promptshow::Mix(promptshow::Mix(h, static_cast<int>(m.ctx[i].btn)), m.ctx[i].key), m.ctx[i].label);
+    for (int i = 0; i < m.nCtx && i < 3; ++i) // (without a label's range - TRACTOR <ITEM> . <range>: moving is no new prompt)
+        h = promptshow::Mix(promptshow::Mix(promptshow::Mix(h, static_cast<int>(m.ctx[i].btn)), m.ctx[i].key),
+                            m.ctx[i].label.substr(0, m.ctx[i].label.find(static_cast<wchar_t>(0x00B7))));
     return h;
 }
 
@@ -933,7 +938,7 @@ static void Slow()
         m.holdUsed = static_cast<int>(g_self.holdSize - g_self.holdFree + 0.5f), m.holdCap = static_cast<int>(g_self.holdSize + 0.5f);
     else
         m.holdUsed = -1;
-    m.credits = hudinfo::Credits();
+    m.credits = g_creditsTest >= 0 ? g_creditsTest : hudinfo::Credits();
     m.shipName = g_haveSelf ? shipname::Name(g_self.shipArch) : L"";
     m.shipClass = me ? hudinfo::ClassName(me) : L"";
 
@@ -952,7 +957,8 @@ static void Slow()
     m.nGroups = 0;
     // the torpedo hardpoints' launcher has a row of its own and is not one of the missiles: its rounds were added to the
     // launcher's count under the missile's name (GitHub issue 5, 4 Nov 2026). Those hardpoints also take cruise
-    // disruptors: a torpedo wins the row, a disruptor shows when alone, with its own button (the wheel's: none on the row)
+    // disruptors: a torpedo wins the row, a disruptor shows when alone; the pad's hold fires either (HoldTorpedoSlot), the
+    // keyboard has a key for each
     m.torpedo.clear();
     m.torpedoAmmo = -1;
     bool torpedoIsRound = false;
@@ -971,7 +977,7 @@ static void Slow()
         m.torpedoAmmo = std::max(0, m.torpedoAmmo) + std::max(0, w.ammo);
     }
     if (!m.torpedo.empty())
-        TorpedoPrompt(m, torpedoIsRound ? presets::Action::Torpedo : presets::Action::CruiseDisruptor);
+        TorpedoPrompt(m, torpedoIsRound || !m.kbm ? presets::Action::Torpedo : presets::Action::CruiseDisruptor);
     // the lines above the launcher row (three): the torpedo row takes one
     const int groupRows = m.torpedo.empty() ? 3 : 2;
     const std::vector<hudinfo::WeaponInfo> wi = hudinfo::Weapons();
@@ -1441,16 +1447,19 @@ static void Slow()
                 AddCtx(A::Cruise, L"CRUISE");
             if (m.target && !tDock && !m.tLootReach) // (loot out of reach: A flies to it)
                 AddCtx(A::Context, L"GO TO");
-            else if (!m.target) // (RS: enemies first, else what is ahead - controller.cpp SmartTarget)
-                AddCtx(A::TargetSmart, m.enemies > 0 ? L"NEAREST ENEMY" : L"TARGET AHEAD");
+            else if (!m.target) // (RS: enemies first, else what is ahead - controller.cpp SmartTarget; the keyboard has
+                                // no SmartTarget: its nearest-enemy key is the game's own)
+                AddCtx(m.kbm && m.enemies > 0 ? A::TargetNearest : A::TargetSmart,
+                       m.enemies > 0 ? L"NEAREST ENEMY" : L"TARGET AHEAD");
             if (m.kbm) // (the pad's LB TARGETS / WHEEL sit under the reticle ring in calm flight)
                 AddCtx(A::TargetPicker, L"TARGETS");
             break;
         }
         // the tractor's prompts in every other state (calm placed them above), after the state's own prompts - they left
         // their spot under the reticle ring on 31 Oct 2026 (5.23); A's one-item form only where A is the context's (a
-        // fight: B / X are REVERSE / TURRET); idempotent
-        TractorCtx(m.state == State::Combat);
+        // fight: B / X are REVERSE / TURRET)
+        if (m.state != State::Calm)
+            TractorCtx(m.state == State::Combat);
     }
 
     // ---- alerts (edges) and the slots they light
@@ -1739,7 +1748,7 @@ static void Simulate(Model& m)
 static bool EnemyCue()
 {
     return !g_m.kbm && !g_m.target && g_m.enemies > 0 && g_m.state != State::Autopilot && g_m.state != State::Turret &&
-           g_m.nearestBtn.btn != glyphs::COUNT;
+           !g_letterbox && g_m.nearestBtn.btn != glyphs::COUNT;
 }
 
 static bool ListShown()
@@ -1886,7 +1895,7 @@ static void ComputeLayout(float W, float H)
     g_m.nCtx = c.nCtx; // (the last prompts that did not fit gave way; a preset's pill cap too)
 }
 
-static void Publish(bool active)
+static void Publish(bool active, bool feed = false)
 {
     const HudBus* bus = HostAtLeast(21) && g_host->GetHudBus ? g_host->GetHudBus() : nullptr;
     if (!bus || !bus->PublishLayout)
@@ -1897,6 +1906,7 @@ static void Publish(bool active)
     const HudRect none = {0, 0, 0, 0};
     HudLayout l = {};
     l.active = active ? 1 : 0;
+    l.feed = feed ? 1 : 0;
     l.kbm = g_m.kbm ? 1 : 0;
     l.alerts = active && uiopt::Get().hudAlerts ? 1 : 0;
     l.alpha = g_t * uiopt::Get().hudOpacity / 100.0f;
@@ -1920,6 +1930,11 @@ static void Publish(bool active)
         l.alert = g_m.alertLeft > 0 && !g_m.alert.empty() ? R(L.alertX0, L.alertY, L.alertX1, L.alertY1) : none;
         l.topFree = R(c.topFree.x0, c.topFree.y0, c.topFree.x1, c.topFree.y1); // from the screen's top edge (the panel may hang flush)
         l.chatFree = R(c.chatFree.x0, c.chatFree.y0, c.chatFree.x1, c.chatFree.y1);
+    }
+    else if (feed)
+    {
+        l.chatFree = R(g_core.chatFree.x0, g_core.chatFree.y0, g_core.chatFree.x1, g_core.chatFree.y1);
+        l.alpha = uiopt::Get().hudOpacity / 100.0f; // (HUD 2's own fade is at 0 here; the feed draws by this)
     }
     bus->PublishLayout(&l);
 }
@@ -2010,6 +2025,12 @@ void Update(float dt, const Context& c)
     {
         if (g_wasInSpace)
             hudvis::Invalidate(); // the HUD goes with the flight (a load, a dock, the menu): drop the roots
+        // An in-flight cutscene (a docking, a mission's scene) has no HUD, but HUD 2's comm feed stays the chat's look:
+        // the game's chat window came back here with bare lines at the screen's edge (a player's report, 4 Nov 2026)
+        const bool feed = want && c.cutscene && g_L.W > 0;
+        hudvis::HoldChat(feed);
+        if (feed)
+            Publish(false, true);
         g_wasInSpace = false;
         g_entrySeen = false;
         g_visible = false;
@@ -2017,6 +2038,7 @@ void Update(float dt, const Context& c)
         HotUpdate(g_m, false);
         return;
     }
+    hudvis::HoldChat(false);
     if (!g_wasInSpace)
         g_spaceSince = perf::Now(); // (the alerts arm 1.5 s later: Slow)
     g_wasInSpace = true;
@@ -2538,6 +2560,11 @@ std::string Command(std::istream& in)
         snprintf(b, sizeof b, "hud2 peek: %s (%.1f s left)", g_reveal.pinned ? "pinned" : g_reveal.peekLeft > 0 ? "on" : "off",
                  g_reveal.peekLeft);
         return b;
+    }
+    if (what == "credits") // hud2 credits <n>: the ship panel's number, the long ones' test (-1: the player's again)
+    {
+        in >> g_creditsTest;
+        return "credits " + std::to_string(g_creditsTest);
     }
     if (what == "sim")
     {

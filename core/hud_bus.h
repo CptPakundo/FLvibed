@@ -25,7 +25,8 @@ struct HudLayout
     u8 alerts;     // 1 while HUD 2's alert cards are on (hud_alerts): the subtitles' Neural Net column leaves out the lines
                    // HUD 2 shows as alerts (shield failed / destroyed, hull breach, incoming missile / torpedo, cruise
                    // disrupted) - one place per event (25 Oct 2026; was reserved: older publishers write 0)
-    u8 reserved;
+    u8 feed;       // 1 with active 0: an in-flight cutscene while HUD 2 is the HUD: the comm feed stays, chatFree says where
+                   // (4 Nov 2026; was reserved: older publishers write 0)
     float alpha;   // 0..1: HUD 2's fade (the transition between the game's HUD and HUD 2 takes a few frames)
     float scale;   // hud_scale / 100
     HudRect nav;      // top-left: objective, maneuver chip, NeuroNet chip

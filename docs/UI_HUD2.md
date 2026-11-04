@@ -949,8 +949,8 @@ under the missile's name) for a row of its own on the third gun line, in the gun
 `key · name` in the keyboard form, the count at the right end (amber at 0). So a torpedo ship shows two group rows, the
 active group kept, the guns in no group dropped with two rows full. One RB glyph between the torpedo and launcher rows,
 as RT beside the gun rows: two 0.036 glyphs overlap at the 0.030 pitch, and a keycap in the row broke the lint in the
-keyboard form. A cruise disruptor on that hardpoint takes the row when no torpedo does (no prompt: it fires from the
-wheel). Focus's strip has the same row, its count always (the band's MSL n is the launcher's). Debug state `hud2 sim torpedo`.
+keyboard form. A cruise disruptor on that hardpoint takes the row when no torpedo does: the pad's torpedo hold fires it
+(`HOLD`; GitHub issue 7, `controller.cpp` HoldTorpedoSlot), the keyboard form shows its own key. Focus's strip has the same row, its count always (the band's MSL n is the launcher's). Debug state `hud2 sim torpedo`.
 **The hull's colour:** the ring's arc and number and the target card's bar and number are the game's red (`kHull`), white
 gone (the owner, 4 Nov 2026: no option, no need to keep it). The escorts' bars stay friendly green. The low states (the
 owner, same day; `hud2_parts.cpp` LowPulse, 1.5 Hz): at 25 % and below the shield keeps its blue and pulses to hostile red,
@@ -999,3 +999,33 @@ only consecutive presses should be 'next target'." / the classic NeuroNet box be
   4 s; with no target A pulled the nearest three times, once with a second item. The nav map open keeps the box (logged),
   closed hides it the next frame. `hud2 lint`: the cue's rows first 0.0061 H apart (FAIL) -> 0.01 H; after, 0 new FAIL
   (the known `loadout '3' / 'JAVELIN'` FAIL stays). **Not verified:** a real pad, the classic HUD's rows on screen, Focus.
+- Sweep after 0.2.6 (4 Nov 2026, code review, no game; unit tests + compile only, CHANGELOG Unreleased): `TractorCtx` once a
+  frame (a second call in calm added [X] for the item [A] names); `CtxSig` leaves a label's range out (the lanes never
+  faded while moving); the keyboard's NEAREST ENEMY is A::TargetNearest; `EnemyCue` off in the letterbox; the classic HUD's
+  A tractor rows not in ASSISTED; `tcycle::Chain` Refused + a full list restarts the run.
+
+### 5.32 Reports of 4 Nov 2026 evening (0.2.7)
+- Issue 8: `hudvis.cpp` steps the Neural Net queue while it hides the NeuroNet box (FREELANCER_RE "The Neural Net queue's
+  step"). Issue 9: the room ring, `room_ring.h` (FREELANCER_RE "Room buttons are hotspot behaviour 1 or 11").
+- Issue 10, the dealer: the plates' `Xfer` means a row is selected (BuySellTradeButton or TransferItemView shown): an item
+  the game refuses has no buy button but all the same text. With the infocard's plate there the lane goes to the column
+  beside it instead of the row over the stats. Read at 4K on Li01_12, the frames in the issue's thread.
+- Issue 10, the pills' flicker: **not reproduced**. Three real buys with Neural Net lines up, sampled ~30 times a second,
+  at 3840x2160, 1920x1080 and 1600x1200: one prompt-bar state each. Refused rows were sampled only before the plate fix
+  and with coarser fields; the case the report's own build shows (a gun bought into a free hardpoint) was not run: the
+  fixture ship has none free. The one feedback loop in the code, the lane and the subtitles' docked block placing
+  themselves by each other, is damped: the keep-out only grows while a block shows, and lets go 0.5 s after it.
+- A player's suggestion: the ship panel's CREDITS goes to CR when the number needs the room (`CreditsWord`), the panel's
+  width counts the short word. Debug `hud2 credits <n>`, read at 4 250 up to 2 147 483 647.
+- The owner on those frames, 4 Nov 2026: "HUD 2 should be adaptable to the content, and allow for maximized used. When in a
+  base, the dealer HUD takes center stage." Text uses the room before it is shortened. Built: the compare column takes the
+  panel's inner width from the item's icon on, a heading that still does not fit takes a second line (`CompareLine`); the
+  ship panel grows to `kShipGrowW` 0.36 for the whole word, CR only past that (`ShipContentWidth`, `CreditsWord`; a
+  measured width alone: the unmeasured default stays `kShipW`). Read at 4 250 up to 2 147 483 647. Open: the same pass over
+  the other shortened texts of HUD 2 and the docked screens, and what "center stage" asks of the dealer's layout.
+- A player, 4 Nov 2026: in in-flight cutscenes the chat lost HUD 2's look. Mode::Cutscene is not "in space": HUD 2 went off,
+  `hudvis` gave the MsgWin back and `Hud2Feed` refused. Now, with HUD 2 as the HUD, `HudLayout.feed` (active 0) carries
+  `chatFree` and a full alpha through the cutscene, `display.cpp` keeps the feed (`feedOnly`: also past its own cutscene and
+  letterbox gates, its band ends inside the bars), `hudvis::HoldChat` keeps the MsgWin hidden through Apply(false). Read in
+  game on a real docking and launch: the chat root hidden in both, shown when docked, HUD 2 back in flight. **Not run:** a
+  mission's story cutscene (same mode, the CamCutscene camera).
