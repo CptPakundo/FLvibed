@@ -24,6 +24,7 @@
 #include "log.h"
 #include "osk.h"
 #include "padbases.h"
+#include "safemem.h"
 #include "text.h"
 #include "uiskin.h"
 #include "uikit.h"
@@ -108,7 +109,7 @@ static bool ChatField(float& x0, float& y0, float& x1, float& y1)
     x0 = r.x, y0 = r.y, x1 = r.x + 2 * r.hw, y1 = r.y + 2 * r.hh;
     return true;
 }
-float Top(float H, const render::Font&) { return H * 0.910f; }
+float Top(float H, const render::Font&) { return H * deckmode::LaneTopH(); }
 
 void Update(float) {}
 
@@ -275,8 +276,8 @@ static void LayoutHold(float W, float H, const float* bN, const float* bF, const
         int dr = 0;
         promptfit::LaneLayout(W, H, g_count, confirm, bN, bF, ph, pitch, uiskin::NeuroNetBottom(), left, lowest, none, dr);
         key.ok = true, key.W = W, key.H = H, key.n = g_count, key.mode = none.mode, key.rx0 = none.rx0, key.ry0 = none.ry0;
-        const float by0 = H * 0.910f;
-        key.aboveLeft = left(by0 - wordH - H * 0.002f, by0, W * 0.95f);
+        const float by0 = H * deckmode::LaneTopH();
+        key.aboveLeft = left(by0 - wordH - H * 0.002f, by0, W * (1.0f - deckmode::SideW()));
         for (int i = 0; i < g_count; ++i)
             key.bN[i] = bN[i], key.bF[i] = bF[i], key.hold[i] = hold[i], key.use[i] = none.use[i];
     }
@@ -349,6 +350,25 @@ static void Fallback(const Placed& p, int sw, int sh)
             p.mode == Mode::Top ? "the top" : "the below-obstacle");
 }
 
+// The lane just laid out (g_last) against the one in use (`before`): promptfit::PillSteady decides, and a lane that has not
+// stood long enough gives way to the one in use, its plan with it. The subtitles get what is drawn (PublishLane comes after).
+static promptfit::PillSteady g_steady;
+static void HoldLane(const Placed& before, const promptfit::HoldPlan& planBefore, float W, float H, const float* widths)
+{
+    if (before.mode == Mode::None)
+        g_steady.NewLane();
+    promptfit::LaneKey k;
+    k.mode = g_last.mode, k.x0 = static_cast<int>(g_last.rx0), k.y0 = static_cast<int>(g_last.ry0);
+    k.x1 = static_cast<int>(g_last.rx1), k.y1 = static_cast<int>(g_last.ry1);
+    unsigned long long layout = 1469598103934665603ULL;
+    auto mix = [&](int v) { layout = (layout ^ static_cast<unsigned>(v)) * 1099511628211ULL; };
+    mix(static_cast<int>(W)), mix(static_cast<int>(H)), mix(g_count);
+    for (int i = 0; i < g_count; ++i)
+        mix(static_cast<int>(widths[i] * 4));
+    if (!g_steady.Accept(k, layout, GetTickCount64()))
+        g_last = before, g_plan = planBefore;
+}
+
 // Extended HUD 2's look (docs\UI_HUD2_EXTENDED.md 10; the mock tools\uimock\hud2x.py `pills`): one glass pill per prompt
 // (glyph 0.032 H + the verb in Agency FB 0.026 H), 0.040 H tall.
 static void DrawHud2(void* device, int sw, int sh, bool visible)
@@ -378,7 +398,10 @@ static void DrawHud2(void* device, int sw, int sh, bool visible)
         bN[i] = promptfit::PillWidth(H, gls[i], hud2kit::TextWidth(p.label ? p.label : L"", size));
         bF[i] = promptfit::PillWidth(H, gls[i], lbl[i]);
     }
+    const Placed before = g_last;
+    const promptfit::HoldPlan planBefore = g_plan;
     LayoutHold(W, H, bN, bF, gls, lbl, hold, d, 2 * half, pitch, floorSize, wN, wF);
+    HoldLane(before, planBefore, W, H, bN);
     for (int i = 0; i < g_count; ++i) // (a word above its pill belongs to the lane's area: the subtitles keep clear of it)
         if (g_last.use[i] && promptfit::Raised(g_plan.at[i]))
             g_last.ry0 = std::min(g_last.ry0, g_last.cy[i] - half - H * 0.001f - floorSize);
@@ -462,7 +485,9 @@ static void DrawClassic(int sw, int sh, bool visible)
         const float lw = static_cast<float>(render::TextWidth(f.label, p.label));
         wN[i] = x + lw, wF[i] = x + lw * scale;
     }
+    const Placed before = g_last;
     Layout(W, H, wN, wF, rowH, pitch, g_last);
+    HoldLane(before, g_plan, W, H, wN);
     const float* w = g_last.w;
     const float labelScale = g_last.atFloor ? scale : 1.0f;
     PublishLane(&g_last, W, H);
@@ -524,7 +549,85 @@ static void DrawClassic(int sw, int sh, bool visible)
     render::End(false);
 }
 
+// The frame-by-frame record of Draw's decision (Trace). Only a change is kept, so a steady screen costs one compare.
+struct TraceRow
+{
+    u32 frame = 0;
+    ULONGLONG at = 0;
+    bool fresh = false, wanted = false, visible = false, pending = false;
+    int mode = -1, count = 0, x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    int help = 0; // the game's hover help on screen: 1 ToolTip, 2 Rollover
+    u32 hovered = 0;
+    bool Same(const TraceRow& o) const
+    {
+        return fresh == o.fresh && wanted == o.wanted && visible == o.visible && pending == o.pending && mode == o.mode &&
+               count == o.count && x0 == o.x0 && y0 == o.y0 && x1 == o.x1 && y1 == o.y1 && help == o.help &&
+               hovered == o.hovered;
+    }
+};
+static constexpr int kTraceRows = 256;
+static TraceRow g_trace[kTraceRows];
+static u32 g_traceChanges = 0, g_traceFrames = 0;
+static bool g_traceFresh = false;
+
+// The hover help's two top-level controls on screen this frame (found again ten times a second; two byte reads a frame).
+static int HoverHelpBits()
+{
+    static u32 tip = 0, roll = 0;
+    static ULONGLONG foundAt = 0;
+    const ULONGLONG now = GetTickCount64();
+    if (now - foundAt > 100)
+    {
+        foundAt = now;
+        tip = static_cast<u32>(ui::FindControl("ToolTip")), roll = static_cast<u32>(ui::FindControl("Rollover"));
+    }
+    u8 a = 0, b = 0;
+    return (tip && safemem::Read(tip + 0x6C, &a, 1) && (a & 3) == 3 ? 1 : 0) |
+           (roll && safemem::Read(roll + 0x6C, &b, 1) && (b & 3) == 3 ? 2 : 0);
+}
+
+static void TraceFrame()
+{
+    ++g_traceFrames;
+    TraceRow r;
+    r.help = HoverHelpBits(), r.hovered = static_cast<u32>(ui::Hovered());
+    r.frame = g_traceFrames, r.at = GetTickCount64();
+    r.fresh = g_traceFresh, r.wanted = g_traceFresh && g_count > 0 && device::Pad() && uiopt::Get().promptBar != 2;
+    r.visible = g_visible, r.pending = g_pending, r.mode = static_cast<int>(g_last.mode), r.count = g_count;
+    r.x0 = static_cast<int>(g_last.rx0), r.y0 = static_cast<int>(g_last.ry0);
+    r.x1 = static_cast<int>(g_last.rx1), r.y1 = static_cast<int>(g_last.ry1);
+    if (g_traceChanges && r.Same(g_trace[(g_traceChanges - 1) % kTraceRows]))
+        return;
+    g_trace[g_traceChanges++ % kTraceRows] = r;
+}
+
+static void DrawFrame();
 void Draw()
+{
+    g_traceFresh = g_fresh;
+    DrawFrame();
+    TraceFrame();
+}
+
+std::string Trace(bool reset)
+{
+    std::ostringstream o;
+    const u32 kept = std::min<u32>(g_traceChanges, kTraceRows);
+    o << "prompttrace frames=" << g_traceFrames << " changes=" << g_traceChanges << " kept=" << kept << "\n";
+    for (u32 i = g_traceChanges - kept; i < g_traceChanges; ++i)
+    {
+        const TraceRow& r = g_trace[i % kTraceRows];
+        o << "  f" << r.frame << " t" << r.at << " fresh=" << r.fresh << " wanted=" << r.wanted << " visible=" << r.visible
+          << " pending=" << r.pending << " lane=" << ModeName(static_cast<Mode>(r.mode)) << " count=" << r.count << " area=" << r.x0
+          << "," << r.y0 << ".." << r.x1 << "," << r.y1 << " help=" << r.help << " hov=" << std::hex << r.hovered << std::dec
+          << "\n";
+    }
+    if (reset)
+        g_traceChanges = 0, g_traceFrames = 0;
+    return o.str();
+}
+
+static void DrawFrame()
 {
     g_drawn = 0, g_rows = 0, g_dropped = 0;
     // the skin's overlay pieces first (the confirm's focus over its own dimming box): the one overlay call this
@@ -552,7 +655,8 @@ void Draw()
         g_shownSince = g_seen.insert(g_screen).second ? now : 0; // a screen seen before gets no timer
     }
     const bool timer = g_shownSince && now - g_shownSince < static_cast<ULONGLONG>(kContextualSec * 1000);
-    g_visible = wanted && (o.promptBar == 1 || g_pending || timer);
+    const bool pendingHeld = g_steady.Shown(g_pending, now); // (a gap of a few frames, the buy button's on a buy, never shows)
+    g_visible = wanted && (o.promptBar == 1 || pendingHeld || timer);
     void* device = g_host && g_host->GetD3DDevice ? g_host->GetD3DDevice() : nullptr;
     int sw = 0, sh = 0;
     if (wanted && device)

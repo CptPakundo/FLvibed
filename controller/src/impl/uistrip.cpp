@@ -18,8 +18,10 @@
 #include "ui.h"
 #include "uiopt.h"
 #include "uiskin.h"
+#include "windowtext.h"
 #include "flexe.h"
 #include "game/baseinfo.h"
+#include "game/deckmode.h"
 #include "game/render.h"
 #include "game/room.h"
 #include "text.h"
@@ -374,7 +376,7 @@ void JobLine(float H)
     Word w;
     w.text = Upper(type);
     w.x = accept.x + accept.hw;
-    w.y = r.y + H * 0.036f;
+    w.y = r.y + std::max(H * 0.036f, windowtext::TextHeight(reward) + H * 0.008f); // (windowtext grows the reward)
     w.align = Right;
     g.words.push_back(w);
 }
@@ -571,7 +573,7 @@ float DrawSegs(const std::vector<Seg>& v, float x, float y)
 
 void DrawStrip(float W, float H, float k)
 {
-    const float x = W * 0.05f, y = H * 0.05f;
+    const float x = W * deckmode::SideW(), y = H * deckmode::EdgeH();
     const float budget = g.barLeft > 0 ? g.barLeft - x - H * 0.03f : W * 0.5f - H * 0.224f - x - H * 0.03f;
     if (budget < H * 0.15f)
         return;
@@ -638,8 +640,22 @@ void DrawStrip(float W, float H, float k)
         item(withShip, L"SHIP", g.ship, L"");
     if (SegsWidth(withShip) <= budget)
         l2 = withShip;
-    else if (SegsWidth(l2) > budget && l2.size() > 3 && g.window) // no third line over a window: the cargo drops
-        l2.resize(l2.size() - (g.dCargo.empty() ? 2 : 3));
+    else if (SegsWidth(l2) > budget && l2.size() > 3 && g.window) // no third line over a window
+    {
+        // the price's delta drops before the cargo: the dealer's own panel shows the total, the cargo is nowhere else there
+        // (CARGO went for "-$1,229" with room beside it, 1280x800, UI_HUD2.md 5.34)
+        std::vector<Seg> noDelta;
+        if (!g.dCredits.empty())
+        {
+            noDelta = l2;
+            noDelta.erase(noDelta.begin() + 2);
+            noDelta[2].gapBefore = H * 0.032f;
+        }
+        if (!noDelta.empty() && SegsWidth(noDelta) <= budget)
+            l2 = noDelta;
+        else
+            l2.resize(l2.size() - (g.dCargo.empty() ? 2 : 3)); // (the cargo only when even that does not fit)
+    }
     else if (SegsWidth(l2) > budget && l2.size() > 3) // credits and cargo on their own lines
     {
         const size_t cargoAt = l2.size() - (g.dCargo.empty() ? 2 : 3);
@@ -722,7 +738,7 @@ std::vector<Box> OtherBoxes(const std::vector<void*>& chars, void* self, float W
 static bool PlaceRules(float bx0, float by0, float bx1, float by1, bool strip, float w, float h, float W, float H, float& x,
                        float& y, const char*& placed, const std::vector<Box>* others)
 {
-    const float gap = H * 0.012f, sx0 = W * 0.05f, sy0 = H * 0.05f, sx1 = W * 0.95f, sy1 = H * 0.95f;
+    const float gap = H * 0.012f, sx0 = W * deckmode::SideW(), sy0 = H * deckmode::EdgeH(), sx1 = W - sx0, sy1 = H - sy0;
     // how much of the other characters the card covers (pixels squared, a half gap around each): heads 20x, bodies 1x
     auto covered = [&](float cx, float cy)
     {

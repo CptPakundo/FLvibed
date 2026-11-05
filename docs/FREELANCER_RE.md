@@ -1077,6 +1077,10 @@ subtitles' `background_style 1` reproduces it (subtitles\docs\DISPLAY_PLAN.md "B
   its update 0x4BE2B0 -> 0x4BDDA0 runs from the UI update 0x59E080 every frame (before the UI pass) and starts the box
   after the cursor rests on a control; its hide 0x4BE390 = state bit 1 off + its showing flag +0x159 = 0 (called by the
   rooms, menus, the target panel 0x4E4B04 ...). With no hover the update itself clears a poked state bit the next frame.
+  **The hit test shows the hover help:** 0x59DD80 is no pure read. It asks each control through vt[0x10], and over a control
+  with help that leaves the ToolTip and the Rollover shown (state bit 1) until the update clears them the next frame. Measured
+  4 Nov 2026 at 1280x800, a resting cursor on the job board: one frame of both every 266 ms while FLvibed tested 4 times a
+  second, none once the test stopped or put them back (`ui::HitTest`, `QuietHelp`). Which control's vt[0x10] does it was not read.
 - **The flat icon sheets on vanilla 1.1:** `DATA\INTERFACE\ButtonTextures.txm` (0.96 MB) holds Montage32 / Montage64 /
   HUD_targetingelement as 256 x 256 uncompressed TGA MIP0 (HDE: 1024 x 1024) with the same grid and meanings (shaded
   grey art instead of HDE's flat white); HUD_talkelement besides.
@@ -1295,8 +1299,15 @@ Every window is a root control named after its class; a window is open when its 
   (957 x same y), per row `...SummaryDest / Title / Reward / Icon N`; the list's scroll bar
   `MissionVendorSummaryScroll` (vt 0x5E55AC; Manhattan: range 0..9, one unit = one row; **not in the D-pad navigation's
   item set** - the pad code scrolls it natively on the edge rows), `MissionVendorAcceptButton` (2612 x 1121, half 249 x
-  49), `MissionVendorCloseButton` (3012 x 416), the chosen job's `MissionVendorMissionTitle / Dest / Reward /
-  FullText / Reject`. Clicking a row (uiclick::Click) selects it: the description follows.
+  49), `MissionVendorCloseButton` (3012 x 416), the chosen job's `MissionVendorMissionTitle / Dest / Reward / Reject` and
+  `MissionVendorMissionFullText`. Clicking a row (uiclick::Click) selects it: the description follows.
+  **The description is a RichTextWin** (`exe::VtText`, built in the window's init 0x48B6E0 at window +0x438; `NewsStoryText`
+  is built the same way, decompiled): +0x348..0x354 its pixel rect (ints: left, top, right, bottom), +0x358 / +0x35C the box's
+  width / height, **+0x380 the laid out text's height in pixels**, +0x3F0 its `UIScroll` (0 while the text fits). Read in
+  game 4 Nov 2026 at 1280x800: box 255,504..1002,691, width 747, height 187, five lines = 110 (22 px a line), +0x3F0 0. Past
+  the box the game adds its own scroll bar right of it (decompiled, not seen in game). **Never set text on it through vt[0xA8]
+  message 0x1D:** tried 4 Nov 2026 (`TextSetProperty`, raw wchar_t*) and the game ended at once, past a `__try`, no log line.
+  The game's own way (0x48CCE0: 0x57E2C0 or 0x57DB50 to parse, 0x57B370 clear, 0x57B3E0 append, 0x5798B0 scroll to 0) is unsigned.
 - **News** `NN_News` (IDS_HOTSPOT_NEWSVENDOR, behaviour 2): `NewsHeadlineBox0..3` + `NewsHeadlineIconFrame0..3`
   (the same geometry as the job rows), `NewsHeadlineHeadline0..3`, `NewsStoryHeadline / Text / Icon`, `NewsTicker`,
   `NewsCloseButton` (3025 x 405). No scroll bar (four headlines).
@@ -1315,6 +1326,26 @@ Every window is a root control named after its class; a window is open when its 
   player's). The text controls (vt 0x5E4F24) keep no readable string in their first 0x3A8 bytes (the pointer at +0x338
   is a render object): the pad's quantity line reads the slider (position = the quantity, range top - 1 = what fits),
   not the game's price text.
+- **The game's text size is its font's, and can change live** (verified in game 4 Nov 2026, 1280x800, a dealer open): a text
+  control's text object (+0x334) holds its font entry at +0x1C; the entry's float +0xD0 is `fixed_height` from `DATA\FONTS\fonts.ini`
+  (read: ItemName 0.035, Normal 0.029). Writing +0xD0 and calling 0x4180C0 (void cdecl: bumps the font epoch 0x6105B0 and flushes
+  the caches; SetupScreen's own call on a resolution change) re-rasterised every text of that font at once, the open window
+  included, and writing it back undid it; the game ran on through both. A font is shared: ItemName and Normal reach far past the
+  dealer (Normal ~15 windows, decompiled). The size arg of the factory 0x5A0E30 is read by nobody; no vt[0xA8] id sets size or font.
+  RichTextWin has its own table, reached otherwise (verified in game 4 Nov - 5 Nov 2026): 32 entries in Common.dll, pixels at a
+  768-line reference from `rich_fonts.ini`, set by the exports `?SetStandardFont@@YAXHABUFontDesc@TextRenderContext@@@Z` and
+  `?ReinitializeRichTextFonts@@YAXXZ`; 0x4180C0 does not reach it. vt[0xB4] 0x57B320 `exe::RichLayout` re-lays +0x380 only; **the two
+  dirty bytes +0x400 / +0x401 make the draw (0x57AB10) re-lay and redraw open text at the table's size**, its scroll bar coming and going
+  with it (verified in game 5 Nov 2026). 0x579CC0 `exe::RichSetSize` (thiscall, width, height) resizes a rich box live and re-wraps it;
+  a rich box's position is vt[0xA8] 6 (the delta from +0x47C). The setter also sets the scroll bar's (+0x3F0) pose from the box's width: on
+  the NeuroNet's boxes that lands the bar one box width too far right (read in game 5 Nov 2026; the dealer's wide box is right); the bar keeps a copy of its pose at +0x3DC (0x595F90). **One text's font changes live, the game's own way** (0x58A110, verified in
+  game 5 Nov 2026): the text object's +0x1C, each laid out line's vt[8](font), +0x28 = 0: the lines keep the font themselves. The object:
+  +0 text, +0x10 / +0x14 the lines (8 bytes each), +0x20 / +0x24 the extents in pixels, +0x28 the layout's epoch (0x6105B0; 0 = lay out
+  again), +0x2C the wrap width in pixels, +0x30 wrap on. The control: +0x32C / +0x330 width and height, +0x358 align. The text field
+  (vt 0x5E501C `exe::VtTextEdit`) takes the same. **A dealer's controls are new at every opening, often at the old addresses.** The font list walk holds
+  (21 of 21 by nickname at entry + 8). Dealer fonts (0x480D10, 0x478100,
+  decompiled): ItemName0N / ItemPrice0N / ItemQuantity0N / TransferItem* = ItemName; Quantity* / WelcomeHelp / CargoLabel =
+  Normal; WelcomeText / PlayerCash = SubHeader; five rows in a hard-coded loop, pitch 0.068.
 - **Ship dealer** `NN_ShipTrader` (vt 0x5D593C; IDS_HOTSPOT_SHIPDEALER, behaviour 7): the offered ships
   `ShipTraderShipNameFrame0..2` (2907 x 797 + 148 i, half 300 x 74) + `ShipTraderShipNameIconFrame0..2` (2511 x),
   per ship `ShipTraderShipName / Class / Price / Mesh N`; the player's `ShipTraderCurrentShip / Frame / Name / Class /

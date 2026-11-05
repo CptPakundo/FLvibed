@@ -104,13 +104,13 @@ static constexpr Section kSections_general[] = {
 
 // CONTROLLER / INPUT
 static constexpr const char* kOpt_input_mode[] = {"AUTOMATIC", "CONTROLLER", "KEYBOARD AND MOUSE"};
-static constexpr const char* kOpt_glyph_style[] = {"AUTOMATIC", "XBOX", "PLAYSTATION", "NINTENDO"};
+static constexpr const char* kOpt_glyph_style[] = {"AUTOMATIC", "XBOX", "PLAYSTATION", "NINTENDO", "STEAM"};
 static constexpr const char* kOpt_glyph_look[] = {"AUTOMATIC", "COLOURED", "HUD 2 GLYPHS"};
 static constexpr const char* kOpt_confirm_button[] = {"BOTTOM BUTTON (A / CROSS / B)", "RIGHT BUTTON (NINTENDO)"};
 static constexpr const char* kOpt_pad_backend[] = {"XINPUT", "SDL3 (EXPERIMENTAL)"};
 static constexpr Row kRows_controller_0[] = {
     {"input_mode", "Controller", "input_mode", Picker, "Input device", kOpt_input_mode, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Automatic: the last device used wins and the whole UI follows it in one frame (a stick past its dead zone, a trigger, any button; a mouse move of a few pixels, a wheel notch, any key). Lock it when a drifting stick or a second device makes it flicker."},
-    {"glyph_style", "Controller", "glyph_style", Picker, "Button prompts", kOpt_glyph_style, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro); choose one if yours is detected wrongly."},
+    {"glyph_style", "Controller", "glyph_style", Picker, "Button prompts", kOpt_glyph_style, 5, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro) and the Steam Deck; choose one if yours is detected wrongly. Steam is the Steam Deck and Steam Controller's own naming: Xbox's face buttons and View / Menu, with L1 / L2 / R1 / R2."},
     {"glyph_look", "Controller", "glyph_look", Picker, "Glyph look", kOpt_glyph_look, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "How the button prompts look: Automatic = HUD 2 in its own colour, the classic HUD and menus in the buttons' colours; Coloured everywhere; HUD 2 style everywhere. Sizes stay as each screen has them."},
     {"confirm_button", "Controller", "confirm_button", Picker, "Confirm with", kOpt_confirm_button, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which face button accepts in menus. The bottom button is the Xbox and PlayStation habit; Nintendo players may prefer the right one."},
     {"pause_on_disconnect", "Controller", "pause_on_disconnect", Toggle, "Pause when the pad disconnects in flight", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A pad that drops out mid-flight pauses the game; in menus the UI just switches to the keyboard."},
@@ -118,11 +118,12 @@ static constexpr Row kRows_controller_0[] = {
 };
 // CONTROLLER / LAYOUT
 static constexpr const char* kOpt_pad_preset[] = {"FREELANCER", "ACE", "ASSISTED", "CUSTOM"};
-static constexpr const char* kOpt_weapon_groups[] = {"SIMPLE (ONE FIRE BUTTON)", "CYCLE ON Y HOLD", "TWO GROUPS ON THE TRIGGERS"};
+static constexpr const char* kOpt_weapon_groups[] = {"SIMPLE (ONE FIRE BUTTON)", "CYCLE ON Y", "TWO GROUPS ON THE TRIGGERS"};
 static constexpr Row kRows_controller_1[] = {
     {"pad_preset", "Controller", "pad_preset", Picker, "Preset", kOpt_pad_preset, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, true, nullptr, "The whole flight layout. Freelancer: targets and weapons on the fingers, consumables on the D-pad. Ace: arcade flight (left stick steers, triggers are the throttle). Assisted: the autopilot flies, you aim and decide. Custom: edited on the Bindings screen."},
     {"edit_bindings", "Controller", nullptr, Button, "Bindings", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", nullptr, Player, Live, nullptr, false, "EDIT BINDINGS AND SEE THE LAYOUT", "The controller diagram with every binding per situation (flight, autopilot, menus, bases, dealers, map, text entry)."},
-    {"weapon_groups", "Controller", "weapon_groups", Picker, "Weapon groups", kOpt_weapon_groups, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one. Cycle: Y held flips to the next group that has guns (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse)."},
+    {"weapon_groups", "Controller", "weapon_groups", Picker, "Weapon groups", kOpt_weapon_groups, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one; Y is cruise. Cycle: Y tap flips to the next group that has guns, Y held is cruise. Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel; Y is cruise. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse)."},
+    {"y_swap", "Controller", "y_swap", Toggle, "Swap Y tap and hold", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The Freelancer layout with Weapon groups on CYCLE ON Y: Y tap is cruise and Y held flips to the next group, instead of the other way round."},
     {"holds_as_toggles", "Controller", "holds_as_toggles", Toggle, "Holds as toggles", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons."},
 };
 // CONTROLLER / AIM
@@ -155,6 +156,7 @@ static constexpr const char* kOpt_ui_style[] = {"CLASSIC", "HUD 2"};
 static constexpr const char* kOpt_pad_cursor[] = {"OFF", "ROOMS AND MAPS", "EVERYWHERE"};
 static constexpr const char* kOpt_prompt_bar[] = {"CONTEXTUAL", "ALWAYS", "OFF"};
 static constexpr const char* kOpt_world_prompts[] = {"CONTEXTUAL", "OFF"};
+static constexpr const char* kOpt_deck_mode[] = {"AUTOMATIC", "ON", "OFF"};
 static constexpr Row kRows_controller_5[] = {
     {"ui_style", "Controller", "ui_style", Picker, "Menus and rooms look", kOpt_ui_style, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Advanced, Live, nullptr, false, nullptr, "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game's controls stay as they are); Classic = the game's own look in the menus. With the HUD row set to Classic, everything keeps the game's look whatever this says."},
     {"pad_cursor", "Controller", "pad_cursor", Picker, "Pad cursor", kOpt_pad_cursor, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "FLvibed's own cursor on the left stick, on every screen by default: moving the stick shows it and the game reacts as to the mouse (a bar character lights up, a button highlights, a row focuses); it slows over and pulls toward targets; a D-pad or bumper press hides it and focus navigation carries on from there. A = click either way. Off = focus navigation only."},
@@ -164,6 +166,8 @@ static constexpr Row kRows_controller_5[] = {
     {"world_prompts", "Controller", "world_prompts", Picker, "World prompts", kOpt_world_prompts, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "A prompt by the target when something unusual is possible now (dock in range, loot in reach). Never a permanent label."},
     {"ap_hints", "Controller", "ap_hints", Toggle, "Autopilot hints", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Show the autopilot's prompts and status to players who have not used it yet. Off: nothing about the autopilot shows until you switch it on once."},
     {"text_size", "Controller", "text_size", Slider, "Text size", nullptr, 0, nullptr, 80.0f, 150.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "Size of FLvibed's own UI text (prompts, panels, the status strip). The subtitles have their own size."},
+    {"deck_mode", "Controller", "deck_mode", Picker, "Steam Deck mode", kOpt_deck_mode, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Steam Deck mode: larger text and no safe margins at the screen's edge. Automatic turns it on at exactly 1280x800."},
+    {"window_text", "Controller", "window_text", Toggle, "Larger window text", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "HUD 2: the text in the game's windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all."},
     {"wheel_rate", "Controller", "wheel_rate", Slider, "Scroll speed", nullptr, 0, nullptr, 1.0f, 50.0f, 1.0f, 1.0f, "", "10", Player, Live, nullptr, false, nullptr, "Right stick scrolling, notches per second."},
 };
 // CONTROLLER / HUD
@@ -192,7 +196,7 @@ static constexpr Row kRows_controller_6[] = {
     {"hud_glyphs", "Controller", "hud_glyphs", Toggle, "Glyphs on the HUD", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Classic HUD: in pad mode the HUD's own buttons carry the glyph of the button that acts on them (the maneuver bar, the cruise box, the NeuroNet box, the contact filters, repair and battery, the weapon groups)."},
     {"button_legend", "Controller", "button_legend", Picker, "Button legend", kOpt_button_legend, 2, kVal_button_legend, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Classic HUD: a small list in the empty right-middle of the screen with the actions available right now and their buttons, changing with the context (a dockable target, a fight, the autopilot flying). HUD 2 has its context prompts instead."},
     {"ap_status_line", "Controller", "ap_status_line", Toggle, "Autopilot status line", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Classic HUD: the one line under the maneuver bar while the autopilot flies, cruise charges or turret view is on. HUD 2 shows it in its navigation block."},
-    {"shield_cue", "Controller", "shield_cue", Toggle, "Shield hit cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails."},
+    {"shield_cue", "Controller", "shield_cue", Toggle, "Shield hit cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2's danger alerts."},
     {"shield_cue_intensity", "Controller", "shield_cue_intensity", Slider, "Shield cue intensity", nullptr, 0, nullptr, 0.0f, 2.0f, 0.05f, 1.0f, "", "1", Player, Live, "shield_cue", false, nullptr, "Strength of the shield cue."},
     {"hull_cue", "Controller", "hull_cue", Toggle, "Hull hit cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "shield_cue", false, nullptr, "With the shield cue: hull hits show your ship's own hull hit effect at the screen edge."},
     {"reticle_cue", "Controller", "reticle_cue", Toggle, "Reticle cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue)."},
@@ -209,11 +213,11 @@ static constexpr Row kRows_controller_7[] = {
 };
 static constexpr Section kSections_controller[] = {
     {"INPUT", kRows_controller_0, 6},
-    {"LAYOUT", kRows_controller_1, 4},
+    {"LAYOUT", kRows_controller_1, 5},
     {"AIM", kRows_controller_2, 6},
     {"STICKS", kRows_controller_3, 4},
     {"TARGETING", kRows_controller_4, 2},
-    {"MENUS AND PROMPTS", kRows_controller_5, 9},
+    {"MENUS AND PROMPTS", kRows_controller_5, 11},
     {"HUD", kRows_controller_6, 20},
     {"SYSTEM", kRows_controller_7, 5},
 };
@@ -416,7 +420,7 @@ static constexpr Bind kBind_FREELANCER[] = {
     {"A", "context", "formation", "none"},
     {"B", "free_flight", "reverse", "none"},
     {"X", "tractor", "turret", "none"},
-    {"Y", "cruise", "weapon_group", "none"},
+    {"Y", "weapon_group", "cruise", "none"},
     {"LB", "target_picker", "action_wheel", "none"},
     {"RB", "missile", "torpedo", "none"},
     {"LT", "afterburner", "none", "none"},

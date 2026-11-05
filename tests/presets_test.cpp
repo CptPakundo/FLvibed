@@ -74,6 +74,21 @@ void Test_presets()
     CHECK(ap.b[glyphs::LS].tap == Action::Handback && ap.b[glyphs::RS].tap == Action::Handback);
     // the layout option on top: simple drops Y hold's weapon group
     CHECK(presets::Effective(presets::FREELANCER, 0).b[glyphs::Y].hold == Action::None);
+    // Y (GitHub issue 15): next group on the tap, cruise held; y_swap the old order; no cycling = cruise on the tap
+    {
+        const presets::Binding y = presets::Effective(presets::FREELANCER, 1).b[glyphs::Y];
+        CHECK(y.tap == Action::WeaponGroup && y.hold == Action::Cruise);
+        const presets::Binding old = presets::Effective(presets::FREELANCER, 1, true).b[glyphs::Y];
+        CHECK(old.tap == Action::Cruise && old.hold == Action::WeaponGroup);
+        for (int groups : {0, 2})
+            for (bool swap : {false, true})
+            {
+                const presets::Binding b = presets::Effective(presets::FREELANCER, groups, swap).b[glyphs::Y];
+                CHECK(b.tap == Action::Cruise && b.hold == Action::None);
+            }
+        CHECK(presets::Effective(presets::ACE, 1, true).b[glyphs::Y].tap == presets::Flight(presets::ACE).b[glyphs::Y].tap);
+        CHECK(presets::Effective(presets::ASSISTED, 1, true).b[glyphs::Y].hold == Action::ActionWheel);
+    }
 
     // the dispatcher on FREELANCER's RB (missile, hold torpedo) and RT (fire, nothing else), 60 frames a second
     auto run = [&](glyphs::Id btn, int downFrames, int totalFrames) {

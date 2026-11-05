@@ -44,7 +44,10 @@
 #include "wgroups.h"
 #include "wheel.h"
 #include "padbases.h"
+#include "windowtext.h"
+#include "gametext.h"
 #include "padmap.h"
+#include "promptbar.h"
 
 #include <sstream>
 
@@ -218,6 +221,30 @@ static std::string WatchCommand(std::istringstream& in)
         g_watch.handler = AddVectoredExceptionHandler(1, WatchHandler);
     g_watch.n = 0, g_watch.addr = addr, g_watch.thread = thread;
     return SetWatchRegs(thread, addr, len, mode == "rw") ? "watching" : "could not set the debug registers";
+}
+
+// A member function of the game's: this in ecx, up to two arguments (research: `callt`)
+static u32 SafeCallThis(uintptr_t fn, u32 self, const u32* args, int n, bool& ok)
+{
+    u32 result = 0;
+    ok = true;
+    __try
+    {
+        typedef u32(__thiscall * T0)(u32);
+        typedef u32(__thiscall * T1)(u32, u32);
+        typedef u32(__thiscall * T2)(u32, u32, u32);
+        switch (n)
+        {
+        case 0: result = reinterpret_cast<T0>(fn)(self); break;
+        case 1: result = reinterpret_cast<T1>(fn)(self, args[0]); break;
+        default: result = reinterpret_cast<T2>(fn)(self, args[0], args[1]); break;
+        }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        ok = false;
+    }
+    return result;
 }
 
 static u32 SafeCall(uintptr_t fn, const u32* args, int n, bool& ok)
@@ -1037,6 +1064,39 @@ std::string Execute(const std::string& line)
         return padbases::Command(in);
     if (op == "map")
         return padmap::Command(in);
+    if (op == "gametext") // gametext [rich <percent>]: the size as applied (gametext.h); rich: that table alone, now (research)
+    {
+        std::string what;
+        int pct = 100;
+        in >> what >> pct;
+        if (what == "rich")
+            gametext::RichNow(pct);
+        if (what == "window")
+            return windowtext::Status();
+        if (what == "texts")
+            return windowtext::Texts();
+        return gametext::Status();
+    }
+    if (op == "prompttrace") // prompttrace [reset]: the pills' decision per frame, every change (promptbar::Trace)
+    {
+        std::string what;
+        in >> what;
+        return promptbar::Trace(what == "reset");
+    }
+    if (op == "callt") // callt <this> <addr> [args...] (thiscall, up to two)
+    {
+        u32 self = num(), fn = num();
+        u32 args[2] = {};
+        int n = 0;
+        std::string t;
+        while (n < 2 && (in >> t))
+            args[n++] = static_cast<u32>(strtoul(t.c_str(), nullptr, 0));
+        bool ok;
+        u32 r = SafeCallThis(fn, self, args, n, ok);
+        char tmp[64];
+        sprintf_s(tmp, ok ? "eax=0x%08X" : "exception", r);
+        return tmp;
+    }
     if (op == "call") // call <addr> [args...] (cdecl)
     {
         u32 fn = num();

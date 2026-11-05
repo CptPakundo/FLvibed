@@ -8,8 +8,8 @@ help replaced, a state extra's field set. Nothing of the owner's other edits is 
 
 patch.json: { "add_rows": {"<tab id>/<section label>": {"first": true | "after": "<row key>", "rows": [{"key", "label", "kind": "toggle" | "picker" |
 "slider", "def", "options" | "min" / "max" / "step" / "unit", "help", "tier"}]}}, "rows": {"<key>": {"def": .., "value": ..,
-"help": ".."}}, "states": {"<screen>/<state>": {"notes": [".."],
-"extras": {"<t>": {"<field>": value}}}}, "decisions": {"<id>": {"note": ".."}}, "top": {"<key>": <block>},
+"help": ".."}}, "states": {"<screen>/<state>": {"notes": [".."], "prompts": [[["<key>", ..], "<label>", "hold"?], ..] (the
+list replaced whole), "extras": {"<t>": {"<field>": value}}}}, "decisions": {"<id>": {"note": ".."}}, "top": {"<key>": <block>},
 "bindings": {"presets/<PRESET>/flight/<input>" | "common/<context>/<input>": {"tap" | "hold" | "dbl": "<action>"}} }. "top" sets a
 spec-only top-level block (the spec half only; e.g. "hud2_presets", Q7). A decision note is appended to the
 existing note (" | " between). The spec file's top-level shape is either the artifact's document ({spec: {...}}) or the
@@ -50,6 +50,14 @@ def patch_js(src, patch):
                 key = screen + '/' + m.group(1)
                 p = patch.get('states', {}).get(key)
                 if p:
+                    if 'prompts' in p:  # a state's prompt list replaced whole: [[keys, label, v], ...]
+                        pm = ', '.join("Pm(%s, %s%s)" % (
+                            ('[' + ', '.join(js_literal(k) for k in q[0]) + ']') if len(q[0]) > 1 else js_literal(q[0][0]),
+                            js_literal(q[1]), (', ' + js_literal(q[2])) if len(q) > 2 and q[2] else '') for q in p['prompts'])
+                        line, n = re.subn(r"prompts: \[(?:Pm\((?:[^()'\[\]]|\[[^\]]*\]|'(?:[^'\\]|\\.)*')*\)(?:, )?)*\]",
+                                          lambda _: 'prompts: [' + pm + ']', line, count=1)
+                        if n == 0:
+                            sys.exit('prompts not found in %s' % key)
                     for t, fields in p.get('extras', {}).items():
                         for f, v in fields.items():
                             # the extra "{ t: 'wheel', ... sel: 0 }" -> replace the field inside that extra's braces
@@ -269,6 +277,8 @@ def patch_spec(doc, patch):
         if key not in states:
             sys.exit('state %s not in the spec' % key)
         st = states[key]
+        if 'prompts' in p:
+            st['prompts'] = [{'keys': q[0], 'label': q[1], 'v': q[2] if len(q) > 2 else ''} for q in p['prompts']]
         for t, fields in p.get('extras', {}).items():
             hit = [e for e in st.get('extras', []) if e.get('t') == t]
             if not hit:

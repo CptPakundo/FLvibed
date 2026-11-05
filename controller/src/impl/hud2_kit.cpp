@@ -488,6 +488,8 @@ void Plate(float x0, float y0, float x1, float y1, float c, int corners, float f
         const float aw = g_sh * 0.003f;
         if (accent == 'l')
             Rect(x0, y0 + tl, aw, (y1 - bl) - (y0 + tl), Argb(accentRgb, 1));
+        else if (accent == 'r')
+            Rect(x1 - aw, y0 + tr, aw, (y1 - br) - (y0 + tr), Argb(accentRgb, 1));
         else if (accent == 't')
             Rect(x0 + tl, y0, (x1 - tr) - (x0 + tl), aw, Argb(accentRgb, 1));
         else if (accent == 'b')
@@ -798,12 +800,13 @@ static void Mark(float cx, float cy, const wchar_t* s, float size, u32 argb)
 static const wchar_t* PillLabel(glyphs::Id id)
 {
     const glyphs::Family f = glyphs::Current();
+    const bool one = f == glyphs::Family::PlayStation || f == glyphs::Family::Steam; // (the L1 / R1 names)
     switch (id)
     {
-    case glyphs::LB: return f == glyphs::Family::PlayStation ? L"L1" : f == glyphs::Family::Nintendo ? L"L" : L"LB";
-    case glyphs::RB: return f == glyphs::Family::PlayStation ? L"R1" : f == glyphs::Family::Nintendo ? L"R" : L"RB";
-    case glyphs::LT: return f == glyphs::Family::PlayStation ? L"L2" : f == glyphs::Family::Nintendo ? L"ZL" : L"LT";
-    case glyphs::RT: return f == glyphs::Family::PlayStation ? L"R2" : f == glyphs::Family::Nintendo ? L"ZR" : L"RT";
+    case glyphs::LB: return one ? L"L1" : f == glyphs::Family::Nintendo ? L"L" : L"LB";
+    case glyphs::RB: return one ? L"R1" : f == glyphs::Family::Nintendo ? L"R" : L"RB";
+    case glyphs::LT: return one ? L"L2" : f == glyphs::Family::Nintendo ? L"ZL" : L"LT";
+    case glyphs::RT: return one ? L"R2" : f == glyphs::Family::Nintendo ? L"ZR" : L"RT";
     default: return nullptr;
     }
 }

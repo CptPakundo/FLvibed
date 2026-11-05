@@ -232,7 +232,9 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   slide; `hotspots` / `goto` say `busy: nn-window` meanwhile), `visible
   <Control>`, `hotspots`, `goto <label>`, `talkers`, `talk <n|offer>`, `menu <new|load|options|exit>`, `pause`,
   `pauseload`, `saves`, `loadsave <file>`, `pendingload` (the CHARACTER_ID the in-game load / death dialog last loaded),
-  `ctlinfo <Control>` (addresses for RE), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
+  `ctlinfo <Control>` (addresses for RE), `prompttrace [reset]` (controller only: every change of the pills' decision and the
+  hover help, per frame, the last 256: a one-frame blink shows here, a poll misses it), `uiskin jobheight <px>` (controller
+  only: the job text's height as the plate reads it, 0 = the game's), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
   `mines=` (the mines counted by ammo, as the countermeasures).
 - **Controller host** (`src\host\main.cpp`): `uigen` - the UI generation counter of HostApi v23 ("uigen N adds A removes
   R": the game's control list adds / removes; Extended HUD 2 finds windows by it; still in a calm room or calm flight);
@@ -320,7 +322,7 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   test starts only: one display setup as FLUF's Alt+Enter makes it, refused unless FLvibed's rewrite applies - never
   exclusive fullscreen);
   `hooks` (host-side, both modules: every detour's mode, place and where the function's own jump leads); `padhud on|off|state` (the pad
-  HUD layer: badges, legend, status line; the Classic HUD); `hud2 on|off|auto|state|sim <name>[+comm]|sim list|sim off|tree
+  HUD layer: badges, legend, status line; the Classic HUD); `hud2 alert shield|hull|missile|cargo` (that alert's card on the live HUD, 3 s, for frames: UI_HUD2.md 5.40); `hud2 on|off|auto|state|sim <name>[+comm]|sim list|sim off|tree
   <root>|hit <x> <y>` (HUD 2, `..\..\docs\UI_HUD2.md`: forced on / off or back to `hud_style`, its state and the published
   layout (the nav line also `event` = the dock / lane / jump answer, `comm` = the subtitles' dialogue panel shows a line,
   `cine` = the letterbox, `fight` = the threat list's rule; HUD 2 FIX2 25 Oct 2026; the `preset=` line, `..\..\docs\UI_HUD2_PRESETS.md` 6 step 4:

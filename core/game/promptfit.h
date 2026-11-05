@@ -4,6 +4,8 @@
 // drive the very code the game runs across the display matrix. No game, no device: the callers pass the measured widths
 // and their keep-out queries. Pixels in, pixels out; every size a fraction of H.
 #pragma once
+#include "game/deckmode.h"
+
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -46,6 +48,66 @@ struct LanePlaced
     float w[kLaneMax] = {};                     // each pill's width as placed
 };
 
+// The pills hold still (GitHub issue 10). Traced frame by frame at 1280x800: the buy button hides for two frames on every
+// buy, so a pending prompt bar blinked; while a window slides in, its moving plates sent the lane row -> top -> column ->
+// top -> row -> column inside 120 frames. Whatever the cause (the subtitles' block, a plate, a window's slide), the rule is
+// the same one, on the clock and not the frame count, so it holds at any frame rate:
+//  - shown: a wish to show lasts kPillHoldMs past its end, so a gap shorter than that never reaches the screen;
+//  - placed: a new lane replaces the one in use once it stood kLaneSettleMs, or after kLaneMaxWaitMs of changes without
+//    rest (a place that never settles still wins: never stuck on a stale lane). Other pills (a new screen, other labels) or
+//    another screen size are a new layout, taken at once.
+constexpr unsigned kPillHoldMs = 200, kLaneSettleMs = 120, kLaneMaxWaitMs = 400;
+
+struct LaneKey
+{
+    LaneMode mode = LaneMode::None;
+    int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    bool SamePlace(const LaneKey& o) const { return mode == o.mode && x0 == o.x0 && y0 == o.y0 && x1 == o.x1 && y1 == o.y1; }
+};
+
+class PillSteady
+{
+public:
+    bool Shown(bool want, unsigned long long nowMs)
+    {
+        if (want)
+            wanted_ = true, lastWant_ = nowMs;
+        return wanted_ && nowMs - lastWant_ < kPillHoldMs;
+    }
+    // true: `cand` is the lane to use this frame; false: keep the one in use. `layout` = what the pills are (their widths,
+    // the screen): a change of it is taken at once.
+    bool Accept(const LaneKey& cand, unsigned long long layout, unsigned long long nowMs)
+    {
+        if (!have_ || layout != layout_ || held_.mode == LaneMode::None)
+        {
+            Take(cand, layout);
+            return true;
+        }
+        if (cand.SamePlace(held_))
+        {
+            waiting_ = false;
+            return true;
+        }
+        if (!waiting_)
+            waiting_ = true, firstAt_ = nowMs, next_ = cand, nextAt_ = nowMs;
+        else if (!cand.SamePlace(next_))
+            next_ = cand, nextAt_ = nowMs;
+        if (nowMs - nextAt_ >= kLaneSettleMs || nowMs - firstAt_ >= kLaneMaxWaitMs)
+        {
+            Take(cand, layout);
+            return true;
+        }
+        return false;
+    }
+    void NewLane() { have_ = false, waiting_ = false; } // nothing in use (the pills were gone): the next lane is taken at once
+
+private:
+    void Take(const LaneKey& k, unsigned long long layout) { have_ = true, waiting_ = false, held_ = k, layout_ = layout; }
+    bool wanted_ = false, have_ = false, waiting_ = false;
+    unsigned long long lastWant_ = 0, firstAt_ = 0, nextAt_ = 0, layout_ = 0;
+    LaneKey held_, next_;
+};
+
 // The pills' places: wN = each pill's width with its label at the nominal size, wF with the label at the fit rule's floor
 // (equal to wN where the label already is at or under it), ph the pill's height, pitch the gap between pills in a row
 // (pixels); `confirm` = the pill that always stays (the A pill, else the first; BACK = the last stays too). `left(y0, y1,
@@ -77,8 +139,8 @@ inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, co
                 o.w[i] = w[i];
         }
     } commit{out, w, n};
-    const float right = W - W * 0.05f;
-    const float by0 = H * 0.910f, by1 = H * 0.950f, cy = (by0 + by1) * 0.5f;
+    const float right = W - W * deckmode::SideW();
+    const float by0 = H * deckmode::LaneTopH(), by1 = H * deckmode::LaneBottomH(), cy = (by0 + by1) * 0.5f;
     auto kept = [&](int i) { return i == confirm || i == n - 1; };
     auto span = [&](int from, int to)
     {
@@ -220,7 +282,7 @@ inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, co
     // lowest obstacle in the row's x range when the row still ends by 0.950 H, else the first free band above the lane,
     // searched upwards in 0.005 H steps (a gap above and below), not above the 0.05 H margin; when none is free, the band
     // itself (the pills over the obstacle's edge rather than off the safe area)
-    while (span(0, n) > right - W * 0.05f && dropOne())
+    while (span(0, n) > right - W * deckmode::SideW() && dropOne())
         ;
     const float rowW = span(0, n), gapV = H * 0.010f;
     const float low = lowest(right - rowW, right, by0);
@@ -228,7 +290,7 @@ inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, co
     if (low + gapV + ph <= by1)
         y = std::max(cy, low + gapV + ph * 0.5f);
     else
-        for (float yc = by1 - ph * 0.5f; yc - ph * 0.5f >= H * 0.05f; yc -= H * 0.005f)
+        for (float yc = by1 - ph * 0.5f; yc - ph * 0.5f >= H * deckmode::EdgeH(); yc -= H * 0.005f)
             if (rowW <= right - left(yc - ph * 0.5f - gapV, yc + ph * 0.5f + gapV, right))
             {
                 y = yc;
@@ -840,7 +902,7 @@ inline HoldPlan LaneHold(float W, float H, int n, int confirm, const float* base
                                              {
                                                  const float y1 = o.cy[i] - ph * 0.5f - H * 0.001f, y0 = y1 - wordH;
                                                  const float x0 = o.x0[i], x1 = o.x0[i] + o.w[i];
-                                                 if (y0 < H * 0.05f || left(y0, y1, x1) > x0 + 0.5f)
+                                                 if (y0 < H * deckmode::EdgeH() || left(y0, y1, x1) > x0 + 0.5f)
                                                      return false;
                                                  for (int j = 0; j < n; ++j)
                                                      if (j != i && o.use[j] && o.x0[j] < x1 && o.x0[j] + o.w[j] > x0 &&

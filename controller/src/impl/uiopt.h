@@ -11,13 +11,14 @@ namespace uiopt
 struct UiOptions
 {
     int inputMode = 0;              // input_mode: 0 automatic, 1 controller, 2 keyboard and mouse
-    int glyphStyle = 0;             // glyph_style: 0 automatic (HID vendor), 1 Xbox, 2 PlayStation, 3 Nintendo
+    int glyphStyle = 0;             // glyph_style: 0 automatic (HID vendor), 1 Xbox, 2 PlayStation, 3 Nintendo, 4 Steam
     int glyphLook = 0;              // glyph_look: 0 automatic, 1 coloured everywhere, 2 HUD 2 glyphs everywhere (glyphs::LookFor);
                                     // its registry row points here directly (controller.cpp kOptions), no copy
     int confirmButton = 0;          // confirm_button: 0 bottom (A / cross / B), 1 right (Nintendo A)
     bool pauseOnDisconnect = true;  // pause_on_disconnect
     int padPreset = 0;              // pad_preset: 0 FREELANCER, 1 ACE, 2 ASSISTED, 3 CUSTOM (= FREELANCER until phase D)
     int weaponGroups = 1;           // weapon_groups: 0 simple, 1 cycle on Y hold, 2 two groups on the triggers
+    bool swapY = false;             // y_swap
     bool holdsAsToggles = false;    // holds_as_toggles
     int rumble = 60;                // rumble: 0..100 %
     int padCursor = 1;              // pad_cursor: 0 off, 1 rooms and maps, 2 everywhere (phase D)

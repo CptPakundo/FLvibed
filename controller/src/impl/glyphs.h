@@ -1,8 +1,10 @@
 // Controller glyphs drawn by FLvibed itself (docs\UI_BUILD.md 1 "Glyphs", UI_PLAN.md 6.3): GDI shapes and letters
 // rasterised at the needed pixel size into an atlas texture (render::Image), so they are sharp at any resolution and
-// need no art file, licence or download. Three families over one positional layout (south = confirm): Xbox (A B X Y
-// coloured letters), PlayStation (cross circle square triangle), Nintendo (B A Y X). The family comes from
-// `glyph_style`, automatic = the connected pad's HID vendor (Sony 054C PlayStation, Nintendo 057E Nintendo, else Xbox).
+// need no art file, licence or download. Four families over one positional layout (south = confirm): Xbox (A B X Y
+// coloured letters), PlayStation (cross circle square triangle), Nintendo (B A Y X), Steam (A B X Y plain, L1 / R1). The
+// family comes from `glyph_style`, automatic = the connected pad's HID vendor (Sony 054C PlayStation, Nintendo 057E
+// Nintendo, a real Valve device 28DE or `SteamDeck=1` in the environment Steam, else Xbox). Steam's virtual gamepad
+// (28DE:11FF) never decides: Steam Input shows it for any pad, an Xbox one included.
 #pragma once
 #include "common.h"
 #include "game/render.h"
@@ -39,6 +41,7 @@ enum class Family
     Xbox,
     PlayStation,
     Nintendo,
+    Steam, // the Deck / Steam Controller's own names: Xbox's face buttons and View / Menu, L1 / L2 / R1 / R2 (GitHub issue 19)
 };
 
 Id FromName(const char* name); // "A" .. "MENU" (the spec's names); COUNT if unknown

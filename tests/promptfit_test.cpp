@@ -14,6 +14,7 @@
 #endif
 #include "test.h"
 
+#include "game/fontscale.h"
 #include "game/promptfit.h"
 #include "game/textfit.h"
 #include "../controller/src/impl/hud2_layout.h"
@@ -376,6 +377,136 @@ CtxResult RunCtx(const CtxSet& s, float W, float H, int scale, Variant v)
 // nothing in the bottom-centre band, no fallback line; at 4:3 / 5:4 the cruise prompt still placed (measured 31 Oct 2026:
 // at 4:3 K&M the right lane is closed and TARGETS, the last, gives way). CANCEL CRUISE's whole width against the lane is
 // printed with -v (measured: 0.204 H pad / 0.214 K&M against the 16:9 lane's 0.186 H - squeezed, its label scrolls).
+// The game's font files as they are in DATA\FONTS, and what the scale does to them.
+void FontScale()
+{
+    using namespace fontscale;
+    const std::string fonts = "; comment\r\n[TrueType]\r\nnickname = ItemName\r\nfont = Agency FB\r\nfixed_height = 0.035\r\n\r\n"
+                              "[TrueType]\r\nnickname = MissionObjective\r\nfont = Agency FB\r\nfixed_height = 0.06\r\n";
+    const std::vector<Fixed> f = ParseFixed(fonts);
+    CHECK(f.size() == 2);
+    CHECK(f[0].nickname == "ItemName");
+    CHECK_NEAR(f[0].height, 0.035, 1e-6);
+    const std::string rich = "[TrueType]\nfont = 0, Arial Unicode MS, 22\nfont = 8, Arial Unicode MS, 23\nfont = 4, Agency FB, 100\n\n"
+                             "[Style]\nname = STYLE_CONSOLE\nfont = 0\n";
+    const std::vector<Rich> r = ParseRich(rich);
+    CHECK(r.size() == 3);
+    CHECK(r[1].id == 8 && r[1].face == "Arial Unicode MS" && r[1].size == 23);
+    CHECK_NEAR(Scaled(0.035f, 130), 0.0455, 1e-6);
+    CHECK_NEAR(Scaled(0.06f, 130), 0.06, 1e-6); // (a heading keeps its size)
+    CHECK(Scaled(23, 130) == 30);
+    CHECK(Scaled(22, 100) == 22);
+    CHECK(Scaled(100, 130) == 100);
+    CHECK(ParseFixed("").empty() && ParseRich("").empty());
+}
+
+// Steam Deck mode: who it is on for, the player's own text size, the margins it gives back, the prompt lane using them.
+void DeckMode()
+{
+    using namespace deckmode;
+    CHECK(Active(0, 1280, 800));
+    CHECK(!Active(0, 1280, 720));
+    CHECK(!Active(0, 1920, 1200));
+    CHECK(!Active(2, 1280, 800));
+    CHECK(Active(1, 3840, 2160));
+    CHECK(TextSize(true, 100) == 120);
+    CHECK(TextSize(true, 90) == 90);
+    CHECK(TextSize(true, 140) == 140);
+    CHECK(TextSize(false, 100) == 100);
+    const bool was = g_on;
+    g_on = false;
+    CHECK_NEAR(SideW(), 0.05, 1e-6);
+    CHECK_NEAR(LaneBottomH(), 0.95, 1e-6);
+    CHECK_NEAR(LaneTopH(), 0.91, 1e-6);
+    CHECK_NEAR(FlightSide(0.03f), 0.03, 1e-6);
+    // one row of five pills, no obstacle: it ends at the safe edge, then at the gutter, and sits lower
+    const float W = 1280, H = 800, wN[5] = {100, 100, 100, 100, 100};
+    auto left = [&](float, float, float) { return W * SideW(); };
+    auto lowest = [](float, float, float) { return 0.0f; };
+    promptfit::LanePlaced a, b;
+    int dropped = 0;
+    promptfit::LaneLayout(W, H, 5, 0, wN, wN, 32, 8, 0, left, lowest, a, dropped);
+    g_on = true;
+    CHECK_NEAR(FlightSide(0.03f), kGutterW, 1e-6);
+    promptfit::LaneLayout(W, H, 5, 0, wN, wN, 32, 8, 0, left, lowest, b, dropped);
+    CHECK(b.mode == promptfit::LaneMode::Row);
+    CHECK(b.rx1 > a.rx1);
+    CHECK(b.ry1 > a.ry1);
+    CHECK(b.rx1 <= W - W * kGutterW + 0.5f);
+    CHECK(b.ry1 <= H - H * kGutterH + 0.5f);
+    g_on = was;
+}
+
+// The pills hold still: the two sequences the frame trace caught at 1280x800 (GitHub issue 10), at two frame rates.
+void PillsHoldStill()
+{
+    using namespace promptfit;
+    auto lane = [](LaneMode m, int x0, int y0, int x1, int y1)
+    {
+        LaneKey k;
+        k.mode = m, k.x0 = x0, k.y0 = y0, k.x1 = x1, k.y1 = y1;
+        return k;
+    };
+    const LaneKey row = lane(LaneMode::Row, 712, 728, 1216, 760), top = lane(LaneMode::Top, 0, 0, 0, 0),
+                  column = lane(LaneMode::Column, 1090, 574, 1216, 760);
+    for (const unsigned ms : {5u, 33u})
+    {
+        // the buy button gone for two frames: the wish to show has no gap on screen
+        PillSteady s;
+        unsigned long long t = 1000;
+        CHECK(s.Shown(true, t));
+        t += ms;
+        CHECK(s.Shown(false, t));
+        t += ms;
+        CHECK(s.Shown(false, t));
+        t += ms;
+        CHECK(s.Shown(true, t));
+        // a real end still ends
+        t += kPillHoldMs + ms;
+        CHECK(!s.Shown(false, t));
+
+        // a window's slide: row, top, column, top, row, column in quick steps, then column stands
+        PillSteady l;
+        t = 5000;
+        CHECK(l.Accept(row, 7, t));
+        int moves = 0;
+        for (const LaneKey* k : {&top, &column, &top, &row, &column})
+        {
+            t += ms;
+            moves += l.Accept(*k, 7, t) && !k->SamePlace(row);
+        }
+        CHECK(moves == 0);
+        bool settled = false;
+        for (unsigned waited = 0; waited <= kLaneSettleMs + ms && !settled; waited += ms)
+            t += ms, settled = l.Accept(column, 7, t);
+        CHECK(settled);
+        // standing, the lane in use answers at once; other pills or another screen are taken at once
+        t += ms;
+        CHECK(l.Accept(column, 7, t));
+        t += ms;
+        CHECK(l.Accept(row, 8, t));
+
+        // changes without rest: stale for at most the longest wait
+        PillSteady n;
+        t = 9000;
+        CHECK(n.Accept(row, 1, t));
+        const unsigned long long start = t;
+        bool taken = false;
+        for (int i = 0; i < 2000 && !taken; ++i)
+        {
+            t += ms;
+            taken = n.Accept(lane(LaneMode::Column, 1000 + i, 574, 1216, 760), 1, t);
+        }
+        CHECK(taken);
+        CHECK(t - start <= kLaneMaxWaitMs + 2 * ms); // (the wait starts a frame in and ends on the first frame past it)
+
+        // nothing in use: the next lane at once
+        n.NewLane();
+        t += ms;
+        CHECK(n.Accept(top, 1, t));
+    }
+}
+
 void StandardCruiseLane()
 {
     namespace hp = uimeta::hud2p;
@@ -720,4 +851,7 @@ void Test_promptfit()
             printf("- %s: %d\n", kv.first.c_str(), kv.second);
     }
     StandardCruiseLane();
+    PillsHoldStill();
+    DeckMode();
+    FontScale();
 }

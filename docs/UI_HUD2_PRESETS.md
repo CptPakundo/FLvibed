@@ -63,6 +63,8 @@ Today: 9.7 % boxed in calm, 18.6 % in combat [C].
 **Fight-form completeness rule**: everything a fight needs lives in the fight form (hold room when loot is in reach, all launcher and torpedo ammo, CM / battery / nanobot counts, the sub-target row). The peek works in combat (§1.6) but is never required there.
 
 ### 1.5 Alerts
+Built differently (0.3.0, the owner, GitHub issue 21; UI_HUD2.md 5.40): the dangers stand beside the ring in a stack per side, every danger showing, so the queue below is not built for them and no second line shares a plate.
+
 - A level-checked **priority queue** at 10 Hz [D]: HULL CRITICAL > MISSILE INCOMING > SHIELD FAILING > PROTECT > CRUISE / LANE DISRUPTED > CARGO FULL. A lower alert never replaces a higher one; a second active alert is one 0.034 line in the same plate. Fixes today's last-wins slot (hud2.cpp 359-365) [C].
 - 3 s; a lit slot stays lit while its condition holds [C]. While MISSILE INCOMING holds, its FLARE answer also shows in the reticle lane [R, GAG]. This is the one deliberate redundancy: a second **channel** for a critical state (§1.7).
 - **Letterbox**: only HULL CRITICAL and MISSILE INCOMING show, in the lower bar; up to 2 others queue and are re-validated after (new code).

@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.3.0 - 5 Nov 2026
+
+- HUD 2, danger alerts: Shield Failing now stands by the left meter, Missile Incoming and Hull Critical by the right, level with
+  the reticle, so your eyes stay near the centre (GitHub issue 21). Two dangers show together instead of one erasing the other:
+  on the same side the newest stands level and pushes the older one down, and subtitles push a side's cards down when they reach
+  them. The cards arrive with a burst and then glow and pulse; the words and prompts stay steady, and the Shield hit cue option
+  turns the glow off. Shield Failing no longer offers FLARE.
+- Pad, weapon groups on both triggers: a held trigger fires full auto. It fired one shot a pull (GitHub issue 14).
+- Pad, dealers: hold A to buy or sell, one trade a hold, as you accept a job. A tap never spends money, and holding again
+  repeats the trade (the comment on GitHub issue 20).
+- Pad, equipment dealer: your own equipment can be sold; A was only the mount box. LS click now mounts and unmounts it (GitHub
+  issue 20).
+- Pad, equipment dealer: LT / RT QUANTITY and Y MAX show whenever the game offers a quantity (GitHub issue 17).
+- HUD 2, loadout panel: with a weapon group on each trigger, each group's row shows its own trigger (GitHub issue 16).
+- HUD 2: the shield meter drains downward, as the hull meter does (GitHub issue 18).
+- Pad, the Freelancer layout: **Y tap now flips to the next weapon group and Y held is cruise**, the other way round from
+  before (GitHub issue 15). The new option "Swap Y tap and hold" (`y_swap`) gives the old order back. With Weapon groups on
+  Simple or Two groups, Y stays cruise on a tap. The Weapon groups choice CYCLE ON Y HOLD is now CYCLE ON Y.
+- New Button prompts choice "Steam" for the Steam Deck and Steam Controller: Xbox's face buttons and View / Menu with L1 / L2 /
+  R1 / R2, picked automatically on a Deck (GitHub issue 19).
+- HUD 2, docked: the game's tooltip no longer flashes over a resting cursor. FLvibed's own focus check set it off four times
+  a second in every docked window, the job board and the dealers included (GitHub issue 10).
+- HUD 2, docked: the button prompts no longer blink on a purchase, and jump around less while a window opens.
+- HUD 2, job board: the window grows to fit a long mission description instead of the text running out of it (GitHub
+  issue 13).
+- Steam Deck mode: at 1280x800 HUD 2's text is larger (120 % unless you chose your own size) and the safe margins at the screen's
+  edge are gone, which also gives the prompts more room. The new `deck_mode` setting forces it on or off.
+- HUD 2, loadout panel: a long torpedo name moves left into the empty space beside it instead of being cut.
+- HUD 2, ship panel: CREDITS no longer shows as a cut, scrolling word when the panel is a fraction too narrow.
+- HUD 2, docked: over a dealer the top strip keeps CARGO; the price change gives way first, since the dealer shows the total.
+- HUD 2, the game's windows: text now takes the room it has. Prices and the numbers that decide a deal grow most, labels less,
+  headings and buttons not at all, and a text steps up only while it fits. Dealers, ship dealer, job board, news, the NeuroNet's
+  windows, save / load and the rumor dialog. Infocards take more of their plates and stay free of scroll bars where the text fits.
+  New `window_text` setting ("Larger window text"), on by default.
+- Options: rows for Steam Deck mode and Larger window text.
+- HUD 2, nav map: it stands a little lower, so the subtitles' panel no longer covers its toolbar.
+- HUD 2, pause in space: the game's comm portrait and caption no longer stand bare around the pause menu.
+- PlayStation prompts: L1 / R1 no longer read as U.
+
 ## 0.2.7a - 4 Nov 2026
 
 - Pad, in bases: the bumpers work in a Bar with no news or job board (two-room bases such as Ku07_02). 0.2.7 took that Bar

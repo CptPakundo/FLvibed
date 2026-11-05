@@ -63,7 +63,9 @@ Rules for a change: edit the part files here (a built behaviour: the `part2b_doc
 changed, `part2_data.js` + `ui/spec`), build, test every control locally (above) (the `db` store and the `user`
 capability exist only inside the claude.ai viewer; locally the page is read-only), publish to the same artifact, patch
 `ui/spec` the same way the data changed (the owner's values and decisions must survive), copy the page to the evidence
-folder, regenerate `docs\UI_SPEC.json` and `core\ui_meta.h`, commit the parts and the spec together.
+folder, regenerate `docs\UI_SPEC.json` and `core\ui_meta.h`, commit the parts and the spec together. Change the spec only
+through `specpatch.py` or an exact text replacement: a `json.dump` with sorted keys reorders `hud2_presets`, whose order
+`ui_meta.py` reads (5 Nov 2026: 13,000 changed lines and a stale `core\ui_meta.h`). Run `tools\ui_meta.py --check` before committing.
 
 **Spec-only blocks (31 Oct 2026):** `UI_SPEC.json` `hud2_presets` (the HUD 2 layout presets, `docs\UI_HUD2_PRESETS.md` 6
 step 1) is data the page does not render; it comes from `patches\2026-10-31_hud2_presets.json` through specpatch's `top`

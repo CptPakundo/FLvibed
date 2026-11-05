@@ -1,0 +1,26 @@
+{
+  "_about": "0.3.0 (5 Nov 2026, Unreleased), GitHub issues 15, 17, 19, 20: the y_swap row, Steam in glyph_style, the dealers' prompts (the owner: what moves money is a hold; LS click mounts).",
+  "add_rows": {
+    "controller/LAYOUT": {"after": "weapon_groups", "rows": [
+      {"key": "y_swap", "label": "Swap Y tap and hold", "kind": "toggle", "def": false,
+       "help": "The Freelancer layout with Weapon groups on CYCLE ON Y HOLD: Y tap flips to the next group and Y held is cruise, instead of the other way round.",
+       "tier": "player", "needs": "live", "parent": null}
+    ]}
+  },
+  "rows": {
+    "glyph_style": {
+      "options": ["AUTOMATIC", "XBOX", "PLAYSTATION", "NINTENDO", "STEAM"],
+      "help": "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro) and the Steam Deck; choose one if yours is detected wrongly. Steam is the Steam Deck and Steam Controller's own naming: Xbox's face buttons and View / Menu, with L1 / L2 / R1 / R2."
+    }
+  },
+  "states": {
+    "commodity/default": {
+      "prompts": [[["LB", "RB"], "SIDE"], [["DU", "DD"], "ITEM"], [["LT", "RT"], "QUANTITY"], [["A"], "BUY / SELL", "hold"], [["Y"], "MAX"], [["B"], "CLOSE"]],
+      "notes": ["Built 5 Nov 2026 (GitHub issue 20's comment, the owner's decision): A held 0.6 s buys or sells, one trade a hold, as a job or a ship is taken; a tap never trades. The row is selected again after each trade, so holding again repeats it. QUANTITY and MAX show only while the game offers a slider."]
+    },
+    "equipment/default": {
+      "prompts": [[["LB", "RB"], "SIDE"], [["DU", "DD"], "ITEM"], [["X"], "FILTER"], [["LT", "RT"], "QUANTITY"], [["A"], "BUY / SELL", "hold"], [["L3"], "MOUNT"], [["Y"], "MAX"], [["B"], "CLOSE"]],
+      "notes": ["Built 5 Nov 2026 (GitHub issues 17, 20): A held buys or sells as at the trader; LS click mounts / unmounts one of your rows through the game's toggle box (until 0.3.0 this was A, which left nothing able to sell). The bar takes five, so its middle follows the item: LT / RT QUANTITY and Y MAX with a slider, LS MOUNT on a row with a box (taking Y's place), X FILTER when no slider needs the place (X still works)."]
+    }
+  }
+}

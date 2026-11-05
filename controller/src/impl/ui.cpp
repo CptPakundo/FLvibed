@@ -232,6 +232,48 @@ int FindInDirection(const std::vector<Item>& items, float fx, float fy, float dx
     return best;
 }
 
+// The game's hit test is no pure read: it asks each control through vt[0x10], and that shows the hover help of the control
+// under the ray (ToolTip and Rollover, state bit 1), which the help's own update 0x4BDDA0 clears the next frame. Asked by
+// FLvibed over a resting cursor, 4 times a second by uiskin's focus, it flashed both for one frame every 266 ms in every
+// docked window (GitHub issue 10; traced at 1280x800, FREELANCER_RE "The hit test shows the hover help"). So what a test of
+// ours switched on is switched off again at once; help that was already up stays up, and the game's own hover, which does
+// not come through here, is untouched.
+struct QuietHelp
+{
+    u32 ctl[2] = {};
+    u8 state[2] = {}, showing = 0, alive = 0;
+    bool have[2] = {};
+    QuietHelp()
+    {
+        static u32 tip = 0, roll = 0;
+        static ULONGLONG foundAt = 0;
+        const ULONGLONG now = GetTickCount64();
+        if (now != foundAt) // (once a clock tick: a grid of tests in one frame looks once, a window's change is seen at once)
+        {
+            foundAt = now;
+            tip = static_cast<u32>(FindControl("ToolTip")), roll = static_cast<u32>(FindControl("Rollover"));
+        }
+        ctl[0] = tip, ctl[1] = roll;
+        for (int i = 0; i < 2; ++i)
+            have[i] = ctl[i] && safemem::Read(ctl[i] + kHelpState, &state[i], 1);
+        if (have[0])
+            safemem::Read(ctl[0] + 0x159, &showing, 1), safemem::Read(ctl[0] + 0x164, &alive, 1);
+    }
+    void Restore() const
+    {
+        for (int i = 0; i < 2; ++i)
+        {
+            u8 now = 0;
+            if (!have[i] || (state[i] & 2) || !safemem::Read(ctl[i] + kHelpState, &now, 1) || !(now & 2))
+                continue;
+            safemem::Write(ctl[i] + kHelpState, static_cast<u8>(now & ~2));
+            if (i == 0)
+                safemem::Write(ctl[0] + 0x159, showing), safemem::Write(ctl[0] + 0x164, alive);
+        }
+    }
+    static constexpr u32 kHelpState = 0x6C;
+};
+
 uintptr_t HitTest(float x, float y)
 {
     // Same ray Freelancer builds for its cursor (0x4BDD40 + camera rotation + normalize).
@@ -250,7 +292,10 @@ uintptr_t HitTest(float x, float y)
         for (float& v : r)
             v /= len;
     typedef uintptr_t(__cdecl * HitTestFn)(const float* ray);
-    return hk::Call<HitTestFn>(exe::HitTest, static_cast<const float*>(r));
+    const QuietHelp help;
+    const uintptr_t hit = hk::Call<HitTestFn>(exe::HitTest, static_cast<const float*>(r));
+    help.Restore();
+    return hit;
 }
 
 std::vector<Item> Probe(float step)

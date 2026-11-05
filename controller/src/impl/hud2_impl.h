@@ -41,6 +41,18 @@ struct Prompt
                   // target) - hud2.cpp CtxSide (the owner's decision 4, 31 Oct 2026)
 };
 
+// One alert card as DrawCard draws it (the model's current alert, or one it holds).
+struct AlertCard
+{
+    std::wstring text, none;
+    u32 col = 0;
+    Prompt prompts[2];
+    int n = 0;
+    float left = 0;
+    int side = 0;
+    float yNow = -1; // its top as it slides (-1: not placed yet)
+};
+
 struct Model
 {
     State state = State::Calm;
@@ -143,6 +155,7 @@ struct Model
     bool realGroups = false;          // the rows are the game's weapon groups (a click selects one), not "all guns"
     std::wstring ungrouped;           // the guns in no group (shown dimmed under the groups as "(no group) ...")
     Prompt fireBtn, launchBtn, torpedoBtn;
+    Prompt fireBtn2; // weapon_groups 2 on the pad: group 2's button (fireBtn is then group 1's); btn COUNT otherwise
     std::wstring launcher;
     int ammo = -1;
     std::wstring torpedo; // a row of its own: the torpedo hardpoints' launcher (on a cruise disruptor there, its name)
@@ -167,6 +180,9 @@ struct Model
     int nAlertPrompts = 0;
     std::wstring alertNone; // the amber "none" state when the answer is used up ("NO COUNTERMEASURES - EVADE")
     float alertLeft = 0;
+    int alertSide = 0; // beside the ring: -1 the shield arc, +1 the hull arc, 0 top-centre (GitHub issue 21)
+    float alertYNow = -1; // the card's top as it slides to its place in the stack (-1: not placed yet)
+    AlertCard held[2]; // the cards a newer alert pushed down, the newer first: dangers are independent (the owner, 5 Nov 2026)
     int alertSlots = 0;     // the D-pad slots the card names (bits: nanobots, batteries, countermeasures, mines): lit while it shows
 };
 
@@ -229,6 +245,8 @@ struct Layout
     float ctxTall = 0;                 // ... and its plate grows upward by this
     float ctxTop;
     float alertY, alertX0, alertX1, alertY1;
+    float heldX[2] = {}, heldY[2] = {}; // the held alert cards' places (hud2_layout.h Out)
+    bool heldShow[2] = {};
     // Focus (hud2_layout.h Out; Standard leaves them 0 / false)
     bool listInCard = false; // the pad's threat rows thrY0..thrY1 inside the card
     float form = 0;          // the card's fight form 0..1
@@ -296,6 +314,7 @@ float ListContentWidth(const Model& m, const Layout& L);   // hud2_click.cpp: th
 float CardIconsContentWidth(const Model& m, const Layout& L); // hud2_click.cpp: the K&M card's click row (short form)
 // The alert card; returns its width (measure).
 float DrawAlert(const Model& m, const Layout& L, float a, bool measure);
+float DrawCard(const AlertCard& c, float x0, float y0, const Layout& L, float a, bool measure); // (returns its width)
 // A prompt's glyph or keycap centred at (cx, cy), h tall; returns its width. `tight` = the dense panels' keycap
 // (hud2kit::Keycap; a glyph is unchanged).
 float DrawPrompt(const Prompt& p, float cx, float cy, float h, u32 argb, bool measure = false, bool tight = false);

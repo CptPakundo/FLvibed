@@ -21,4 +21,17 @@ inline bool Read(uintptr_t addr, void* out, size_t len)
         return false;
     }
 }
+// One byte into `addr`; false when the memory cannot be written.
+inline bool Write(uintptr_t addr, u8 value)
+{
+    __try
+    {
+        *reinterpret_cast<volatile u8*>(addr) = value;
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
 } // namespace safemem

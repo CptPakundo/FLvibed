@@ -119,9 +119,14 @@ const Table& FlightAp()
     return ap;
 }
 
-Table Effective(int preset, int weaponGroups)
+Table Effective(int preset, int weaponGroups, bool swapY)
 {
     Table t = Flight(preset);
+    // FREELANCER's Y: tap next group, hold cruise (the owner, 5 Nov 2026; GitHub issue 15). y_swap gives the old order
+    // back, and without group cycling cruise takes the tap (the hold's weapon_group then drops, below). Only where Y is
+    // next group / cruise, so nothing moves in ACE and ASSISTED.
+    if ((swapY || weaponGroups != 1) && t.b[glyphs::Y].tap == Action::WeaponGroup && t.b[glyphs::Y].hold == Action::Cruise)
+        std::swap(t.b[glyphs::Y].tap, t.b[glyphs::Y].hold);
     if (weaponGroups == 0)
     {
         if (t.b[glyphs::Y].hold == Action::WeaponGroup)

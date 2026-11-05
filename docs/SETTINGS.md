@@ -5,7 +5,7 @@ in the source and regenerate.** `set <name> <value>` / `ap set` change a value l
 help lines; `config settings` / `ap settings` / `settings` list them in the game. Behaviour, measurements and the why of
 each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, `controller\docs\HUD_CUES.md`.
 
-## [Controller] - EXE\FLController.ini [Controller] (72 keys; source `controller\src\impl\controller.cpp`)
+## [Controller] - EXE\FLController.ini [Controller] (76 keys; source `controller\src\impl\controller.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -34,19 +34,20 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `maneuver_watchdog` | bool | 0 \| 1 | true | 1 = if your ship stalls during a formation, goto or dock (nearly stopped for 3 s, its goal more than 150 m away and not getting closer, you not steering), FLvibed leaves it and issues it again (up to 3 times, 10 s apart) and logs what happened |
 | `run_in_background` | bool | 0 \| 1 | false | 1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back to Windows meanwhile |
 | `npc_stall_log` | bool | 0 \| 1 | true | writes EXE\FLvibed_npc_stalls.log when a hostile ship near you stops moving: what the game says about it, for bug reports; read only, it changes nothing in the game |
-| `shield_cue` | bool | 0 \| 1 | true | screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it fails; HUD 2's shield meter flashes red when low |
+| `shield_cue` | bool | 0 \| 1 | true | screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it fails; HUD 2's shield meter flashes red when low, and its danger alerts glow and pulse |
 | `shield_cue_intensity` | float | 0 .. 2 | 1.0 | shield_cue strength (alpha and size) |
 | `hull_cue` | bool | 0 \| 1 | true | with shield_cue: hull hits show your ship's own hull hit effect at the screen edge, and while the hull is damaged the edges carry your ship's damage effects (sparks, fire, smoke) as the game lights them; HUD 2's hull meter flashes bright red when low |
 | `hull_cue_pattern` | int | 0 .. 2 | 2 | pattern of the hull damage edge, so it never reads as a shield hit: 0 none, 1 armour plates, 2 hexagons (default) |
 | `reticle_cue` | bool | 0 \| 1 | true | a ring pulse at the crosshair: autopilot on (cyan, outward), handed back (amber, inward), nanobots (green) / batteries (blue) used (double ring) |
 | `autopilot_cancel` | float | 0 .. 1 | 0.35 | Advanced Autopilot (the pad hold, the key or the bar button starts it): stick deflection that hands the ship back to you (0 = never). Its own settings (pilot, engage rules, weapons, personality fields p.<name>) are in the [Autopilot] section |
 | `input_mode` | int | 0 .. 2 | 0 | input device: 0 automatic (the last device used wins, the UI follows in one frame), 1 controller, 2 keyboard and mouse |
-| `glyph_style` | int | 0 .. 3 | 0 | button prompts: 0 automatic (the connected pad's family), 1 Xbox, 2 PlayStation, 3 Nintendo |
+| `glyph_style` | int | 0 .. 4 | 0 | button prompts: 0 automatic (the connected pad's family), 1 Xbox, 2 PlayStation, 3 Nintendo, 4 Steam (Steam Deck / Steam Controller: Xbox's face buttons, L1 / L2 / R1 / R2) |
 | `glyph_look` | int | 0 .. 2 | 0 | how the button prompts look: 0 automatic (HUD 2 draws them in its own colour, the classic HUD and the menus in the buttons' colours), 1 coloured everywhere, 2 HUD 2 style everywhere; sizes stay as each screen has them |
 | `confirm_button` | int | 0 .. 1 | 0 | which face button accepts in menus: 0 the bottom one (A / cross / B), 1 the right one (Nintendo) |
 | `pause_on_disconnect` | bool | 0 \| 1 | true | a pad that drops out mid-flight pauses the game; in menus the UI switches to the keyboard |
 | `pad_preset` | int | 0 .. 3 | 0 | the flight layout: 0 Freelancer (targets and weapons on the fingers, consumables on the D-pad), 1 Ace (arcade flight: the left stick steers, the triggers are the throttle), 2 Assisted (the autopilot flies, you aim and decide), 3 Custom |
-| `weapon_groups` | int | 0 .. 2 | 1 | 0 simple: RT fires the active group; 1 cycle: Y held flips to the next group (Y tap stays cruise); 2 two groups: RT fires group 1 and LT group 2 (afterburner moves to the LS click). Launchers fire only on their own buttons |
+| `weapon_groups` | int | 0 .. 2 | 1 | 0 simple: RT fires the active group, Y is cruise; 1 cycle: Y tap flips to the next group, Y held is cruise; 2 two groups: RT fires group 1 and LT group 2 (afterburner moves to the LS click), Y is cruise. Launchers fire only on their own buttons |
+| `y_swap` | bool | 0 \| 1 | false | the Freelancer layout with weapon_groups 1: Y tap is cruise and Y held flips to the next group, instead of the other way round |
 | `holds_as_toggles` | bool | 0 \| 1 | false | afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons |
 | `rumble` | int | 0 .. 100 | 60 | vibration strength in percent (0 = off): hits on your ship by their weight, your shield failing, the autopilot's hand-back pulse and the game's boxes that wait for your answer; only while the controller is in use and the game is in front, never in cutscenes or the menus, and the world's effects never while paused |
 | `pad_cursor` | int | 0 .. 2 | 2 | a cursor on the left stick where pointing is natural: 0 off, 1 rooms and maps, 2 everywhere; it slows over targets, the D-pad hides it |
@@ -57,6 +58,9 @@ each default: `controller\docs\AUTOPILOT.md`, `subtitles\docs\DISPLAY_PLAN.md`, 
 | `world_prompts` | int | 0 .. 1 | 0 | a prompt by the target when something unusual is possible now (dock in range, loot in reach): 0 contextual, 1 off |
 | `ap_hints` | bool | 0 \| 1 | true | show the autopilot's prompts and status before it was ever used; 0 = nothing about it shows until you switch it on once |
 | `text_size` | int | 80 .. 150 | 100 | size of FLvibed's own UI text (prompts, panels, the status line) in percent; the subtitles have their own |
+| `deck_mode` | int | 0 .. 2 | 0 | Steam Deck mode, larger text and no safe margins at the screen's edge: 0 automatic (on at 1280x800), 1 on, 2 off |
+| `game_text_size` | int | 100 .. 150 | 100 | size of the game's own text in every window, in percent; takes effect at the main menu |
+| `window_text` | bool | 0 \| 1 | true | HUD 2: the text in the game's windows takes the room it has, the prices most, labels less, headings and buttons not at all |
 | `hud_glyphs` | bool | 0 \| 1 | true | in pad mode the HUD's own buttons carry the glyph of the button that acts on them |
 | `button_legend` | int | 0 .. 1 | 0 | the contextual list of the actions available now with their buttons, right-middle of the screen: 0 = on, 1 = off (the row's order: ON / OFF) |
 | `ap_status_line` | bool | 0 \| 1 | true | the one line under the maneuver bar while the autopilot flies, cruise charges or turret view is on |

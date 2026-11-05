@@ -485,7 +485,7 @@ static void Badges(std::vector<Badge>& out, float H, float ts, int sw, int sh)
     on("SwitchToContactList", presets::Action::TargetPicker, BesideLeft);
     on("NextEnemyButton", presets::Action::TargetSmart, BesideRight);
     on("NextEnemyButton", presets::Action::NextEnemy, BesideRight);
-    // the status panel's header: the D-pad over each consumable, Y (hold) over the active weapon group (lit)
+    // the status panel's header: the D-pad over each consumable, Y over the active weapon group (lit)
     on("HudRepairButton", presets::Action::Nanobot, BottomPanel);
     on("UseBatteryButton", presets::Action::Battery, BottomPanel);
     if (uiopt::Get().weaponGroups == 1)

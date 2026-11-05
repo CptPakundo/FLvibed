@@ -113,6 +113,9 @@ struct Measures
     float ctxGap = 0;  // ContextGap (the space between prompts)
     float ctxWord = 0; // ContextWordSize (the HOLD word's text size)
     float alertW = 0;  // the alert card's width (DrawAlert measure), 0 = no alert text
+    int alertSide = 0; // beside the ring: -1 the left (shield) arc, +1 the right (hull) arc, 0 top-centre (GitHub issue 21)
+    float heldW[2] = {}; // the cards a newer alert pushed down (0 = none), the newer first: width, side as above
+    int heldSide[2] = {};
     // the panels sized to their content (0.2.1 round 3, the owner: "they only need to be as big as the content they
     // display"; UI_HUD2.md 5.26): Standard's card (with the list under it), ship panel and loadout base panel widths
     // (pixels) as hud2.cpp eased them from the measures (hud2_parts.cpp *ContentWidth, its minimum and hysteresis);
@@ -177,6 +180,8 @@ struct Out
     bool ctxFallback = false;          // no lane beside the panels had room (4:3 / 5:4 at large scales): the lanes above
                                        // them (promptfit.h LanesAbove, 5.23)
     float alertY = 0, alertX0 = 0, alertX1 = 0, alertY1 = 0;
+    float heldX[2] = {}, heldY[2] = {}; // the held cards' places; heldShow false: no card, or its place is taken
+    bool heldShow[2] = {};
     Rect ringBus, topFree, chatFree; // the HUD bus's rectangles (hud2.cpp Publish)
     u32 suppressed = 0;              // every element the preset suppresses this frame (context + budget)
     u32 budgetOff = 0;               // ... of them by the budget
@@ -259,6 +264,10 @@ constexpr int kStandardOverrides = 12; // card w, card h K&M, nav width, nav box
 constexpr float kBottomBandX0W = hp::kKeepX0W, kBottomBandX1W = hp::kKeepX1W;
 // The ring's geometry the zone's top follows (fractions of H x k; hud2_parts.cpp DrawRing / DrawSplitArcs draw with them):
 constexpr float kRingArcW = 0.0065f;  // the arcs' width (the ring's; Focus's split arcs and bottom arc alike)
+constexpr float kAlertStackH = 0.094f; // the two-line alert card beside the ring (GitHub issue 21)
+constexpr float kAlertSideR = 0.205f;  // its inner edge from the ring's centre: outside the missile chevrons (they end at 0.20)
+constexpr float kAlertStackGap = 0.012f; // between two stacked cards
+constexpr float kAlertDlgGap = 0.012f;   // a side's top card under the subtitles' dialogue (fractions of H)
 constexpr float kThrottleDR = 0.022f; // Standard's throttle arc at the ring's bottom centre: its radius beyond the ring
 constexpr float kThrottleW = 0.75f;   //   and its width, of the arcs' (the owner, 26 Oct 2026: "bottom center of the circle")
 // The ring's lowest drawn edge below the centre (pixels): Standard's family the throttle arc's outer edge (its BOOST / KILL /
@@ -385,7 +394,7 @@ inline u32 BudgetSuppress(const Rules& r, const Frame& f, const Out& o, u32 alre
 inline void FocusCorners(const Frame& f, const hp::Preset& p, const Rules& rules, Out& L)
 {
     const float W = f.W, H = f.H, k = L.k;
-    const float myBottom = hp::kMarginBottom * H;
+    const float myBottom = deckmode::FlightTopBottom(hp::kMarginBottom) * H;
     const bool off = f.targetOff || rules.cardOffForm;
     // the card: the calm compact form .. the fight form, eased by the caller (Reveal: the form's ease and its 6 s linger)
     const float cw = hp::Num(p, "calm", "card", "w", 0.34f);
@@ -583,9 +592,10 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     L.k = Scale(f);
     const float k = L.k;
     // the margins (PRESETS 1.1: 5 % W at the sides, 0.05 H top and bottom) and the ring (the preset's reticle radius)
-    L.mx = hp::kMarginSideW * W, L.my = hp::kMarginTop * H, L.cx = W / 2, L.cy = H / 2, L.R = p.reticleR * H * k;
+    L.mx = deckmode::FlightSide(hp::kMarginSideW) * W, L.my = deckmode::FlightTopBottom(hp::kMarginTop) * H, L.cx = W / 2,
+    L.cy = H / 2, L.R = p.reticleR * H * k;
     L.clearY0 = L.cy + RingBottom(rules.corners == 1, L.R, H, k) + hp::kCentreGap * H; // (5.23: Focus draws split arcs)
-    const float myBottom = hp::kMarginBottom * H;
+    const float myBottom = deckmode::FlightTopBottom(hp::kMarginBottom) * H;
     if (rules.corners == 1)
         FocusCorners(f, p, rules, L);
     else
@@ -639,23 +649,72 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
         PlaceContextLanes(f, n, lineY, L);
     }
     // the alert top-centre (its plate 0.05 H x k: PRESETS 1.5), below the subtitles' dialogue panel when one shows there
-    const float alertH = hp::kAlertPlateH;
+    const float alertH = f.m.alertSide ? kAlertStackH : hp::kAlertPlateH;
     L.alertY = L.my;
     if (f.dlg.comm)
         L.alertY = std::max(L.alertY, f.dlg.y1 * H + 0.012f * H);
     const float aw = f.m.alertW;
     L.alertX0 = L.cx - aw / 2, L.alertX1 = L.cx + aw / 2;
+    // a danger to the ship stands beside its meter, level with the reticle, so the eyes stay there (GitHub issue 21): the
+    // two-line card, clear of the missile chevrons' band (they reach 0.20 H x k), if it meets nothing; else as any alert
+    // One stack per side (the owner, 5 Nov 2026), as the subtitles' lines stack: the newest card level with the ring, an
+    // older one pushed down a place, and up again when the one above it goes. The subtitles' dialogue pushes a side's whole
+    // stack: its top card stands kAlertDlgGap under a dialogue that reaches the stack's extent, the others follow it.
+    const float cardH = kAlertStackH * H * k, cardStep = cardH + kAlertStackGap * H * k, level = L.cy - cardH / 2;
+    auto besideAt = [&](int side, float y0, float w, float& x) {
+        const float off = kAlertSideR * H * k, y1 = y0 + cardH;
+        const float x0 = side < 0 ? L.cx - off - w : L.cx + off, x1 = x0 + w;
+        auto meets = [&](float a0, float b0, float a1, float b1) { return a1 > a0 && x0 < a1 && x1 > a0 && y0 < b1 && y1 > b0; };
+        x = x0;
+        return x0 >= L.mx * 0.5f && x1 <= W - L.mx * 0.5f && y1 <= H - L.my && !meets(L.nav.x0, L.nav.y0, L.nav.x1, L.nav.y1) &&
+               !meets(L.ship.x0, L.ship.y0, L.ship.x1, L.ship.y1) && !meets(L.loadout.x0, L.loadout.y0, L.loadout.x1, L.loadout.y1) &&
+               !meets(L.cons.x0, L.cons.y0, L.cons.x1, L.cons.y1) &&
+               !((f.target || f.list) && meets(L.card.x0, f.target ? L.card.y0 : L.thrY0, L.card.x1, f.list ? L.thrY1 : L.card.y1)) &&
+               !(f.dlg.fresh && meets(f.dlg.x0 * W, f.dlg.y0 * H, f.dlg.x1 * W, f.dlg.y1 * H));
+    };
+    bool beside = false;
+    for (int side : {-1, 1})
+    {
+        int n = aw > 0 && f.m.alertSide == side ? 1 : 0;
+        float wide = n ? aw : 0;
+        for (int i = 0; i < 2; ++i)
+            if (f.m.heldW[i] > 0 && f.m.heldSide[i] == side)
+                ++n, wide = std::max(wide, f.m.heldW[i]);
+        float top = level;
+        if (n && f.dlg.fresh)
+        {
+            const float sx0 = side < 0 ? L.cx - kAlertSideR * H * k - wide : L.cx + kAlertSideR * H * k, sx1 = sx0 + wide;
+            const float dy0 = f.dlg.y0 * H, dy1 = f.dlg.y1 * H;
+            if (f.dlg.x0 * W < sx1 && f.dlg.x1 * W > sx0 && dy0 < level + n * cardStep && dy1 > level)
+                top = dy1 + kAlertDlgGap * H;
+        }
+        int at = 0; // the next free place of this side's stack
+        if (aw > 0 && f.m.alertSide == side)
+        {
+            float x = 0;
+            beside = besideAt(side, top, aw, x);
+            if (beside)
+                L.alertX0 = x, L.alertX1 = x + aw, L.alertY = top, at = 1;
+        }
+        for (int i = 0; i < 2; ++i)
+            if (f.m.heldW[i] > 0 && f.m.heldSide[i] == side)
+            {
+                L.heldY[i] = top + at * cardStep;
+                L.heldShow[i] = besideAt(side, L.heldY[i], f.m.heldW[i], L.heldX[i]);
+                at += L.heldShow[i] ? 1 : 0;
+            }
+    }
     // a narrow screen (4:3): the card does not fit between the nav and the target card - it goes under the higher of them
-    if (aw > 0 && (L.alertX1 > L.card.x0 - 0.01f * H || L.alertX0 < L.nav.x1))
+    if (aw > 0 && !beside && (L.alertX1 > L.card.x0 - 0.01f * H || L.alertX0 < L.nav.x1))
         L.alertY = std::max(L.alertY, (f.list ? L.thrY1 : L.card.y1) + 0.012f * H);
     // ... and never over the reticle ring and its speed / cruise words: below the ring then
     const float ringY0 = L.cy - L.R - 0.03f * H * k, ringY1 = L.cy + L.R + 0.04f * H * k;
-    if (aw > 0 && L.alertY < ringY1 && L.alertY + alertH * H * k > ringY0 && L.alertX0 < L.cx + L.R &&
+    if (aw > 0 && !beside && L.alertY < ringY1 && L.alertY + alertH * H * k > ringY0 && L.alertX0 < L.cx + L.R &&
         L.alertX1 > L.cx - L.R)
         L.alertY = ringY1 + 0.006f * H;
     // ... and clear of the subtitles' dialogue wherever it landed: the first clear place of here, below the dialogue,
     // above it, below the ring - clear = inside the margins and over none of HUD 2's parts
-    if (aw > 0 && f.dlg.fresh && f.dlg.x1 > f.dlg.x0)
+    if (aw > 0 && !beside && f.dlg.fresh && f.dlg.x1 > f.dlg.x0)
     {
         const float ah = alertH * H * k, gap = 0.012f * H;
         const float dx0 = f.dlg.x0 * W, dy0 = f.dlg.y0 * H, dx1 = f.dlg.x1 * W, dy1 = f.dlg.y1 * H;

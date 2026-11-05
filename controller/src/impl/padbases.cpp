@@ -143,6 +143,10 @@ static bool g_conversation = false; // a character talks to the player / the roo
 // dealers / jobs / ships
 static float g_aHeld = 0; // seconds A has been down (0 = up)
 static bool g_aFired = false;
+// After a trade the game clears the row's selection and the transfer panel stays gone (measured 5 Nov 2026), so a second
+// hold would find no button: the focused row is selected again. A few tries, as the clear comes a moment after the trade.
+static int g_tradeTries = 0;
+static float g_tradeWait = 0;
 static float g_trigRepeat[2] = {}; // LT, RT repeat timers
 static float g_trigHeld[2] = {};
 static int g_filter = -1;
@@ -556,6 +560,16 @@ static void LeaveChars()
 // ---------------------------------------------------------------- the frame
 // The screen's prompts (UI_SPEC.json `prompts`, confirm first, at most five) into the shared prompt bar (promptbar.*,
 // D-MENUS's component: a decision pending keeps it up under CONTEXTUAL).
+// The mount box of the equipment dealer's row `rowName`, when it is one of the player's rows and has one (cargo has none).
+static u32 MountToggle(const char* rowName)
+{
+    if (g_screen != Screen::Equipment || g_side != 2 || !IsRow(rowName))
+        return 0;
+    char tname[24];
+    sprintf_s(tname, "EquipToggle%d", TrailingNumber(rowName));
+    return Vis(tname);
+}
+
 // A dealer's focus on its transfer panel (the buy / sell button, the quantity slider) with a row to go back to: B = BACK
 static bool PanelFocus(const char* focusName)
 {
@@ -642,15 +656,24 @@ static void Prompts(const Gamepad& pad)
     {
         const bool eq = g_screen == Screen::Equipment;
         const bool buy = Vis("BuySellTradeButton") != 0;
-        // (the spec lists six prompts here; the bar takes five: the D-pad's ITEM, the obvious one, is left out)
+        const bool qty = Vis("QuantitySlider") != 0;
+        const bool mount = MountToggle(ui::ControlName(Focused())) != 0;
+        // The bar takes five (the D-pad's ITEM, the obvious one, is left out), so the middle follows the selected item:
+        // QUANTITY and MAX with a slider (GitHub issue 17: the equipment dealer never named the triggers), MOUNT on an
+        // item of the player's with a box, FILTER when nothing needs its place.
         // (the list side: short, so HUD 2's pills fit the column right of the description at 16:9 - promptbar rule 4)
         add(Id::LB, L"SIDE", false, Id::RB);
-        if (eq)
-            add(Id::X, L"FILTER");
-        else
+        if (qty)
             add(Id::LT, L"QUANTITY", false, Id::RT);
-        add(Id::A, eq ? (g_side == 2 ? L"MOUNT" : L"BUY") : (g_side == 2 ? L"SELL" : L"BUY"));
-        add(Id::Y, L"MAX");
+        else if (eq)
+            add(Id::X, L"FILTER");
+        add(Id::A, g_side == 2 ? L"SELL" : L"BUY", true, Id::COUNT, aProgress);
+        if (n > 0)
+            p[n - 1].enabled = buy; // (greyed, not gone: the panel's button leaves for a few frames on a purchase)
+        if (mount)
+            add(Id::L3, L"MOUNT");
+        else if (qty)
+            add(Id::Y, L"MAX");
         add(Id::B, PanelFocus(ui::ControlName(Focused())) ? L"BACK" : L"CLOSE");
         decision = buy;
         break;
@@ -1019,6 +1042,12 @@ static void UpdateWindow(const Gamepad& pad)
                 reselect = true; // the list scrolled under the focused row: the row shows another item now
             g_lastScrollPos = pos;
         }
+        if (g_tradeTries > 0 && (g_tradeWait -= g_dt) <= 0)
+        {
+            --g_tradeTries, g_tradeWait = 0.3f;
+            if (!g_cursorShown && IsRow(hname) && !Vis("BuySellTradeButton"))
+                reselect = true;
+        }
         ReadQuantity();
     }
     else
@@ -1096,26 +1125,26 @@ static void UpdateWindow(const Gamepad& pad)
         g_owned |= XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_Y | XINPUT_GAMEPAD_LEFT_SHOULDER | XINPUT_GAMEPAD_RIGHT_SHOULDER |
                    XINPUT_GAMEPAD_DPAD_LEFT | XINPUT_GAMEPAD_DPAD_RIGHT;
         if (g_screen == Screen::Equipment)
-            g_owned |= XINPUT_GAMEPAD_X;
-        if (pad.Pressed(XINPUT_GAMEPAD_A))
+            g_owned |= XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_LEFT_THUMB;
+        // A held buys or sells, as a job or a ship is taken: what moves money is never one tap (the owner, 5 Nov 2026;
+        // GitHub issue 20, which also found that nothing could be sold here: A was the mount box on every row of the
+        // player's). A tap acts on the focused control, a filter or a row; the transfer panel's own controls wait for the hold.
+        if (aDown && !g_aFired && g_aHeld >= 0.6f && Vis("BuySellTradeButton"))
         {
-            // the equipment dealer, one of the player's own rows: its mount toggle (EquipToggleN) first - the toggle
-            // class's own action through uiclick::Click (exe::ToggleButtonActivate: the dealer mounts / unmounts the
-            // item, the box flips); selling one's own equipment is never done by A here
-            bool done = false;
-            if (g_screen == Screen::Equipment && g_side == 2 && IsRow(hname))
-            {
-                char tname[24];
-                sprintf_s(tname, "EquipToggle%d", TrailingNumber(hname));
-                const u32 t = Vis(tname);
-                events::Push("pad equipment: %s %s", tname,
-                             t ? (uiclick::Click(t) ? "toggled" : "no click (class not signed)") : "absent");
-                done = true;
-            }
-            if (!done && Vis("BuySellTradeButton"))
-                ClickName("BuySellTradeButton", g_side == 2 ? "sell" : "buy");
-            else if (!done && hovered && IsWindowControl(hname) && uiclick::Click(hovered))
-                events::Push("pad dealer: %s clicked", hname);
+            g_aFired = true;
+            ClickName("BuySellTradeButton", g_side == 2 ? "sell" : "buy");
+            g_tradeTries = 3, g_tradeWait = 0.3f;
+        }
+        else if (!aDown && heldBefore > 0 && heldBefore < 0.6f && !g_aFired && hovered && IsWindowControl(hname) &&
+                 !Starts(hname, "BuySell") && !Starts(hname, "QuantitySlider") && uiclick::Click(hovered))
+            events::Push("pad dealer: %s clicked", hname);
+        // LS click: the mount box (EquipToggleN) of one of the player's rows - the toggle class's own action through
+        // uiclick::Click (exe::ToggleButtonActivate: the dealer mounts / unmounts the item, the box flips)
+        if (g_screen == Screen::Equipment && pad.Pressed(XINPUT_GAMEPAD_LEFT_THUMB))
+        {
+            const u32 t = MountToggle(hname);
+            events::Push("pad equipment: %s mount box %s", hname,
+                         t ? (uiclick::Click(t) ? "toggled" : "no click (class not signed)") : "absent");
         }
         if (pad.Pressed(XINPUT_GAMEPAD_Y))
             Quantity(1000, "max");
@@ -1231,7 +1260,7 @@ void Update(float dt, const Gamepad& pad, Where where)
             Log("pad screen %s -> none (modal window)", ScreenName(g_screen));
             LeaveChars();
             g_screen = Screen::None;
-            g_aHeld = 0, g_aFired = false, g_lastScrollPos = -1, g_lastHovered = 0, g_closeHeld = 0;
+            g_aHeld = 0, g_aFired = false, g_tradeTries = 0, g_lastScrollPos = -1, g_lastHovered = 0, g_closeHeld = 0;
         }
         // the pause menu, its confirm, the save / load screens, the death dialog: padmenus' screens follow the pad
         // cursor rule; any other modal (a story popup) keeps the arrow
@@ -1247,7 +1276,7 @@ void Update(float dt, const Gamepad& pad, Where where)
         if (s2 != g_screen)
         {
             Log("pad screen %s -> %s", ScreenName(g_screen), ScreenName(s2));
-            g_aHeld = 0, g_aFired = false, g_lastScrollPos = -1, g_lastHovered = 0, g_closeHeld = 0;
+            g_aHeld = 0, g_aFired = false, g_tradeTries = 0, g_lastScrollPos = -1, g_lastHovered = 0, g_closeHeld = 0;
             g_qtyPos = g_qtyMax = -1;
             if (g_screen == Screen::Room)
                 LeaveChars();
@@ -1541,7 +1570,7 @@ void Draw(void* device)
         else
             swprintf_s(line, L"QUANTITY %d", g_qtyPos);
         const float tw = static_cast<float>(render::TextWidth(font, line));
-        const float x = W * 0.5f - tw * 0.5f, y = H * 0.655f;
+        const float x = W * 0.5f - tw * 0.5f, y = H * 0.648f;
         render::Gradient(x - H * 0.01f, y - H * 0.003f, tw + H * 0.02f, font.lineHeight + H * 0.006f, Argb(kBack, 0.0f),
                          Argb(kBack, 0.5f), Argb(kBack, 0.5f), Argb(kBack, 0.0f));
         render::Text(x, y, line, Argb(kHud, 0.95f));

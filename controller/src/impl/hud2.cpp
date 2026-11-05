@@ -524,12 +524,50 @@ static unsigned CtxSig(const Model& m)
     return h;
 }
 
-static void Alert(const wchar_t* title, u32 col)
+static bool g_alertsOff = false; // the layout has the alert slot off this frame (a cinematic): the held cards go with it
+
+// A running card beside the ring stays when a new alert comes: the dangers are independent, and an alert fires once at its
+// edge, so a replaced card never came back (the owner, 5 Nov 2026). The newest takes the top of its side's stack, the
+// others go down a place (hud2_layout.h); the same alert again replaces its old card.
+static bool KeepCard(const wchar_t* title)
+{
+    for (AlertCard& h : g_m.held)
+        if (h.left > 0 && h.text == title)
+            h.left = 0;
+    if (g_m.held[0].left <= 0 && g_m.held[1].left > 0)
+        g_m.held[0] = g_m.held[1], g_m.held[1].left = 0;
+    if (g_m.alertLeft <= 0 || g_m.alert.empty() || !g_m.alertSide || g_m.alert == title)
+        return false;
+    if (g_m.held[0].left > 0)
+        g_m.held[1] = g_m.held[0];
+    AlertCard& h = g_m.held[0];
+    h.text = g_m.alert, h.none = g_m.alertNone, h.col = g_m.alertCol, h.n = g_m.nAlertPrompts;
+    h.left = g_m.alertLeft, h.side = g_m.alertSide, h.yNow = g_m.alertYNow;
+    for (int i = 0; i < h.n && i < 2; ++i)
+        h.prompts[i] = g_m.alertPrompts[i];
+    return true;
+}
+
+static void Alert(const wchar_t* title, u32 col, int side = 0)
 {
     if (!uiopt::Get().hudAlerts)
         return;
+    const bool kept = KeepCard(title);
     g_m.alert = title, g_m.alertCol = col, g_m.alertLeft = 3.0f, g_m.nAlertPrompts = 0, g_m.alertNone.clear();
-    g_m.alertSlots = 0;
+    if (!kept)
+        g_m.alertSlots = 0; // (a kept card still names its slots)
+    g_m.alertSide = side, g_m.alertYNow = -1;
+}
+
+// The stacks slide (continuous motion, never a step): each card eases to the place the layout gives it.
+static void SlideAlerts(float dt)
+{
+    auto slide = [dt](float& y, float to) { y = y < 0 ? to : y + (to - y) * std::min(1.0f, dt / 0.08f); };
+    if (g_m.alertSide)
+        slide(g_m.alertYNow, g_L.alertY);
+    for (int i = 0; i < 2; ++i)
+        if (g_m.held[i].left > 0 && g_L.heldShow[i])
+            slide(g_m.held[i].yNow, g_L.heldY[i]);
 }
 // The maneuver lock's answer (0.2.1; a player report: in M01 the mission's Act_LockManeuvers made B / free flight do
 // nothing, which read as a malfunction): the card in the warning amber, glyph-free, 2.5 s - not gated by hud_alerts,
@@ -538,8 +576,9 @@ bool LockNotice()
 {
     if (!Active())
         return false;
+    KeepCard(L"LOCKED BY THE MISSION");
     g_m.alert = L"LOCKED BY THE MISSION", g_m.alertCol = kWarn, g_m.alertLeft = 2.5f, g_m.nAlertPrompts = 0;
-    g_m.alertNone.clear(), g_m.alertSlots = 0;
+    g_m.alertNone.clear(), g_m.alertSlots = 0, g_m.alertSide = 0;
     return true;
 }
 
@@ -614,6 +653,9 @@ static void Fast(float dt)
     }
     if (m.alertLeft > 0)
         m.alertLeft -= dt;
+    for (AlertCard& h : m.held)
+        if (h.left > 0)
+            h.left -= dt;
     if (m.placeLeft > 0)
         m.placeLeft -= dt;
     // the dock reply for the readers (hudinfo::Docking's queue)
@@ -698,7 +740,7 @@ static void LightSlots(Model& m, bool shieldLow)
     const int counts[4] = {m.nano, m.batt, m.cm, m.mines};
     const bool cond[4] = {m.hull >= 0 && m.hull <= 0.25f, shieldLow, m.missiles > 0, false};
     static const u32 kMeaning[4] = {kFriend, kShield, kHostile, kChrome};
-    const bool card = m.alertLeft > 0 && !m.alert.empty();
+    const bool card = (m.alertLeft > 0 && !m.alert.empty()) || m.held[0].left > 0 || m.held[1].left > 0;
     for (int i = 0; i < 4; ++i)
     {
         const bool named = cond[i] || (card && (m.alertSlots & (1 << i)));
@@ -951,7 +993,13 @@ static void Slow()
     MakePrompt(m.slotBtn[1], presets::Action::Battery, nullptr);
     MakePrompt(m.slotBtn[2], presets::Action::Cm, nullptr);
     MakePrompt(m.slotBtn[3], presets::Action::Mine, nullptr);
-    MakePrompt(m.fireBtn, presets::Action::Fire, nullptr);
+    m.fireBtn2 = Prompt();
+    m.fireBtn2.btn = glyphs::COUNT;
+    if (!MakePrompt(m.fireBtn, presets::Action::Fire, nullptr) && !m.kbm) // weapon_groups 2: a button per group
+    {
+        MakePrompt(m.fireBtn, presets::Action::FireGroup1, nullptr);
+        MakePrompt(m.fireBtn2, presets::Action::FireGroup2, nullptr);
+    }
     if (!MakePrompt(m.launchBtn, presets::Action::Missile, nullptr))
         MakePrompt(m.launchBtn, presets::Action::Torpedo, nullptr);
     m.nGroups = 0;
@@ -1476,17 +1524,15 @@ static void Slow()
     }
     if (g_haveSelf && g_self.shieldMax > 0 && shield <= 0.25f && g_prevShield > 0.25f)
     {
-        Alert(L"SHIELD FAILING", kHostile);
+        Alert(L"SHIELD FAILING", kHostile, -1);
         m.alertSlots |= 2;
         if (m.batt > 0)
             AlertPrompt(A::Battery, L"BATTERY");
-        if (m.missiles > 0 && m.cm > 0)
-            AlertPrompt(A::Cm, L"FLARE"), m.alertSlots |= 4;
         AlertNone(L"NO BATTERIES \x00B7 BREAK OFF");
     }
     if (m.hull >= 0 && m.hull <= 0.25f && g_prevHull > 0.25f)
     {
-        Alert(L"HULL CRITICAL", kHostile);
+        Alert(L"HULL CRITICAL", kHostile, 1);
         m.alertSlots |= 1;
         if (m.nano > 0)
             AlertPrompt(A::Nanobot, L"NANOBOTS");
@@ -1494,7 +1540,7 @@ static void Slow()
     }
     if (m.missiles > g_prevMissiles)
     {
-        Alert(L"MISSILE INCOMING", kHostile);
+        Alert(L"MISSILE INCOMING", kHostile, 1);
         m.alertSlots |= 4;
         if (m.cm > 0)
             AlertPrompt(A::Cm, L"FLARE");
@@ -1548,7 +1594,7 @@ static void Simulate(Model& m)
     m.tBars = false, m.tLevel = -1;
     m.missiles = 0;
     m.nThreats = 0;
-    m.alertLeft = 0;
+    m.alertLeft = 0, m.held[0].left = m.held[1].left = 0;
     m.hot[0] = m.hot[1] = m.hot[2] = m.hot[3] = false;
     m.locked = false;
     m.tName = L"Fort Bush", m.tFaction = L"Liberty Police", m.tClass = L"POLICE BASE", m.tDist = L"3.4 km";
@@ -1569,9 +1615,9 @@ static void Simulate(Model& m)
         m.escorts[2] = {L"Escort 3 \u00B7 Carlson", 0.35f};
         m.nEscorts = 3;
         m.missiles = 1, m.missileAng[0] = 28, m.hitAng = 200, m.hitAge = 0.2f;
-        m.alert = L"SHIELD FAILING", m.alertCol = kHostile, m.alertLeft = 3, m.nAlertPrompts = 0;
+        m.alert = L"SHIELD FAILING", m.alertCol = kHostile, m.alertLeft = 3, m.nAlertPrompts = 0, m.alertSide = -1;
+        m.alertNone.clear();
         AlertPrompt(A::Battery, L"BATTERY");
-        AlertPrompt(A::Cm, L"FLARE");
         m.hot[1] = true, m.hotCol[1] = kShield, m.hot[2] = true, m.hotCol[2] = kHostile;
         m.locked = true;
         AddCtx(A::Reverse, L"REVERSE");
@@ -1835,7 +1881,15 @@ static void ComputeLayout(float W, float H)
         f.m.side[i] = g_m.ctx[i].side;
     f.m.ctxGap = ContextGap(L), f.m.ctxWord = ContextWordSize(L);
     f.m.slotKeyW = SlotKeyWidth(g_m, L, g_m.presetDrawn == hud2preset::Focus); // (the stacked cross's width: decision 3)
-    f.m.alertW = g_m.alert.empty() ? 0 : DrawAlert(g_m, L, 1, true);
+    f.m.alertSide = g_m.alertSide;
+    // (a card keeps its place in the stack until it has faded; then those under it go up)
+    f.m.alertW = g_m.alert.empty() || (g_m.alertSide && g_m.alertLeft <= 0 && g_f.alert <= 0.01f) ? 0 : DrawAlert(g_m, L, 1, true);
+    for (int i = 0; i < 2; ++i)
+    {
+        const AlertCard& h = g_m.held[i];
+        f.m.heldW[i] = h.left > 0 ? DrawCard(h, 0, 0, L, 1, true) : 0;
+        f.m.heldSide[i] = h.side;
+    }
     // Standard's panels sized to their content (0.2.1 round 3, UI_HUD2.md 5.26): measured, floored, eased with hysteresis
     // (hud2_layout.h EaseContent); the layout caps them at the spec's widths. A new scale or screen snaps them.
     if (g_m.presetDrawn != hud2preset::Focus)
@@ -1891,6 +1945,8 @@ static void ComputeLayout(float W, float H)
         L.ctxW[i] = c.ctxW[i], L.ctxX[i] = c.ctxX[i], L.ctxPY[i] = c.ctxPY[i], L.ctxWrap[i] = c.ctxWrap[i];
     L.ctxTall = c.ctxTall;
     L.alertY = c.alertY, L.alertX0 = c.alertX0, L.alertX1 = c.alertX1, L.alertY1 = c.alertY1;
+    for (int i = 0; i < 2; ++i)
+        L.heldX[i] = c.heldX[i], L.heldY[i] = c.heldY[i], L.heldShow[i] = c.heldShow[i];
     L.listInCard = c.listInCard, L.form = c.form, L.bandY = c.bandY, L.holdY = c.holdY, L.clearY0 = c.clearY0;
     g_m.nCtx = c.nCtx; // (the last prompts that did not fit gave way; a preset's pill cap too)
 }
@@ -2095,6 +2151,7 @@ void Update(float dt, const Context& c)
             tgt.context = 0;
     }
     tgt.alert = g_m.alertLeft > 0 ? 1.0f : 0.0f;
+    g_alertsOff = false;
     // The game's cinematics (a jump's tunnel, a lane's entry, a dock's approach: the letterbox, exe::LetterboxAmount): HUD 2
     // collapses to the nav's chip (in the upper bar) and the ring - the side panels and the context line go (the round 3
     // critique: the panels straddled the bars and read through over the gate's stripes)
@@ -2244,7 +2301,7 @@ void Update(float dt, const Context& c)
         if (off & hl::Bit(hl::Context))
             tgt.context = 0;
         if (off & hl::Bit(hl::Alert))
-            tgt.alert = 0;
+            tgt.alert = 0, g_alertsOff = true;
     }
     Ease(g_f.ring, tgt.ring, dt), Ease(g_f.ship, tgt.ship, dt), Ease(g_f.loadout, tgt.loadout, dt);
     Ease(g_f.nav, tgt.nav, dt);
@@ -2257,6 +2314,7 @@ void Update(float dt, const Context& c)
     Ease(g_f.enemyCue, EnemyCue() ? 1.0f : 0.0f, dt, 0.12f);
     g_f.slide = 1 - g_t;
     ComputeLayout(static_cast<float>(fl::ScreenWidth()), static_cast<float>(fl::ScreenHeight()));
+    SlideAlerts(dt);
     RequestViews(c);
     Publish(active);
     g_perf.update = g_perf.update * 0.95f + static_cast<float>((perf::Now() - t0) * 1000.0) * 0.05f;
@@ -2474,6 +2532,15 @@ void Render(void* device)
         RecordTag("context");
         DrawContext(g_m, L, base * g_f.context * fCtx, false);
     }
+    // the pushed-down cards first: while one slides under a new card the new card stays on top; each fades on its own time
+    for (int i = 1; i >= 0 && !g_alertsOff; --i)
+        if (g_m.held[i].left > 0 && L.heldShow[i])
+        {
+            part(0, -1);
+            RecordTag("alert");
+            DrawCard(g_m.held[i], L.heldX[i], g_m.held[i].yNow >= 0 ? g_m.held[i].yNow : L.heldY[i], L,
+                     base * fAlert * std::min(1.0f, g_m.held[i].left / 0.15f), false);
+        }
     if (g_f.alert > 0.01f && !g_m.alert.empty())
     {
         part(0, -1);
@@ -2565,6 +2632,23 @@ std::string Command(std::istream& in)
     {
         in >> g_creditsTest;
         return "credits " + std::to_string(g_creditsTest);
+    }
+    if (what == "alert") // hud2 alert shield|hull|missile|cargo: that alert's card on the live HUD, for frames (3 s)
+    {
+        using A = presets::Action;
+        std::string which;
+        in >> which;
+        if (which == "shield")
+            Alert(L"SHIELD FAILING", kHostile, -1), AlertPrompt(A::Battery, L"BATTERY");
+        else if (which == "hull")
+            Alert(L"HULL CRITICAL", kHostile, 1), AlertPrompt(A::Nanobot, L"NANOBOTS");
+        else if (which == "missile")
+            Alert(L"MISSILE INCOMING", kHostile, 1), AlertPrompt(A::Cm, L"FLARE");
+        else if (which == "cargo")
+            Alert(L"CARGO HOLD FULL", kChrome), AlertNone(L"NO ROOM FOR LOOT");
+        else
+            return "hud2 alert shield|hull|missile|cargo";
+        return "alert " + which;
     }
     if (what == "sim")
     {
