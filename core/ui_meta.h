@@ -485,7 +485,7 @@ inline constexpr int kBindingPresetCount = 3;
 inline constexpr const char* kBindingDefault = "FREELANCER";
 
 static constexpr Bind kBind_common_dealers[] = {
-    {"A", "buy_sell", "none", "none"},
+    {"A", "none", "buy_sell", "none"},
     {"B", "back", "none", "none"},
     {"X", "filter", "none", "none"},
     {"Y", "max", "compare", "none"},
@@ -493,7 +493,7 @@ static constexpr Bind kBind_common_dealers[] = {
     {"RB", "side", "none", "none"},
     {"LT", "qty_dec", "none", "none"},
     {"RT", "qty_inc", "none", "none"},
-    {"L3", "cursor_toggle", "none", "none"},
+    {"L3", "mount", "none", "none"},
     {"R3", "none", "none", "none"},
     {"LS", "focus", "none", "none"},
     {"RS", "scroll", "none", "none"},

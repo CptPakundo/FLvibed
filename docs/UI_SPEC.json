@@ -12,8 +12,8 @@
    "dealers": {
     "A": {
      "dbl": "none",
-     "hold": "none",
-     "tap": "buy_sell"
+     "hold": "buy_sell",
+     "tap": "none"
     },
     "B": {
      "dbl": "none",
@@ -43,7 +43,7 @@
     "L3": {
      "dbl": "none",
      "hold": "none",
-     "tap": "cursor_toggle"
+     "tap": "mount"
     },
     "LB": {
      "dbl": "none",

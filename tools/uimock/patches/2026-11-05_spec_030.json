@@ -1,0 +1,7 @@
+{
+  "_about": "The 0.3.0 spec refresh (5 Nov 2026): the dealers' bindings as built. A held buys or sells (a tap acts on the focus), LS click mounts one of your items.",
+  "bindings": {
+    "common/dealers/A": {"tap": "none", "hold": "buy_sell"},
+    "common/dealers/L3": {"tap": "mount"}
+  }
+}
