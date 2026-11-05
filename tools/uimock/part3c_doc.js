@@ -54,7 +54,7 @@ function cmpHtml(title, cl, h2, cap, i, ll, rl) {
 // same fields, used while K&M is chosen); gallery items `km: {img, title, cap}`. Every section says how the device changes
 // it (`dv`: {same} or {pad, km}), so the switch always shows its effect.
 function isKM() { return dev() === 'km'; }
-function devLabel() { return { km: 'keyboard and mouse', xbox: 'an Xbox controller', ps: 'a PlayStation controller', switch: 'a Nintendo Switch controller' }[dev()] || dev(); }
+function devLabel() { return { km: 'keyboard and mouse', xbox: 'an Xbox controller', ps: 'a PlayStation controller', switch: 'a Nintendo Switch controller', steam: 'a Steam Deck or Steam Controller' }[dev()] || dev(); }
 function forDev(b) { return isKM() && b.km ? Object.assign({}, b, b.km) : b; }
 function devNote(s) {
   if (!s.dv) return '';

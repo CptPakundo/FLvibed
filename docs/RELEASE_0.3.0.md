@@ -26,7 +26,7 @@ Also open on GitHub: 10 and 13 (built, replies on the owner's word), 3 (stalled 
 ## Open before a release
 - **The blank UI** (`docs\UI_HUD2.md` 5.38): all game text and icons gone, seen once, cause not read. What to read if it returns is written there.
 - Not run: the real pad on any of this; other bases than Buffalo and Manhattan; a three-row comm line over the nav map; the map docked; a real mouse on the map's objects.
-- Living spec captures of the dealers and of the alerts predate this work (the page's text is current).
+- Living spec captures: retaken after the release (v71, `spec_030_2026-11-05`; flight, alerts, dealers, the settled windows). Still older: the mission offer, player info, pause docked and save windows, the 21:9 and other aspect frames, the classic HUD's combat and dock frames. `docs\spec` with them pushed to the published repository the same day, after the tag.
 - The release path: `tools\package.ps1`, `core\version.h`, the version texts on the spec.
 
 ## Replies, drafted for the owner's word (posted from the owner's account: no "we")
@@ -42,5 +42,5 @@ Each reply carries a post-fix frame (the owner, 5 Nov 2026), for the reply alone
 - **10, 13:** built since their last reply (UI_HUD2.md 5.33): the replies still to write when the owner says so.
 
 ## State at the handover (5 Nov 2026)
-`tools\drift_check.ps1` clean but for `research` (22 notes due, as before). Unit tests 64, 0 failures. Living spec v69, `ui/spec` v142. No full sweep ran: one was started by
-mistake and stopped on the owner's word after a minute (`pad-input` passed, nothing else), so the last full sweep predates all of this. Version 0.3.0 set and packaged (`build\package\`, `tools\setup\test_setup.ps1`), not published. Left for the owner's word: the export into the published clone and the push, the release page with the zip and the setup, the replies with their frames, and the living spec's publish (its parts and `docs\spec` already read 0.3.0; the live page still says Upcoming until the release is out). The CHANGELOG's date moves if the release does.
+`tools\drift_check.ps1` clean but for `research` (22 notes due, as before). Unit tests 64, 0 failures. `ui/spec` v143. No full sweep ran: one was started by
+mistake and stopped on the owner's word after a minute (`pad-input` passed, nothing else), so the last full sweep predates all of this. Published 5 Nov 2026 on the owner's word: GitHub bc4b048, tag v0.3.0, the release with the zip and the setup (verified by download), living spec v70, then v71 with the captures. Replies posted the same day with their frames (the texts above are the drafts; the posted ones differ a little): 13-21 closed, 10 open until the reporter confirms the flicker on the Deck, 3 open.

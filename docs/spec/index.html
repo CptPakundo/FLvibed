@@ -16,8 +16,8 @@
    "dealers": {
     "A": {
      "dbl": "none",
-     "hold": "none",
-     "tap": "buy_sell"
+     "hold": "buy_sell",
+     "tap": "none"
     },
     "B": {
      "dbl": "none",
@@ -47,7 +47,7 @@
     "L3": {
      "dbl": "none",
      "hold": "none",
-     "tap": "cursor_toggle"
+     "tap": "mount"
     },
     "LB": {
      "dbl": "none",
@@ -8646,6 +8646,7 @@ body.ed .roonly { display: none !important; }
     <button class="dev" data-dev="xbox">Xbox</button>
     <button class="dev" data-dev="ps">PlayStation</button>
     <button class="dev" data-dev="switch">Switch</button>
+    <button class="dev" data-dev="steam">Steam</button>
   </div>
   <span class="status edonly" id="status">Loading…</span>
   <button id="roToggle" class="modebtn hidden" title="Off shows the page as everyone else sees it (read-only)">Edit: on</button>
@@ -8849,10 +8850,11 @@ const PRESETS = {
   ]
 };
 
-// ================================================================== glyphs: three families over one positional layout
+// ================================================================== glyphs: four families over one positional layout
 // Logical inputs are Xbox-positional (A = south, B = east, X = west, Y = north). Switch labels the same positions B / A / Y / X.
 const INPUTS = ['LS', 'RS', 'L3', 'R3', 'LT', 'RT', 'LB', 'RB', 'A', 'B', 'X', 'Y', 'DU', 'DD', 'DL', 'DR', 'VIEW', 'MENU'];
 const GLYPHSETS = {
+  steam: { name: 'Steam', A: ['A', '#f0f4f8'], B: ['B', '#f0f4f8'], X: ['X', '#f0f4f8'], Y: ['Y', '#f0f4f8'], LB: 'L1', RB: 'R1', LT: 'L2', RT: 'R2', L3: 'L', R3: 'R', LS: 'L', RS: 'R', VIEW: 'VIEW', MENU: 'MENU', DU: '▲', DD: '▼', DL: '◀', DR: '▶' },
   xbox: { name: 'Xbox', A: ['A', '#7ac142'], B: ['B', '#e4404a'], X: ['X', '#2f8fdc'], Y: ['Y', '#f7d000'], LB: 'LB', RB: 'RB', LT: 'LT', RT: 'RT', L3: 'L', R3: 'R', LS: 'L', RS: 'R', VIEW: 'VIEW', MENU: 'MENU', DU: '▲', DD: '▼', DL: '◀', DR: '▶' },
   ps: { name: 'PlayStation', A: ['✕', '#8ab5e6'], B: ['○', '#e76d6d'], X: ['□', '#e37fb0'], Y: ['△', '#7bc77e'], LB: 'L1', RB: 'R1', LT: 'L2', RT: 'R2', L3: 'L3', R3: 'R3', LS: 'L', RS: 'R', VIEW: 'CREATE', MENU: 'OPTIONS', DU: '▲', DD: '▼', DL: '◀', DR: '▶' },
   switch: { name: 'Switch', A: ['B', '#ffffff'], B: ['A', '#ffffff'], X: ['Y', '#ffffff'], Y: ['X', '#ffffff'], LB: 'L', RB: 'R', LT: 'ZL', RT: 'ZR', L3: 'L', R3: 'R', LS: 'L', RS: 'R', VIEW: '−', MENU: '+', DU: '▲', DD: '▼', DL: '◀', DR: '▶' }
@@ -8876,7 +8878,7 @@ const ACTIONS = {
   none: '—', steer: 'Steer (gimbal aim on the target)', throttle: 'Throttle lever (up / down)', throttle_up: 'Throttle up (the lever stays)', throttle_down: 'Throttle down / brake (the lever stays)', strafe: 'Strafe (left / right, up / down)', strafe_ud: 'Strafe up / down', fire: 'Fire guns', missile: 'Fire missile', torpedo: 'Torpedo / cruise disruptor', afterburner: 'Afterburner', reverse: 'Reverse thrust', cruise: 'Cruise (toggle)', engine_kill: 'Engine kill (drift)', target_nearest: 'Target nearest enemy', target_smart: 'Target nearest enemy first (within 10 km), the next ones on presses within 3 s; no enemy near: the nearest object inside the reticle ring', target_attacker: 'Target my attacker', target_picker: 'Target picker', next_enemy: 'Next enemy', prev_enemy: 'Previous enemy', next_target: 'Next target', clear_target: 'Clear target', context: 'Context: dock / lane / jump / fly to target; tractor the targeted loot (nearest with no target)', goto: 'Go to target', formation: 'Formation with target', free_flight: 'Cancel maneuver (free flight)', tractor: 'Tractor all loot in reach', scan: 'Scan cargo', nanobot: 'Nanobot', battery: 'Shield battery', cm: 'Countermeasure', mine: 'Mine', weapon_group: 'Next weapon group', turret: 'Turret view on / off (the right stick turns the camera)', rear: 'Rear view', nav_map: 'Nav map', hub: 'NeuroNet hub (map first)', pause: 'Pause menu', autopilot: 'Autopilot on / off', goal_panel: 'Autopilot goal panel', action_wheel: 'Action wheel (rare actions)', chat: 'Chat', aim: 'Aim (the autopilot flies)', handback: 'Hand the ship back',
   focus: 'Move focus', accept: 'Accept / select', back: 'Back / close', back_all: 'Close every window', ctx_x: 'Context action (delete, jettison, sell, filter)', sec_y: 'Secondary (max, info, keyboard)', tab_prev: 'Previous tab', tab_next: 'Next tab', page_prev: 'Previous page / quantity −', page_next: 'Next page / quantity +', scroll: 'Scroll text', reset_view: 'Reset view', cursor: 'Pad cursor (option)', cursor_toggle: 'Show / hide the pad cursor',
   room_prev: 'Previous room', room_next: 'Next room', char_prev: 'Previous character', char_next: 'Next character', talk: 'Talk / use', launch: 'Launch', jobs: 'Job board', news: 'News', repair_all: 'Repair all',
-  side: 'Switch side (your cargo / dealer)', qty_dec: 'Quantity −', qty_inc: 'Quantity +', buy_sell: 'Buy / sell / mount', max: 'All / max', filter: 'Category filter', compare: 'Compare / info',
+  side: 'Switch side (your cargo / dealer)', qty_dec: 'Quantity −', qty_inc: 'Quantity +', buy_sell: 'Buy / sell (held)', mount: 'Mount / unmount your item', max: 'All / max', filter: 'Category filter', compare: 'Compare / info',
   map_cursor: 'Map cursor', map_snap: 'Snap to the nearest object', map_select: 'Select / add waypoint', map_remove: 'Remove last waypoint', map_travel: 'Travel (autopilot)', zoom_in: 'Zoom in', zoom_out: 'Zoom out', map_scope: 'System / universe', dest_list: 'Destination list',
   type: 'Type the character', backspace: 'Backspace', space: 'Space', shift: 'Shift / symbols', caret_l: 'Caret left', caret_r: 'Caret right', done: 'Done (Enter)', cancel_text: 'Cancel'
 };
@@ -8904,7 +8906,7 @@ const COMMON = {
   flight_ap: { LS: Bd('handback'), RS: Bd('handback'), L3: Bd('none'), R3: Bd('target_smart', 'rear', 'clear_target'), LT: Bd('afterburner'), RT: Bd('fire'), LB: Bd('target_picker', 'action_wheel'), RB: Bd('missile', 'torpedo'), A: Bd('accept'), B: Bd('handback'), X: Bd('goal_panel', 'turret'), Y: Bd('cruise'), DU: Bd('nanobot'), DD: Bd('battery'), DL: Bd('cm'), DR: Bd('mine'), VIEW: Bd('hub', 'autopilot'), MENU: Bd('pause') },
   menus: { LS: Bd('focus'), RS: Bd('scroll'), L3: Bd('cursor_toggle'), R3: Bd('reset_view'), LT: Bd('page_prev'), RT: Bd('page_next'), LB: Bd('tab_prev'), RB: Bd('tab_next'), A: Bd('accept'), B: Bd('back', 'back_all'), X: Bd('ctx_x'), Y: Bd('sec_y'), DU: Bd('focus'), DD: Bd('focus'), DL: Bd('focus'), DR: Bd('focus'), VIEW: Bd('hub'), MENU: Bd('pause') },
   rooms: { LS: Bd('cursor'), RS: Bd('scroll'), L3: Bd('cursor_toggle'), R3: Bd('none'), LT: Bd('none'), RT: Bd('none'), LB: Bd('room_prev'), RB: Bd('room_next'), A: Bd('talk'), B: Bd('back'), X: Bd('news'), Y: Bd('launch'), DU: Bd('repair_all'), DD: Bd('none'), DL: Bd('char_prev'), DR: Bd('char_next'), VIEW: Bd('hub'), MENU: Bd('pause') },
-  dealers: { LS: Bd('focus'), RS: Bd('scroll'), L3: Bd('cursor_toggle'), R3: Bd('none'), LT: Bd('qty_dec'), RT: Bd('qty_inc'), LB: Bd('side'), RB: Bd('side'), A: Bd('buy_sell'), B: Bd('back'), X: Bd('filter'), Y: Bd('max', 'compare'), DU: Bd('focus'), DD: Bd('focus'), DL: Bd('side'), DR: Bd('side'), VIEW: Bd('hub'), MENU: Bd('pause') },
+  dealers: { LS: Bd('focus'), RS: Bd('scroll'), L3: Bd('mount'), R3: Bd('none'), LT: Bd('qty_dec'), RT: Bd('qty_inc'), LB: Bd('side'), RB: Bd('side'), A: Bd('none', 'buy_sell'), B: Bd('back'), X: Bd('filter'), Y: Bd('max', 'compare'), DU: Bd('focus'), DD: Bd('focus'), DL: Bd('side'), DR: Bd('side'), VIEW: Bd('hub'), MENU: Bd('pause') },
   map: { LS: Bd('map_cursor'), RS: Bd('scroll'), L3: Bd('none'), R3: Bd('reset_view'), LT: Bd('zoom_out'), RT: Bd('zoom_in'), LB: Bd('map_scope'), RB: Bd('map_scope'), A: Bd('map_select'), B: Bd('back'), X: Bd('map_remove', 'map_remove'), Y: Bd('map_travel'), DU: Bd('map_snap'), DD: Bd('map_snap'), DL: Bd('map_snap'), DR: Bd('map_snap'), VIEW: Bd('dest_list'), MENU: Bd('pause') },
   text: { LS: Bd('focus'), RS: Bd('none'), L3: Bd('none'), R3: Bd('none'), LT: Bd('caret_l'), RT: Bd('caret_r'), LB: Bd('shift'), RB: Bd('shift'), A: Bd('type'), B: Bd('backspace', 'cancel_text'), X: Bd('space'), Y: Bd('shift'), DU: Bd('focus'), DD: Bd('focus'), DL: Bd('focus'), DR: Bd('focus'), VIEW: Bd('none'), MENU: Bd('done') }
 };
@@ -9342,7 +9344,7 @@ const DOC = [
       { t: 'p', html: `${UP('new in 0.2.0')} <b>The bottom of the screen, rearranged (31 Oct 2026):</b> the lower centre - under the reticle ring, where your own ship flies - is now kept free of HUD 2: only the game's own markers (a target's brackets, the reticle) appear there. The cruise state moved inside the ring (the charge seconds, then CRUISE ON), the action prompts went into two lanes beside the bottom panels (moving and controlling the ship on the left, firing, using and targeting on the right; TRACTOR &lt;item&gt; and TRACTOR ALL n are two of them), and both bottom panels got smaller: the ship panel 0.31 x 0.15 H, the weapons panel 0.40 x 0.15 H with the D-pad cross on its own plate above its right end. A name too long for its room shows its start with "...", waits 1.5 s, then scrolls to its end like a station's display board. The frames below show this layout, captured from the release build.` },
       { t: 'gal', title: 'The layout since 31 Oct 2026 (controller)', items: [
         { img: CAP('m_combat'), title: 'Combat', cap: '[B] REVERSE in the left lane, [X] TURRET in the right; the escorts in the 0.31 H ship panel; a gun group too long for its room shows its start with "..." before it scrolls; the launcher with its count.' },
-        { img: CAP('m_travel'), title: 'Calm travel', cap: '[A] DOCK and [Y] CRUISE in the left lane; nothing under the ring. The ship panel: name and class, hold, credits.' },
+        { img: CAP('m_travel'), title: 'Calm travel', cap: '[A] DOCK and HOLD [Y] CRUISE in the left lane; nothing under the ring. The ship panel: name and class, hold, credits.' },
         { img: CAP('m_cruise'), title: 'Cruise charging', cap: 'The seconds inside the ring where the power arc was (the speed moves up), the bottom arc filling cyan; [Y] CANCEL CRUISE first in the left lane, whole.' },
         { img: CAP('m_dock'), title: 'Docking (autopilot)', cap: 'AUTOPILOT · DOCK FORT BUSH with progress and DOCK REQUESTED in the nav; GOALS and HOLD TAKE CONTROL stacked in the left lane\'s two rows.' },
         { img: CAP('m_lane'), title: 'Trade lane', cap: 'GOALS and HOLD TAKE CONTROL in the left lane; the lower centre empty.' },
@@ -9360,18 +9362,18 @@ const DOC = [
       ] },
       { t: 'cmp', title: 'Combat (controller)', cl: CAP('f_combat_cl'), h2: CAP('f_combat_h2'), cap: 'A fight in Bretonia (M05): threat list under the target card, [B] REVERSE and [X] TURRET in the bottom lanes, escorts in the ship panel, the gun groups with the active one marked, the D-pad cross. Left: the classic HUD with the pad badges and the combat legend.',
         km: { title: 'Keyboard and mouse', cl: CAP('f_kbm_cl'), h2: CAP('f_kbm_h2'), cap: 'The keyboard form: the maneuver row under NEURONET as clickable chips with their keys (F2, F3, F4 ...), keycaps instead of glyphs (CTRL+R NEXT ENEMY), the consumables as a 2 x 2 grid of key + slot. Left: the game\'s default HUD.' } },
-      { t: 'cmp', title: 'Calm travel', cl: CAP('f_travel_cl'), h2: CAP('f_travel_h2'), cap: 'Calm flight dims the ring to 40 % and the side panels to 60-65 %; [A] DOCK and [Y] CRUISE in the left lane beside the ship panel. The target card shows a friendly station without bars it cannot use, [RS] x2 CLEAR in its footer.' },
+      { t: 'cmp', title: 'Calm travel', cl: CAP('f_travel_cl'), h2: CAP('f_travel_h2'), cap: 'Calm flight dims the ring to 40 % and the side panels to 60-65 %; [A] DOCK and HOLD [Y] CRUISE in the left lane beside the ship panel. The target card shows a friendly station without bars it cannot use, [RS] x2 CLEAR in its footer.' },
       { t: 'cmp', title: 'Cruise charging', cl: CAP('f_cruise_cl'), h2: CAP('f_cruise_h2'), cap: 'The ring\'s bottom arc fills cyan while cruise charges, the seconds inside the ring under the speed; [Y] CANCEL CRUISE in the left lane beside the ship panel. Left: the game\'s own HUD.' },
       { t: 'cmp', title: 'Docking with the autopilot', cl: CAP('f_dock_cl'), h2: CAP('f_dock_h2'), cap: 'The nav top left: AUTOPILOT + DOCK FORT BUSH with progress and DOCK REQUESTED; TAKE CONTROL on the context line (now the left lane). Left: the classic pad layer with a dockable target (DOCK AT FORT BUSH in the legend).' },
       { t: 'gal', title: 'Every other state', items: [
         { img: CAP('f_lane'), title: 'Trade lane', cap: 'The autopilot on the Norfolk Shipyard lane in New York: AUTOPILOT, TRADE LANE NORFOLK SHIPYARD, rings left and ETA with the ride\'s progress; [LB] TARGETS / WHEEL faded top right without a target; GOALS and TAKE CONTROL in the left lane.'},
         { img: CAP('f_jump'), title: 'Jump tunnel', cap: 'In a cinematic (the game\'s letterbox) HUD 2 collapses to the maneuver chip: JUMP COLORADO with the countdown.' },
         { img: CAP('f_turret'), title: 'Turret view', cap: 'TURRET VIEW chip in the nav; X held toggles turret view (on and off), EXIT TURRET on the context line; the reticle stays centred, the right stick turns the camera.' },
-        { img: CAP('f_missile'), title: 'Alert: missile incoming', cap: 'This capture predates 0.3.0, which moves the danger alerts beside the ring: MISSILE INCOMING with its answer (the D-pad direction of the flares), the countermeasure slot lit on the cross.'},
+        { img: CAP('f_missile'), title: 'Danger alerts beside the ring', cap: 'Three dangers at once: SHIELD FAILING by the left meter, MISSILE INCOMING level by the right, HULL CRITICAL pushed down a place under it. Each names the D-pad direction that answers it and glows on the low meters\' pulse; the words and prompts stay steady.'},
         { img: CAP('f_m03'), title: 'Protect objective (M03)', cap: 'The objective as the headline with the convoy\'s hull bar; the escorts by their call signs; a wrapped weapon row.' },
         { img: CAP('f_720p'), title: '1280x720', cap: 'Every size is a fraction of the screen height: the same layout at 720p, 21:9 and 4:3.' },
         { img: CAP('t_43_fight'), title: '4:3 (1600x1200): HUD 2 at 0.8', cap: 'At 4:3 HUD 2 takes 0.8 of its 16:9 size (16:10 0.9), so the panels keep their spacing across the narrower screen; text stays at the legibility floor or above. A Rheinland fight in Bretonia (M05): the objective as the game shows it, two identical guns as "Magma Hammer Mk I ×2".'},
-        { img: CAP('t_43_alert'), title: '4:3 at the largest text: the alert keeps clear', cap: 'Text size 150 % and HUD size 130 % (HUD 2 caps its scale at what the screen holds, about 118 %): the alert sits below the ring and the chat band ends above it.' },
+        { img: CAP('t_43_alert'), title: '4:3: the danger alerts fit', cap: 'At 1600x1200 HUD 2 scales to 0.8 and the two-line cards keep their places beside the ring, the third pushed down a place. A one-line card would not fit there.' },
         { img: CAP('t_vanilla_fight'), title: 'Vanilla Freelancer 1.1 (1280x960)', cap: 'The same HUD on the original game at 4:3 (0.8): Agency FB from Windows\' fonts, the own-ship view drawn without HDE\'s plugins, the objective without vanilla\'s stray format code ("Destroy the Hostile Ships", not "...Ships%M").' },
       ] },
       { t: 'p', html: `<b>Text at every size:</b> every text FLvibed draws follows one rule: a text that does not fit its box first steps down in size, only as far as needed, to a legibility floor (0.024 of the screen height, never under 14 px, whatever <i>Text size</i> and <i>HUD size</i> say); only then does it show its start with "..." - on HUD 2 it then waits 1.5 s, scrolls slowly to its end, waits again and fades back to its start, like a station's display board - or, where the box takes lines, it wraps (the objective onto two lines). Nothing inside a panel or card touches anything else in it (at least 0.01 H apart). HUD 2 grows with <i>Text size</i> x <i>HUD size</i> (never below 100 %) times the screen's shape - 16:9 and wider 1.0, 16:10 0.9, 4:3 and 5:4 0.8, so narrower screens keep the spacing - but never past what its panels fit on the screen (about 118 %); texts never go under the floor. Identical guns show once with their count ("Justice Mk I ×2"). <b>Tooltips</b> (the game's hover help, both HUDs) show only on a deliberate hover: in flight after a real mouse move within the last 3 s, never for a cursor resting on a HUD button while the stick or the autopilot flies; in bases, menus and the NeuroNet windows the game's own hover - the mouse, the pad cursor or a pad focus.` },
@@ -9479,7 +9481,7 @@ const DOC = [
         { img: CAP('t_43_jobboard'), title: '4:3 job board', cap: 'Four pills in the bottom row.' },
         { img: CAP('t_43_pause'), title: '4:3 pause (docked)', cap: 'A SELECT · B RESUME in the bottom row.' },
         { img: CAP('t_43_equipment'), title: '4:3 equipment dealer: the one exception', cap: 'Its infocard plate covers the bottom band to 0.975 H and 0.91 W, so the pills take the top lane under the NeuroNet box in two rows (geometry, not text). Every other screen keeps the bottom lane.' },
-        { img: CAP('a_1610_commodity'), title: '16:10 commodity dealer', cap: 'The top lane, two rows (captured before the fit-rule lane, which now tries the bottom rows with the labels at the floor first; 16:10 not re-measured).' },
+        { img: CAP('a_1610_commodity'), title: '16:10 commodity dealer', cap: 'At 1280x800, the Steam Deck\'s screen: the column right of the description, with the larger text of Steam Deck mode.' },
         { img: CAP('a_1610_shipdealer'), title: '16:10 ship dealer', cap: 'The column right of the window.' },
         { img: CAP('a_21x9_room_trader'), title: '21:9 trader room', cap: 'Everything in its row at the bottom right.' },
         { img: CAP('a_21x9_commodity'), title: '21:9 commodity dealer', cap: 'The column.' },
@@ -9719,7 +9721,7 @@ function setValue(r, v, tab) {
   if (r.preset) applyPreset(tab, v); else if (tab && tab.presetKey) syncPresetRow(tab);
   if (r.key === 'show_advanced') showAdv = !!v;
   if (r.key === 'pad_preset' && spec.bindings.presets[v]) spec.bindings.preset = v;
-  if (r.key === 'glyph_style') { const m = { XBOX: 'xbox', PLAYSTATION: 'ps', NINTENDO: 'switch' }; if (m[v] && padMode()) spec.device = m[v]; }
+  if (r.key === 'glyph_style') { const m = { XBOX: 'xbox', PLAYSTATION: 'ps', NINTENDO: 'switch', STEAM: 'steam' }; if (m[v] && padMode()) spec.device = m[v]; }
   touched();
 }
 function applyPreset(tab, name) {
@@ -9996,7 +9998,7 @@ function cmpHtml(title, cl, h2, cap, i, ll, rl) {
 // same fields, used while K&M is chosen); gallery items `km: {img, title, cap}`. Every section says how the device changes
 // it (`dv`: {same} or {pad, km}), so the switch always shows its effect.
 function isKM() { return dev() === 'km'; }
-function devLabel() { return { km: 'keyboard and mouse', xbox: 'an Xbox controller', ps: 'a PlayStation controller', switch: 'a Nintendo Switch controller' }[dev()] || dev(); }
+function devLabel() { return { km: 'keyboard and mouse', xbox: 'an Xbox controller', ps: 'a PlayStation controller', switch: 'a Nintendo Switch controller', steam: 'a Steam Deck or Steam Controller' }[dev()] || dev(); }
 function forDev(b) { return isKM() && b.km ? Object.assign({}, b, b.km) : b; }
 function devNote(s) {
   if (!s.dv) return '';
@@ -10263,7 +10265,7 @@ async function initStore() {
 $$('#itoolViews button').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; selected = null; render(); }));
 $('#backDoc').addEventListener('click', () => { view = VIEW_PARENT[view] || 'overview'; selected = null; render(); });
 try { const h = (location.hash || '').slice(1); if (isDocView(h) || VIEW_PARENT[h]) view = h; } catch (e) { }
-$$('.toolbar .dev').forEach(b => b.addEventListener('click', () => { devPicked = true; spec.device = b.dataset.dev; const gs = rowByKey('glyph_style'); if (gs && b.dataset.dev !== 'km') { const m = { xbox: 'XBOX', ps: 'PLAYSTATION', switch: 'NINTENDO' }; if (gs.r.value !== 'AUTOMATIC') gs.r.value = m[b.dataset.dev]; } touched(); render(); }));
+$$('.toolbar .dev').forEach(b => b.addEventListener('click', () => { devPicked = true; spec.device = b.dataset.dev; const gs = rowByKey('glyph_style'); if (gs && b.dataset.dev !== 'km') { const m = { xbox: 'XBOX', ps: 'PLAYSTATION', switch: 'NINTENDO', steam: 'STEAM' }; if (gs.r.value !== 'AUTOMATIC') gs.r.value = m[b.dataset.dev]; } touched(); render(); }));
 $('#roToggle').addEventListener('click', () => {
   if (!isEditor) return; const d = spec.device;
   if (editTools) canonSpec = deepClone(spec); else { spec = deepClone(canonSpec); spec.device = d; }

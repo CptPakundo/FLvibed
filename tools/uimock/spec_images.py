@@ -137,6 +137,24 @@ ASPECT = ['final43_commodity', 'final43_shipdealer', 'final43_options_front_vide
           'final21x9_pause_docked', 'final21x9_room_trader']
 
 
+# the 0.3.0 recapture (5 Nov 2026, release build): the held Y and dealer prompts, the alerts beside the ring, and from the
+# text-by-role run (hud28_windows, 4K, build before the dealers changed) only the windows caught settled
+S030 = os.path.join(RUNS, 'spec_030_2026-11-05')
+S030_NAMES = {
+    'f_combat_h2': 'final_combat', 'f_travel_h2': 'final_travel', 'f_cruise_h2': 'final_cruise', 'f_dock_h2': 'final_dock',
+    'm_combat': 'final_combat', 'm_travel': 'final_travel', 'm_cruise': 'final_cruise', 'f_missile': 'final_alerts',
+    't_43_alert': 'a43_final_alerts', 't_43_equipment': 'a43_equipment', 'f_travel_cl': 'classic_travel',
+    'f_cruise_cl': 'classic_cruise', 'x_commodity_h2': 'commodity', 'x_equipment_h2': 'equipment',
+    'a_43_commodity': 'a43_commodity', 'a_1610_commodity': 'a1610_commodity',
+}
+W28 = os.path.join(RUNS, 'hud28_windows_2026-11-05')
+W28_NAMES = {
+    'x_jobboard_h2': 'k3_job-012310', 'x_news_h2': 'k3_news-012334', 'x_shipdealer_h2': 'k3_ship-012428',
+    'x_nn_inventory_docked_h2': 'k3_nn_inventory-012432', 'x_nn_log_docked_h2': 'k3_nn_log-012435',
+    'x_nn_help_docked_h2': 'k3_nn_help-012441', 'x_navmap_space_h2': 'm4_navmap-014214', 'x_pause_space_h2': 'm4_pause-014220',
+}
+
+
 def save(src, name, width=1600, crop=None):
     if not os.path.exists(src):
         print('missing', src)
@@ -175,6 +193,10 @@ def main():
         save(os.path.join(S020, f + '.png'), n)
     for n, f in S021_NAMES.items():   # the 0.2.1 captures last
         save(os.path.join(S021, f + '.png'), n)
+    for n, f in W28_NAMES.items():    # then the windows, and the 0.3.0 captures last
+        save(os.path.join(W28, f + '.png'), n)
+    for n, f in S030_NAMES.items():
+        save(os.path.join(S030, f + '.png'), n, 1200 if n.startswith('a_') else 1600)
     print(len(os.listdir(OUT)), 'images in', OUT)
 
 

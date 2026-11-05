@@ -36,7 +36,7 @@ function setValue(r, v, tab) {
   if (r.preset) applyPreset(tab, v); else if (tab && tab.presetKey) syncPresetRow(tab);
   if (r.key === 'show_advanced') showAdv = !!v;
   if (r.key === 'pad_preset' && spec.bindings.presets[v]) spec.bindings.preset = v;
-  if (r.key === 'glyph_style') { const m = { XBOX: 'xbox', PLAYSTATION: 'ps', NINTENDO: 'switch' }; if (m[v] && padMode()) spec.device = m[v]; }
+  if (r.key === 'glyph_style') { const m = { XBOX: 'xbox', PLAYSTATION: 'ps', NINTENDO: 'switch', STEAM: 'steam' }; if (m[v] && padMode()) spec.device = m[v]; }
   touched();
 }
 function applyPreset(tab, name) {
