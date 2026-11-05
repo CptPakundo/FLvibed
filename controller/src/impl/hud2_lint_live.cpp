@@ -142,6 +142,7 @@ std::string LintCommand(std::istream& in)
     const Context& c = CurContext();
     hud2lint::Input li;
     li.W = L.W, li.H = L.H, li.scale = L.k;
+    li.titleSafe = !deckmode::g_on; // (Steam Deck mode has no safe area, by the owner's decision: a handheld crops nothing)
 
     // ---- the items (the kit's records of the last pass)
     li.items.reserve(g_lintLast.size());

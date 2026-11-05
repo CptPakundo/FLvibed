@@ -250,6 +250,41 @@ void Test_hud2_layout()
     CHECK(S.reticleR == 0.10f);
     CHECK(hp::kMarginSideW == 0.03f && hp::kMarginTop == 0.03f && hp::kMarginBottom == 0.03f); // 0.05 until 0.2.0
     CHECK(hp::kAlertPlateH == 0.05f);
+    // ---- the alert stacks beside the ring (GitHub issue 21, the owner): the newest level, the older pushed down, up again
+    // when the one above goes; each side its own; the dialogue pushes a side's whole stack by the known gap
+    {
+        Frame f = Base(3840, 2160, false);
+        const float H = 2160, k = Scale(f), card = kAlertStackH * H * k, step = card + kAlertStackGap * H * k;
+        f.m.alertW = 700, f.m.alertSide = 1;
+        const Out one = Compute(f, S);
+        const float level = one.cy - card / 2;
+        CHECK_NEAR(one.alertY, level, 0.01);
+        CHECK(one.alertX0 >= one.cx + kAlertSideR * H * k - 0.01 && !one.heldShow[0]);
+        f.m.heldW[0] = 600, f.m.heldSide[0] = 1; // the older one, pushed down
+        const Out two = Compute(f, S);
+        CHECK(two.heldShow[0]);
+        CHECK_NEAR(two.alertY, level, 0.01);
+        CHECK_NEAR(two.heldY[0], level + step, 0.01);
+        f.m.heldW[1] = 500, f.m.heldSide[1] = -1; // the other side's stack starts level too
+        const Out sides = Compute(f, S);
+        CHECK(sides.heldShow[1]);
+        CHECK_NEAR(sides.heldY[1], level, 0.01);
+        CHECK(sides.heldX[1] + 500 <= sides.cx - kAlertSideR * H * k + 0.01);
+        Frame gone = f; // the higher card dropped: the lower one goes back up
+        gone.m.alertW = 0, gone.m.alertSide = 0;
+        const Out up = Compute(gone, S);
+        CHECK(up.heldShow[0]);
+        CHECK_NEAR(up.heldY[0], level, 0.01);
+        Frame sub = f; // a dialogue over the left side only: that stack under it by the gap, the right one stays
+        sub.dlg.fresh = true, sub.dlg.x0 = 0.05f, sub.dlg.x1 = 0.45f, sub.dlg.y0 = 0.42f, sub.dlg.y1 = 0.55f;
+        sub.m.alertW = 700, sub.m.alertSide = -1, sub.m.heldW[1] = 0, sub.m.heldSide[0] = -1;
+        const Out pushed = Compute(sub, S);
+        CHECK_NEAR(pushed.alertY, 0.55f * H + kAlertDlgGap * H, 0.01);
+        CHECK(pushed.heldShow[0]);
+        CHECK_NEAR(pushed.heldY[0], pushed.alertY + step, 0.01); // (the whole stack follows)
+        sub.m.alertSide = 1, sub.m.heldSide[0] = 1;
+        CHECK_NEAR(Compute(sub, S).alertY, level, 0.01);
+    }
     // Hud2Scale's aspect factor is the spec's (1.8: 16:10 k 0.9, 4:3 / 5:4 k 0.8; 16:9 and wider 1)
     CHECK_NEAR(promptfit::Hud2Scale(1920, 1200, 100, 100, false), hp::kAspectK16x10, 1e-5);
     CHECK_NEAR(promptfit::Hud2Scale(1600, 1200, 100, 100, false), hp::kAspectK4x3, 1e-5);

@@ -451,6 +451,11 @@
        path"). Every mode change of the game (its start, the Options screen's resolution, FLUF's Alt+Enter) goes through
        SetupScreen; the window's style and size through WindowStyle. Signatures identical in HDE 0.7.1 and vanilla 1.1
        (the windowed style immediate differs - HDE's installer patches it - so it is a wildcard read as data). */ \
+    X(VtTextEdit, Data, 0x5E501C, 0x58C271, 1, "06 ?? ?? ?? ?? C7 46 7C ?? ?? ?? ?? 89 9E A0 03 00 00 88 9E") /* the text field, a TextControl with a cursor (QuantityEdit): the same text object at +0x334 */ \
+    X(RichSetSize, Code, 0x579CC0, 0, 0, "8B 44 24 04 81 EC 90 00 00 00 53 8B D9 8B 8C 24 9C 00 00 00") /* RichTextWin: void thiscall(float width, float height), the game's own resize: the box re-wraps at once (verified in game 5 Nov 2026, FREELANCER_RE "The game's text size is its font's") */ \
+    X(RichLayout, Code, 0x57B320, 0, 0, "33 C0 8A 81 94 04 00 00 8D 91 80 03 00 00 50 52 8B 91 58 03") /* RichTextWin vt[0xB4]: u32 thiscall(): LayoutRichText at the box's width, the new height at +0x380; the picture changes only through the dirty bytes +0x400 / +0x401 (verified in game 5 Nov 2026) */ \
+    X(FontFlush, Code, 0x4180C0, 0, 14, "0D 00 00 00 00 83 C4 2C C3 ?? ?? ?? ?? ?? 51 FF 05 ?? ?? ?? ?? 75 0A C7 05") /* void cdecl: bumps the fonts' epoch and flushes their caches, SetupScreen's call on a resolution change; every text re-rasterises (verified in game 4 Nov 2026, FREELANCER_RE "The game's text size is its font's") */ \
+    X(FontList, Data, 0x61651C, 0x4177B1, 1, "A1 ?? ?? ?? ?? 53 56 8B 30 3B F0 57 74 28 8B 7C") /* the fonts.ini table: a list head, an entry at node + 8 (nickname + 8, fixed_height + 0xD0) */ \
     X(SetupScreen, Code, 0x4249C0, 0, 0, \
       "A1 ?? ?? ?? ?? 8B 08 83 EC 3C 85 C9 53 56 57 75 09 5F 5E 32") /* bool cdecl(HWND, const DisplaySettings* request, DisplaySettings* applied): sets the display mode (the renderer's mode call with the request, then WindowStyle; windowed: a request larger than the desktop is clamped). DisplaySettings: 0x28 bytes, +8 width, +0xC height, +0x25 u8 fullscreen. Callers 0x424CE0 / 0x424DD0 (start, Options) pass exe::DisplaySettings as `applied`; FLUF's Alt+Enter passes a copy of it with +0x25 flipped */ \
     X(WindowStyle, Code, 0x424870, 0, 0, \

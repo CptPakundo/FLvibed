@@ -202,7 +202,7 @@ All 21 decisions are answered in the mock-up's Decisions view (`docs\UI_SPEC.jso
 calls through the session (LB picker / wheel, the R3 scheme, X hold turret view, Y hold weapon-group cycle, no "my
 attacker", the pad cursor everywhere, the HUD kept informative with badges and the button legend, ASSISTED = turret
 mode) and the suggested defaults for the rest (6b `pilot` advanced only; 12 hold View; 13 automatic switching with a
-lock; 14 the three glyph families, confirm = bottom with a Nintendo swap; 17 the New Game prompt locked per save; 18
+lock; 14 the glyph families (Steam added 5 Nov 2026), confirm = bottom with a Nintendo swap; 17 the New Game prompt locked per save; 18
 the LiveSplit client now; 19 the prompt bar contextual; 20 foundation -> flight HUD -> bases -> dealers -> map).
 **Standing order (the user, 25 Oct 2026): the mock-up is the living spec and stays current through development** -
 every UI change lands in it (`tools\uimock\README.md`: the page's source, build, publish, how the owner's edits in the
@@ -212,7 +212,7 @@ artifact's `ui/spec` document are patched, `docs\UI_SPEC.json` regenerated) in t
 Research: `docs\research\controller_ui.md` (three rounds of sources in `research\evidence\controller_ui\`). The whole
 design is in the interactive mock-up (artifact `4v4dXbB5GTVt1URowFtSvN`, version 3 then - now the living spec, v22 published, v23 in source; its page kept as
 `research\evidence\controller_ui\mockup_v2_index.html`): the Input buttons switch the whole page between keyboard
-and mouse and the three glyph families, the Screens view shows every game screen (21 screens, 31 states, from the
+and mouse and the glyph families, the Screens view shows every game screen (21 screens, 31 states, from the
 captures in `research\experience\ui_2026-10-25\screens\`) with its pad layout, the Bindings view the diagram and
 presets per situation, the Options views the extended CONTROLLER and AUTOPILOT tabs, the Maneuver bar view the
 autopilot button, Decisions 11-20 the questions of this round. Everything is editable there; the decided spec is read
@@ -254,7 +254,7 @@ view; picked with the right stick, dead-zoned, the D-pad works too, the left sti
 25 Oct: wheels belong on a bumper, scan cargo is contextual and fits the wheel, and Freelancer needs no "my attacker"
 bind, nearest enemy plus firing-selects-the-target cover it); RB missile / hold torpedo or cruise disruptor; A context
 (dock, lane, jump, fly to; loot in reach) / hold formation; B cancel (free flight, drop cruise, cancel dock) / hold
-reverse; X tractor loot / **hold turret view**; Y cruise; D-pad nanobot / battery / countermeasure / mine; View
+reverse; X tractor loot / **hold turret view**; Y next group / hold cruise (0.3.0); D-pad nanobot / battery / countermeasure / mine; View
 NeuroNet hub (map first) / hold
 half a second = Advanced Autopilot on / off; Menu pause. **ACE** (arcade flight, for Ace Combat / Rogue Squadron / Star Fox hands; tidied 25 Oct to the same rules): LS
 steers (gimbal lock on the target), RS strafes, RT throttle up with afterburner at full pull, LT throttle down / brake
@@ -267,15 +267,15 @@ cheapness (the left thumb steers, so a nanobot mid-fight costs steering). **ASSI
 A context / accept, B hand back, Y target / hold picker, X goal panel, D-pad consumables. Shared situations: menus
 (D-pad / LS focus, A accept, B back / hold close all, X context, Y secondary, LB / RB tabs, LT / RT pages, RS scroll, R3
 reset view, L3 pad cursor), bases (LB / RB rooms, D-pad left / right characters, A talk, Y launch or job board, X
-news, LS cursor), dealers (LB / RB side, D-pad rows, LT / RT quantity, A buy / sell / mount, Y all, X filter), nav map
+news, LS cursor), dealers (LB / RB side, D-pad rows, LT / RT quantity, A held buy / sell, LS click mount, Y all, X filter), nav map
 (LS cursor, D-pad snap, A select / again waypoint, X remove / hold clear, Y travel, LT / RT zoom, LB / RB system /
 universe, View destination list), text entry (an own on-screen keyboard; A type, X space, B backspace, Menu done).
 Playtest before freezing: afterburner on LT vs LB vs L3, cruise on Y vs L3, engine kill as a toggle, the D-pad reach
 while steering, the wheel's selection input.
 **Weapon groups** (the owner's question, 25 Oct: some want it simple, some granular): a tiered setting
 `weapon_groups`. **SIMPLE (default)**: RT fires the active group (the game's default group), group switching in the
-action wheel, the HUD's group buttons badge the current one; **CYCLE ON Y HOLD**: Y held flips to the next group (Y tap
-stays cruise), the badge and the combat legend show it; **TWO GROUPS ON THE TRIGGERS**: RT fires group 1, LT group 2
+action wheel, the HUD's group buttons badge the current one; **CYCLE ON Y**: Y tap flips to the next group, Y held is cruise (0.3.0; `y_swap` the old
+order), the badge and the combat legend show it; **TWO GROUPS ON THE TRIGGERS**: RT fires group 1, LT group 2
 (the Armored Core / MechWarrior pattern; afterburner moves to the LS click, engine kill into the wheel; ACE: A / B). In every
 mode launchers fire only on their own buttons; groups are assigned with the action wheel's EDIT GROUPS (`wgroups.*`,
 UI_HUD2.md 5.30; the inventory's ticks planned here were never built).

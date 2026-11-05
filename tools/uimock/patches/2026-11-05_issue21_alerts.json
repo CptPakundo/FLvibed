@@ -1,0 +1,8 @@
+{
+  "_about": "0.3.0 (5 Nov 2026, Unreleased), GitHub issue 21 and the owner's rules: danger alerts beside the ring in a stack per side, the glow's off switch named on the Shield hit cue row.",
+  "rows": {
+    "shield_cue": {
+      "help": "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2's danger alerts."
+    }
+  }
+}

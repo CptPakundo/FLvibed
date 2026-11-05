@@ -82,10 +82,11 @@ struct Table
 // The spec's tables as written.
 const Table& Flight(int preset);
 const Table& FlightAp(); // common.flight_ap: while the autopilot flies (every preset)
-// The flight table with the layout option applied: `weaponGroups` (0 simple: Y hold's weapon_group drops; 2 two groups:
+// The flight table with the layout option applied: `weaponGroups` (0 simple: Y is cruise on the tap, nothing held; 2 two groups:
 // RT / LT fire group 1 / 2, afterburner moves to the LS click and engine kill is unbound). The autopilot is View held in
 // every preset (the alternatives - a stick-click chord, hold Menu - removed 28 Oct 2026: never the owner's choice).
-Table Effective(int preset, int weaponGroups);
+// `swapY` (y_swap): with weapon_groups 1, FREELANCER's Y back to the old order: tap cruise, hold next group.
+Table Effective(int preset, int weaponGroups, bool swapY = false);
 // The button an action sits on in a table (the first match; slot 0 tap, 1 hold, 2 dbl); false when unbound.
 bool Find(const Table& t, Action a, glyphs::Id& btn, int& slot);
 

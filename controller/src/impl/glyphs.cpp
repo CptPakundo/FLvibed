@@ -33,6 +33,7 @@ const char* FamilyName(Family f)
     case Family::Xbox: return "xbox";
     case Family::PlayStation: return "playstation";
     case Family::Nintendo: return "nintendo";
+    case Family::Steam: return "steam";
     }
     return "?";
 }
@@ -44,14 +45,25 @@ static bool g_detectedOnce = false;
 static bool g_realWas = false;
 static u32 g_vendorsSeen = 0;
 
+constexpr u32 kVendorValve = 0x28DE, kProductSteamVirtual = 0x11FF; // (SDL's usb_ids.h)
+
+// Steam sets SteamDeck=1 for the games it starts on a Deck, in both its modes (community-reported, no Valve document);
+// a wrong reading costs only the bumpers' names, and glyph_style overrides it.
+static bool OnSteamDeck()
+{
+    char v[8] = {};
+    return GetEnvironmentVariableA("SteamDeck", v, sizeof(v)) && v[0] == '1';
+}
+
 static void Detect()
 {
     // Every HID game controller the system lists (RawInput; XInput itself hides the vendor): a Sony or Nintendo pad
-    // among them picks its family, else Xbox (an XInput pad with no HID match reads as Xbox too).
+    // among them picks its family, then a real Valve device or the Deck, else Xbox (an XInput pad with no HID match
+    // reads as Xbox too).
     UINT n = 0;
     if (GetRawInputDeviceList(nullptr, &n, sizeof(RAWINPUTDEVICELIST)) != 0 || n == 0)
     {
-        g_detected = Family::Xbox;
+        g_detected = OnSteamDeck() ? Family::Steam : Family::Xbox;
         return;
     }
     std::vector<RAWINPUTDEVICELIST> list(n);
@@ -77,7 +89,11 @@ static void Detect()
             f = Family::PlayStation;
         else if (info.hid.dwVendorId == 0x057E && f != Family::PlayStation)
             f = Family::Nintendo;
+        else if (info.hid.dwVendorId == kVendorValve && info.hid.dwProductId != kProductSteamVirtual && f == Family::Xbox)
+            f = Family::Steam;
     }
+    if (f == Family::Xbox && OnSteamDeck())
+        f = Family::Steam;
     if (f != g_detected || !g_detectedOnce)
         Log("glyphs: %d HID game controller(s), family %s (vendors 0x%X)", pads, FamilyName(f), g_vendorsSeen);
     g_detected = f;
@@ -90,7 +106,10 @@ void Update(bool realPadConnected, u32 vendor)
     if (vendor)
     {
         // the device layer names the pad (a device-layer test pad, IDEAS T36): its vendor decides, as the HID list does
-        const Family f = vendor == 0x054C ? Family::PlayStation : vendor == 0x057E ? Family::Nintendo : Family::Xbox;
+        const Family f = vendor == 0x054C   ? Family::PlayStation
+                         : vendor == 0x057E ? Family::Nintendo
+                         : vendor == kVendorValve || OnSteamDeck() ? Family::Steam
+                                                                   : Family::Xbox;
         if (vendor != vendorWas)
             Log("glyphs: the pad's device layer names vendor 0x%04X, family %s", vendor, FamilyName(f));
         g_detected = f, g_vendorsSeen = vendor, g_detectedOnce = true;
@@ -100,7 +119,11 @@ void Update(bool realPadConnected, u32 vendor)
     vendorWas = vendor;
     g_realWas = realPadConnected;
     const int style = uiopt::Get().glyphStyle;
-    g_current = style == 1 ? Family::Xbox : style == 2 ? Family::PlayStation : style == 3 ? Family::Nintendo : g_detected;
+    g_current = style == 1   ? Family::Xbox
+                : style == 2 ? Family::PlayStation
+                : style == 3 ? Family::Nintendo
+                : style == 4 ? Family::Steam
+                             : g_detected;
 }
 
 Family Current() { return g_current; }
@@ -308,9 +331,10 @@ static bool PaintHud2(Painter& p, Family f, Id id, Layer layer, int ox, int oy)
         else
         {
             p.Poly(kWhite, q, 8, rim);
-            const bool ps = f == Family::PlayStation, nin = f == Family::Nintendo;
+            const bool ps = f == Family::PlayStation || f == Family::Steam, nin = f == Family::Nintendo; // (the L1 / R1 names)
             static const wchar_t* kT[3][4] = {{L"LB", L"RB", L"LT", L"RT"}, {L"L1", L"R1", L"L2", L"R2"}, {L"L", L"R", L"ZL", L"ZR"}};
-            p.Label(kWhite, kT[ps ? 1 : nin ? 2 : 0][id - LB], cx, cy, 0.42f, hud);
+            // (PlayStation's names in Arial: in the HUD's narrow face L1 read as U at the chips' size, UI_HUD2.md 5.34)
+            p.Label(kWhite, kT[ps ? 1 : nin ? 2 : 0][id - LB], cx, cy, 0.42f, ps ? L"Arial" : hud);
         }
         return true;
     }
@@ -418,7 +442,7 @@ static void Paint(Painter& p, Family f, Id id, Layer layer, int ox, int oy, bool
         else
         {
             p.RoundFrame(kWhite, Px(0.02f), Py(0.18f), Px(0.98f), Py(0.82f), r, rim);
-            const wchar_t* t = f == Family::PlayStation ? (id == LB ? L"L1" : L"R1")
+            const wchar_t* t = f == Family::PlayStation || f == Family::Steam ? (id == LB ? L"L1" : L"R1")
                                : f == Family::Nintendo  ? (id == LB ? L"L" : L"R")
                                                         : (id == LB ? L"LB" : L"RB");
             p.Label(kWhite, t, Px(0.5f), Py(0.5f), 0.5f, hud);
@@ -435,7 +459,7 @@ static void Paint(Painter& p, Family f, Id id, Layer layer, int ox, int oy, bool
         else
         {
             p.RoundFrame(kWhite, Px(0.18f), Py(0.04f), Px(0.82f), Py(0.96f), r, rim);
-            const wchar_t* t = f == Family::PlayStation ? (id == LT ? L"L2" : L"R2")
+            const wchar_t* t = f == Family::PlayStation || f == Family::Steam ? (id == LT ? L"L2" : L"R2")
                                : f == Family::Nintendo  ? (id == LT ? L"ZL" : L"ZR")
                                                         : (id == LT ? L"LT" : L"RT");
             p.Label(kWhite, t, Px(0.5f), Py(0.5f), 0.46f, hud);

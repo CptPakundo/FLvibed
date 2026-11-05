@@ -41,4 +41,7 @@ void Draw();
 bool Visible();
 void Shutdown(); // (fonts belong to uikit; nothing owned here yet)
 std::string Status();
+// The pills frame by frame (debug `prompttrace [reset]`): every change of what Draw decided, with the frame and the time.
+// One frame of a blink shows here; a poll of Status from outside the game misses it (GitHub issue 10).
+std::string Trace(bool reset);
 } // namespace promptbar

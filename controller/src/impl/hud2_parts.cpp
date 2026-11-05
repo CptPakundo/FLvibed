@@ -71,8 +71,8 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
     const float shield = std::max(0.0f, m.shield);
     const bool lowShield = m.shield >= 0 ? m.shield <= 0.25f : true;
     RecordTag("ring.shield");
-    if (m.shield > -2) // shield left (red at <= 25 %), filling from the top
-        SegArc(cx, cy, R, 138, 222, w, shield, ShieldInk(lowShield), 14, 1.6f, true);
+    if (m.shield > -2) // shield left (red at <= 25 %), filling from the bottom as the hull: it drains down (GitHub issue 18)
+        SegArc(cx, cy, R, 138, 222, w, shield, ShieldInk(lowShield), 14, 1.6f, false);
     RecordTag("ring.hull");
     if (m.hull >= 0) // hull right
     {
@@ -692,7 +692,9 @@ void DrawShip(const Model& m, const Layout& L, float a)
     {
         const std::wstring s = CreditsDigits(m.credits);
         const float numW = TextWidth(s, T), gap = 0.012f * H * k;
-        TextMarquee(tx, yy, CreditsWord(right - tx, numW, T, gap), T, right - tx - numW - gap, Argb(kDim, 1), Left, 0.08f);
+        // (the word's room with CreditsWord's own pixel of slack: a panel sized to the sum can round a fraction short, and at
+        // the floor the fit rule then cut the word it had just chosen: "CREDI" at 1280x800, 4 Nov 2026)
+        TextMarquee(tx, yy, CreditsWord(right - tx, numW, T, gap), T, right - tx - numW - gap + 1.0f, Argb(kDim, 1), Left, 0.08f);
         Text(right, yy, s, T, Argb(kInk, 1), Right);
     }
 }
@@ -788,9 +790,19 @@ static void Slot(const Model& m, int i, int count, float px, float py, float sz,
 }
 
 // The loadout's drawn gun lines (Standard): the first unused line's offset from the panel's top in H x k units (wraps
-// included), and whether the keyboard form's group keys set the pitch - LoadoutContentHeight reads them (one frame late).
+// included), and whether the taller pitch is in use (the keyboard form's group keys, or a trigger per group) -
+// LoadoutContentHeight reads them (one frame late).
 static float g_loGunEnd = 0;
 static bool g_loKeyed = false;
+
+// weapon_groups 2 on the pad: the groups fire from a button each, so a row carries its own glyph.
+static bool TwoTriggers(const Model& m) { return !m.kbm && m.fireBtn2.btn != glyphs::COUNT; }
+// The button of a group row: game group 1 on the first trigger, 2 on the second; other groups have none.
+static const Prompt* RowTrigger(const Model& m, int row)
+{
+    const int group = m.realGroups ? m.groupNum[row] : row + 1;
+    return group == 1 ? &m.fireBtn : group == 2 ? &m.fireBtn2 : nullptr;
+}
 
 void DrawLoadout(const Model& m, const Layout& L, float a)
 {
@@ -854,21 +866,25 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
     for (int i = 0; click && i < m.nGroups && i < 3; ++i)
         keyCol = std::max(keyCol, DrawPrompt(m.groupBtn[i], 0, 0, 0.024f * H * k, 0, true, true));
     const bool keyed = keyCol > 0;
+    // weapon_groups 2: each group row has its own trigger glyph (GitHub issue 16). Two glyphs a row apart need the keyboard
+    // form's taller pitch and the lint's 0.028 size, as stacked keycaps do.
+    const bool two = TwoTriggers(m), tall = keyed || two;
     // the rows in the 0.15 H plate (hud2.cpp loH; was 0.17 H: first row 0.032, pitch 0.032, launcher 0.140): first row
     // 0.028, pitch 0.030 (0.026 text, 0.028 numeral cells), the launcher row 0.122 (its LOCKED chip 0.012 above the edge).
     // With group keys (the keyboard form; the owner, 31 Oct 2026, A1: the NUM 1 / 2 / 3 keycaps touched each other and
     // the weapon names at the 0.030 pitch - 0.039 H floor-grown caps): first row 0.022, pitch 0.039 (a 0.0288 tight cap +
     // the lint's 0.01 H between stacked caps), the launcher row 0.128; the names end 0.012 H before their key, the
     // launcher row's texts before the key column
-    const float rowP = (keyed ? 0.039f : 0.030f) * H * k;
-    float yy = y0 + (keyed ? 0.022f : 0.028f) * H * k;
+    const float rowP = (tall ? 0.039f : 0.030f) * H * k;
+    float yy = y0 + (tall ? 0.022f : 0.028f) * H * k;
     auto widthAt = [](float size) { return [size](const std::wstring& t) { return TextWidth(t, size); }; };
     if (m.nGroups > 0)
     {
         const float fw = DrawPrompt(m.fireBtn, 0, 0, g, 0, true, true);
         // RT beside the group rows (between the first two, as the mock-up; on the row when there is one)
-        DrawPrompt(m.fireBtn, wx + fw / 2, yy + (m.nGroups > 1 ? (keyed ? rowP * 0.5f : 0.02f * H * k) : 0.0f), g,
-                   Argb(kChrome, 1), false, true);
+        if (!two)
+            DrawPrompt(m.fireBtn, wx + fw / 2, yy + (m.nGroups > 1 ? (keyed ? rowP * 0.5f : 0.02f * H * k) : 0.0f), g,
+                       Argb(kChrome, 1), false, true);
         const float tx = wx + std::max(g, fw) + 0.02f * H * k, rx = x1 - 0.018f * H * k;
         const float ts = 0.026f * H * k, nameX = tx + 0.052f * H * k;
         // Three lines above the launcher: a row whose guns do not fit wraps one gun per line onto a spare line (at most
@@ -900,6 +916,8 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
             const bool lit = i == m.activeGroup;
             const bool hov = click && HotHovered() == kHotGroup + i;
             const float rowY = yy;
+            if (const Prompt* fire = two ? RowTrigger(m, i) : nullptr)
+                DrawPrompt(*fire, wx + fw / 2, yy, 0.028f * H * k, Argb(kChrome, 1), false, true);
             // the group's numeral in a cell of its own (Agency FB's "1" is a bare stroke: ">1" read as ">|"); a one is
             // drawn with its flag and foot; the active group's marker a yellow triangle left of the cell
             const float ch = 0.028f * H * k, ccx = tx + 0.012f * H * k + ch * 0.5f;
@@ -942,23 +960,28 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
     {
         if (!ordnanceShare)
             DrawPrompt(m.torpedoBtn, wx + ordW / 2, yy, g, Argb(kChrome, 1), false, true);
-        const float nx = wx + std::max(g, ordW) + 0.02f * H * k + 0.052f * H * k; // (the gun names' column)
         const float rx = x1 - 0.018f * H * k - (keyed ? keyCol + 0.012f * H * k : 0.0f), ls = 0.026f * H * k;
         const std::wstring ammo = std::to_wstring(std::max(0, m.torpedoAmmo));
         const float aw = TextWidth(ammo, ls);
+        // the gun names' column; a name too long for it slides left into the group cell's column, empty on this row, only as
+        // far as it needs (the owner, 4 Nov 2026: "OLD - STARKILLER TORPI..." scrolled beside that empty room; alignment
+        // gives way to the whole name)
+        const float gunCol = wx + std::max(g, ordW) + 0.02f * H * k + 0.052f * H * k;
+        const float tightCol = wx + std::max(g, ordW) + 0.012f * H * k;
+        const float nx = std::max(tightCol, std::min(gunCol, rx - aw - 0.010f * H * k - TextWidth(m.torpedo, ls)));
         Text(rx, yy, ammo, ls, Argb(m.torpedoAmmo > 0 ? kInk : kAmber, 1), Right);
         TextMarquee(nx, yy, m.torpedo, ls, hud2layout::RowRoom(nx, rx, aw, 0.010f * H * k, false, 0, 0), Argb(kInk, 1));
         yy += rowP;
     }
     // the launcher row where the mock-up puts it (under three rows), whatever the group count
     const float freeY = yy;                       // (the first gun line the rows above left unused)
-    yy = y0 + (keyed ? 0.128f : 0.122f) * H * k; // (at most three rows above it: groups + the guns in no group)
+    yy = y0 + (tall ? 0.128f : 0.122f) * H * k; // (at most three rows above it: groups + the guns in no group)
     // the panel's height fits its rows (0.2.1 round 6; LoadoutContentHeight): Standard's launcher row keeps its pad above
     // the bottom edge, so a shorter panel lifts it under the last gun row (at the full 0.15 the same place as before)
     if (m.presetDrawn != hud2preset::Focus)
     {
-        yy = std::min(yy, y1 - (keyed ? 0.022f : 0.028f) * H * k);
-        g_loGunEnd = (freeY - y0) / (H * k), g_loKeyed = keyed;
+        yy = std::min(yy, y1 - (tall ? 0.022f : 0.028f) * H * k);
+        g_loGunEnd = (freeY - y0) / (H * k), g_loKeyed = tall;
     }
     // the gun line above the launcher row is the panel's spare height when the rows did not use it (0.2.1 round 5)
     const bool lineAbove = freeY <= yy - rowP + 0.5f;
@@ -1275,40 +1298,80 @@ float DrawContext(const Model& m, const Layout& L, float a, bool measure)
 }
 
 // ---------------------------------------------------------------- the transient alert
-float DrawAlert(const Model& m, const Layout& L, float a, bool measure)
+constexpr float kAlertCardSec = 3.0f; // (hud2.cpp Alert)
+constexpr int kAlertBloomLayers = 10;
+constexpr float kAlertBloomReach = 0.024f, kAlertBloomAlpha = 0.055f; // the outer edge (H x k); each layer's alpha, they add up inward
+
+float DrawCard(const AlertCard& c, float x0, float y0, const Layout& L, float a, bool measure)
 {
     const float H = L.H, k = L.k, T = 0.024f * H * k, g = 0.032f * H * k;
-    const float tw = TextWidth(m.alert, 0.028f * H * k, 0.1f);
+    const float tw = TextWidth(c.text, 0.028f * H * k, 0.1f);
     float pw = 0;
-    for (int i = 0; i < m.nAlertPrompts; ++i)
-        pw += DrawPrompt(m.alertPrompts[i], 0, 0, g, 0, true) + g * 0.25f + TextWidth(m.alertPrompts[i].label, T) +
-              0.03f * H * k;
-    if (!m.alertNone.empty())
-        pw += TextWidth(m.alertNone, T, 0.06f) + 0.03f * H * k;
-    const float w = 0.07f * H * k + tw + 0.03f * H * k + pw;
-    if (measure || m.alert.empty())
+    for (int i = 0; i < c.n; ++i)
+        pw += DrawPrompt(c.prompts[i], 0, 0, g, 0, true) + g * 0.25f + TextWidth(c.prompts[i].label, T) + 0.03f * H * k;
+    if (!c.none.empty())
+        pw += TextWidth(c.none, T, 0.06f) + 0.03f * H * k;
+    // beside a meter (GitHub issue 21): two lines, the event over its answers, so it fits every screen and hides less of the view
+    const bool stacked = c.side != 0;
+    const float w = stacked ? std::max(0.056f * H * k + tw, 0.02f * H * k + pw) + 0.02f * H * k
+                            : 0.07f * H * k + tw + 0.03f * H * k + pw;
+    if (measure || c.text.empty())
         return w;
     SetAlpha(a);
-    const float x0 = L.cx - w / 2, y0 = L.alertY, h = 0.05f * H * k, yc = y0 + h / 2;
-    Plate(x0, y0, x0 + w, y0 + h, 0.012f * H * k, kTL | kTR | kBR | kBL, 205 / 255.0f, kChrome, 0.43f, 'l', m.alertCol);
+    const float h = (stacked ? hud2layout::kAlertStackH : 0.05f) * H * k;
+    const float yc = y0 + (stacked ? 0.026f * H * k : h / 2);
+    // The urgency (the owner, 5 Nov 2026), all of it under the card's words so they stay clear: a burst as it arrives, then
+    // a bloom around the plate on the low meters' pulse (1.5 Hz, under the 3 Hz limit, one beat for every danger) with their
+    // off switch (HUD_CUES.md)
+    const float chamfer = 0.012f * H * k;
+    auto shape = [](float a0, float b0, float a1, float b1, float q, u32 argb) {
+        const float p[16] = {a0 + q, b0, a1 - q, b0, a1, b0 + q, a1, b1 - q, a1 - q, b1, a0 + q, b1, a0, b1 - q, a0, b0 + q};
+        Poly(p, 8, argb);
+    };
+    float burst = 0;
+    if (stacked && shieldcue::Get().on)
+    {
+        burst = std::clamp(1 - (kAlertCardSec - c.left) / 0.4f, 0.0f, 1.0f);
+        const float glow = std::max(burst, 0.3f + 0.7f * LowPulse());
+        for (int i = kAlertBloomLayers; i >= 1; --i) // (many faint layers: three read as hard bands)
+        {
+            const float d = kAlertBloomReach * H * k * i / kAlertBloomLayers;
+            shape(x0 - d, y0 - d, x0 + w + d, y0 + h + d, chamfer + d * 0.5f, Argb(c.col, kAlertBloomAlpha * glow));
+        }
+    }
+    Plate(x0, y0, x0 + w, y0 + h, chamfer, kTL | kTR | kBR | kBL, 205 / 255.0f, kChrome, 0.43f,
+          c.side < 0 ? 'r' : 'l', c.col); // (the accent on the edge that faces the ring)
+    if (burst > 0)
+        shape(x0, y0, x0 + w, y0 + h, chamfer, Argb(c.col, 0.3f * burst));
     {
         const RecUnit unit; // (the alert's mark and its words)
-        if (!Icon(flicons::Important, x0 + 0.03f * H * k, yc, 0.03f * H * k, Argb(m.alertCol, 1)))
-            Ring(x0 + 0.03f * H * k, yc, 0.012f * H * k, 0.002f * H * k, Argb(m.alertCol, 1));
-        Text(x0 + 0.056f * H * k, yc, m.alert, 0.028f * H * k, Argb(m.alertCol, 1), Left, 0.1f, false);
+        if (!Icon(flicons::Important, x0 + 0.03f * H * k, yc, 0.03f * H * k, Argb(c.col, 1)))
+            Ring(x0 + 0.03f * H * k, yc, 0.012f * H * k, 0.002f * H * k, Argb(c.col, 1));
+        Text(x0 + 0.056f * H * k, yc, c.text, 0.028f * H * k, Argb(c.col, 1), Left, 0.1f, false);
     }
-    float x = x0 + 0.056f * H * k + tw + 0.03f * H * k;
-    for (int i = 0; i < m.nAlertPrompts; ++i)
+    float x = stacked ? x0 + 0.02f * H * k : x0 + 0.056f * H * k + tw + 0.03f * H * k;
+    // the answers' line, 0.01 H under the event (the lint's gap): at 4:3 k 0.8 the text and glyphs sit at their floors, so a floor here too
+    const float pyc = stacked ? y0 + std::max(0.068f * k, 0.057f) * H : yc;
+    for (int i = 0; i < c.n; ++i)
     {
         const RecUnit unit; // (the answer's prompt and its own label)
-        const float pw1 = DrawPrompt(m.alertPrompts[i], 0, 0, g, 0, true);
-        DrawPrompt(m.alertPrompts[i], x + pw1 / 2, yc, g, Argb(kChrome, 1));
+        const float pw1 = DrawPrompt(c.prompts[i], 0, 0, g, 0, true);
+        DrawPrompt(c.prompts[i], x + pw1 / 2, pyc, g, Argb(kChrome, 1));
         x += pw1 + g * 0.25f;
-        x += Text(x, yc, m.alertPrompts[i].label, T, Argb(kInk, 1), Left, 0, false) + 0.03f * H * k;
+        x += Text(x, pyc, c.prompts[i].label, T, Argb(kInk, 1), Left, 0, false) + 0.03f * H * k;
     }
-    if (!m.alertNone.empty()) // the answer used up / not fitted: amber words instead of a glyph
-        Text(x, yc, m.alertNone, T, Argb(kWarn, 1), Left, 0.06f, false); // the lit slot's amber: one meaning, one colour
+    if (!c.none.empty()) // the answer used up / not fitted: amber words instead of a glyph
+        Text(x, pyc, c.none, T, Argb(kWarn, 1), Left, 0.06f, false); // the lit slot's amber: one meaning, one colour
     return w;
+}
+
+float DrawAlert(const Model& m, const Layout& L, float a, bool measure)
+{
+    AlertCard c;
+    c.text = m.alert, c.none = m.alertNone, c.col = m.alertCol, c.n = m.nAlertPrompts, c.side = m.alertSide, c.left = m.alertLeft;
+    for (int i = 0; i < c.n && i < 2; ++i)
+        c.prompts[i] = m.alertPrompts[i];
+    return DrawCard(c, L.alertX0, m.alertSide && m.alertYNow >= 0 ? m.alertYNow : L.alertY, L, a, measure);
 }
 
 // ================================================================ Focus (docs\UI_HUD2_PRESETS.md 2.2 "glass and edges";
@@ -1345,7 +1408,7 @@ void DrawSplitArcs(const Model& m, const Layout& L, float a, const FocusVis& v)
     if (v.shield > 0.004f)
     {
         SetAlpha(a * v.shield);
-        SegArc(cx, cy, R, 180 - half, 180 + half, w, shield, ShieldInk(lowShield), 8, 1.6f, true);
+        SegArc(cx, cy, R, 180 - half, 180 + half, w, shield, ShieldInk(lowShield), 8, 1.6f, false);
         if (show(shield) && m.shield >= 0)
         {
             swprintf_s(buf, L"%d", static_cast<int>(shield * 100 + 0.5f));
@@ -1678,11 +1741,16 @@ void DrawFireStrip(const Model& m, const Layout& L, float a, bool countHere)
     const float cellX = wx + std::max(g, std::max(fw, lw)) + 0.010f * H * k, nameX = cellX + ch + 0.010f * H * k;
     if (ng > 0)
     {
-        // RT beside the group rows, centred on them
-        DrawPrompt(m.fireBtn, wx + fw / 2, (rowY(0) + rowY(ng - 1)) * 0.5f, g, Argb(kChrome, 1), false, true);
+        // RT beside the group rows, centred on them; a trigger per row with weapon_groups 2 (GitHub issue 16)
+        const bool two = TwoTriggers(m);
+        if (!two)
+            DrawPrompt(m.fireBtn, wx + fw / 2, (rowY(0) + rowY(ng - 1)) * 0.5f, g, Argb(kChrome, 1), false, true);
         for (int i = 0; i < ng; ++i)
         {
             const bool lit = i == m.activeGroup;
+            if (const Prompt* fire = two ? RowTrigger(m, i) : nullptr)
+                DrawPrompt(*fire, wx + fw / 2, rowY(i), std::min(0.028f * H * k, p - 0.010f * H * k), Argb(kChrome, 1), false,
+                           true);
             GroupCell(cellX + ch * 0.5f, rowY(i), ch, m.realGroups ? m.groupNum[i] : i + 1, lit, H, k);
             TextMarquee(nameX, rowY(i), m.groups[i], ts, rx - nameX, Argb(lit ? kInk : kDim, 1));
         }

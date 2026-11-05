@@ -841,8 +841,8 @@
      },
      "Y": {
       "dbl": "none",
-      "hold": "weapon_group",
-      "tap": "cruise"
+      "hold": "cruise",
+      "tap": "weapon_group"
      }
     }
    }
@@ -1646,7 +1646,8 @@
         ],
         [
          "Y",
-         "CRUISE"
+         "CRUISE",
+         "hold"
         ],
         [
          "LB",
@@ -1782,7 +1783,8 @@
         ],
         [
          "Y",
-         "CRUISE"
+         "CRUISE",
+         "hold"
         ],
         [
          "VIEW",
@@ -1949,7 +1951,7 @@
      "label": "Combat",
      "notes": [
       "In a fight the legend becomes the combat sheet: weapons, the consumables with their counts (the D-pad), reverse. Counts the HUD does not show (countermeasures, mines) live here. A line under the bar names the threat.",
-      "Built: FIRE GROUP n shows only with Weapon groups = CYCLE ON Y HOLD (else FIRE); NEXT ENEMY resolves to R3 in FREELANCER; the MINE row carries the mine count (counted by ammo)."
+      "Built: FIRE GROUP n shows only with Weapon groups = CYCLE ON Y (else FIRE); NEXT ENEMY resolves to R3 in FREELANCER; the MINE row carries the mine count (counted by ammo)."
      ],
      "prompts": []
     },
@@ -2822,7 +2824,7 @@
      "id": "cruise",
      "label": "Cruise",
      "notes": [
-      "Y toggled cruise; the cruise box's badge lights and the legend offers B to drop it (the cancel button also leaves lanes and cancels docks).",
+      "Y held toggled cruise; the cruise box's badge lights and the legend offers B to drop it (the cancel button also leaves lanes and cancels docks).",
       "Built 26 Oct 2026 (0.1.0): under HUD 2's ring always [Y] CRUISE (dim when off, CHARGING, CRUISE ON) and, while loot is in the tractor's reach, [A] TRACTOR <ITEM> · <range> (one item: the targeted loot, else the nearest) and [X] TRACTOR ALL n (4 Nov 2026; before, one prompt for both); the throttle arc and BOOST / KILL / REV at the ring's bottom centre."
      ],
      "prompts": []
@@ -3137,7 +3139,7 @@
       "D-pad / stick walks the item rows; the infocard on the right follows the focus and RS scrolls it. Jettison is a hold with a sweep.",
       "Weapon groups: on a focused weapon, D-pad left / right ticks its group boxes (the game's own checkboxes), so a granular loadout is set up here and fired by the Weapon groups setting's choice (one fire button, Y-hold cycling, or two groups on the triggers).",
       "View is the hub: from here LB / RB also switch to the other NeuroNet windows (map, log, status, info).",
-      "Built: the window has no CARGO / EQUIPMENT / SHIP tabs (filter buttons only): prompts D-pad ITEM, A USE / MOUNT, RS INFO, B CLOSE; weapon groups are set on the HUD's group buttons (Y hold cycles), not in this window; JETTISON hold is not built.",
+      "Built: the window has no CARGO / EQUIPMENT / SHIP tabs (filter buttons only): prompts D-pad ITEM, A USE / MOUNT, RS INFO, B CLOSE; weapon groups are set on the HUD's group buttons (Y cycles), not in this window; JETTISON hold is not built.",
       "Superseded: the group boxes above were never built; weapon groups are set with the action wheel's EDIT GROUPS (GitHub issue 4, 4 Nov 2026)."
      ],
      "prompts": [
@@ -3656,7 +3658,8 @@
      "notes": [
       "The game's two-list window, adapted: bumpers switch the side (your cargo / the dealer), D-pad walks the rows, triggers set the quantity (hold = fast), A buys or sells, Y = all you can afford / all you have. The transfer panel in the middle shows the running total and the profit against known prices.",
       "Keyboard and mouse keep the game's own window.",
-      "Built: the prompt bar caps at five, so the D-pad ITEM prompt is left out (LB / RB side, LT / RT QUANTITY, A BUY / SELL, Y MAX, B CLOSE); the middle panel shows QUANTITY n / max under the game's own total (the game's price text is not readable by FLvibed), not a running total of its own."
+      "Built: the prompt bar caps at five, so the D-pad ITEM prompt is left out (LB / RB side, LT / RT QUANTITY, A BUY / SELL, Y MAX, B CLOSE); the middle panel shows QUANTITY n / max under the game's own total (the game's price text is not readable by FLvibed), not a running total of its own.",
+      "Built 5 Nov 2026 (GitHub issue 20's comment, the owner's decision): A held 0.6 s buys or sells, one trade a hold, as a job or a ship is taken; a tap never trades. The row is selected again after each trade, so holding again repeats it. QUANTITY and MAX show only while the game offers a slider."
      ],
      "prompts": [
       {
@@ -3687,8 +3690,8 @@
        "keys": [
         "A"
        ],
-       "label": "BUY",
-       "v": ""
+       "label": "BUY / SELL",
+       "v": "hold"
       },
       {
        "keys": [
@@ -3743,8 +3746,9 @@
      "id": "default",
      "label": "Pad",
      "notes": [
-      "Same window as the trader plus X for the category filter (the game's icon row) and a compare line (equipped vs selected) in the middle panel; A buys, or mounts an item you own.",
-      "Built: Y = MAX quantity, no COMPARE line (the game's stat text is not readable); A on one of your own rows mounts / unmounts the item through the game's own toggle box (the list re-sorts after each toggle: mounted first)."
+      "Same window as the trader plus X for the category filter (the game's icon row) and a compare line (equipped vs selected) in the middle panel; A held buys or sells.",
+      "Built: Y = MAX quantity, no COMPARE line (the game's stat text is not readable); the list re-sorts after each mount toggle: mounted first.",
+      "Built 5 Nov 2026 (GitHub issues 17, 20): A held buys or sells as at the trader; LS click mounts / unmounts one of your rows through the game's toggle box (until 0.3.0 this was A, which left nothing able to sell). The bar takes five, so its middle follows the item: LT / RT QUANTITY and Y MAX with a slider, LS MOUNT on a row with a box (taking Y's place), X FILTER when no slider needs the place (X still works)."
      ],
      "prompts": [
       {
@@ -3772,16 +3776,31 @@
       },
       {
        "keys": [
+        "LT",
+        "RT"
+       ],
+       "label": "QUANTITY",
+       "v": ""
+      },
+      {
+       "keys": [
         "A"
        ],
-       "label": "BUY / MOUNT",
+       "label": "BUY / SELL",
+       "v": "hold"
+      },
+      {
+       "keys": [
+        "L3"
+       ],
+       "label": "MOUNT",
        "v": ""
       },
       {
        "keys": [
         "Y"
        ],
-       "label": "COMPARE",
+       "label": "MAX",
        "v": ""
       },
       {
@@ -3957,7 +3976,7 @@
       },
       {
        "def": "AUTOMATIC",
-       "help": "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro); choose one if yours is detected wrongly.",
+       "help": "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro) and the Steam Deck; choose one if yours is detected wrongly. Steam is the Steam Deck and Steam Controller's own naming: Xbox's face buttons and View / Menu, with L1 / L2 / R1 / R2.",
        "id": "glyph_style",
        "key": "glyph_style",
        "kind": "picker",
@@ -3967,7 +3986,8 @@
         "AUTOMATIC",
         "XBOX",
         "PLAYSTATION",
-        "NINTENDO"
+        "NINTENDO",
+        "STEAM"
        ],
        "parent": null,
        "tier": "player",
@@ -4072,8 +4092,8 @@
        "value": null
       },
       {
-       "def": "CYCLE ON Y HOLD",
-       "help": "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one. Cycle: Y held flips to the next group that has guns (Y tap stays cruise). Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse).",
+       "def": "CYCLE ON Y",
+       "help": "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one; Y is cruise. Cycle: Y tap flips to the next group that has guns, Y held is cruise. Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel; Y is cruise. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse).",
        "id": "weapon_groups",
        "key": "weapon_groups",
        "kind": "picker",
@@ -4081,12 +4101,24 @@
        "needs": "live",
        "options": [
         "SIMPLE (ONE FIRE BUTTON)",
-        "CYCLE ON Y HOLD",
+        "CYCLE ON Y",
         "TWO GROUPS ON THE TRIGGERS"
        ],
        "parent": null,
        "tier": "player",
-       "value": "CYCLE ON Y HOLD"
+       "value": "CYCLE ON Y"
+      },
+      {
+       "id": "y_swap",
+       "key": "y_swap",
+       "label": "Swap Y tap and hold",
+       "kind": "toggle",
+       "help": "The Freelancer layout with Weapon groups on CYCLE ON Y: Y tap is cruise and Y held flips to the next group, instead of the other way round.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "def": false,
+       "value": false
       },
       {
        "def": false,
@@ -4448,6 +4480,35 @@
        "words": []
       },
       {
+       "def": "AUTOMATIC",
+       "help": "Steam Deck mode: larger text and no safe margins at the screen's edge. Automatic turns it on at exactly 1280x800.",
+       "id": "deck_mode",
+       "key": "deck_mode",
+       "kind": "picker",
+       "label": "Steam Deck mode",
+       "needs": "live",
+       "options": [
+        "AUTOMATIC",
+        "ON",
+        "OFF"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "AUTOMATIC"
+      },
+      {
+       "def": true,
+       "help": "HUD 2: the text in the game's windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all.",
+       "id": "window_text",
+       "key": "window_text",
+       "kind": "toggle",
+       "label": "Larger window text",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      },
+      {
        "def": 10,
        "help": "Right stick scrolling, notches per second.",
        "id": "wheel_rate",
@@ -4708,7 +4769,7 @@
       },
       {
        "def": true,
-       "help": "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails.",
+       "help": "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2's danger alerts.",
        "id": "shield_cue",
        "key": "shield_cue",
        "kind": "toggle",

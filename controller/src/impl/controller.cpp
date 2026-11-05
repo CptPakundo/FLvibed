@@ -8,6 +8,9 @@
 #include "settings.h"
 #include "../fl.h"
 #include "game/ai.h"
+#include "game/deckmode.h"
+#include "windowtext.h"
+#include "gametext.h"
 #include "game/flight.h"
 #include "game/gameclock.h"
 #include "game/geom.h"
@@ -123,6 +126,7 @@ struct Options
     bool pauseOnDisconnect = true; // a pad unplugged in flight pauses the game
     int padPreset = 0;             // 0 FREELANCER, 1 ACE, 2 ASSISTED, 3 CUSTOM (ui_meta.h kControllerPresets)
     int weaponGroups = 1;          // 0 simple (one fire button), 1 cycle on Y hold, 2 two groups on the triggers
+    bool swapY = false;            // y_swap: with weapon_groups 1, Y tap = cruise, Y hold = next group (the old order)
     bool holdsAsToggles = false;   // afterburner, reverse, drift, rear view as press-once / press-again
     int rumble = 60;               // vibration strength in percent (0 = off)
     int padCursor = 2;             // 0 off, 1 rooms and maps, 2 everywhere (the owner's decision 15, 25 Oct 2026)
@@ -133,6 +137,9 @@ struct Options
     int worldPrompts = 0;          // 0 contextual, 1 off
     bool apHints = true;           // the autopilot's prompts / status shown before it was ever used (on since 0.2.0)
     int textSize = 100;            // FLvibed's own UI text, percent (80..150)
+    int deckMode = 0;              // Steam Deck mode: 0 automatic (at 1280x800), 1 on, 2 off (core\game\deckmode.h)
+    int gameTextSize = 100;        // the game's own text, percent (100..150; gametext.h)
+    bool windowText = true;        // the game's windows' text by role, HUD 2 only (windowtext.h)
     bool hudGlyphs = true;         // glyph badges on the HUD's own elements in pad mode
     int buttonLegend = 0;          // 0 on, 1 off (the contextual button legend)
     bool apStatusLine = true;      // the autopilot's one status line under the maneuver bar
@@ -208,6 +215,17 @@ static void Hold(int cmd, bool want)
     }
     if (!want && (flags & fl::CMDF_KEYUP))
         fl::FireCommand(cmd, false);
+}
+
+// A group's trigger (weapon_groups 2). USER_FIRE_WEAPON_GROUPn is keymap state = keydown with no repeat, and its handler
+// (0x4DCC60) fires once per keydown; only USER_FIRE_WEAPONS is polled as held (0x51D115). So a held trigger gave one shot
+// a pull (GitHub issue 14). A keydown each frame matches fire-all's per-frame poll; the guns' own refire sets the rate.
+static void HoldFireGroup(int cmd, bool want)
+{
+    const bool was = g_holding[cmd].down;
+    Hold(cmd, want);
+    if (want && was)
+        fl::FireCommand(cmd, true);
 }
 
 static bool g_inTap = false; // a pad tap is being fired (OnKeyCmd skips it: Apply answered it)
@@ -2176,7 +2194,7 @@ static void Apply(const presets::Event& e)
         if (start)
             Tap(fl::USER_LAUNCH_MINES);
         break;
-    case Action::WeaponGroup: // weapon_groups 1: Y held flips to the next of the three HUD groups that have guns
+    case Action::WeaponGroup: // weapon_groups 1: Y flips to the next of the three HUD groups that have guns
         if (start)
         {
             // (from the game's active group, not a count of our own: a load or a key may have changed it)
@@ -2251,7 +2269,7 @@ static void UpdateSpace(float dt)
     g_dispatch.toggles = o.holdsAsToggles;
     // The situation's table: the preset's flight table, or the shared flight_ap one while the autopilot flies.
     const bool apFlying = autopilot::Active();
-    g_table = apFlying ? presets::FlightAp() : presets::Effective(preset, o.weaponGroups);
+    g_table = apFlying ? presets::FlightAp() : presets::Effective(preset, o.weaponGroups, o.swapY);
     // Press ownership: what another consumer had when it went down (the B that closed FLUF's window, the A that closed a
     // popup, the stick that moved FLUF's cursor) stays hidden from the flight dispatch until released; a hold of the
     // dispatcher's own interrupted by another consumer is cancelled (no tap on its release).
@@ -2389,8 +2407,8 @@ static void UpdateSpace(float dt)
     Hold(fl::USER_FIRE_WEAPONS, fire);
     UpdateFireTarget(dt, fire || g_dispatch.Held(presets::Action::FireGroup1) ||
                              g_dispatch.Held(presets::Action::FireGroup2));
-    Hold(fl::USER_FIRE_WEAPON_GROUP1, g_dispatch.Held(presets::Action::FireGroup1));
-    Hold(fl::USER_FIRE_WEAPON_GROUP2, g_dispatch.Held(presets::Action::FireGroup2));
+    HoldFireGroup(fl::USER_FIRE_WEAPON_GROUP1, g_dispatch.Held(presets::Action::FireGroup1));
+    HoldFireGroup(fl::USER_FIRE_WEAPON_GROUP2, g_dispatch.Held(presets::Action::FireGroup2));
     Hold(fl::USER_LAUNCH_MISSILES, g_dispatch.Held(presets::Action::Missile));
     HoldTorpedoSlot();
     Hold(fl::USER_AFTERBURN, g_dispatch.Held(presets::Action::Afterburner) || aceBurn);
@@ -2635,10 +2653,13 @@ void OnFrame(double dtd)
         uiopt::UiOptions& u = uiopt::Get();
         u.inputMode = g_opt.inputMode, u.glyphStyle = g_opt.glyphStyle, u.confirmButton = g_opt.confirmButton;
         u.pauseOnDisconnect = g_opt.pauseOnDisconnect, u.padPreset = g_opt.padPreset;
-        u.weaponGroups = g_opt.weaponGroups, u.holdsAsToggles = g_opt.holdsAsToggles;
+        u.weaponGroups = g_opt.weaponGroups, u.swapY = g_opt.swapY, u.holdsAsToggles = g_opt.holdsAsToggles;
         u.rumble = g_opt.rumble, u.padCursor = g_opt.padCursor;
         u.cursorMagnet = g_opt.cursorMagnet, u.promptBar = g_opt.promptBar, u.worldPrompts = g_opt.worldPrompts;
-        u.apHints = g_opt.apHints, u.textSize = g_opt.textSize, u.hudGlyphs = g_opt.hudGlyphs;
+        // (Steam Deck mode: the screen says, deck_mode overrides; the player's own text_size stays theirs)
+        deckmode::g_on = deckmode::Active(g_opt.deckMode, static_cast<float>(fl::ScreenWidth()), static_cast<float>(fl::ScreenHeight()));
+        u.apHints = g_opt.apHints, u.textSize = deckmode::TextSize(deckmode::g_on, g_opt.textSize), u.hudGlyphs = g_opt.hudGlyphs;
+        gametext::Frame(g_opt.gameTextSize, g_mode == Mode::Menu);
         u.buttonLegend = g_opt.buttonLegend, u.apStatusLine = g_opt.apStatusLine;
         u.hudStyle = g_opt.hudStyle, u.hudFade = g_opt.hudFade, u.hudOpacity = g_opt.hudOpacity;
         u.hudScale = g_opt.hudScale, u.hudNumbers = g_opt.hudNumbers, u.hudThreats = g_opt.hudThreats;
@@ -2879,6 +2900,7 @@ void OnFrame(double dtd)
         sc.enabled = g_opt.enabled;
         uiskin::Update(dt, sc);
         uistrip::Update(dt, g_opt.enabled && uiStyle == 1 && g_mode == Mode::Docked);
+        windowtext::Frame(g_opt.windowText && g_opt.enabled && uiStyle == 1 && g_opt.gameTextSize == 100);
     }
     // The open options page owns the pad and the keys: no flight / menu pad dispatch. Its ownership outlasts its close
     // until every button is up: the press that closed it (B, A on CANCEL / CLOSE) reached the menu and base code in
@@ -3109,7 +3131,7 @@ static const settings::Def kOptions[] = {
      "reports; read only, it changes nothing in the game"},
     {"shield_cue", settings::Bool, &shieldcue::Get().on, 0, 1,
      "screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it "
-     "fails; HUD 2's shield meter flashes red when low"},
+     "fails; HUD 2's shield meter flashes red when low, and its danger alerts glow and pulse"},
     {"shield_cue_intensity", settings::Float, &shieldcue::Get().intensity, 0, 2,
      "shield_cue strength (alpha and size)"},
     {"hull_cue", settings::Bool, &shieldcue::Get().hull, 0, 1,
@@ -3130,8 +3152,9 @@ static const settings::Def kOptions[] = {
     {"input_mode", settings::Int, &g_opt.inputMode, 0, 2,
      "input device: 0 automatic (the last device used wins, the UI follows in one frame), 1 controller, 2 keyboard "
      "and mouse"},
-    {"glyph_style", settings::Int, &g_opt.glyphStyle, 0, 3,
-     "button prompts: 0 automatic (the connected pad's family), 1 Xbox, 2 PlayStation, 3 Nintendo"},
+    {"glyph_style", settings::Int, &g_opt.glyphStyle, 0, 4,
+     "button prompts: 0 automatic (the connected pad's family), 1 Xbox, 2 PlayStation, 3 Nintendo, 4 Steam (Steam Deck / "
+     "Steam Controller: Xbox's face buttons, L1 / L2 / R1 / R2)"},
     {"glyph_look", settings::Int, &uiopt::Get().glyphLook, 0, 2,
      "how the button prompts look: 0 automatic (HUD 2 draws them in its own colour, the classic HUD and the menus in "
      "the buttons' colours), 1 coloured everywhere, 2 HUD 2 style everywhere; sizes stay as each screen has them"},
@@ -3144,8 +3167,12 @@ static const settings::Def kOptions[] = {
      "flight: the left stick steers, the triggers are the throttle), 2 Assisted (the autopilot flies, you aim and "
      "decide), 3 Custom"},
     {"weapon_groups", settings::Int, &g_opt.weaponGroups, 0, 2,
-     "0 simple: RT fires the active group; 1 cycle: Y held flips to the next group (Y tap stays cruise); 2 two "
-     "groups: RT fires group 1 and LT group 2 (afterburner moves to the LS click). Launchers fire only on their own buttons"},
+     "0 simple: RT fires the active group, Y is cruise; 1 cycle: Y tap flips to the next group, Y held is cruise; 2 two "
+     "groups: RT fires group 1 and LT group 2 (afterburner moves to the LS click), Y is cruise. Launchers fire only on "
+     "their own buttons"},
+    {"y_swap", settings::Bool, &g_opt.swapY, 0, 1,
+     "the Freelancer layout with weapon_groups 1: Y tap is cruise and Y held flips to the next group, instead of the "
+     "other way round"},
     {"holds_as_toggles", settings::Bool, &g_opt.holdsAsToggles, 0, 1,
      "afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons"},
     {"rumble", settings::Int, &g_opt.rumble, 0, 100,
@@ -3180,6 +3207,12 @@ static const settings::Def kOptions[] = {
      "it on once"},
     {"text_size", settings::Int, &g_opt.textSize, 80, 150,
      "size of FLvibed's own UI text (prompts, panels, the status line) in percent; the subtitles have their own"},
+    {"deck_mode", settings::Int, &g_opt.deckMode, 0, 2,
+     "Steam Deck mode, larger text and no safe margins at the screen's edge: 0 automatic (on at 1280x800), 1 on, 2 off"},
+    {"game_text_size", settings::Int, &g_opt.gameTextSize, 100, 150,
+     "size of the game's own text in every window, in percent; takes effect at the main menu"},
+    {"window_text", settings::Bool, &g_opt.windowText, 0, 1,
+     "HUD 2: the text in the game's windows takes the room it has, the prices most, labels less, headings and buttons not at all"},
     {"hud_glyphs", settings::Bool, &g_opt.hudGlyphs, 0, 1,
      "in pad mode the HUD's own buttons carry the glyph of the button that acts on them"},
     {"button_legend", settings::Int, &g_opt.buttonLegend, 0, 1,

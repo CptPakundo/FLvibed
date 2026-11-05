@@ -1,0 +1,21 @@
+{
+  "_about": "0.3.0 (5 Nov 2026, Unreleased), the owner on GitHub issue 15: FREELANCER's Y is next group on the tap, cruise held, by default; y_swap gives the old order back; the option's name loses HOLD. Legends mark Y CRUISE as a hold.",
+  "bindings": {
+    "presets/FREELANCER/flight/Y": {"tap": "weapon_group", "hold": "cruise"}
+  },
+  "rows": {
+    "weapon_groups": {
+      "options": ["SIMPLE (ONE FIRE BUTTON)", "CYCLE ON Y", "TWO GROUPS ON THE TRIGGERS"],
+      "def": "CYCLE ON Y",
+      "value": "CYCLE ON Y",
+      "help": "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one; Y is cruise. Cycle: Y tap flips to the next group that has guns, Y held is cruise. Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel; Y is cruise. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse)."
+    },
+    "y_swap": {
+      "help": "The Freelancer layout with Weapon groups on CYCLE ON Y: Y tap is cruise and Y held flips to the next group, instead of the other way round."
+    }
+  },
+  "states": {
+    "hud/pad": {"extras": {"legend": {"items": [["A", "DOCK AT FORT BUSH"], ["Y", "CRUISE", "hold"], ["LB", "TARGETS"], ["R3", "TARGET AHEAD"], ["VIEW", "MAP"]]}}},
+    "hud/manual": {"extras": {"legend": {"items": [["R3", "TARGET AHEAD"], ["LB", "TARGETS"], ["Y", "CRUISE", "hold"], ["VIEW", "MAP"]]}}}
+  }
+}

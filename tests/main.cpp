@@ -15,6 +15,7 @@ void Test_flhash();
 void Test_ini();
 void Test_utf();
 void Test_textfit();
+void Test_roletext();
 void Test_marquee();
 void Test_promptlabel();
 void Test_promptshow();
@@ -206,6 +207,7 @@ int main(int argc, char** argv)
         {"ini", Test_ini},
         {"utf", Test_utf},
         {"textfit", Test_textfit},
+        {"roletext", Test_roletext},
         {"marquee", Test_marquee},
         {"promptlabel", Test_promptlabel},
         {"promptshow", Test_promptshow},

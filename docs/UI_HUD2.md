@@ -25,7 +25,7 @@ Research: `docs\research\controller_ui.md` (rounds 2 and 3; evidence `research\e
    about 10 % of the screen (the native HUD ~22 %).
 4. **Corners by job**: top-left where you are going (the objective as the headline, the maneuver as a chip), top-right
    what you are looking at, bottom-left your ship, bottom-right what you fire and use; the comm feed left-middle (where
-   FLvibed's subtitles already sit); the context line under the player's ship; one transient alert top-centre.
+   FLvibed's subtitles already sit); the context line under the player's ship; transient alerts, dangers beside the ring (5.40), the rest top-centre.
 5. **Freelancer's own art and language**: HDE's flat icon sheets (`buttontextures_flaticons.txm`: maneuvers, contact
    types, the starburst and the spiked sphere for flares and mines), the bracket / arrow art (`HUD_targetingelement`),
    the wireframe views of the target and of the player's ship, the segmented gauge blocks, the palette (navy glass,
@@ -48,7 +48,7 @@ Research: `docs\research\controller_ui.md` (rounds 2 and 3; evidence `research\e
 | Zone | Element | Contents |
 |---|---|---|
 | top-left | NAV (no box) | the objective as the headline (yellow diamond) with the protected ship's hull bar; the maneuver chip while one runs (its flat icon, name, object; AUTOPILOT chip when FLvibed flies) with progress and ETA; system and zone for 5 s after a jump; NeuroNet (View, a dot for news) |
-| top-centre | ALERT | one transient card (3 s), 0.05 H: the event in its colour + the answering buttons as glyphs (SHIELD FAILING · D-pad down BATTERY · D-pad left FLARE); skipped when a comm line says it |
+| top-centre (dangers beside the ring since 0.3.0: 5.40) | ALERT | a transient card (3 s), 0.05 H: the event in its colour + the answering buttons as glyphs (CRUISE DISRUPTED · Y RECHARGE); skipped when a comm line says it |
 | top-right | TARGET card | the game's wireframe of the target (else its flat type icon), attitude chip, class, level, name, faction, distance, shield and hull bars with numbers (only for what can be damaged); in combat the threat list under it (LB TARGETS, R3 NEXT, the filter, the next two hostiles) |
 | centre | RETICLE RING | radius 0.10 H: shield left (red at <= 25 %), hull right, power below (cyan while cruise charges, with the seconds); the speed inside; a number at an arc's end only below 40 %; missile chevrons and the hit flash outside; the game's own reticle in the middle |
 | around | DIRECTIONS | one ellipse (0.62 x 0.40 H): the target and every hostile off the screen, the game's arrow in the stance colour, distance under it |
@@ -1029,3 +1029,202 @@ only consecutive presses should be 'next target'." / the classic NeuroNet box be
   letterbox gates, its band ends inside the bars), `hudvis::HoldChat` keeps the MsgWin hidden through Apply(false). Read in
   game on a real docking and launch: the chat root hidden in both, shown when docked, HUD 2 back in flight. **Not run:** a
   mission's story cutscene (same mode, the CamCutscene camera).
+
+### 5.33 0.2.8, first stage: the flicker and the job board (4 Nov 2026; built; run in game: dev build, 1280x800, Save1148, background, virtual pad)
+- Issue 10's reporter plays at 1280x800 (16:10) on a Steam Deck, a size no earlier run used; it is a test size from here on.
+  Polling the prompt bar from outside (5.32) saw nothing there either: debug `prompttrace` now keeps every change of the
+  pills' decision and of the hover help, per frame (`promptbar::Trace`).
+- **The flicker** the owner saw on the job board: the game's ToolTip and Rollover, one frame every 266 ms, nonstop. Not the
+  pills (one state through it, shown or hidden). `uiskin`'s focus asks the game's hit test 4 times a second, and that test
+  shows the hover help (FREELANCER_RE "The hit test shows the hover help"). `ui::HitTest` now puts back what it switched on, so
+  every caller is covered and the 4 Hz stays. Read: 0 frames of help over 14 s on the job board, pad on and off, and over
+  the dealer's opening and three buys. The owner, looking at the same job board on the fixed build, 4 Nov 2026: "It's gone".
+- **Is it issue 10's flicker? Likely, not proven.** It runs on the dealers too with the cursor on the buy button, but it does
+  not need the Neural Net subtitles, which the report says it does; only the reporter can say.
+- The buy's blink: the buy button hides for two frames on each buy, Neural Net on or off, and the pills (`pending`) went with
+  it. The window's slide: the lane went row, top, column, top, row, column in 120 frames. `promptfit::PillSteady` (pure, unit
+  tested from those sequences at 5 and 33 ms a frame): a wish to show lasts 200 ms past its end, a new lane must stand 120 ms
+  (400 ms at most without rest); new pills or a new screen size are taken at once. Read: `visible` 1 through all three buys;
+  the opening's five jumps are two. **Left:** the pills still stand at the top for ~375 ms on a dealer's first opening.
+- Issue 13: the job plate's foot was fixed at 640 at this size, the text's box runs to 691: a job of seven or eight lines ran
+  out of the window, past that the game scrolls. The plate now reads the text's own height (`RichTextBottom`: top + the
+  smaller of text and box, + 0.030 H) and grows only when it must, so a normal job looks as before. Read with `uiskin
+  jobheight <px>`: 640 at 110 px, 683, 705, 716 at 154, 176, 187, 716 at 600, 640 again; frame `plate_600`, 12 px over the
+  pills. **Not run:** a real overlong job, the game's scroll bar inside the plate; only 1280x800.
+- **Open:** 1-3 isolated frames of hover help around room and window changes in the harness's click runs, up to 18 frames
+  long; they do not repeat. Cause not read: possibly the game's own hover under the harness's cursor.
+- Evidence: `research\experience\runs\hud28_deck_2026-11-04\` (run logs, `burst_job_pills`, `flash_pair.png`).
+
+### 5.34 0.2.8, the audit of all of HUD 2 (4 Nov 2026; frames at 1280x800, run-judge's list, the top items read again by hand)
+The owner's scope is the whole of HUD 2, flight as the bar. 26 frames: `research\experience\runs\hud28_tour1280_2026-11-04\`
+(+ `audit_crops\`). Not seen: repair, popups, a filled save's info box, scrolled lists, other sizes.
+- **The limit that shapes all of it:** the skin draws plates around the game's own controls and moves none of them. A plate can
+  grow; the text inside a game control cannot. So the list splits in two.
+- **Plates and FLvibed's own parts (no game control moves):** the ship panel writes CREDI at 257 094 with room to spare (a bug
+  in 5.32's word, flight frame); the context strip drops CARGO for the price delta with x290-450 free (`commodity_*`); the
+  prompts' two rows sit 2 px over the DEALER plate; the commodity infocard plate cuts the third price line and its scroll bar
+  straddles the plate's edge; the sub-tab plate crosses the top of the job / news / NeuroNet plates; the subtitles' comm plate
+  covers the nav map's toolbar; L1 / L2 chips too small to read (L1 reads "U"); under a pause in space the game's comm portrait,
+  name and an empty box stand outside any plate (`pause_space`).
+- **Needs the game's controls moved or resized (`ControlSetPosition`, height unproven):** infocards and log texts clipped by their
+  own box with empty plate below (`nn_*`: the game's clip and scroll bar, a taller plate changes nothing); the dealer's five
+  rows, small Quantity / Price / Total text, the refusal line; the offer's and news' small text; save names running into the date.
+- **Not faults:** no pills on `equip_*`, `job`: Contextual shows them only with a decision pending. `pause_space`'s tooltip: the
+  frames around it are in keyboard form, where the tooltip is the game's. Save names were long test names.
+- **1280x800 is a handheld (the owner, 4 Nov 2026):** it is almost only the Steam Deck, a 7-inch screen held in the hands, so it
+  gets more considered spacing and larger text, for comfort. Valve's bar: readable at 30 cm, the smallest character never under
+  9 px at 1280x800, 12 px recommended ([Steamworks: Steam Deck compatibility](https://partner.steamgames.com/doc/steamdeck/compat)).
+  Measured from the frames, ascender to descender: game text 14-20 px, FLvibed's 14-22 px, so nothing fails it (lowercase is
+  smaller than that; the fonts are thin). The signal is the resolution: Steam's own check needs the Steam SDK in a game launched
+  by Steam, and no environment variable was confirmed. FLvibed's text scales by `text_size`, tested by the layout suite; the
+  game's own text does not, it is the second group above.
+- **Text sizes tried at 1280x800** (`hud2 sim combat`, free roam, `research\experience\runs\hud28_handheld2_2026-11-04\`, and the
+  dealer in `hud28_handheld_2026-11-04\`): the aspect factor costs 16:10 a tenth (`Hud2Scale`: k 0.9 at text_size 100; it was
+  made for width at 1600x1200 and the like, not for hands), 120 gives k 1.08, 135 k 1.18 (the cap). Lint: 2 FAIL, 1 FAIL (the
+  known `3` / JAVELIN), 0 FAIL + 4 WARN. Flight reads clearly better at 120. **Costs:** the context prompts fall from 7 to 5
+  (HOLD REVERSE, HOLD TURRET go) and the alert moves down toward the ring; docked, the strip drops NEW YORK and CARGO at 120 and
+  135 although room is free beside them, and the dealer's own text does not change. So the strip comes first. Not built: a
+  handheld default; the size is the owner's to pick from the frames.
+- **CREDI, not proven fixed:** read whole in six frames (keyboard and pad, 500 000 / 257 094 / 256 748) but on another ship than
+  the one that failed; the panel fades out after ~3 s without input, so the larger values were not seen.
+- **The dealer, from the frames:** DEALER is the smallest, shortest plate and sits at the side; a one-item inventory keeps 240 px
+  empty; the infocard takes 28 % of the height and still cuts; the deciding numbers are the smallest text; credits twice, the
+  quantity three ways. The owner's call: how far "center stage" goes (rearranging the game's controls or FLvibed's own screen).
+
+### 5.35 Steam Deck mode (4 Nov 2026; built; run in game: dev build, 1280x800, SaveC706 + Save1148, background, virtual pad)
+- The owner: 120 from the frames, and "remove the safe zones from the HUD, at least for Steam Deck mode". `core\game\deckmode.h`
+  is the one rule: on by itself at exactly 1280x800, `deck_mode` 1 / 2 forces it on / off; `text_size` 100 reads as 120, any
+  size the player chose stays; every safe margin reads from it (flight 0.03 and the docked 0.05 become 0.0125 W / 0.015 H, a gutter
+  so a plate's rim does not touch the bezel). Read by: `hud2_layout.h`, `promptfit.h`'s lane, `promptbar`, `uiskin::LaneLeft`, the
+  strip and the character card. `Hud2Scale` is unchanged (k 1.08). **Not moved:** the subtitles' own fallback places (they
+  follow the bus in flight) and the game's windows.
+- Read at 1280x800: the margin paid for the larger text: the context prompts back to 7, the panels at 12-16 px from the edge, the
+  centre clear (`hud2 sim combat`, frame `deck_combat`). The lint skips `title-safe` in this mode (16 WARNs that were the decision
+  itself); still WARN: boxed 19.4 % against the 16 % budget, 7 prompts against the cap of 6. Docked: the strip's three lines
+  whole, the pills in the room right of the infocard, clear of DEALER (frame `deck_commodity`).
+- The strip over a window: the price's delta gives way before CARGO (`uistrip.cpp`): the dealer's panel shows the total, CARGO is
+  nowhere else there.
+- CREDI fixed and read on the ship and form that failed (Anubis, keyboard, 257 094): `CreditsWord` allowed a pixel of slack the fit
+  rule did not, so a panel a fraction short cut the word it had chosen. The ship's panel stays up with `hud_fade 0` for such reads.
+- The torpedo row (the owner's frame, 4 Nov 2026, "OLD - STARKILLER TORPI..."): it has no group cell, so a name too long for the gun
+  names' column slides left into that column's empty room, only as far as it needs; a short name keeps the alignment. Read whole on
+  the Anubis, keyboard and pad (`sheet_torpedo.png`), `hud2 sim torpedo` unchanged at 0 FAIL. **Lint:** with the name that far left
+  it stands over the missile count with 3.6 / 7.1 px between them against 8 px (`panel.overlap`, as the known `3` / JAVELIN): the
+  rows' pitch at this size, accepted for the whole name, not fixed. The lint's own read of the keyboard row caught the panel still
+  growing after the switch of form.
+- 4K re-read after this change (`hud28_4k_2026-11-04\`): the rule off, k 1, the 3 % margins, `hud2 sim torpedo` 0 FAIL. The job plate
+  met a real six-line job there and grew around it, the text inside (frame `k4_job`): 5.33's "no real overlong job" is answered
+  for growth; the game's scroll bar inside the plate is still unseen.
+- **Open:** a `deck_mode` row on the options page (ini and `set` only so far); the release build; 1280x720, the Deck's other native
+  size, stays off. The owner, 4 Nov 2026: the dealer's text is tiny at every resolution.
+
+### 5.36 Legible everywhere: the game's own text (4 Nov 2026 on; design, probes; `game_text_size` stays off; what came of it: 5.37, 5.38)
+- The owner's goal: "very legible and readable in all windows, all HUD elements, all modals - EVERYTHING", the dealer's descriptions
+  included. Then, on seeing a uniform scale: it "might need to be more intelligent and more contextual".
+- **Built, off:** `game_text_size` (100..150, default 100, `gametext.*`, `core\game\fontscale.h`): both font tables from their files
+  at the main menu, all 21 + 9 fonts found in game. **Uniform scale rejected as the answer:** at 130 % headings ran into the
+  line below and ACCEPT JOB out of its button; at 125 % with headings and buttons kept (0.04 up), the owner's frame on the
+  equipment dealer: the stats' labels wrapped while their values did not, so **numbers stood beside the wrong labels**, three scroll
+  bars in the infocard, the class line into the price. The game's boxes fit its small text. Frames: `hud28_text130_2026-11-05\`,
+  `hud28_text125_2026-11-05\` (that tour stalled at 14 frames and was stopped).
+- **The plan, approved 5 Nov 2026, the dealer as pilot:** flight's own principle, text takes the room it has. By role (a table per
+  window: the deciding numbers most, labels less, headings and buttons not at all); measured (a text steps up only while it fits;
+  rich text from its real height, +0x380, up to the point a scroll bar would appear); boxes grown where the window has room.
+- **The probes (`hud28_ctxprobe_2026-11-05\`, the equipment dealer, 1280x800):**
+  - Rich box resized through the game's setter 0x579CC0 (thiscall, width, height): **works live**: 403 -> 564 px, text re-wrapped at
+    once, 176 -> 154 px high, back clean (`pB_wider`). The box is `InfoCard_Facts` here, 0.5 x 0.265; it runs over Stats unless they move.
+  - Rich size per window: `SetStandardFont` + `ReinitializeRichTextFonts` live: **works on the next rebuild**: the open text stays
+    as drawn (+0x380 read 270 after vt[0xB4], the picture unchanged, `pC_rich120`), the next row selected drew larger (`pC_rich120_row2`),
+    back clean, no stale font crash in this one run. So a size set before a window fills its text needs no re-layout.
+  - One control's font: no effect seen in that probe (+0x1C written, +0x28 zeroed): the probe missed the laid out lines, which keep
+    their own font. **Answered in 5.37: it works.**
+- Debug: `callt <this> <addr> [args]`, `gametext rich <percent>`, `gametext dealer`.
+- Evidence: `research\experience\runs\hud28_deckmode_2026-11-04\`, `hud28_handheld2_2026-11-04\`.
+
+### 5.37 The dealer pilot: text by role (5 Nov 2026; built; run in game: dev build, 1280x800, Save1148, background; `window_text`, HUD 2 only; `windowtext.*`, `core\game\roletext.h`)
+- **The open unknown, answered:** one control's font swaps live, the game's own way (0x58A110: the object's +0x1C, then each laid out
+  line's vt[8], then +0x28 = 0): 25 -> 34 px on the prices alone, kept through a row change, back clean (`a1_swapped`). No fallback needed.
+- **No font is resized.** The game's own Agency FB fonts already are a ladder (0.029, 0.03, 0.035, 0.0385, 0.04, 0.0435, 0.045, 0.06;
+  read from the list and the file, so a mod's sizes are taken as they are). A role climbs rungs; no other window sees it.
+- **The roles' tops (fractions of H):** prices 0.045, 0.0435 at the commodity trader, whose FAIR / GOOD word stands over them (from
+  0.035, +29 / +24 %); deal numbers Price / Total / Quantity 0.0435 (from 0.029, +50 %); deal labels 0.0385; row names 0.0385, the
+  transfer row's 0.04; the refusal, the welcome text, Cargo Space 0.035. PlayerTitle, PlayerCash, BUY / SELL and the class line stay.
+- **Measured:** a list is one column at one size, read from every row's own width (`roletext::PickRows`: the price first, then the name):
+  the class line and the price keep a gap, a name never passes the row. A long name holds the whole column at its base (the equipment
+  filter's "Adv. Rampart H. F. Shield (Class 2)"). The size steps down at once and up only at the next opening, so a column does not
+  pulse as the list scrolls. **So a filter that shrank a column keeps it until the window opens again.**
+- **Rich text:** one size for the window, the table in while it is open, back at 100 on close. At each new filling: laid out at a
+  size through vt[0xB4] (`exe::RichLayout`), +0x380 against the box, from the last size up or down; then the dirty bytes +0x400 / +0x401
+  make the game re-lay and redraw the open text (this replaces 5.36's "the open text stays as drawn": those two bytes were missing).
+  Fits = every box holds its text, labels level with their values. Text that scrolls at any size (a commodity's price list) takes 115.
+  The top is 115: at 125 a long heading wrapped across the plate's rule, which no height shows (`z1_gear`). Read: guns, gear, commodity
+  115, the Javelin launcher 105 at 1280x800, 100 at 4K (its description is the limit). **A long description steps the size down for that
+  item**: measured, as asked; the owner may prefer one size per window. A heading longer than the Rampart's is unread at 115.
+- **Boxes:** `exe::RichSetSize` and the position (vt[0xA8] 6): the infocard's boxes take 0.0125 H more above and below (214 -> 236 px: 7
+  stats at 115 % need 234), the description the width up to the stats (403 -> 468 px), the wide box ends short of the plate's edge so
+  the game's scroll bar stands inside it (5.34's straddle, fixed). By absolute targets from the close button. Plates (`uiskin`): infocard
+  0.480..0.779, transfer foot 0.470, no-selection foot 0.355 (the welcome text); QUANTITY n / m up to 0.648 H.
+- **The three musts, read from frames at 1280x800 and 4K (`hud28_pilot_2026-11-05\`, sheets `sheet_*.png`):** the gun selected: labels beside
+  their values, none wrapped (`z2_gun3`, `k1_gun3`); no scroll bars in the infocard; the class line clear of the price. A real buy and a sell
+  side: `z2_commodity_bought`, `z2_commodity_sell`. The rows reach their size during the slide-in, before the text can be read (`h_2.6`, sampled).
+  Release build, 1280x800, keyboard form: the welcome text inside its plate, the gun and a commodity as in dev (`sheet_release.png`,
+  `r_*`). Every frame is the virtual pad or a click; no real pad, and only Buffalo Base's dealers and Save1148's goods.
+- **The window's controls are new at every opening**, often at the same addresses: 5.37's first build kept positions by address and threw
+  the names across the window (`c2_commodity`). Everything is forgotten at close; nothing is written to a closed window's controls.
+- **Cost:** ~4 ms a try (the game rebuilds its rich fonts), 8-21 ms once per selection, never per frame.
+- **The owner, 5 Nov 2026: "Dealer looks good, keep going."** The setting is `window_text` since 5.38 (`dealer_text` / `dealertext.*` until
+  then). Default on in the dev build, `game_text_size` stays 100 (it stands down under any other value). Off puts fonts back but not the
+  boxes until the next opening.
+
+### 5.38 Every window by role (5 Nov 2026; built; run in game: dev build, 1280x800 + 4K, Save1148, background; `windowtext.*`, `window_text`)
+- **One table row per window** (`windowtext.cpp` `kSpecs`: its texts, row columns, rich boxes, anchors); the module is 5.37's, general. A window is found
+  by one walk of the control list every 12 frames, then watched each frame; everything is forgotten when it closes. All modes, not only docked.
+- **By window (top sizes, fractions of H):** ship dealer: both ships' rows as the dealer's (prices 0.045), credits 0.035, the infocard 0.486..0.7795, 115 / 110 %.
+  Job board: rewards 0.04, the refusal 0.035, the job's text by fit; **the rows' and the chosen job's Dest / Title stay**: their lines are 18 px apart
+  at 800 lines. News: headlines and story headline 0.035, the story by fit. NeuroNet inventory: names 0.0385, the infocard box 0.40 H tall. Log: 115.
+  Current information: box 0.475 H tall, 115. Player status: the stats' numbers 0.0385. Save / load: the info panel's data 0.035. Rumor / offer dialog: by fit.
+- **A single text** takes its top while it fits its wrap width, down only, while the window is open; a wrapping text is exempt (the refusal, the welcome text).
+- **The scroll bar:** the setter sets the bar's pose from the box's width. On the NeuroNet's boxes it landed 290 px right, a box's width too far (`w2_nn_inventory`):
+  a resize that keeps the width now puts the bar back (`ControlSetPosition`, and its pose copy +0x3DC). Boxes also wait 4 still frames, so nothing is placed mid-slide. That wait
+  was built on a wrong first reading (the slide) and kept as it costs nothing. The dealer's wide box, whose width does change, was right already.
+- **The job's type word** (`uistrip`) stands under the reward by the reward's real height (`windowtext::TextHeight`).
+- **L1 / R1:** PlayStation's shoulder names in Arial in the glyph atlas (5.34: L1 read as U). Read at 1280x800 and 4K: L1 now, no longer U, but still the smallest text on screen (`r2_commodity`).
+- **Release build, 1280x800 (`sheet_release_windows.png`, `r2_*`, `r3_*`):** both dealers and every window as in dev; the type word clear of the reward; no blank UI through the whole tour and survey.
+- **Option rows** (`UI_SPEC.json`, `ui_meta.h` regenerated, CONTROLLER tab): "Steam Deck mode" `deck_mode`, "Larger window text" `window_text`; read in `ui rows` (`x1_rows.txt`).
+- **Seen once, cause not read: every text control and icon of the game gone, only rich text, plates and FLvibed's own drawing left** (`w2_nn_player` on, then for the rest
+  of that game, through a logic reload and with `window_text` off: `diag_off`). It began after the NeuroNet inventory closed in the build with the displaced bar. **Not reproduced** in 3 runs of the
+  current build (8 NeuroNet openings `y1_*`; an NPC talk first `q1_*`; the same full survey `w3_*`), nor at 4K. The talk alone is ruled out for `window_text` on; the same with it off was not run (no
+  `talk_mission` offered). Likely the displaced bar, unproven. If it comes back: read `GameOption(6 / 9 / 0x13)`, which gate the text control's draw (0x58A7F0), at that moment.
+- **One start failed:** `D3D8 CreateDevice -> 0x88760868`, the game's "no 3D capable video card" box (the owner's frame). Before any UI; the retry started clean.
+- **The nav map stands 0.05 H lower** (the owner, 5 Nov 2026: "Why not move the map, instead?", after a first build moved the subtitles' panel under it): the subtitles stay where the eye is
+  and do not jump when the map opens. `windowtext` row `NeuroNetNavMap`, `exe::NavMapSetPosition` once the window has stood still, the native height kept so a new opening is not moved twice.
+  Read: the whole toolbar clear of the panel at 1280x800 and 4K (`m3_navmap`, `m4_navmap`); the game's own hit test finds the close and universe buttons at the new height; the universe view and a second opening
+  hold. Not read: a three-row comm line over the map; the map docked (the same window); a real mouse on the map's objects.
+- **The comm window in a pause in space:** `hudvis` root `CommText` (the HUD_Receiver), kept by HUD 2, hidden only while a modal menu stands over the flight (`m3_pause`, `m4_pause`); the portrait is back on resume (`m3_resumed`).
+- **Save names into the date:** closed, as 5.34's own "Not faults" had it: long test names. The list is a table control that draws its own rows; a real save's name fits.
+- 5.34's sub-tab plate did not cross a window in these frames. Pause menu: no text role needed.
+- Evidence: `research\experience\runs\hud28_windows_2026-11-05\` (`sheet_1280_windows.png`, `sheet_4k_windows.png`, `*_texts_*.txt` the text tables).
+- **The owner, 5 Nov 2026: no 0.2.8 release;** this work goes out in 0.3.0: [RELEASE_0.3.0.md](RELEASE_0.3.0.md).
+
+### 5.39 GitHub issues 14-20 (5 Nov 2026; built; run in game: dev + release builds, 1280x800, SaveC706 / SaveC701, background, virtual pad)
+- **Group fire (14):** `USER_FIRE_WEAPON_GROUPn` is keydown only and 0x4DCC60 fires once per keydown; `HoldFireGroup` (`controller.cpp`) sends one each frame while held, the guns' refire sets the rate.
+  Refire resets per 3 s, release build: 12 at refire 0.25, 25 at 0.12; both triggers together at the full rate; firing stops on release.
+- **Trigger per group row (16):** `Model::fireBtn2`; `TwoTriggers` / `RowTrigger` (`hud2_parts.cpp`) draw a 0.028 glyph on each row, at the keyboard form's taller pitch (0.039). Group 1 takes the first trigger, group 2 the second, others none. Standard and Focus; lint 0 FAIL on both (`std_groups2_live`, `focus_groups2_live`). What the panel drew before was not read: Fire is unbound in this mode, so the report's "right trigger only" is not explained.
+- **Shield drain (18):** the shield arc lit from the top, the hull already from the bottom (frame `std_critical`: 10 % and 18 % both low on their arcs). The owner: "Meters drain down, yes." Standard and Focus.
+- **Dealers (17, 20):** nothing could be sold: A was the mount box on every row of the player's. The owner, on the reporter's comment: A held 0.6 s buys or sells at the trader and the equipment dealer, as a job or a ship; LS click mounts. One 2.5 s hold bought one unit. After a trade the game clears the row's selection and the panel stays gone, so `g_tradeTries` selects the focused row again (found by test: a second hold did nothing until then). The bar takes five, so its middle follows the item: QUANTITY and MAX with a slider, MOUNT on a row with a box (in Y's place), FILTER when no slider needs the place (X still works).
+  Read, cash back from `worth`: tap 0, hold sell +150, hold buy -500, trader -155 / +155, LS click unmounted a gun; the ring, the sweep and the pills at 1280x800 (`eq_hold_progress`, `eq_stack_quantity`). Not read: the greyed A with the panel gone (coded, `Prompt::enabled`); the pills at 4K.
+- **Y (15):** the owner, 5 Nov 2026: the reporter's order is the default. FREELANCER's table is Y tap next group, Y held cruise; `presets::Effective` puts cruise back on the tap for `weapon_groups` 0 and 2, and `y_swap` gives the old order. The option's name is now CYCLE ON Y. ACE and ASSISTED do not change. Cost: cruise waits for the 0.4 s hold, and a tap with one armed group does nothing.
+- **Steam glyphs (19):** `Family::Steam`, `glyph_style` 4: Xbox's face letters in the plain colour, View / Menu, L1 / L2 / R1 / R2. Automatic: a real Valve HID device (28DE, not the virtual gamepad 11FF, which Steam Input shows for any pad) or `SteamDeck=1`, after Sony and Nintendo. Read: `glyph_style` 4 frame; `SteamDeck=1` with a device-layer pad of vendor 045E logged `family steam` (release build). **Not read:** a Deck or a Steam Controller; `SteamDeck=1` rests on community reports, no Valve document; the Valve rule takes any product but the virtual one, so it needs no id for the 2026 controller, and whether that pad reaches the HID list as a gamepad is unknown (the option covers it).
+- Not run: the real pad; other bases than Manhattan; a mission that locks weapons with group fire held (fire-all's loop checks `is_control_excluded`, the group's handler was not read that far).
+- Evidence: `research\experience\runs\0.3.0_issues_20261105\`.
+
+### 5.40 Danger alerts beside the ring (GitHub issue 21; 5 Nov 2026; built; run in game: dev + release builds, 1280x800, 4K, 4:3, SaveC706, background, virtual pad)
+The owner's rules, in the order they came. **Why:** at 16:9 the card stood at the top margin, far from the eyes in a fight. Alerts fire once at their edge, so a card a newer alert replaced never came back: SHIELD FAILING could be gone 0.2 s after it rose.
+- **Place:** SHIELD FAILING by the left arc, MISSILE INCOMING and HULL CRITICAL by the right, level with the reticle, inner edge `kAlertSideR` 0.205 H x k from the ring's centre, outside the chevrons (they end at 0.20). Other alerts stay top-centre.
+- **Card:** two lines, the event over its answers, `kAlertStackH` 0.094: one line does not fit beside the ring at 1280x800. The accent is on the edge facing the ring. The answers' line has a floor (`max(0.068 k, 0.057)`): at 4:3 k 0.8 the text and glyphs sit at their floors and the lint's 0.01 H would fail.
+- **Stack per side** (`hud2_layout.h`; `Model::held` the older cards, the newer first): the newest level, an older one a place down, up again when the one above goes; a card keeps its place until it has faded. `KeepCard`: a new alert pushes the running card down, the same alert replaces its old card, a top-centre alert no longer erases a danger. They slide (`SlideAlerts`, tau 0.08 s), the pushed card drawn under the new one. Up to three cards.
+- **Subtitles:** a dialogue reaching a side's stack puts that side's top card `kAlertDlgGap` 0.012 H under it, the others follow. Tested in `tests\hud2_layout_test.cpp` only: no line reached a card in game (the centre panel passes between the stacks, chatter stops above the left card).
+- **Urgency:** a 0.4 s burst, then a bloom of ten faint layers on `LowPulse` (1.5 Hz, the low meters' beat), under the card's words; off with `shield_cue` (HUD_CUES.md's off-switch rule). Three layers read as hard bands. SHIELD FAILING lost its FLARE answer (the owner); MISSILE INCOMING carries it.
+- Read: the game's own SHIELD FAILING and HULL CRITICAL in a release-build fight (`real_*`); three cards at 4K and 4:3, Standard and Focus (`sheet_displays.png`), no alert line in the lint; the push and the pulse frame by frame (`sheet_bloom.png`); the off switch (`v5_off`). `hud2 alert shield|hull|missile|cargo` raises a card for frames.
+- **Not read:** a real MISSILE INCOMING on the new card (the fight's pirates fired none); a lower card rising in game (unit test; cards last 3 s, so the lowest normally goes first); the fallback when a card's place is taken. Boxed area reaches about 15 % at 1280x800 with three cards up, for up to 3 s (the lint's WARN). The Neural Net column is not a keep-out: five queued lines reached the right stack's x and y in a forced test (one or two lines stop well above it). Only the newest card is on the HUD bus, so the subtitles do not avoid an older one. At 4:3 the lint's FAILs left are the loadout's, also with no alert up, and a wrapped context prompt.
+- Evidence: `research\experience\runs\0.3.0_issue21\`.

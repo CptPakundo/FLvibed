@@ -1,0 +1,13 @@
+{
+  "_about": "0.2.8 (5 Nov 2026, Unreleased): two option rows after text_size, CONTROLLER > MENUS AND PROMPTS: Steam Deck mode (deck_mode, automatic at exactly 1280x800) and Larger window text (window_text). docs/UI_SPEC.json and core/ui_meta.h already carry them; this patch brings them to part2_data.js and to the artifact's ui/spec.",
+  "add_rows": {
+    "controller/MENUS AND PROMPTS": {"after": "text_size", "rows": [
+      {"key": "deck_mode", "label": "Steam Deck mode", "kind": "picker", "options": ["AUTOMATIC", "ON", "OFF"], "def": "AUTOMATIC",
+       "help": "Steam Deck mode: larger text and no safe margins at the screen's edge. Automatic turns it on at exactly 1280x800.",
+       "tier": "player", "needs": "live", "parent": null},
+      {"key": "window_text", "label": "Larger window text", "kind": "toggle", "def": true,
+       "help": "HUD 2: the text in the game's windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all.",
+       "tier": "player", "needs": "live", "parent": null}
+    ]}
+  }
+}

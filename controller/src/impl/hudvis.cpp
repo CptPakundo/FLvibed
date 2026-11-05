@@ -130,6 +130,7 @@ void SetHoverHelp(bool allowed) { g_hoverAllowed = allowed; }
 static bool g_menuOver = false;
 static u32 g_menuFrames = 0;
 void SetMenuOver(bool on) { g_menuOver = on; }
+static bool AlwaysKept(const Root&) { return true; }
 
 static Root g_roots[] = {
     {"ManeuverButton0", "maneuvers"},
@@ -156,6 +157,9 @@ static Root g_roots[] = {
     // over HUD 2's card, the known bug): HUD 2's MISSILE INCOMING card and the ring's chevrons carry it. Only this child:
     // its parent draws the brackets and arrows (kept native)
     {"MissileAlert", "missilealert", nullptr, true},
+    // the game's comm window (HUD_Receiver: the portrait, its outline, the caption): HUD 2 keeps it, only a modal menu over the
+    // flight hides it - its pieces stood bare around the pause menu with no plate (UI_HUD2.md 5.34)
+    {"CommText", "comm", AlwaysKept},
 };
 static DWORD g_lastFind = 0, g_lastNameCheck = 0;
 static u32 g_finds = 0, g_drops = 0;

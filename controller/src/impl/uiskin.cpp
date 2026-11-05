@@ -29,6 +29,7 @@
 #include "ui.h"
 #include "uiopt.h"
 #include "uistrip.h"
+#include "game/deckmode.h"
 #include "game/render.h"
 
 #include <sstream>
@@ -281,12 +282,12 @@ const FamilyDef kFamilies[] = {
     {"dealer", &exe::VtDealer, false, false, {}, {}, false,
      {{"Inventory_Close", -1.250f, -0.038f, -0.828f, 0.457f, kTLBR, 0.092f, 0, 0, SellFull, 0.85f},
       {"Inventory_Close", -1.250f, -0.038f, -0.828f, 0.127f, kTLBR, 0.092f, 0, 0, SellEmpty, 0.85f},
-      // (the transfer plate reaches under its QUANTITY n / m label, 0.668 H at 4K = 0.459 under the X; the infocard
-      // plate starts 0.012 H below it - critique 3, 5)
-      {"Inventory_Close", -0.810f, -0.038f, -0.418f, 0.478f, kTLBR, 0, 0, 0, Xfer, 0.85f},
-      {"Inventory_Close", -0.810f, -0.038f, -0.418f, 0.292f, kTLBR, 0, 0, 0, NoXfer, 0.85f},
+      // (the transfer plate reaches under its QUANTITY n / m label; the infocard plate starts 0.010 H below it - critique 3,
+      // 5. 5 Nov 2026: the infocard took 0.022 H more, for the larger text: windowtext's boxes follow these two numbers)
+      {"Inventory_Close", -0.810f, -0.038f, -0.418f, 0.470f, kTLBR, 0, 0, 0, Xfer, 0.85f},
+      {"Inventory_Close", -0.810f, -0.038f, -0.418f, 0.355f, kTLBR, 0, 0, 0, NoXfer, 0.85f}, // (the welcome text at windowtext's size)
       {"Inventory_Close", -0.404f, -0.038f, 0.022f, 0.422f, kTLBR, 0.092f, 0, 0, Always, 0.85f},
-      {"Inventory_Close", -1.200f, 0.490f, -0.060f, 0.767f, kTLBR, 0.052f, 0, 0, Xfer, 0.85f}},
+      {"Inventory_Close", -1.200f, 0.480f, -0.060f, 0.779f, kTLBR, 0.052f, 0, 0, Xfer, 0.85f}},
      {"PlayerTitle"}, FocusPair, "ItemButton", "ItemView", 0},
     {"shipdealer", &exe::VtShipTrader, false, true, {}, {}, false,
      {{"ShipTraderCancelButton", -1.2365f, 0.007f, -0.8265f, 0.222f, kTLBR, 0.075f, 0, 0, Always, 0.85f},
@@ -296,7 +297,7 @@ const FamilyDef kFamilies[] = {
       {"ShipTraderCancelButton", -0.8125f, -0.033f, -0.4025f, 0.470f, kTLBR, 0, 0, 0, Always, 0.85f},
       // (the dealer list's plate reaches up over the close X - 0.04 H higher than the mock, whose X hung outside it)
       {"ShipTraderCancelButton", -0.3885f, -0.033f, 0.0235f, 0.352f, kTLBR, 0.115f, 0, 0, Always, 0.85f},
-      {"ShipTraderCancelButton", -1.1885f, 0.482f, -0.0985f, 0.767f, kTLBR, 0.052f, 0, 0, Always, 0.85f}},
+      {"ShipTraderCancelButton", -1.1885f, 0.482f, -0.0985f, 0.779f, kTLBR, 0.052f, 0, 0, Always, 0.85f}},
      {"ShipTraderTitle"}, FocusPair, "ShipTraderShipNameIconFrame", "ShipTraderShipNameFrame", 0},
     // the repair dialog (its own art, like the NeuroNet windows; verify 25 Oct 2026: it had no family and stayed native
     // among skinned screens): one plate from the close X (its frame measured at 4K: 0.630..1.178 x 0.195..0.804 H, the
@@ -385,6 +386,7 @@ struct Win
     u32 anchors[6] = {};              // per plate
     u32 condCtl = 0, condCtl2 = 0, condCtl3 = 0; // dealer: BuySellTradeButton, the partner's ItemView01, its Full_Cargobar
     u32 condCtl4 = 0;                            // dealer: TransferItemView
+    u32 storyText = 0;                           // job board: the chosen job's rich text (the plate grows to it)
     bool alive = true;
 };
 std::vector<Win> g_wins;
@@ -708,6 +710,8 @@ void Apply(Win& w)
         w.condCtl2 = w.partner ? Child(w.partner, "ItemView01") : 0;
         w.condCtl3 = w.partner ? Child(w.partner, "Full_Cargobar") : 0;
     }
+    if (w.fam == kFamJobBoard)
+        w.storyText = Child(w.root, "MissionVendorMissionFullText");
     if (g_on)
         g_applied = true;
 }
@@ -1173,6 +1177,26 @@ bool FocusBox(const Win& w, u32 hov, Box& out)
     return true;
 }
 
+// The bottom of a rich text as it reads now (pixels; 0 unknown): its projected top + the text's own height, at most the
+// box's (past that the game's scroll bar takes over). RichTextWin (exe::VtText): +0x35C the box's height, +0x380 the laid
+// out text's height, read 4 Nov 2026 at 1280x800: 187 and 110 for five lines (FREELANCER_RE "Job board"). GitHub issue 13: the
+// box runs 51 px past the plate's fixed foot there, so a job of seven or eight lines ran out of the window.
+int g_jobHeightTest = 0; // debug `uiskin jobheight <px>`: the text's height as read (0: the game's). A raw text set on this
+                         // control ended the game on 4 Nov 2026 (its vt[0xA8] message 0x1D): never write text to it that way
+float RichTextBottom(u32 ctl)
+{
+    u32 vt = 0, view = 0, content = 0;
+    Box b;
+    if (!ctl || !R32(ctl, vt) || !exe::VtText.is(vt) || !R32(ctl + 0x35C, view) || !R32(ctl + 0x380, content) ||
+        !RectOf(ctl, b))
+        return 0;
+    if (g_jobHeightTest > 0)
+        content = static_cast<u32>(g_jobHeightTest);
+    if (view == 0 || view > static_cast<u32>(g_sh) || content == 0 || content > 100000u)
+        return 0;
+    return b.cy + static_cast<float>(std::min(view, content));
+}
+
 bool DrawWindow(const Win& w, u32 hov) // true: it drew the focus
 {
     const FamilyDef& f = kFamilies[w.fam];
@@ -1202,6 +1226,9 @@ bool DrawWindow(const Win& w, u32 hov) // true: it drew the focus
         }
         if (p.trim > 0 && g_laneTrim) // (the lane in use: the plate ends at its content - rule 3)
             y1 += Hf(p.trim - p.y1);
+        if (w.fam == kFamJobBoard) // (the plate holds its text: it grows to it, with the margin under the text it keeps today)
+            if (const float bottom = RichTextBottom(w.storyText))
+                y1 = std::max(y1, bottom + Hf(0.030f));
         if (g_paint)
         {
             Glass(x0, y0, x1, y1, p.corners, p.fill);
@@ -1637,7 +1664,7 @@ void DrawOver(void* device)
 float LaneLeft(float W, float H, float y0, float y1, float right)
 {
     const float gap = H * 0.012f;
-    float left = W * 0.05f;
+    float left = W * deckmode::SideW();
     auto block = [&](float x0, float by0, float x1, float by1)
     {
         if (by0 >= y1 || by1 <= y0 || x0 >= right)
@@ -1658,7 +1685,6 @@ void Shutdown()
     RestoreAll();
     g_genSeen = 0xFFFFFFFFu;
 }
-
 std::string Command(std::istream& in)
 {
     std::string what;
@@ -1700,6 +1726,13 @@ std::string Command(std::istream& in)
     {
         g_genSeen = 0xFFFFFFFFu;
         return "uiskin: rescan next frame";
+    }
+    if (what == "jobheight") // jobheight <px>: the job text's height as the plate reads it, 0 = the game's (nothing written to the game)
+    {
+        int px = 0;
+        in >> px;
+        g_jobHeightTest = std::max(0, px);
+        return "uiskin jobheight " + std::to_string(g_jobHeightTest);
     }
     if (what == "windows" || what == "state" || what.empty())
     {

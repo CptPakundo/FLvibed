@@ -13,7 +13,7 @@ addresses and structures are in `..\FREELANCER_RE.md` "UI (NeuroNet / FlControl 
 | `ImportantFilterButton`, `ShipsFilterButton`, `SolarFilterButton`, `LootFilterButton`, `AllFilterButton` | the expanded list's filters | LB on the first |
 | `NextEnemyButton`, `TargetCloseButton`, `StatusCloseButton` | the target panel's next-enemy and close buttons | R3 |
 | `HudRepairButton`, `UseBatteryButton` | nanobots and shield batteries (the counts beside them) | D-pad up / down |
-| `HudWeaponGroupButton` x3 (the same name three times, left to right groups 1 / 2 / 3) | the weapon groups; the active one lit yellow | Y hold above the active one |
+| `HudWeaponGroupButton` x3 (the same name three times, left to right groups 1 / 2 / 3) | the weapon groups; the active one lit yellow | Y above the active one |
 | `HealthBar`, `ShieldBar`, `PowerBar`, `HUD_Core` | the gauges (images, not buttons) | - |
 At 4K the HudShift layout puts the maneuver bar at x 111..939 (buttons 78 px half extents at depth 0.5), the NeuroNet
 box at 3377..3776, the weapon group buttons at 3522..3712 (30 px half extents). Anchor on the controls by name, never
@@ -23,9 +23,10 @@ on positions: HudShift moves them.
 - `USER_AUTO_TURRET` (0xBF, the H key) = **turret view**, a toggle (keydown only). Leaving it, the game also sends
   `USER_LOOK_ROTATE_CAMERA_RESET` itself. The pad holds it: on at the hold, off at the release.
 - `USER_WEAPON_GROUP1..3` (keydown) make a group the active one; the HUD's group button lights it (group 2 lit
-  after the pad sent GROUP2). `USER_FIRE_WEAPON_GROUP1..3` fire one group each (keydown only); the pad sends the
-  keydown and marks them held (`SetHeld`) - that the game polls them as held like fire-all is **not verified yet**
-  (`weapon_groups` 2 needs a shot count on SaveC705). `USER_ASSIGN_WEAPON_GROUPn` stores the current selection into a
+  after the pad sent GROUP2). `USER_FIRE_WEAPON_GROUP1..3` fire one group each: keymap `state = keydown`, no repeat, and
+  the handler (0x4DCC60) fires once per keydown, so the game does **not** poll them as held the way it polls fire-all
+  (0x51D115). The pad sends a keydown every frame while the trigger is held (`HoldFireGroup`); the guns' own refire sets the
+  rate (shot count on SaveC706, 5 Nov 2026: 12 in 3 s at refire 0.25, 24 in 3 s at 0.12; one shot a pull before; GitHub issue 14). `USER_ASSIGN_WEAPON_GROUPn` stores the current selection into a
   group. The pad sets groups with the action wheel's EDIT GROUPS (USER_TOGGLE_WEAPONn + USER_WEAPON_GROUPn;
   `..\FREELANCER_RE.md` "Weapon groups"). No key is bound to any of them by default (keymap.ini).
 - `USER_MANEUVER_FREE_FLIGHT` **does not disengage the cruise engine** (cruise stayed on after it, 25 Oct 2026): the

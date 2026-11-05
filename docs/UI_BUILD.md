@@ -11,7 +11,7 @@ guiding principles, no raw addresses, hooks chain, fails closed, the pre-change 
  FLvibed.dll (plain, global namespace)                 controller logic (flv_controller_impl)
  ┌──────────────────────────────────┐                  ┌──────────────────────────────────────────────┐
  │ core\flvibed.cpp  module switches│                  │ device.*   input-device service (pad / K&M)  │
- │ core\settings_bus.cpp  THE BUS   │◄── HostApi ─────►│ glyphs.*   glyph atlas, 3 families (own art) │
+ │ core\settings_bus.cpp  THE BUS   │◄── HostApi ─────►│ glyphs.*   glyph atlas, 4 families (own art) │
  │   [Modules] section registered   │ GetSettingsBus   │ uikit.*    row kit: panel, rows, focus, list │
  └──────────────────────────────────┘                  │ options_page.*  the FLVIBED page (5 tabs)    │
  controller host (flv_controller_host)                 │ padhud.*   badges, legend, status line, ...  │
@@ -52,8 +52,8 @@ guiding principles, no raw addresses, hooks chain, fails closed, the pre-change 
 - **Glyphs**: drawn by FLvibed itself into the atlas (GDI shapes + letters: Xbox A B X Y coloured, PlayStation cross /
   circle / square / triangle, Nintendo B A Y X; bumpers, triggers, sticks, D-pad, View / Menu), so they are sharp at
   any resolution and need no asset, licence or download (`..\CLAUDE.md`: downloads need the user's OK; Kenney's CC0 set
-  stays the later art swap, noted in the mock-up). Families by the pad's HID vendor id (Sony 054C, Nintendo 057E, else
-  Xbox), overridable (`glyph_style`); confirm positional with the Nintendo swap (`confirm_button`).
+  stays the later art swap, noted in the mock-up). Families by the pad's HID vendor id (Sony 054C, Nintendo 057E, a real
+  Valve device 28DE or `SteamDeck=1` Steam, else Xbox), overridable (`glyph_style`); confirm positional with the Nintendo swap (`confirm_button`).
 
 ## 2. Tracks and ownership (parallel agents share this checkout: disjoint files, or disjoint blocks)
 | Track | Owns (edits only these) | Delivers |
