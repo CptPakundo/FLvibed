@@ -181,6 +181,12 @@ def add_rows_js(src, patch):
             ai = next((i for i in range(si + 1, len(lines)) if ("('%s'," % p['after']) in lines[i]), None)
             if ai is None:
                 sys.exit('row %s not in %s' % (p['after'], where))
+            # The section's last row carries the section's close: the close moves to the new last row, or the new row
+            # lands outside the section and every allRows() on the page throws (6 Nov 2026, pad_sdl_fallback).
+            closed = re.match(r"(.*\))\s*\] \},\s*$", lines[ai])
+            if closed:
+                lines[ai] = closed.group(1) + ','
+                new[-1] = new[-1].rstrip().rstrip(',') + ' ] },'
             lines[ai + 1:ai + 1] = new
         elif p.get('first', True):
             lines[si + 1:si + 1] = new
