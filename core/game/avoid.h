@@ -1,4 +1,4 @@
-// Obstacle avoidance for the autopilot's own steering (user, 18 Oct 2026: better than the game's auto avoidance,
+// Obstacle avoidance for the autopilot's own steering (better than the game's auto avoidance,
 // deterministic from the ship's size and maneuvering, costing as little time as possible against straight flight, one
 // winding path around every obstacle ahead at once). Input: the client's own objects near the ship (space::Obstacles:
 // field rocks and mines, solars, ships) with their physical radii, the ship's radius, speed and top turn rate
@@ -32,7 +32,7 @@ struct Params
     int bins = 60;          // 6 deg angle bins round the pivot
 
     // ---- RayPath (planesFirst and narrowGain stay per-call arguments)
-    // The berths tried in order, each a half width max(floor, shipRadius x radii) (session 7, M12: a wide berth first - a
+    // The berths tried in order, each a half width max(floor, shipRadius x radii) (M12: a wide berth first - a
     // line 11-27 m off the trench walls set off the wall slide and the guard, which ended the cruise -, the ship's own
     // width only when no wide way exists; the third was max(5, shipRadius) x 1.5, the same number)
     struct Berth
@@ -74,7 +74,7 @@ struct Result
     int debrisIgnored = 0;   // small breakable debris among them, not avoided (it breaks harmlessly)
     float clearAhead = 1e9f; // how far the straight line to the aim is clear (m)
     bool strict = false;     // a field where contact is costly (mines in view): slowing allowed; elsewhere light
-                             // contact is fine and the speed is kept (user, 18 Oct 2026)
+                             // contact is fine and the speed is kept
     bool imminent = false;   // strict and a bend too sharp within ~0.4 s of travel
     float residual = 0;      // the deepest the final path still cuts into an obstacle's radii (m; > 0: contact)
 };
@@ -88,7 +88,7 @@ struct Memory
 
 Result Steer(const Input& in, const std::vector<space::Obstacle>& obstacles, Memory& mem, const Params& prm = {});
 
-// Close-quarter flight through real geometry (user, 22 Oct 2026: M12's lair trench and core, M13's Dyson sphere - "close
+// Close-quarter flight through real geometry (M12's lair trench and core, M13's Dyson sphere - "close
 // quarter flight decisions that are highly aware of nearby geometry"; Steer sees bounding spheres, which a lattice or a
 // trench is not). The game's own ray test (space::RayHitDistance: real hulls) along the way ahead, the ship's width as
 // three parallel rays: the wanted direction if it is clear for `look` m, else the clear direction nearest to it from a
@@ -104,7 +104,7 @@ struct FanResult
 FanResult RayFan(const float pos[3], const float wanted[3], float look, float shipRadius, const u32* ignore,
                  int nIgnore);
 
-// A way through real geometry from `from` to `to` (session 7, 23 Oct 2026, the user watching M12: "the ship tried to engage
+// A way through real geometry from `from` to `to` (the user watching M12: "the ship tried to engage
 // another generator without cruising its way through the tight trench at the lair's perimeter", "poor navigation between
 // generators"; the user's try 3 hops follow the trench's arc at 300 m/s): straight when that is clear for the ship's
 // width, else the shortest chain over a polar grid in the plane through both ends and the centre of the biggest solid
@@ -120,7 +120,7 @@ std::vector<float> RayPath(const float from[3], const float to[3], float shipRad
 // How the last RayPath found its way ("level plane, berth 37 m", "none").
 const char* RayPathMode();
 
-// Crossing a solar's rotating part (session 7, 23 Oct 2026; the M12 core's reactor wheel - 6 spokes at 36 deg/s; the user's
+// Crossing a solar's rotating part (the M12 core's reactor wheel - 6 spokes at 36 deg/s; the user's
 // try 3 crossed at ~190 m off its pivot through a gap at 297 m/s, try 1 struck a spoke; the user: "the ship flew too close
 // to the turbine's center, thus it couldn't avoid it in time"): two scans 0.25 s apart, each a 31 x 31 grid (20 m) of rays
 // parallel to the line of flight through the part's plane (the game's ray test; only the part's hits, class 0x1, counted)
@@ -154,7 +154,7 @@ bool WheelAim(const WheelScan& w, const float from[3], float now, float tArrive,
 // The length of a run from `from` to `to` the way the steering flies it: straight, or round every lethal zone (with the
 // berth Steer keeps at `speed`), planet and big station (radius >= 300 m) in the way - straight until the clearance is
 // inside Steer's look-ahead window, then tangent, arc, tangent; a body inside another's clearance counts once; field
-// rocks and ships are left out (small detours on the way). For plans and predictions (21 Oct 2026: Planet Leeds' ring lies
+// rocks and ships are left out (small detours on the way). For plans and predictions (Planet Leeds' ring lies
 // behind the planet seen from the Iw03 hole, the straight-line plan said 23.5 s and the run round the zone took 28.3).
 float PathLength(const float from[3], const float to[3], const std::vector<space::Obstacle>& bodies, float shipRadius,
                  float speed, float turnRate, u32 ignore = 0);

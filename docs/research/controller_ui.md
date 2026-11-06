@@ -1,12 +1,14 @@
 # Controller UI: presets, device switching, glyphs, pad menus, assists, speedrun mode and LiveSplit
 Status: current (the UI build of 25 Oct 2026 realised U15-U23; where the build departed from the research the bullet says so in place)
-Checked against: FLvibed fc379a3 (31 Oct 2026 ~04:00, short form: 2 watched-path commits: a4571892 `controller.cpp` +3 lines (autopilot::Stop on a player death), 0b04d363 AUTOPILOT_UX.md names `repair_hull_at` design-only (the unread key was deleted, 1d6f6da); no pad / UI / HUD change; no effect)
-Dirty paths at check: another session's uncommitted `HANDOFF.txt`, `controller/src/host/main.cpp`, `controller/src/impl/autopilot_{combat,target,travel}.cpp`, `controller/src/impl/livesplit.cpp`, `controller/src/impl/uiskin.cpp`, `core/hook.{cpp,h}`, `subtitles/src/host/main.cpp`, `subtitles/src/impl/{data,impl,movie}.cpp` (not judged) (31 Oct 2026 ~04:00)
-Watch: docs/UI_PLAN.md, docs/UI_SPEC.json, controller/docs/BINDINGS.md, controller/docs/TASK_GLYPHS_HUD.md, controller/docs/AUTOPILOT_UX.md, controller/src/impl/controller.cpp, controller/src/impl/gamepad.*, core/game/render.*
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 43 watched-path commits: the module split P0-P11e (moves, comments, map rows) and the controller.cpp split; the default binds changed (Y tap next group / Y hold cruise, A one item / X all, RS nearest enemy first), HUD 2 the default everywhere since 0.2.0, the Steam glyph family; marked in place)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: docs/UI_PLAN.md, docs/UI_SPEC.json, modules/controller/docs/BINDINGS.md, modules/controller/docs/TASK_GLYPHS_HUD.md, modules/autopilot/docs/AUTOPILOT_UX.md, modules/controller/src/impl/controller*.cpp, modules/controller/src/impl/gamepad.*, core/game/render.*
 Evidence: `research\evidence\controller_ui\` - `hud_conventions_aaa.md` and `hud_space_games.md` (round 2, 25 Oct 2026 ~08:00, every claim with its URL; `hud_redesign\` the frames, renders and the proposal page); the three research files of 25 Oct 2026 in full (`flight_presets.md` 73 sources, `pad_ui_switching_glyphs_menus.md` 68 sources, `assist_speedrun_livesplit.md` 59 sources; every claim cited, forum opinions marked anecdotal) and the interactive mock-up page (`mockup_v2_index.html`; live at artifact `4v4dXbB5GTVt1URowFtSvN`); the game screens captured for it in `research\experience\ui_2026-10-25\screens\`
-Sources: see the evidence files (web pages read 25 Oct 2026; nothing downloaded). Earlier rounds this builds on: `controller\docs\BINDINGS.md` (12 games' pad layouts, 18 Oct) and `controller\docs\research\ADAPTIVE_UI_RESEARCH.md` (device switching, pad menus, accessibility, 17 Oct)
+Sources: see the evidence files (web pages read 25 Oct 2026; nothing downloaded). Earlier rounds this builds on: `modules\controller\docs\BINDINGS.md` (12 games' pad layouts, 18 Oct) and `modules\controller\docs\research\ADAPTIVE_UI_RESEARCH.md` (device switching, pad menus, accessibility, 17 Oct)
 
 ## What it means for FLvibed (the design is in `docs\UI_PLAN.md` section 6; the owner decides in the mock-up)
+
+*6 Nov 2026 (3c9c1390, short form):* the device rules hold and the defaults moved; every change came from the owner or a GitHub issue. **Binds:** Y tap = next group and Y held = cruise (91aee7bb, issue 15; `y_swap` the way back), A tractors one item and X all with named prompts, a cold RS press takes the nearest enemy (6365c9ac). **HUD:** `hud_style` 2 (HUD 2 always) and `ui_style` HUD 2 are the defaults since 0.2.0. **Glyphs:** a fifth `glyph_style`, Steam, from a real Valve device or `SteamDeck=1` (`glyphs.cpp`; Steam Input's type still not read, U16). **Device rules:** c4652165 - a stick takes the device back only by moving, so a worn stick no longer takes it from the mouse (U15), and the switch ends a pad snap and a virtual button. **Holds:** `holds_as_toggles` stays global, and a latch now follows the game (dd235cb5, U34). Still open: the Smart-Steering tick (U20), the named pipe (U22), the Bindings screen (U33; U60 proposes a read-only card), the real pad.
 
 *Research round 29 Oct 2026 ~22:30 (HEAD 04b4c05; the owner: sizing and spacing that make sense, full-featured but
 compact defaults, accessible options with depth, better presets, full rebinding, a visual / flow pass on every element):*
@@ -67,7 +69,7 @@ stick moves the game's cursor FLUF reads, A / B as mouse button / close); a pres
 when it went down (`core\press_gate.h`, 0eca73d - the B that closes a window never reaches flight); the dealer's B is held
 through the NeuroNet window's slide (f52815b); two new options rows (`fluf_windows` af2adb1, `borderless` 90a8b7f). All
 extend built ideas; nothing here is contradicted. Not verified: the tutorial boxes on the pad with the owner (attended).
-**Extended HUD 2 and the fix tracks (check-up 25 Oct 2026, HEAD 855745b; `docs\UI_HUD2_EXTENDED.md` 10-13,
+**Extended HUD 2 and the fix tracks (check-up 25 Oct 2026, HEAD 855745b; `modules\hud\docs\UI_HUD2_EXTENDED.md` 10-13,
 `UI_HUD2.md` 5.10-5.11):** HUD 2 was declared complete (057b2d8; FIX2 landed: lit D-pad slots, NEURONET pinned, the
 thinner hit flash, wrapped and counted weapon rows 5ea171f) and its menus / rooms / dialogs followed the same day:
 `ui_style` (CLASSIC default / HUD 2) skins the game's own windows (uiskin, found on the host's UI generation counter,
@@ -83,11 +85,11 @@ floor (4e9e1f6, U26), HUD 2's scale following the aspect (389e37d), hover help o
 rule. HUD 2 runs on vanilla 1.1 too (65cd6dd, 48c712a, c6158a4). Still open: the news dot's data (U7), the Smart-Steering
 tick (U20), Steam Input's type (U16), the named-pipe LiveSplit fallback (U22), the Bindings screen, and the owner's
 Elite-pad pass.
-**HUD 2 built (check-up 25 Oct 2026, HEAD 073a665; `docs\UI_HUD2.md` 4-5):** the owner gave the go (~11:00) and HUD 2 was
+**HUD 2 built (check-up 25 Oct 2026, HEAD 073a665; `modules\hud\docs\UI_HUD2.md` 4-5):** the owner gave the go (~11:00) and HUD 2 was
 built the same day - the HUD bus, the readers (`core\game\hudinfo.*`), HUD 2 (`hud2*.cpp`, `hudvis.*`), the subtitles on
 the bus, keyboard-and-mouse clicks, polish, integration (5.8: every coverage row passed, the display matrix in the release
 build, 0.13-0.18 ms a frame at 4K in a fight) and a fix round after an in-game critique (5.9); `hud_style` 1 (HUD 2 on the
-pad) is the default, CLASSIC (the U23 badges and legend) stays at 0, HUD 2 for keyboard and mouse at 2 (IDEAS U27 built;
+pad) is the default *[since 0.2.0: `hud_style` 2, HUD 2 always, `docs\SETTINGS.md`]*, CLASSIC (the U23 badges and legend) stays at 0, HUD 2 for keyboard and mouse at 2 (IDEAS U27 built;
 U24 / U25 superseded with their D-pad cross, loadout strip and NeuroNet chip carried into HUD 2; U26's 0.024 H floor
 built). **Where the build departed from round 3:** the game's HUD is not hidden by HDE's HUDless switch (the paragraph
 below) but per root control by the state byte +0x6C (found once, cached, re-hidden only where the game re-shows them -
@@ -99,7 +101,7 @@ only, read: nothing here changes). Coexistence with FLSharp 0.9.2 / HUDless: no 
 second-install sweep items (`flsharp.md`, IDEAS U4).
 **Pad HUD round 3, HUD 2 (25 Oct 2026 ~09:00-10:30; the owner: "a smart balance between B and C ... be daring ...
 from the ground up ... Freelancer flavor ... fully functional"):** a ground-up pad HUD drawn by FLvibed with the
-game's HUD hidden whole - design brief `docs\UI_HUD2.md` (U27, proposed). Research added: whole-HUD layouts of
+game's HUD hidden whole - design brief `modules\hud\docs\UI_HUD2.md` (U27, proposed). Research added: whole-HUD layouts of
 modern space games measured on screenshots (`hud_space_visual.md`: Starfield's third-person ring with arcs at the
 reticle, Everspace 2's world target tag and corner bars, Ace Combat 7's one-colour line HUD, Elite's one-hue rule,
 Halo's light-blue glow palette, Armored Core VI's "thin meters" complaints, the York ammo-near-reticle study), the code
@@ -146,9 +148,9 @@ differently from the research is marked in each bullet below; the next check rea
   PlayStation / Nintendo) and `confirm_button` (001d858).]*
 - **The default flight preset borrows the strongest cross-genre reflexes** (round 2 added 13 flight games and the action / mech / racing norms): fire on RT; afterburner on LT (a trigger is the best hold: Chorus, Halo, Destiny boost there; Everspace players dislike stick-click holds); lock-on on R3 (Elden Ring, Armored Core VI, BotW); consumables one tap each on the D-pad (works in Freelancer because the throttle lever persists); A = context, B = cancel / brake (held = reverse, Rebel Galaxy Outlaw's throttle-down); rare actions in one hold-wheel picked with the D-pad (analog selection in a hold-wheel misfires: the Everspace 2 complaint); the autopilot on a half-second hold of View with a ring (deliberate, one-handed, no double-tap: the Star Citizen anti-pattern). Freelancer-specific material is thin: not on Steam (no shared layouts), the one forum trace is the cursor-recentring problem. (U17)
   *[Built 442654f (25 Oct 2026): `presets.*` - FREELANCER (the owner's 25 Oct binds: RT fire, LT afterburner, R3 tap
-  smart target / hold rear, LB tap picker / hold wheel, X tap tractor / hold turret, Y cruise, D-pad consumables, View
+  smart target / hold rear, LB tap picker / hold wheel, X tap tractor / hold turret, Y cruise *[changed 4-5 Nov 2026: Y tap next group, Y held cruise, 91aee7bb; A one item, X all, 6365c9ac]*, D-pad consumables, View
   hold autopilot) plus ACE and ASSISTED with tap / hold / double; every FREELANCER binding verified by the key trace;
-  `pad_preset` with CUSTOM on the options page; `controller\CLAUDE.md` "Controls summary" rewritten and BINDINGS.md marked
+  `pad_preset` with CUSTOM on the options page; the module's private map "Controls summary" rewritten and BINDINGS.md marked
   superseded by the spec (e0d2963). Not built: the Bindings screen (`edit_bindings` shows a note; `UI_BUILD.md` 5).]*
 - **Pad cursor as an option, focus by default**: Destiny's cursor slows over items and pulls toward them, Destiny 2 aborts holds only when the cursor leaves the item; players ask for snap-to on the D-pad (Grim Dawn) and for the virtual cursor back where it was removed (MSFS). So: focus navigation everywhere, **Pad cursor: Off / Rooms and maps / Everywhere** (default the middle), ~1200 px/s with a ramp, slow to ~40 % over a target with a gentle pull, D-pad hides it. (U18)
   *[Overtaken by the owner (f1804a6) and built c476760 / a6f8e2f (25 Oct 2026): the pad cursor is **on everywhere by

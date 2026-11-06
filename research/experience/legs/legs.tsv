@@ -1331,3 +1331,49 @@ date	label	save	outcome	secs	boot	fps	commit	instance	detail
 2026-10-31 16:44	M02-sc4-c	Save05c7.fl	PASS	771	87	161	c0f77a43	3	UNTIL total 771 s
 2026-10-31 17:50	M02-ar1-c	Save05c7.fl	PASS	763	13	177	06f9f68a	1	UNTIL total 763 s
 2026-10-31 17:50	M02-ar1-c	Save05c7.fl	PASS	783	13	175	06f9f68a	2	UNTIL total 783 s
+2026-11-05 10:49	M13-p7-base	SaveS450.fl	FAIL	123	12	117	904229c9	3	FAILED (FAILED: 390 78876718 player-death) total 123 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 390 78876718 player-death
+2026-11-05 10:50	M13-p7-base	SaveS450.fl	PASS	168	13	121	904229c9	1	UNTIL total 168 s
+2026-11-05 10:50	M13-p7-base	SaveS450.fl	PASS	178	13	124	904229c9	2	UNTIL total 178 s
+2026-11-05 10:52	M05-p7-base	SaveS422.fl	PASS	173	14	130	904229c9	3	SUCCESS total 173 s
+2026-11-05 10:53	M05-p7-base	SaveS422.fl	PASS	171	12	134	904229c9	1	SUCCESS total 171 s
+2026-11-05 10:53	M05-p7-base	SaveS422.fl	PASS	172	12	138	904229c9	2	SUCCESS total 172 s
+2026-11-05 11:14	M13-p7-after	SaveS450.fl	PASS	156	13	121	d83a227c	2	UNTIL total 156 s
+2026-11-05 11:14	M13-p7-after	SaveS450.fl	PASS	166	12	118	d83a227c	3	UNTIL total 166 s
+2026-11-05 11:14	M13-p7-after	SaveS450.fl	PASS	169	13	128	d83a227c	1	UNTIL total 169 s
+2026-11-05 11:17	M05-p7-after	SaveS422.fl	PASS	171	12	129	d83a227c	2	SUCCESS total 171 s
+2026-11-05 11:17	M05-p7-after	SaveS422.fl	PASS	171	12	130	d83a227c	3	SUCCESS total 171 s
+2026-11-05 11:17	M05-p7-after	SaveS422.fl	PASS	173	12	129	d83a227c	1	SUCCESS total 173 s
+2026-11-05 11:27	M13-p7-after	SaveS450.fl	PASS	163	13	126	d83a227c	1	UNTIL total 163 s
+2026-11-05 11:28	M13-p7-after	SaveS450.fl	PASS	169	12	119	d83a227c	2	UNTIL total 169 s
+2026-11-05 11:28	M13-p7-after	SaveS450.fl	PASS	176	12	126	d83a227c	3	UNTIL total 176 s
+2026-11-05 13:12	M13-p8-base	SaveS450.fl	PASS	166	15	110	06ba8e4b	2	UNTIL total 166 s
+2026-11-05 13:13	M13-p8-base	SaveS450.fl	PASS	177	16	116	06ba8e4b	3	UNTIL total 177 s
+2026-11-05 13:13	M13-p8-base	SaveS450.fl	PASS	183	16	113	06ba8e4b	1	UNTIL total 183 s
+2026-11-05 13:16	M05-p8-base	SaveS422.fl	PASS	170	14	131	06ba8e4b	2	SUCCESS total 170 s
+2026-11-05 13:16	M05-p8-base	SaveS422.fl	PASS	173	12	130	06ba8e4b	3	SUCCESS total 173 s
+2026-11-05 13:16	M05-p8-base	SaveS422.fl	PASS	172	12	130	06ba8e4b	1	SUCCESS total 172 s
+2026-11-05 13:19	M13-p8-after	SaveS450.fl	PASS	158	13	115	06ba8e4b	2	UNTIL total 158 s
+2026-11-05 13:19	M13-p8-after	SaveS450.fl	PASS	164	13	119	06ba8e4b	1	UNTIL total 164 s
+2026-11-05 13:19	M13-p8-after	SaveS450.fl	PASS	187	12	124	06ba8e4b	3	UNTIL total 187 s
+2026-11-05 13:22	M05-p8-after	SaveS422.fl	PASS	170	12	130	06ba8e4b	2	SUCCESS total 170 s
+2026-11-05 13:22	M05-p8-after	SaveS422.fl	PASS	173	12	131	06ba8e4b	1	SUCCESS total 173 s
+2026-11-05 13:22	M05-p8-after	SaveS422.fl	PASS	172	12	135	06ba8e4b	3	SUCCESS total 172 s
+2026-11-05 15:10	M05-p10	SaveS422.fl	PASS	173	14	192	a26997ae+dirty	1	SUCCESS total 173 s
+2026-11-05 20:34	M05-p11e-base	SaveS422.fl	PASS	170	14	116	48ed8869	1	SUCCESS total 170 s
+2026-11-05 20:34	M05-p11e-base	SaveS422.fl	PASS	171	15	113	48ed8869	2	SUCCESS total 171 s
+2026-11-05 20:34	M05-p11e-base	SaveS422.fl	PASS	171	13	113	48ed8869	3	SUCCESS total 171 s
+2026-11-05 20:40	M13-p11e-base	SaveS450.fl	FAIL	274	14	119	48ed8869	1	FAILED (FAILED: 927 114299203 player-death) total 274 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 613 114232937 autopilot objective marked target 3211120453 is 5388 m off: there first
+2026-11-05 20:43	M13-p11e-base	SaveS450.fl	PASS	478	12	133	48ed8869	2	SUCCESS total 478 s
+2026-11-05 20:43	M13-p11e-base	SaveS450.fl	PASS	482	12	131	48ed8869	3	SUCCESS total 482 s
+2026-11-05 20:47	M05-p11e-head	SaveS422.fl	PASS	172	14	129	cfd3d14a	1	SUCCESS total 172 s
+2026-11-05 20:47	M05-p11e-head	SaveS422.fl	PASS	172	13	127	cfd3d14a	2	SUCCESS total 172 s
+2026-11-05 20:47	M05-p11e-head	SaveS422.fl	PASS	172	13	126	cfd3d14a	3	SUCCESS total 172 s
+2026-11-05 20:55	M13-p11e-head	SaveS450.fl	FAIL	408	11	112	cfd3d14a	1	FAILED (FAILED: 1371 115192484 player-death) total 408 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 620 114996921 objective-client seq=8 obj=24485 "Destroy the Generators" steps=1
+2026-11-05 20:55	M13-p11e-head	SaveS450.fl	FAIL	405	14	109	cfd3d14a	2	FAILED (FAILED: 1372 115199421 player-death) total 405 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 609 115006609 autopilot objective start action=to-marks mode=travel target=0
+2026-11-05 20:56	M13-p11e-head	SaveS450.fl	PASS	467	14	121	cfd3d14a	3	SUCCESS total 467 s
+2026-11-05 21:07	M13-p11e-final	SaveS450.fl	FAIL	307	12	116	4c5cadc3	3	FAILED (FAILED: 1175 115930890 player-death) total 307 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 625 115829328 autopilot objective leash St03_dyson_airlock_1 18000 m: object (kept)
+2026-11-05 21:09	M13-p11e-final	SaveS450.fl	PASS	455	12	129	4c5cadc3	2	SUCCESS total 455 s
+2026-11-05 21:09	M13-p11e-final	SaveS450.fl	PASS	466	14	128	4c5cadc3	1	SUCCESS total 466 s
+2026-11-05 21:21	M13-p11e-last	SaveS450.fl	FAIL	382	12	114	559e28dc	2	FAILED (FAILED: 1344 116751625 player-death) total 382 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 655 116576171 autopilot objective decide reason=objective text=24485 verb=3 ref=0 target=0 nav=0
+2026-11-05 21:22	M13-p11e-last	SaveS450.fl	PASS	451	13	119	559e28dc	1	SUCCESS total 451 s
+2026-11-05 21:22	M13-p11e-last	SaveS450.fl	PASS	488	12	122	559e28dc	3	SUCCESS total 488 s

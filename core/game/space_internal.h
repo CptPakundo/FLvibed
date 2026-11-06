@@ -62,7 +62,7 @@ struct Api
     // ship's archetype (CShip::shiparch)
     float*(__cdecl* velocity)(float* out, const void* cobject) = nullptr;
     const u8*(__fastcall* shipArch)(const void* ship, void* edx) = nullptr;
-    // The client's own objects (multiplayer, 28 Oct 2026): server.dll's pub:: API answers only for the in-process
+    // The client's own objects (multiplayer): server.dll's pub:: API answers only for the in-process
     // single-player server - in multiplayer its world is empty (GetLocation returned code != 0 with zeros: every
     // contact read 0 m). Common.dll's CObject registry is the client's world in both modes: CObject::Find (adds a
     // reference: Release after), EngineObject::get_position / get_orientation, CEqObj::attitude_towards (the

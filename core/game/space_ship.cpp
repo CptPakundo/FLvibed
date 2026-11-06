@@ -148,7 +148,7 @@ bool ShieldOf(u32 id, float& current, float& max, bool& up)
 // The game's invincibility of a space object (missions' Act_Invulnerable): server.dll
 // pub::SpaceObj::GetInvincible(uint id, bool& invincible, bool& (a second flag), float& floor) - the hull fraction it
 // cannot be damaged below. True when the object is invincible and already at that floor: guns cannot take more off it
-// (M04 Benford: the cruisers' floor 0.4 - the autopilot held still firing at one, 20 Oct 2026).
+// (M04 Benford: the cruisers' floor 0.4 - the autopilot held still firing at one).
 bool Invincible(u32 id, bool& invincible, bool& second, float& floor)
 {
     typedef int(__cdecl * GetInvincibleFn)(u32, bool&, bool&, float&);

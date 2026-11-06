@@ -7,7 +7,7 @@ removed (HDE skips them). **Par** = the golden run (per leg the fastest of the t
 sum of our golds; **limit** = a segment longer than this fails the run at once (catastrophic mistake or delay);
 **spread** = the standard deviation of the last 10 full passes (leg) or of their segment; **runs** = how many
 runs per side judge a change to that leg (a 2 % / 5 s gain out of the noise).
-Generated 2026-10-31 17:50.
+Generated 2026-11-05 21:23.
 
 | Leg | Par | Golden run | Our PB | PB - par | Sum of our best | Gold - par | Full passes | Spread | Runs |
 |---|---|---|---|---|---|---|---|---|---|

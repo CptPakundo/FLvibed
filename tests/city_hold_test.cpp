@@ -1,7 +1,7 @@
-// `city_hold_side`'s pure half (controller\src\impl\city_hold.h): the away side from the platforms' centroid in M13's
+// `city_hold_side`'s pure half (modules\autopilot\src\city_hold.h): the away side from the platforms' centroid in M13's
 // city geometry (DATA\MISSIONS\M13\m13.ini: final_generator1 and platform1-3, St03b), the ab11 death bearings off it,
 // the gap, the re-anchor, the ordnance verdict and the deeper-point rule.
-#include "../controller/src/impl/city_hold.h"
+#include "../modules/autopilot/src/city_hold.h"
 
 #include "test.h"
 

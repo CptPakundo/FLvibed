@@ -1,7 +1,7 @@
 # The upstream HD Edition as a test install: switch now or later?
 Status: current
-Checked against: FLvibed fc379a3 (31 Oct 2026 ~04:00, short form: 6 watched-path commits (all `docs/TESTING.md`: the AFK_PLAYBOOK pointer, the segment-DNF rule, `tools\reach.py` / reach-short); no HDE, FLSharp, install or signature content (grep of the diff); decision unchanged)
-Dirty paths at check: another session's uncommitted `HANDOFF.txt`, `controller/src/host/main.cpp`, `controller/src/impl/autopilot_{combat,target,travel}.cpp`, `controller/src/impl/livesplit.cpp`, `controller/src/impl/uiskin.cpp`, `core/hook.{cpp,h}`, `subtitles/src/host/main.cpp`, `subtitles/src/impl/{data,impl,movie}.cpp` (not judged) (31 Oct 2026 ~04:00)
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 23 watched-path commits: the module split P0-P11e (moves, comments, map rows) and docs; 40fe028e MOD_COMPATIBILITY reads against the code; 228 / 228 on the upstream exe; second install still not built (M7); decision unchanged)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
 Watch: docs/HDE_UPSTREAM.md, docs/MOD_COMPATIBILITY.md, tools/install-hde.ps1, docs/TESTING.md, core/flexe.h, docs/kb/display.md
 Evidence: the two installs' `EXE` folders compared file by file; `build\sigtool\sigtool.exe check` on both exes; the clone's git history since the 0.7.1 tag; GitHub milestones and releases of FLHDE/freelancer-hd-edition and -installer
 Sources: [file] docs\HDE_UPSTREAM.md (the project's own list of what changed, 17 Oct 2026); [file] the clone and the install; [api] GitHub; `flsharp.md`

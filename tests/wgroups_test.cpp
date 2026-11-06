@@ -1,9 +1,9 @@
-// controller\src\impl\wgroups_rules.h (pure): the pad's group switch goes to the next group that has guns, never to an
+// modules\controller\src\impl\wgroups_rules.h (pure): the pad's group switch goes to the next group that has guns, never to an
 // empty one (RT would fire nothing: GitHub issue 4), stays put when only one group has guns, and falls back to plain
 // order when the membership is unknown.
 #include "test.h"
 
-#include "../controller/src/impl/wgroups_rules.h"
+#include "../modules/controller/src/impl/wgroups_rules.h"
 
 void Test_wgroups()
 {

@@ -1,7 +1,7 @@
 # Ghidra + an MCP bridge: the game's binaries decompiled on demand
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 1 watched-path commit: f8e1dd31 (FREELANCER_RE: the engine-kill-at-cruise coast, measured from a motion trace, not decompiled); `core/flexe.h` unchanged since 5eb7bcb; the benchmark claims stand)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 33 watched-path commits: the module split P0-P11e (moves, comments, map rows); flexe.h 228, FREELANCER_RE grew, so the seed is behind both (`ghidra.ps1 -Seed` not run: outside this round); tools/ghidra README paths only; the benchmark claims stand)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
 Watch: core/flexe.h, core/fldll.h, docs/FREELANCER_RE.md, tools/ghidra
 Evidence: research\ghidra\ (the install, the project, logs; git-ignored); the benchmark's transcript is the session's (29 Oct 2026 AFK)
 Sources: https://github.com/bethington/ghidra-mcp (v7.0.0 release, README), https://github.com/NationalSecurityAgency/ghidra (12.1.4 release), Adoptium API (Temurin 21); LaurieWired/GhidraMCP was the fallback, not needed

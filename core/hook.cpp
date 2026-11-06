@@ -1,3 +1,4 @@
+// Hook layer: symbol resolution by signature, code patching, instruction lengths, original image reads, detours, patches.
 #include "hook.h"
 
 #include "log.h"
@@ -750,8 +751,13 @@ struct Installed
     HookMode mode;
     char name[40];
     bool insideLogged; // "stays inside FLUF's detour" said once
+    u32 owners;        // the report's filter (SetOwner)
 };
 static std::vector<Installed> g_hooks;
+static u32 g_owners = ~0u;
+
+void SetOwner(u32 owners) { g_owners = owners; }
+u32 GetOwner() { return g_owners; }
 
 static u8* MakeStub(const void* to)
 {
@@ -867,6 +873,7 @@ static bool HookAt(uintptr_t site, void* dest, size_t stolen, const char* name, 
     e.dest = dest;
     e.tramp = tramp;
     e.mode = mode;
+    e.owners = g_owners;
     if (name)
         strncpy_s(e.name, name, _TRUNCATE);
     else
@@ -954,11 +961,33 @@ int AdoptRestoreStyle(const char* who)
     return moved;
 }
 
-void HookReport(char* out, size_t len)
+// Vtable and import patches, for the report (the list of detours above does not hold them); one row per slot.
+struct PatchRow
+{
+    uintptr_t slot;
+    std::string what;
+    u32 owners;
+};
+static std::vector<PatchRow> g_patches;
+
+static void NotePatch(uintptr_t slot, const std::string& what)
+{
+    for (const PatchRow& p : g_patches)
+        if (p.slot == slot)
+            return;
+    g_patches.push_back({slot, what, g_owners});
+}
+
+void HookReport(char* out, size_t len, u32 owners)
 {
     std::string r;
+    for (const PatchRow& p : g_patches)
+        if (p.owners & owners)
+            r += p.what + "\n";
     for (const Installed& e : g_hooks)
     {
+        if (!(e.owners & owners))
+            continue;
         const u8* c = reinterpret_cast<const u8*>(e.site);
         uintptr_t to = 0;
         ForeignJumpLength(c, &to);
@@ -1199,6 +1228,8 @@ void* PatchVtable(void** vtable, int index, void* fn)
             GetLastError());
         return nullptr;
     }
+    NotePatch(reinterpret_cast<uintptr_t>(&vtable[index]),
+              "vtable slot " + std::to_string(index) + " at " + Where(reinterpret_cast<uintptr_t>(vtable)));
     return old;
 }
 
@@ -1213,6 +1244,7 @@ void* PatchImport(HMODULE module, const char* dllName, const char* funcName, voi
         Log("PatchImport: %s!%s slot not writable (error %lu): hook not installed", dllName, funcName, GetLastError());
         return nullptr;
     }
+    NotePatch(reinterpret_cast<uintptr_t>(slot), std::string("import ") + dllName + "!" + funcName);
     return old;
 }
 

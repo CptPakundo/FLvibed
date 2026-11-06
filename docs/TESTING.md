@@ -2,22 +2,23 @@
 
 The testing rules the user set, and how the test install, deploy and sweeps work. Moved here from `..\CLAUDE.md` on
 21 Oct 2026 (the audit's CLAUDE.md diet); the rules are unchanged. The harness functions themselves are described in
-`..\controller\docs\HARNESS.md`; the mission runbooks in `missions\`; the game knowledge base in `kb\`.
+`..\docs\HARNESS.md`; the mission runbooks in `missions\`; the game knowledge base in `kb\`.
 
 ## Build and deploy
 - Build through the lock: `tools\buildlock.ps1 <target>` (one build at a time across sessions; it also stamps
   `build\<config>\build_info.txt`, what the build was built from, which the legs record). The command guard refuses a
   direct `build.cmd` call. The targets:
-- `build.cmd dev` (default): `build\dev\FLvibed.dll` (both modules' hosts) + `FLSubtitlesImpl.dll` +
-  `FLControllerImpl.dll` (the logic, hot-reloadable). `build.cmd release`: `build\release\FLvibed.dll` alone.
-  `build.cmd impl`: the logic DLLs only. `build.cmd sigtool`: `build\sigtool\sigtool.exe` (signatures for `core\flexe.h`). `build.cmd test`: the host-free unit
+- `build.cmd dev` (default): `build\dev\FLvibed.dll` (every module's host part) + `FLvibedLogic.dll` (every module's logic,
+  hot-reloadable as one). `build.cmd release`: `build\release\FLvibed.dll` alone.
+  `build.cmd impl`: the logic DLL only. `build.cmd sigtool`: `build\sigtool\sigtool.exe` (signatures for `core\flexe.h`). `build.cmd test`: the host-free unit
   tests (`tests\`, seconds, no game; `tools\README.md`). `build.cmd setup`: the players' installer (`tools\setup\`).
 - `tools\deploy.ps1` (PowerShell tool, full path): builds, writes `dacom.ini` (FLvibed.dll) and `FLvibed.ini`,
-  copies `subtitles\data\*.tsv` to `EXE\FLSubtitles\`, then hot-reloads (game running, DLL unchanged) or starts the
+  copies `modules\subtitles\data\*.tsv` to `EXE\FLSubtitles\`, then hot-reloads (game running, DLL unchanged) or starts the
   game, skipping each startup movie natively (`movieskip`: the game's movie loop sees it finished) while its video
-  window exists. Switches: `-Impl` (logic only, hot reload), `-Release` (the player build), `-Restart`, `-NoStart`,
+  window exists. Switches: `-Impl` (logic only, hot reload; `reload` or `unload` on either module's channel is one act for all the logic, `core\loader.h`), `-Release` (the player build), `-Restart`, `-NoStart`,
   `-NoBuild`, `-Intro` (let movies play), `-Save <file>` (start, then load that save by name), `-Modules
-  subtitles,controller` (which modules run), **`-Background`** (start without taking focus, game runs out of focus: use
+  subtitles,controller` (which modules run; each alone runs in the background too; both off or `safe = 1` is a game with no
+  guard at all, so never started: `tests\modules_nothing.ps1` proves that state with no game), **`-Background`** (start without taking focus, game runs out of focus: use
   it for automated tests so the user keeps the screen; every harness call works out of focus; it also starts the
   screenshot sampler `tools\flshots.ps1` for the session - a standing order: look at `research\experience\shots\<time>`
   while waiting), `-Instance <n>` (also a prepared folder's name, e.g. `-Instance vanilla11c` for the vanilla 1.1
@@ -34,11 +35,11 @@ The testing rules the user set, and how the test install, deploy and sweeps work
   xbox|ps5|switchpro`: SDL's own virtual devices with the real pads' USB ids - type, glyph family, buttons, axes,
   hot-plug, rumble / trigger rumble / effects read back; sweep section `pad-sdl`); the haptics' effects on both
   backends' streams (debug `haptics`, sweep section `pad-haptics`: the pad must be the device in use - `set input_mode
-  1` - and the gate open) - `controller\docs\HARNESS.md`.
-- **Sweeps:** `controller\tools\flsweep.ps1 -Parallel <N>` builds once, splits the sections over N games by their median
+  1` - and the gate open) - `docs\HARNESS.md`.
+- **Sweeps:** `tools\harness\flsweep.ps1 -Parallel <N>` builds once, splits the sections over N games by their median
   times and runs them at once (measured 20 Oct 2026: the full sweep 2688 s on 3 games vs ~7900 s serial, every mission
   SUCCESS; 1 game 191 fps, 3 games 154-163 fps each). Section `target-churn` (0.2.1): formation / goto / autopilot
-  dock under target churn and stick nudges, ~2 min (`controller\docs\HARNESS.md`). Under load the harness polls slower, so a test must never race
+  dock under target churn and stick nudges, ~2 min (`docs\HARNESS.md`). Under load the harness polls slower, so a test must never race
   the game: a threshold the test depends on is enforced game-side (base-repair: `spawn clearat <hull>` despawns the
   attackers - and their missiles in flight, counted as damage already done - the frame the hull reaches it; harness
   polling missed it and the ship died). A sweep ends after the game has exited (a dying game counted as running for
@@ -50,7 +51,7 @@ The testing rules the user set, and how the test install, deploy and sweeps work
   timing history `tools\flbenchhist.ps1`; one test start with evidence `tools\fltest.ps1`; check-ins `tools\flcheckin.ps1`
   (text digest per instance every ~2 min, ATTENTION on death / stall / repairs / a frozen game - no frame in 3 s, with
   per-thread CPU, the busy threads' code locations and our logs saved by `tools\flfreeze.ps1`).
-- **Speedrun legs** (22 Oct 2026, `LEGS.md`): `controller\tools\flleg.ps1` runs one leg per game instance from a save,
+- **Speedrun legs** (22 Oct 2026, `LEGS.md`): `tools\harness\flleg.ps1` runs one leg per game instance from a save,
   several at once (one pwsh each, build once before); each instance has its own copies of the FL*.dll (not hard links),
   so a new build can be deployed to an idle instance while others run. Prefer a leg (minutes, from the nearest leg
   save) over a long chain; a chain run only for what crosses leg boundaries. A failed leg keeps the last 15 s of its
@@ -58,7 +59,7 @@ The testing rules the user set, and how the test install, deploy and sweeps work
   `autopilot minefield-damage` (hull lost to a mine in a mine-danger field; not a zone's steady damage) is a FAIL whatever the mission says (the
   user, 23 Oct 2026, for Zone 21; the rule holds for every minefield). **Fail states** (the user, 23 Oct 2026: fail a
   run as soon as it cannot be a good one - shorter test cycles): the checkpoint limits ("Speedrun splits" below) plus
-  the event rules of `controller\tools\missions\leg_failstates.tsv`, rows per leg (`M12`) or for all (`*`): `event` = a
+  the event rules of `tools\harness\missions\leg_failstates.tsv`, rows per leg (`M12`) or for all (`*`): `event` = a
   log event matching the pattern ends the leg `FAILED (FAIL STATE ...)` at once; `by` = the pattern must appear within
   `secs` of the anchor's first event (no anchor: of the leg start). `Leg.ps1` checks them live; `-NoFailStates` turns
   them off. Each row says why (its data). (The first per-leg `by` rows - 1.3x the leg's best, M12's lair / core
@@ -73,19 +74,34 @@ The testing rules the user set, and how the test install, deploy and sweeps work
   (>= 200 frames in a folder) every 10th frame as PNG, the rest as full-resolution JPEG q92; the spec's image sources
   (`tools\uimock\spec_images.py`), folders a tool reads and recent runs untouched. Left: `hud2x_verify_2026-10-25`
   (2 GB, its generic file names all count as named). Evidence 48 GB after.
-- **Windows 7** (a player's 0.1.0 report; the owner, 29 Oct 2026): `tools\win7_check.ps1` (run by `package.ps1`, which
-  fails a release on it, and by `drift_check`) compares every import of the release DLL, the setup and the server
-  plugin with `tools\win7_imports.tsv`; a new import is looked up (minimum client) and allowlisted, or resolved at run
-  time. `FLVIBED_SIM_WIN7=1` in the deploying shell's environment (like `FLVIBED_BACKGROUND`, never stored) makes the
-  game take its Windows 7 paths here: XInput from `xinput9_1_0` only, no `GetDpiForWindow`, `DwmFlush` failing (Aero
-  off). Verified 29 Oct (`runs\win7sim_2026-10-29`): the intro lines, xinput9_1_0 loaded, the winmode readout. Open: a
-  real pad read through xinput9_1_0 (plug one in, run with the switch); a real Windows 7 machine.
+- **Windows 7** (a player's 0.1.0 report, a tester's on 0.3.0; no Windows 7 VM, the owner): `tools\win7_check.ps1` (run by
+  `package.ps1`, which fails a release on it, and by `drift_check`) looks every import of the release DLL, the setup and
+  the server plugin up in `tools\win7_exports.tsv`, the real export tables of Windows 7 SP1 x86 (6.1.7601.23403, from
+  KB3125574; `-Reference` rewrites it). `tools\win7_imports.tsv` holds only what that update lacks. It also fails on a name
+  in the DLL's text that a current system DLL exports, Windows 7 does not, and `core\host\win7sim.cpp` does not list, and on a
+  binary whose Rich header has a part from a toolset past build.cmd's pin (MSVC 14.44: VS 2026's no longer targets Windows 7), a stale library included.
+  `FLVIBED_SIM_WIN7=1` in the deploying shell's environment (like `FLVIBED_BACKGROUND`, never stored) makes the game
+  take its Windows 7 paths here: XInput from `xinput9_1_0` only, `DwmFlush` failing (Aero off), and every newer API and DLL
+  unfound at run time, FLvibed's, SDL's and the C runtime's look-ups alike (the log's `win7 sim: refused` lines; a release
+  build: a dev build's logic DLL is not patched). Proved
+  by these: the loader finds every import; each fallback runs. Not proved: a real Windows 7 machine, and a real pad read
+  through xinput9_1_0.
+  `tests\win7_speed.ps1`: the keyboard's throttle reaches top speed and comes back, on HUD 2, the simulation, a pad, the controller off and classic.
+- **The autopilot under windows** (GitHub issue 25): `tests\ap_under_window.ps1`, flying, and with `-Fight` fighting on the pad and on keyboard and mouse, with a no-window control.
+- **The pad's toggles and the native target keys:** `tests\pad_toggles.ps1` (GitHub issues 29, 30), `tests\target_keys.ps1` (HUD 2 against classic).
+- **PlayStation and Switch pads with no setting:** `tests\pad_fallback.ps1`. A test game leaves the machine's own pad alone (`FLVIBED_BACKGROUND`): debug `padfallback hid|0|1` gives the fallback its answer, `padfallback rumble` a pulse on the pad in the hands. A device-layer pad stands in for a mapper's mirror and for a real Xbox pad beside it; row `injected` sends real injected input (F24, a mouse move of one pixel and back) through the low-level hooks with the game behind. A real Steam Input run and `dimouse`'s drop at the reads need the game in front: the owner's pad check.
+- **Before a game is spent on a test script:** `tools\test_lint.ps1` (in `drift_check`) resolves its harness calls and their parameters.
+- **A game started in front runs no frames while another window has focus,** so `Send-FL` times out with the game healthy (`Responding` true, the log still): read what a player's run needs while it is in front, or from its log afterwards. One client on the debug channel at a time: a polling watcher starves other calls.
+- **Module matrix** (sweep section `modules-matrix`, release build, one fresh game per row): all on, each cut module off, the controller off, each cut
+  module on with the controller off; hooks judged against the all-on game's table, verbs against an unknown verb; core only and `safe` by
+  `tests\modules_nothing.ps1`. `deploy.ps1 -Modules subtitles,controller,speedrun=0` writes a row only when it is named. The startup movies are skipped there:
+  `tests\movie_modules.ps1` lets them play: all on, Subtitles alone, Movies alone (frames), a reload during a movie (dev build).
 - **Display matrix** (sweep section `display-matrix`, 21 Oct 2026): one game instance (the worker's, or instance 9 in a
   serial sweep; never the main install) is started fresh per configuration - borderless 3840x2160, bordered windowed
   1600x1200 (4:3) and 2560x1080 (21:9), borderless 1280x720, a DPI-unaware process - and both modules are checked (back
   buffer size, window border, DPI awareness, HUD projection, pad throttle, HUD 2 coming on with the pad, a subtitle, a
   screenshot per mode under `research\experience\runs\display_<time>`). **HUD 2 in tests** (25 Oct 2026,
-  `docs\UI_HUD2.md`): with `hud_style` 1 (default) HUD 2 replaces the game's panels while the pad is the device - the
+  `modules\hud\docs\UI_HUD2.md`): with `hud_style` 1 (default) HUD 2 replaces the game's panels while the pad is the device - the
   virtual pad included - so a test that reads or clicks the game's own HUD controls (`uiitems`, `visible`, `click` on a
   maneuver / contact / status button) runs before any pad input, with `input_mode 2`, or with `hud_style 0`; the autopilot
   legs and sets drive no pad and see the game's HUD. HUD 2's own state: debug `hud2 state`, `hudinfo`. Exclusive fullscreen only with `-Attended` (it takes the screen). How the
@@ -127,7 +143,7 @@ personal best, best segments / gold, sum of best, comparisons).
   `docs\SPLITS.md` (generated, committed with the leg results) = par, runners, gold, PB, spread, limits per checkpoint,
   the sum of best per leg; `docs\livesplit\<leg>.lss` = LiveSplit files with those comparisons (open them in LiveSplit to
   see a leg as the runners do; nothing of ours depends on LiveSplit).
-- **Fail limits - a catastrophic mistake or delay** (`controller\tools\missions\leg_checkpoints.tsv`, generated by
+- **Fail limits - a catastrophic mistake or delay** (`tools\harness\missions\leg_checkpoints.tsv`, generated by
   `splits.py limits`): a segment fails when it takes longer than max(2x the runners' slowest time for it, +45 s;
   1.5x our gold + 20 s) - far outside both the runners' worst and our own best; a full leg also fails when a checkpoint
   is not reached by 1.15x the PB's split + 30 s. The own-history bounds tighten by themselves as golds and PBs improve;
@@ -168,8 +184,8 @@ personal best, best segments / gold, sum of best, comparisons).
    `speedrun-ref` (the first `flleg` / `flset` on a leg in a session is refused with the leg's runner data until the
    command states "# ref: <their approach vs ours>"; `speedrun-ref-read` does the same once for the first read of a
    leg's run evidence), the verdict nudge, which puts the same data beside every leg's RESULT line
-   (`tools\claude\hooks\speedref.js`), and the judge gate (a Stop hook: a turn does not end with a leg verdict that no
-   `run-judge` call followed; run-judge's report has a required RUNNERS section). `tools\claude\README.md` has the why
+   (the private reference hook), and the judge gate (a Stop hook: a turn does not end with a leg verdict that no
+   `run-judge` call followed; run-judge's report has a required RUNNERS section). the private Claude Code harness notes has the why
    and the replay numbers.
 2. **Probe before a fix** (session 9 lesson: the M12 plate read as "rotating spokes" from video for four sets): read the
    mechanism in game (ray scan, motion trace, dense frames, the log) and write the finding down; a fix built on an
@@ -185,7 +201,7 @@ whatever its rotated order (30 Oct 2026: the first of each instance's own -Order
    the two-instance form, one `tools\flset.ps1` per variant: `-Sprt -SprtA <reference variant> [-SprtB <other side>]
    [-SprtSeg <checkpoint>]` judges the pair after every third run of its own and stops on any final verdict (both
    sides read the shared history, so both stop) - opt-in
-   since 30 Oct 2026, H2; the default is the owner's D1), INCONCLUSIVE (12 runs on B, still between the bounds) reverts,
+   since 30 Oct 2026; the default is the owner's D1), INCONCLUSIVE (12 runs on B, still between the bounds) reverts,
    NODATA stops (fail closed: a side with no value - an unanchored or mistyped label regex -, A with one value, a run in
    both sets, an option it does not understand). A DNF counts as the segment's fail limit; B failing 2 runs more than A,
    or a leg total slower by its 2 % gain, forces REVERT; exit code 0 always (advice: the caller decides). Its `reach`
@@ -200,7 +216,7 @@ whatever its rotated order (30 Oct 2026: the first of each instance's own -Order
    segment and failed later is a timed sample there, not a failure in the fails guard (mm4-b_i1 passed M13.bsdown, stalled
    at the Osiris, and had counted among A's bsdown failures; `splits.py selftest` "later failure no fail"). The sprt is
    time-only: a survival change shows in its fails guard and needs its own count (Fisher) beside it. **Before an sprt
-   set, its smallest detectable effect** (30 Oct 2026, Q4: three M13 sets of 24 legs
+   set, its smallest detectable effect** (30 Oct 2026: three M13 sets of 24 legs
 ended without a verdict): about 2.5 x sigma x sqrt(2 / cap) - M13.bsdown's sigma 26.6 s at a cap of 12 gives ~27 s; a
 change the runners' data does not put above that is not worth the set (cut the variance first: fixed dt, seeds, a
 checkpoint save closer to the change). `splits.py selftest` checks its math and arguments. Computed by `tools\reach.py`; since 31 Oct 2026 the guard `reach-short` refuses a set / arms launch whose `reach=<checkpoint>:<runs per arm>:<expected s>` lies below it (`reach=probe` for a run that judges nothing). A segment-local change
@@ -281,7 +297,7 @@ the save's first segment then starts N s past the checkpoint (a `seg` run: compa
    segment is a finding, also when its time looks fine.
 6. **Shared code** (travel, combat, dock, guard, objective logic) changed -> the leg gate (`tools\flgate.ps1`: every leg
    once from its start save in `docs\legs_reference.tsv`; `-ApSet` carries a switch to every leg, e.g. the measurement
-   gate `situation_shadow 1` read by `tools\shadow_digest.py --gate <tag>`, Q6 S5) before the next change set, compared checkpoint by checkpoint with the last gate (`splits.py compare
+   gate `situation_shadow 1` read by `tools\shadow_digest.py --gate <tag>`) before the next change set, compared checkpoint by checkpoint with the last gate (`splits.py compare
    'gate-<last>$' 'gate-<new>$'`); a WORSE segment of one run is a lead to re-run (one run is noise), a leg whose
    segments stay worse is a regression to fix first. **Since 30 Oct 2026 evening every gate harvests** (fresh
    checkpoint saves by default, `-NoFreshSaves` off; after the queue `sets\gate_<tag>_A.tsv` from `tools\gate_harvest.py`
@@ -291,9 +307,9 @@ the save's first segment then starts N s past the checkpoint (a `seg` run: compa
    **Every launch** (leg, set, gate) carries `# budget: <pkg> n/N` stated before the first run, every set `# reach:`
    (what its runs can detect vs the effect expected, the start save before the change's events), and the live state of
    each new run is read 60 s+ after its start (`tools\launchcheck.ps1`; the Stop hook refuses the turn end otherwise) -
-   the guard rules and hooks of `tools\claude\README.md`.
+   the guard rules and hooks of the private Claude Code harness notes.
 7. **Speedrun knowledge vs general play**: behaviour that only pays because of a mission's script (a trigger distance, a
-   bespoke route) is speedrun knowledge and names its source (`controller\docs\AUTOPILOT_UX.md` 2a); general behaviour
+   bespoke route) is speedrun knowledge and names its source (`modules\autopilot\docs\AUTOPILOT_UX.md` 2a); general behaviour
    must not key on mission ids. The legs judge the speedrun preset; the sweeps / fight matrix judge the general play.
    Since session 11 `flleg.ps1` applies `ap preset speedrun` at every leg's boot (before a set's `-ApSet`); the preset
    holds the kept speedrun switches (`autopilot_settings.cpp` presets; AUTOPILOT.md "Speedrun flight").
@@ -312,7 +328,7 @@ the save's first segment then starts N s past the checkpoint (a `seg` run: compa
   these options.
 - **Install policy (user, 21 Oct 2026):** HDE 0.7.1 stays the primary test install and the benchmark baseline until
   HDE publishes v0.8; the upstream HDE + FLSharp 0.9.2 becomes a second, separate install for compatibility sweeps
-  only (not built yet). Reasons, differences and the plan: `research\hde-upstream.md`.
+  only (not built yet). Reasons, differences and the plan: `docs\research\hde-upstream.md`.
 - **Nothing of this project's game outside the project (user, 18 Oct 2026):** the user may play a personal Freelancer
   install on this PC; everything the test install writes stays in it unless the user says otherwise. Its
   `EXE\flplusplus.ini` has `save_in_directory = true` + `screenshots_in_directory = true` (HDE's flplusplus redirects
@@ -357,7 +373,7 @@ saves.
   grab), never change Windows or game settings (a mixer mute was rejected: silence is in-process, the render client's
   silent flag), all game systems keep working as in a normal start, test flags only in the game process's environment
   (FLVIBED_BACKGROUND), never stored. A background start's window title names it (user, 21 Oct 2026): "Freelancer -
-  FLvibed test instance <n> (background, muted)" or "... test, main install ..." (controller host's watcher thread,
+  FLvibed test instance <n> (background, muted)" or "... test, main install ..." (the host's watcher thread, `core\host\focus.cpp`: any module alone gets all of this,
   re-applied every second). If new code may still take focus, ask first and close the game right after.
   **The silence and the inactive window are FLvibed's own**: a game without FLvibed loaded comes up in front with its
   sound. Every start outside `deploy.ps1` (which installs FLvibed itself) calls `Assert-FLWillLoad <EXE dir>` first
@@ -400,7 +416,7 @@ saves.
   the history, sane choices, the product doing the work rather than the helpers), judged against the 2020 playthrough
   where it exists (the reference footage: the 2020 playlist and the top-3 speedruns, `research\videos\`); a "pass" that only completed - a
   section that passed for days while flying past a lane - is a failure. For a verdict that decides a change, hand the
-  run to the `run-judge` agent (`tools\claude\README.md`).
+  run to the `run-judge` agent (the private Claude Code harness notes).
 - **Every unattended test samples screenshots and runs check-ins** (`deploy.ps1 -Background` starts the sampler;
   `tools\flcheckin.ps1` every ~2 min in the background; unexpected behaviour = stop, read the logs, fix).
 - **Reference runs by the user** (23 Oct 2026, M12): the user flies a set piece on the main install, in front with
@@ -413,7 +429,7 @@ saves.
   counter-productive and a time waster"; an M12 leg held 3 km off a generator for 8 min until its clock failed it):
   check-ins every ~60 s while legs run, each read as it lands; a stuck or known-wrong test is stopped at once (stop its
   task, close its instance), diagnosed and rerun - never left to its time-out. Legs stop themselves on no progress
-  (`Leg.ps1 -StallSec`, `controller\docs\HARNESS.md`).
+  (`Leg.ps1 -StallSec`, `docs\HARNESS.md`).
 - **Judge a change by several runs** (user, 23 Oct 2026: "run the current build 3 times ... and judge it by all three
   before changing anything else"): leg results vary a lot run to run (M12 session 7: hops 31-86 s, the same build 1/3
   and 3/3 by chance of cruise disruptors and fighters). Since 24 Oct 2026 the number of runs comes from the leg's
@@ -435,11 +451,11 @@ saves.
   game window when the other tools are not enough (`Save-FLShot`).
 
 ## Session state and the environment hooks
-- `HANDOFF.txt` = the current state only (mode, now / next, plan status, open issues), **under 8,000 characters** -
+- the private handoff = the current state only (mode, now / next, plan status, open issues), **under 8,000 characters** -
   Claude Code caps hook output at 10,000 and a longer handoff arrived as a 2 KB preview (20 Oct 2026); finished items
-  move to `HANDOFF_history.txt` (append, never delete). Both are versioned since 21 Oct 2026 (they were git-ignored).
-- The environment's hooks (versioned in `tools\claude\hooks\` since 29 Oct 2026, installed by `tools\claude\install.ps1`;
-  all of the harness: `tools\claude\README.md`): `compact-handoff.js` injects the handoff after every compaction and
+  move to the private handoff history (append, never delete). Both are versioned since 21 Oct 2026 (they were git-ignored).
+- The environment's hooks (versioned in the private session hooks since 29 Oct 2026, installed by the private harness installer;
+  all of the harness: the private Claude Code harness notes): `compact-handoff.js` injects the handoff after every compaction and
   into every new or resumed session (matchers `compact|startup|resume` since 21 Oct 2026; after a compaction or resume
   with the live git / game / set-driver state), `context-warn.js` warns near the context limit and notices a compaction
   by the context drop, `afk-guard.js` (Stop) blocks idle turn ends while `..\..\.claude\afk.flag` exists (the user is
@@ -461,7 +477,7 @@ the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
 1. **Start**: create `..\..\.claude\afk.flag` (one line: "AFK continuous - plan in FLvibed\HANDOFF.txt", the time). The
    Stop hook (`afk-guard.js`) then blocks idle turn ends. Create a **session cron keep-alive** (CronCreate, every 10 min
    off the :00 / :30 marks, recreated before its 7-day expiry - the schedule and its reason: the `afk-run` skill,
-   `tools\claude\skills\afk-run\SKILL.md`; prompt: "AFK continuation: continue the next unfinished item in
+   a private session skill; prompt: "AFK continuation: continue the next unfinished item in
    FLvibed\HANDOFF.txt; never end idle") - a turn that
    ends while a background task or cron is pending is allowed by the hook, and the cron (not the task's notification
    alone) guarantees the session is re-prompted. Every turn ends with a background task running (a test, a check-in).
@@ -471,11 +487,11 @@ the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
    thing, step back, write down why, change approach or move to the next item.
 3. **Rollover near a full context** - since 30 Oct 2026 (the owner's standing OK) by a one-shot scheduled task of the
    app that starts a fresh successor session, with a handshake that never drops the run
-   (`tools\claude\afk_handover.ps1`: the predecessor releases only after the successor took over; the task runs every 15 min, so
+   (the private handover script: the predecessor releases only after the successor took over; the task runs every 15 min, so
    no takeover in 35 min = abort and work on; `-Request` refuses while one of the session's subagents still works, and
-   the predecessor keeps its running work going until HANDED - 30 Oct 2026 evening, test `tools\claude\test_handover.ps1`):
+   the predecessor keeps its running work going until HANDED - 30 Oct 2026 evening, test the private handover test):
    the afk-run skill "Rollover", the successor's prompt
-   `tools\claude\skills\afk-run\successor_prompt.md`. Before that: not possible from an AFK turn - `start_session` is refused in a turn the cron
+   a private session skill. Before that: not possible from an AFK turn - `start_session` is refused in a turn the cron
    keep-alive or a task notification started ("only on the user's own words"), and the user is not there to start one
    (session 8, 23 Oct 2026). Long runs are carried by compaction with the handoff current at every milestone (4.); only
    the user's return ends AFK (delete the flag and the cron), then the end-of-run report `..\..\AFK_SUMMARY_<date>.md`
@@ -505,7 +521,7 @@ the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
      PROGRESS): stop changing that
      target. Write down why the last attempts failed (dossier), then either change the approach (probe / research the
      mechanism first - "Probe before a fix") or move to the next target in the list. Never a fourth variation of the
-     same idea. Enforced since 29 Oct 2026: the command guard (`tools\claude\hooks\guard.js` `set-no-progress`) refuses
+     same idea. Enforced since 29 Oct 2026: the command guard (the private command guard `set-no-progress`) refuses
      `flset.ps1` on such a leg unless the command names the new approach (`# guard-ok:set-no-progress <hypothesis>`,
      logged in `..\.claude\guard_fires.tsv`).
    - **UNRELIABLE** (PASS under 5 / 6 in a recent set): fail states first - read every failed run before any speed work.
@@ -520,14 +536,14 @@ the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
    while AFK the command guard reads it (since 29 Oct 2026, T31): `review-due` refuses a set launch or a dev build when
    it is missing, over 2 h old or unfinished, `stop-the-line` refuses a set while it shows ATTENTION / ERROR on
    decisions / replay / saves (and a flleg run from an unfit save) - each refusal names the step that clears it (the
-   `afk-run` skill, `tools\claude\README.md`). A kept change is turned on by default only after
+   `afk-run` skill, the private Claude Code harness notes). A kept change is turned on by default only after
    the gate shows no regression on the other legs (speedrun-only knowledge stays behind its preset / switch and names
-   its source - `controller\docs\AUTOPILOT_UX.md` 2a). Long runs (the leg gate, several legs in a row) go
+   its source - `modules\autopilot\docs\AUTOPILOT_UX.md` 2a). Long runs (the leg gate, several legs in a row) go
    as detached pwsh (`Start-Process`), not as tool background tasks: those end at the tool's 10 min timeout. Quote the
    script path inside one `-ArgumentList` string (`"-NoProfile -File `"$g`" ..."`): an array splits the path at its
    spaces and pwsh only prints its help. A direct `flleg.ps1` with an array argument (`-ApSet 'a 1','b 2'`) cannot go
 through `-File` (its values split at their spaces, the leg dies at once on a parameter error): pass
-`@('-NoProfile','-Command',"& '<path>' ... -ApSet 'a 1','b 2'")` (30 Oct 2026, Q4 probe). `deploy.ps1 -Impl -Instance <n>` STARTS the game when that instance has none
+`@('-NoProfile','-Command',"& '<path>' ... -ApSet 'a 1','b 2'")` (30 Oct 2026). `deploy.ps1 -Impl -Instance <n>` STARTS the game when that instance has none
    (in front, with sound - session 8: the gate had already closed it); for a test instance always add `-Background`,
    and build-only work uses `build.cmd impl` / `deploy.ps1 -NoStart` (the instances are hard-linked mirrors: deploy only
    while no instance game runs).

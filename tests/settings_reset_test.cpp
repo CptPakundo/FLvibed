@@ -47,4 +47,31 @@ void Test_settings_reset()
         DeleteFileA((dir + name).c_str());
     CHECK(settings_reset::Run(dir.c_str()) == 0);
     CHECK(GetPrivateProfileIntA("FLvibed", "settings_version", 0, ini.c_str()) == settings_reset::kVersion);
+
+    // 0.3.5's rumble: a stored 60 moves to 100, once
+    const std::string pad = dir + "FLController.ini";
+    const auto rumble = [&pad] { return GetPrivateProfileIntA("Controller", "rumble", -1, pad.c_str()); };
+    CHECK(WriteTextFile(ini, "[FLvibed]\r\nsettings_version = 2\r\n"));
+    CHECK(WriteTextFile(pad, "; comment\r\n[Controller]\r\nhud_style = 1\r\nrumble = 60\r\n"));
+    CHECK(settings_reset::MoveValues(dir.c_str()));
+    CHECK(rumble() == 100);
+    CHECK(GetPrivateProfileIntA("Controller", "hud_style", 0, pad.c_str()) == 1);                              // the rest of the file stays
+    CHECK(GetPrivateProfileIntA("FLvibed", "settings_version", 0, ini.c_str()) == settings_reset::kVersion); // no reset
+    // a second start: a 60 the player chose since stays
+    CHECK(WriteTextFile(pad, "[Controller]\r\nrumble = 60\r\n"));
+    CHECK(!settings_reset::MoveValues(dir.c_str()));
+    CHECK(rumble() == 60);
+    // any other value stays, and the move is spent
+    CHECK(WriteTextFile(ini, "[FLvibed]\r\nsettings_version = 2\r\n"));
+    CHECK(WriteTextFile(pad, "[Controller]\r\nrumble = 45\r\n"));
+    CHECK(!settings_reset::MoveValues(dir.c_str()));
+    CHECK(rumble() == 45);
+    CHECK(GetPrivateProfileIntA("FLvibed", "settings_moved", 0, ini.c_str()) == settings_reset::kMoved);
+    // a new install: no FLController.ini yet, the move spent all the same, so a 60 set later stays
+    DeleteFileA(pad.c_str());
+    CHECK(WriteTextFile(ini, "[FLvibed]\r\nsettings_version = 2\r\n"));
+    CHECK(!settings_reset::MoveValues(dir.c_str()));
+    CHECK(WriteTextFile(pad, "[Controller]\r\nrumble = 60\r\n"));
+    CHECK(!settings_reset::MoveValues(dir.c_str()));
+    CHECK(rumble() == 60);
 }

@@ -1,7 +1,7 @@
-// The SDL virtual test pads' pure pieces (controller\src\pad_backend.h, WORK_QUEUE Q5 slice 2, IDEAS T36 slice 2): the
+// The SDL virtual test pads' pure pieces (modules\controller\src\pad_backend.h, WORK_QUEUE Q5 slice 2, IDEAS T36 slice 2): the
 // kinds (USB ids, the type SDL names, the glyph family they must select), the harness's XInput form -> the virtual
 // device's raw values and back through SDL's gamepad layer (the trigger normalisation mirrored), the pad in use.
-#include "../controller/src/pad_backend.h"
+#include "../modules/controller/src/pad_backend.h"
 
 #include "test.h"
 

@@ -1,5 +1,90 @@
 # Changelog
 
+## 0.3.5rc (test build)
+
+A test build of 0.3.5: every change below, not yet through the full regression sweep and gate. Short checks only: unit tests, the module matrix, one start each of flight, a dock, a subtitle and a movie.
+
+- **PlayStation and Switch pads work natively, with no setting and no mapper:** FLvibed reads them itself through SDL3, with the right button
+  prompts, rumble and hot-plug, whether or not Steam Input or a mapper is running. Their output for that pad is ignored, so each press acts once: the
+  Xbox-pad copy they present and, while you use the pad, the keys and mouse they send. A real Xbox pad beside it works too: the pad in your hands is the
+  pad, with its prompts and rumble. To hand the pad to Steam Input or your mapper, turn off **Read PlayStation and Switch pads natively** (Options,
+  Controller, Input). A Steam Deck or Steam Controller is not touched: Steam Input is how those work.
+  Known limits: what a mapper sends while the pad rests still reaches the game (Steam's gyro, macros). A mapper that outputs through a virtual device of
+  its own, or as a DualShock, is not seen: turn the row off for those.
+- A Bluetooth PlayStation pad's rumble switches the pad to a mode other apps may not read, as in other games that rumble it, as far as is known. If another app sees a dead pad
+  after playing over Bluetooth, hold the PS button for about 10 seconds to turn the pad off.
+- Windows 7: FLvibed is now built with a Microsoft compiler that still targets it, after a tester's Windows 7 needed VxKex to run 0.3.0.
+  Expected to work without VxKex, not yet confirmed on a real Windows 7.
+- Autopilot: stopping it during a coast gives you the engine back, and starting it again no longer sits there lit and doing nothing.
+- Autopilot: loading a save, from the pause menu too, stops it. It used to fly on into the game you loaded.
+- Autopilot: it keeps turning with the rear view on, and with the pause menu open in multiplayer, where the game has no pause.
+- Autopilot: a dock you made by hand no longer stops its next start for four seconds.
+- Autopilot beside FLUF: FLUF's windows get the pad while it flies, and the stick there no longer takes the ship back.
+- Multiplayer: a server's word changed during a flight counts at once, not at the next start.
+- Restart stalled maneuvers leaves a queued dock alone: waiting for the bay is no stall.
+- Pad: after using a menu with the pad, the mouse works again at once. A held A or X no longer stays pressed for the mouse.
+- Pad: a worn stick resting off centre, or a wheel's axis, no longer takes the game from your mouse.
+- Pad: the right stick scrolls the lists it says it does, at the dealers too (an overflowing description's own scroll bar is not reached yet).
+- Pad: the ship dealer no longer sometimes opens on its final trade stage. A click from the pad could count as a double click.
+- Pad: the job board's tooltip no longer flickers on a still screen. With the pad there is no cursor for it to follow, so in the docked windows it stays off (rooms keep the characters' name cards).
+- Pad: the button prompts stay for as long as a window, menu or modal is open. They used to leave after 3 seconds and not come back on a later visit, as at the job board. In a base room they still fade; the Prompt bar row's Always keeps them there too.
+- HUD 2: the face buttons in the prompts wear their platform's colours, in the shades of each family's latest coloured generation: the Xbox Series pad, the DualShock 4 (for the DualSense too) and the New Nintendo 3DS (for the Switch). Glyph look's HUD 2 style keeps them single-colour.
+- Pad: vibration now defaults to 100 %. If your setting is the old default of 60 %, it moves to 100 % once, at the first start of this version; any other value stays. To set it back: Options, Controller, Rumble. A 60 % you set afterwards stays.
+- Pad: with Weapon Groups On Triggers, both triggers fire their groups under the autopilot too, and HUD 2 shows both. LT used to light the afterburner there (GitHub issue 31).
+- Pad: unplugging or alt-tabbing with the action wheel open no longer fires the highlighted action.
+- Pad: the Keyboard and mouse input mode also silences Start. X in the flight inventory keeps the item's description.
+- Saves: a Speedrun or Assisted save loaded from the pause menu now loads as what it is. A save folder that is out of reach for a moment no longer forgets every save's mode.
+- HUD 2: an alert no longer comes back on the next flight after a dock.
+- Speedrun: a best is kept when two splits land in the same frame. New Game's list also takes up, down, Enter and Escape; SPEEDRUN MODE is offered only with the module on.
+- Options: Reset Everything also clears the rows of modules that are off, and the Borderless row says when your change acts. The Bindings button says plainly that the editor is not built yet.
+- `EXE\FLvibed.ini`: `[Modules]` rows take `on`, `off`, `yes` and `no` as every other setting does (`hud = on` used to turn the HUD off).
+- With the Autopilot off, the target picker and HUD 2 still know the mission's ships.
+- Smaller logs: the stall recorder keeps to its cap, and 2,400 trace lines at every load are gone.
+- Updating by hand from the zip keeps your settings. The zip's `FLvibed.ini` used to replace yours, which reset every FLvibed setting at
+  the next start; the zip no longer ships that file (the game writes it at its first start).
+- Uninstall: the autopilot's learned ranges (`EXE\FLvibed\ranges.tsv`) and the `*.before-0.2.0` backups go with your settings, so the
+  `EXE\FLvibed` folder no longer stays behind; the dialog now names everything it removes, the speedrun bests included.
+- FLvibed is now a core with eight modules: HUD, Controller, Subtitles, Movies, Autopilot, NPC, Display and Speedrun. Each has
+  its row in `EXE\FLvibed.ini` `[Modules]`. A row you never set follows the module it came from (`hud`, `autopilot`, `speedrun`,
+  `display` and `npc` follow `controller`, `movies` follows `subtitles`), so nothing changes on an existing install. Keyboard and
+  mouse players can keep HUD 2, the autopilot or speedrun mode with the Controller off. With `subtitles = 0` and `controller = 0`
+  nothing starts, and `safe = 1` turns everything off, for troubleshooting.
+- Options, GENERAL: the FLVIBED page sets all eight modules, each row saying what it needs; no ini to edit. Turning the Controller
+  off no longer takes the other modules with it, and one of Subtitles and Controller always stays on, because with both off
+  FLvibed does not start, this page included. Reset Everything brings every module back alike.
+- Options: the FLVIBED page works with the Controller module off. A setting that acts on the game stays live with what uses it:
+  Text size, Steam Deck mode, FLUF's windows and Restart stalled maneuvers are core's; the window rows go with Display, the speedrun
+  rows with Speedrun, the autopilot's with the Autopilot, the movie rows with Movies when Subtitles are off. A row whose module
+  is off says so, shows the value in the file, and tells you where to turn the module on.
+- New Game on keyboard and mouse: with the Controller off, NEW GAME offers NORMAL GAME, ASSISTED and SPEEDRUN MODE by mouse, so
+  speedrun mode, its timer, splits and LiveSplit work with no pad. Saves carry their mode there too.
+- Restart stalled maneuvers now protects every player, whichever modules are on.
+- Multiplayer: a server's word on the autopilot reaches it with the Controller off, exactly as with it, and its tag line stays
+  out of the chat whichever modules run.
+- A crash in the HUD, Autopilot, Speedrun or NPC module stops that module alone, as if it were off: the pad, the options page and
+  the rest play on, and the module's rows say MODULE STOPPED until you restart the game.
+- Options, Autopilot tab: its rows work again. Every row was greyed, and Reset, Default and Save skipped them, in 0.2.0 to 0.3.0.
+- Autopilot, goal panel: the SETTINGS tab's changes are saved.
+- Autopilot: the guns are released when you stop it, whatever stopped it.
+- A crash in FLvibed's own logic gives you back the game's HUD and stops the ship turning, instead of leaving the panels hidden.
+- HUD 2: the keyboard's throttle keys work. With the game's maneuver bar hidden they did nothing, so the ship kept whatever speed it had
+  (this fits a report of speed locked in flight while trade lanes still worked; the reported 10 m/s itself was not reproduced).
+- HUD 2: your allies' health bars in the lower left have the same small pips as the rest of the HUD (GitHub issue 23).
+- Pad, dealers: the QUANTITY line stands still; it moved sideways whenever its digits changed (a likely cause of GitHub issue 24, not confirmed yet).
+- Pad, inventory: X steps its categories as at the Equipment Dealer, in flight and docked, and the prompt bar says FILTER (GitHub issue 30).
+- HUD 2: the game's next and previous target keys work; with the contact list hidden they found nothing.
+- Holds as toggles: a boost or rear view the game ended by itself no longer needs two presses to start again (GitHub issue 29).
+- Autopilot: it keeps flying and fighting while the map, a NeuroNet window or the options page is open (GitHub issue 25); only the game's
+  pause holds it. The window keeps your pad, keys and cursor: what you do there does not steer the ship or take it back.
+- With the Controller module off: the map and inventory can be clicked while the autopilot flies, the goal panel closes at a mode
+  change, turret view keeps the autopilot's gun aim, HUD 2 names your own `autopilot_key`, and the options page keeps Steam Deck
+  mode and Text size.
+- With `controller = 0` the game also gets the message-pump fix (`pump_no_block`) and the LAN list fix, which belong to the core
+  now.
+- Pad, equipment dealer: the D-pad no longer lands on a carried item's mount box, so A on your row cannot unmount it by accident (the comment on GitHub issue 10). LS click mounts and unmounts; the box stays on screen for the mouse.
+- HUD 2, docked windows: text no longer changes size and weight as you use a window (GitHub issue 22). A list's names stay at the game's size, where a long name scrolling into view used to drop the whole list to a smaller, thinner font until the window closed, and a dealer's descriptions keep one size for all items instead of a size per item. A description too long for that size scrolls in its box.
+- Uninstall removes `FLvibed_npc_stalls.log`.
+
 ## 0.3.0 - 5 Nov 2026
 
 - HUD 2, danger alerts: Shield Failing now stands by the left meter, Missile Incoming and Hull Critical by the right, level with

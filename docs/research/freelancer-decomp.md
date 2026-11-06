@@ -1,12 +1,14 @@
 # Freelancer Decomp (FreelancerDecomp/Freelancer-Decomp): a full C++ rebuild of the 1.1 client
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 4 watched-path commits: bd5d7af6 + 44659916 (locked-transit back-off, Action::Jump), 4a4bd7b1 strafe_pass (strafe.h pure), f8e1dd31 (FREELANCER_RE: engine kill at full cruise holds 300 -> 287 m/s, HDE, measured from a motion trace); no symbol, flexe.h or decomp cross-reference touched; no effect)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: core/flexe.h, core/hook.*, docs/FREELANCER_RE.md, subtitles/src/impl/impl.cpp, subtitles/src/impl/display.cpp, controller/src/impl/autopilot_*.cpp, core/game/route.cpp, core/game/avoid.cpp, docs/kb
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 52 watched-path commits: the module split P0-P11e (moves, comments, map rows); flexe.h 217 -> 228 (K1 105 behind); FREELANCER_RE rows from the game, not the decomp; no cross-reference touched)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: core/flexe.h, core/hook.*, docs/FREELANCER_RE.md, modules/subtitles/src/impl/impl.cpp, modules/subtitles/src/impl/display.cpp, modules/autopilot/src/autopilot_*.cpp, core/game/route.cpp, core/game/avoid.cpp, docs/kb
 Evidence: research\evidence\decomp\ (flexe_xref.txt: 109 of 123 symbols mapped to decomp names; decomp_xref.js regenerates it from a clone)
 Sources: https://github.com/FreelancerDecomp/Freelancer-Decomp read from a shallow clone in the session scratchpad (not kept: IDEAS X1); its docs/re, docs/ini and src; GitHub API for commits and pull requests
 
 ## What it means for FLvibed
+
+*6 Nov 2026 (3c9c1390, short form):* 228 symbols (+11; K1 105 behind): `VtMissionMessage`, `GameOption`, the contact list's build and draw, `NNPump`, `NavMapMouse`, `VtTextEdit`, `RichSetSize`, `RichLayout`, `FontFlush`, `FontList`. Repository not re-fetched. No effect.
 
 *Check-up 30 Oct 2026 ~23:30 (short form + the repository re-fetched, HEAD 5eb7bcb; 10 watched-path commits
 bf4d1d1..5eb7bcb):* `flexe.h` unchanged (217; K1 still 94 behind). The new `FREELANCER_RE.md` "Saves" facts were read
@@ -161,7 +163,7 @@ takes from FLUF, FLHook and adoxa.
    **`+0x40 CaptionIds`** (the IDS of the speaker-name line the game itself shows), `+0x44 TextIds[16]`, `+0x84
    TextCount`, **`+0x88 PermutationIds`** (an IDS of an order string such as "2, 0, 1"; 0 = in order), `+0x8C
    Attenuation`, `+0x90 Linger`, `+0x94 Result`. Dispatch itself tests `IsPlayerObjRwId(Msg->Sender)`.
-   - Fix lead: in `subtitles\src\impl\impl.cpp OnComm`, `c.from == PlayerShip()` must map to `Relation::Player`
+   - Fix lead: in `modules\subtitles\src\impl\impl.cpp OnComm`, `c.from == PlayerShip()` must map to `Relation::Player`
      before the attitude test (Trent's own comm lines currently fall through to Ally).
    - `CaptionIds` is a game-native speaker name FLvibed's `CommInfo` does not carry yet (it falls back to the
      sender's faction); the retail caption is built from the pilot name, the group name, or the object's name
@@ -203,7 +205,7 @@ takes from FLUF, FLHook and adoxa.
    `DAT_0067c258`, `IsCommandHeld`), `hud_command_dispatch.cpp` (the command record `ObjectAction` routes; handlers
    of one id run in reverse registration order and the first `true` eats the event), `player_behavior.cpp`
    (mouse-flight hold timer 0.25 s, engaged flag, throttle global, strafe burst, auto-level / auto-avoidance
-   setters). For the controller-first UI (`controller\docs\TASK_GLYPHS_HUD.md`): the `nn_*.cpp` screens,
+   setters). For the controller-first UI (`modules\controller\docs\TASK_GLYPHS_HUD.md`): the `nn_*.cpp` screens,
    `wincontrol_base.cpp` and `win3d.cpp` describe the ~98 WinControl classes and the NeuroNet message ids FLvibed
    drives natively (0x26 button click, `SetProperty` ids), i.e. the foundation for pad-native screens over the
    game's own controls.

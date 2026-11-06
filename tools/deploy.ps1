@@ -1,7 +1,7 @@
 # Builds FLvibed and deploys it into the test install (FLvibed\Install\Freelancer HD Edition).
-#   deploy.ps1                 dev build: FLvibed.dll + the modules' logic DLLs; if the game runs and FLvibed.dll is
-#                              unchanged, the logic DLLs hot-reload, otherwise the game restarts
-#   deploy.ps1 -Impl           build only the logic DLLs and hot-reload them in the running game
+#   deploy.ps1                 dev build: FLvibed.dll + the logic, FLvibedLogic.dll; if the game runs and FLvibed.dll is
+#                              unchanged, the logic hot-reloads, otherwise the game restarts
+#   deploy.ps1 -Impl           build only the logic and hot-reload it in the running game
 #   deploy.ps1 -Release        the player build: FLvibed.dll alone (logic linked in, no hot reload); restarts
 #   deploy.ps1 -Restart        stop the game, copy, start it
 #   deploy.ps1 -NoStart        do not start the game
@@ -10,7 +10,8 @@
 #                              save folder is copied in first (Freelancer lists saves when it starts); never as
 #                              AutoSave.fl / Restart.fl, never over a different file of that name unless -ReplaceSave
 #   deploy.ps1 -Modules subtitles,controller
-#                              which modules FLvibed.ini enables (default: both); takes effect at game start
+#                              which modules FLvibed.ini enables (default: both); takes effect at game start. A row of
+#                              core\modules_rules.h is written only when named: -Modules subtitles,controller,speedrun=0
 #   deploy.ps1 -Background     a test start that leaves the user alone: no focus taken, runs out of focus, sound
 #                              muted (FLVIBED_BACKGROUND=1 for that process only); tests go on while the user works
 #   deploy.ps1 -NoBuild        use the last build as it is (a sweep builds once, then starts each section with this)
@@ -32,14 +33,14 @@ $hasInst = $Instance -and $Instance -ne '0'
 $root = Split-Path $PSScriptRoot -Parent                       # FLvibed
 # Parse every harness script first: one syntax slip ("$name:" in a string, twice on 20 Oct 2026) broke the whole
 # dot-sourced harness and surfaced only as "Get-FLGameProcess is not recognized" inside a test.
-foreach ($ps in Get-ChildItem (Join-Path $root 'tools'), (Join-Path $root 'controller\tools'), (Join-Path $root 'subtitles\tools') -Filter *.ps1 -Recurse) {
+foreach ($ps in Get-ChildItem (Join-Path $root 'tools') -Filter *.ps1 -Recurse) {
     $perr = $null
     $null = [Management.Automation.Language.Parser]::ParseFile($ps.FullName, [ref]$null, [ref]$perr)
     if ($perr) { throw "harness script does not parse: $($ps.Name) line $($perr[0].Extent.StartLineNumber): $($perr[0].Message)" }
 }
 if ($hasInst) { $env:FLVIBED_INSTANCE = "$Instance" }
-. (Join-Path $root 'subtitles\tools\flsub.ps1')
-. (Join-Path $root 'controller\tools\flctl.ps1')
+. (Join-Path $root 'tools\harness\flsub.ps1')
+. (Join-Path $root 'tools\harness\flctl.ps1')
 if ($hasInst -and -not (Test-Path (Join-Path (Get-FLInstallDir) 'EXE\Freelancer.exe'))) {
     if ($Instance -notmatch '^\d+$') { throw "instance ${Instance}: no install at $(Get-FLInstallDir) (named instances are prepared by hand)" }
     "instance ${Instance}: mirror -> " + (New-FLInstance ([int]$Instance))
@@ -48,7 +49,7 @@ $exeDir = Join-Path (Get-FLInstallDir) 'EXE'
 # The test install's game data stays in the install (user, 18 Oct 2026: nothing of this project's game in the places a
 # personal Freelancer install uses): refuse to run it while flplusplus would write to the shared Documents folder.
 Assert-FLDataSeparate
-if ($Impl -and $Release) { throw '-Impl hot-reloads the dev build; the release build has no separate logic DLLs' }
+if ($Impl -and $Release) { throw '-Impl hot-reloads the dev build; the release build has no separate logic DLL' }
 
 # ---------------------------------------------------------------- build
 $config = if ($Release) { 'release' } else { 'dev' }
@@ -56,6 +57,9 @@ $target = if ($Impl) { 'impl' } else { $config }
 $build = Join-Path $root "build\$config"
 if ($NoBuild) {
     if (-not (Test-Path (Join-Path $build 'FLvibed.dll'))) { throw "-NoBuild: no $config build in $build" }
+    # (P11g: another session's uncommitted edit reached a build that would have counted as a check on the clean code)
+    $info = Join-Path $build 'build_info.txt'
+    if ((Test-Path $info) -and (Get-Content $info -Raw) -match '\+dirty') { Write-Warning "-NoBuild: the $config build is +dirty, not any commit: do not count this run ($((Get-Content $info -Raw).Trim()))" }
 } else {
     # through the machine-wide build lock: a deploy beside another session's build breaks both build\ folders
     & (Join-Path $PSScriptRoot 'buildlock.ps1') $target
@@ -83,9 +87,16 @@ if ($changed) { Set-Content $dacom $lines -Encoding ascii; 'dacom.ini: FLvibed.d
 
 # FLvibed.ini: enabled modules (read once at game start)
 $known = 'subtitles', 'controller'
-foreach ($m in $Modules) { if ($known -notcontains $m) { throw "unknown module $m (known: $($known -join ', '))" } }
+$rows = 'hud', 'autopilot', 'speedrun', 'display', 'npc', 'movies'   # absent = inherited (core\modules_rules.h)
+$named = [ordered]@{}
+foreach ($m in ($Modules -split ',')) {   # (one string through pwsh -File)
+    $name, $value = $m -split '=', 2
+    if ($known + $rows -notcontains $name) { throw "unknown module $name (known: $(($known + $rows) -join ', '))" }
+    $named[$name] = if ($null -eq $value) { 1 } else { [int]$value }
+}
 # + the settings stamp (core\settings_reset.h kVersion): a test start never runs the release's settings reset
-$ini = "[Modules]`r`n" + (($known | ForEach-Object { "$_ = $([int]($Modules -contains $_))" }) -join "`r`n") + "`r`n" +
+$lines = @($known | ForEach-Object { "$_ = $([int]($named[$_] -eq 1))" }) + @($rows | Where-Object { $named.Contains($_) } | ForEach-Object { "$_ = $($named[$_])" })
+$ini = "[Modules]`r`n" + ($lines -join "`r`n") + "`r`n" +
     "[FLvibed]`r`nsettings_version = 2`r`n"
 $iniPath = Join-Path $exeDir 'FLvibed.ini'
 $iniChanged = -not (Test-Path $iniPath) -or ((Get-Content $iniPath -Raw) -ne $ini)
@@ -126,7 +137,7 @@ if ($Restart -or (($hostChanged -or $iniChanged -or $iniSynced) -and $running)) 
 }
 if (-not $running) {
     # Windows releases the loaded DLLs a moment after the process ends: wait until every one of ours can be written
-    # (was: FLvibed.dll only - a release deploy then failed on a hot-reload copy, FLSubtitlesImpl.run0.dll, 19 Oct;
+    # (was: FLvibed.dll only - a release deploy then failed on a hot-reload copy, FLvibedLogic.run0.dll, 19 Oct;
     # and only when deploy itself stopped the game - a game killed just before by a test script left FLvibed.dll
     # locked and the copy failed, 20 Oct 2026).
     $sw = [Diagnostics.Stopwatch]::StartNew()
@@ -149,35 +160,36 @@ function Copy-Retry([string]$from, [string]$to) {
 }
 New-Item -ItemType Directory -Force (Join-Path $exeDir 'FLSubtitles') | Out-Null
 foreach ($f in 'subtitles.tsv', 'movies.tsv', 'mixes.tsv', 'movie_frames.tsv', 'speaker_colors.tsv', 'word_times.tsv') {
-    $src = Join-Path $root "subtitles\data\$f"
-    if (Test-Path $src) { Copy-Item $src (Join-Path $exeDir "FLSubtitles\$f") -Force }
+    $src = Join-Path $root "modules\subtitles\data\$f"
+    if (-not (Test-Path $src)) { throw "shipped file missing: $src" }   # never skipped in silence: a moved file would just not arrive
+    Copy-Item $src (Join-Path $exeDir "FLSubtitles\$f") -Force
 }
-# FLvibed's own shipped files (EXE\FLvibed\): the maneuver bar's autopilot icon mesh (controller\data\autopilot.3db, built by
+# FLvibed's own shipped files (EXE\FLvibed\): the maneuver bar's autopilot icon mesh (modules\autopilot\data\autopilot.3db, built by
 # tools\mk3db.py; the host falls back to the overlay-drawn glyph when it is missing)
 New-Item -ItemType Directory -Force (Join-Path $exeDir 'FLvibed') | Out-Null
 foreach ($f in 'autopilot.3db') {
-    $src = Join-Path $root "controller\data\$f"
-    if (Test-Path $src) { Copy-Item $src (Join-Path $exeDir "FLvibed\$f") -Force }
+    $src = Join-Path $root "modules\autopilot\data\$f"
+    if (-not (Test-Path $src)) { throw "shipped file missing: $src" }
+    Copy-Item $src (Join-Path $exeDir "FLvibed\$f") -Force
 }
 if (-not $Impl) { Copy-Retry (Join-Path $build 'FLvibed.dll') (Join-Path $exeDir 'FLvibed.dll') }
 # what the build was built from (buildlock.ps1 Write-FLBuildInfo; flleg.ps1 records it per run)
 $info = Join-Path $build 'build_info.txt'
 if (Test-Path $info) { Copy-Item $info (Join-Path $exeDir 'FLvibed.build.txt') -Force }
-$logic = 'FLSubtitlesImpl.dll', 'FLControllerImpl.dll'
-foreach ($f in $logic + 'FLSubtitles.dll', 'FLController.dll') {
+$logic = 'FLvibedLogic.dll'
+foreach ($f in @($logic) + 'FLSubtitlesImpl.dll', 'FLControllerImpl.dll', 'FLSubtitles.dll', 'FLController.dll') {
     $p = Join-Path $exeDir $f
-    if ($Release -or $f -notin $logic) { if (Test-Path $p) { Remove-Item -LiteralPath $p -Force } }   # not used
-    elseif (-not $Release) { Copy-Retry (Join-Path $build $f) $p }
+    if ($Release -or $f -ne $logic) { if (Test-Path $p) { Remove-Item -LiteralPath $p -Force } }   # not used
+    else { Copy-Retry (Join-Path $build $f) $p }
 }
-if ($Release) {   # the dev hosts' hot-reload copies (FL*Impl.run0/1.dll) are not used either
-    Get-ChildItem $exeDir -Filter 'FL*Impl.run*.dll' | Remove-Item -Force
-}
+# the dev build's hot-reload copies: unused in a release; before P1 each module had its own
+Get-ChildItem $exeDir -Filter 'FL*Impl.run*.dll' | Remove-Item -Force
+if ($Release) { Get-ChildItem $exeDir -Filter 'FLvibedLogic.run*.dll' | Remove-Item -Force }
 
 # ---------------------------------------------------------------- hot reload or start
-$on = @{ subtitles = $Modules -contains 'subtitles'; controller = $Modules -contains 'controller' }
-if ($running) {
-    if ($on.subtitles) { 'subtitles -> ' + (Send-FLS 'reload') }
-    if ($on.controller) { 'controller -> ' + (Send-FL 'reload') }
+$on = @{ subtitles = $named['subtitles'] -eq 1; controller = $named['controller'] -eq 1 }
+if ($running) {   # one reload for all the logic, through either module's channel
+    if ($on.controller) { 'logic -> ' + (Send-FL 'reload') } elseif ($on.subtitles) { 'logic -> ' + (Send-FLS 'reload') }
     return
 }
 if ($NoStart) { return }
@@ -218,7 +230,7 @@ if ($all.Count -gt 240) {
     # SaveC700-C704 and Save2b9b went to overflow - "C700" is hex too - and their tests found no save).
     $named = @{}
     $docs = @(Get-ChildItem -LiteralPath $root -Filter 'CLAUDE.md' -Recurse -Depth 2 -ErrorAction SilentlyContinue) +
-            @(Get-ChildItem -LiteralPath (Join-Path $root 'controller\tools') -Filter '*.ps1' -Recurse -ErrorAction SilentlyContinue) +
+            @(Get-ChildItem -LiteralPath (Join-Path $root 'tools\harness') -Filter '*.ps1' -Recurse -ErrorAction SilentlyContinue) +
             @(Get-ChildItem -LiteralPath (Join-Path $root 'research\tools') -Filter '*.ps1' -ErrorAction SilentlyContinue) +
             @(Get-ChildItem -LiteralPath (Join-Path $root 'docs\missions') -Filter '*.md' -ErrorAction SilentlyContinue)
     foreach ($m in ($docs | Select-String -Pattern 'Save[0-9A-Za-z]{4}\b' -AllMatches)) {
@@ -298,7 +310,7 @@ $evidenceGB = (($evidence | ForEach-Object { Get-ChildItem $_ -Recurse -File -Er
 if ($evidenceGB -gt $warnGB) { "WARNING: test evidence (logs, runs, shots) is {0:N1} GB (> {1} GB): ask the user about pruning" -f $evidenceGB, $warnGB }
 if ($Background) {
     # A background test start: FLVIBED_BACKGROUND=1 in the game's environment only (never stored, the user's own starts
-    # are unaffected): the controller host keeps it running out of focus, keeps its window from taking the focus and
+    # are unaffected): the host (core\host\focus.cpp, any module) keeps it running out of focus, keeps its window from taking the focus and
     # mutes its sound in the Windows mixer (inside the game all sound runs as always). Plus an inactive first window.
     $env:FLVIBED_BACKGROUND = '1'
     try { $proc = Get-Process -Id ($(if ($GameArgs) { [FLVWin]::StartInactive($flExe, $exeDir, $GameArgs) } else { [FLVWin]::StartInactive($flExe, $exeDir) })) } finally { Remove-Item Env:FLVIBED_BACKGROUND }

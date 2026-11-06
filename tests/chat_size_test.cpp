@@ -1,9 +1,9 @@
-// subtitles\src\impl\chat_size.h (pure): the side chat's em heights per `chat_size` - 1 Large = the 0.2.0 size (0.034 /
+// modules\subtitles\src\impl\chat_size.h (pure): the side chat's em heights per `chat_size` - 1 Large = the 0.2.0 size (0.034 /
 // 0.030 H), 0 Normal smaller but still above the vanilla chat text (cap 0.0156 H; Agency FB's cap ~0.64 em), the name in
 // the same proportion to the line; out of range = Normal.
 #include "test.h"
 
-#include "../subtitles/src/impl/chat_size.h"
+#include "../modules/subtitles/src/impl/chat_size.h"
 
 void Test_chat_size()
 {

@@ -1,6 +1,7 @@
 # M13 runner study: what the top-3 any% runs do, segment by segment, and one "runner shape" for us
 Status: history - the 30 Oct study; the living M13 runner study is `runners\M13.md` (with its four notes) - header added 31 Oct 2026
-Checked against: FLvibed e4064c9a (31 Oct 2026 ~15:35, header only: research_check listed this note every round for want of one)
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 1 watched-path commit: 01ad1f4d (paths only in `runners\M13.md`); history, no effect)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
 Watch: docs/research/runners/M13.md
 
 Study of 30 Oct 2026 (late), after the owner watched td1full: "a deeper analysis and then mimicking of speedrunners is
@@ -9,7 +10,7 @@ required to get M13 up to par". The runners' segment times are our **minimum** p
 **Sources and tags.** [M] = measured (source given), [I] = inferred. Runner data: `research\evidence\speedrun\reference\`
 (`ref.py M13 "<section>"`, `events_dense_run<N>.tsv`; "v" = video seconds), `research\evidence\speedrun\topics\combat\fights.tsv`
 (M13 rows 55-66). Ours: `docs\SPLITS.md` 303-319, `docs\checkpoints.tsv` 184-194, `docs\LEG_DOSSIER.md` 1243-1315,
-`docs\missions\M13.md` (script), `controller\docs\AUTOPILOT.md`, and the latest full run
+`docs\missions\M13.md` (script), `modules\autopilot\docs\AUTOPILOT.md`, and the latest full run
 `research\experience\legs\2026-10-30_2136_M13-td1full-b_i1\` (td1: `splits.txt`, `FLController.log` at wall-clock
 times, `FLMotion.tsv`). Frames looked at: `reference\motion\frames\B2_r1_m13_nomadbs.jpg` (R1 battleship),
 `reference\frames\r2_14068.0_M13_24s.jpg` (R2 battleship approach, cut for this study), `reference\motion\frames\B5_r1_m13_city_2s.jpg`

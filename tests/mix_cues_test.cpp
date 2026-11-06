@@ -1,9 +1,9 @@
-// subtitles\src\impl\mix_cues.h (pure): a scene mix's lines come due on the mix clock (a line already over is passed
+// modules\subtitles\src\impl\mix_cues.h (pure): a scene mix's lines come due on the mix clock (a line already over is passed
 // over); the track ends with its last line, or when the scene, once seen, has been gone for 0.5 s (skipped when that is
 // before the last line's end) - a scene without letterbox bars that never reads as a scene ends with its lines.
 #include "test.h"
 
-#include "../subtitles/src/impl/mix_cues.h"
+#include "../modules/subtitles/src/impl/mix_cues.h"
 
 void Test_mix_cues()
 {

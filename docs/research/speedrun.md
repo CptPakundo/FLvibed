@@ -1,12 +1,14 @@
 # Speedrunning Freelancer: records, routes, money gates and skips versus the autopilot
 Status: current (re-based 29 Oct 2026 at 7518008 on SPLITS.md 29 Oct 03:41 and dossier M04's 29 Oct notes; the older dated lines below are history) (before: re-based 25 Oct 2026 at 855745b on SPLITS.md 24 Oct 23:55 and dossier M04) (before: partly stale (25 Oct 2026: the PBs moved - M04 974, M10 1124, M09 724 - and sets s12-s13 landed, `docs\SPLITS.md` was regenerated 24 Oct 23:55; "What it means" needs a re-base on `docs\SPLITS.md` and the M04 dossier before the next autopilot session - **pending**, not attempted in the 25 Oct ~07:00 UI-build check-up nor in the ~12:15 HUD 2 one) (the "What it means" section re-based on `docs\SPLITS.md` on 24 Oct 2026; V2 / V3's "ours" numbers are dated and marked))
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 11 watched-path commits (14:27-15:18): strafe_pass flown (sp1) BAD and parked; ab13 / ally_kill and chase_kill + spawn_stage run-judged BAD; the locked-gate loop fixes bd5d7af6 / 44659916 (fx2 i3 still STALLs, cause inferred); AUTOPILOT.md logs split to AUTOPILOT_LOG.md; the HUD 2 lint; SPLITS 15:10: M13 PB 744 (+58), sum of best 692 (+6, was 694); this note's own tables not re-based)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: controller/docs/AUTOPILOT.md, controller/src/impl/autopilot_*.cpp, docs/kb, docs/missions, docs/LEGS.md, docs/SPLITS.md, docs/checkpoints.tsv, docs/LEG_DOSSIER.md, HANDOFF.txt
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 122 watched-path commits: the module split P0-P11e (moves, comments, map rows), M02 spawn_charge parked and ash_ride BAD, the engine-kill facts, lock_trap, the leg proof runs; SPLITS 5 Nov 21:23: PB total 12,034 (+1,987), sum of best 11,258 (+1,211); this note's tables not re-based)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: modules/autopilot/docs/AUTOPILOT.md, modules/autopilot/src/autopilot_*.cpp, docs/kb, docs/missions, docs/LEGS.md, docs/SPLITS.md, docs/checkpoints.tsv, docs/LEG_DOSSIER.md, HANDOFF.txt
 Evidence: research\evidence\speedrun\ (commodity_prices.tsv; runs_all.json; **runs\** = the three recordings analysed: per run notes.md, legs.tsv, events.tsv, banners.tsv, scenes.tsv, economy.tsv, loadouts.md, splits.tsv, frames, scripts; METHOD.md = the shared brief; **topics\combat\** = 22 fights x 3 runs (fights.tsv, HUD readings); **topics\navigation\** = 619 entries (docks.tsv), sections.tsv = every mission leg in sections vs our autopilot runs)
 Sources: [video] the top-3 any% recordings (research\videos\speedruns\, provided by the user 22 Oct 2026, decoded frame by frame with ffmpeg, never played, no audio) with the runners' / commenters' notes beside them; [page] speedrun.com API and the two written route guides; [data] HDE goods.ini x market_commodities.ini; [page] StrategyWiki / forum notes; [repo] LEGS.md, research\experience\legs\ (our leg runs' phases / logs)
 
 ## What it means for FLvibed
+
+*6 Nov 2026 (3c9c1390, short form):* no autopilot speed work since 31 Oct 18:00: M02 ash_ride, M13 and the rest are parked for the module split (HANDOFF). `docs\SPLITS.md` (5 Nov 21:23): PB total 12,034 s (+1,987 on par 10,047), sum of best 11,258 (+1,211); M13 PB 744 (+58), M02 1098 (+223). **M02 Ashcroft (A22):** `spawn_charge` parked after sc1-sc4 (no coast in any run, 0 chase kills in 6); the data pass (`runners\M02_ashcroft_datapass.md`) gave `ash_ride` (06f9f68a), and probe ar1 was run-judged BAD: no coast, kills after his run point. The "M02 PB" of 771.7 / 763.5 in those commits are UNTIL totals from Save05c7 and came from the escort fight; they are not the leg's PB. **Engine kill, measured and corrected (A36):** the engine back on after a kill at cruise does not resume cruise (300 -> ~90 m/s in 0.5-0.7 s, a new ~8.5 s charge; c2c7e26a), and the velocity cannot be redirected during the coast, vanilla and HDE alike (7851745c, the owner, withdrawing an OCR inference). Section 7's "engine kill at cruise, coast in" items stand as one-way moves. By the owner's rule (ea92edc3), an apparent HDE / vanilla difference is a misread until a probe proves it.
 
 *31 Oct 2026 ~15:20 (32c80fce, short form):* **the battleship's escalation step 2 failed** - `strafe_pass` (4a4bd7b1, lengthwise passes 150-250 m off the hull with afterburner pulses, from `runners\M13_bsdown_datapass.md`) flown as probe sp1 and run-judged BAD, parked (default 0; `AUTOPILOT.md` 'Flown 31 Oct 2026 ~14:52'): S415 -> M13.bsdown 87.7-105.0 s vs kb3 70.7-76.6 (segment par 45.0), banner -> kill 60-77 s vs runners 20-31; safe (hull 1.00 in all 5) but guns on the hull 9-17 % of the time, 14-34 launches held, ~40 % of each cycle beyond the ends and in turns; the full leg hit the FAIL STATE at bsdown (171 s). M13 rests until a new idea (escalation step 3). The pre-crash batch's final verdicts (934fbaab): set ab13 / `ally_kill` BAD on time (it works: allies kill the gate battleship in 8-14 s; barrier 90.2 vs 84.9), chase_kill + spawn_stage BAD. A locked-gate loop (ak2-b_i4: 154 'found no way') got a back-off (bd5d7af6, widened to Jump trips 44659916); fx2 still STALLs in 1 of 3 - the inferred cause is `wait_for_trent` re-locking the gate when our trip skips Orillion (the runners cruise behind him; not verified). **M02 Ashcroft, escalation step 1** (`runners\M02_ashcroft_consensus.md`, f8e1dd31): we sit 740-1,238 m from Ashcroft at 0-186 m/s when he spawns, press cruise only once he outruns the engine, and the cruise gap freezes at 1.4-1.5 km - proposed `spawn_charge` (a point on his line 250 m behind the spawn inside every leash, King's 3 km leash Li01_03 included; cruise pressed at his spawn); A36 answered (an engine kill at full cruise holds 300 -> 287 m/s over 6.8 s in HDE). SPLITS 15:10: M13 PB 744 (+58), sum of best 692.
 
@@ -35,7 +37,7 @@ wrong (JRS parked, bb9163a: the hole's occupant decides, not the rush; A23). The
 flew gate s7arb3 at parity (481 / 0): the same decisions, so no time gain from it by design. Harness rules that guard the numbers: a
 story-unfit checkpoint load ends a run at once (c1e287c), a checkpoint save above 50 m/s or in cruise is unfit
 (652c3b6 / eee33b7), a skipped obj checkpoint is soft (408c85e), a docking letterbox held > 120 s ends a run STALL
-(638ca29). Next per the queue: LOOK (`controller\docs\LOOK_PLAN.md`), KILL (needs a fit save), CP-M01b.
+(638ca29). Next per the queue: LOOK (`modules\autopilot\docs\LOOK_PLAN.md`), KILL (needs a fit save), CP-M01b.
 
 *Check-up 30 Oct 2026 ~07:25 (short form, HEAD aafe41d; 44 watched-path commits 4ca36df..aafe41d, most of them
 handoffs):* `docs\SPLITS.md` (05:56) after gate q3s2 and the M07 fix check: **PBs 12,277 (+2,229; was 12,346 /
@@ -423,7 +425,7 @@ Built by two agents (`research\evidence\speedrun\reference\`; README there = fie
   (the owner's reading of footage outranks a data read: research\videos CALIBRATION.md). Key corrections: the runners hold generators near contact with a slow one-way
   slide, never ram; the HUD target distance is a surface distance (0-M against a cruiser's hull); "MOUSE FLIGHT" is a
   steering toggle, not an autopilot state.
-Rules found (frame-backed; the autopilot side: `controller\docs\AUTOPILOT.md` hold-and-salvo, IDEAS A16-A30):
+Rules found (frame-backed; the autopilot side: `modules\autopilot\docs\AUTOPILOT.md` hold-and-salvo, IDEAS A16-A30):
 1. **Static targets:** fired upon without pause from the moment they are targeted (launchers start ~1 km out); the hold
    at HUD 60-100 m (run 1) / 35-60 m (run 2) off the surface, the cursor on the target 91-96 % of the time; still (M12,
    all runs) or a slow one-way slide 3-11 m/s (~5 deg/s, always to the ship's right at the M13 barrier, never reversed);
@@ -701,9 +703,9 @@ campaign number is not), 2 answered by the videos; the rest open.]*
   `market_commodities.ini`, `market_ships.ini`, `weapon_good.ini`, `SOLAR\loadouts.ini`,
   `UNIVERSE\universe.ini`, `UNIVERSE\SYSTEMS\Li01\Li01.ini`, `CHANGELOG.md`; names from
   `FLvibed\research\strings\resources.tsv`; FLvibed `docs\kb\generated\ships.tsv`, `solararch.tsv`.
-- FLvibed docs: `CLAUDE.md`, `controller\docs\AUTOPILOT.md`, `docs\kb\README.md`, `economy.md`,
+- FLvibed docs: `CLAUDE.md`, `modules\autopilot\docs\AUTOPILOT.md`, `docs\kb\README.md`, `economy.md`,
   `navigation-and-hazards.md`, `combat-targets.md`, `missions\M01a..M05.md`, `docs\missions\README.md`,
-  `CUTSCENES.md`, `M01b/M02..M13.md` (grep), `docs\FREELANCER_RE.md` (story gates), `HANDOFF.txt`.
+  `CUTSCENES.md`, `M01b/M02..M13.md` (grep), `docs\FREELANCER_RE.md` (story gates), the private handoff.
 
 ### 9 What could not be verified
 - [Answered 22 Oct: the recordings give every leg of three runs, V1-V2] **Per-mission splits of any full run**: none published (`splits: null` on all 28 runs; no splits.io; the YouTube /

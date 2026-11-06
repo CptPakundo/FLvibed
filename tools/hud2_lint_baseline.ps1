@@ -1,4 +1,4 @@
-# The HUD 2 layout lint's live baseline (docs\UI_HUD2_PRESETS.md 6 item 3, IDEAS T8): one background game on an
+# The HUD 2 layout lint's live baseline (modules\hud\docs\UI_HUD2_PRESETS.md 6 item 3, IDEAS T8): one background game on an
 # instance, a save in space, `hud2 lint` over every `hud2 sim` context, written as the approved dump (docs\hud2_lint_baseline.txt
 # by default) or to -Out for a diff (-Compare prints the lines that differ from the approved file, per context).
 # Each context is sampled after its fades settle (1.5 s, two round trips): sampled at once, a context still showed the
@@ -19,7 +19,7 @@ $contexts = 'live', 'combat', 'travel', 'cruise', 'dock', 'lane', 'ap', 'apwait'
 $raw = [System.Collections.Generic.List[string]]::new()
 & (Join-Path $fl 'tools\deploy.ps1') -NoBuild -Background -Instance $Instance -Save $Save *> $null
 $env:FLVIBED_INSTANCE = $Instance
-. (Join-Path $fl 'controller\tools\flctl.ps1')
+. (Join-Path $fl 'tools\harness\flctl.ps1')
 if ((Send-FL 'pilot') -match 'not in space') { $null = Start-FLLaunch -TimeoutSec 90 }
 $null = Wait-FLSpace -TimeoutSec 90
 try {
@@ -44,7 +44,7 @@ finally {
         Stop-Process -Force
 }
 $build = (Get-Content (Join-Path $fl 'build\dev\build_info.txt') -TotalCount 1)
-$hdr = @("# HUD 2 layout lint - the live baseline (docs\UI_HUD2_PRESETS.md 6 item 3), by tools\hud2_lint_baseline.ps1",
+$hdr = @("# HUD 2 layout lint - the live baseline (modules\hud\docs\UI_HUD2_PRESETS.md 6 item 3), by tools\hud2_lint_baseline.ps1",
          "# $(Get-Date -Format 'yyyy-MM-dd HH:mm'), dev $build, instance $Instance, $(Split-Path $Save -Leaf), hud_preset $Preset, K&M (a background game), 3840x2160 expected; every hud2 sim context, sampled settled",
          '# Diff a later run against this file (-Compare): a new FAIL / WARN is a regression or a decision; "live" varies by a few px.')
 Set-Content $Out ($hdr + $raw)

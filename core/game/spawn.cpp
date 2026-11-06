@@ -1,3 +1,4 @@
+// Spawns and despawns NPC ships natively from the game's NPC templates, for controlled combat tests; owns its debug command.
 #include "game/spawn.h"
 
 #include "flexe.h"
@@ -95,7 +96,7 @@ static const Api& GetApi()
 
 // Our spawns: the ship id and the reputation allocated for it. An id is ours only while the object still carries that
 // reputation (was: ids only - they outlived a save load, and space ids are reused, so `spawn clear` could destroy
-// another ship, a mission's too, 18 Oct 2026).
+// another ship, a mission's too).
 struct Spawned
 {
     u32 id;
@@ -311,7 +312,7 @@ static int Create(const Api& a, ShipInfo& si, u32& id, const std::string& factio
         // the one the game's own NPC creations pass); 5 fits a fresh process, a loaded save changes it. Keep the last
         // accepted one; when refused, probe (a refused Create creates nothing) and keep the accepted one. The accepted
         // flags climb with the session's object ids: upward from the last one first, then from 0, up to 65535 (was
-        // 0..4095: after ~2 h of test spawns the ids passed 4400 and every spawn failed -4, 19 Oct 2026).
+        // 0..4095: after ~2 h of test spawns the ids passed 4400 and every spawn failed -4).
         static u32 flag = 5;
         si.flag = flag;
         int rc = group ? a.create(id, si) : -2;
@@ -390,11 +391,11 @@ u32 Spawn(const Request& r, std::string* err)
     if (!t.pilot.empty() && !(onLive ? ai::LoadPilotOnto(t.pilot, pers, &perr) : ai::LoadPilot(t.pilot, pers, &perr)))
         return fail("pilot " + t.pilot + ": " + perr);
     // Templates' pilots often carry formation jobs (basic_job_formation: force_attack_formation - wingmen that only
-    // fight under an encounter's leader); a lone spawn needs a solo job or it never attacks (18 Oct 2026).
+    // fight under an encounter's leader); a lone spawn needs a solo job or it never attacks.
     if (!r.job.empty() && !ai::ApplyBlock(r.job, pers, &perr))
         return fail("job " + r.job + ": " + perr);
     // Job allow_player_targeting: no job block sets it and its default (and a lawful patrol's) is off - such an NPC
-    // never picks the player as a target (18 Oct 2026). A benchmark enemy must.
+    // never picks the player as a target. A benchmark enemy must.
     ai::SetField(pers, "allow_player_targeting", "true", &perr);
     float me[3];
     if (!PlayerLocation(a, player, me))

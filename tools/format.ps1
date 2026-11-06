@@ -8,8 +8,8 @@ $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $cf = Get-ChildItem "$vs\VC\Tools\Llvm\x64\bin\clang-format.exe" -ErrorAction SilentlyContinue
 if (-not $cf) { $cf = Get-ChildItem "$vs\VC\Tools\Llvm\bin\clang-format.exe" -ErrorAction SilentlyContinue }
 if (-not $cf) { throw "clang-format.exe not found under $vs\VC\Tools\Llvm (install the C++ Clang tools component)" }
-$files = Get-ChildItem -Recurse -File -Include *.cpp, *.h (Join-Path $root 'core'), (Join-Path $root 'controller\src'),
-         (Join-Path $root 'subtitles\src'), (Join-Path $root 'tests'), (Join-Path $root 'tools\sigtool') | ForEach-Object FullName
+$files = Get-ChildItem -Recurse -File -Include *.cpp, *.h (Join-Path $root 'core'), (Join-Path $root 'modules'), (Join-Path $root 'tests'),
+         (Join-Path $root 'tools\sigtool') | Where-Object Name -NotIn 'ui_meta.h', 'checkpoints_gen.h' | ForEach-Object FullName   # those two are generated
 $changed = 0
 foreach ($f in $files) {
     if ($Check) {

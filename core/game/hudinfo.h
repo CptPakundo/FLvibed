@@ -1,4 +1,4 @@
-// FLvibed - what HUD 2 (docs\UI_HUD2.md) needs to know that the other readers do not give yet (UI_HUD2.md 5.6): the
+// FLvibed - what HUD 2 (modules\hud\docs\UI_HUD2.md) needs to know that the other readers do not give yet (UI_HUD2.md 5.6): the
 // weapon groups, display names, the target's faction / class / level, the engine's states, credits, the tractor, the
 // trade lane run, jumps, docking, cruise disruption, the missile lock, the formation, a mission timer. Every call is
 // cheap (cached internally where it touches strings or lists; names cached by id) and fails closed: an unknown value
@@ -54,6 +54,7 @@ std::wstring LaneName(u32 ringId);
 
 // ---- the player's ship
 bool AfterburnerOn();
+bool AfterburnerKnown(); // the reader resolved: AfterburnerOn's false means off
 bool EngineKilled();
 // Credits, -1 unknown.
 long long Credits();
@@ -119,6 +120,8 @@ bool PlayerFormation(Formation& out);
 float MissionTimer();
 
 // Debug: a one-line-per-reader status for `hudinfo` (controller debug command).
+// The objective line as the game's banner shows it; "" when there is none. Never raw: an unfilled format code is dropped.
+std::wstring ObjectiveLine(u32 textId);
 std::string Status();
 // Debug: research dumps behind the readers (`hudinfo wg|engine|lock|tractor|obj <id>|sys [id]|equip <arch>`).
 std::string Research(const std::string& what);

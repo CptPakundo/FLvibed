@@ -167,7 +167,7 @@ def save(src, name, width=1600, crop=None):
     im.save(os.path.join(OUT, name + '.jpg'), quality=80, optimize=True, progressive=True)
 
 
-# The built HUD 2 layout of 31 Oct 2026 (docs\UI_HUD2.md 5.19-5.23) drawn by hud2_states.py on HUD-free 4K frames (run it
+# The built HUD 2 layout of 31 Oct 2026 (modules\hud\docs\UI_HUD2.md 5.19-5.23) drawn by hud2_states.py on HUD-free 4K frames (run it
 # first): no release-build capture of it exists yet. `spec_images.py mock` writes only these.
 HUD2 = os.path.join(ROOT, 'research', 'evidence', 'controller_ui', 'hud_redesign', 'hud2')
 MOCK = {'m_' + k: os.path.join(HUD2, f'hud2_{k}.png') for k in ('combat', 'travel', 'cruise', 'dock', 'lane')}

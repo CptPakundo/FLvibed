@@ -1,15 +1,17 @@
 # Test automation: UI crawlers, layout checks, real-input tiers, attended check cards, token-lean agent loops, ratchets
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 3 watched-path commits: 32c80fce (T8's layout lint built in part: `hud2_lint.h` + debug `hud2 lint`, 79 unit checks, the first approved dump `docs\hud2_lint_baseline.txt`; no pseudo-localisation, no SSIM goldens, contrast n/a), dff3fac2 (guard, 141/141), 5dcf6195 (routing test, 195/195); T7 / T9-T13 and the real-pad path gaps unchanged)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: controller/src/impl/gamepad.*, controller/src/impl/uikit.cpp, controller/src/impl/controller.cpp, controller/src/impl/debug.cpp, controller/docs/HARNESS.md, docs/TESTING.md, tools/drift_check.ps1, tools/flsweep.ps1, tools/claude/**
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 47 watched-path commits: the module split P0-P11e (moves, comments, map rows); new: fingerprint.ps1, sweep modules-matrix, test_lint, path_check, win7_check against real export tables; the lint at 0 FAIL; T7, T9-T12 unchanged)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: modules/controller/src/impl/gamepad.*, core/ui/uikit.cpp, modules/controller/src/impl/controller*.cpp, core/game/debugverbs.cpp, docs/HARNESS.md, docs/TESTING.md, tools/drift_check.ps1, tools/harness/flsweep.ps1, tools/claude/**
 Evidence: none saved (web pages read 29 Oct 2026)
 Sources: a research agent's report (web + the repo); the coordinating session checked the repo findings
 (`gamepad.cpp` 90-128, `controller.cpp` 2283-2295, `uikit.cpp` 178-192). Tags: [page], [file], [assumed]
 
 ## What it means for FLvibed
 
-*31 Oct 2026 ~15:20 (32c80fce, short form):* **T8 is built in part** (32c80fce): a pure layout checker over HUD 2's drawn rectangles (`controller\src\impl\hud2_lint.h`, adapter `hud2_lint_live.cpp`, debug `hud2 lint`; 79 unit checks) with U35's measurable rules (zones, text floor, centre gaps, duplicates, prompts, budgets, title-safe) and a live baseline as the approved text dump to diff against (`docs\hud2_lint_baseline.txt`, FAIL in every context on today's HUD). Not yet: the dump per commit as a ratchet, pseudo-localisation, SSIM golden screens, contrast (needs frames), screens beyond the flight HUD. The T7 crawler and T10 cards are untouched.
+*6 Nov 2026 (3c9c1390, short form):* the refactor built the check this note lacked for moves: `tools\fingerprint.ps1` (a build's hooks, settings and perf against a baseline, dc7605e3) and the sweep section `modules-matrix` (every module off and alone, fb74b2c0). Cheap static checks grew in `drift_check`: `test_lint.ps1` (a test script's harness calls resolve before a game is spent, ca7fd127), `path_check.py` (d0e79b14), `win7_check` against Windows 7's real export tables (abcf80a7; a real Windows 7 run stays a tester's). T8: the lint's baseline is at 0 FAIL (4008c34a); the per-commit ratchet, pseudo-localisation and goldens are still open. T12's `test_map.tsv` does not exist. The two real-pad path gaps stand.
+
+*31 Oct 2026 ~15:20 (32c80fce, short form):* **T8 is built in part** (32c80fce): a pure layout checker over HUD 2's drawn rectangles (`modules\hud\src\hud2_lint.h`, adapter `hud2_lint_live.cpp`, debug `hud2 lint`; 79 unit checks) with U35's measurable rules (zones, text floor, centre gaps, duplicates, prompts, budgets, title-safe) and a live baseline as the approved text dump to diff against (`docs\hud2_lint_baseline.txt`, FAIL in every context on today's HUD). Not yet: the dump per commit as a ratchet, pseudo-localisation, SSIM golden screens, contrast (needs frames), screens beyond the flight HUD. The T7 crawler and T10 cards are untouched.
 
 *31 Oct 2026 ~04:00 (fc379a3, short form):* the golden / fixture pattern this note recommends reached the harness's own readers: `tools\fixtures\reader_rows.tsv` (8 `legs.tsv` rows with their expected class) is checked against `splits.py full_pass_row` / `stopat_row` (a planted 78752d8-style bug fails 3 rows), and `test_hooks` counts a hook's own refusal as covered, not a stumble (c6005a2 / c8c24ee). The UI side (T7 crawler, T8 layout lint, T10 cards) is untouched; the two real-pad path gaps stand.
 
@@ -121,7 +123,7 @@ doc size budgets (a125547, `doc_bytes:<path>` rows for the four always-loaded ma
 ### 4. Token-lean agent loops (T11, T12)
 - Subagents take a `model:` field and return only a summary; the docs advise routing tasks to Haiku for cost and warn
   that detailed reports from many subagents fill the main context (https://code.claude.com/docs/en/sub-agents).
-  `run-judge` is `model: inherit` today (`tools\claude\agents\run-judge.md`; game-facts and docs-auditor are `sonnet`).
+  `run-judge` is `model: inherit` today (a private session agent; game-facts and docs-auditor are `sonnet`).
 - Tools should return token-efficient output (https://www.anthropic.com/engineering/writing-tools-for-agents). Prompt
   caching hits only an exact prefix: editing CLAUDE.md, adding an MCP server or tool, or injecting timestamps mid-session
   invalidates it [page, third-party].

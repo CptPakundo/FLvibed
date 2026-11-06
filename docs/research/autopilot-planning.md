@@ -1,8 +1,8 @@
 # Autopilot planning: goal architecture, re-orientation at every activation, natural-language commands, the game's goal vocabulary
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 4 watched-path commits: bd5d7af6 + 44659916 the locked-transit back-off (a Dock / Jump trip the game cannot route rests 4 s x 15, then 10 s; fx2: the back-off fires, i3 still STALLs - cause inferred, not verified: m13.ini `wait_for_trent` locks the gate after check_cap's unlock), a live case for A37 / A38's 'the game's locks' and A39's live trigger table; 4a4bd7b1 strafe_pass (flown sp1 BAD, parked, 4ca9eb64); f8e1dd31 FREELANCER_RE: an engine kill at full cruise holds the speed (A36 answered); A37 / A40-A42 unchanged)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: controller/docs/AUTOPILOT_UX.md, controller/src/impl/autopilot*.cpp, core/game/mission.*, docs/FREELANCER_RE.md, docs/UI_BUILD.md
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 49 watched-path commits: the module split P0-P11e (moves, comments, map rows) and the autopilot_objective / combat splits; lock_trap d3814fd1 (default 0, not flown), the direct fallback (fx3 3 / 3), 37639266 stop / new-game fixes; the 31 Oct wait_for_trent inference refuted (marked in place); situation_arbiter still 0)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: modules/autopilot/docs/AUTOPILOT_UX.md, modules/autopilot/src/autopilot*.cpp, core/game/mission.*, docs/FREELANCER_RE.md, docs/UI_BUILD.md
 Evidence: none saved (web pages read 29 Oct 2026; the Game AI Pro PDFs could not be fetched - those claims rest on
 abstracts, secondary pages and the agent's prior knowledge, marked [assumed] where it matters)
 Sources: a research agent's report (web + the repo + the local KnowledgeBase clone); the coordinating session checked the
@@ -10,7 +10,9 @@ repo references. Tags: [page], [file], [assumed]
 
 ## What it means for FLvibed
 
-*31 Oct 2026 ~15:20 (32c80fce, short form):* the locked-gate loop (bd5d7af6, 44659916; `AUTOPILOT.md` 'Objective mode' fixes) is the case this note's validator row names - 'the game's locks allow ... locked gates, a best path exists': the executor asked the game for a route every ~1 s to a gate the script kept locked (ak2-b_i4: 154 'found no way'). The back-off now rests and re-asks; probe fx2 still STALLs in 1 of 3, and the cause the driver inferred (game-facts, not verified in game) is an armed trigger: `wait_for_trent` (Cnd_DistShip 320 m to Orillion -> Act_LockDock lock) fires after check_cap's unlock when our trip goes to the gate rather than to Orillion. The general fix is the assessor reading armed triggers whose action locks the step's target (A39's `mission::LiveTriggers` exists) and satisfying them while the step lasts (A37, A38) - recorded on A37. strafe_pass (4a4bd7b1) was flown and parked BAD (`speedrun.md`).
+*6 Nov 2026 (3c9c1390, short form):* the switch-over has not happened: `situation_arbiter` is still default 0 (`docs\SETTINGS.md`) and the module split moved the code without changing it (`autopilot_objective.cpp` is now look / decide / supervise, 739734bd). Three things touch this note. (1) **The 31 Oct cause is refuted:** SaveS450 holds the lock with `wait_for_trent` already fired (`AUTOPILOT.md`, checked 31 Oct ~15:45), so fx2 i3's empty path has another cause; the direct fallback (a best path that comes back empty within 8 km: straight to the object, the dock answer decides) flew fx3 3 / 3 PASS, the likely cause being the planner's 500 m same-system range [inferred]. (2) `lock_trap` (d3814fd1; default 0, unit-tested, **not flown**) is the general rule the validator row asks for, read from the live table (A39), but it sits in `ObjectiveDecide` beside the arbiter (A37, A40). (3) 37639266: a load from the pause menu never met Mode::Menu, so running modes flew on into the new game; `ForgetGame` stops them - another remembered-state case for A37 and A42's load edge. A38 / A41 / A43 unchanged.
+
+*31 Oct 2026 ~15:20 (32c80fce, short form):* the locked-gate loop (bd5d7af6, 44659916; `AUTOPILOT.md` 'Objective mode' fixes) is the case this note's validator row names - 'the game's locks allow ... locked gates, a best path exists': the executor asked the game for a route every ~1 s to a gate the script kept locked (ak2-b_i4: 154 'found no way'). The back-off now rests and re-asks; probe fx2 still STALLs in 1 of 3, and the cause the driver inferred (game-facts, not verified in game) is an armed trigger: `wait_for_trent` (Cnd_DistShip 320 m to Orillion -> Act_LockDock lock) fires after check_cap's unlock when our trip goes to the gate rather than to Orillion *[refuted 31 Oct 2026 ~15:45, `AUTOPILOT.md`: SaveS450 holds the lock with `wait_for_trent` already fired; the cause of fx2 i3 is another one]*. The general fix is the assessor reading armed triggers whose action locks the step's target (A39's `mission::LiveTriggers` exists) and satisfying them while the step lasts (A37, A38) - recorded on A37. strafe_pass (4a4bd7b1) was flown and parked BAD (`speedrun.md`).
 
 *31 Oct 2026 ~04:00 (fc379a3, short form):* the commits since 5eb7bcb are M13 shape work in the existing handlers behind default-0 switches (`AUTOPILOT.md` has each with its verdict) and the audit's cleanup (1d6f6da: `extend` + 4 knobs, `big_pass`, `big_standoff`, `big_jink`, `hold_big_gap`, `hold_jink`, `blind_rush`, `static_volley`, the never-read `repair_*_at` deleted; the survival stance keeps `extend` as constants). None adds a goal type, a queue or an arbiter input: A37 / A40 / A41 stand as they were. Two touch this note's ideas: 29defbc - the autopilot's own escape-mission memory (`g_survival*`) and the system-entry point now start over at each load (NoteMenu), consistent with 're-orient at every activation' and A42's load edge; a4571892 - the dead test is the game's own kill value (relative hull exactly 0, FLHook kills with SetRelativeHealth 0) with the death camera as the backstop, and a PlayerDied stop no longer cancels a dead ship's behaviour (the commit says: not verified in game). `FREELANCER_RE.md` (f9657cb, ad11e02) gained a bay-request row and the finding that a guided round holds the whole target object (no part can be aimed at).
 
@@ -32,10 +34,10 @@ removes); `situation_arbiter` stays 0 (4ae968b) - the switch-over and the goal p
 A42's cold / warm and pause / resume oracles now exist host-free (`tests\goalqueue_test.cpp`, `tests\situation_exec_test.cpp`);
 the toggle fuzz itself is not built. A41 gains decompiled `Cnd_` semantics (FREELANCER_RE: nag 20 s samples / 900 m
 closing / 4 strikes, tether time cumulative, Cnd_Destroyed counts; not verified in game) that the LOOK plan
-(`controller\docs\LOOK_PLAN.md`) builds on. A43 unchanged.
+(`modules\autopilot\docs\LOOK_PLAN.md`) builds on. A43 unchanged.
 
 *30 Oct 2026 ~11:50 (16df8bd, short form):* **A37 is being built as this note proposed, behaviour-neutral so far**
-(WORK_QUEUE Q6, `controller\docs\A37_PLAN.md`): S1 the pure assessor `situation::Assess` over a recorded snapshot
+(WORK_QUEUE Q6, `modules\autopilot\docs\A37_PLAN.md`): S1 the pure assessor `situation::Assess` over a recorded snapshot
 (4e1c8e7; host-free hash = the game's), S2 the live trigger table as its story source with the ini view as the
 fail-closed fallback (63291e3, A39), S3-S5 every `ObjectiveDecide` exit as a pure `Rule_*` in shadow behind
 `situation_shadow` (default 0; c79fc35, 16a4b63, d0715f7): in game **28 / 28 shadow events agree, 0 differ** (S3 4, S4 10,
@@ -55,7 +57,7 @@ is exactly what A37's design removes. The decision timers now run on one game cl
 them. A37-A43 unchanged (the queue not built, WORK_QUEUE Q6).
 *29 Oct 2026 (04b4c05, new; the owner: a general autopilot for every task the game sets, re-orienting itself at all
 times - also when toggled off and on at any moment - multi-stage and multi-system on the fly, and later natural-language
-orders):* the goal model is designed (`controller\docs\AUTOPILOT_UX.md` sections 2-3: states, goal records with
+orders):* the goal model is designed (`modules\autopilot\docs\AUTOPILOT_UX.md` sections 2-3: states, goal records with
 completion and failure tests, the queue, reflexes, interrupts, the auto planner) but **the queue is not built**
 (`docs\UI_BUILD.md` 5: QUEUE / DO NEXT greyed). The research says the design is the right one and adds what makes it
 resume-proof:
@@ -113,7 +115,7 @@ resume-proof:
 - Voyager (https://voyager.minedojo.org/) judges success with an LLM critic; FLvibed's tests from game state are strictly
   better - never replace them with a model's judgement.
 - The assessor's sources on hand [file]: the client objective list (`exe::ClientObjective`, host API v25 `ObjectiveReread`,
-  checked in `controller\src\api.h`), the marks (re-patched after a load), the waypoint list, the system, the dock state,
+  checked in `modules\controller\src\api.h`), the marks (re-patched after a load), the waypoint list, the system, the dock state,
   contacts, the visit record.
 
 ### 3. Natural language to commands

@@ -534,6 +534,9 @@ def main(argv=None):
     under = [Run(f, runs, not args.no_collapse) for f in resolve(args.run, runs)]
     for A in base:
         say(A.head('baseline'))
+    # (printed even with --quiet: P7's two-run M13 baseline flagged three of six runs, one wider baseline cleared them)
+    if len(base) < 3:
+        print(f'THIN BASELINE: {len(base)} run(s), an envelope of fewer than 3 flags ordinary spread; a label takes PASS runs only, so name failed runs as folders')
     worst = 0
     for R in under:
         seg_flags, seg_n, kind_flags, fight_flags, ratio = judge(base, R, args, say)

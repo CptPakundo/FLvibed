@@ -1,5 +1,5 @@
 """shadow_digest.py - the A37 shadow's verdicts over a set of leg runs (WORK_QUEUE Q6 S5, 30 Oct 2026): counts the
-`situation shadow agree|differ <rule>` lines (controller\\src\\impl\\situation_snap.cpp, setting situation_shadow) per
+`situation shadow agree|differ <rule>` lines (modules\\autopilot\\src\\situation_snap.cpp, setting situation_shadow) per
 rule and lists every differ with its leg, so a measurement gate (tools\\flgate.ps1 -ApSet 'situation_shadow 1') is read
 from one digest, not 14 logs (Working method 23). Per leg folder the first source that has shadow lines counts:
 FLController.log, else *.events.txt, else transcript.txt (the same event can sit in several - counted once).
@@ -27,7 +27,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEGS = os.path.join(ROOT, 'research', 'experience', 'legs')
 # (S7, 30 Oct 2026: the arbiter's lines too - `situation arbiter agree|differ <rule> ... plan=agree|<diff>` and
-# `side-effect <kind> ... refused`; controller\docs\HARNESS.md. A plan difference and a refusal are counted, not failed:
+# `side-effect <kind> ... refused`; docs\HARNESS.md. A plan difference and a refusal are counted, not failed:
 # plan= is S10's measure of the rules' own plans, a refusal is the game-first gate working)
 LINE = re.compile(r'situation (shadow|arbiter) (agree|differ) (\S+)(.*)$')
 PLAN = re.compile(r'\bplan=(\S+)')

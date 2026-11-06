@@ -1,10 +1,10 @@
-// FLvibed - shared includes and small helpers for every module (compiled into each module's namespace).
+// FLvibed - shared includes and small helpers for every module (at global scope in the logic, in namespace flv_host in the host).
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
-// 16-bit leftovers (minwindef.h: empty `near` / `far`): a variable named `near` broke the build twice (20 Oct 2026)
+// 16-bit leftovers (minwindef.h: empty `near` / `far`): a variable named `near` broke the build twice
 #undef near
 #undef far
 
@@ -29,7 +29,7 @@ template <class T> inline T& Mem(uintptr_t addr) { return *reinterpret_cast<T*>(
 inline float Clampf(float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); }
 
 // An environment variable of the game process, sized from its value (a fixed buffer once cut FLVIBED_INSTANCE at 15
-// characters and the instance silently fell back to the main channel, 26 Oct 2026); "" when unset.
+// characters and the instance silently fell back to the main channel); "" when unset.
 inline std::string EnvVar(const char* name)
 {
     for (int tries = 0; tries < 3; ++tries) // the value may change between the size query and the read
@@ -50,8 +50,8 @@ inline std::string EnvVar(const char* name)
 
 // Test switch: FLVIBED_SIM_WIN7=1 in the game's environment (set it in the shell before deploy.ps1 -Background) makes
 // FLvibed take its Windows 7 paths on a newer Windows - XInput without xinput1_4 / xinput1_3 (no DirectX runtime),
-// no GetDpiForWindow, DwmFlush failing (Aero off) - so the fallbacks can be tested here (tools\win7_check.ps1 covers
-// the imports). Never set on a player's machine.
+// DwmFlush failing (Aero off), every API and DLL newer than Windows 7 unfound at run time (core\host\win7sim.cpp) - so
+// the fallbacks can be tested here (tools\win7_check.ps1 covers the imports). Never set on a player's machine.
 inline bool SimWin7()
 {
     static const bool on = EnvVar("FLVIBED_SIM_WIN7") == "1";

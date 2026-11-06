@@ -1,3 +1,4 @@
+// Drives the main menu, load screen and pause menu natively through the game's own button and load logic.
 #include "game/menu.h"
 
 #include "flexe.h"

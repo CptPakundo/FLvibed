@@ -1,18 +1,29 @@
+// Log channels (a file of the host's or a sink of the logic's), the plain Log(), and the perf:: CPU time tables.
 #include "log.h"
 
 #include <cstdarg>
 
-static FILE* g_log = nullptr;
+// A channel is a file of the host's (LogOpen) or a sink of the logic's (LogAttach).
+struct LogChannel
+{
+    void (*sink)(const char* line);
+    FILE* file;
+};
+static LogChannel g_channels[4] = {};
+static int g_channelCount = 0;
+static int g_plain = -1; // the plain Log()'s file: the one opened last
 static CRITICAL_SECTION g_logLock;
 static bool g_lockReady = false;
 static std::string g_dllDir;
 static void (*g_sink)(const char* line) = nullptr;
 
-void LogInit(HMODULE self, const char* fileName)
+int LogOpen(HMODULE self, const char* fileName)
 {
-    InitializeCriticalSection(&g_logLock);
-    g_lockReady = true;
-
+    if (!g_lockReady)
+    {
+        InitializeCriticalSection(&g_logLock);
+        g_lockReady = true;
+    }
     char path[MAX_PATH] = {};
     GetModuleFileNameA(self, path, MAX_PATH);
     char* slash = strrchr(path, '\\');
@@ -20,8 +31,12 @@ void LogInit(HMODULE self, const char* fileName)
         slash[1] = 0;
     g_dllDir = path;
 
-    std::string logPath = g_dllDir + fileName;
-    g_log = _fsopen(logPath.c_str(), "w", _SH_DENYWR);
+    if (g_channelCount >= 4)
+        return -1;
+    const std::string logPath = g_dllDir + fileName;
+    g_channels[g_channelCount] = {nullptr, _fsopen(logPath.c_str(), "w", _SH_DENYWR)};
+    g_plain = g_channelCount;
+    return g_channelCount++;
 }
 
 void LogSetSink(void (*sink)(const char* line), const char* dllDir)
@@ -30,31 +45,68 @@ void LogSetSink(void (*sink)(const char* line), const char* dllDir)
     g_dllDir = dllDir ? dllDir : "";
 }
 
-void LogWriteLine(const char* line)
+int LogAttach(void (*sink)(const char* line), const char* dllDir)
 {
-    if (!g_log || !g_lockReady)
+    LogSetSink(sink, dllDir);
+    for (int i = 0; i < g_channelCount; ++i)
+        if (g_channels[i].sink == sink)
+            return i;
+    if (g_channelCount >= 4)
+        return -1;
+    g_channels[g_channelCount] = {sink, nullptr};
+    return g_channelCount++;
+}
+
+int LogChannelOf(void (*sink)(const char* line))
+{
+    for (int i = 0; i < g_channelCount; ++i)
+        if (g_channels[i].sink == sink)
+            return i;
+    return -1;
+}
+
+void LogTo(int channel, const char* line)
+{
+    if (channel < 0 || channel >= g_channelCount)
+        return;
+    const LogChannel& c = g_channels[channel];
+    if (c.sink)
+    {
+        c.sink(line);
+        return;
+    }
+    if (!c.file || !g_lockReady)
         return;
     EnterCriticalSection(&g_logLock);
     SYSTEMTIME st;
     GetLocalTime(&st);
-    fprintf(g_log, "[%02d:%02d:%02d.%03d] %s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, line);
-    fflush(g_log);
+    fprintf(c.file, "[%02d:%02d:%02d.%03d] %s\n", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, line);
+    fflush(c.file);
     LeaveCriticalSection(&g_logLock);
+}
+
+void LogWriteLine(const char* line) { LogTo(g_plain, line); }
+
+void LogV(int channel, const char* fmt, va_list args)
+{
+    char buf[2048];
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    buf[sizeof(buf) - 1] = 0;
+
+    if (channel >= 0 && channel < g_channelCount)
+        LogTo(channel, buf);
+    else if (g_sink)
+        g_sink(buf);
+    else
+        LogWriteLine(buf);
 }
 
 void Log(const char* fmt, ...)
 {
-    char buf[2048];
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, args);
+    LogV(-1, fmt, args);
     va_end(args);
-    buf[sizeof(buf) - 1] = 0;
-
-    if (g_sink)
-        g_sink(buf);
-    else
-        LogWriteLine(buf);
 }
 
 const std::string& DllDir() { return g_dllDir; }
@@ -79,6 +131,12 @@ struct State
     double worstFrame = 0;
     long frames = 0;
     double since = 0;
+    // The order the scopes opened in, for the fullest frame since the last report (`order:` in the report): the
+    // refactor's check that the modules' entry points keep their sequence (tools\fingerprint.ps1).
+    const char* order[48] = {};
+    int orderCount = 0;
+    const char* fullest[48] = {};
+    int fullestCount = 0;
 };
 State g_perf;
 } // namespace
@@ -104,7 +162,12 @@ static int Slot(const char* name)
     return g_perf.used++;
 }
 
-Scope::Scope(const char* name) : slot_(Slot(name)), t0_(Now()) { ++g_perf.depth; }
+Scope::Scope(const char* name) : slot_(Slot(name)), t0_(Now())
+{
+    ++g_perf.depth;
+    if (g_perf.orderCount < 48)
+        g_perf.order[g_perf.orderCount++] = name;
+}
 
 Scope::~Scope()
 {
@@ -130,6 +193,12 @@ void NewFrame()
     g_perf.frameAcc = 0;
     g_perf.depth = 0; // called outside every scope: a scope a fault skipped (SEH, no unwinding) is not open any more
     ++g_perf.frames;
+    if (g_perf.orderCount > g_perf.fullestCount)
+    {
+        g_perf.fullestCount = g_perf.orderCount;
+        memcpy(g_perf.fullest, g_perf.order, sizeof(g_perf.order));
+    }
+    g_perf.orderCount = 0;
 }
 
 std::string Report()
@@ -150,6 +219,10 @@ std::string Report()
     }
     if (!g_perf.used)
         s += "  (no scope ran)\n";
+    s += "order:";
+    for (int i = 0; i < g_perf.fullestCount; ++i)
+        s += std::string(i ? " > " : " ") + g_perf.fullest[i];
+    s += "\n";
     const int depth = g_perf.depth; // a report from inside a scope keeps the open count
     g_perf = State();
     g_perf.depth = depth;

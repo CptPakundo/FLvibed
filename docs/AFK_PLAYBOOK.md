@@ -2,7 +2,7 @@
 
 Written 31 Oct 2026 at the end of the AFK run of 00:45-04:10 from everything that run and the ones before it taught
 (`..\AFK_SUMMARY_2026-10-31.md`, `..\AUDIT_2026-10-31.md`, `docs\test_budget.tsv`). The mechanics (flag, cron, review,
-compaction audit) are the afk-run skill's; the rules behind them are `docs\WORK_QUEUE.md` "Working method" 1-24 and
+compaction audit) are the afk-run skill's; the rules behind them are the private work queue "Working method" 1-24 and
 `docs\TESTING.md`. This page is the order of work and the lessons. Read it at the start and after every compaction.
 
 ## 1. The session
@@ -29,7 +29,7 @@ compaction audit) are the afk-run skill's; the rules behind them are `docs\WORK_
 6. **Routing:** the router misclassed three briefs on 31 Oct. Check the class the hook names; when it is wrong, stop
    and respawn with the model / effort named and a `route-ok: <why>` line: C++ design / debug Opus high; a scoped C++
    change Opus medium; a harness script fix Opus medium; docs Sonnet medium; judging = the run-judge agent (Opus high).
-   Turn each miss into a matcher + a case in `tools\claude\routing\test_routing.js`.
+   Turn each miss into a matcher + a case in the private routing policy.
 
 ## 3. Legs and in-game tests (the project's biggest pain point)
 7. **Study first, plan second:** the leg's runner study (`docs\research\runners\<leg>.md`, `tools\runner_study.py`)
@@ -74,6 +74,6 @@ compaction audit) are the afk-run skill's; the rules behind them are `docs\WORK_
 ## 5. What to work on (the owner's order of 31 Oct ~00:40, still binding)
 1. **M13 to par** by mimicking the runners - bold changes, no constant small-change testing (then every mission).
 2. **Audit and sweep, enforced:** largely done 31 Oct; the open rows of `..\AUDIT_2026-10-31.md`.
-3. **The queue** (`docs\WORK_QUEUE.md`): build first, build a lot, test in bundles at key points.
+3. **The queue** (the private work queue): build first, build a lot, test in bundles at key points.
 4. **Feature completeness, weighted to what players use:** HUD classic + HUD 2, controller features, UI / UX / flow.
 The concrete NOW / NEXT is the handoff's top block.

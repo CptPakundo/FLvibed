@@ -3,8 +3,8 @@
 #pragma once
 #include "test.h"
 
-#include "../controller/src/impl/situation.h"
-#include "../controller/src/impl/situation_io.h"
+#include "../modules/autopilot/src/situation.h"
+#include "../modules/autopilot/src/situation_io.h"
 
 #include <fstream>
 #include <sstream>

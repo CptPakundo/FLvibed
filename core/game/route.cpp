@@ -1,3 +1,4 @@
+// Route planning for travel: the lane ride law, lane geometry and the planner that mixes flight and trade lanes.
 #include "game/route.h"
 
 #include "game/avoid.h"
@@ -426,7 +427,7 @@ static bool Closed(const Lane& L, const std::vector<u32>& closed)
     for (u32 r : L.rings)
         if (std::find(closed.begin(), closed.end(), r) != closed.end())
             return true;
-    // The mission's own lane permission (user, 19 Oct 2026: never attempt a lane that will be denied): closed when the
+    // The mission's own lane permission (never attempt a lane that will be denied): closed when the
     // game's check denies every ring pair in this direction (space::LaneOpen 0); unknown (-1) or a pair the mission
     // opened keeps it (the travel's reactive check stays the backstop).
     bool anyOpen = false, anyKnown = false;
@@ -440,12 +441,12 @@ static bool Closed(const Lane& L, const std::vector<u32>& closed)
 }
 
 // An arrival at an object that is not docked with (a planet - its dock is a separate ring -, a station without a dock,
-// a wreck) ends outside it, not at its centre (19 Oct 2026: a travel to planet Manhattan flew into it): from the object
+// a wreck) ends outside it, not at its centre (a travel to planet Manhattan flew into it): from the object
 // toward `from`, past its physical radius and out of any costly zone (atmosphere damage, minefield: space::StrictAt),
 // plus 300 m (Params::standOff). The object's radius from the game's own obstacles list.
 static void StandOff(float pos[3], const float from[3], u32 object, const Params& prm)
 {
-    // A point just outside a lethal zone is as bad as one inside (21 Oct 2026, M01: the mission's point after the Donau
+    // A point just outside a lethal zone is as bad as one inside (M01: the mission's point after the Donau
     // lay 129 m off Manhattan's 4100 m death zone - the avoidance's berth left a sliver, the ship swerved at the
     // atmosphere for 22 s and stopped 206 m short): out from the zone's centre to its surface + 300 m (Params::standOff).
     const float standOff = prm.standOff;
@@ -555,7 +556,7 @@ Plan Make(const flight::Model& m, const float pos[3], float speed, const std::ve
                 LaneBetween(w.object, here[i + 1].object, it.lane))
             {
                 // A ring closed this trip (a disrupted ride - lane hackers) cuts the best path's lane: the part beyond
-                // its last closed ring stays its lane item (21 Oct 2026, Li01 147 -> 154 disrupted at 150: the item was
+                // its last closed ring stays its lane item (Li01 147 -> 154 disrupted at 150: the item was
                 // dropped, the next lane's entry was flown to directly and the ship cruised ~130 s beside 151-154 -
                 // the split lanes below only serve fixed points). Closed by the mission: flown instead (left out).
                 size_t cut = 0;
@@ -592,7 +593,7 @@ Plan Make(const flight::Model& m, const float pos[3], float speed, const std::ve
         if (i + 1 == here.size())
         {
             it.kind = o != objects.end() && o->second.dock ? Kind::Dock : Kind::Arrive;
-            // A travel at a planet goes to its docking ring (user, 19 Oct 2026): the planet the arrival names, or the
+            // A travel at a planet goes to its docking ring: the planet the arrival names, or the
             // one whose zone holds the point, with a ring (the game's link: the ring's dock_with = the planet's base) of
             // a faction not hostile to us. The fallback when the objective names no target (its target wins upstream).
             if (it.kind == Kind::Arrive)
@@ -625,7 +626,7 @@ Plan Make(const flight::Model& m, const float pos[3], float speed, const std::ve
                 }
             }
             // (a point too: M03's "Fly to Planet California Minor" marks the planet's centre - the travel flew into its
-            // zone and the avoidance fought it, 19 Oct 2026)
+            // zone and the avoidance fought it)
             if (it.kind == Kind::Arrive)
                 StandOff(it.pos, pl.items.empty() ? pos : pl.items.back().pos, it.object, prm);
             pl.items.push_back(it);
@@ -762,7 +763,7 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
     {
         // `eta [from=<id>] <id> ...`: the plan's time to dock with each object of this system (lanes, fast docks), from
         // the ship (or from object `from=`, e.g. the base you are docked at). For choosing where to go (job boards:
-        // travel time, not distance - user, 18 Oct 2026). The waypoint list is not touched.
+        // travel time, not distance - user). The waypoint list is not touched.
         std::istringstream in(rest);
         std::string tok;
         flight::Model m;

@@ -1,4 +1,4 @@
-// subtitles\src\impl\movie_words.h (pure): an intro line's word_times.tsv row (movie clock) -> its word starts from the
+// modules\subtitles\src\impl\movie_words.h (pure): an intro line's word_times.tsv row (movie clock) -> its word starts from the
 // line's own start; -1 stays unknown; a word before the line's start counts from 0; a count mismatch or nothing placed
 // = no timings (the estimate); the text hash is the aligner's FNV-1a.
 #include <cstdlib>
@@ -6,7 +6,7 @@
 
 #include "test.h"
 
-#include "../subtitles/src/impl/movie_words.h"
+#include "../modules/subtitles/src/impl/movie_words.h"
 
 void Test_movie_words()
 {

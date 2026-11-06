@@ -1,6 +1,6 @@
-// FLvibed - Steam Deck mode (the owner, 4 Nov 2026): 1280x800 is almost only the Deck, a 7-inch screen held in the hands, so
+// FLvibed - Steam Deck mode: 1280x800 is almost only the Deck, a 7-inch screen held in the hands, so
 // the text is larger and the safe margins go: they are there for televisions that crop the picture's edge, which a handheld's
-// panel never does. docs\UI_HUD2.md 5.35.
+// panel never does. modules\hud\docs\UI_HUD2.md 5.35.
 //
 // The signal is the resolution: Steam's own check (ISteamUtils::IsSteamRunningOnSteamDeck) needs the Steam SDK in a game Steam
 // launched, a Freelancer install has neither, and no environment variable is documented. `deck_mode` overrides it either way.

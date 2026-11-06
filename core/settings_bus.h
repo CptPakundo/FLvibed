@@ -11,6 +11,10 @@
 #include "common.h"
 #include "settings.h"
 
+// Rows one owner can register in a section. A longer table is refused whole, which greys every one of its rows on the options page:
+// each table states `static_assert(count <= kSettingsBusMaxRows)`, so growing past it fails the build, not the page.
+constexpr size_t kSettingsBusMaxRows = 256;
+
 // The bus is one struct of plain function pointers (no C++ linkage across the DLL boundary / the module namespaces).
 struct SettingsBusSection
 {
@@ -31,7 +35,8 @@ struct SettingsBusSection
 struct SettingsBus
 {
     u32 version; // 1
-    // Registers a section; returns its id (> 0) or 0 when the bus is full / the section name is taken.
+    // Registers a module's rows of a section; returns its id (> 0), or 0 when the bus is full, this module has the section
+    // already or another owner has one of the keys. A section may have several owners; a key has one.
     int (*Register)(const SettingsBusSection* section);
     void (*Unregister)(int id);
     int (*Count)();
@@ -47,7 +52,7 @@ struct SettingsBus
     bool (*Get)(const char* section, const char* key, char* out, int outLen);
     // Back to the default (Set with the default).
     bool (*Reset)(const char* section, const char* key);
-    // Writes the section's ini through the owner's writer; false when unknown or the owner has no writer.
+    // Writes the section's ini through each owner's writer; false when unknown or no owner has a writer.
     bool (*Save)(const char* section);
     // A change counter: grows with every Set / Reset on any section (the page's dirty tracking, the HUD's caches).
     u32 (*Generation)();

@@ -1,9 +1,9 @@
-// HUD 2's layout preset plumbing (controller\src\impl\hud2_preset.h, UI_HUD2_PRESETS.md 6 step 4): hud_preset clamps to
+// HUD 2's layout preset plumbing (modules\hud\src\hud2_preset.h, UI_HUD2_PRESETS.md 6 step 4): hud_preset clamps to
 // a valid preset (out of range = Standard), Standard's and Focus's layouts are built (every other preset draws as
 // Standard and its label says so), each preset's data is its own (the lint's zones / caps), the value ids' homes per preset with the
 // off-screen hand-over, and the controller setup's read (PRESETS 4: column, needs, the compatibility cell, the
 // suggested pairing) from core\ui_meta.h's generated table.
-#include "../controller/src/impl/hud2_preset.h"
+#include "../modules/hud/src/hud2_preset.h"
 
 #include "test.h"
 

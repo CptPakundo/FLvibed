@@ -1,6 +1,6 @@
 # FLvibed in multiplayer
 
-The owner's request of 28 Oct 2026 (`..\SESSION_BRIEF_multiplayer.md`): FLvibed as general as possible, getting the most
+The owner's request of 28 Oct 2026: FLvibed as general as possible, getting the most
 out of single player **and** multiplayer; everything that can work in multiplayer should; the Advanced Autopilot
 technically able to run there at full capacity, **whether it may is the server's decision** (host / admins / GMs); readers
 that work from the client's own state in both modes rather than a separate multiplayer path; the single-player-only
@@ -10,7 +10,7 @@ with any variation of an FL install, the better").
 State (28 Oct 2026, commits b09fcab..; two clients and autopilot PvP: "Several clients on one server"): verified on local servers - HDE 0.7.1 FLServer + HDE's FLHook, and the plain vanilla 1.1
 FLServer (no FLHook) - with one HDE test client, dev and release builds. The vanilla 1.1 client could not connect to any
 LAN server here: it lists the server by its IPv6 link-local address and the connect fails (vanilla's own DirectPlay
-listing; HDE's Common.dll and FLUF disable IPv6 entries) - not FLvibed's. Not run yet: two clients, an internet server, a
+listing; HDE's Common.dll and FLUF disable IPv6 entries) - not FLvibed's. Not run yet: an internet server, a
 modded server (Discovery and the like).
 
 ## How multiplayer differs, for FLvibed (verified 28 Oct 2026 unless marked)
@@ -43,7 +43,7 @@ modded server (Discovery and the like).
   carry their client id (small numbers).
 - **The story's scripts run on the server.** Content.dll's mission code (objectives, marks, spawns, saves, job offers,
   the story's money target) never runs in a multiplayer client: FLvibed's Content.dll / server.dll hooks
-  (`controller\src\host\events.cpp`) stay installed and simply never fire.
+  (`core\host\events.cpp`) stay installed and simply never fire.
 - **Registry:** Common.dll keeps `MPAccountName`, `MPAccountNameSig` and `InstallKey` under
   `HKCU\Software\Microsoft\Microsoft Games\Freelancer\1.0` (the test setup keeps them in the instance: `tools\mptest`).
 - **Leaving:** a killed client leaves its account "in use" on the server until a timeout (the next connect is refused);
@@ -68,10 +68,10 @@ Legend: ✅ works (verified on the local server) · 🟡 works with a gap · ⛔
 | Pad menus: main menu, LAN prompt, server list, character list, new character | uiclick (deferred front-end clicks), `table`, modal frames | ✅ the two tables on the pad (screen `mptable`: D-pad up / down selects rows natively, A = CONNECT / LOAD, Y = NEW CHARACTER, B = back; verified on the virtual pad); the main menu (A = the menu's own click on the focused button, `menu::ClickMainButton`) and the LAN prompt (screen `mpprompt`: focus on LAN, A = the focused answer's click, B = PromptExit) on the virtual pad out of focus (28 Oct 2026: D-pad down x2, A -> the prompt; A -> the server list) |
 | Pad in bases, dealers, NeuroNet windows | room / uiclick (client UI) | ❔ the base came up; dealers not exercised in multiplayer |
 | Docked strip / Extended HUD 2 readers (prices, hold, cargo, base names) | the client's copies first (both modes): ship [0x67337C], EquipDescList 0x672960, Common.dll universe / market data; server.dll where they have nothing | ✅ base name, ship (Starflier), hold 18 left / 2 used, prices of the held goods (debug `docked`: the server answers none of them in multiplayer) |
-| Death dialog (Respawn / New character / New server) | the game's UI (`RespawnButtonButton` ...) | ✅ by the harness; the pad: focus on RESPAWN, A = the focused button's own click (native, out of focus too) - ✅ the pad: focus on RESPAWN, A = the focused button's own click - verified out of focus (28 Oct 2026) |
+| Death dialog (Respawn / New character / New server) | the game's UI (`RespawnButtonButton` ...) | ✅ by the harness; the pad: focus on RESPAWN, A = the focused button's own click (native), verified out of focus (28 Oct 2026) |
 | Subtitles: comms, chatter, speaker names / factions / colours | Freelancer.exe comm handler; names via `RepId` / Vibe | ✅ (comms and chatter logged; NPC names resolve) |
 | Subtitles: room scenes, bar characters, movies | client (FindVoice, PlayArch, Movie.dll) | ❔ same client path as single player; not exercised in multiplayer |
-| Chat window lines (FLvibed's chatter, server lines) | `exe::ChatFlush` | ✅ (FLHook's lines read; the template fix fails closed) |
+| Chat window lines (FLvibed's chatter, server lines) | `exe::ChatFlush`, core's for every player (`core\host\chatlines.*`) | ✅ (FLHook's lines read; the template fix fails closed; with the Controller off the rule is the same: `tests\mp_modules.ps1`) |
 | The player's own name in a comm | the client's player list (`exe::PlayerList`, client id from `CSimple::GetOwnerPlayer`) | ✅ "FLvibedTester" (debug `who`) |
 | Options page (FLVIBED) | the settings bus | ❔ client-only, should work; not opened in multiplayer |
 | Movies: fit, intro subtitles | Movie.dll | ✅ unaffected (startup, before any mode) |
@@ -86,7 +86,7 @@ Legend: ✅ works (verified on the local server) · 🟡 works with a gap · ⛔
 
 ## Server permission for the autopilot
 
-### Built (28 Oct 2026; `controller\src\impl\mprules.*`, debug `mp`)
+### Built (28 Oct 2026; `core\game\mprules.*`, debug `mp`)
 
 - **Single player:** everything, always.
 - **The server's sources:** the chat tag below in any server line (FLHook's banners, admin messages), or the FLHook
@@ -127,12 +127,11 @@ Legend: ✅ works (verified on the local server) · 🟡 works with a gap · ⛔
    further option: off on internet servers, everything on LAN servers (the server list knows LAN).
 2. **The channels** - **the owner, 28 Oct 2026:** not the server name / description / MOTD ("either not robust enough or
    can be abused"); **FLUF payloads** make sense where server and client both run FLUF; **an FLHook plugin** might also
-   make sense. The chat tag stays meanwhile. Not built yet: both are server-side parts FLvibed would ship (a FLUF server
-   module, an FLHook plugin built against the server's FLHook version).
+   make sense. The chat tag stays beside it. The FLHook plugin is built (`server\flhook\`); a FLUF server module is not.
 3. **Finer parts** beyond on / travel / off (missiles only, no torpedoes, no auto-fire but assisted aim ...), and whether
    the player sees the server's word on screen (today only the event log and the debug `mp`: a refused start shows no
    message on screen yet).
-4. **The tag's text:** `[flvibed autopilot=...]` is visible in the chat; a hidden form needs a server plugin.
+4. **The tag's text:** `[flvibed autopilot=...]` is visible in the chat when a server line carries it by hand; the FLHook plugin sends a tag-only line, which FLvibed hides.
 
 ## Several clients on one server (28 Oct 2026)
 

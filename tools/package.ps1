@@ -1,5 +1,5 @@
-# Builds the player package: build\package\FLvibed-<version>.zip (the release FLvibed.dll, the shipped data, a default
-# FLvibed.ini, the install notes, CHANGELOG.md and the licences), laid out as the game folder expects (EXE\...), and
+# Builds the player package: build\package\FLvibed-<version>.zip (the release FLvibed.dll, the shipped data, the install
+# notes, CHANGELOG.md and the licences), laid out as the game folder expects (EXE\...), and
 # prints its SHA-256. The version comes from core\version.h. Run in the PowerShell tool: tools\package.ps1 [-NoBuild]
 param([switch]$NoBuild)
 $ErrorActionPreference = 'Stop'
@@ -7,6 +7,9 @@ $root = Split-Path $PSScriptRoot -Parent
 
 $version = ([regex]::Match((Get-Content (Join-Path $root 'core\version.h') -Raw), '#define FLV_VERSION "([^"]+)"')).Groups[1].Value
 if (-not $version) { throw 'FLV_VERSION not found in core\version.h' }
+# the public repository has no export-ignored file: its docs must not point at one
+$exportCheck = & (Join-Path $root 'research\tools\ocr\.venv\Scripts\python.exe') -I (Join-Path $PSScriptRoot 'docrefs.py') --export
+if ($LASTEXITCODE) { $exportCheck | Write-Host; throw 'public docs point at export-ignored files (tools\docrefs.py --export)' }
 if (-not $NoBuild) {
     & (Join-Path $PSScriptRoot 'buildlock.ps1') release
     if ($LASTEXITCODE) { throw "release build failed ($LASTEXITCODE)" }
@@ -23,12 +26,11 @@ New-Item -ItemType Directory -Force (Join-Path $stage 'EXE\FLSubtitles'), (Join-
 
 Copy-Item $dll (Join-Path $stage 'EXE')
 foreach ($f in 'subtitles.tsv', 'movies.tsv', 'mixes.tsv', 'movie_frames.tsv', 'speaker_colors.tsv', 'word_times.tsv') {
-    Copy-Item (Join-Path $root "subtitles\data\$f") (Join-Path $stage 'EXE\FLSubtitles')
+    Copy-Item (Join-Path $root "modules\subtitles\data\$f") (Join-Path $stage 'EXE\FLSubtitles')
 }
-Copy-Item (Join-Path $root 'controller\data\autopilot.3db') (Join-Path $stage 'EXE\FLvibed')
-# deliberately WITHOUT the settings stamp (core\settings_reset.h): merged by hand over an older release's files it must
-# not skip that release's settings reset (a fresh install by hand only gets a backup of these defaults)
-[IO.File]::WriteAllText((Join-Path $stage 'EXE\FLvibed.ini'), "[Modules]`r`nsubtitles = 1`r`ncontroller = 1`r`n")
+Copy-Item (Join-Path $root 'modules\autopilot\data\autopilot.3db') (Join-Path $stage 'EXE\FLvibed')
+# No FLvibed.ini in the zip: merged by hand it would replace the player's, so its [Modules] rows and its settings stamp
+# (core\settings_reset.h) would go, and the next start would reset every setting. The DLL writes the file at its first start.
 Copy-Item (Join-Path $root 'CHANGELOG.md') $stage
 Copy-Item (Join-Path $root 'LICENSES\*') (Join-Path $stage 'LICENSES')
 
@@ -44,7 +46,7 @@ INSTALL
 The easy way: run FLvibed-$version-Setup.exe from the same release page - it finds the game, installs, updates and
 uninstalls (Windows Settings > Apps > FLvibed). By hand, with this zip:
 1. Copy the EXE folder from this package into your Freelancer folder (the one that holds EXE\Freelancer.exe) and let
-   it merge: FLvibed.dll, FLvibed.ini, FLSubtitles\ and FLvibed\ land in EXE\.
+   it merge: FLvibed.dll, FLSubtitles\ and FLvibed\ land in EXE\. An update this way keeps your settings.
 2. Open EXE\dacom.ini in a text editor. In the [Libraries] section, add this line after the plugins already listed
    there (on the original game after .\flmaterials.dll):
        FLvibed.dll
@@ -52,10 +54,11 @@ uninstalls (Windows Settings > Apps > FLvibed). By hand, with this zip:
 
 UNINSTALL
 Remove the FLvibed.dll line from EXE\dacom.ini, then delete EXE\FLvibed.dll, FLvibed.ini, FLController.ini,
-FLSubtitles.ini, FLController.log, FLSubtitles.log and the folders EXE\FLSubtitles\ and EXE\FLvibed\. Saves stay valid.
+FLSubtitles.ini, any *.before-0.2.0 backups of them, FLController.log, FLSubtitles.log, FLvibed_npc_stalls.log and the
+folders EXE\FLSubtitles\ and EXE\FLvibed\. Saves stay valid.
 
 NEEDS
-Windows 10 or 11 (tested; Windows 7 SP1, 8 and 8.1 should work - checked, not played there yet) and your own copy
+Windows 10 or 11 (tested; Windows 7 SP1, 8 and 8.1 should work - checked; a tester's Windows 7 needed VxKex for 0.3.0) and your own copy
 of the game. Controllers: XInput (Xbox) pads; other pads through Steam Input,
 DS4Windows or similar. No other mod, loader or runtime is needed.
 

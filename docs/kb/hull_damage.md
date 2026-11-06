@@ -1,6 +1,6 @@
 # Hull damage: how it looks (game data + game)
 
-What a ship shows when its hull takes damage, for the HUD hull cue (`controller\docs\HUD_CUES.md`). HDE 0.7.1.
+What a ship shows when its hull takes damage, for the HUD hull cue (`modules\hud\docs\HUD_CUES.md`). HDE 0.7.1.
 
 ## Per hit: `surface_hit_effects` `[data]`
 - `shiparch.ini` (every file of freelancer.ini `[Data] ships`): `surface_hit_effects = <damage>, <effect>, ...` tiers;

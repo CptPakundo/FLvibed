@@ -1,4 +1,4 @@
-# The local multiplayer test setup (tools\mptest\README.md) - dot-source after controller\tools\flctl.ps1 (PowerShell
+# The local multiplayer test setup (tools\mptest\README.md) - dot-source after tools\harness\flctl.ps1 (PowerShell
 # tool only). A test instance (never the main install, never v11nightly or another worker's copy) runs FLServer.exe
 # and a test client on this machine; flmptest.dll (build.cmd mptest; TEST-ONLY) keeps the multiplayer account key and
 # the server's data inside the instance (the owner, 28 Oct 2026: nothing outside the project, and always know which

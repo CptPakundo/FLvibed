@@ -1,6 +1,6 @@
-// FLvibed - the pure geometry of the pad's prompt rows (hold word, 26 Oct 2026): factored out of
-// controller\src\impl\promptbar.cpp (the bottom lane: docs\UI_HUD2_EXTENDED.md 13) and hud2.cpp ComputeLayout (HUD 2's
-// context line: docs\UI_HUD2.md 5.9) without changing their behaviour, so the host-free tests (tests\promptfit_test.cpp)
+// FLvibed - the pure geometry of the pad's prompt rows (hold word): factored out of
+// modules\controller\src\impl\promptbar.cpp (the bottom lane: modules\hud\docs\UI_HUD2_EXTENDED.md 13) and hud2.cpp ComputeLayout (HUD 2's
+// context line: modules\hud\docs\UI_HUD2.md 5.9) without changing their behaviour, so the host-free tests (tests\promptfit_test.cpp)
 // drive the very code the game runs across the display matrix. No game, no device: the callers pass the measured widths
 // and their keep-out queries. Pixels in, pixels out; every size a fraction of H.
 #pragma once
@@ -113,7 +113,7 @@ private:
 // (pixels); `confirm` = the pill that always stays (the A pill, else the first; BACK = the last stays too). `left(y0, y1,
 // right)` = the row's left limit in that band (the screen's keep-outs), `nnBottom` = the NeuroNet box's bottom when
 // docked (0 = none), `lowest(x0, x1, below)` = the lowest keep-out edge in that x range. `dropped` counts the pills
-// dropped. The order (docs\UI_HUD2_EXTENDED.md 13; fix-text 25 Oct 2026): the row; the row with the labels at the floor;
+// dropped. The order (modules\hud\docs\UI_HUD2_EXTENDED.md 13; fix-text 25 Oct 2026): the row; the row with the labels at the floor;
 // the column; two rows at the bottom (labels at the floor); the column at the floor; only then the last resorts.
 template <class LeftFn, class LowFn>
 inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, const float* wF, float ph, float pitch,
@@ -334,7 +334,7 @@ struct ContextPlaced
     bool above = false;     // moved above the panels (only a first prompt that alone does not fit)
 };
 
-// The line under the ship (docs\UI_HUD2.md 5.9 "one baseline"): at 0.915 H; the last prompts give way until the line fits
+// The line under the ship (modules\hud\docs\UI_HUD2.md 5.9 "one baseline"): at 0.915 H; the last prompts give way until the line fits
 // between the ship panel (right edge shipX1) and the loadout (left edge loX0); only a line whose first prompt alone does
 // not fit goes above the panels (their top panelsY0, 0.04 H x k above it). `w` = each prompt's width (nullptr = the line
 // measures 0: the player is typing), `gap` the space between prompts. `lineY` = the baseline in H (HUD 2's layout core
@@ -364,7 +364,7 @@ inline ContextPlaced PlaceContext(const float* w, int n, float gap, float W, flo
 }
 
 // ---------------------------------------------------------------- where a hold prompt's word HOLD goes
-// The owner (26 Oct 2026, follow-up): HOLD BEFORE the glyph (the word, then the glyph with its broken ring, then the
+// The owner (follow-up): HOLD BEFORE the glyph (the word, then the glyph with its broken ring, then the
 // label); where that would cost a prompt (or move the context line above the panels where it fitted before) the first
 // step of a cascade that keeps every prompt the line / lane showed without any word:
 //   (a) Above   - the word stacked above the glyph, small, centred on it (only its excess width over the glyph counts);
@@ -425,7 +425,7 @@ struct HoldDims
 };
 inline float RingChord(float glyphH) { return 2.0f * 0.62f * glyphH * 0.34202f; }
 // The gap between the word and its glyph (Before): the broken ring reaches ~0.15 h past the glyph's slot (radius 0.62 h
-// + its line), then a clear 0.2 h (0.2 h alone let the ring touch the word's D: in game at 4K, 26 Oct 2026).
+// + its line), then a clear 0.2 h (0.2 h alone let the ring touch the word's D: in game at 4K).
 inline float GapBefore(float glyphH) { return glyphH * 0.35f; }
 // What a prompt's word adds to its width (glyph = the width of the glyph slot, label = the label's width at its smallest).
 inline float HoldExtra(WordAt a, float glyph, float label, const HoldDims& d)
@@ -565,8 +565,8 @@ inline float KeycapTightWidth(float nameW, float ts)
     return w > hc ? w : hc;
 }
 
-// ---------------------------------------------------------------- a prompt's label: never a marquee (0.2.1, 2 Nov 2026)
-// The owner (2 Nov 2026): a button prompt's label is always readable whole - a label too long for its room wraps onto two
+// ---------------------------------------------------------------- a prompt's label: never a marquee (0.2.1)
+// The owner: a button prompt's label is always readable whole - a label too long for its room wraps onto two
 // lines in a somewhat smaller font (never under the legibility floor) instead of scrolling (panel names keep their
 // marquee). The order: (1) one line at the nominal size; (2) one line shrunk, down to the two-line size; (3) two lines
 // split at the word boundary that makes the wider line narrowest, at the two-line size (0.85 x nominal, never under the
@@ -687,8 +687,8 @@ inline float LabelMinWidth(const std::wstring& s, float nominal, float floor, Wi
     return width(s, lo);
 }
 
-// ---------------------------------------------------------------- HUD 2's context lanes (the owner, 31 Oct 2026)
-// The owner's decision 4 (docs\UI_HUD2.md 5.20): the prompts tight to the bottom-left and the bottom-right, the very centre
+// ---------------------------------------------------------------- HUD 2's context lanes
+// The owner's decision 4 (modules\hud\docs\UI_HUD2.md 5.20): the prompts tight to the bottom-left and the bottom-right, the very centre
 // bottom clear "for aesthetic purposes" (the centred line's cruise / dock / context pills hid the ship). Two lanes beside
 // the bottom panels: the LEFT lane from the ship panel's right edge towards the centre, the RIGHT lane from the loadout's
 // left edge towards the centre, neither past the bottom-centre clear band (x 0.40-0.60 W: the ship keep-out's columns,
@@ -721,7 +721,7 @@ inline LaneGeom ContextLanes(float W, float H, float k, float shipX1, float loX0
 // The lanes above the bottom panels: where the beside-the-panels lanes have no room for even the first prompt (4:3 / 5:4
 // at large scales: the panels reach the band). The left from the side margin to the band's 0.40 W, the right from the
 // band's 0.60 W to the other margin (the same pads), the baseline 0.04 H x k above the panels' top `panelsTop` (pixels),
-// two rows. Replaces the old centred line above the panels, which crossed the lower centre (the owner, 31 Oct 2026: the
+// two rows. Replaces the old centred line above the panels, which crossed the lower centre (the
 // lower centre devoid of HUD elements; UI_HUD2.md 5.23).
 inline LaneGeom LanesAbove(float W, float H, float k, float mx, float panelsTop, float bandX0W = 0.40f,
                            float bandX1W = 0.60f)

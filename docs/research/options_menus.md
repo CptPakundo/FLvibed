@@ -1,12 +1,17 @@
 # Options menus: how well-regarded games do it, and what Freelancer's own screen looks like
-Status: current (the UI build of 25 Oct 2026 realised U10-U14; two departures marked in place: the pause menu got a sixth button after all, the subtitles preview is a replica, not the display's own code)
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 1 watched-path commit: 4a4bd7b1 (docs/SETTINGS.md gains strafe_pass, Hidden + Meta; 269 keys); hidden keys are not on the options page; no effect)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: docs/UI_PLAN.md, core/settings.h, core/game/menu.*, controller/src/impl/controller.cpp, subtitles/src/impl/display.*, docs/SETTINGS.md
-Evidence: `research\experience\ui_2026-10-25\` (the test install's Options screen, pause menu and flight HUD at 4K, 25 Oct 2026, and the three mock-ups built over them); the sources below (read 25 Oct 2026)
+Status: current (extended 6 Nov 2026 by the simple mode round; the UI build of 25 Oct 2026 realised U10-U14; two departures marked in place: the pause menu got a sixth button after all, the subtitles preview is a replica, not the display's own code)
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 3 watched-path commits: ccf824e6 the spec lists only binds that exist, ddb71c86 [Modules] reads "on" like every row, c4652165 pad fixes; U57-U63 as 4cab3e0f (the options rulings, landed during the round) left them)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: docs/UI_PLAN.md, core/settings.h, core/game/menu.*, modules/controller/src/impl/controller*.cpp, modules/subtitles/src/impl/display.*, docs/SETTINGS.md
+Evidence: `research\evidence\options_menu\` (the simple mode round: three readers, three verifiers, inventory, mock frames); `research\experience\ui_2026-10-25\` (the test install's Options screen, pause menu and flight HUD at 4K, 25 Oct 2026, and the three mock-ups built over them); the sources below (read 25 Oct 2026)
 Sources: [page] gameaccessibilityguidelines.com full list; [page] learn.microsoft.com XAG 104 (subtitles and captions); [page] caniplaythat.com God of War Ragnarok accessibility review, Forza Horizon 5 menu deep dive, Marvel's Spider-Man Remastered deep dive; [page] naughtydog.com TLOU2 accessibility features; [page] bugnet.io "how to design a good options menu"; [page] flyawaysimulation.com / forums.flightsimulator.com on MSFS Assistance presets; [page] pixelpoppers.com / gameaccessibilityguidelines.com on Celeste's Assist Mode; [page] Drexel 2023 thesis abstract on settings-menu UX; [page] gdevelop.io "Borrowing without copying" (settings screens)
 
 ## What it means for FLvibed
+
+**Simple mode round (6 Nov 2026, the owner's brief for 0.4.0): design `docs\UI_OPTIONS.md`, the owner's rulings in its section 14.** Five tabs by feature (HUD, CONTROLLER, SUBTITLES, AUTOPILOT, MORE), 30 settings for today's 114 rows,
+no scrolling at Large on a Deck, each feature's switch at the head of its tab, off greying what is under it. A hidden row the player changed comes back under YOU CHANGED, so nothing is lost out of sight (U57), and the
+description moves into the page at body size (U58). Bundle rows with CUSTOM extend presets to the hints and hit effects (U59). A first-start card covers four access choices once (U63). `pad_backend`, the one hidden default that could harm, is settled by
+0.3.5's SDL3 fallback (U61). The evidence is thin where it matters most: all 30 GitHub issues have one author, every usage figure is from another genre, and no player has walked the page: the check pack is U62.
 
 *Check-up 29 Oct 2026 ~07:15 (short form, HEAD 067bf32; 2 watched-path commits 7518008..067bf32):* no effect: no key
 or row added; the page's own pad reader now applies `stick_deadzone` (6970588: a player with a larger deadzone got the
@@ -41,7 +46,7 @@ game's own page-switch slide caught mid-way); native row controls (ToggleButtonC
 *Check-up 25 Oct 2026 (073a665), HUD 2:* the CONTROLLER tab gained a HUD section of 11 rows (`hud_style` CLASSIC / HUD 2
 ON THE PAD / HUD 2 ALWAYS, `hud_fade`, `hud_opacity`, `hud_scale`, `hud_numbers`, `hud_threats`, `hud_context`,
 `hud_alerts`, `hud_info`, `hud_wireframes` as player rows, `hud_transition` as an advanced row; `core\ui_meta.h`,
-`docs\UI_HUD2.md` 5.3) - the tier rule of U11 holds. One gap grew: while HUD 2 shows, the subtitles' top panel draws in
+`modules\hud\docs\UI_HUD2.md` 5.3) - the tier rule of U11 holds. One gap grew: while HUD 2 shows, the subtitles' top panel draws in
 Agency FB and the chatter goes to HUD 2's comm feed at HUD 2's sizes (`display.cpp DrawHud2Feed`), which the SUBTITLES
 tab's replica preview does not show (`options_page.cpp DrawPreview` knows nothing of HUD 2) - more weight for the
 preview through the display's own code (U12).
@@ -127,3 +132,26 @@ preview uses the same `gamefont` faces).
 Nobody added a page to `NN_Preferences`; HDE re-enables two hidden `optlist.ini` sliders by exe patch, FLSharp hooks
 the class at ~20 sites for the resolution list, FLUF draws its own ImGui options window and once hooked the main menu's
 Options button, adoxa adds single native controls by byte patch. The free page-button slot is unused by all of them.
+
+### Simple mode round (6 Nov 2026)
+Readers: `research\evidence\options_menu\reader_a_games.md` (about 40 pages), `reader_b_standards.md` (about 50), `reader_c_players.md` (over 40). Each was attacked by a verifier who re-fetched the claims: `verify_a_games.md`,
+`verify_b_standards.md`, `verify_c_players.md`. Page inventory: `inventory.tsv`. What survived is table 2 of `docs\UI_OPTIONS.md`; what did not:
+
+| Claim | Fate |
+|---|---|
+| No game has a global Simple / Advanced switch | **Wrong.** OpenTTD ships Basic as the default with Expert and changed-from-default filters; PCSX2 hides advanced by default; RetroArch has the switch, on by default. None found in a big commercial title |
+| TLOU II dropped per-audience menus after feedback | The reason has a primary source (Gallant on NPR: players "didn't fully trust us to configure those options"); the menu history stays second-hand |
+| FH5 and GoW put accessibility first | Overstated: the sources' section order, not the menu's; no tab order is cited |
+| Subtitles: 60 % is true demand | Overstated: Origins' 60 % reached first-party, Division 2 runs 75 % ever to 50 % now, TLOU II's 63 % sits in a video |
+| Sniper Elite 5 text size 35 % | Very likely subtitle size; menu text size is a separate row. Its aim assist reads 8 % and 97 % in two years, so its numbers are not leaned on |
+| MWII: blur and FOV over half | A group of settings, no per-setting figure. Dead zone over 40 % stands, second-hand |
+| Black Ops 6: accessibility menu nearly half | The sentence names no title; not BO6 data |
+| Small text is the loudest complaint | About a dozen voices; Valve's rule carries it |
+| Page 1996: 92 % customised | Stands, but like for like with Spool it is 86 % changing preferences |
+| Mods commonly have an advanced mode | Only BepInEx builds it in; Fallout 4's MCM example is a sample of a generic switch; Sodium has no Advanced page today and warns by toast |
+| Never say "module" | Untested. Foundry VTT and ElvUI use the word; plain names stay a judgement |
+| Holds under 3 s are safe | Wrong: that line replaces pinch gestures; no safe hold is published |
+| Disabled rows must stay focusable | A design choice: Microsoft's default says otherwise |
+| XAG 111 navigation, XAG 28 px | The brief's errors: 111 is audio description, navigation 112, focus 113, context 114; 28 px is GAG's, XAG 101 says 18 / 36 px PC and 26 / 52 px console |
+
+Open: no first-hand screens or frames of other games (text sources only); PCGamingWiki refused every fetch; Reddit unreachable; the Xbox handheld measuring method; Elite Dangerous' tab list and first run.

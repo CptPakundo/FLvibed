@@ -12,7 +12,6 @@
 namespace
 {
 constexpr int kMaxSections = 16;
-constexpr int kMaxRows = 160;    // per section (the autopilot has ~95 keys today)
 constexpr int kDefaultLen = 96;  // one default as text (Vec3 "x, y, z", a key name, a pilot nickname)
 
 struct Slot
@@ -26,14 +25,9 @@ Slot g_slots[kMaxSections];
 int g_nextId = 1;
 u32 g_generation = 0;
 
-Slot* FindSlot(const char* section)
+bool InSection(const Slot& s, const char* section)
 {
-    if (!section)
-        return nullptr;
-    for (Slot& s : g_slots)
-        if (s.id && s.section.section && _stricmp(s.section.section, section) == 0)
-            return &s;
-    return nullptr;
+    return section && s.id && s.section.section && _stricmp(s.section.section, section) == 0;
 }
 
 const settings::Def* FindDef(const Slot& s, const char* key, size_t* index)
@@ -50,13 +44,42 @@ const settings::Def* FindDef(const Slot& s, const char* key, size_t* index)
     return nullptr;
 }
 
+// The row and its owner: a section may have several owners (`[Controller]` holds HUD, speedrun and window rows), a key has one.
+Slot* FindOwner(const char* section, const char* key, const settings::Def** def, size_t* index = nullptr)
+{
+    for (Slot& s : g_slots)
+        if (InSection(s, section))
+            if (const settings::Def* d = FindDef(s, key, index))
+            {
+                if (def)
+                    *def = d;
+                return &s;
+            }
+    return nullptr;
+}
+
+// An owner's second registration (a logic that did not unregister) or a key another owner has: fail closed, the old one stays.
+bool Clashes(const SettingsBusSection& section)
+{
+    for (const Slot& s : g_slots)
+        if (InSection(s, section.section))
+        {
+            if (section.module && s.section.module && _stricmp(section.module, s.section.module) == 0)
+                return true;
+            for (size_t i = 0; i < section.count; ++i)
+                if (FindDef(s, section.defs[i].name, nullptr))
+                    return true;
+        }
+    return false;
+}
+
 int BusRegister(const SettingsBusSection* section)
 {
     if (!section || !section->section || !*section->section || !section->defs || section->count == 0 ||
-        section->count > kMaxRows)
+        section->count > kSettingsBusMaxRows)
         return 0;
-    if (FindSlot(section->section))
-        return 0; // the name is taken (a logic that did not unregister: fail closed, the old one stays)
+    if (Clashes(*section))
+        return 0;
     for (Slot& s : g_slots)
     {
         if (s.id)
@@ -111,8 +134,8 @@ const SettingsBusSection* BusSection(int i)
 
 const settings::Def* BusFind(const char* section, const char* key)
 {
-    const Slot* s = FindSlot(section);
-    return s ? FindDef(*s, key, nullptr) : nullptr;
+    const settings::Def* d = nullptr;
+    return FindOwner(section, key, &d) ? d : nullptr;
 }
 
 bool CopyOut(const std::string& v, char* out, int outLen)
@@ -141,9 +164,9 @@ bool BusDefault(const char* section, const char* key, char* out, int outLen)
 {
     if (out && outLen > 0)
         out[0] = 0;
-    const Slot* s = FindSlot(section);
     size_t index = 0;
-    if (!s || !FindDef(*s, key, &index))
+    const Slot* s = FindOwner(section, key, nullptr, &index);
+    if (!s)
         return false;
     std::string d;
     if (!DefaultOf(*s, index, d))
@@ -153,9 +176,9 @@ bool BusDefault(const char* section, const char* key, char* out, int outLen)
 
 bool BusSet(const char* section, const char* key, const char* value)
 {
-    Slot* s = FindSlot(section);
-    const settings::Def* d = s ? FindDef(*s, key, nullptr) : nullptr;
-    if (!d || !value || !d->ptr)
+    const settings::Def* d = nullptr;
+    Slot* s = FindOwner(section, key, &d);
+    if (!s || !value || !d->ptr)
         return false;
     if (!settings::Apply(*d, value))
         return false;
@@ -185,11 +208,14 @@ bool BusReset(const char* section, const char* key)
 
 bool BusSave(const char* section)
 {
-    const Slot* s = FindSlot(section);
-    if (!s || !s->section.save)
-        return false;
-    s->section.save(s->section.ctx);
-    return true;
+    bool saved = false; // each owner writes its own rows
+    for (const Slot& s : g_slots)
+        if (InSection(s, section) && s.section.save)
+        {
+            s.section.save(s.section.ctx);
+            saved = true;
+        }
+    return saved;
 }
 
 u32 BusGeneration() { return g_generation; }

@@ -1,4 +1,4 @@
-// The situation assessor (controller\src\impl\situation.h, A37 S1): over a synthetic snapshot - the subject, the kind and
+// The situation assessor (modules\autopilot\src\situation.h, A37 S1): over a synthetic snapshot - the subject, the kind and
 // its source, threats, constraints, goals with live state and achieved, affordances; idempotence and contact-order
 // invariance; the step key from the snapshot alone (4c4fb6f: a re-issued step keeps its key, "Dock with the Trade Lane"
 // after the escort gets a new one - no memory needed); placeholders and stand-ins; holds; the job table's precedence;

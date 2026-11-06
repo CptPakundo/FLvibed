@@ -5,10 +5,10 @@
 #                        is generated here.
 #   pre-commit         - runs pre-commit.privacy, then, when a review product is staged
 #                        (subtitles/review/FLSubtitles/data/subtitles.tsv | movies.tsv | mixes.tsv | word_times.tsv) or one of the
-#                        published copies in subtitles/data:
+#                        published copies in modules/subtitles/data:
 #                          1. re-aligns the word timings when the review subtitles.tsv is staged
 #                             (FLSubtitles/aligner/align_words.py, incremental) and stages word_times.tsv;
-#                          2. publishes the review products into subtitles/data (tools/publish.ps1) and stages them,
+#                          2. publishes the review products into modules/subtitles/data (tools/publish.ps1) and stages them,
 #                             so the commit carries the review change and its published copy together.
 #                        In a `git commit -- <paths>` commit the hook cannot stage extra files: it writes them and
 #                        refuses the commit; commit again with those paths added.
@@ -64,7 +64,7 @@ MARKER
 # 2. the subtitle review products (subtitles/review/CLAUDE.md "Publishing")
 R=subtitles/review/FLSubtitles
 staged=$(git diff --cached --name-only)
-echo "$staged" | grep -q -E "^($R/data/(subtitles|movies|mixes|word_times)|subtitles/data/(subtitles|movies|mixes|word_times))[.]tsv$" || exit 0
+echo "$staged" | grep -q -E "^($R/data/(subtitles|movies|mixes|word_times)|modules/subtitles/data/(subtitles|movies|mixes|word_times))[.]tsv$" || exit 0
 # a `git commit -- <paths>` commit runs on a temporary index: files the hook writes cannot be staged into it
 partial=0
 case "$GIT_INDEX_FILE" in *next-index*) partial=1 ;; esac
@@ -97,7 +97,7 @@ ps=pwsh; command -v pwsh >/dev/null 2>&1 || ps=powershell
 if [ $partial = 1 ]; then
   "$ps" -NoProfile -ExecutionPolicy Bypass -File subtitles/review/tools/publish.ps1 -NoStage -Quiet >&2
   rc=$?
-  if [ $rc = 2 ]; then echo "pre-commit: commit again with subtitles/data/subtitles.tsv movies.tsv mixes.tsv word_times.tsv in the paths" >&2; exit 1; fi
+  if [ $rc = 2 ]; then echo "pre-commit: commit again with modules/subtitles/data/subtitles.tsv movies.tsv mixes.tsv word_times.tsv in the paths" >&2; exit 1; fi
   [ $rc = 0 ] || { echo "pre-commit: publishing the subtitle data FAILED" >&2; exit 1; }
 else
   "$ps" -NoProfile -ExecutionPolicy Bypass -File subtitles/review/tools/publish.ps1 -Quiet >&2 \

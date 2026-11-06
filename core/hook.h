@@ -1,3 +1,4 @@
+// Hook layer API: signature-verified symbols (Sym) that fail closed, Detour, code and table patches, Mem, Call and VCall.
 #pragma once
 #include "common.h"
 
@@ -45,7 +46,7 @@ struct Sym
     template <class F> F fn() { return reinterpret_cast<F>(get()); } // typed function pointer or null
 };
 
-// Resolve `count` symbols now (the hosts and logics call it once at startup) and log a summary plus every symbol
+// Resolve `count` symbols now (the host and the logic call it once at startup) and log a summary plus every symbol
 // that is not at its v1.1 address. `who` prefixes the log lines.
 void ResolveAll(Sym* const* syms, size_t count, const char* who);
 // Resolve one symbol (cached; ResolveAll and Sym::get call it).
@@ -109,7 +110,7 @@ uintptr_t FindInModule(const char* module, const char* sig, int off);
 // A data address read from the 32-bit operand at `off` in that unique match (an instruction that references it).
 uintptr_t FindModuleData(const char* module, const char* sig, int off);
 
-// ---- What another mod patched at run time: the module's original image, read from its own file (26 Oct 2026) ----
+// ---- What another mod patched at run time: the module's original image, read from its own file ----
 // FLUF rewrites vtable slots (every control class's vt[0xA8], Common.dll classes, IServerImpl), instructions (the
 // lane code) and pointers; the loaded module's file says what the game had there. Loaded on first use per module (the
 // Windows loader's layout, relocated to the live base), refused (null / 0 / false, logged once) when the file is not
@@ -162,12 +163,12 @@ void* Detour(uintptr_t target, void* dest, size_t stolen, const char* name = nul
 // ---- Co-residency with restore-style detours (FLUF) ----
 enum HookMode : u8
 {
-    HookNone = 0,  // not hooked by this module part
+    HookNone = 0,  // not hooked by this instance
     HookDirect,    // FLvibed's JMP at the target, the stolen bytes in the trampoline
     HookChained,   // FLvibed's JMP at the target, the trampoline jumps to the plugin hooked there before
     HookAtHandler, // the target belongs to a restore-style detour: FLvibed hooks its handler (both run)
 };
-// How this module part hooked `target` (the latest Detour on it).
+// How this instance hooked `target` (the latest Detour on it).
 HookMode ModeOf(uintptr_t target);
 const char* HookModeName(HookMode mode);
 // Is `addr` code of a restore-style detourer: FLUF.dll or a module that imports it (FLUF's modules), or a range the
@@ -175,7 +176,7 @@ const char* HookModeName(HookMode mode);
 bool IsRestoreStyle(uintptr_t addr);
 void AddRestoreStyleRange(uintptr_t begin, uintptr_t end); // tests: a simulated FLUF
 void ClearRestoreStyleRanges();
-// Once the other DLLs are loaded (the hosts call it once, at their first frame): every hook of this module part whose
+// Once the other DLLs are loaded (the host calls it once, at the first frame): every hook of this instance whose
 // target a restore-style detour took AFTER FLvibed (FLUF loaded later: FLvibed's JMP is then its saved "original",
 // so FLvibed's hook ran inside FLUF's, with FLUF as its caller) moves to that detour's handler: the old JMP becomes a
 // pass-through, the hook's "original" pointer leads into FLUF's handler. Logs one line per moved hook and a summary
@@ -183,14 +184,28 @@ void ClearRestoreStyleRanges();
 int AdoptRestoreStyle(const char* who);
 // The event for a FLUF detour installed after the first frame (FLUF builds some of its hooks late, e.g. with its UI): a
 // hook whose caller matters passes its return address here; true (and an adoption becomes pending) when the caller is
-// restore-style code - FLvibed's hook then runs inside FLUF's call. The hosts run AdoptRestoreStyle again, outside
+// restore-style code - FLvibed's hook then runs inside FLUF's call. The host runs AdoptRestoreStyle again, outside
 // that call, when AdoptPending() says so (it clears the flag).
 bool NoteCaller(const void* ret);
 bool AdoptPending();
-// Every hook of this module part: name, mode, where FLvibed's jump is, where the function's own first jump leads now
-// (debug `hooks`).
-void HookReport(char* out, size_t len);
-// One startup line: FLUF loaded before this module part, or not (yet).
+// Every hook of this instance: name, mode, where FLvibed's jump is, where the function's own first jump leads now (debug
+// `hooks`). `owners` picks the rows: a debug channel lists its module's hooks and the shared ones (core\host\router.h).
+void HookReport(char* out, size_t len, u32 owners = ~0u);
+// Whose hooks the next ones are (a mask; the report's filter, nothing else), on the game's thread and during the start.
+void SetOwner(u32 owners);
+u32 GetOwner();
+class Owner
+{
+  public:
+    explicit Owner(u32 owners) : saved_(GetOwner()) { SetOwner(owners); }
+    ~Owner() { SetOwner(saved_); }
+    Owner(const Owner&) = delete;
+    Owner& operator=(const Owner&) = delete;
+
+  private:
+    u32 saved_;
+};
+// One startup line: FLUF loaded before FLvibed, or not (yet).
 void LogRestoreStyleAtStart(const char* who);
 // The length of the x86-32 instruction at `code` if a hook may move it into a trampoline (relocating E8 / E9 rel32
 // and EB rel8), else 0 (relative conditional jumps, far transfers, int3 padding, unknown opcodes). `terminal`: an

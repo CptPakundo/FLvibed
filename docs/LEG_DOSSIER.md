@@ -6,13 +6,13 @@ runner makes the time, what our autopilot does there, and the ranked things to c
 (speedrun.com IL boundaries: accept = the offer popup closes; land = the docking animation's last frame).
 
 **Times blocks are generated - never type numbers between the `legtimes` markers.** `node tools\legtable.js` (run by
-`controller\tools\flleg.ps1` after every leg) fills each mission leg's block from `docs\legs_reference.tsv` (the three
+`tools\harness\flleg.ps1` after every leg) fills each mission leg's block from `docs\legs_reference.tsv` (the three
 runs, best of 3, scene-free) and `research\experience\legs\legs.tsv` (our PASS runs from the leg's start save, with the
 personal-best chain). L00 and the FT legs have no autopilot leg yet: their small tables are static (the runs' `legs.tsv`).
 
 **Numbers in the prose are dated evidence**, not live state: section seconds come from
 `research\evidence\speedrun\topics\navigation\sections.tsv` (our best leg runs as of 22 Oct 2026 vs the runs), the
-autopilot's state from `controller\docs\AUTOPILOT.md` at commit 4c7d3fe (items marked *untested* there are untested here).
+autopilot's state from `modules\autopilot\docs\AUTOPILOT.md` at commit 4c7d3fe (items marked *untested* there are untested here).
 
 **Keeping it current:** when a training result, a new leg best or a user correction changes the picture of a leg, add a
 dated one-line note under that leg's "Key notes for training" (newest first) and correct the bullets it outdates. The
@@ -28,7 +28,7 @@ Evidence shorthand (all under `research\evidence\speedrun\` unless a path says o
 | REF | `reference\` - `ref.py <leg> [<section>]` (`research\tools\ocr\.venv\Scripts\python.exe -I`), `sections_dense.tsv`, `data\verified_desc.tsv`, `frames\` |
 | BEH / CAL | `reference\motion\behaviours.md` (frame-backed manoeuvre rules) / `reference\calib\CALIBRATION.md` (user corrections) |
 | SR / IDEAS | `docs\research\speedrun.md` (V1-V11) / `docs\research\IDEAS.md` (A1-A33) |
-| AP / LEGLOG | `controller\docs\AUTOPILOT.md` / `research\experience\legs\legs.tsv` and the run folders beside it |
+| AP / LEGLOG | `modules\autopilot\docs\AUTOPILOT.md` / `research\experience\legs\legs.tsv` and the run folders beside it |
 
 Reading rules that apply everywhere (CAL): the HUD target distance is a **surface** distance (0-M against a hull); the
 vanilla HUD's left strip box is **thruster energy**, not the throttle; "MOUSE FLIGHT" is a steering toggle, not an
@@ -231,7 +231,7 @@ Our personal bests (full leg): 1134 (10-22 08:54) -> 1128 (10-28 23:05) -> 1109 
 4. No hold-short at the Colorado gate (+30 s): request at once when no NPC is locked in (A23); King must still follow.
 
 **Per segment: M02.ashcroft -> M02.pod (the Rogues fight's end and the follow; 30 Oct 2026, `ref.py M02`, LOOK L2's
-probe, `controller\docs\LOOK_PLAN.md` 8)** - our pod segment 114-131 s (sd 5.6) vs par 22; our Rogues gold 26 s UNDER
+probe, `modules\autopilot\docs\LOOK_PLAN.md` 8)** - our pod segment 114-131 s (sd 5.6) vs par 22; our Rogues gold 26 s UNDER
 par - the runners spend those seconds placing themselves.
 - WHAT: the runners do not kill the 4th escort themselves. They bring it low (r1 Dowling and r3 Harrison left at 0.09
   hull; HUD kills 1 / 2 / 1 in the section) and leave it to King and the police. **12-17 s before "Follow Ashcroft" they are

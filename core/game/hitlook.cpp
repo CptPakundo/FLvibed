@@ -1,3 +1,4 @@
+// Reads how hits look from the game's data: shield, impact and hull effects, damage stages, curves and textures.
 #include "hitlook.h"
 
 #include "flhash.h"

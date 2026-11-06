@@ -1,3 +1,4 @@
+// Builds one texture atlas from the game's flat icon sheets for HUD 2 and answers each icon's texture and UV.
 #include "flicons.h"
 
 #include "log.h"

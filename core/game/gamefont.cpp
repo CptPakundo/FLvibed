@@ -1,3 +1,4 @@
+// Resolves the game's label and body typefaces from its font files, falling back to Windows' fonts, for FLvibed's text.
 #include "gamefont.h"
 
 #include "log.h"

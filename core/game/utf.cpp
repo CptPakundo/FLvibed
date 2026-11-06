@@ -1,3 +1,4 @@
+// Reader for Freelancer UTF files: lists their leaves and decodes the uncompressed TGA images inside.
 #include "utf.h"
 
 #include <fstream>

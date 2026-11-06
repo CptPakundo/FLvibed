@@ -1,4 +1,4 @@
-// The arbiter's executor, its pure half (controller\src\impl\situation_exec.h, A37_PLAN S7): every refusal of the
+// The arbiter's executor, its pure half (modules\autopilot\src\situation_exec.h, A37_PLAN S7): every refusal of the
 // side-effect gate (side effects check the game first) and its event line; the plan comparison; the ObjectiveStart
 // arguments of a proposal = the old path's for every recorded decision (the fixtures' `decided`), each plan's kind fit
 // for its mode; the pause facts; D10's pause / resume over every fixture - the queue's carried memory (a short pause:
@@ -7,7 +7,7 @@
 // finding, decided for S7) - and the arrival reach that settles S6's `arrived` exception.
 #include "situation_fixture.h"
 
-#include "../controller/src/impl/situation_exec.h"
+#include "../modules/autopilot/src/situation_exec.h"
 
 #include <map>
 

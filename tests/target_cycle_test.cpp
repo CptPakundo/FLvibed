@@ -1,6 +1,6 @@
-// The targeting press's enemy rule (controller\src\impl\target_cycle.h, the owner, 4 Nov 2026): a cold press takes the
+// The targeting press's enemy rule (core\game\target_cycle.h, the owner, 4 Nov 2026): a cold press takes the
 // nearest enemy, presses in a run walk the others once each, a target changed by anything else or a pause starts cold.
-#include "../controller/src/impl/target_cycle.h"
+#include "../core/game/target_cycle.h"
 
 #include "test.h"
 

@@ -1,8 +1,8 @@
 # LLM-driven NPCs and AI assistants in games: SkyrimNet and its peers, and what the same would take in Freelancer
 Status: current
-Checked against: FLvibed 4338909 (31 Oct 2026 ~05:10, short form: 1 watched-path commit (55d42263, hook / subtitle-loader robustness); no comm / dialog / NPC-speech content; no effect)
-Dirty paths at check: none (working tree clean at 4338909, 31 Oct 2026 ~05:10)
-Watch: subtitles/src, core/game/ai.*, core/game/room.*, core/text.*, docs/FREELANCER_RE.md#comm|dialog|voice|chatter|room|NPC|pilot|text, controller/docs/TASK_GLYPHS_HUD.md, docs/kb/world
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 26 watched-path commits: the module split P0-P11e (moves, comments, map rows) and subtitle / comm fixes (57d6814a the Neural Net queue steps under HUD 2, a9235830 the comm feed through in-flight cutscenes, 5e37b14c a trace removed); N-rows stay later; no effect)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: modules/subtitles/src, core/game/ai.*, core/game/room.*, core/text.*, docs/FREELANCER_RE.md#comm|dialog|voice|chatter|room|NPC|pilot|text, modules/controller/docs/TASK_GLYPHS_HUD.md, docs/kb/world
 Evidence: none kept (the public repository was read from a shallow clone in the session scratchpad; the game facts come from the HDE install, the FLHook SDK on hand and the decomp note)
 Sources: [file] the SkyrimNet repository (README, LICENSE, CONTRIBUTING, docs/modding, Source/Scripts/SkyrimNetApi.psc, plugins/skyrimnet/base prompts and config, model-presets); [api] GitHub releases and commits; [page] https://goncalo22.github.io/SkyrimNet-GamePlugin/Features/overview/ ; [page] the other projects' GitHub pages, documentation sites and news coverage listed in "Other games" below; [file] FLvibed docs\FREELANCER_RE.md "Voices and dialogue audio", research\repos\FLHookSDK FLCoreServer.h, the HDE install's voices inis, the decomp's hud_comm / voice_profiles / character_info sources (docs\research\freelancer-decomp.md)
 
@@ -24,7 +24,7 @@ both modes: speaker factions from the client's own reputation data (da018ac: `CE
 unfilled name templates out of the chat - a rule a generated line would inherit. Nothing contradicted; every N item
 stays later.
 *Check-up 26 Oct 2026 (step 3 short form, HEAD e5c02cc; 12 watched-path commits 855745b..e5c02cc):* one more building
-block - the subtitles' priority rule (915be52 / 034ee2e, `subtitles\docs\DISPLAY_PLAN.md` "Priority and the side chat"):
+block - the subtitles' priority rule (915be52 / 034ee2e, `modules\subtitles\docs\DISPLAY_PLAN.md` "Priority and the side chat"):
 story lines and portrait comms hold centre stage until their audio ends, other NPC lines go to the game's own chat log /
 HUD 2's feed (`chat_all_dialogue` copies story lines there too) - the place an NPC reply (N2) or a talking Neural Net
 (N10) would show without fighting mission comms. Nothing contradicted.
@@ -67,7 +67,7 @@ reasoning, in order of weight:
    eligibility is pre-warmed). Typed input exists too: the chat input control is present in single player (the
    console plugin uses it) (IDEAS N8).
    *Check-up 25 Oct 2026 (abf84ac):* the UI build gave the pad its own text entry - an on-screen keyboard
-   (`controller\src\impl\osk.*`, 13c41f0) - and the shared prompt bar and pad list screens (`promptbar.*`,
+   (`modules\controller\src\impl\osk.*`, 13c41f0) - and the shared prompt bar and pad list screens (`promptbar.*`,
    `padmenus.*`, d01c755): N2's typed input and N3's pad-friendly reply panel have their building blocks. Also learned:
    the subtitle display is cleared when the game returns to its menu (0c2328e) - any injected text channel must do the same.
    *Check-up 25 Oct 2026 (855745b):* more building blocks, none changing a conclusion: the HUD bus v2 carries the pad's
@@ -101,7 +101,7 @@ reasoning, in order of weight:
    FLvibed would act natively (IDEAS N10).
    *Check-up 25 Oct 2026 (073a665):* HUD 2 gives such a computer its display: the Neural Net lines are HUD 2's alert
    cards (the subtitles leave them out, `HudLayout.alerts`), and the HUD bus keeps one comm surface at a time between
-   the subtitles' top panel and HUD 2's comm feed (`docs\UI_HUD2.md` 5.8, 5.9 item 2). A generated line would publish
+   the subtitles' top panel and HUD 2's comm feed (`modules\hud\docs\UI_HUD2.md` 5.8, 5.9 item 2). A generated line would publish
    through the same bus rather than open a third surface.
 10. **Voice commands do not need an LLM.** The flight-sim ATC products show two designs: BeyondATC's structured,
     grammar-constrained exchanges and SayIntentions' free-form conversation. For the controller a structured path is

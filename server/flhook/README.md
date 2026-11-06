@@ -5,7 +5,7 @@ need it. It tells every player who runs FLvibed what this server allows FLvibed'
 (`docs\MULTIPLAYER.md` "Server permission").
 
 ## Install
-1. Copy `flvibed_server.dll` into the server's `EXE\plugins\` (beside FLHook's other plugins).
+1. Build it (`build.cmd flhook`; the release does not ship it) and copy `flvibed_server.dll` into the server's `EXE\plugins\` (beside FLHook's other plugins).
 2. Start FLServer. On first load the plugin writes `EXE\config\flvibed.json`:
    ```json
    { "autopilot": "travel" }

@@ -1,9 +1,9 @@
 # The gap to the runners, by kind of segment
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 1 watched-path commit (06c44292: AUTOPILOT.md logs moved to AUTOPILOT_LOG.md, LEG_DOSSIER.md pointer repointed; probe sp1's legs.tsv rows); no figure changed; the kind decomposition still awaits `gapreport.py decompose`; the stale M13 row unchanged (SPLITS 15:10: M13 PB 744, sum of best 692))
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 1 watched-path commit: 01ad1f4d (paths only); no figure changed; `gapreport.py decompose` still not re-run)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
 Watch: docs/checkpoints.tsv, docs/splits_reference.tsv, docs/LEG_DOSSIER.md, tools/gapreport.py,
-controller/src/impl/autopilot_dock.cpp, controller/src/impl/autopilot_objective.cpp, controller/src/impl/autopilot_combat.cpp
+modules/autopilot/src/autopilot_dock.cpp, modules/autopilot/src/autopilot_objective.cpp, modules/autopilot/src/autopilot_combat.cpp
 Evidence: `research\experience\legs\splits.tsv` (our segment history), `docs\splits_reference.tsv` (par), the gate
 s7arb3 legs' `FLController.log`s (`research\experience\legs\2026-10-30_1[56]*-gate-s7arb3_i*`), the runners' material
 (`docs\LEG_DOSSIER.md`, `research\evidence\speedrun\topics\combat\`, `navigation\`, `reference\sections_dense.tsv`).
@@ -132,9 +132,9 @@ nothing else is shot. **Risk / safety:** paid with consumables (M13 battleship: 
 `notes.md` 81-86). On **HD Edition** explosions deal full damage regardless of distance to big ships and bases
 (`docs\FREELANCER_RE.md` 398-411: Server.dll patch, BinaryEdits line 135; our own torpedo cost us 2,424 at 80-95 m) -
 point-blank torpedo / missile use carries a self-damage risk the vanilla runners did not have; one M09 run died at full
-hull to its own torpedo on the generator's rock (`controller\docs\AUTOPILOT.md` 84-88).
+hull to its own torpedo on the generator's rock (`modules\autopilot\docs\AUTOPILOT.md` 84-88).
 
-**What our autopilot does** (`controller\docs\AUTOPILOT.md` 563-583 `static_hold`, 701-719): a hold point
+**What our autopilot does** (`modules\autopilot\docs\AUTOPILOT.md` 563-583 `static_hold`, 701-719): a hold point
 `static_hold_gap` off the hull with a lateral slide, launches gated by `blast_flank` / line-of-fire checks, a held
 static target "kept until it dies unless the hull is under 35 %" - yet it "survives detours to other targets"
 (581-582). The logs of gate s7arb3 show where the fight time goes (throwaway scan of `autopilot start mode=combat`,
@@ -185,7 +185,7 @@ The formation trick appears once in 47 gate entries (run 3, the California gate 
 
 **What our autopilot does:** the fast dock's shortcut-rush starts when an NPC going in would reach the entrance first
 - full speed to the entrance, no request, formation on a locked-in ship, called off after 5-10 s at the entrance or
-30 s (`controller\src\impl\autopilot_dock.cpp` 915-947); `ShortcutPlace` admits **jump holes** as well as gates
+30 s (`modules\autopilot\src\autopilot_dock.cpp` 915-947); `ShortcutPlace` admits **jump holes** as well as gates
 (126-130), although the kb rule says "jump gates only" (`docs\kb\navigation-and-hazards.md` 113) and the user's trick
 was "jump gates and trade lanes for sure, jump holes maybe" (94-95). Measured in the leg logs (throwaway scan pairing
 each `shortcut-rush ahead` with the next `fast-dock request`):
@@ -235,7 +235,7 @@ Cosmo scene (27 s) plus a follow, M05.follow (+25) holds a 53 s space scene - bo
 (+39) is the Fischer shed and the dock; M01a.end (+36) the Pittsburgh ring.
 
 **What our autopilot does:** among the step's flying goals it takes "the mission's success first, then the nearest"
-(`controller\src\impl\autopilot_objective.cpp` 957-1008). At M05 "Fly to the Trade Lane" that picked
+(`modules\autopilot\src\autopilot_objective.cpp` 957-1008). At M05 "Fly to the Trade Lane" that picked
 `dst_to_br04_tradelane` (the log's `travel plan arrive 7544.5 -21.4 55522.5`, the point 7890, 25, 56125 within 3,000
 m) over `player_near_br04_01` (within 4,000 m of Leeds' ring, which skips the lane: `docs\missions\M05.md` 286), so
 the leg flies 58 s to the lane point, rides, and docks 109 s after the objective (M05 s7arb3 log, +66.2 -> +175.5).
@@ -291,7 +291,7 @@ first trace row in gun range in a fight mode; M13 the first missile); M13 has 3 
   later step names as the destroy target; fight on the way to the next destination) - ~155-220 s over M02 / M04, more
   than any kill-speed rule; companion tethers are the known blocker (dossier M04). Runner-up: reach firing distance at
   cruise and brake there (M13.bsdown / .sphere, M09.tekagi: 24-39 s to the first shot).
-  *[Contradicted in part 30 Oct 2026, 5d21d21 / 1e71507 (LOOK L2 closed unbuilt, `controller\docs\LOOK_PLAN.md` 8): for
+  *[Contradicted in part 30 Oct 2026, 5d21d21 / 1e71507 (LOOK L2 closed unbuilt, `modules\autopilot\docs\LOOK_PLAN.md` 8): for
   M02 the follow is a tail chase at equal cruise speed from 4.6-6.2 km behind, so attacking Ashcroft during "Follow
   Ashcroft" wins ~0-3 s; M02.pod's ~90 s is the start geometry (the runners are cruising near his spawn when the 4th
   escort dies) - re-targeted as ASH-START (IDEAS A22). The M04 half not tried.]*

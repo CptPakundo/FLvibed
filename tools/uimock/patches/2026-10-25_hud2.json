@@ -1,5 +1,5 @@
 {
- "_about": "HUD 2 approved by the owner (25 Oct 2026 ~11:00: 'you have my permission to build this'): FLvibed's own flight HUD (docs\\UI_HUD2.md) - its settings at the top of the CONTROLLER tab's HUD section, the classic rows marked as such, a note on the HUD screen and decision 16.",
+ "_about": "HUD 2 approved by the owner (25 Oct 2026 ~11:00: 'you have my permission to build this'): FLvibed's own flight HUD (modules\\hud\\docs\\UI_HUD2.md) - its settings at the top of the CONTROLLER tab's HUD section, the classic rows marked as such, a note on the HUD screen and decision 16.",
  "add_rows": {
   "controller/HUD": {"first": true, "rows": [
    {"key": "hud_style", "label": "HUD", "kind": "picker", "options": ["CLASSIC", "HUD 2 ON THE PAD", "HUD 2 ALWAYS"], "def": "HUD 2 ON THE PAD", "help": "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's HUD (with the controller's glyphs and legend)."},
@@ -21,9 +21,9 @@
   "ap_status_line": {"help": "Classic HUD: the one line under the maneuver bar while the autopilot flies, cruise charges or turret view is on. HUD 2 shows it in its navigation block."}
  },
  "states": {
-  "hud/pad": {"notes": ["HUD 2 (approved 25 Oct 2026, docs\\UI_HUD2.md; the HUD row, default HUD 2 ON THE PAD): in pad flight FLvibed's own HUD replaces the game's panels - the reticle ring (shield left, hull right, power below, speed inside), the objective and maneuver top left, the target card top right with the threat list, the ship panel bottom left, the loadout with the D-pad cross bottom right, context prompts under the ship, one alert at a time; the subtitles' panel with the portrait top centre. The badges above remain the Classic HUD. Mock-ups: the HUD 2 proposal page (artifact D6XnaBvWLKHARfdvTQuj3Y)."]}
+  "hud/pad": {"notes": ["HUD 2 (approved 25 Oct 2026, modules\\hud\\docs\\UI_HUD2.md; the HUD row, default HUD 2 ON THE PAD): in pad flight FLvibed's own HUD replaces the game's panels - the reticle ring (shield left, hull right, power below, speed inside), the objective and maneuver top left, the target card top right with the threat list, the ship panel bottom left, the loadout with the D-pad cross bottom right, context prompts under the ship, one alert at a time; the subtitles' panel with the portrait top centre. The badges above remain the Classic HUD. Mock-ups: the HUD 2 proposal page (artifact D6XnaBvWLKHARfdvTQuj3Y)."]}
  },
  "decisions": {
-  "c_hud": {"note": "Superseded for the pad by HUD 2 (25 Oct 2026, the owner's go: 'a modern looking and feeling HUD that has the Freelancer flavor'); the badge HUD stays as the Classic HUD - docs\\UI_HUD2.md."}
+  "c_hud": {"note": "Superseded for the pad by HUD 2 (25 Oct 2026, the owner's go: 'a modern looking and feeling HUD that has the Freelancer flavor'); the badge HUD stays as the Classic HUD - modules\\hud\\docs\\UI_HUD2.md."}
  }
 }

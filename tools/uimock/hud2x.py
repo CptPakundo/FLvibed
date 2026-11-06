@@ -1,4 +1,4 @@
-"""hud2x.py - Extended HUD 2 (docs\\UI_HUD2_EXTENDED.md 9): the non-flight screens in HUD 2's skin, on game frames.
+"""hud2x.py - Extended HUD 2 (modules\\hud\\docs\\UI_HUD2_EXTENDED.md 9): the non-flight screens in HUD 2's skin, on game frames.
 
     research\\tools\\ocr\\.venv\\Scripts\\python.exe -I tools\\uimock\\hud2x.py [screen ...]
 

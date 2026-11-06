@@ -14,9 +14,9 @@
 !/core/
 !/docs/
 !/tools/
-!/controller/
 !/subtitles/
 !/server/
+!/modules/
 !/tests/
 !/.clang-format
 
@@ -31,8 +31,6 @@
 !/research/experience/legs/legs.tsv
 
 # build output
-/controller/build/
-/subtitles/build/
 /build/
 *.obj
 *.pdb

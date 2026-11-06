@@ -21,7 +21,7 @@ local and git-ignored in `research\ghidra\`; the scripts that drive it are here.
 | `FLvibedSeed.java` | resolves every flexe.h symbol the way `core\hook.cpp` does (the v1.1 address with its signature verified, else a unique scan), labels it, names the function, writes the flexe.h comment as a plate comment. 29 Oct 2026: 211 / 211 at the v1.1 address in HDE 0.7.1's exe. |
 | `re_notes.js` + `FLvibedNotes.java` | `docs\FREELANCER_RE.md` into the listing: every Freelancer.exe address it mentions (634 on 29 Oct 2026) gets the doc's lines as a comment - at a function's entry in the plate comment, so a decompile shows the verified facts; the tables' function names are applied where Ghidra had none. Part of `-Seed` (re-run after doc edits; `-Check` notices a changed doc). |
 | `FLvibedVtables.java` | creates the functions only a vtable points at (analysis misses them: Common.dll's LaneAction update was one). 29 Oct: ~6,200 over the 18 programs (Freelancer.exe +1,200, Common.dll +464, Alchemy.dll +2,034). A vtable here is also any code-referenced run of two or more code pointers in data, so a few of these may be jump / callback tables rather than classes - harmless for reading, but a function that decompiles to nonsense may be one. |
-| `mcp_launch.js` | the MCP server Claude Code starts (`.mcp.json` from `tools\claude\mcp.env.json`): starts the headless server when it does not answer (loopback 127.0.0.1:8089, the token, file access limited to `research\ghidra\`), then runs the bridge on stdio with program selectors required |
+| `mcp_launch.js` | the MCP server Claude Code starts (`.mcp.json` from the private MCP settings): starts the headless server when it does not answer (loopback 127.0.0.1:8089, the token, file access limited to `research\ghidra\`), then runs the bridge on stdio with program selectors required |
 | `gq.js` | the same server from a shell: `node tools\ghidra\gq.js <program> dec|asm|callers|xto|xfrom|find|str|ins|mem|mkfn|name|note ...` (header) - for the `game-facts` agent (shell only) and sessions started before the MCP registration |
 
 ## Use
@@ -37,7 +37,7 @@ local and git-ignored in `research\ghidra\`; the scripts that drive it are here.
 
 ## Standing of what it says
 Decompiled code is a reading of the binary, not of the game at run time: it ranks below "verified in game" and game
-data, above inference (`tools\claude\agents\game-facts.md`). Ghidra's types and names for unnamed code are guesses;
+data, above inference (a private session agent). Ghidra's types and names for unnamed code are guesses;
 vtable calls (`(**(code **)(*p + 0x150))()`) need the class to read them - the exports (`CShip::...`) and flexe.h's
 names are the anchors.
 

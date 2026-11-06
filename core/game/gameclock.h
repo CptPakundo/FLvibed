@@ -1,20 +1,19 @@
-// FLvibed - the game clock (30 Oct 2026, docs\WORK_QUEUE.md Q3 slice 2a; research\evidence\timing\probe_report.md
+// FLvibed - the game clock (docs\WORK_QUEUE.md Q3 slice 2a; research\evidence\timing\probe_report.md
 // section 4): game time = the sum of the dt the game passes FrameUpdate. The decision timers and the rate estimates
 // (closing speeds, the player's velocity, the rounds' predicted hit times) read it, so they keep their meaning when the
 // game runs faster or slower than the wall clock (the TEST ONLY debug `fixeddt`: each frame 1/fps of game time, the
-// game as fast as it draws) and stand still while the game is paused (dt 0). UI / HUD animation, profiling, frame
+// game as fast as it draws) and stand still while the game is paused. UI / HUD animation, profiling, frame
 // pacing (fpscap) and the logs' time stamps stay on wall time. Header only; unit test tests\gameclock_test.cpp.
 //
-// Who advances it: the controller logic's OnFrame, once per frame (controller\src\impl\controller.cpp). The state is a
-// C++17 inline variable, so every module part that includes this header (build.cmd's namespace wrapper; core\game is
-// compiled into the subtitles' logic too) has its own copy: only the controller logic's copy moves, so only the
-// controller logic reads it (the subtitles call none of the core\game functions that do: space_rounds.cpp's Missiles /
-// IncomingRounds / TrackRounds / LastRoundHit). The controller host never includes it.
+// Who advances it: core's frame, once per frame unless the game is paused (core\game\coreframe.cpp; the game's own dt runs on through a pause). The state is a
+// C++17 inline variable at global scope: core\game is one instance for the whole logic (tools\core_once.py proves it), so
+// the subtitles' calls into core\game read the same clock. With neither the core frame's modules on it stands still. The host
+// never includes it.
 //
 // Starts at one day, not 0: the callers' "0 = never" stamps (a static ULONGLONG at = 0) then read as long ago against
 // every window they measure (the longest 30 min), as they did against GetTickCount64's uptime.
 //
-// A logic hot reload restarts the clock (dev: FLControllerImpl.dll is unloaded, every static and inline variable starts
+// A logic hot reload restarts the clock (dev: FLvibedLogic.dll is unloaded, every static and inline variable starts
 // again) - together with every stamp taken from it, which live in the same DLL: the stamps are 0 (never) again and the
 // clock is back at one day, so each timer starts fresh (a window in progress is forgotten, as before a reload: the
 // logic's state was reset anyway). In the release build `reload` restarts the same linked-in logic without re-running

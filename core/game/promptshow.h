@@ -1,4 +1,4 @@
-// FLvibed - when HUD 2's context prompts show (0.2.1, the owner, 2 Nov 2026: "like the Focus preset's elements that
+// FLvibed - when HUD 2's context prompts show (0.2.1, "like the Focus preset's elements that
 // disappear when not needed"). Setting hud_prompts: 0 = always shown (0.2.0's behaviour); 1 = in flight the prompt lanes
 // appear when their content changes (a prompt added or removed, a label changed: the prompt set's signature) or right
 // after a player action (goto, dock, formation, free flight, cruise, a target switch / clear, the wheel's actions), stay

@@ -78,8 +78,8 @@ std::vector<Missile> Missiles()
         GetProcAddress(GetModuleHandleA("common.dll"), "?get_target@CGuided@@QBEPAUIObjRW@@XZ"));
     // Closing speed from an earlier sample at least 30 ms old (callers in quick succession share it safely); between
     // two such samples the last closing speed stands. Was: GetTickCount (~16 ms steps) and 0 whenever the sample was
-    // too fresh - at high frame rates several frames in every 50 ms read 0, dropping the missile dodge (18 Oct 2026).
-    // Timed by the game clock since 30 Oct 2026 (was QueryPerformanceCounter: at k x game speed a wall-timed difference
+    // too fresh - at high frame rates several frames in every 50 ms read 0, dropping the missile dodge.
+    // Timed by the game clock (was QueryPerformanceCounter: at k x game speed a wall-timed difference
     // read k times too fast): 30 ms of game time, m per game second.
     struct Sample
     {
@@ -243,7 +243,7 @@ std::vector<Round> IncomingRounds(float horizon, float radius, u32 shieldArch)
     if (!lastPos || !velocity || !owner || !munition)
         return out;
     // the player's velocity from positions >= 30 ms apart (the last estimate stands in between); game time (the game
-    // clock, since 30 Oct 2026; was QueryPerformanceCounter): 30 ms and 1 s of game time, m per game second
+    // clock,; was QueryPerformanceCounter): 30 ms and 1 s of game time, m per game second
     static float lastMe[3] = {}, vMe[3] = {};
     static double lastT = 0;
     const double now = gameclock::NowSec();
@@ -363,7 +363,7 @@ void TrackRounds()
         float dir[3]; // flight direction (unit)
     };
     static std::unordered_map<uintptr_t, Track> live; // by CBeam pointer
-    // game time (the game clock, since 30 Oct 2026; was QueryPerformanceCounter): the rounds' predicted times are game
+    // game time (the game clock,; was QueryPerformanceCounter): the rounds' predicted times are game
     // seconds, and a pause no longer ages every tracked round into a miss
     const double now = gameclock::NowSec();
     const Api& a = GetApi();

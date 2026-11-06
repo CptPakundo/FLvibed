@@ -86,7 +86,7 @@ System ParseSystem(const std::string& dataDir, const std::string& systemFile, Id
         if (s.type == "zone" && !nick.empty() && damage > strictDamage)
         {
             // A lethal sphere (a planet's / sun's death zone) is an avoidance obstacle with its berth, not a field to
-            // fly through carefully (user, 20 Oct 2026, M04 Planet Leeds): strict stays for crossable damage.
+            // fly through carefully (M04 Planet Leeds): strict stays for crossable damage.
             if (damage >= lethalDamage && _stricmp(shape.c_str(), "sphere") == 0 && havePos && size > 0)
                 out.lethal.push_back({{pos[0], pos[1], pos[2]}, size});
             else

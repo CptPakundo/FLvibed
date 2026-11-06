@@ -1,7 +1,7 @@
 // The universe tables the autopilot steers by, from the game's data alone (no game needed: built into the unit tests
 // too): the system file of a system (universe.ini), and per system its zones' encounter levels, strict zones (costly
 // fields and damage zones, with a field's exclusion zones), lethal spheres (planet / sun cores) and planet dock rings.
-// Read through ini::Read, so vanilla 1.1's binary (BINI) inis read like HD Edition's text ones (29 Oct 2026; until
+// Read through ini::Read, so vanilla 1.1's binary (BINI) inis read like HD Edition's text ones (until
 // then the hand-written text parsers in space_universe.cpp saw nothing on vanilla: SWEEP_2026-10-29 #5). space_universe.cpp
 // caches the result per system and answers the game-side questions with it.
 #pragma once

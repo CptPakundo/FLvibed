@@ -374,7 +374,7 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
     }
     if (cmd == "equipall") // equipall: the player's equipment per EquipmentClass bit (0..15): class, active, ammo
     {
-        // Research (20 Oct 2026: PlayerCountermeasures read 0 with a dropper of 28 - no countermeasure was ever dropped).
+        // Research (PlayerCountermeasures read 0 with a dropper of 28 - no countermeasure was ever dropped).
         std::ostringstream out;
         for (int bit = 0; bit < 16; ++bit)
         {

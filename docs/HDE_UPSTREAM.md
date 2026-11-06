@@ -1,5 +1,7 @@
 # HD Edition after 0.7.1 (upstream changes and what they mean for FLvibed)
 
+The facts of 17 Oct 2026; newer verdicts: `docs\research\hde-upstream.md`, `docs\research\npc-ai.md`.
+
 Checked 17 Oct 2026 against the HDE repository (`research\repos\freelancer-hd-edition`, git-ignored clone of
 github.com/FLHDE/freelancer-hd-edition, head `7c6186e` of 25 Aug 2026). The test install is the 0.7.1 release
 (tag `45145d9`, 15 Jul 2025); its mission scripts are byte-identical to the tag. 153 commits since then, no new

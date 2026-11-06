@@ -1,4 +1,4 @@
-// Route planning for travel (user, 18 Oct 2026: the fastest mix of flight and trade lanes, the way an experienced
+// Route planning for travel (the fastest mix of flight and trade lanes, the way an experienced
 // player travels): the game's own best path (the nav map's / an objective's waypoint list: lane entry and exit rings,
 // gates, the destination) is the skeleton; for each lane on it the planner decides deterministically, from the ship's
 // flight model (core\game\flight) and the game's lane ride law, whether riding beats flying, which ring to enter at
@@ -85,7 +85,7 @@ struct Params
     // the lane-vs-fly rule: a ride's exits (leaving the lane by free flight) are weighed every `exitEvery` m along it
     // and at the lane's end
     float exitEvery = 500;
-    // an arrival's stand-off (StandOff): a point just outside a lethal zone is as bad as one inside (21 Oct 2026, M01: the
+    // an arrival's stand-off (StandOff): a point just outside a lethal zone is as bad as one inside (M01: the
     // mission's point after the Donau lay 129 m off Manhattan's 4100 m death zone - the avoidance's berth left a sliver,
     // the ship swerved at the atmosphere for 22 s and stopped 206 m short): out to the zone's surface + `standOff`; and the
     // arrival beside an object / out of a costly zone that far past its radius

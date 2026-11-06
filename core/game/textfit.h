@@ -16,7 +16,7 @@ namespace textfit
 {
 constexpr wchar_t kEllipsis = 0x2026;
 
-// The legibility floor (the owner, 25 Oct 2026: legible at every font size and resolution) and the fit rule's floor: no
+// The legibility floor (legible at every font size and resolution) and the fit rule's floor: no
 // text smaller than 0.024 H
 // (HUD 2's text floor) nor than kMinPx pixels, whatever text_size / hud_scale say. 14 px = 0.024 H at 600 lines, the
 // smallest screen the game's own resolution list offers (800x600); there Agency FB's bold caps stand ~10 px with the
@@ -100,7 +100,7 @@ inline Result Fit(const std::wstring& s, const std::vector<float>& adv, float el
 // A word that grows in place (the subtitles' spoken-word pop), centred on its laid-out slot: the largest scale that
 // keeps its word gaps. `restW` = its width as laid out, `baseW` = its width drawn at scale 1 in the grow font (~restW),
 // `spaceW` = the space's advance; each side may take at most `share` of a space, so two neighbours growing at once
-// still leave 60 % of the gap (fix-text 3, 25 Oct 2026: a fixed 1.08 grew a long word by more than Agency FB's narrow
+// still leave 60 % of the gap (fix-text 3: a fixed 1.08 grew a long word by more than Agency FB's narrow
 // space - "yourcontrols", "showingthelocation"; a third of a space per side still read "troublewith" at 4K). Never above
 // maxScale; under 1 only when the grow font's own width already overshoots the gap budget (hinting at another size).
 inline float GrowCap(float restW, float baseW, float spaceW, float maxScale, float share = 0.2f)

@@ -1,5 +1,5 @@
 """Sentence joining: merge.render_sentence (the review tool's "In game:" preview) against the runtime's C++
-JoinPieces fixtures (<root>/subtitles/src/impl/impl.cpp JoinTest, parsed from the source so the two lists can
+JoinPieces fixtures (<root>/modules/subtitles/src/impl/impl.cpp JoinTest, parsed from the source so the two lists can
 never drift apart), and the tool's own sentence builder over the game's grammar (docs/chatter_grammar.tsv)."""
 import re
 import tempfile
@@ -9,7 +9,7 @@ import fixture
 import merge
 import review_server
 
-IMPL = fixture.ROOT / "subtitles" / "src" / "impl" / "impl.cpp"
+IMPL = fixture.ROOT / "modules" / "subtitles" / "src" / "impl" / "impl.cpp"
 STR = r'"((?:[^"\\]|\\.)*)"'
 
 

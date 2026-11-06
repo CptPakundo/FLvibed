@@ -1,6 +1,6 @@
 # The flight HUD's controls and the pad's commands (verified in game 25 Oct 2026, HDE 0.7.1, SaveC702)
 
-What the pad HUD layer (`controller\src\impl\padhud.*`) and the bindings presets (`presets.*`) rely on; the
+What the pad HUD layer (`modules\controller\src\impl\padhud.*`) and the bindings presets (`presets.*`) rely on; the
 addresses and structures are in `..\FREELANCER_RE.md` "UI (NeuroNet / FlControl family)".
 
 ## The HUD's named controls (`uiitems`; names as the game registers them)
@@ -11,7 +11,7 @@ addresses and structures are in `..\FREELANCER_RE.md` "UI (NeuroNet / FlControl 
 | `NNNavmapButtonRoot`, `NNInventoryButtonRoot`, `NNMissionLogButtonRoot`, `NNPlayerInfoButtonRoot`, `NNHelpButtonRoot` | the NeuroNet box, top right | View on the nav map |
 | `SwitchToContactList` | the contact list's expander (the target panel's right button) | LB |
 | `ImportantFilterButton`, `ShipsFilterButton`, `SolarFilterButton`, `LootFilterButton`, `AllFilterButton` | the expanded list's filters | LB on the first |
-| `NextEnemyButton`, `TargetCloseButton`, `StatusCloseButton` | the target panel's next-enemy and close buttons | R3 |
+| `NextEnemyButton`, `TargetCloseButton`, `StatusCloseButton` | the target panel's next-enemy and close buttons | RS click |
 | `HudRepairButton`, `UseBatteryButton` | nanobots and shield batteries (the counts beside them) | D-pad up / down |
 | `HudWeaponGroupButton` x3 (the same name three times, left to right groups 1 / 2 / 3) | the weapon groups; the active one lit yellow | Y above the active one |
 | `HealthBar`, `ShieldBar`, `PowerBar`, `HUD_Core` | the gauges (images, not buttons) | - |
@@ -37,17 +37,17 @@ on positions: HudShift moves them.
 - `USER_RADIO` (keymap P, keydown) is the game's hail: its key name is ids 1971 "RADIO", its help 3239 "Hails the
   targeted ship." (research\strings\resources.tsv). The action wheel's COMMS slot sends it (phase D, 25 Oct 2026); what
   it does to a single-player target is the game's own business (not measured yet).
-- The phase D flight modals (picker / wheel / goal panel, `controller\src\impl\picker.*`, `wheel.*`, `goals.*`) select
+- The phase D flight modals (picker / wheel / goal panel, `modules\controller\src\impl\picker.*`, `wheel.*`, `goals.*`) select
   targets through `space::SetTarget` (the contact list's own USER_SET_TARGET action, filter-independent) and the objective's
   navmarker through `space::SelectFirstWaypoint`; the wheel's CONTACT FILTER clicks the HUD's own filter buttons
   (`ImportantFilterButton` .. `AllFilterButton`, `SwitchToContactList` first while the list is collapsed) through `uiclick`.
 - The flight cursor's name is `cross` over nothing; over an object it names the object's relation (`hostile`, `fire`,
-  `neutral`, `fire_neutral`, ...): the pad's "target the object under the reticle" (R3) clicks only when the name is
+  `neutral`, `fire_neutral`, ...): the pad's "target the object under the reticle" (RS click) clicks only when the name is
   neither `cross` nor `arrow`, through the game's own click selection (as `fire_target` does).
 - The game's dock range (`space::DockRange`, HDE 50 km) is the world prompt's "dock in range" test; the tractor's
   reach (`ai::Self::tractorRange`) the "loot in reach" test.
 
-## Under HUD 2 (25 Oct 2026; `controller\src\impl\hudvis.*`, `..\UI_HUD2.md`)
+## Under HUD 2 (25 Oct 2026; `modules\hud\src\hudvis.*`, `..\UI_HUD2.md`)
 HUD 2 hides the six panel roots above (`HUD_Maneuvers`, `NN_MainButton`, `HUD_Target`, `HUD_ContactList`, `HUD_Status`,
 `HUD_Core`) and the cruise line (`HUD_CruiseProgress`) by their state byte, so **none of these controls is drawn or
 hit-testable while HUD 2 shows**: commands still work (the keymap and the pad send them), clicks on the hidden buttons

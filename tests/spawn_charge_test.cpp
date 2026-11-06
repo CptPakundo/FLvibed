@@ -1,4 +1,4 @@
-// `spawn_charge`'s pure half (controller\src\impl\lookahead.h, docs\research\runners\M02_ashcroft_consensus.md "The ONE
+// `spawn_charge`'s pure half (modules\autopilot\src\lookahead.h, docs\research\runners\M02_ashcroft_consensus.md "The ONE
 // design"): the stage point over a list of leashes (250 m behind the spawn on his line, 70 m aside, inside every ball;
 // the side that needs the least pull; the refusals "no-point-in-leashes" and "far"), StillFleeing, the charge profiles
 // and the gap predictor ChargeGap, ChaseStep's `fleeing` (the charge at his spawn whatever his speed, the coast at cruise
@@ -6,7 +6,7 @@
 // point (m02.ini, tests\look_test.cpp) with King's 5 km nag and the 3 km leash the supervisor holds on him.
 #include "test.h"
 
-#include "../controller/src/impl/lookahead.h"
+#include "../modules/autopilot/src/lookahead.h"
 
 #include <cstring>
 

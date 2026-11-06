@@ -1,5 +1,5 @@
 // FLvibed - 3-component vector arithmetic on plain float[3] arrays (positions, velocities, directions as the game
-// and fl::Kinematics hold them). Header-only, shared by every module (core\game), compiled into each.
+// and fl::Kinematics hold them). Header-only, shared by every module (core\game).
 // Written 24 Oct 2026 to replace the autopilot's hand-rolled idioms (checkup audit 3.5): each function keeps the
 // arithmetic order of the idiom it replaced, so float results are bit-identical to the code before it. Every function
 // takes pointers to three components; `out` must not alias an input (Cross, Sub, Add, Scale).

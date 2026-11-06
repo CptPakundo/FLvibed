@@ -1,5 +1,5 @@
 {
-  "_about": "0.2.6 (4 Nov 2026; docs/UI_HUD2.md 5.31 and the watchdog change): the owner's play notes - the tractor's two prompts (A one item, X all), the right stick's enemies-first rule, the enemies cue; the maneuver watchdog now leaves the maneuver before it starts it again. Apply with specpatch.py to part2_data.js, docs/UI_SPEC.json and the artifact's ui/spec (pinned set, after reading). Tested on a virtual pad, not a real one.",
+  "_about": "0.2.6 (4 Nov 2026; modules/hud/docs/UI_HUD2.md 5.31 and the watchdog change): the owner's play notes - the tractor's two prompts (A one item, X all), the right stick's enemies-first rule, the enemies cue; the maneuver watchdog now leaves the maneuver before it starts it again. Apply with specpatch.py to part2_data.js, docs/UI_SPEC.json and the artifact's ui/spec (pinned set, after reading). Tested on a virtual pad, not a real one.",
   "rows": {
     "maneuver_watchdog": {
       "help": "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed leaves the maneuver and starts it again, up to 3 times, and logs what happened."

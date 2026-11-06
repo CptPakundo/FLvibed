@@ -1,8 +1,8 @@
 // FLvibed - our own ordnance: a homing round's flight, where it bursts and where we are then (WORK_QUEUE Q4 slice 1; the
-// owner's rule of 29 Oct 2026, controller\docs\AUTOPILOT.md "DECISION (the owner, 29 Oct 2026 ~21:45)": full DPS always,
+// owner's rule of 29 Oct 2026, modules\autopilot\docs\AUTOPILOT.md "DECISION (the owner, 29 Oct 2026 ~21:45)": full DPS always,
 // splash avoided by WHERE we fire from, never by holding fire). Header-only and host-free: the game's ray test comes in
 // as a callback, so the unit tests (tests\ordnance_test.cpp) run the same code as the game. Shared by every module
-// (core\game), compiled into each; no system headers here (core\pre.h / common.h have them).
+// (core\game); no system headers here (core\pre.h / common.h have them).
 //
 // Game facts used (docs\FREELANCER_RE.md "Missile launch speed", "Proximity fuse"): the round starts at the ship's
 // velocity + the muzzle velocity along the nose, coasts through its motor delay, accelerates for the burn, then coasts

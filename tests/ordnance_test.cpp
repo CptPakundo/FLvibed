@@ -6,7 +6,7 @@
 
 #include "test.h"
 
-// MissileFlightTime as it stood in controller\src\impl\autopilot_target.cpp at 8ad4ad9 (the reference)
+// MissileFlightTime as it stood in modules\autopilot\src\autopilot_target.cpp at 8ad4ad9 (the reference)
 static float OldFlightTime(float motorAccel, float motorDelay, float motorTime, float lifetime, float dist,
                            float closing0)
 {

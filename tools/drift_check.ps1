@@ -4,20 +4,24 @@
 #   decisions   tools\decision_check.ps1 - the objective mode's script-goal decisions over every mission unchanged
 #   kb          tools\kbgen.ps1 -Check - the generated kb tables match the install
 #   replay      tools\splits.py replay - no good archived run fails the checkpoint limits (GOOD RUNS FAILED: 0)
-#   settings    every `ap set` key the code accepts is documented in controller\docs\AUTOPILOT.md
+#   settings    every `ap set` key the code accepts is documented in modules\autopilot\docs\AUTOPILOT.md
 #   settings-doc docs\SETTINGS.md matches a fresh generation from the registries (tools\settings_table.ps1 -Check)
 #   ui-meta     core\ui_meta.h matches a fresh generation from docs\UI_SPEC.json (tools\ui_meta.py --check)
 #   spec-copy   docs\spec\ (the static read-only living spec) matches a fresh export of tools\uimock (export.ps1 -Check)
-#   checkpoints controller\src\impl\checkpoints_gen.h matches docs\checkpoints.tsv (tools\checkpoints_gen.py --check)
+#   checkpoints modules\speedrun\src\checkpoints_gen.h matches docs\checkpoints.tsv (tools\checkpoints_gen.py --check)
 #   subtitle-review the review tool's unit tests (subtitles\review\FLSubtitles\asr\tests\run_tests.py, ~1 s: fit rules,
 #               sentence joining vs the C++ JoinPieces fixtures, takes, saves, the publish copy rule)
 #   tools       every script in tools\ is listed in tools\README.md
 #   doc-refs    every backticked repository path in the tracked .md files exists (tools\docrefs.py)
+#   doc-export  no public doc names an export-ignored file (tools\docrefs.py --export): tools\package.ps1 stops on it
+#   modules     every source has one owner, in its owner's folder, and no include crosses a module (tools\module_lint.py --enforce)
+#   paths       no tracked script names a repository path that is not there (tools\path_check.py): a move's silent skip
 #   doc-graph   every tracked .md is referred to by another doc (tools\docindex.py --orphans; the maps excepted)
 #   handoff     HANDOFF.txt under 8,000 characters
 #   claude-env  the Claude Code harness is installed as versioned (tools\claude\install.ps1 -Check) and its hook tests
 #               pass (tools\claude\hooks\test_hooks.js)
 #   ghidra      the Ghidra project's seed is today's core\flexe.h (tools\ghidra\ghidra.ps1 -Check; OK when not set up)
+#   testlint    every harness call of the test scripts resolves (tools\test_lint.ps1)
 #   win7        the built release DLL, setup and server plugin import nothing Windows 7 lacks (tools\win7_check.ps1)
 #   git         nothing uncommitted (else: a change not committed after it was finished)
 #   backup      the newest bundle in the backup folder (tools\backup.ps1 -ShowDest) is under 4 h old
@@ -93,9 +97,9 @@ try {
     }
     Invoke-Check 'settings' {
         # the registry rows `{"name", Type, ...` (core\settings.h) plus the two hand-written word keys `k == "..."`
-        $keys = Select-String -Path (Join-Path $root 'controller\src\impl\autopilot_settings.cpp') -Pattern '(?:\{"|k == ")([a-z_0-9.]+)"(?:, (?:Bool|Int|Float|Hex|String|Vec3)\b|\))' -AllMatches |
+        $keys = Select-String -Path (Join-Path $root 'modules\autopilot\src\autopilot_settings.cpp') -Pattern '(?:\{"|k == ")([a-z_0-9.]+)"(?:, (?:Bool|Int|Float|Hex|String|Vec3)\b|\))' -AllMatches |
                 ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
-        $doc = Get-Content (Join-Path $root 'controller\docs\AUTOPILOT.md') -Raw
+        $doc = Get-Content (Join-Path $root 'modules\autopilot\docs\AUTOPILOT.md') -Raw
         $miss = @($keys | Where-Object { $doc -notmatch "\b$([regex]::Escape($_))\b" })
         Report 'settings' ($miss.Count -eq 0) "$($keys.Count) keys$(if ($miss) { '; undocumented: ' + ($miss -join ', ') })"
     }
@@ -140,6 +144,19 @@ try {
         $dr = "$(& $py -I (Join-Path $here 'docrefs.py') 2>&1 | Select-Object -Last 1)"
         Report 'doc-refs' ($LASTEXITCODE -eq 0) $dr.Trim()
     }
+    Invoke-Check 'doc-export' {
+        # tools\package.ps1 stops on this: seen here, it is not found on release day
+        $de = "$(& $py -I (Join-Path $here 'docrefs.py') --export 2>&1 | Select-Object -Last 1)"
+        Report 'doc-export' ($LASTEXITCODE -eq 0) $de.Trim()
+    }
+    Invoke-Check 'modules' {
+        $ml = "$(& $py -I (Join-Path $here 'module_lint.py') --enforce 2>&1 | Select-Object -Last 1)"
+        Report 'modules' ($LASTEXITCODE -eq 0) $ml.Trim()
+    }
+    Invoke-Check 'paths' {
+        $pc = "$(& $py -I (Join-Path $here 'path_check.py') 2>&1 | Select-Object -Last 1)"
+        Report 'paths' ($LASTEXITCODE -eq 0) $pc.Trim()
+    }
     Invoke-Check 'doc-graph' {
         $dg = "$(& $py -I (Join-Path $here 'docindex.py') --orphans 2>&1 | Select-Object -Last 1)"
         Report 'doc-graph' ($LASTEXITCODE -eq 0) $dg.Trim()
@@ -166,6 +183,11 @@ try {
         $gh = "$(& (Join-Path $here 'ghidra\ghidra.ps1') -Check 2>&1 | Select-Object -Last 1)"
         Report 'ghidra' ($LASTEXITCODE -eq 0) $gh.Trim()
     }
+    Invoke-Check 'testlint' {
+        # a test script's harness calls resolve before a game is spent on it (tools\test_lint.ps1)
+        $tl = @(& (Join-Path $here 'test_lint.ps1') 2>&1 | ForEach-Object { "$_" })
+        Report 'testlint' ($LASTEXITCODE -eq 0) (($tl | Select-Object -First 2) -join ' ')
+    }
     Invoke-Check 'win7' {
         # Windows 7: the built binaries import nothing the system lacks (tools\win7_check.ps1; OK when nothing is built)
         $w7 = @(& (Join-Path $here 'win7_check.ps1') 2>&1 | ForEach-Object { "$_" })
@@ -187,7 +209,8 @@ try {
         $rc = @(& (Join-Path $here 'research_check.ps1') *>&1 | ForEach-Object { "$_" }) # (it writes with Write-Host)
         $stale = @($rc | Where-Object { $_ -match 'watched paths changed in' }).Count
         $chain = @($rc | Where-Object { $_ -match '^\s+HEADER CHAIN:' }).Count # (the flag line itself, not a listed commit subject)
-        Report 'research' ($stale -eq 0 -and $chain -eq 0) "$stale research note(s) with watched changes since their check-up, $chain header(s) with a '; before:' chain (tools\research_check.ps1)"
+        $deadWatch = @($rc | Where-Object { $_ -match '^\s+WATCH DEAD:' }).Count
+        Report 'research' ($stale -eq 0 -and $chain -eq 0 -and $deadWatch -eq 0) "$stale research note(s) with watched changes since their check-up, $deadWatch dead Watch line(s), $chain header(s) with a '; before:' chain (tools\research_check.ps1)"
     }
     Invoke-Check 'saves' {
         # a run counts when it started (its legs.tsv end time - secs - boot) over 2 min after the verdict: not the run that
@@ -272,7 +295,11 @@ try {
                 '^doc_bytes:(.+)$' { $f = Join-Path $root $Matches[1]; if (Test-Path $f) { (Get-Item $f).Length } else { $null } }
                 default { $null }
             }
-            if ($null -eq $now) { $msgs += "$($r.name): not measured"; continue }
+            if ($null -eq $now) {
+                # a doc that moved would disarm its row in silence; the DLL is simply not built yet
+                if ($r.name -like 'doc_bytes:*') { $okAll = $false; $msgs += "$($r.name): no such file, fix the row" } else { $msgs += "$($r.name): not measured" }
+                continue
+            }
             $lim = [double]$r.value * (1 + [double]$r.max_growth)
             $pct = 100.0 * ($now - [double]$r.value) / [double]$r.value
             if ($now -gt $lim) { $okAll = $false; $msgs += ("{0} {1:N0} = {2:+0.0;-0.0} % over the ratchet {3:N0} (limit +{4:P0}): bring it back or raise the row with a reason" -f $r.name, $now, $pct, [double]$r.value, [double]$r.max_growth) }

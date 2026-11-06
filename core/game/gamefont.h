@@ -1,8 +1,8 @@
 // FLvibed - the game's own fonts, resolved once per module part so FLvibed's text shares the game's typefaces: the label
 // face (Agency FB in every known build: HUD labels, the objective banner, the Options screen's rows) and the body face
-// (Arial Unicode MS: lists, tooltips, infocards; the widest character coverage). Moved out of subtitles\src\impl\
-// display.cpp on 25 Oct 2026 (the UI build) so the options page and the pad HUD share it; compiled into each module
-// part that uses it (core\game).
+// (Arial Unicode MS: lists, tooltips, infocards; the widest character coverage). Moved out of modules\subtitles\src\impl\
+// display.cpp on 25 Oct 2026 (the UI build) so the options page and the pad HUD share it; one instance for the whole
+// logic (core\game).
 //
 // Resolution (fix-text, 25 Oct 2026; the vanilla 1.1 run found Segoe UI everywhere): the faces' names come from the
 // game's DATA\FONTS\fonts.ini [TrueType] (nickname HudSmall = the label face, ListText = the body face; the names above

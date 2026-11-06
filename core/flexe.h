@@ -104,6 +104,10 @@
       "51 8B 44 24 08 3B 05 ?? ?? ?? ?? 56 57 75 21 8B 0D ?? ?? ?? ?? 85 C9 0F 84 ?? ?? ?? ?? 8B 54") /* void cdecl(int, const void* rdl, u32 size): chat window line */                                                                                                                                                                                                                                                                                                                                                                                                                                                    \
     X(ManeuverExecute, Code, 0x4D8E20, 0, 0,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
       "81 EC C8 00 00 00 53 55 56 57 89 4C 24 1C E8 ?? ?? ?? ?? 85 C0 75 0F 5F") /* bool thiscall(PlayerManeuvers, int op, bool flag): the player's maneuver dispatcher */                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+    X(ContactListBuild, Code, 0x4D0490, 0, 0, \
+      "6A FF 64 A1 00 00 00 00 68 ?? ?? ?? ?? 50 B8 0C 22 00 00 64 89 25 00 00") /* void thiscall(part = window - 0x38): the contact list's rows, which USER_NEXT / PREV_TARGET and NEXT_ENEMY walk. Its one caller is the list's draw */ \
+    X(ContactListDraw, Code, 0x4D24B0, 0, 0, \
+      "6A FF 64 A1 00 00 00 00 68 ?? ?? ?? ?? 50 B8 D0 6D 00 00 64 89 25 00 00") /* the list window's vt[0x34]: every 1.5 s or at its dirty byte +0x404 it calls ContactListBuild */ \
     X(NNPump, Code, 0x489E00, 0, 0, \
       "A1 ?? ?? ?? ?? 85 C0 74 6A A1 ?? ?? ?? ?? 8B 00 83 C0 08 8B 40 08 85 C0") /* void cdecl(float): the Neural Net queue's step: the head line ended = drop it and play the next. Its one caller is 0x45C8C0, which stops with the NeuroNet box (GitHub issue 8, 4 Nov 2026); the argument is not read */ \
     X(QueueNN, Code, 0x489E80, 0, 0,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        \
@@ -347,7 +351,7 @@
       "C3 83 EC 24 56 8B F1 57 8B 7C 24 30 8B CF 8B 11 8D 86 E0 02") /* the icon button's (vt 0x5E15F4) vt[0x14], void thiscall(const Vector* frameTranslation) ret 4: stores it at +0x2E0 (+0x328 = 1), places its mesh at frame + pos (+0xA8) when +0x2F4 bit 0, then the base 0x5A0880 (writes +0x60, moves the render object, calls every child's vt[0x14] with it). The Options screen's slide-in animates the page buttons through it */\
     X(PendingLoadId, Data, 0x67EA78, 0x5B0812, 10,                                                                                                                                                                                               \
       "00 01 02 02 02 00 01 90 C6 05 ?? ?? ?? ?? 00 C3") /* CHARACTER_ID (char[], the save's file name): the save the game is about to load - 0x5B2C70 cdecl(const CHARACTER_ID*, bool) copies it here and requests game state 7 (callers: the in-game load screen's load-by-index 0x488144, the death dialog 0x4BC8D5), the loading state machine 0x5B2A30 loads it (0x5AB1F0); 0x5B0810 clears its first byte */\
-    /* HUD 2 readers (25 Oct 2026, docs\UI_HUD2.md 5.6, core\game\hudinfo.cpp; docs\FREELANCER_RE.md "HUD 2 readers") */ \
+    /* HUD 2 readers (25 Oct 2026, modules\hud\docs\UI_HUD2.md 5.6, core\game\hudinfo.cpp; docs\FREELANCER_RE.md "HUD 2 readers") */ \
     X(WeaponGroups, Data, 0x674C0C, 0x47EED6, 11, \
       "00 00 85 C0 75 0E 8B 47 08 50 B9 ?? ?? ?? ?? E8") /* the player's weapon-group manager (thiscall object): current group +0x28 (0-based), stored groups vector<Group*> +0xC..+0x10; HUD_Status's USER_WEAPON_GROUPn (0x4DC415) saves the current selection (0x4F5580) and loads group n (0x4F5920) on it */ \
     X(WeaponGroupCurrent, Code, 0x4F6170, 0, 4, \
@@ -355,7 +359,7 @@
     /* HUD 2 hotspots (25 Oct 2026, the KBM track; docs\FREELANCER_RE.md "HUD 2 hotspots") */ \
     X(MouseWheel, Data, 0x616848, 0x41F833, 4, \
       "4E 1C 2B 15 ?? ?? ?? ?? 89 56 20 8A 46 14 C0 E8") /* int: the mouse wheel's accumulated position in notches (the poll 0x41F150 adds each read's lZ / 120; a frame's turn = the change since the last read) */ \
-    /* HUD 2 polish (25 Oct 2026, controller\src\impl\hudvis.cpp; docs\FREELANCER_RE.md "UI") */ \
+    /* HUD 2 polish (25 Oct 2026, modules\hud\src\hudvis.cpp; docs\FREELANCER_RE.md "UI") */ \
     X(ArrivalText, Data, 0x66D398, 0x45B383, 1, \
       "3D ?? ?? ?? ?? 85 FF 74 2A 8B 47 0C 85 C0 74 14") /* NN_ArrivalText* (0 = none): the system arrival line ("New York System, Liberty Space.", typed top left), a top-level control created per showing by CreateControl("NN_ArrivalText") (ctor 0x45B570 stores it here, dtor 0x45ABB0 clears it); its child text control "ArrivalText" at +0x32C; the game shows the child (bits |= 3) after a delay and deletes the whole control when the line has timed out */ \
     X(TargetViewDraw, Code, 0x4E3C90, 0, 0, \
@@ -447,7 +451,7 @@
       "83 EC 30 53 56 8B 74 24 3C 8B 06 57 56 FF 50 24 51 8B 0E D9") /* void cdecl(camera*): makes it current (the views put exe::UiCamera back after their draw) */ \
     X(RenderSetViewport, Code, 0x421620, 0, 0, \
       "8B 44 24 10 8B 54 24 04 8B 0D ?? ?? ?? ?? 53 56 8B 74 24 10 57 8B 7C 24") /* void cdecl(x, y, w, h, const char* file, int line): sets the viewport */ \
-    /* Window mode (26 Oct 2026, borderless windowed: controller\src\host\winmode.cpp; docs\kb\display.md "Window mode
+    /* Window mode (26 Oct 2026, borderless windowed: modules\display\src\winmode.cpp; docs\kb\display.md "Window mode
        path"). Every mode change of the game (its start, the Options screen's resolution, FLUF's Alt+Enter) goes through
        SetupScreen; the window's style and size through WindowStyle. Signatures identical in HDE 0.7.1 and vanilla 1.1
        (the windowed style immediate differs - HDE's installer patches it - so it is a wildcard read as data). */ \

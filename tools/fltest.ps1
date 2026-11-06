@@ -9,8 +9,8 @@
 #   Write-FLTest $t "note"                 # timestamped line in the run's notes.txt (and the console)
 #   Stop-FLTest $t [-KeepGame]             # saves events + manifest, closes the game (the standing rule)
 $script:FLTestRoot = Split-Path $PSScriptRoot -Parent
-. (Join-Path $script:FLTestRoot 'controller\tools\flctl.ps1')
-. (Join-Path $script:FLTestRoot 'subtitles\tools\flsub.ps1')
+. (Join-Path $script:FLTestRoot 'tools\harness\flctl.ps1')
+. (Join-Path $script:FLTestRoot 'tools\harness\flsub.ps1')
 . (Join-Path $script:FLTestRoot 'tools\flbenchhist.ps1')
 
 function Get-FLSession {

@@ -1,4 +1,4 @@
-# HUD 2 layout lint - the live baseline (docs\UI_HUD2_PRESETS.md 6 item 3), by tools\hud2_lint_baseline.ps1
+# HUD 2 layout lint - the live baseline (modules\hud\docs\UI_HUD2_PRESETS.md 6 item 3), by tools\hud2_lint_baseline.ps1
 # 2026-10-31 22:50, dev 1c93bf0d+dirty src:b7a57dc4 dev 2026-10-31T22:49:12, instance 3, Save0e2b.fl, hud_preset 0, K&M (a background game), 3840x2160 expected; every hud2 sim context, sampled settled
 # Diff a later run against this file (-Compare): a new FAIL / WARN is a regression or a decision; "live" varies by a few px.
 === context live

@@ -1,5 +1,5 @@
-"""Generates controller\\src\\impl\\checkpoints_gen.h from docs\\checkpoints.tsv (the story's hand-curated checkpoints,
-docs\\TESTING.md "Speedrun splits"): the in-game split detector (controller\\src\\impl\\livesplit.cpp) reaches the same
+"""Generates modules\\speedrun\\src\\checkpoints_gen.h from docs\\checkpoints.tsv (the story's hand-curated checkpoints,
+docs\\TESTING.md "Speedrun splits"): the in-game split detector (modules\\speedrun\\src\\livesplit.cpp) reaches the same
 checkpoints by the same conditions splits.py matches in the logs - `ours`: obj:<id> (the objective first shown),
 control / land / launch / cutscene (mode changes), kill:<n> (the n-th destroyed marked solar), success (the mission's
 result), save:<ids> (the mission's checkpoint save, pub::Save with that description id: GAME SAVED) - from the live
@@ -14,7 +14,7 @@ import sys
 
 FL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(FL, 'docs', 'checkpoints.tsv')
-OUT = os.path.join(FL, 'controller', 'src', 'impl', 'checkpoints_gen.h')
+OUT = os.path.join(FL, 'modules', 'speedrun', 'src', 'checkpoints_gen.h')
 KINDS = {'obj': 'Obj', 'control': 'Control', 'land': 'Land', 'launch': 'Launch', 'cutscene': 'Cutscene',
          'success': 'Success', 'kill': 'Kill', 'save': 'Save'}
 

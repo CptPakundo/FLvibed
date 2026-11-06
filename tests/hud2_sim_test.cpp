@@ -1,6 +1,6 @@
-// HUD 2's debug states' names and parse (controller\src\impl\hud2_sim.h; `hud2 sim`, UI_HUD2_PRESETS.md 6 step 2):
+// HUD 2's debug states' names and parse (modules\hud\src\hud2_sim.h; `hud2 sim`, UI_HUD2_PRESETS.md 6 step 2):
 // the original five unchanged, every new context accepted, +comm on any, unknown names and modifiers refused, off.
-#include "../controller/src/impl/hud2_sim.h"
+#include "../modules/hud/src/hud2_sim.h"
 
 #include "test.h"
 

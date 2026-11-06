@@ -1,6 +1,7 @@
 // System headers for every FLvibed module, included OUTSIDE the module namespaces. build.cmd compiles each module
 // source through a wrapper ("#include pre.h; namespace flv_<module>_<part> { #include <source> }"), so the
-// modules' own headers and code land in their namespace while these headers (include-guarded) are already in.
+// modules' own headers and code land in their namespace while these headers (include-guarded) are already in. A logic
+// wrapper includes every core header the same way first (build.cmd :wraplogic), so core code is the one global instance.
 // Every system header a module uses must be listed here, with the same configuration macros as common.h.
 #pragma once
 
@@ -39,7 +40,7 @@
 #include <unordered_map>
 #include <vector>
 
-// SDL3 (WORK_QUEUE Q5: the opt-in gamepad backend, controller\src\host\sdlpad.cpp): only for the controller host's sources,
+// SDL3 (WORK_QUEUE Q5: the opt-in gamepad backend, modules\controller\src\host\sdlpad.cpp): only for the controller host's sources,
 // whose wrappers define FLV_SDL3 (build.cmd :wrap; the headers come from build\sdl3\<version>\include as external
 // headers). The logic and the other modules never see SDL: the logic reads the backend through HostApi v33. SDL's
 // headers declare everything at global scope (extern "C"), so the host's namespace finds them as ::SDL_*.

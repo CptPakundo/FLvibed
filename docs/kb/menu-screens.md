@@ -1,7 +1,7 @@
 # Menu screens on the pad (saves, loads, text entry, speedrun mode)
 
 What the game's menu screens are made of and how FLvibed drives them natively from a pad (D-MENUS, 25 Oct 2026;
-engine facts in `..\FREELANCER_RE.md` "Main menu, load screens, pause menu"; code `controller\src\impl\padmenus.cpp`,
+engine facts in `..\FREELANCER_RE.md` "Main menu, load screens, pause menu"; code `modules\controller\src\impl\padmenus.cpp`,
 `newgame.cpp`, `osk.cpp`, `livesplit.cpp`, `runtimer.cpp`).
 
 - **Load / save lists** `[game]`: a row is selected natively through the list's own fields (the hovered row +0x7C, the

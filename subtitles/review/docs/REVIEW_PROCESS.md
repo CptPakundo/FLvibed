@@ -1,7 +1,7 @@
 # Subtitle review: how it works, what we learned (session 2 audit)
 
 State on 17 Oct 2026: 24,963 shipped lines (`FLSubtitles/data/subtitles.tsv`); review paused with 8 lines
-open (section 5). Next stage: the runtime display (FLvibed: subtitles/docs/DISPLAY_PLAN.md).
+open (section 5). Next stage: the runtime display (FLvibed: modules/subtitles/docs/DISPLAY_PLAN.md).
 
 ## 1. Running it
 
@@ -32,9 +32,9 @@ Rebuild is refused there), `--reviewer`. What happens at start, and why:
 
 **Tests** (seconds, no game content, no audio, no server): `review.cmd test`. A synthetic project with the
 repository's own rule files: fit rules, sentence joining against the runtime's C++ `JoinPieces` fixtures (read from
-`<root>\subtitles\src\impl\impl.cpp`) and the game's grammar, one actor's takes, saving / undo bytes, word timings and
+`<root>\modules\subtitles\src\impl\impl.cpp`) and the game's grammar, one actor's takes, saving / undo bytes, word timings and
 suspects, "not sure" marks, the shared normalisers (`merge.squash`, `conv_form`, `strip_final_period`), the reader /
-atomic writer, and the publish copy rule (the copies in `<root>\subtitles\data\` match the products in HEAD and are
+atomic writer, and the publish copy rule (the copies in `<root>\modules\subtitles\data\` match the products in HEAD and are
 not hand-edited). `<root>\tools\drift_check.ps1` runs them as its `subtitle-review` line.
 
 **The pipeline step after a data or rule change** (seconds):
@@ -61,7 +61,7 @@ note), X again clears it; **Stats** (T): how every line is decided, word timings
   user closes a stage. A commit with `subtitles.tsv` staged re-aligns the word timings of the changed lines first
   (pre-commit hook, `FLSubtitles/aligner/align_words.py`, a few seconds plus ~20 s model load; user, 22 Oct 2026:
   "anything that was changed would need to have its forced alignment re-run") and commits `word_times.tsv` with it;
-  the same hook publishes the products into `<root>\subtitles\data\` within that commit (`tools/publish.ps1`; FLvibed's
+  the same hook publishes the products into `<root>\modules\subtitles\data\` within that commit (`tools/publish.ps1`; FLvibed's
   CLAUDE.md "Subtitle data"). New lines on the suspect list (`out/word_times_suspect.tsv`) are worth a look.
   Every aligned line also gets the CTC second opinion (two other aligners correct the words Qwen gets far wrong; how
   the timings are measured and what was tried: section 8).
@@ -88,7 +88,7 @@ note), X again clears it; **Stats** (T): how every line is decided, word timings
   `nemo-speech transcribe <16 kHz wav dir> -r --diarize -f json --output-dir <dir>` then
   `.venv\Scripts\python -I mix_align.py --script <shooting_script.txt> --heard <dir>`, then the aligner with
   `--movies-only --fix-windows` (`mix_align.py` refuses to overwrite reviewed lines without `--force`). **In game**:
-  `<root>\subtitles\src\impl\mixcues.cpp` shows them when the mix plays (29 Oct 2026; published with the data). **Reviewing them** (the tool's list "Scene mixes: their lines", or a mix in the Story order; `asr/mix_review.py`):
+  `<root>\modules\subtitles\src\impl\mixcues.cpp` shows them when the mix plays (29 Oct 2026; published with the data). **Reviewing them** (the tool's list "Scene mixes: their lines", or a mix in the Story order; `asr/mix_review.py`):
   each line is an item playing its window of the mix (Space, L loops it); edit text, speaker and window, Enter saves
   and marks it reviewed (column `reviewed`); "Use heard" / "Use script" fill the text box from the note; Split… (then
   click the word the second line starts with), Insert line after, Delete line, Fit window to words. Every edit

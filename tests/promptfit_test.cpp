@@ -17,7 +17,7 @@
 #include "game/fontscale.h"
 #include "game/promptfit.h"
 #include "game/textfit.h"
-#include "../controller/src/impl/hud2_layout.h"
+#include "../modules/hud/src/hud2_layout.h"
 
 #include <windows.h>
 
@@ -230,7 +230,7 @@ LaneResultH RunLane(const Screen& sc, float W, float H, Variant v)
         const float e = v == Word && p.hold ? promptfit::HoldExtra(promptfit::WordAt::Before, gls[i], lbl[i], dims) : 0.0f;
         wN[i] = bN[i] + e, wF[i] = bF[i] + e;
     }
-    // uiskin::LaneLeft / LowestKeepOut over these keep-outs
+    // winplates::LaneLeft / LowestKeepOut over these keep-outs
     auto left = [&](float y0, float y1, float right)
     {
         float l = W * 0.05f;

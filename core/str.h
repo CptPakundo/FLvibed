@@ -1,5 +1,5 @@
-// String helpers shared by every module part. Header-only on purpose: each part compiles core into its own namespace
-// wrapper, so inline functions here cost no extra translation unit and no link step. ASCII semantics, as the game's
+// String helpers shared by every module part. Header-only on purpose: the logic and each host include it in their own
+// scope, so inline functions here cost no extra translation unit and no link step. ASCII semantics, as the game's
 // data and the harness commands are: Lower() maps each byte through tolower() as an unsigned char.
 //   Trim(s, ws)       strips the characters of `ws` from both ends. The default set " \t\r" is the ini files' (a
 //                     line's '\n' is already gone after getline); callers whose text may still carry line ends pass
@@ -35,7 +35,7 @@ inline std::string StripComment(std::string s)
 }
 
 // UTF-8 <-> UTF-16 (the text the game and Windows draw). Length-based: an embedded NUL is kept. The one conversion
-// of every module part (29 Oct 2026: text.cpp, the subtitles' data.cpp and uikit.cpp each had their own).
+// of every module part (text.cpp, the subtitles' data.cpp and uikit.cpp each had their own).
 inline std::wstring Widen(const char* utf8, size_t len)
 {
     if (!utf8 || !len)

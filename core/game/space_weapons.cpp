@@ -46,7 +46,7 @@ int ReadWeapons(void* ship, Weapon* out, int max, int equipClass /* = kEquipClas
             if (arch && IsLauncherArch(reinterpret_cast<const void*>(arch)))
             {
                 // Archetype::Root::get_id (the id at +8, the nickname hash). The old raw +4 read was an unrelated field
-                // (426997752 for the Azrael whose id is 3058004237; found by the READERS track, 25 Oct 2026)
+                // (426997752 for the Azrael whose id is 3058004237; found by the READERS track)
                 if (const Api& a = GetApi(); a.archId)
                     w.archId = a.archId(reinterpret_cast<const void*>(arch), nullptr);
                 w.power = Mem<float>(arch + kArchPower);
@@ -64,7 +64,7 @@ int ReadWeapons(void* ship, Weapon* out, int max, int equipClass /* = kEquipClas
                 if (w.homing)
                 {
                     w.seekerRange = Mem<float>(proj + kMunitionSeekerRange);
-                    // stored as the cosine of seeker_fov_deg (Javelin 35 -> 0.819152, 18 Oct 2026): a half-angle
+                    // stored as the cosine of seeker_fov_deg (Javelin 35 -> 0.819152): a half-angle
                     w.seekerFovDeg =
                         acosf(std::max(-1.0f, std::min(1.0f, Mem<float>(proj + kMunitionSeekerFov)))) * 57.29578f;
                     w.maxTurn = Mem<float>(proj + kMunitionMaxTurn);
@@ -82,7 +82,7 @@ int ReadWeapons(void* ship, Weapon* out, int max, int equipClass /* = kEquipClas
                             w.motorTime = Mem<float>(m + kMotorLifetime);
                         }
                 }
-                // Archetype::Root::get_id (the raw +4 read gave other values for munitions, 18 Oct 2026)
+                // Archetype::Root::get_id (the raw +4 read gave other values for munitions)
                 if (const Api& a = GetApi(); a.archId)
                     w.ammoArch = a.archId(reinterpret_cast<const void*>(proj), nullptr);
             }
@@ -95,12 +95,12 @@ int ReadWeapons(void* ship, Weapon* out, int max, int equipClass /* = kEquipClas
 }
 
 // The game's fire slots (USER_FIRE_WEAPON1..10) are the HUD status window's weapon list, not the equipment order the
-// traverser walks (18 Oct 2026: the traverser gives the Javelin first, the game fires it on slot 2). Freelancer.exe:
+// traverser walks (the traverser gives the Javelin first, the game fires it on slot 2). Freelancer.exe:
 // the "HUD_Status" control's command handler (switch at 0x4DBACB, case USER_FIRE_WEAPON1 0x4DBEC2) fires entry n-1 of
 // the vector at object +0x590 / +0x594 (36-byte entries, u16 sub-object id first); USER_TOGGLE_WEAPON1..10 (0x4DC252)
 // take the same entries. Read from there and accepted only when every entry is one of the ship's weapons; else by
 // hardpoint name, which matched the measurement on some ships only. Shown or not: HUD 2 hides HUD_Status and the list
-// stays the game's (SaveC706, 4 Nov 2026: by name HpWeapon06 read 7, the game's TOGGLE2 / list entry 2).
+// stays the game's (SaveC706: by name HpWeapon06 read 7, the game's TOGGLE2 / list entry 2).
 static bool HudFireSlots(Weapon* w, int n)
 {
     // The control lookup walks every UI control: once per 2 s (the read below validates the cached one each time).
@@ -199,7 +199,7 @@ std::vector<Weapon> ShipWeapons(u32 id)
     return {};
 }
 
-// Turret reach by the game's own test (Common.dll CEGun, 22 Oct 2026): CanPointAt(point, tolerance) checks the point's
+// Turret reach by the game's own test (Common.dll CEGun): CanPointAt(point, tolerance) checks the point's
 // direction from the turret origin against the gun's joint limits widened by `tolerance` (rad; a gun without joints:
 // its axis +- tolerance) - read from its disassembly, 0x6298860; GetTurretOrigin returns the Vector by hidden pointer;
 // GetMunitionRange the projectile's reach (m).
@@ -349,7 +349,7 @@ int VolleyAt(u32 id, const float pt[3], float* volley, float* perSecond, float t
 
 // Debug `gunpoint`: each active player gun's own verdict on a world point - CEGun::CanPointAt (its joint limits),
 // CanFire (the game's FireResult, FLHookSDK Enums: 9 success, 5 gun angle, 4 power, 2 refire, 6 cruise), the distance against its munition's reach, the hardpoint
-// (the owner, 28 Oct 2026: on the M13 generators / a Nomad battleship not every gun fired - probe before a fix).
+// (on the M13 generators / a Nomad battleship not every gun fired - probe before a fix).
 static const char* FireResultName(int r)
 {
     static const char* const n[] = {"destroyed", "disabled", "refire", "ammo", "power", "angle", "cruise", "lane", "cloak", "ok"};

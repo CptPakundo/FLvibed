@@ -1,8 +1,8 @@
-// FLvibed - the input rules beside FLUF's windows (26 Oct 2026; docs\MOD_COMPATIBILITY.md FLUF, docs\research\fluf.md
+// FLvibed - the input rules beside FLUF's windows (docs\MOD_COMPATIBILITY.md FLUF, docs\research\fluf.md
 // "FLUF in play" E): pure functions over the HUD bus's FLUF record (core\hud_bus.h HudFluf / HudFlufExtra), used by the
-// controller logic (controller\src\impl\flufaware.*) and the unit tests (tests\fluf_probe_test.cpp). Header only.
+// controller logic (modules\controller\src\impl\flufaware.*) and the unit tests (tests\fluf_probe_test.cpp). Header only.
 //
-// The rules (the owner, 26 Oct 2026):
+// The rules:
 // - FLUF's windows are always on top. Every FLUF window that takes the player's input is driven by the pad - any window
 //   whose name the probe knows or not (generalised by ImGui's own state, not by names): a window takes input when FLUF's
 //   click rule gives it the mouse and ImGui hit-tests it (not ImGuiWindowFlags_NoMouseInputs). Never the developer

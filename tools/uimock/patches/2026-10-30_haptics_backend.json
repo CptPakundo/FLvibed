@@ -1,5 +1,5 @@
 {
-  "_about": "Q5 (WORK_QUEUE, 30 Oct 2026; unreleased): the vibration system plays (hits by damage share, shield vs hull, shield fail, the autopilot's hand-back pulse, popup confirmation request) under the Rumble row; and the advanced row pad_backend (0 XInput, 1 SDL3 experimental: PlayStation and Switch Pro pads with their own glyphs). Read live each frame (controller/src/impl/gamepad.cpp).",
+  "_about": "Q5 (WORK_QUEUE, 30 Oct 2026; unreleased): the vibration system plays (hits by damage share, shield vs hull, shield fail, the autopilot's hand-back pulse, popup confirmation request) under the Rumble row; and the advanced row pad_backend (0 XInput, 1 SDL3 experimental: PlayStation and Switch Pro pads with their own glyphs). Read live each frame (modules/controller/src/impl/gamepad.cpp).",
   "rows": {
     "rumble": {
       "help": "Vibration strength: your ship being hit (heavier for hull than shield), your shield failing, the autopilot handing the ship back, and a game box waiting for your answer. 0 = off. Never the only cue. Silent while the game is in the background, paused (except those boxes), in menus and cutscenes, and while you play with keyboard and mouse."

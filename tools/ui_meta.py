@@ -3,9 +3,9 @@
 tables of the spec's tabs / sections / rows (key, bus section, registry key, kind, label, options, min / max / step,
 unit, words, tier, needs, parent, preset flag, button caption, help) plus the autopilot and controller preset tables and
 the bindings presets / common situations (data for the HUD track), and `uimeta::hud2p` from the spec's `hud2_presets`
-(the HUD 2 layout presets, docs\\UI_HUD2_PRESETS.md: shared numbers, zones, budget / prompt caps, value ids, each
-element's numbers per context - read by the HUD 2 lint, controller\\src\\impl\\hud2_lint.h, and the layout core,
-controller\\src\\impl\\hud2_layout.h; a spec without the block fails the generation). The options page (controller\\src\\impl\\options_page.*)
+(the HUD 2 layout presets, modules\\hud\\docs\\UI_HUD2_PRESETS.md: shared numbers, zones, budget / prompt caps, value ids, each
+element's numbers per context - read by the HUD 2 lint, modules\\hud\\src\\hud2_lint.h, and the layout core,
+modules\\hud\\src\\hud2_layout.h; a spec without the block fails the generation). The options page (core\\ui\\options_page.*)
 reads rows, defaults and values from the settings bus and uses this file for the layout and the words.
 
 The alias table ALIASES maps a spec key to (bus section, registry key, value coding) where the registry's key or value
@@ -35,6 +35,12 @@ ALIASES = {
     # GENERAL: the module switches live in FLvibed.ini [Modules] (the HOST track registers the section)
     "mod_subtitles": dict(section="Modules", key="subtitles"),
     "mod_controller": dict(section="Modules", key="controller"),
+    "mod_hud": dict(section="Modules", key="hud"),
+    "mod_autopilot": dict(section="Modules", key="autopilot"),
+    "mod_speedrun": dict(section="Modules", key="speedrun"),
+    "mod_display": dict(section="Modules", key="display"),
+    "mod_npc": dict(section="Modules", key="npc"),
+    "mod_movies": dict(section="Modules", key="movies"),
     # GENERAL buttons: no registry row (the page acts)
     "reset_all": dict(virtual=True),
     "about": dict(virtual=True),
@@ -233,9 +239,9 @@ def gen(spec):
                 oname = "kOpt_%s" % ident(key)
                 vname = "kVal_%s" % ident(key)
                 if opts:
-                    w("static constexpr const char* %s[] = {%s};" % (oname, ", ".join(cstr(o) for o in opts)))
+                    w("inline constexpr const char* %s[] = {%s};" % (oname, ", ".join(cstr(o) for o in opts)))
                 if vals:
-                    w("static constexpr const char* %s[] = {%s};" % (vname, ", ".join(cstr(v) for v in vals)))
+                    w("inline constexpr const char* %s[] = {%s};" % (vname, ", ".join(cstr(v) for v in vals)))
                 kind_c = {"toggle": "Toggle", "picker": "Picker", "slider": "Slider", "key": "Key", "button": "Button"}[kind]
                 tier_c = "Advanced" if row.get("tier") == "advanced" else "Player"
                 needs_c = {"live": "Live", "load": "Load", "restart": "Restart"}[row.get("needs", "live")]
@@ -248,11 +254,11 @@ def gen(spec):
                         cstr(row.get("unit", "") or ""), cstr(reg_default(row, alias)) if not virtual else "nullptr",
                         tier_c, needs_c, cstr(row.get("parent")), "true" if row.get("preset") else "false",
                         cstr(row.get("btn")), cstr(row.get("help", ""))))
-            w("static constexpr Row %s[] = {" % rows_name)
+            w("inline constexpr Row %s[] = {" % rows_name)
             L.extend(row_inits)
             w("};")
             sec_defs.append("    {%s, %s, %d}," % (cstr(sec["label"]), rows_name, len(sec["rows"])))
-        w("static constexpr Section kSections_%s[] = {" % tid)
+        w("inline constexpr Section kSections_%s[] = {" % tid)
         L.extend(sec_defs)
         w("};")
         w("")
@@ -293,7 +299,7 @@ def gen(spec):
         names = []
         for p in spec["presets"][group]:
             pname = "kPreset_%s_%s" % (group, ident(p["name"]))
-            w("static constexpr PresetValue %s[] = {" % pname)
+            w("inline constexpr PresetValue %s[] = {" % pname)
             for k in sorted(p["values"]):
                 s, rk, val = preset_value(k, p["values"][k])
                 w("    {%s, %s, %s}," % (cstr(s), cstr(rk), cstr(val)))
@@ -307,7 +313,7 @@ def gen(spec):
 
     # ---- bindings
     def bindset(name, table, var):
-        w("static constexpr Bind %s[] = {" % var)
+        w("inline constexpr Bind %s[] = {" % var)
         for b in BUTTONS:
             e = table.get(b, {})
             w("    {%s, %s, %s, %s}," % (cstr(b), cstr(e.get("tap", "none")), cstr(e.get("hold", "none")), cstr(e.get("dbl", "none"))))
@@ -363,7 +369,7 @@ def gen(spec):
     return "\n".join(L) + "\n"
 
 
-# ---- HUD 2 layout presets (docs\UI_HUD2_PRESETS.md 6 step 1; UI_SPEC.json "hud2_presets")
+# ---- HUD 2 layout presets (modules\hud\docs\UI_HUD2_PRESETS.md 6 step 1; UI_SPEC.json "hud2_presets")
 HUD2_PRESET_IDS = ["standard", "focus", "speedrun", "guided"]  # hud_preset 0..3 (PRESETS 5)
 HUD2_ANCHORS = {"centre_to_card": "CentreToCard", "rail": "Rail", "centre": "Centre", "centre_offset": "CentreOffset"}
 
@@ -378,7 +384,7 @@ def strlist(w, name, items):
     """A static array of C strings (or nullptr when empty); returns (expr, count)."""
     if not items:
         return "nullptr", 0
-    w("static constexpr const char* %s[] = {%s};" % (name, ", ".join(cstr(s) for s in items)))
+    w("inline constexpr const char* %s[] = {%s};" % (name, ", ".join(cstr(s) for s in items)))
     return name, len(items)
 
 
@@ -393,9 +399,9 @@ def gen_hud2(spec, w):
                          "(specpatch.py) to the spec first")
     sh = hp["shared"]
     w("")
-    w("// ---- HUD 2 layout presets (docs\\UI_HUD2_PRESETS.md, revision 2; UI_SPEC.json \"hud2_presets\": every number with")
+    w("// ---- HUD 2 layout presets (modules\\hud\\docs\\UI_HUD2_PRESETS.md, revision 2; UI_SPEC.json \"hud2_presets\": every number with")
     w("// its section there). Fractions of H at 16:9 from the top-left unless named _W (of W) or d (from the centre); budgets")
-    w("// = fractions of the screen's area (plates only). The lint (controller\\src\\impl\\hud2_lint.h) reads these.")
+    w("// = fractions of the screen's area (plates only). The lint (modules\\hud\\src\\hud2_lint.h) reads these.")
     w("namespace hud2p")
     w("{")
     shared = [
@@ -409,7 +415,7 @@ def gen_hud2(spec, w):
         ("kKeepY1", sh["keep_out"]["y1"], sh["keep_out"]["src"]),
         ("kTitleSafe", sh["title_safe"]["frac"], sh["title_safe"]["src"]),
         ("kBudgetDefault", sh["budget_default"]["frac"], sh["budget_default"]["src"]),
-        # the layout core's shared numbers (PRESETS 6 step 5, controller\src\impl\hud2_layout.h)
+        # the layout core's shared numbers (PRESETS 6 step 5, modules\hud\src\hud2_layout.h)
         ("kMarginSideW", sh["margins"]["side_w"], sh["margins"]["src"]),
         ("kMarginTop", sh["margins"]["top"], sh["margins"]["src"]),
         ("kMarginBottom", sh["margins"]["bottom"], sh["margins"]["src"]),
@@ -516,7 +522,7 @@ def gen_hud2(spec, w):
                 fnum(z["r"], what) if circle else "0.0f",
                 fnum(z.get("half_max", 0), what), fnum(z.get("card_gap", 0), what), fnum(z.get("card_gap_narrow", 0), what),
                 exk, exkn, cstr(z["src"])))
-        w("static constexpr Zone kZones_%s[] = {" % pid)
+        w("inline constexpr Zone kZones_%s[] = {" % pid)
         for zi in zinits:
             w(zi)
         w("};")
@@ -531,7 +537,7 @@ def gen_hud2(spec, w):
                         binits.append("    {%s, %s, %s, %s}," % (cstr(ctx), cstr(dev), cstr(when),
                                                                fnum(v, "%s %s %s cap" % (p["id"], ctx, dev))))
         if binits:
-            w("static constexpr BudgetCap kBudgets_%s[] = {" % pid)
+            w("inline constexpr BudgetCap kBudgets_%s[] = {" % pid)
             for bi in binits:
                 w(bi)
             w("};")
@@ -539,7 +545,7 @@ def gen_hud2(spec, w):
         for ctx in ("calm", "combat"):
             c = p["prompts"][ctx]
             pinits.append("    {%s, %d, %d}," % (cstr(ctx), int(c["pills"]), int(c["pairs"])))
-        w("static constexpr PromptCap kPrompts_%s[] = {" % pid)
+        w("inline constexpr PromptCap kPrompts_%s[] = {" % pid)
         for pi in pinits:
             w(pi)
         w("};")
@@ -575,7 +581,7 @@ def gen_hud2(spec, w):
                 ninits.append("    {%s, %s, %s, %s}," % (cstr("bundle"), cstr(part), cstr(key),
                                                       fnum(x, "%s bundle %s" % (p["id"], key))))
         if ninits:
-            w("static constexpr ElemNum kNums_%s[] = {" % pid)
+            w("inline constexpr ElemNum kNums_%s[] = {" % pid)
             for ni in ninits:
                 w(ni)
             w("};")
@@ -657,7 +663,7 @@ def gen_hud2(spec, w):
 
 HUD2_SETUP_COLUMNS = ["FREELANCER / CUSTOM", "ACE", "ASSISTED", "K&M"]  # PRESETS 4 compatibility table's columns
 HUD2_FITS = {"fine": "Fine", "adapts": "Adapts", "discouraged": "Discouraged"}
-# pad_preset 0..3 (controller\src\impl\presets.h Preset) -> the spec's "suggested" key
+# pad_preset 0..3 (core\ui\presets.h Preset) -> the spec's "suggested" key
 HUD2_PAD_PRESETS = ["FREELANCER", "ACE", "ASSISTED", "CUSTOM"]
 
 

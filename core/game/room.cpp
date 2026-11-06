@@ -1,3 +1,4 @@
+// Base-room characters and hotspots handled natively, plus uiclick: clicking, finding and scrolling the game's controls.
 #include "game/room.h"
 
 #include "flexe.h"
@@ -173,7 +174,7 @@ bool SelectTableRow(u32 ctl, int row, bool activate)
     }
 }
 
-// Research captures (user, 19 Oct 2026: "hide the game's HUD for the duration of capture"): clears the visible bit
+// Research captures ("hide the game's HUD for the duration of capture"): clears the visible bit
 // (+0x6C bit 0) of every visible control and remembers them; `false` restores exactly those.
 static std::vector<u32> g_hidden;
 int HideAll(bool hide)
@@ -266,7 +267,7 @@ static u32 FindVisibleNth(const char* want, int nth, bool shownOnly = true)
 
 // "Name#n" = the n-th visible control of that name, in the game's control list order (windows reuse row names: the
 // commodity trader's dealer list NN_Dealer and the ship's cargo list NN_Inventory both have ItemButton1..: #2 is the
-// cargo's, 22 Oct 2026).
+// cargo's).
 u32 FindVisible(const char* want)
 {
     const char* hash = strchr(want, '#');
@@ -290,8 +291,8 @@ bool Click(u32 ctl)
 {
     __try
     {
-        // Button classes by mouse handler: text / popup-OK buttons 0x5A4380 (sound id +0x380, notify-owner
-        // flag +0x388 bit 2, messages 0x27 then 0x26); icon buttons 0x55B950 (HUD, maneuvers, NN menu, base
+        // Button classes by mouse handler: text / popup-OK buttons 0x5A4380 (sound id +0x380, the action vt[0xB4]: its
+        // command, else message 0x26 to the owner); icon buttons 0x55B950 (HUD, maneuvers, NN menu, base
         // rooms: sound id +0x374, the action vt[0xB4] = IconButtonActivate).
         void** vt = *reinterpret_cast<void***>(ctl);
         const u32 handler = reinterpret_cast<u32>(vt[0x4C / 4]);
@@ -314,7 +315,7 @@ bool Click(u32 ctl)
             // Options screen's opt_toggle N): the game's handler picks the click sound by the state (+0x3A0 -> the id at
             // +0x3C4 off / +0x3C8 on) and hands over to the icon button handler, whose release runs the control's action
             // vt[0xB4] = ToggleButtonActivate (the command, else msg 0x26 to the owner window - the dealer mounts /
-            // unmounts; then the state flips and the owner gets msg 0x30 with it). Signed, else fails closed (25 Oct 2026).
+            // unmounts; then the state flips and the owner gets msg 0x30 with it). Signed, else fails closed.
             if (!exe::ToggleButtonActivate.is(reinterpret_cast<u32>(vt[0xB4 / 4])))
                 return false;
             const u32 sound = Mem<u32>(ctl + (Mem<u32>(ctl + 0x3A0) ? 0x3C8 : 0x3C4));
@@ -328,7 +329,7 @@ bool Click(u32 ctl)
             // Icon buttons: their own action, as the game's mouse handler runs it on a click while the button is not in
             // its other mode (+0x330 bit 0x80, set and cleared by the hover logic: then the handler sends 0x27, which
             // e.g. the NavBar ignores). Was: our click followed that bit - with no real hover it could stay set, and
-            // room buttons (Launch, Bar, ...) were ignored for the rest of the session (18 Oct 2026). The action must
+            // room buttons (Launch, Bar, ...) were ignored for the rest of the session. The action must
             // be the signed function: another class or an unknown build fails closed.
             if (!exe::IconButtonActivate.is(reinterpret_cast<u32>(vt[0xB4 / 4])))
                 return false;
@@ -343,22 +344,9 @@ bool Click(u32 ctl)
         const u32 sound = Mem<u32>(ctl + 0x380);
         if (sound != 0xFFFFFFFF)
             hk::Call<void(__cdecl*)(u32)>(exe::PlayUiSound, sound);
-        if (Mem<u8>(ctl + 0x388) & 2)
-        {
-            // Text buttons notify their owner window: 0x27, and 0x26 if that was not handled (as the game does).
-            const u32 parent = Mem<u32>(ctl + 4);
-            if (!parent)
-                return false;
-            const u32 win = reinterpret_cast<GetFn>((*reinterpret_cast<void***>(parent))[8 / 4])(parent);
-            if (!win)
-                return false;
-            const WinMsgFn msg = reinterpret_cast<WinMsgFn>((*reinterpret_cast<void***>(win))[0xA8 / 4]);
-            const u32 id = reinterpret_cast<GetFn>(vt[8 / 4])(ctl);
-            if (!msg(win, 0x27, id, 0))
-                msg(win, 0x26, id, 0);
-        }
-        else
-            reinterpret_cast<ActionFn>(vt[0xB4 / 4])(ctl);
+        // A single click, as the game's release runs it. +0x388 bit 1 means the press was a double click: only a press writes it and the factory never
+        // clears it, so with no press it is whatever the heap held. Read here, it sent the ship dealer's double-click shortcut (0x27) on a plain click.
+        reinterpret_cast<ActionFn>(vt[0xB4 / 4])(ctl);
         return true;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
@@ -662,7 +650,7 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
         *reply = line;
         return true;
     }
-    if (cmd == "dealer") // dealer [ControlName]: research probe of the dealer window around a row control (20 Oct 2026)
+    if (cmd == "dealer") // dealer [ControlName]: research probe of the dealer window around a row control
     {
         // The dealer's buy (0x47EAB0, thiscall(count) on the dealer window) buys the good of its list object's selected
         // row: list = window+0x360, +0x3A4 selected index (-1 none), +0x978 1/3 = the side shown; 0x483580 (thiscall on

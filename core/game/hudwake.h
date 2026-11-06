@@ -1,4 +1,4 @@
-// FLvibed - HUD 2's CONTEXTUAL mode (0.2.1, the owner's decisions of 2 Nov 2026; docs\UI_HUD2.md 5.25). `hud_fade` has
+// FLvibed - HUD 2's CONTEXTUAL mode (0.2.1, the owner's decisions of 2 Nov 2026; modules\hud\docs\UI_HUD2.md 5.25). `hud_fade` has
 // two modes: 0 FULL (every element always shown) and 1 CONTEXTUAL (the default; the old 1 "calm dims" and 2 "minimal"
 // retired, 2 falls back to 1). CONTEXTUAL: in flight HUD 2 fades out while idle / in simple flying; each element wakes on
 // its own triggers, lingers kLingerS after the last one, then fades (the caller's ease). Always shown whatever the
@@ -35,7 +35,7 @@ enum Trig : unsigned
                          // the press itself, whether or not anything fires (locked, empty): the whole HUD (0.2.1 round 6)
 };
 
-// What each trigger wakes (the owner: "the elements they touch").
+// What each trigger wakes ("the elements they touch").
 inline unsigned Wakes(unsigned trig)
 {
     unsigned m = 0;

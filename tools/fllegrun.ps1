@@ -1,4 +1,4 @@
-# One speedrun leg (controller\tools\flleg.ps1) under a wall-clock watchdog, for the set drivers (flset / flgate /
+# One speedrun leg (tools\harness\flleg.ps1) under a wall-clock watchdog, for the set drivers (flset / flgate /
 # flarms; 29 Oct 2026, tools audit - SWEEP_2026-10-29.md #11). The drivers called flleg in their own process: a hang
 # outside the harness waits (a stuck ffmpeg, a game that never answers at the boot) stalled the whole queue until
 # someone noticed (memory watchdog_stuck_tests). Here the leg runs as a PowerShell job (a child process; its
@@ -9,8 +9,8 @@
 function Get-FLHarnessHash {
     # the harness a leg loads (flleg, Leg.ps1, the flctl parts): one hash over their bytes
     $root = Split-Path $PSScriptRoot -Parent
-    $files = @(Join-Path $root 'controller\tools\flleg.ps1') + @(Get-ChildItem (Join-Path $root 'controller\tools') -Filter 'flctl*.ps1' | ForEach-Object FullName) +
-             @(Join-Path $root 'controller\tools\missions\Leg.ps1')
+    $files = @(Join-Path $root 'tools\harness\flleg.ps1') + @(Get-ChildItem (Join-Path $root 'tools\harness') -Filter 'flctl*.ps1' | ForEach-Object FullName) +
+             @(Join-Path $root 'tools\harness\missions\Leg.ps1')
     $sha = [Security.Cryptography.SHA256]::Create()
     $all = [IO.MemoryStream]::new()
     foreach ($f in $files | Sort-Object) { $b = [IO.File]::ReadAllBytes($f); $all.Write($b, 0, $b.Length) }
@@ -18,7 +18,7 @@ function Get-FLHarnessHash {
 }
 function Invoke-FLLegGuarded([Parameter(Mandatory)][hashtable]$Leg, [int]$GraceSec = 900) {
     $root = Split-Path $PSScriptRoot -Parent
-    $flleg = Join-Path $root 'controller\tools\flleg.ps1'
+    $flleg = Join-Path $root 'tools\harness\flleg.ps1'
     # one harness per set (30 Oct 2026 evening: Leg.ps1 was edited while two sets ran - a set's legs must all run the
     # same harness to be comparable; the "half-edited copy" first blamed for that round was a misread, aa85f7b): the
     # set's first leg pins the harness hash, a later leg on a changed harness is not started (the driver's loop ends on
