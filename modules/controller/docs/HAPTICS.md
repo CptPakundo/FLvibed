@@ -40,7 +40,7 @@ Taken in the owner's absence (the research note's section 7). Each is the driver
 | # | Decision | What it means here |
 |---|---|---|
 | 1 | The layered idea | Section 1 |
-| 2 | Waveform on by default on a USB DualSense once its probe passes on the owner's card; opt-in until then | `haptics_mode` Automatic reads motors while `kWaveformProven` is false (`wave_synth.h`); Waveform is the opt-in. One constant flips it |
+| 2 | Waveform on by default on a USB DualSense (the owner, 6 Nov 2026: opt out, not opt in), ahead of the probe on the owner's card | `haptics_mode` Automatic reads the waveform while `kWaveformProven` is true (`wave_synth.h`); Motors is the opt-out. A failed stream falls back to the motors and says why |
 | 3 | Weapons locked: launchers in cruise, player control excluded, no gun mounted, scripted locks. Power out stays limp, a different feel from jam | Wall means a rule, limp means empty (section 7). Scripted locks have no reader: dropped, section 3 |
 | 4 | Trigger effects default Full, Light one row away, an intensity row; held fire must not fatigue | `trigger_effects`, `trigger_strength`; the held state settles (section 7) |
 | 5 | No sound in any test: waveform output only on the owner's card | The stream opens only for a real pad on a foreground, non-background game with `haptics_device` 1 |

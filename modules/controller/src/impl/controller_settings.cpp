@@ -150,7 +150,7 @@ static const settings::Def kOptions[] = {
     {"trigger_strength", settings::Int, &g_opt.triggerStrength, 0, 100,
      "the trigger effects' strength in percent, on top of trigger_effects"},
     {"haptics_mode", settings::Int, &g_opt.hapticsMode, 0, 2,
-     "0 automatic (motors until the waveform is proven), 1 motors, 2 waveform: a USB DualSense's grips driven as audio, "
+     "0 automatic (the waveform on a USB DualSense, the motors elsewhere), 1 motors, 2 waveform: a USB DualSense's grips driven as audio, "
      "its speaker set to four channels in the Sound panel; any failure falls back to motors and says why"},
     {"haptics_ship", settings::Int, &g_opt.hapticsClass[0], 0, 100,
      "percent: the engine, afterburner, cruise charge, tractor, nebulas and asteroids"},

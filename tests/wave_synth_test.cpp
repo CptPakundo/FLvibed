@@ -178,8 +178,8 @@ void Test_wave_synth()
     }
 
     // ---- the stream's rules
-    CHECK(!kWaveformProven); // decision 2: flips only on the owner's card
-    CHECK(!WantWave(kModeAuto) && !WantWave(kModeMotors) && WantWave(kModeWave));
+    CHECK(kWaveformProven); // decision 2: on by default, the owner's word of 6 Nov 2026: opt out, not opt in
+    CHECK(WantWave(kModeAuto) && !WantWave(kModeMotors) && WantWave(kModeWave));
     CHECK(WaveFormatRefusal(4, 48000, 0x33) == nullptr); // this Edge, read 6 Nov 2026
     CHECK(WaveFormatRefusal(2, 48000, 0x3) != nullptr);  // a Stereo layout
     CHECK(WaveFormatRefusal(4, 44100, 0x33) != nullptr);

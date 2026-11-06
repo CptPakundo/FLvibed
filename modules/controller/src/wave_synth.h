@@ -6,7 +6,7 @@
 namespace wavesynth
 {
 // Waveform by default on Automatic only once the owner's card has passed its probe (decision 2, HAPTICS.md 2). Until then Automatic reads motors and Waveform is the opt-in.
-constexpr bool kWaveformProven = false;
+constexpr bool kWaveformProven = true;
 
 // `haptics_mode`
 constexpr int kModeAuto = 0, kModeMotors = 1, kModeWave = 2;
