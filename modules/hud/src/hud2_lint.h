@@ -17,6 +17,7 @@
 // (tools\ui_meta.py), each with its section there; nothing here copies one. The aliases below keep the lint's names.
 #pragma once
 #include "common.h"
+#include "game/textfit.h"
 #include "ui_meta.h"
 
 namespace hud2lint
@@ -132,6 +133,7 @@ struct Item
     // dims to 30 %" half is not checked here)
     bool overlay = false;
     bool secondChannel = false; // a declared second channel of a critical state (1.7: the FLARE mirror, the hull flash)
+    bool fades = false; // gone from the steady picture: hud_fade takes it out in calm, it stands only while awake
     int unit = 0; // a designed unit (hud2kit::RecUnit: a prompt and its own label, a slot's icon and count): 0 none
     Lane lane = Lane::None;
     std::string comp;  // the component ("nav", "card", "ring.speed", ...)
@@ -173,9 +175,11 @@ struct Input
     std::vector<Analog> analogs;
     std::vector<Toggle> toggles;
     float budget = kBudget;   // boxed area cap, fraction of the screen
+    float dlgX0 = 0, dlgY0 = 0, dlgX1 = 0, dlgY1 = 0; // the subtitles' dialogue panel (pixels), 0 none
     int pillCap = LimitsOf(Standard(), false, false).pills; // the caps (-1 none): LimitsOf(preset, combat, kbm)
     int pairCap = LimitsOf(Standard(), false, false).pairs;
     bool keepOut = true, titleSafe = true;
+    bool air = false; // panel.air: a measure of the live HUD, off for the fixtures
     // Rules the caller cannot feed: {rule id, why}; the lint skips them and prints "n/a: <rule>: <why>". An id that names
     // no rule (e.g. "analog.readout:steer") is only printed.
     std::vector<std::pair<std::string, std::string>> na;
@@ -203,7 +207,8 @@ struct Result
     std::vector<Finding> findings;
     std::vector<std::pair<std::string, std::string>> na;
     Verdict verdict = Verdict::Pass;
-    float boxed = 0; // the plates' union area / the screen's
+    float boxed = 0;  // the plates' union area / the screen's: the awake peak, everything that can stand at once
+    float steady = 0; // ... without what hud_fade takes out: what stands on screen once the frame has settled
     int pills = 0, pairs = 0;
     int fails = 0, warns = 0;
 };
@@ -545,7 +550,8 @@ inline Result Lint(const Input& in)
             if (it.alpha <= 0)
                 continue;
             for (const Zone& z : in.zones)
-                if ((plate || (z.texts && !it.overlay)) && !Exempt(it.comp, z.exempt) && InZone(it, z))
+                // (the targeting display stands where the target does, the 31 Oct rule's diegetic exception, the owner's word: UI_HUD2_SKIN.md 6.10)
+                if ((plate || (z.texts && !it.overlay)) && !Exempt(it.comp, z.exempt) && it.comp.compare(0, 7, "target.") != 0 && InZone(it, z))
                 {
                     const bool mark = it.kind == Kind::Text || it.kind == Kind::Glyph || it.kind == Kind::Keycap ||
                                       it.kind == Kind::Icon;
@@ -558,7 +564,7 @@ inline Result Lint(const Input& in)
     // FAIL: text under the floor (max(0.024 H, 14 px), above); glyph letters are sized by their shape (hud2_kit Mark)
     if (!Skipped(in, "text.floor"))
     {
-        const float floor = std::max(kTextFloorH * H, kTextFloorPx);
+        const float floor = textfit::MinSize(H); // (hud_size moves it)
         for (const Item& it : in.items)
             if ((it.kind == Kind::Text || it.kind == Kind::Keycap) && it.alpha > 0 && it.textH > 0 &&
                 it.textH < floor - kEdgePx)
@@ -598,6 +604,34 @@ inline Result Lint(const Input& in)
             }
         }
     }
+    // FAIL: a context prompt on the subtitles' panel: the prompts move clear, they may not touch it
+    if (in.dlgX1 > in.dlgX0 && !Skipped(in, "prompt.subtitles"))
+        for (const Item& a : in.items)
+            if (a.alpha > 0 && a.comp.compare(0, 7, "context") == 0 && BoxGap(a.x0, a.y0, a.x1, a.y1, in.dlgX0, in.dlgY0, in.dlgX1, in.dlgY1) <= 0)
+                Add(r, Sev::Fail, "prompt.subtitles", Who(a), "a prompt on the subtitles' panel");
+    // FAIL: an alert card over any other part of the HUD, at any size (GitHub issue 35: the card across a long contact
+    // list), and its words out of its own plate. The plate is the card's widest shape; overlays draw on top by design
+    if (!Skipped(in, "alert.overlap"))
+    {
+        const Item* plate = nullptr;
+        for (const Item& a : in.items)
+            if (a.alpha > 0 && a.comp == "alert" && a.kind == Kind::Shape && (!plate || a.x1 - a.x0 > plate->x1 - plate->x0))
+                plate = &a;
+        for (const Item& a : in.items)
+        {
+            if (a.alpha <= 0 || a.comp != "alert")
+                continue;
+            if (plate && a.kind == Kind::Text && (a.x0 < plate->x0 - 0.5f || a.x1 > plate->x1 + 0.5f))
+                Add(r, Sev::Fail, "alert.overlap", Who(a), "the words stand out of the card's plate");
+            for (const Item& b : in.items)
+            {
+                if (b.alpha <= 0 || b.comp == "alert" || b.overlay)
+                    continue;
+                if (BoxGap(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0, b.x1, b.y1) < 0 && ItemGap(a, b) < 0)
+                    Add(r, Sev::Fail, "alert.overlap", Who(a) + " / " + Who(b), "an alert card over another part");
+            }
+        }
+    }
     // FAIL: inside one panel, two drawn items that overlap or sit closer than their gap (PanelGapPx: 0.01 H for separate
     // elements; a designed unit and the lines of one text block may touch). The edge tolerance keeps a box that ends
     // exactly on the gap passing.
@@ -626,6 +660,34 @@ inline Result Lint(const Input& in)
                              need > 0 ? "0.01 H (separate elements)" : "touching (one unit / one text block)");
                     Add(r, Sev::Fail, "panel.overlap", Who(a) + " / " + Who(b), why);
                 }
+            }
+        }
+    }
+    // WARN: a plate whose content does not sit evenly in it (the owner, 6 Nov 2026: equal space on both axes, none wasted, everywhere): the air on the two sides of an axis apart by more than
+    // 0.008 H. Text boxes carry the font's line, so a small difference is not read as a fault
+    if (in.air && !Skipped(in, "panel.air"))
+    {
+        const float tol = 0.008f * H;
+        for (const Item& p : in.items)
+        {
+            if (p.kind != Kind::Plate || p.alpha < kVisibleAlpha)
+                continue;
+            float x0 = 1e9f, y0 = 1e9f, x1 = -1e9f, y1 = -1e9f;
+            const std::string part = PartOf(p.comp);
+            for (const Item& c : in.items)
+            {
+                const float mx = (c.x0 + c.x1) / 2, my = (c.y0 + c.y1) / 2;
+                if ((!PanelItem(c) && !(c.kind == Kind::Shape && c.alpha >= kVisibleAlpha)) || PartOf(c.comp) != part || mx < p.x0 || mx > p.x1 || my < p.y0 || my > p.y1)
+                    continue;
+                x0 = std::min(x0, c.x0), y0 = std::min(y0, c.y0), x1 = std::max(x1, c.x1), y1 = std::max(y1, c.y1);
+            }
+            if (x1 < x0)
+                continue;
+            const float l = x0 - p.x0, rr = p.x1 - x1, t = y0 - p.y0, b = p.y1 - y1;
+            if (fabsf(l - rr) > tol || fabsf(t - b) > tol)
+            {
+                snprintf(why, sizeof why, "air left %.3f right %.3f top %.3f bottom %.3f H, plate %.3f x %.3f H", l / H, rr / H, t / H, b / H, (p.x1 - p.x0) / H, (p.y1 - p.y0) / H);
+                Add(r, Sev::Warn, "panel.air", Who(p), why);
             }
         }
     }
@@ -685,10 +747,20 @@ inline Result Lint(const Input& in)
             if (it.kind == Kind::Plate && it.alpha > 0)
                 plates.push_back(&it);
         r.boxed = UnionArea(plates, W, H) / (W * H);
-        if (!Skipped(in, "budget") && in.budget > 0 && r.boxed > in.budget)
+        std::vector<const Item*> standing;
+        for (const Item* p : plates)
+            if (!p->fades)
+                standing.push_back(p);
+        r.steady = UnionArea(standing, W, H) / (W * H);
+        if (!Skipped(in, "budget") && in.budget > 0 && r.steady > in.budget)
         {
-            snprintf(why, sizeof why, "boxed %.1f %% of the screen, the budget is %.1f %%", r.boxed * 100, in.budget * 100);
-            Add(r, Sev::Warn, "budget", std::to_string(plates.size()) + " plates", why);
+            snprintf(why, sizeof why, "boxed %.1f %% of the screen, the budget is %.1f %%", r.steady * 100, in.budget * 100);
+            Add(r, Sev::Warn, "budget", std::to_string(standing.size()) + " plates", why);
+        }
+        else if (!Skipped(in, "budget") && in.budget > 0 && r.boxed > in.budget)
+        {
+            snprintf(why, sizeof why, "awake peak %.1f %% of the screen, steady %.1f %%, the budget is %.1f %%", r.boxed * 100, r.steady * 100, in.budget * 100);
+            Add(r, Sev::Warn, "budget.awake", std::to_string(plates.size()) + " plates", why);
         }
     }
     // WARN: prompt counts (pills on the context line; every glyph / keycap but the answers)
@@ -748,8 +820,8 @@ inline std::string Format(const Result& r)
     for (const auto& n : r.na)
         s += "n/a: " + n.first + ": " + n.second + "\n";
     char b[160];
-    snprintf(b, sizeof b, "verdict %s (%d FAIL, %d WARN) boxed=%.1f%% pills=%d prompts=%d", VerdictName(r.verdict),
-             r.fails, r.warns, r.boxed * 100, r.pills, r.pairs);
+    snprintf(b, sizeof b, "verdict %s (%d FAIL, %d WARN) boxed=%.1f%% steady=%.1f%% pills=%d prompts=%d", VerdictName(r.verdict),
+             r.fails, r.warns, r.boxed * 100, r.steady * 100, r.pills, r.pairs);
     return s + b;
 }
 } // namespace hud2lint

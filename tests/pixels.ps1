@@ -3,7 +3,7 @@
 # legend and prompts, the options page on two tabs. Frames in research\experience\runs\pixels_<label>\ (git-ignored).
 # Docked: the prompts, and a dealer under Extended HUD 2. -Dll runs another build's release DLL (build\ref_*), -Modules another row, -Classic hud_style 0.
 # Usage (PowerShell tool): tests\pixels.ps1 -Label <name> [-Sizes '3840, 2160','1280, 800'] [-Instance 3] [-Dll <path>] [-Modules a,b=0] [-Classic]   uses build\release
-param([Parameter(Mandatory)][string]$Label, [string[]]$Sizes = @('3840, 2160', '1280, 800'), [int]$Instance = 3, [string]$Dll = '',
+param([Parameter(Mandatory)][string]$Label, [string[]]$Sizes = @('3840, 2160', '1280, 800'), [string]$Instance = 3, [string]$Dll = '',
       [string[]]$Modules = @('subtitles', 'controller'), [switch]$Classic, [switch]$DockedOnly)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
@@ -35,7 +35,7 @@ try {
         Set-FLPad -RY 0.6; $null = Wait-FLFramesPassed 30; Clear-FLPad; $null = Wait-FLFramesPassed 30
         Shot "${tag}_pad"
         $null = Send-FL 'ui options open'; $null = Wait-FLFramesPassed 150 # (the game's window behind it slides in)
-        Shot "${tag}_options_general"
+        Shot "${tag}_options_hud"
         $null = Send-FL 'ui tab 1'; $null = Wait-FLFramesPassed 30
         Shot "${tag}_options_controller"
         $null = Send-FL 'ui options close'

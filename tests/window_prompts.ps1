@@ -2,7 +2,7 @@
 # contextual, now fades only outside windows: a base room. Reads the bar's own state past the 3 s timer, on first and later visits, at a window with a decision (the job board), one
 # with none (the news board) and a dealer with nothing selected; then a room, whose prompts still go. One background game, build\release. Exit 1 = a failure.
 # Usage (PowerShell tool): tests\window_prompts.ps1 [-Instance 5] [-Root <a checkout>]   -Root: another build's tree, for a control run
-param([int]$Instance = 5, [string]$Root = (Split-Path $PSScriptRoot -Parent))
+param([string]$Instance = 5, [string]$Root = (Split-Path $PSScriptRoot -Parent))
 $ErrorActionPreference = 'Stop'
 $env:FLVIBED_INSTANCE = "$Instance"
 . (Join-Path $Root 'tools\harness\flctl.ps1')

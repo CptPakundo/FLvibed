@@ -251,6 +251,48 @@ class Fallback
     float waited_ = 0, empty_ = 0, rest_ = 0;
 };
 
+// ---- Impulse Triggers (modules\controller\docs\HAPTICS.md 6): XInput has no field for the trigger motors, so an Xbox pad stays XInput's to read and SDL, started in its own
+// mode with SDL's WGI driver, sends all four motors. XInputSetState stays silent then: the two would fight over the same pad. It fails closed to XInput's two motors: no WGI
+// (Windows 7), no pad found, two gamepads listed (nothing cheap names the XInput slot), Wine (trigger rumble through it could cost the plain rumble), a Sony or Nintendo pad
+// beside it (the fallback owns SDL, and hints apply at SDL's start).
+constexpr int kSdlStartImpulse = 3;      // HostApi SdlPad's `on`
+constexpr float kImpulseLook = 0.5f;     // seconds between looks: the output needs no read a frame
+constexpr float kImpulseEmpty = 10.0f;   // seconds SDL may run and find no such pad, then it stops until the pad comes back
+
+// One entry of the HID list: an Xbox pad XInput reads ("IG_"). A Steam virtual pad has Valve's id, a third party's its own: only Microsoft's own go this way.
+inline bool XboxHid(unsigned vendor, unsigned usagePage, unsigned usage, bool xinputPath)
+{
+    return usagePage == 1 && (usage == 4 || usage == 5) && xinputPath && vendor == kVendorXbox;
+}
+
+class ImpulseRoute
+{
+  public:
+    // Once per look. `running`: SDL holds such a pad, alone. True: SDL runs for the output.
+    bool Want(bool triggersOn, bool hostHas, bool xboxPad, bool fallback, bool wine, bool test, bool running, bool sdlUp, float dt)
+    {
+        if (!xboxPad)
+            gaveUp_ = false; // the pad left: it may come back through a working route
+        if (!triggersOn || !hostHas || !xboxPad || fallback || wine || test || gaveUp_)
+        {
+            empty_ = 0;
+            return false;
+        }
+        empty_ = sdlUp && !running ? empty_ + dt : 0;
+        if (empty_ >= kImpulseEmpty)
+        {
+            gaveUp_ = true, empty_ = 0;
+            return false;
+        }
+        return true;
+    }
+    void GiveUp() { gaveUp_ = true; }
+
+  private:
+    float empty_ = 0;
+    bool gaveUp_ = false;
+};
+
 // Keep the SDL backend running: pad_backend 1 on a host that has it (v33+) - also while the device-layer test pads are on,
 // so a test that plugs them does not restart SDL each time - or the fallback's word.
 inline bool WantSdl(int padBackend, bool hostHas, bool fallback = false) { return (padBackend == 1 || fallback) && hostHas; }

@@ -1,6 +1,6 @@
 # HUD 2 as a complete skin of the game (P11f design, 5 Nov 2026)
 
-**Status:** design for the owner's reading. Nothing here is built and no game ran: another session owns builds and games. Game facts are from the docs, the install's data and decompiled code unless marked; section 12 lists the probes that must pass before the build leans on them. Research: `docs\research\hud-skin.md`, evidence `research\evidence\hud2_skin\` (readers, verifiers, facts, frames).
+**Status:** design for the owner's reading; the build's record is `UI_HUD2_BUILD_040.md`: code on `build-040`, none of it seen in game. Game facts are from the docs, the install's data and decompiled code unless marked; section 12 lists the probes that must pass before the build leans on them. Research: `docs\research\hud-skin.md`, evidence `research\evidence\hud2_skin\` (readers, verifiers, facts, frames).
 
 **The owner, 5 Nov 2026:** "HUD 2 should actually be a complete skin replace for the game when enabled, so that should extend to things like the navmap, quit UI etc." This overrides the "Left native (decided)" list of `UI_HUD2_EXTENDED.md` (9.10, 10): the main menu, the loading screen, the nav map's drawing, the welcome texts. With HUD 2 off the game stays exactly classic. The 3D scene and rooms are no skin matter; every 2D screen, window, dialog, overlay and transition is. The tester's "not fully integrated" (the game's HUD showing briefly at every screen load) belongs here: nothing native may flash, at any load, room change, menu or mission moment.
 
@@ -323,7 +323,7 @@ Only the map's side windows and the box's icons change where a route is drawn; b
 | Moment | Native | Skin |
 |---|---|---|
 | Any screen to any screen | art visible until replaced | the registry (3.1) |
-| NeuroNet window | two slides of 0.30 s, 0.61 s measured, plates follow | stays; shortening needs a hook on 0x55E120, which goes with one frame for all five windows (R8, 6.9); a close during it is held, as built |
+| NeuroNet window | two slides of 0.30 s, 0.61 s measured, plates follow | stays; shortening goes with one frame for all five windows (R8, 6.9) and needs no hook on 0x55E120: the 0.30 is one float in .rdata, `exe::NNSlideTime`, not an immediate (`FREELANCER_RE` "The NeuroNet's window manager"); a close during it is held, as built |
 | Front-end screens | 0.83 s out, 1.54 s in, 2.37 s, about 1 s empty | stays until decoded |
 | Modal open, close | instant | scrim eases 150 ms in, 100 ms out; input never waits |
 | Base to space | no fade | none added |
@@ -337,7 +337,7 @@ The skin adds no wait anywhere and no motion on a path a speedrun measures.
 - **The bottom of the reticle:** form C, `UI_HUD2_INPUTS.md` 7b.
 - **One frame for the five windows (R8):** one top line, one left edge, one scrim from MAP to INVENTORY. Windows grow by pitch and font, not rows, by the Layout tier, Deck first: probe 18 proves `NN_Inventory`, whose hit boxes are unproven. The hook on 0x55E120 goes with the strip's work. INFO's plate ends at its content. Still to state in one line at step 6: the docked bumper hand-over (room bar, SIDE, strip).
 - **One distance (R13):** the target card and the threat rows read the game's surface value, so card, bracket and cue agree on one number. The card shows it beside the bracket: an exception to "one value, one place", written with the cue's in `UI_HUD2_PRESETS.md` 1.7. The name stands on both too, as a holding position: the bracket and its label are open (section 16).
-- **Buying and selling (R16):** the hold on the row stays. One press up from the row reaches the game's BUY or SELL, and a tap on it does the trade. The lane says which: HOLD BUY or HOLD SELL on the row, BUY or SELL on the button. One focus: the row gives up its block when the button takes it. The controller module's (`padbases.cpp`): `PanelFocus` only reads focus, the tap is blocked on purpose today, and the re-select after a trade needs care.
+- **Buying and selling (R16):** the hold on the row stays. One press up from the row reaches the game's BUY or SELL, and a tap on it does the trade. The lane says which: HOLD BUY or HOLD SELL on the row, BUY or SELL on the button. On a filter A reads SELECT and a hold does nothing, whatever row stands selected behind the focus (`dealerrules::HoldAct`). One focus: the row gives up its block when the button takes it. The controller module's (`padbases.cpp`): `PanelFocus` only reads focus, the tap is blocked on purpose today, and the re-select after a trade needs care.
 
 ### 6.10 The targeting display (the owner, 6 Nov 2026; frames `decisions\Target3_*`; research `docs\research\target-info-display.md`)
 It replaces the native bracket corners, label and bars on screen. No anchor at the target card, and no line to it: it makes the player look too far away. **The circle is the player's:** nothing here draws one.
@@ -351,12 +351,13 @@ It replaces the native bracket corners, label and bars on screen. No anchor at t
 | Attitude | By shape as well as colour: hostile a solid caret, neutral a hollow one, friendly an open one |
 | Size | Marks follow the object's on-screen size from the game's radius, floor 0.030 H, cap 0.10 H, so the block stays on screen on a capital |
 | After a hit | The remaining shield or hull in numbers beside its bar for 3 s, faded over 0.4 s; another hit starts it again; white pips mark what was just lost |
-| Inside the ring | **The shoulder seat:** the caret stays on the ship; bars and words move to the row of the cue, starting at 0.10 k from the centre, clear of the ring's low-shield and hull numbers, on the target's side, changing side only past the middle. A new target's card opens there. Enter and leave thresholds by probe T8 (the research's R + 0.03, R + 0.06 to start from) |
+| Inside the ring | **The seat (the owner, 6 Nov 2026; was the shoulder):** the caret stays on the ship; bars and words stand centred on top of the reticle: over the cue's row while it shows, just over the ring when it does not, over an alert card that stands there. With the ring faded there is no seat and they stay with the target. A new target's card opens there. Enter and leave thresholds by probe T8 (the research's R + 0.03, R + 0.06 to start from) |
 | Close ships | The target in full. Each other ship takes the richest form that touches nothing, falling a step when it would: caret and name, caret and distance, caret and one row of hull pips, bare caret. Where no room exists for the card, the target goes straight to the settled form (this design's pick; not drawn) |
 | Waypoint target | **By its type:** a ship stays a ship, a solar a solar; a solar with nothing to damage has no bars. Being the waypoint adds a small diamond round the attitude caret, no more. The game's large diamond and its distance go, the distance into the words line. If the diamond's art cannot be hidden (+0x7B4, unprobed), it stays round the same form |
 | Breathing | The lock's glow on the cue at 1 Hz, the waypoint diamond's at 0.5 Hz (the owner); both hold steady under `skin_motion` FADES and NONE |
 | Off screen | The game's arrow, name and distance on the card. On leaving, the words wait by the arrow about 0.5 s and fade, so a target at the edge does not flicker |
 | The card | Keeps name and distance on screen too (the owner): R13's exception to "one value, one place" stands (`UI_HUD2_PRESETS.md` 1.7) |
+| Moving (phase 2, three clips judged) | A jump of the block travels 0.20 s, never cuts; `skin_motion` FADES and NONE cut. The side changes past the middle by 0.06 k and holds 0.8 s; the seat holds 0.6 s, enter R + 0.03, leave R + 0.09, and both wait for the change to start, so the block goes to the seat straight. The mini card is beside the ship, on its other side where the screen ends; where it would touch the ring, a panel, a prompt, an alert or the subtitles it does not stand: the settled form at its opening, the change later (the "no room" rule above). Off the seat the block stands outside the ring beside it, above the ship over it, held 0.5 s; an alert card has the place, and with no room the words fade and the top card still names the target. Off screen the block stays where it stood and fades; a target never on screen has none. The caret stands over the ring and the plate, its size stops at 0.012 k: a fighter's radius reaches the marks' cap at about 300 m. Position is projected at the draw |
 
 **Words:** all at the floor, `hud_size`'s. Pad and K&M alike: draw only, no hotspot; clicks stay the game's records. The lint needs a row: the card is a plate in S1 for 2.0 s, and the settled block stands in the lower centre when the target does (the 31 Oct rule's diegetic exception, the owner's word).
 
@@ -523,4 +524,70 @@ For release 0.4.0, after 0.3.5, on the owner's go. Each step proved at 4K and 12
 
 **Stale here on purpose:** the design's rows of `UI_HUD2_EXTENDED.md` stand until step 12.
 
+## 17. Build state of steps 4, 6, 7, 9 (6 Nov 2026; branch `build-040-skin`; written before the games: what they showed is `docs\RELEASE_0.4.0.md`)
+Built to the unit tests and the release build only. Files: `skin_rules.h` (tested), `skinkit.*`, `skindialog.*`, `skinmenu.*`, `skinload.*`, `skinover.*`; `uiskin`, `windowtext`, `winplates`, `padmenus`, `padbases`, `router`.
+
+**What the code found against this design:**
+- **The dialogs draw over the UI pass, not under it** (`uiskin::DrawModal`, before the lane): anything under the UI pass lies under the buttons of the screen behind, which the ornate box used to cover. So every word on a dialog is read and drawn by the skin. A dialog whose words cannot be read stays whole native: **NN_Prompt, so the MP prompt, stays native** until a reader for its rich text exists.
+- **No native progress exists** (6.4's "from the native progress"): the bar's fill only wraps. The bar shows that fill held at its highest, so never a loop; on a long load it fills early and stands.
+- **Abort mission is no dialog** but the map's controls (`FREELANCER_RE` "Dialogs"): its row stands in `skin_rules.h`, undrawn; it belongs with step 5's frame. **No ship purchase confirm was found.**
+- **CONTINUE runs through the load screen** (the quick load 0x5B2C70 brings rooms up without characters), so it costs that screen's slide, about 2.4 s.
+- **Alt-F4 and the menu's EXIT are one object:** told by the main menu behind it.
+- **Large:** `windowtext` ran only at game text 100 because its close put the rich table back to 100. It now returns to the size applied, and runs at any size.
+- **The bumpers docked, in one line:** a window that binds them keeps them (dealers SIDE, log, map); the strip of step 5 takes them on NeuroNet windows; else the room bar.
+
+**Owed in game, pass criteria in brackets:**
+| Check | Pass |
+|---|---|
+| Dialog probe, one per class: Quit, Delete (front and in game), Exit (menu, Alt-F4), NN_Error, please-wait, multiplayer's leave question | `uiskin windows` lists the family with art hidden; verbs drawn on the boxes; click, A, B, Esc each give the game's answer; `fell=0`; `uiskin restore` brings the ornate box back |
+| Text read: `TextOf` on `ExitText` against vt[0xA8] message 0x1F | same string |
+| Dialog at 1280x800, 4K, 21:9 | plate centred on the chips, inside the screen, title and cost uncut |
+| NN_Prompt: find `PromptText`'s string; name the captions of `PromptYes / No` | then its row can be written |
+| CONTINUE: no save; a save; a speedrun save; the five buttons at rest and in the slide | no chip and five native places; one press lands in the save with characters in the rooms; the mode shows beside the chip; `uiskin state` placed=1, captions and hits follow the buttons, leaving the menu puts them back |
+| The save list 0x67E970 against `saves` | same names, newest first by file time |
+| Loading, each path: menu load, in-game load, New Game, MP connect, launch, dock | navy from the first frame, no native bar flash, black frames between (probe 9) none or fill by 0x578F70; bar only past 1.5 s; load time unchanged within noise |
+| `uiskin loadplace 1` on each path | says which paths read the right place; only those go live |
+| Cursor: each of the 19 names, K&M, pad's cursor, FLUF beside, options page, modal loop | shape at the game's hot spot, the mesh gone, a mod's name logged and native, no cursor in a movie |
+| ToolTip: read `+0x104` while hovering | same text as the frame; else it stays native by itself |
+| Rollover | dump 0x672288 for its text field; native until then |
+| Popups, front load | MMOkButton's and the load buttons' frames gone, hit and click kept |
+| Page rule on every `.page` screen | art with a rectangle has a plate, no unknown class hidden, `seams` lists what is left |
+| `uiskin seams` at every moment of 3.1 | zero, or each line owned by a row |
+| Base text at 800: `gametext window` `over=` on all goods | names at the fixed rung; each overflow read from a frame; issue 22's test holds |
+| Large at 125 from a start | text by role, rich table back at 125 after a window closes |
+| The frame: log, status, info | top line and left edge equal within 2 px, clicks land, no visible jump too large to keep; else hook 0x55E120 first |
+| Probe 18: `gametext frame 1`, then NN_Inventory | every row, filter and scroll hit box follows; its growth by pitch and font is still to build after this |
+| R16: focus on BUY and SELL, tap | one trade, focus back on its row and selected, lane BUY on the button, HOLD on the row, one focus block; the D-pad reaches the button from the top row |
+| Delete by X, front and in game | one press opens the confirm, focus on KEEP SAVE |
+| HUD 2 off, `[Modules] hud = 0`, `skin_native` each label | frames equal classic; every write restored |
+
+**Decided in the owner's absence (6 Nov 2026, the AFK order), each for the owner to overturn:**
+1. Alt-F4 in a game: title EXIT FREELANCER?, the quit's cost, EXIT ANYWAY / KEEP PLAYING, as built: the table's "as quit, EXIT".
+2. **Enter follows the focus** (`skindialog::EnterKey`): a word in focus that Enter ignored would lose progress on a risky dialog; the safe answer is the rule of 6.2. Owed: the raw key reaches the chain inside the dialog's modal loop.
+3. A latest save of another mode: CONTINUE loads it and says the mode beside the chip, as built: D9 says "the latest save".
+4. Past 1.5 s the held fill stays: R17's form has a bar, a slow machine still sees something move once, and it never loops.
+5. The rung at 900 lines and under only: the frames at 4K decide in phase 2; nothing grows without a reason read from a frame.
+6. A name too long for the rung wraps: panels grow first, abbreviation last, and native rows have no marquee.
+7. **One scrim, 78 %, for all five windows:** R8's "one scrim", at the number the owner set for the map.
+8. The fall line stays THIS WINDOW KEEPS THE GAME'S LOOK: event, plainly, and it is a rare line.
+
 **Settings** (`[Controller]`, ini names unchanged): `ui_style` stays the master. New: `skin_motion` (0 full, 1 fades, 2 none), `skin_native` (hidden, empty). The map has no switch of its own: `skin_native = navmap` gives the old one.
+
+## 18. Panels fitted to what they hold (6 Nov 2026, the owner: no overflow, no spill, no waste, no needless asymmetry, one mechanism)
+`core\ui\winfit.h` is the pure rule, `tests\winfit_test.cpp` its states; `winplates.cpp` feeds it the window's real controls every 6 frames once the window stands still, and only under the skin's own plates. Debug: `gametext fit` lists each fitted panel and the air round its content; `tests\docked_text.ps1` writes it to `fit.log` at every step.
+- What is measured: text by its top and its laid-out height (the game draws line under line from the control's point, 0x4143C0), rich text by what it fills, buttons by their frames, the cargo bar. No other art, no scroll bar. A text's left depends on its alignment, so it counts on the vertical axis only.
+- `Hug` ends under its content plus 0.018 H; panels side by side within 0.05 H end level; `Level` is a neighbour whose content cannot be read (the ship's 3D view); `Under` takes the room the row leaves, its foot stays, and its text boxes go with it past 0.004 H (`FitBoxShift`). Edges travel at 2 H a second; the first fit of an opening does not travel.
+- Fitted: dealer, ship dealer, job board, offer. Not fitted, because their content is not all controls: Options' pages, the menus, repair's rows, the news ticker, the root-framed NeuroNet windows. These keep the table's numbers.
+- A text with no role that is wider than its box steps down at most three rungs, never under `kRowFloor`, and stays down for the opening (`Loose`). That test is the same for every alignment: a text no wider than its box cannot leave it. Window headings are left alone.
+- The infocards carry no rule: a long heading wraps and its second line stood on it.
+- A column of prompts checks the place it moves to, not only the one it left: it touched the transfer panel.
+- Rows in frames (`kFramed` in `windowtext.cpp`): every list row in the dealers, the ship dealer, the inventory, the job board and the status window, and the transfer row, is placed by the frame as it stands, by measure each third frame: the first line under the frame's top, the others on its foot, one line alone in the middle. The game's offsets are for its own fonts: a larger price crossed the frame. A row's width room is its frame's.
+- Whole lines: a rich box ends on a whole line (`kRichLine`), never through one. The job's story grows to its text as far as the lane; the log and the info text start under the title's rule.
+- The log and the info window stand 0.15 H taller than the game's (`kTextWindowGrow`), the window higher by half of it so it stays centred; the log's MISSION and LOG buttons go to the new foot by where they stand, so a window the game keeps is never moved twice. NN_Inventory stands centred too.
+- `gametext fit` also lists every text out of its frame or box (`over frame`, `over box`).
+- Skin words count as content: uistrip reports each word it draws (`AddSkinItem`), cleared by the frame that fills the list, never between that and the measure. A blank line counts too: the text object's +0x24 leaves it out, so a text's height is line pitch x lines (`TextHeightPx`). A state change (another set of plates) starts from no offset and fits that frame; panels are measured every frame.
+- The ship dealer's side panels start at their headings: the X stands on the headings' line (`StandShipHead`), the table's numbers are from there, the centre panel `Match`es the tallest list, the infocard rises. One refusal: HUD 2's line, the game's `ErrorHelp` hidden while it stands. Buttons move by the position property, checked to stay on their column (`MoveButton`): vt[0x14] threw the X 1000 px left.
+- The room bar's underline stands on the current room's button, found as the game finds it (`CurrentRoomButton`, hotspot label = room nickname); the sub-row was a stand-in that slid. A sub-row button far from it is the room before's. No focus on the bar for 0.3 s after it moves (`BarBusy`); the focus hit test runs every frame. `gametext bar` reads the bar's steps frame by frame.
+- Prompts: a column's room runs to the screen's edge where HUD 2 centres it in its gap; a pill still too wide stacks its glyphs over its word in two slots (`LanePlaced::stack`); the hold never keeps pills on a panel (`Blocked`); a row stays at the right edge, the strip's mirror, when something stands at the band's left. Until a dealer's X reaches its column its plates are not painted, and the prompts keep clear of where they will stand.
+- Refusals: the dealers show HUD 2's amber line as the ship dealer does (`DealError`): NEEDS LEVEL n, else the game's words, at the largest size that fits between the panel's top and the item. The white line is parked off the screen (`windowtext::Park`). The ship's refusal and trade-in stand in the centre panel at one size, the largest the longest line leaves inside it. A panel with a rule ends no higher than the rule (`least`); `Match` counts what it can read (SELECT SHIP).
+- The pad's stick scrolls a rich text by whole lines, so no line stands cut at the box's edge. Status and Repair are not fitted.

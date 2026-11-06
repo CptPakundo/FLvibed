@@ -7,314 +7,314 @@ removed (HDE skips them). **Par** = the golden run (per leg the fastest of the t
 sum of our golds; **limit** = a segment longer than this fails the run at once (catastrophic mistake or delay);
 **spread** = the standard deviation of the last 10 full passes (leg) or of their segment; **runs** = how many
 runs per side judge a change to that leg (a 2 % / 5 s gain out of the noise).
-Generated 2026-11-05 21:23.
+Generated 2026-11-06 17:29.
 
 | Leg | Par | Golden run | Our PB | PB - par | Sum of our best | Gold - par | Full passes | Spread | Runs |
 |---|---|---|---|---|---|---|---|---|---|
-| M01a | 409 | SydMontague | 479 | +70 | 457 | +49 | 19 | 12 (n 10) | 7 |
-| M01b | 457 | TM4S13 (WR) | 521 | +64 | 506 | +49 | 16 | 15 (n 10) | 8 |
-| M02 | 876 | TM4S13 (WR) | 1098 | +223 | 982 | +107 | 30 | 25 (n 10) | 6 |
-| M03 | 763 | SydMontague | 860 | +98 | 823 | +60 | 19 | 34 (n 10) | 8 |
-| M04 | 812 | OldOak | 939 | +126 | 877 | +64 | 45 | 19 (n 10) | 5 |
-| M05 | 952 | SydMontague | 1084 | +132 | 1030 | +78 | 23 | 57 (n 10) | 8 |
-| M06 | 489 | SydMontague | 681 | +192 | 639 | +150 | 19 | 18 (n 10) | 7 |
-| M07 | 1250 | SydMontague | 1647 | +397 | 1523 | +273 | 17 | 16 (n 10) | 3 |
-| M08 | 582 | OldOak | 655 | +73 | 620 | +38 | 21 | 14 (n 10) | 5 |
-| M09 | 530 | TM4S13 (WR) | 724 | +195 | 631 | +102 | 30 | 16 (n 10) | 5 |
-| M10 | 914 | TM4S13 (WR) | 1078 | +164 | 1020 | +106 | 21 | 43 (n 10) | 8 |
-| M11 | 978 | TM4S13 (WR) | 1169 | +191 | 1120 | +141 | 10 | 23 (n 10) | 4 |
-| M12 | 348 | SydMontague | 354 | +6 | 338 | -10 | 208 | 14 (n 10) | 8 |
-| M13 | 686 | SydMontague | 744 | +58 | 692 | +6 | 43 | 20 (n 10) | 8 |
-| **All** | **10047** | | **12034** | **+1987** | **11258** | **+1211** | | | |
+| M01a | 409 | SydMontague | - |  | - |  | 0 | - (n 0) | 3 |
+| M01b | 457 | TM4S13 (WR) | - |  | - |  | 0 | - (n 0) | 3 |
+| M02 | 876 | TM4S13 (WR) | - |  | - |  | 0 | - (n 0) | 3 |
+| M03 | 763 | SydMontague | - |  | - |  | 0 | - (n 0) | 3 |
+| M04 | 812 | OldOak | - |  | - |  | 0 | - (n 0) | 3 |
+| M05 | 952 | SydMontague | - |  | - |  | 0 | - (n 0) | 3 |
+| M06 | 489 | SydMontague | - |  | - |  | 0 | - (n 0) | 3 |
+| M07 | 1250 | SydMontague | - |  | - |  | 0 | - (n 0) | 3 |
+| M08 | 582 | OldOak | - |  | - |  | 0 | - (n 0) | 3 |
+| M09 | 530 | TM4S13 (WR) | - |  | - |  | 0 | - (n 0) | 3 |
+| M10 | 914 | TM4S13 (WR) | - |  | - |  | 0 | - (n 0) | 3 |
+| M11 | 978 | TM4S13 (WR) | - |  | - |  | 0 | - (n 0) | 3 |
+| M12 | 348 | SydMontague | - |  | - |  | 0 | - (n 0) | 3 |
+| M13 | 686 | SydMontague | - |  | - |  | 0 | - (n 0) | 3 |
+| **All** | **10047** | | **0** | **-10047** | **0** | **-10047** | | | |
 
 ## M01a
 
-Par 409 s (SydMontague); our PB 479 s (2026-10-29_0743_M01a-afk29-guarded3_i2).
+Par 409 s (SydMontague); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M01a.control | Manhattan base (Juni, restock), launch + the M01 space scene (77 s) | 94 | 94 / 95 / 94 | 90 | -4 | 6 | 191 | 94 | 92 | -2 |
-| 2 | M01a.wing | the Order wing appears | 5 | 4 / 5 / 5 | 1 | -4 | 0 | 50 | 99 | 93 | -6 |
-| 3 | M01a.wingdown | Order wing fight (runners 57-61 s, nearest first) | 78 | 83 / 83 / 78 | 83 | +5 | 5 | 166 | 177 | 176 | -1 |
-| 4 | M01a.lane1 | waypoint cruise (runners 17-18 s straight) | 17 | 18 / 17 / 17 | 26 | +9 | 2 | 63 | 194 | 202 | +8 |
-| 5 | M01a.brandt | TL146 lane ride | 26 | 26 / 26 / 26 | 30 | +4 | 1 | 71 | 220 | 233 | +13 |
-| 6 | M01a.ambush | formation with Brandt, lanes to the Rogue ambush | 78 | 78 / 78 / 78 | 77 | -1 | 3 | 156 | 298 | 320 | +22 |
-| 7 | M01a.reform | Rogue lane ambush fight | 56 | 53 / 64 / 56 | 70 | +14 | 4 | 128 | 354 | 395 | +41 |
-| 8 | M01a.lane2 | re-form with Brandt, to the last lane | 26 | 29 / 27 / 26 | 26 | +0 | 1 | 74 | 380 | 424 | +44 |
-| 9 | M01a.end | last lane + Pittsburgh ring (scripted ring wait 16-24 s) | 28 | 31 / 28 / 28 | 55 | +26 | 7 | 102 | 409 | 479 | +70 |
+| 1 | M01a.control | Manhattan base (Juni, restock), launch + the M01 space scene (77 s) | 94 | 94 / 95 / 94 | - |  | - | 191 | 94 | - |  |
+| 2 | M01a.wing | the Order wing appears | 5 | 4 / 5 / 5 | - |  | - | 50 | 99 | - |  |
+| 3 | M01a.wingdown | Order wing fight (runners 57-61 s, nearest first) | 78 | 83 / 83 / 78 | - |  | - | 166 | 177 | - |  |
+| 4 | M01a.lane1 | waypoint cruise (runners 17-18 s straight) | 17 | 18 / 17 / 17 | - |  | - | 63 | 194 | - |  |
+| 5 | M01a.brandt | TL146 lane ride | 26 | 26 / 26 / 26 | - |  | - | 71 | 220 | - |  |
+| 6 | M01a.ambush | formation with Brandt, lanes to the Rogue ambush | 78 | 78 / 78 / 78 | - |  | - | 156 | 298 | - |  |
+| 7 | M01a.reform | Rogue lane ambush fight | 56 | 53 / 64 / 56 | - |  | - | 128 | 354 | - |  |
+| 8 | M01a.lane2 | re-form with Brandt, to the last lane | 26 | 29 / 27 / 26 | - |  | - | 74 | 380 | - |  |
+| 9 | M01a.end | last lane + Pittsburgh ring (scripted ring wait 16-24 s) | 28 | 31 / 28 / 28 | - |  | - | 76 | 409 | - |  |
 
 ## M01b
 
-Par 457 s (TM4S13 (WR)); our PB 521 s (2026-10-30_1641_M01b-gate-s7arb3_i3).
+Par 457 s (TM4S13 (WR)); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M01b.control | Pittsburgh base: King, restock, launch | 36 | 36 / 33 / 25 | 31 | -6 | 1 | 82 | 36 | 31 | -6 |
-| 2 | M01b.xt19 | formation with Epsilon 1 to station XT-19 | 84 | 84 / 85 / 84 | 85 | +0 | 0 | 169 | 121 | 118 | -3 |
-| 3 | M01b.wp1 | defend XT-19 (fighter wave 1) | 100 | 100 / 110 / 103 | 101 | +1 | 5 | 220 | 221 | 225 | +4 |
-| 4 | M01b.wave2 | waypoint leg 1 (Beta-4 comm) | 23 | 23 / 23 / 22 | 51 | +28 | 3 | 96 | 244 | 277 | +33 |
-| 5 | M01b.wp2 | fighter wave 2 | 64 | 64 / 66 / 64 | 65 | +1 | 3 | 132 | 308 | 344 | +36 |
-| 6 | M01b.wave3 | waypoint leg 2 | 39 | 39 / 40 / 39 | 40 | +1 | 1 | 85 | 347 | 384 | +37 |
-| 7 | M01b.wp3 | fighter wave 3 | 25 | 25 / 24 / 25 | 24 | -1 | 0 | 70 | 372 | 408 | +36 |
-| 8 | M01b.platforms | waypoint leg 3 -> the Rogue base appears (turn ~120 deg left at the Beta-4 comm) | 31 | 31 / - / - | 31 | +0 | 5 | 76 | 403 | 441 | +38 |
-| 9 | M01b.end | the two weapon platforms only, base explosion scene, GAME SAVED (our leg flies on to land on Pittsburgh: not timed) | 54 | 54 / - / - | 79 | +25 | 9 | 139 | 457 | 521 | +64 |
+| 1 | M01b.control | Pittsburgh base: King, restock, launch | 36 | 36 / 33 / 25 | - |  | - | 82 | 36 | - |  |
+| 2 | M01b.xt19 | formation with Epsilon 1 to station XT-19 | 84 | 84 / 85 / 84 | - |  | - | 169 | 121 | - |  |
+| 3 | M01b.wp1 | defend XT-19 (fighter wave 1) | 100 | 100 / 110 / 103 | - |  | - | 220 | 221 | - |  |
+| 4 | M01b.wave2 | waypoint leg 1 (Beta-4 comm) | 23 | 23 / 23 / 22 | - |  | - | 68 | 244 | - |  |
+| 5 | M01b.wp2 | fighter wave 2 | 64 | 64 / 66 / 64 | - |  | - | 132 | 308 | - |  |
+| 6 | M01b.wave3 | waypoint leg 2 | 39 | 39 / 40 / 39 | - |  | - | 85 | 347 | - |  |
+| 7 | M01b.wp3 | fighter wave 3 | 25 | 25 / 24 / 25 | - |  | - | 70 | 372 | - |  |
+| 8 | M01b.platforms | waypoint leg 3 -> the Rogue base appears (turn ~120 deg left at the Beta-4 comm) | 31 | 31 / - / - | - |  | - | 76 | 403 | - |  |
+| 9 | M01b.end | the two weapon platforms only, base explosion scene, GAME SAVED (our leg flies on to land on Pittsburgh: not timed) | 54 | 54 / - / - | - |  | - | 108 | 457 | - |  |
 
 ## M02
 
-Par 876 s (TM4S13 (WR)); our PB 1098 s (2026-10-31_0540_M02-as0-a_i5).
+Par 876 s (TM4S13 (WR)); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M02.control | Manhattan base, launch + the M02 space-enter scene (55 s) | 84 | 84 / 69 / 77 | 81 | -4 | 1 | 169 | 84 | 82 | -2 |
-| 2 | M02.lane1 | to the first lane with King | 6 | 6 / 7 / 8 | 6 | +0 | 0 | 53 | 90 | 88 | -2 |
-| 3 | M02.colorado | lanes + the Colorado gate (King must follow) | 103 | 103 / 100 / 100 | 117 | +14 | 1 | 206 | 194 | 218 | +24 |
-| 4 | M02.scan | to the scan area | 29 | 29 / 30 / 29 | 29 | +0 | 4 | 75 | 222 | 247 | +25 |
-| 5 | M02.cosmo | scan at once (Cosmo acts on the scan) | 26 | 26 / 25 / 30 | 66 | +40 | 2 | 120 | 248 | 318 | +69 |
-| 6 | M02.cosmodone | disable Cosmo's engines (~3 shots, no kill) + Cosmo scene | 32 | 32 / 36 / 30 | 8 | -24 | 3 | 81 | 280 | 326 | +46 |
-| 7 | M02.lane2 | to the lane at GAME SAVED | 28 | 28 / - / 29 | 52 | +24 | 0 | 97 | 308 | 378 | +69 |
-| 8 | M02.pueblo | lanes to Pueblo | 35 | 35 / - / - | 40 | +5 | 3 | 80 | 344 | 429 | +85 |
-| 9 | M02.marked | Pueblo defence | 74 | 74 / - / - | 85 | +11 | 11 | 148 | 418 | 522 | +104 |
-| 10 | M02.rogues | fly to the marked ship (go to the fight at cruise) | 66 | 66 / - / 62 | 65 | -1 | 2 | 132 | 484 | 616 | +133 |
-| 11 | M02.ashcroft | Rogues fight | 46 | 46 / 53 / 60 | 20 | -26 | 22 | 120 | 530 | 643 | +113 |
-| 12 | M02.pod | Ashcroft: cruise chase + engine kill to fire, he ejects in 6-10 s | 22 | 22 / 29 / 18 | 106 | +84 | 6 | 179 | 552 | 763 | +211 |
-| 13 | M02.nygate | tractor the pod | 27 | 27 / 27 / - | 22 | -6 | 1 | 72 | 578 | 784 | +206 |
-| 14 | M02.nygatein | the 30 km open cruise to the NY gate | 125 | 125 / 118 / - | 84 | -41 | 10 | 250 | 704 | 891 | +187 |
-| 15 | M02.missouri | NY gate, lanes, Fort Bush Rogues (attack while neutral), lanes | 159 | - / 178 / 168 | 177 | +18 | 5 | 356 | 862 | 1074 | +211 |
-| 16 | M02.end | to Battleship Missouri, dock | 13 | - / 14 / 14 | 24 | +10 | 1 | 59 | 876 | 1098 | +223 |
+| 1 | M02.control | Manhattan base, launch + the M02 space-enter scene (55 s) | 84 | 84 / 69 / 77 | - |  | - | 169 | 84 | - |  |
+| 2 | M02.lane1 | to the first lane with King | 6 | 6 / 7 / 8 | - |  | - | 53 | 90 | - |  |
+| 3 | M02.colorado | lanes + the Colorado gate (King must follow) | 103 | 103 / 100 / 100 | - |  | - | 206 | 194 | - |  |
+| 4 | M02.scan | to the scan area | 29 | 29 / 30 / 29 | - |  | - | 75 | 222 | - |  |
+| 5 | M02.cosmo | scan at once (Cosmo acts on the scan) | 26 | 26 / 25 / 30 | - |  | - | 75 | 248 | - |  |
+| 6 | M02.cosmodone | disable Cosmo's engines (~3 shots, no kill) + Cosmo scene | 32 | 32 / 36 / 30 | - |  | - | 81 | 280 | - |  |
+| 7 | M02.lane2 | to the lane at GAME SAVED | 28 | 28 / - / 29 | - |  | - | 74 | 308 | - |  |
+| 8 | M02.pueblo | lanes to Pueblo | 35 | 35 / - / - | - |  | - | 80 | 344 | - |  |
+| 9 | M02.marked | Pueblo defence | 74 | 74 / - / - | - |  | - | 148 | 418 | - |  |
+| 10 | M02.rogues | fly to the marked ship (go to the fight at cruise) | 66 | 66 / - / 62 | - |  | - | 132 | 484 | - |  |
+| 11 | M02.ashcroft | Rogues fight | 46 | 46 / 53 / 60 | - |  | - | 120 | 530 | - |  |
+| 12 | M02.pod | Ashcroft: cruise chase + engine kill to fire, he ejects in 6-10 s | 22 | 22 / 29 / 18 | - |  | - | 74 | 552 | - |  |
+| 13 | M02.nygate | tractor the pod | 27 | 27 / 27 / - | - |  | - | 72 | 578 | - |  |
+| 14 | M02.nygatein | the 30 km open cruise to the NY gate | 125 | 125 / 118 / - | - |  | - | 250 | 704 | - |  |
+| 15 | M02.missouri | NY gate, lanes, Fort Bush Rogues (attack while neutral), lanes | 159 | - / 178 / 168 | - |  | - | 356 | 862 | - |  |
+| 16 | M02.end | to Battleship Missouri, dock | 13 | - / 14 / 14 | - |  | - | 59 | 876 | - |  |
 
 ## M03
 
-Par 763 s (SydMontague); our PB 860 s (2026-10-30_1456_M03-gate-s7arb2_i1).
+Par 763 s (SydMontague); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M03.control | CA Minor base: launch | 22 | 23 / 10 / 22 | 20 | -2 | 1 | 68 | 22 | 20 | -2 |
-| 2 | M03.lane | meet Juni, to the lane | 12 | 10 / 11 / 12 | 11 | -1 | 0 | 57 | 34 | 31 | -3 |
-| 3 | M03.convoy | lanes to the Magellan side | 55 | 56 / 56 / 55 | 61 | +6 | 1 | 112 | 89 | 93 | +5 |
-| 4 | M03.buoy1 | to the convoy | 55 | 46 / 54 / 55 | 45 | -10 | 4 | 110 | 144 | 139 | -5 |
-| 5 | M03.outcasts | escort past the buoys | 73 | 71 / 66 / - | 66 | -7 | 2 | 142 | 217 | 207 | -10 |
-| 6 | M03.buoy4 | Outcast attack (transport 2's pods = artifacts; transport 1 destroyed = fail) | 66 | 59 / - / - | 47 | -19 | 4 | 118 | 282 | 260 | -22 |
-| 7 | M03.willard | escort to the fourth buoy | 39 | 35 / - / - | 36 | -3 | 7 | 80 | 321 | 296 | -26 |
-| 8 | M03.willardland | escort to Willard, dock | 83 | 74 / - / - | 83 | +0 | 8 | 149 | 404 | 379 | -26 |
-| 9 | M03.willardout | Willard base stop | 18 | 17 / 32 / 18 | 29 | +11 | 1 | 77 | 422 | 412 | -10 |
-| 10 | M03.valkyries | to CA Minor until the Valkyries | 49 | 48 / 19 / 49 | 52 | +3 | 0 | 98 | 471 | 465 | -6 |
-| 11 | M03.valkdown | Valkyries fight | 30 | 19 / 52 / 30 | 25 | -5 | 3 | 105 | 501 | 493 | -8 |
-| 12 | M03.caminor | to CA Minor: shed Juni (hold cruise / engine kill 3-4.5 km out), dock first | 44 | 42 / 41 / 44 | 53 | +8 | 3 | 100 | 545 | 552 | +7 |
-| 13 | M03.walker | CA Minor base stop, launch | 15 | 16 / 26 / 15 | 24 | +9 | 2 | 71 | 560 | 580 | +20 |
-| 14 | M03.towillard | meet Walker | 81 | 80 / - / 81 | 78 | -3 | 16 | 162 | 641 | 664 | +23 |
-| 15 | M03.pirates | to Willard with Walker | 70 | 70 / - / 70 | 72 | +2 | 1 | 140 | 711 | 737 | +26 |
-| 16 | M03.end | Rheinland pirates at Willard (keep one alive until the bombers spawn), Juni pays | 52 | 112 / 66 / 52 | 121 | +69 | 7 | 224 | 763 | 860 | +98 |
+| 1 | M03.control | CA Minor base: launch | 22 | 23 / 10 / 22 | - |  | - | 68 | 22 | - |  |
+| 2 | M03.lane | meet Juni, to the lane | 12 | 10 / 11 / 12 | - |  | - | 57 | 34 | - |  |
+| 3 | M03.convoy | lanes to the Magellan side | 55 | 56 / 56 / 55 | - |  | - | 112 | 89 | - |  |
+| 4 | M03.buoy1 | to the convoy | 55 | 46 / 54 / 55 | - |  | - | 110 | 144 | - |  |
+| 5 | M03.outcasts | escort past the buoys | 73 | 71 / 66 / - | - |  | - | 142 | 217 | - |  |
+| 6 | M03.buoy4 | Outcast attack (transport 2's pods = artifacts; transport 1 destroyed = fail) | 66 | 59 / - / - | - |  | - | 118 | 282 | - |  |
+| 7 | M03.willard | escort to the fourth buoy | 39 | 35 / - / - | - |  | - | 80 | 321 | - |  |
+| 8 | M03.willardland | escort to Willard, dock | 83 | 74 / - / - | - |  | - | 149 | 404 | - |  |
+| 9 | M03.willardout | Willard base stop | 18 | 17 / 32 / 18 | - |  | - | 77 | 422 | - |  |
+| 10 | M03.valkyries | to CA Minor until the Valkyries | 49 | 48 / 19 / 49 | - |  | - | 98 | 471 | - |  |
+| 11 | M03.valkdown | Valkyries fight | 30 | 19 / 52 / 30 | - |  | - | 105 | 501 | - |  |
+| 12 | M03.caminor | to CA Minor: shed Juni (hold cruise / engine kill 3-4.5 km out), dock first | 44 | 42 / 41 / 44 | - |  | - | 90 | 545 | - |  |
+| 13 | M03.walker | CA Minor base stop, launch | 15 | 16 / 26 / 15 | - |  | - | 71 | 560 | - |  |
+| 14 | M03.towillard | meet Walker | 81 | 80 / - / 81 | - |  | - | 162 | 641 | - |  |
+| 15 | M03.pirates | to Willard with Walker | 70 | 70 / - / 70 | - |  | - | 140 | 711 | - |  |
+| 16 | M03.end | Rheinland pirates at Willard (keep one alive until the bombers spawn), Juni pays | 52 | 112 / 66 / 52 | - |  | - | 224 | 763 | - |  |
 
 ## M04
 
-Par 812 s (OldOak); our PB 939 s (2026-10-30_1611_M04-gate-s7arb3_i2).
+Par 812 s (OldOak); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M04.control | Manhattan base: launch | 33 | 65 / 33 / 24 | 40 | +7 | 1 | 130 | 33 | 41 | +8 |
-| 2 | M04.lane1 | meet Juni and King, to the West Point lane | 0 | 0 / 0 / 0 | 0 | +0 | 0 | 45 | 33 | 41 | +8 |
-| 3 | M04.unity | the Navy turns at West Point | 57 | 56 / 57 / - | 56 | -0 | 0 | 113 | 90 | 97 | +8 |
-| 4 | M04.lane2 | fight / escape the Unity | 69 | 67 / 69 / - | 69 | +0 | 2 | 138 | 158 | 169 | +11 |
-| 5 | M04.lane3 | lane | 27 | 17 / 27 / 39 | 32 | +5 | 4 | 84 | 186 | 208 | +22 |
-| 6 | M04.ithaca | lanes to Ithaca | 60 | 75 / 60 / 60 | 65 | +5 | 1 | 150 | 246 | 272 | +27 |
-| 7 | M04.benford | waypoints to Benford | 12 | 15 / 12 / 13 | 8 | -4 | 7 | 60 | 258 | 281 | +23 |
-| 8 | M04.benfordland | dock at Benford | 12 | 8 / 12 / 9 | 10 | -2 | 0 | 58 | 270 | 292 | +22 |
-| 9 | M04.magellan | Benford room scene (runners watch ~200 s; Esc on HDE), launch, station attack | 136 | 136 / 136 / 135 | 118 | -18 | 18 | 273 | 406 | 411 | +5 |
-| 10 | M04.gate | to the Magellan gate: shed Juni (engine kill at ~3 km / hold cruise) | 37 | 32 / - / 39 | 48 | +11 | 0 | 92 | 444 | 459 | +15 |
-| 11 | M04.fp4 | through the gate | 35 | 33 / - / 33 | 40 | +5 | 6 | 80 | 478 | 500 | +21 |
-| 12 | M04.hunters | runners head for Mactan (the hunters meet them there) | 73 | 69 / 73 / 70 | 26 | -47 | 0 | 146 | 552 | 530 | -22 |
-| 13 | M04.mactan | bounty hunters (open while neutral), dock Mactan | 22 | 30 / 22 / 37 | 126 | +104 | 12 | 209 | 573 | 695 | +122 |
-| 14 | M04.wing | Mactan base stop, launch | 84 | 66 / 84 / 69 | 72 | -11 | 2 | 167 | 656 | 770 | +114 |
-| 15 | M04.hole | Rheinland assault wing | 37 | 41 / 37 / 41 | 23 | -14 | 10 | 86 | 694 | 794 | +100 |
-| 16 | M04.leeds | to the Leeds hole alone, through | 31 | 34 / 31 / 36 | 50 | +19 | 3 | 95 | 724 | 844 | +119 |
-| 17 | M04.end | Leeds hole -> Leeds (lanes, ring) | 88 | 91 / 88 / 89 | 93 | +5 | 1 | 182 | 812 | 939 | +126 |
+| 1 | M04.control | Manhattan base: launch | 33 | 65 / 33 / 24 | - |  | - | 130 | 33 | - |  |
+| 2 | M04.lane1 | meet Juni and King, to the West Point lane | 0 | 0 / 0 / 0 | - |  | - | 45 | 33 | - |  |
+| 3 | M04.unity | the Navy turns at West Point | 57 | 56 / 57 / - | - |  | - | 113 | 90 | - |  |
+| 4 | M04.lane2 | fight / escape the Unity | 69 | 67 / 69 / - | - |  | - | 138 | 158 | - |  |
+| 5 | M04.lane3 | lane | 27 | 17 / 27 / 39 | - |  | - | 84 | 186 | - |  |
+| 6 | M04.ithaca | lanes to Ithaca | 60 | 75 / 60 / 60 | - |  | - | 150 | 246 | - |  |
+| 7 | M04.benford | waypoints to Benford | 12 | 15 / 12 / 13 | - |  | - | 60 | 258 | - |  |
+| 8 | M04.benfordland | dock at Benford | 12 | 8 / 12 / 9 | - |  | - | 58 | 270 | - |  |
+| 9 | M04.magellan | Benford room scene (runners watch ~200 s; Esc on HDE), launch, station attack | 136 | 136 / 136 / 135 | - |  | - | 273 | 406 | - |  |
+| 10 | M04.gate | to the Magellan gate: shed Juni (engine kill at ~3 km / hold cruise) | 37 | 32 / - / 39 | - |  | - | 84 | 444 | - |  |
+| 11 | M04.fp4 | through the gate | 35 | 33 / - / 33 | - |  | - | 78 | 478 | - |  |
+| 12 | M04.hunters | runners head for Mactan (the hunters meet them there) | 73 | 69 / 73 / 70 | - |  | - | 146 | 552 | - |  |
+| 13 | M04.mactan | bounty hunters (open while neutral), dock Mactan | 22 | 30 / 22 / 37 | - |  | - | 82 | 573 | - |  |
+| 14 | M04.wing | Mactan base stop, launch | 84 | 66 / 84 / 69 | - |  | - | 167 | 656 | - |  |
+| 15 | M04.hole | Rheinland assault wing | 37 | 41 / 37 / 41 | - |  | - | 86 | 694 | - |  |
+| 16 | M04.leeds | to the Leeds hole alone, through | 31 | 34 / 31 / 36 | - |  | - | 81 | 724 | - |  |
+| 17 | M04.end | Leeds hole -> Leeds (lanes, ring) | 88 | 91 / 88 / 89 | - |  | - | 182 | 812 | - |  |
 
 ## M05
 
-Par 952 s (SydMontague); our PB 1084 s (2026-10-30_0217_M05-gate-q3s2_i1).
+Par 952 s (SydMontague); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M05.control | Cambridge base: launch | 9 | 48 / 10 / 9 | 27 | +18 | 1 | 97 | 9 | 29 | +20 |
-| 2 | M05.lane1 | meet Juni, to the lane | 4 | 4 / 4 / 4 | 4 | +0 | 0 | 49 | 13 | 33 | +20 |
-| 3 | M05.lane2 | lanes | 63 | 63 / 62 / 63 | 65 | +2 | 1 | 126 | 76 | 100 | +24 |
-| 4 | M05.gate | to the Omega-3 gate | 29 | 29 / 31 / 29 | 35 | +6 | 3 | 76 | 105 | 134 | +29 |
-| 5 | M05.o3lane | Omega-3 gate (busy: 12-13 s queue in all runs) | 29 | 28 / 28 / 29 | 29 | +0 | 2 | 74 | 134 | 164 | +30 |
-| 6 | M05.sprague | Freeport 1 lanes | 62 | 63 / 64 / 62 | 62 | +0 | 2 | 128 | 196 | 231 | +35 |
-| 7 | M05.spraguefight | to Sprague | 36 | 36 / 35 / 36 | 38 | +2 | 18 | 81 | 232 | 269 | +37 |
-| 8 | M05.spragueland | Sprague fight, dock | 57 | 50 / 50 / 57 | 58 | +1 | 8 | 114 | 289 | 335 | +46 |
-| 9 | M05.baxter | Sprague room scenes (Esc on HDE), flee, to the waypoint coordinates | 69 | 68 / 116 / 69 | 71 | +2 | 3 | 232 | 358 | 406 | +48 |
-| 10 | M05.baxterland | to Baxter, dock | 11 | 12 / 14 / 11 | 25 | +14 | 6 | 60 | 369 | 432 | +63 |
-| 11 | M05.baxterfight | Baxter stop, launch into the Rheinland wing | 17 | 18 / 19 / 17 | 15 | -2 | 3 | 64 | 386 | 451 | +65 |
-| 12 | M05.cambhole | post-Baxter fight: fighters first, gunboat last at point blank, leave on the kill | 98 | - / 84 / 98 | 103 | +5 | 13 | 196 | 484 | 557 | +73 |
-| 13 | M05.cambholein | to the Cambridge hole | 37 | - / 45 / 37 | 31 | -6 | 5 | 90 | 521 | 588 | +67 |
-| 14 | M05.follow | Cambridge: lanes | 107 | 106 / 108 / 107 | 113 | +6 | 12 | 216 | 628 | 704 | +75 |
-| 15 | M05.torpwait | follow the Rheinlanders (chase scene) | 59 | 56 / 58 / 59 | 63 | +4 | 4 | 118 | 687 | 776 | +88 |
-| 16 | M05.torpfight | torpedo-run scene | 63 | 66 / 64 / 63 | 68 | +5 | 0 | 132 | 750 | 844 | +94 |
-| 17 | M05.leedshole | fight | 72 | 60 / 47 / 72 | 59 | -13 | 7 | 144 | 822 | 911 | +89 |
-| 18 | M05.end | Leeds hole -> Leeds (only the marked lane ring works) | 130 | 122 / 132 / 130 | 164 | +34 | 7 | 265 | 952 | 1084 | +132 |
+| 1 | M05.control | Cambridge base: launch | 9 | 48 / 10 / 9 | - |  | - | 97 | 9 | - |  |
+| 2 | M05.lane1 | meet Juni, to the lane | 4 | 4 / 4 / 4 | - |  | - | 49 | 13 | - |  |
+| 3 | M05.lane2 | lanes | 63 | 63 / 62 / 63 | - |  | - | 126 | 76 | - |  |
+| 4 | M05.gate | to the Omega-3 gate | 29 | 29 / 31 / 29 | - |  | - | 76 | 105 | - |  |
+| 5 | M05.o3lane | Omega-3 gate (busy: 12-13 s queue in all runs) | 29 | 28 / 28 / 29 | - |  | - | 74 | 134 | - |  |
+| 6 | M05.sprague | Freeport 1 lanes | 62 | 63 / 64 / 62 | - |  | - | 128 | 196 | - |  |
+| 7 | M05.spraguefight | to Sprague | 36 | 36 / 35 / 36 | - |  | - | 81 | 232 | - |  |
+| 8 | M05.spragueland | Sprague fight, dock | 57 | 50 / 50 / 57 | - |  | - | 114 | 289 | - |  |
+| 9 | M05.baxter | Sprague room scenes (Esc on HDE), flee, to the waypoint coordinates | 69 | 68 / 116 / 69 | - |  | - | 232 | 358 | - |  |
+| 10 | M05.baxterland | to Baxter, dock | 11 | 12 / 14 / 11 | - |  | - | 60 | 369 | - |  |
+| 11 | M05.baxterfight | Baxter stop, launch into the Rheinland wing | 17 | 18 / 19 / 17 | - |  | - | 64 | 386 | - |  |
+| 12 | M05.cambhole | post-Baxter fight: fighters first, gunboat last at point blank, leave on the kill | 98 | - / 84 / 98 | - |  | - | 196 | 484 | - |  |
+| 13 | M05.cambholein | to the Cambridge hole | 37 | - / 45 / 37 | - |  | - | 90 | 521 | - |  |
+| 14 | M05.follow | Cambridge: lanes | 107 | 106 / 108 / 107 | - |  | - | 216 | 628 | - |  |
+| 15 | M05.torpwait | follow the Rheinlanders (chase scene) | 59 | 56 / 58 / 59 | - |  | - | 118 | 687 | - |  |
+| 16 | M05.torpfight | torpedo-run scene | 63 | 66 / 64 / 63 | - |  | - | 132 | 750 | - |  |
+| 17 | M05.leedshole | fight | 72 | 60 / 47 / 72 | - |  | - | 144 | 822 | - |  |
+| 18 | M05.end | Leeds hole -> Leeds (only the marked lane ring works) | 130 | 122 / 132 / 130 | - |  | - | 264 | 952 | - |  |
 
 ## M06
 
-Par 489 s (SydMontague); our PB 681 s (2026-10-28_2224_M06-gate-mpb21_i3).
+Par 489 s (SydMontague); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M06.control | Hood base (Hovis), launch + the race intro scenes (75 s) | 81 | 88 / 82 / 81 | 92 | +11 | 1 | 176 | 81 | 94 | +13 |
-| 2 | M06.racego | GO (the race banner) | 1 | 0 / 0 / 1 | 0 | -1 | 0 | 46 | 82 | 94 | +12 |
-| 3 | M06.racedone | the ring race (runners 68-70 s at cruise from GO) | 68 | 70 / 73 / 68 | 69 | +2 | 0 | 146 | 150 | 163 | +13 |
-| 4 | M06.hood | to the Hood | 46 | 44 / 40 / 46 | 45 | -1 | 0 | 92 | 196 | 208 | +12 |
-| 5 | M06.hoodout | dock the Hood, base stop, launch | 16 | 26 / 18 / 16 | 25 | +9 | 2 | 71 | 212 | 241 | +29 |
-| 6 | M06.glorious | to Station Glorious | 40 | 42 / 40 / 40 | 52 | +12 | 0 | 98 | 252 | 293 | +41 |
-| 7 | M06.gloriousland | Glorious defence (torpedoes at the station), dock on the banner | 46 | 54 / 80 / 46 | 66 | +20 | 11 | 160 | 299 | 370 | +71 |
-| 8 | M06.gunboat | Glorious stop, Quintaine, to the gunboat | 54 | 54 / 60 / 54 | 59 | +5 | 2 | 119 | 353 | 436 | +83 |
-| 9 | M06.hole | the gunboat at 0-60 m | 26 | 44 / 24 / - | 58 | +31 | 6 | 106 | 379 | 493 | +114 |
-| 10 | M06.hostiles | to the Leeds hole | 24 | 30 / 28 / - | 30 | +6 | 4 | 75 | 403 | 531 | +128 |
-| 11 | M06.holein | hostiles at the hole | 24 | 26 / 26 / 24 | 38 | +14 | 8 | 77 | 427 | 569 | +142 |
-| 12 | M06.end | Leeds hole -> Leeds | 62 | 66 / 62 / 62 | 105 | +43 | 3 | 177 | 489 | 681 | +192 |
+| 1 | M06.control | Hood base (Hovis), launch + the race intro scenes (75 s) | 81 | 88 / 82 / 81 | - |  | - | 176 | 81 | - |  |
+| 2 | M06.racego | GO (the race banner) | 1 | 0 / 0 / 1 | - |  | - | 46 | 82 | - |  |
+| 3 | M06.racedone | the ring race (runners 68-70 s at cruise from GO) | 68 | 70 / 73 / 68 | - |  | - | 146 | 150 | - |  |
+| 4 | M06.hood | to the Hood | 46 | 44 / 40 / 46 | - |  | - | 92 | 196 | - |  |
+| 5 | M06.hoodout | dock the Hood, base stop, launch | 16 | 26 / 18 / 16 | - |  | - | 71 | 212 | - |  |
+| 6 | M06.glorious | to Station Glorious | 40 | 42 / 40 / 40 | - |  | - | 88 | 252 | - |  |
+| 7 | M06.gloriousland | Glorious defence (torpedoes at the station), dock on the banner | 46 | 54 / 80 / 46 | - |  | - | 160 | 299 | - |  |
+| 8 | M06.gunboat | Glorious stop, Quintaine, to the gunboat | 54 | 54 / 60 / 54 | - |  | - | 119 | 353 | - |  |
+| 9 | M06.hole | the gunboat at 0-60 m | 26 | 44 / 24 / - | - |  | - | 89 | 379 | - |  |
+| 10 | M06.hostiles | to the Leeds hole | 24 | 30 / 28 / - | - |  | - | 75 | 403 | - |  |
+| 11 | M06.holein | hostiles at the hole | 24 | 26 / 26 / 24 | - |  | - | 71 | 427 | - |  |
+| 12 | M06.end | Leeds hole -> Leeds | 62 | 66 / 62 / 62 | - |  | - | 131 | 489 | - |  |
 
 ## M07
 
-Par 1250 s (SydMontague); our PB 1647 s (2026-10-30_0315_M07-guardfix2-2_i2).
+Par 1250 s (SydMontague); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M07.control | Leeds base (the M07 offer, Esc), launch + the intro scenes | 59 | 58 / 66 / 59 | 64 | +5 | 1 | 132 | 59 | 65 | +6 |
-| 2 | M07.agents | to the agents | 0 | 0 / 0 / 0 | 0 | +0 | 0 | 45 | 59 | 65 | +6 |
-| 3 | M07.lane1 | kill one Agent | 24 | 27 / 21 / 24 | 20 | -4 | 3 | 72 | 83 | 94 | +11 |
-| 4 | M07.fighters | lanes | 49 | 46 / 48 / 49 | 48 | -1 | 4 | 98 | 132 | 146 | +15 |
-| 5 | M07.lane2 | Stokes fighters | 24 | 24 / 24 / 24 | 36 | +12 | 6 | 73 | 156 | 188 | +32 |
-| 6 | M07.blockade | lanes to the Tau-31 gate | 61 | 34 / 43 / - | 40 | -21 | 6 | 88 | 217 | 233 | +16 |
-| 7 | M07.gate | the blockade (the cruiser from 150-450 m: no hull loss) | 61 | - / - / - | 95 | +34 | 7 | 162 | 278 | 341 | +64 |
-| 8 | M07.tau31 | the Tau-31 gate | 38 | - / - / 38 | 47 | +9 | 10 | 92 | 316 | 414 | +98 |
-| 9 | M07.sinclair | Tau-31 lanes | 91 | - / - / - | 187 | +96 | 7 | 301 | 407 | 606 | +199 |
-| 10 | M07.tau29 | Sinclair defence in the field | 91 | - / - / - | 102 | +11 | 9 | 182 | 498 | 719 | +221 |
-| 11 | M07.shinkaku | Tau-29 hole (shared scripted wait), to Shinkaku, dock | 91 | 62 / 62 / - | 114 | +23 | 4 | 191 | 589 | 840 | +251 |
-| 12 | M07.shinout | Shinkaku stop, launch | 33 | 33 / 29 / 33 | 35 | +2 | 1 | 78 | 622 | 876 | +254 |
-| 13 | M07.fleetdone | fleet scenes (68 s) + the Schiller fleet fight (fighters in the battleship's lee) | 260 | 260 / - / 260 | 285 | +26 | 21 | 519 | 882 | 1165 | +283 |
-| 14 | M07.tau23 | to the Tau-23 hole | 88 | 79 / - / 88 | 93 | +5 | 6 | 176 | 970 | 1264 | +295 |
-| 15 | M07.cali | Tau-23 hole, to Kress' base, dock | 57 | 70 / 58 / 57 | 91 | +34 | 6 | 157 | 1027 | 1380 | +353 |
-| 16 | M07.kyushuhole | Cali stop, launch, to the Kyushu hole | 79 | 84 / 90 / 79 | 84 | +5 | 1 | 180 | 1106 | 1464 | +358 |
-| 17 | M07.end | Kyushu hole -> Kyushu | 145 | 149 / 147 / 145 | 181 | +36 | 4 | 298 | 1250 | 1647 | +397 |
+| 1 | M07.control | Leeds base (the M07 offer, Esc), launch + the intro scenes | 59 | 58 / 66 / 59 | - |  | - | 132 | 59 | - |  |
+| 2 | M07.agents | to the agents | 0 | 0 / 0 / 0 | - |  | - | 45 | 59 | - |  |
+| 3 | M07.lane1 | kill one Agent | 24 | 27 / 21 / 24 | - |  | - | 72 | 83 | - |  |
+| 4 | M07.fighters | lanes | 49 | 46 / 48 / 49 | - |  | - | 98 | 132 | - |  |
+| 5 | M07.lane2 | Stokes fighters | 24 | 24 / 24 / 24 | - |  | - | 69 | 156 | - |  |
+| 6 | M07.blockade | lanes to the Tau-31 gate | 61 | 34 / 43 / - | - |  | - | 88 | 217 | - |  |
+| 7 | M07.gate | the blockade (the cruiser from 150-450 m: no hull loss) | 61 | - / - / - | - |  | - | 122 | 278 | - |  |
+| 8 | M07.tau31 | the Tau-31 gate | 38 | - / - / 38 | - |  | - | 83 | 316 | - |  |
+| 9 | M07.sinclair | Tau-31 lanes | 91 | - / - / - | - |  | - | 182 | 407 | - |  |
+| 10 | M07.tau29 | Sinclair defence in the field | 91 | - / - / - | - |  | - | 182 | 498 | - |  |
+| 11 | M07.shinkaku | Tau-29 hole (shared scripted wait), to Shinkaku, dock | 91 | 62 / 62 / - | - |  | - | 125 | 589 | - |  |
+| 12 | M07.shinout | Shinkaku stop, launch | 33 | 33 / 29 / 33 | - |  | - | 78 | 622 | - |  |
+| 13 | M07.fleetdone | fleet scenes (68 s) + the Schiller fleet fight (fighters in the battleship's lee) | 260 | 260 / - / 260 | - |  | - | 519 | 882 | - |  |
+| 14 | M07.tau23 | to the Tau-23 hole | 88 | 79 / - / 88 | - |  | - | 176 | 970 | - |  |
+| 15 | M07.cali | Tau-23 hole, to Kress' base, dock | 57 | 70 / 58 / 57 | - |  | - | 141 | 1027 | - |  |
+| 16 | M07.kyushuhole | Cali stop, launch, to the Kyushu hole | 79 | 84 / 90 / 79 | - |  | - | 180 | 1106 | - |  |
+| 17 | M07.end | Kyushu hole -> Kyushu | 145 | 149 / 147 / 145 | - |  | - | 298 | 1250 | - |  |
 
 ## M08
 
-Par 582 s (OldOak); our PB 655 s (2026-10-30_1628_M08-gate-s7arb3_i2).
+Par 582 s (OldOak); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M08.control | Shinagawa base: launch | 14 | 14 / 14 / 12 | 21 | +7 | 1 | 59 | 14 | 22 | +8 |
-| 2 | M08.lane | meet Juni and Ozu, to the lane | 5 | 5 / 5 / 5 | 5 | +1 | 0 | 50 | 18 | 27 | +8 |
-| 3 | M08.waypoint | lanes | 41 | 40 / 41 / 45 | 44 | +4 | 0 | 90 | 60 | 72 | +12 |
-| 4 | M08.honshu | fly at the Honshu hole (Ozu within 9 km of it = the trigger) | 44 | 44 / 44 / 40 | 54 | +10 | 1 | 101 | 104 | 126 | +22 |
-| 5 | M08.transport | through the hole | 32 | 33 / 32 / 38 | 41 | +9 | 0 | 83 | 136 | 175 | +40 |
-| 6 | M08.platforms | to the transport | 76 | 74 / 76 / 70 | 74 | -2 | 0 | 152 | 212 | 251 | +39 |
-| 7 | M08.formation | platforms at 0-20 m (CMs on) + Kusari forces | 62 | 73 / 62 / 65 | 81 | +19 | 10 | 146 | 274 | 332 | +59 |
-| 8 | M08.enemies | formation with the transport (scripted pace) | 167 | 169 / 167 / 168 | 109 | -58 | 4 | 338 | 440 | 451 | +10 |
-| 9 | M08.escort | enemy ships | 8 | 12 / 8 / 19 | 21 | +13 | 10 | 64 | 448 | 478 | +29 |
-| 10 | M08.kyoto | escort through the Chugoku hole | 126 | - / 126 / 128 | 160 | +34 | 3 | 260 | 574 | 644 | +69 |
-| 11 | M08.end | Chugoku -> Kyoto, dock | 8 | - / 8 / 9 | 9 | +1 | 1 | 54 | 582 | 655 | +73 |
+| 1 | M08.control | Shinagawa base: launch | 14 | 14 / 14 / 12 | - |  | - | 59 | 14 | - |  |
+| 2 | M08.lane | meet Juni and Ozu, to the lane | 5 | 5 / 5 / 5 | - |  | - | 50 | 18 | - |  |
+| 3 | M08.waypoint | lanes | 41 | 40 / 41 / 45 | - |  | - | 90 | 60 | - |  |
+| 4 | M08.honshu | fly at the Honshu hole (Ozu within 9 km of it = the trigger) | 44 | 44 / 44 / 40 | - |  | - | 89 | 104 | - |  |
+| 5 | M08.transport | through the hole | 32 | 33 / 32 / 38 | - |  | - | 83 | 136 | - |  |
+| 6 | M08.platforms | to the transport | 76 | 74 / 76 / 70 | - |  | - | 152 | 212 | - |  |
+| 7 | M08.formation | platforms at 0-20 m (CMs on) + Kusari forces | 62 | 73 / 62 / 65 | - |  | - | 146 | 274 | - |  |
+| 8 | M08.enemies | formation with the transport (scripted pace) | 167 | 169 / 167 / 168 | - |  | - | 338 | 440 | - |  |
+| 9 | M08.escort | enemy ships | 8 | 12 / 8 / 19 | - |  | - | 64 | 448 | - |  |
+| 10 | M08.kyoto | escort through the Chugoku hole | 126 | - / 126 / 128 | - |  | - | 256 | 574 | - |  |
+| 11 | M08.end | Chugoku -> Kyoto, dock | 8 | - / 8 / 9 | - |  | - | 54 | 582 | - |  |
 
 ## M09
 
-Par 530 s (TM4S13 (WR)); our PB 724 s (2026-10-24_1217_M09-s11o9-sd_i1).
+Par 530 s (TM4S13 (WR)); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M09.control | Kyoto base: launch | 14 | 14 / 14 / 15 | 31 | +17 | 1 | 67 | 14 | 33 | +18 |
-| 2 | M09.tohokugo | meet Ozu | 16 | 16 / 16 / 16 | 16 | +0 | 0 | 62 | 30 | 49 | +18 |
-| 3 | M09.tohoku | to the Tohoku hole | 43 | 43 / - / 43 | 59 | +16 | 0 | 108 | 74 | 108 | +35 |
-| 4 | M09.arch | Tohoku: to the Blood Dragon hideout | 79 | 79 / - / 79 | 82 | +3 | 4 | 158 | 152 | 204 | +51 |
-| 5 | M09.patrol | to the arch, the patrol appears | 22 | - / - / - | 10 | -12 | 5 | 67 | 174 | 228 | +54 |
-| 6 | M09.patroldown | the Tekagi patrol (a kill race against Ozu's dialogue nag) | 22 | - / - / - | 40 | +18 | 8 | 94 | 196 | 302 | +106 |
-| 7 | M09.gens | to the arch | 31 | 31 / 38 / 34 | 27 | -4 | 3 | 83 | 228 | 340 | +113 |
-| 8 | M09.tekagi | 4 generators by hold-and-salvo (runners 36-40 s), dock at Tekagi's base | 52 | 52 / 55 / 56 | 94 | +41 | 18 | 161 | 280 | 437 | +157 |
-| 9 | M09.forces | Tekagi room scenes (Esc on HDE), launch, to Juni | 42 | 42 / 51 / 58 | 52 | +10 | 0 | 116 | 322 | 489 | +167 |
-| 10 | M09.chugoku | Rheinland forces, to the Chugoku hole | 129 | 129 / 142 / 217 | 116 | -14 | 7 | 434 | 450 | 617 | +166 |
-| 11 | M09.kyotogo | Chugoku hole | 8 | 8 / 4 / - | 17 | +9 | 2 | 53 | 458 | 635 | +177 |
-| 12 | M09.end | Chugoku -> Kyoto | 71 | 71 / 76 / - | 88 | +18 | 2 | 153 | 530 | 724 | +195 |
+| 1 | M09.control | Kyoto base: launch | 14 | 14 / 14 / 15 | - |  | - | 60 | 14 | - |  |
+| 2 | M09.tohokugo | meet Ozu | 16 | 16 / 16 / 16 | - |  | - | 62 | 30 | - |  |
+| 3 | M09.tohoku | to the Tohoku hole | 43 | 43 / - / 43 | - |  | - | 88 | 74 | - |  |
+| 4 | M09.arch | Tohoku: to the Blood Dragon hideout | 79 | 79 / - / 79 | - |  | - | 158 | 152 | - |  |
+| 5 | M09.patrol | to the arch, the patrol appears | 22 | - / - / - | - |  | - | 67 | 174 | - |  |
+| 6 | M09.patroldown | the Tekagi patrol (a kill race against Ozu's dialogue nag) | 22 | - / - / - | - |  | - | 67 | 196 | - |  |
+| 7 | M09.gens | to the arch | 31 | 31 / 38 / 34 | - |  | - | 83 | 228 | - |  |
+| 8 | M09.tekagi | 4 generators by hold-and-salvo (runners 36-40 s), dock at Tekagi's base | 52 | 52 / 55 / 56 | - |  | - | 112 | 280 | - |  |
+| 9 | M09.forces | Tekagi room scenes (Esc on HDE), launch, to Juni | 42 | 42 / 51 / 58 | - |  | - | 116 | 322 | - |  |
+| 10 | M09.chugoku | Rheinland forces, to the Chugoku hole | 129 | 129 / 142 / 217 | - |  | - | 434 | 450 | - |  |
+| 11 | M09.kyotogo | Chugoku hole | 8 | 8 / 4 / - | - |  | - | 53 | 458 | - |  |
+| 12 | M09.end | Chugoku -> Kyoto | 71 | 71 / 76 / - | - |  | - | 152 | 530 | - |  |
 
 ## M10
 
-Par 914 s (TM4S13 (WR)); our PB 1078 s (2026-10-30_1538_M10-gate-s7arb3_i2).
+Par 914 s (TM4S13 (WR)); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M10.control | Kyoto base: launch | 22 | 22 / 15 / 14 | 31 | +9 | 1 | 67 | 22 | 32 | +10 |
-| 2 | M10.sigma | meet Hakkera, to the Sigma-13 hole | 38 | 38 / 40 / 55 | 39 | +1 | 0 | 109 | 60 | 71 | +11 |
-| 3 | M10.fighters | Sigma-13 hole, to the waypoint | 40 | 40 / 30 / 26 | 40 | -0 | 2 | 85 | 100 | 112 | +12 |
-| 4 | M10.breakoff | 8 heavy fighters (nearest first, leave on the last kill) | 56 | 56 / 60 / - | 54 | -2 | 6 | 121 | 156 | 173 | +18 |
-| 5 | M10.nbhole | to the New Berlin hole (wrecks on the way) | 63 | 63 / 95 / - | 68 | +5 | 3 | 190 | 218 | 242 | +24 |
-| 6 | M10.newberlin | New Berlin lanes, dock | 72 | 72 / 78 / 38 | 61 | -11 | 2 | 155 | 290 | 307 | +16 |
-| 7 | M10.nbout | New Berlin stop, launch | 21 | 21 / 22 / 22 | 28 | +7 | 3 | 66 | 312 | 334 | +23 |
-| 8 | M10.frankfurt | lanes to the Frankfurt gate | 36 | 36 / 34 / 35 | 43 | +7 | 0 | 84 | 348 | 377 | +30 |
-| 9 | M10.holstein | Frankfurt lanes (Fischer shed by the lanes), dock Holstein first | 136 | 136 / 139 / 144 | 163 | +27 | 4 | 287 | 483 | 548 | +65 |
-| 10 | M10.bruchsalgo | Holstein room scene (Esc on HDE), launch | 0 | 0 / 8 / 10 | 0 | +0 | 0 | 55 | 483 | 548 | +65 |
-| 11 | M10.wing | to Bruchsal | 60 | 60 / 58 / 58 | 65 | +4 | 0 | 121 | 544 | 629 | +85 |
-| 12 | M10.bruchsal | assault wing, dock Bruchsal | 68 | 68 / 94 / 78 | 70 | +2 | 8 | 187 | 612 | 713 | +101 |
-| 13 | M10.expdone | escape scene, one experimental ship from inside its hull, wait for Botzler | 230 | 230 / 252 / 251 | 239 | +9 | 31 | 504 | 841 | 951 | +110 |
-| 14 | M10.hamburg | to the Hamburg hole within 6 km of Von Claussen | 28 | 28 / 16 / 30 | 57 | +30 | 1 | 106 | 868 | 1012 | +143 |
-| 15 | M10.order | Hamburg hole, Order forces | 27 | 27 / 27 / 31 | 36 | +9 | 0 | 76 | 896 | 1049 | +153 |
-| 16 | M10.end | dock the Osiris (only once its waypoint exists) | 19 | 19 / 15 / 17 | 28 | +9 | 2 | 64 | 914 | 1078 | +164 |
+| 1 | M10.control | Kyoto base: launch | 22 | 22 / 15 / 14 | - |  | - | 67 | 22 | - |  |
+| 2 | M10.sigma | meet Hakkera, to the Sigma-13 hole | 38 | 38 / 40 / 55 | - |  | - | 109 | 60 | - |  |
+| 3 | M10.fighters | Sigma-13 hole, to the waypoint | 40 | 40 / 30 / 26 | - |  | - | 85 | 100 | - |  |
+| 4 | M10.breakoff | 8 heavy fighters (nearest first, leave on the last kill) | 56 | 56 / 60 / - | - |  | - | 121 | 156 | - |  |
+| 5 | M10.nbhole | to the New Berlin hole (wrecks on the way) | 63 | 63 / 95 / - | - |  | - | 190 | 218 | - |  |
+| 6 | M10.newberlin | New Berlin lanes, dock | 72 | 72 / 78 / 38 | - |  | - | 155 | 290 | - |  |
+| 7 | M10.nbout | New Berlin stop, launch | 21 | 21 / 22 / 22 | - |  | - | 66 | 312 | - |  |
+| 8 | M10.frankfurt | lanes to the Frankfurt gate | 36 | 36 / 34 / 35 | - |  | - | 81 | 348 | - |  |
+| 9 | M10.holstein | Frankfurt lanes (Fischer shed by the lanes), dock Holstein first | 136 | 136 / 139 / 144 | - |  | - | 287 | 483 | - |  |
+| 10 | M10.bruchsalgo | Holstein room scene (Esc on HDE), launch | 0 | 0 / 8 / 10 | - |  | - | 55 | 483 | - |  |
+| 11 | M10.wing | to Bruchsal | 60 | 60 / 58 / 58 | - |  | - | 121 | 544 | - |  |
+| 12 | M10.bruchsal | assault wing, dock Bruchsal | 68 | 68 / 94 / 78 | - |  | - | 187 | 612 | - |  |
+| 13 | M10.expdone | escape scene, one experimental ship from inside its hull, wait for Botzler | 230 | 230 / 252 / 251 | - |  | - | 504 | 841 | - |  |
+| 14 | M10.hamburg | to the Hamburg hole within 6 km of Von Claussen | 28 | 28 / 16 / 30 | - |  | - | 75 | 868 | - |  |
+| 15 | M10.order | Hamburg hole, Order forces | 27 | 27 / 27 / 31 | - |  | - | 76 | 896 | - |  |
+| 16 | M10.end | dock the Osiris (only once its waypoint exists) | 19 | 19 / 15 / 17 | - |  | - | 64 | 914 | - |  |
 
 ## M11
 
-Par 978 s (TM4S13 (WR)); our PB 1169 s (2026-10-23_1437_M11-gate-s8v_i3).
+Par 978 s (TM4S13 (WR)); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M11.control | Osiris base: launch | 60 | 60 / 57 / 79 | 24 | -36 | 1 | 158 | 60 | 25 | -35 |
-| 2 | M11.nyhole | to the New York hole | 71 | 71 / 71 / 71 | 60 | -10 | 0 | 143 | 130 | 85 | -46 |
-| 3 | M11.enemies | New York hole | 6 | 6 / 7 / 7 | 32 | +26 | 1 | 68 | 136 | 119 | -18 |
-| 4 | M11.buffalo | enemy ships | 28 | 28 / 35 / - | 46 | +18 | 10 | 88 | 164 | 183 | +18 |
-| 5 | M11.buffaloland | to Buffalo, dock | 55 | 55 / 53 / - | 65 | +10 | 2 | 118 | 220 | 248 | +29 |
-| 6 | M11.isholego | Buffalo stop, launch | 30 | 30 / 31 / 32 | 41 | +11 | 3 | 81 | 250 | 294 | +45 |
-| 7 | M11.ishole | to the in-system hole | 14 | 14 / 15 / 21 | 33 | +19 | 2 | 70 | 264 | 329 | +65 |
-| 8 | M11.satellite | in-system hole, to the satellite | 49 | 49 / 49 / 41 | 59 | +10 | 5 | 108 | 312 | 392 | +79 |
-| 9 | M11.rendezvous | the Navy satellite (torpedo + missile salvo at 0 m) | 78 | 78 / 88 / 82 | 78 | +1 | 19 | 175 | 390 | 480 | +90 |
-| 10 | M11.zone21 | to Walker | 74 | 74 / 64 / 65 | 61 | -13 | 0 | 148 | 464 | 541 | +77 |
-| 11 | M11.z21fight | follow Walker into Zone 21 (mine field: hull damage = FAIL) | 50 | 50 / 62 / 68 | 64 | +14 | 0 | 136 | 514 | 605 | +91 |
-| 12 | M11.ordership | enemy ships | 56 | 56 / 54 / 75 | 66 | +10 | 10 | 150 | 570 | 673 | +103 |
-| 13 | M11.alaska | defend the Order ships | 47 | 47 / 47 / 47 | 47 | -0 | 0 | 94 | 616 | 719 | +103 |
-| 14 | M11.prison | Alaska gate | 31 | 31 / 40 / 29 | 36 | +5 | 3 | 85 | 648 | 755 | +108 |
-| 15 | M11.mitchell | follow Walker to Mitchell, shed the companions, dock | 84 | 84 / 74 / 74 | 74 | -10 | 1 | 168 | 732 | 829 | +98 |
-| 16 | M11.order2 | prison room scene (Esc on HDE), launch, Walker's death scene | 56 | 56 / 56 / 74 | 57 | +1 | 0 | 149 | 788 | 886 | +99 |
-| 17 | M11.nygate | defend the Order ships | 91 | - / - / 150 | 133 | +42 | 0 | 300 | 878 | 1020 | +141 |
-| 18 | M11.osiris | NY gate, Omaha / Buffalo, the Osiris uncloaks | 91 | - / - / - | 132 | +41 | 5 | 217 | 970 | 1156 | +186 |
-| 19 | M11.end | dock the Osiris | 9 | 9 / - / - | 12 | +3 | 4 | 54 | 978 | 1169 | +191 |
+| 1 | M11.control | Osiris base: launch | 60 | 60 / 57 / 79 | - |  | - | 158 | 60 | - |  |
+| 2 | M11.nyhole | to the New York hole | 71 | 71 / 71 / 71 | - |  | - | 143 | 130 | - |  |
+| 3 | M11.enemies | New York hole | 6 | 6 / 7 / 7 | - |  | - | 52 | 136 | - |  |
+| 4 | M11.buffalo | enemy ships | 28 | 28 / 35 / - | - |  | - | 80 | 164 | - |  |
+| 5 | M11.buffaloland | to Buffalo, dock | 55 | 55 / 53 / - | - |  | - | 110 | 220 | - |  |
+| 6 | M11.isholego | Buffalo stop, launch | 30 | 30 / 31 / 32 | - |  | - | 76 | 250 | - |  |
+| 7 | M11.ishole | to the in-system hole | 14 | 14 / 15 / 21 | - |  | - | 66 | 264 | - |  |
+| 8 | M11.satellite | in-system hole, to the satellite | 49 | 49 / 49 / 41 | - |  | - | 98 | 312 | - |  |
+| 9 | M11.rendezvous | the Navy satellite (torpedo + missile salvo at 0 m) | 78 | 78 / 88 / 82 | - |  | - | 175 | 390 | - |  |
+| 10 | M11.zone21 | to Walker | 74 | 74 / 64 / 65 | - |  | - | 148 | 464 | - |  |
+| 11 | M11.z21fight | follow Walker into Zone 21 (mine field: hull damage = FAIL) | 50 | 50 / 62 / 68 | - |  | - | 136 | 514 | - |  |
+| 12 | M11.ordership | enemy ships | 56 | 56 / 54 / 75 | - |  | - | 150 | 570 | - |  |
+| 13 | M11.alaska | defend the Order ships | 47 | 47 / 47 / 47 | - |  | - | 94 | 616 | - |  |
+| 14 | M11.prison | Alaska gate | 31 | 31 / 40 / 29 | - |  | - | 85 | 648 | - |  |
+| 15 | M11.mitchell | follow Walker to Mitchell, shed the companions, dock | 84 | 84 / 74 / 74 | - |  | - | 168 | 732 | - |  |
+| 16 | M11.order2 | prison room scene (Esc on HDE), launch, Walker's death scene | 56 | 56 / 56 / 74 | - |  | - | 149 | 788 | - |  |
+| 17 | M11.nygate | defend the Order ships | 91 | - / - / 150 | - |  | - | 300 | 878 | - |  |
+| 18 | M11.osiris | NY gate, Omaha / Buffalo, the Osiris uncloaks | 91 | - / - / - | - |  | - | 182 | 970 | - |  |
+| 19 | M11.end | dock the Osiris | 9 | 9 / - / - | - |  | - | 54 | 978 | - |  |
 
 ## M12
 
-Par 348 s (SydMontague); our PB 354 s (2026-10-24_0602_M12-s11g-b_i2).
+Par 348 s (SydMontague); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M12.control | Osiris base, launch + the M12_Osiris scene (41 s) | 68 | 72 / 62 / 68 | 58 | -11 | 1 | 145 | 68 | 59 | -10 |
-| 2 | M12.banner | meet Juni and King, formation cruise to the lair, at generator 1 before the banner | 70 | - / 68 / 70 | 70 | +0 | 0 | 140 | 138 | 130 | -8 |
-| 3 | M12.gen1 | generator 1 (hold and salvo from the banner) | 14 | - / - / 14 | 12 | -2 | 4 | 59 | 152 | 143 | -9 |
-| 4 | M12.gen2 | cruise hop (charge on the kill), generator 2 | 31 | 32 / - / - | 29 | -2 | 11 | 77 | 183 | 173 | -10 |
-| 5 | M12.gen3 | cruise hop, generator 3 | 27 | 28 / - / - | 25 | -2 | 5 | 73 | 209 | 205 | -5 |
-| 6 | M12.core | afterburner to the core entrance, charge before the airlock | 13 | 23 / 25 / 13 | 14 | +1 | 5 | 70 | 223 | 222 | -1 |
-| 7 | M12.cell | across the core (wheel gap, plate hole), tractor the cell in passing | 6 | 9 / 9 / 6 | 11 | +5 | 1 | 54 | 229 | 233 | +4 |
-| 8 | M12.exit | to the exit, out of the airlock | 2 | 4 / 3 / 2 | 2 | -0 | 2 | 49 | 231 | 236 | +4 |
-| 9 | M12.hole | exit -> Omicron Minor hole (the 600 s collapse clock) | 54 | 49 / 50 / 54 | 54 | +0 | 2 | 108 | 285 | 290 | +5 |
-| 10 | M12.end | Omicron Minor -> Toledo (ignore the Nomads: the 8 km trigger), dock | 63 | 66 / 64 / 63 | 64 | +0 | 10 | 132 | 348 | 354 | +6 |
+| 1 | M12.control | Osiris base, launch + the M12_Osiris scene (41 s) | 68 | 72 / 62 / 68 | - |  | - | 145 | 68 | - |  |
+| 2 | M12.banner | meet Juni and King, formation cruise to the lair, at generator 1 before the banner | 70 | - / 68 / 70 | - |  | - | 140 | 138 | - |  |
+| 3 | M12.gen1 | generator 1 (hold and salvo from the banner) | 14 | - / - / 14 | - |  | - | 59 | 152 | - |  |
+| 4 | M12.gen2 | cruise hop (charge on the kill), generator 2 | 31 | 32 / - / - | - |  | - | 77 | 183 | - |  |
+| 5 | M12.gen3 | cruise hop, generator 3 | 27 | 28 / - / - | - |  | - | 73 | 209 | - |  |
+| 6 | M12.core | afterburner to the core entrance, charge before the airlock | 13 | 23 / 25 / 13 | - |  | - | 70 | 223 | - |  |
+| 7 | M12.cell | across the core (wheel gap, plate hole), tractor the cell in passing | 6 | 9 / 9 / 6 | - |  | - | 54 | 229 | - |  |
+| 8 | M12.exit | to the exit, out of the airlock | 2 | 4 / 3 / 2 | - |  | - | 49 | 231 | - |  |
+| 9 | M12.hole | exit -> Omicron Minor hole (the 600 s collapse clock) | 54 | 49 / 50 / 54 | - |  | - | 108 | 285 | - |  |
+| 10 | M12.end | Omicron Minor -> Toledo (ignore the Nomads: the 8 km trigger), dock | 63 | 66 / 64 / 63 | - |  | - | 132 | 348 | - |  |
 
 ## M13
 
-Par 686 s (SydMontague); our PB 744 s (2026-10-31_0501_M13-ab12-b_i1).
+Par 686 s (SydMontague); our PB - s (no full pass).
 
 | # | Checkpoint | Segment (what happens) | Par seg | Runners seg (1/2/3) | Gold | Gold - par | Spread | Limit | Par at | PB at | PB - par |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | M13.control | Toledo base: launch | 13 | 28 / 1 / 13 | 10 | -2 | 0 | 73 | 13 | 18 | +6 |
-| 2 | M13.battleship | Nomad interceptors, to the Nomad battleship | 56 | 49 / 74 / - | 48 | -8 | 0 | 147 | 69 | 68 | -1 |
-| 3 | M13.bsdown | the battleship at 0 m (battery bursts) | 45 | - / 59 / - | 55 | +10 | 8 | 118 | 114 | 122 | +9 |
-| 4 | M13.sinclair | Toledo docking order, dock, relaunch | 33 | - / 24 / 33 | 21 | -12 | 11 | 78 | 147 | 154 | +7 |
-| 5 | M13.osiris | escort Sinclair to the Osiris | 104 | 136 / - / 104 | 108 | +4 | 2 | 271 | 251 | 263 | +12 |
-| 6 | M13.orillion | Osiris stop (refill), launch | 29 | 32 / - / 29 | 34 | +4 | 3 | 78 | 280 | 297 | +17 |
-| 7 | M13.gatefight | follow Orillion | 78 | 78 / 77 / 78 | 78 | +1 | 0 | 157 | 358 | 376 | +19 |
-| 8 | M13.barrier | fight at the Nomad gate, through it | 89 | 111 / 83 / - | 73 | -16 | 8 | 222 | 447 | 457 | +10 |
-| 9 | M13.gens | to the barrier | 45 | 48 / 48 / - | 47 | +2 | 9 | 96 | 492 | 504 | +12 |
-| 10 | M13.sphere | 4 barrier generators (hold, slide, battery bursts) | 65 | 58 / 76 / 65 | 68 | +3 | 6 | 152 | 557 | 576 | +19 |
-| 11 | M13.end | into the sphere, the city generators, the final cutscene | 129 | 124 / 120 / 129 | 150 | +21 | 8 | 258 | 686 | 744 | +58 |
+| 1 | M13.control | Toledo base: launch | 13 | 28 / 1 / 13 | - |  | - | 73 | 13 | - |  |
+| 2 | M13.battleship | Nomad interceptors, to the Nomad battleship | 56 | 49 / 74 / - | - |  | - | 147 | 69 | - |  |
+| 3 | M13.bsdown | the battleship at 0 m (battery bursts) | 45 | - / 59 / - | - |  | - | 118 | 114 | - |  |
+| 4 | M13.sinclair | Toledo docking order, dock, relaunch | 33 | - / 24 / 33 | - |  | - | 78 | 147 | - |  |
+| 5 | M13.osiris | escort Sinclair to the Osiris | 104 | 136 / - / 104 | - |  | - | 271 | 251 | - |  |
+| 6 | M13.orillion | Osiris stop (refill), launch | 29 | 32 / - / 29 | - |  | - | 78 | 280 | - |  |
+| 7 | M13.gatefight | follow Orillion | 78 | 78 / 77 / 78 | - |  | - | 157 | 358 | - |  |
+| 8 | M13.barrier | fight at the Nomad gate, through it | 89 | 111 / 83 / - | - |  | - | 222 | 447 | - |  |
+| 9 | M13.gens | to the barrier | 45 | 48 / 48 / - | - |  | - | 96 | 492 | - |  |
+| 10 | M13.sphere | 4 barrier generators (hold, slide, battery bursts) | 65 | 58 / 76 / 65 | - |  | - | 152 | 557 | - |  |
+| 11 | M13.end | into the sphere, the city generators, the final cutscene | 129 | 124 / 120 / 129 | - |  | - | 258 | 686 | - |  |
 

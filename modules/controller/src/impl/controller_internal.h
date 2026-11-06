@@ -53,6 +53,11 @@ struct Options : sharedrows::Values
     bool swapY = false;            // y_swap: with weapon_groups 1, Y tap = cruise, Y hold = next group (the old order)
     bool holdsAsToggles = false;   // afterburner, reverse, drift, rear view as press-once / press-again
     int rumble = 100;              // vibration strength in percent (0 = off)
+    int triggerEffects = 2;        // 0 off, 1 light, 2 full (docs\HAPTICS.md 10)
+    int triggerStrength = 100;     // percent
+    int hapticsMode = 0;           // 0 automatic, 1 motors, 2 waveform
+    int hapticsClass[5] = {100, 100, 100, 100, 100}; // ship, weapons, danger, set pieces, prompts: percent
+    int hapticsDevice = 1;         // 0: the recording alone
     int padCursor = 2;             // 0 off, 1 rooms and maps, 2 everywhere (the owner's decision 15)
     int cursorMagnet = 60;         // the pad cursor's slow-down / pull over clickable elements, percent
     int promptBar = 0;             // 0 contextual, 1 always, 2 off

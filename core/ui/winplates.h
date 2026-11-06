@@ -19,6 +19,9 @@ bool R32(u32 a, u32& v);
 bool RBytes(u32 a, void* out, size_t n);
 bool W8(u32 a, u8 v);
 bool W32(u32 a, u32 v);
+// A text control's string (VtTitleText only; its text object +0x334 holds the wide pointer at +0, reallocated at every set, so it is copied, never kept).
+// False on any other class, on an empty text or a read that faults. docs\FREELANCER_RE.md "The game's text size is its font's".
+bool TextOf(u32 ctl, std::wstring& out);
 
 constexpr u32 kParent = 0x04, kSibling = 0x08, kChild = 0x0C, kName = 0x18, kState = 0x6C, kOwnMesh = 0x84,
               kColour = 0x348, kLit = 0x333;
@@ -40,6 +43,23 @@ struct Box
 };
 bool RectOf(u32 ctl, Box& b);
 
+constexpr int kPlates = 7; // the most plates a window family has (the dealer)
+// How far the panel under a fitted window's row stands off the table, pixels: its text boxes go with it (0 none). A family index.
+float FitBoxShift(int fam);
+bool Blocked(float x0, float y0, float x1, float y1); // a keep-out stands on this rectangle, pixels
+bool WindowOpen(); // a window stands over the room: the pad's focus is its
+bool BarBusy(); // the room bar moved within the last 0.3 s: no focus on it, its targets are not where they will stand
+std::string BarReport(); // the room bar's changes since the last read, frame by frame
+float TextHeightPx(u32 ctl); // a text control's drawn height, blank lines counted; 0 no text
+bool FitOpen(); // a window with fitted panels is open: what stands in it is read every frame
+// What the skin draws in a window itself, pixels: the fit counts it as content. Each frame's list, cleared first
+void ClearSkinItems();
+void AddSkinItem(float x0, float y0, float x1, float y1);
+void SetRootGrow(float grow); // the log and the info window stand this much taller than their root, fractions of H (windowtext's boxes fill it)
+bool IsTitle(const char* control); // a window's heading, by the table
+// Each fitted panel of the open windows: its rectangle and the air round what it holds, fractions of H: what the walk reads
+std::string FitReport();
+
 enum Cond
 {
     Always,
@@ -47,11 +67,14 @@ enum Cond
     Xfer,        // dealer: a row is selected: the buy button, or the item alone where the game refuses it (no free hardpoint
                  // ...: no button, the item, its compare lines and its infocard all the same; GitHub issue 10)
     NoXfer,
+    ShipWords, // dealer: the ship dealer's final stage with no row selected: its words stand in the infocard's place
     SellFull, // dealer: the player's list has rows (NN_Inventory ItemView01 shown)
     SellEmpty,
 };
 // One plate. anchor: "" = the window root's own rect (edges + the offsets), "#Name" = that control's rect edges +
 // offsets, "Name" = that control's centre + offsets. Offsets and the rules in fractions of H.
+// What the dealer's quantity block rises by while the game hides the slider above it (a single item), fractions of H: the slider's room, less a readable gap. windowtext moves the block.
+constexpr float kStackLift = 0.045f;
 struct PlateDef
 {
     const char* anchor;
@@ -64,6 +87,8 @@ struct PlateDef
     // the bottom lane (modules\hud\docs\UI_HUD2_EXTENDED.md 13, rule 3): while the prompt lane is in use the plate ends here instead
     // of y1 (same anchor rule) - its content's bottom + 0.006 H, measured in the lane probe (0 = never trimmed)
     float trim = 0;
+    float liftFoot = 0; // the plate ends this much higher while the dealer's quantity slider is hidden: its room is empty then
+    bool holdsWords = false; // the plate grows by what SetWordsRoom says: the skin's lines under its rows stand inside it
 };
 constexpr int kTLBR = hud2kit::kTL | hud2kit::kBR;
 
@@ -83,7 +108,7 @@ struct FamilyDef
     const char* art[6];
     const char* own[8];  // children drawing their own art (+0x84): hidden, and given a tab plate when `tabs`
     bool tabs;
-    PlateDef plates[6];
+    PlateDef plates[kPlates];
     const char* titles[3];
     FocusKind focus;
     const char* fa; // focus prefix a (FocusShift / FocusLeft: the prefix it applies to)
@@ -95,7 +120,7 @@ extern const FamilyDef kFamilies[];
 extern const int kFamilyCount;
 int FamilyIndex(const char* label);
 extern const int kFamDealer, kFamInventory, kFamNavBar, kFamNNBox, kFamOptions, kFamOffer, kFamConfirm, kFamLog, kFamNavMap, kFamShipDealer,
-    kFamPause, kFamJobBoard, kFamMainMenu, kFamPopup;
+    kFamPause, kFamJobBoard, kFamMainMenu, kFamPopup, kFamExit, kFamError, kFamPrompt, kFamNetOp, kFamHelp;
 
 struct Art
 {
@@ -124,9 +149,10 @@ struct Win
     std::vector<u32> tabs;            // controls given a tab plate
     std::vector<u32> tabCaps;         // their caption text controls (Options: the current page's is the game's yellow)
     u32 field = 0;                    // the save description's field (LoadSave_DescripButton)
-    u32 anchors[6] = {};              // per plate
+    u32 anchors[kPlates] = {};        // per plate
     u32 condCtl = 0, condCtl2 = 0, condCtl3 = 0; // dealer: BuySellTradeButton, the partner's ItemView01, its Full_Cargobar
     u32 condCtl4 = 0;                            // dealer: TransferItemView
+    u32 condCtl5 = 0;                            // dealer: BackToShipDealer (the final stage alone)
     u32 storyText = 0;                           // job board: the chosen job's rich text (the plate grows to it)
     bool alive = true;
 };
@@ -200,6 +226,10 @@ bool ModalShown();
 float LowestKeepOut(float x0, float x1, float below);
 // The left limit (pixels) of a pill row spanning y0..y1 that ends at `right`: right of everything the pills must not cover there this frame,
 // plus a gap; `right` when the band is blocked; 0.05 W at least.
+// The keep-out reaching furthest right across the band y0..y1: the panel a column of prompts stands beside. False when none does.
+bool PanelBeside(float y0, float y1, float& right, float& top, float& bottom);
+// The room the lines under the ship dealer's list take this frame, fractions of H (uistrip).
+void SetWordsRoom(float room);
 float LaneLeft(float W, float H, float y0, float y1, float right);
 // A family's plate anchored at control `anchor` (e.g. "options", "OptionsBox"): its offsets from the anchor's centre in fractions of H
 // (x0 y0 x1 y1). False when the family has no such plate.

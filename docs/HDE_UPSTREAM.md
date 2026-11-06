@@ -44,6 +44,37 @@ missions. Forks: of 21, only three have commits HDE lacks: CI workflows (Stellar
   Story Factions update (mission NPC affiliation no longer shown in comm text - affects the comm text our subtitles
   sit beside), more console commands, engbase.dll animation crash fix.
 
+## The second install (`Install\instances\hde_upstream`, made 6 Nov 2026; IDEAS M7)
+A named instance for compatibility passes, never the baseline: 0.7.1 stays primary. Built from HDE `7c6186e` (0.7.1-153, the clone as it stands) with the
+installer source at `55121f8` (31 Oct 2026, a new clone in `research\repos\freelancer-hd-edition-installer`), over `research\Vanilla\Freelancer`.
+Not started yet: the launch check is owed (below).
+
+**Why the installer and not an overlay:** about 35 `Process_*` routines (`mod_options.iss`) rename files, edit inis and patch bytes; the repository alone does not
+run (its `*_tsr.dll` resources and `d3d8_*.dll` are renamed by them). So HDE's own option code ran, compiled from a copy.
+
+**Inno Setup:** 6.7.4, from the jrsoftware/issrc release that jrsoftware.org links (10.6 MB, SHA-256 `A5499293...D8EB30E8C`, signed by Pyrsys B.V.),
+`Install\downloads\innosetup\app`, with `/CURRENTUSER /PORTABLE=1 /NOICONS /DIR=...`: no admin, no uninstall entry, no file association, no shortcut, no PATH
+change (compared before and after). 6.5.1, which built the 0.7.1 setup, cannot compile this source (`DialogFontBaseScaleHeight`). The only trace was an empty
+`HKCU\Software\Jordan Russell\Inno Setup` key, removed afterwards; a new compile makes it again.
+
+**The copy's edits** (`Install\downloads\hde_upstream_build\make.ps1`, git-ignored; the source as HDE ships it needs admin):
+`PrivilegesRequired=lowest`, `Uninstallable=no`, `UsePreviousAppDir=no`; no icons, fonts (all four are in `C:\Windows\Fonts`) or VC++ redistributable; no 7z:
+the mod's files come by the installer's own `dircpy` from `/ModSrc=<a robocopy of the clone without .git>` (the stage is deleted again; the repository's
+working tree is CRLF, as the installer needs); `{userdocs}` never touched (`My Games` goes to `{app}\_mygames`, deleted after, the `Restart.fl` deletes dropped).
+Option code untouched. Setup: `/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /DIR=... /LOG=... /VanillaFlDir=... /ModSrc=... /NoMsvcRedist` and the primary's options
+`/DisplayMode=2 /GraphicsApi=1 /JumpTunnel=0 /SkipIntros=0 /NewSaveFolder=0`. 16 s, 5.2 GB, log `Install\instances\hde_upstream\hde-install.log`.
+
+**After it:** `flplusplus.ini` `save_in_directory` / `screenshots_in_directory` true, an empty `SAVE\Accts\SinglePlayer`, `Set-FLInstanceDisplay hde_upstream borderless
+'3840, 2160'`. `deploy.ps1 -Instance hde_upstream -Background -NoBuild -NoStart` reached it (dacom.ini, dev build 1c917e6e copied in: stale for any test, deploy again).
+`Assert-FLNoFullscreen` and `Assert-FLDataSeparate` pass; `sigtool check` 228 / 228 at their 1.1 addresses on this exe.
+
+**Compared with 0.7.1, as installed:** FLSharp 0.9.2 (0.8.0), exe 2,523,648 B (2,519,552), DxWrapper 1.7.8467.25 (1.3.7700.25), no `dinput8.dll`, TargetScreen.dll and
+VersionText.dll in dacom.ini, HDEResources.dll for Controls.dll in freelancer.ini. The setup's 16 changed exe bytes equal 0.7.1's at every offset except 0x0E15D3
+(`26000700`, the IDS of the DynamicTargetScreen button, upstream only). `PerfOptions.ini` is the installer's own: `depth_bpp= 32` (the main install 24).
+
+**Owed once a game is free:** a background start, the main menu reached, the log clean, FLvibed loaded beside FLSharp 0.9.2; deploy first (a fresh build). No fixtures yet: mission
+saves of 0.7.1 are not assumed to load (M08 / M11 scripts changed). The test scripts take a named instance only with 31fe28ad; a worktree reaches the instance by its `Install` junction.
+
 ## For FLvibed
 - Runbooks stay on 0.7.1 (what tests run); the upstream notes say where newer HDE differs.
 - Moving the test install to a newer HDE is the user's decision (installer options, `tools\install-hde.ps1`); the

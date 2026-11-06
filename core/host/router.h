@@ -69,6 +69,7 @@ u32 CoreOwner();
 void* D3DDevice();                       // IDirect3DDevice8 used by the game; null until created
 int RoomCharacters(void** out, int max); // live base-room characters, oldest first
 void SetCursorHidden(bool on);           // the game's arrow stays hidden through the cursor pass
+void SetLoadDraw(void (*draw)());        // called in each load frame, its scene open; null: the game's own screen alone
 void* ManeuverLayoutOriginal();          // the hook's "original", null when refused: for the status lines
 bool RawKeysWanted();
 bool RawKey(int vk, bool down, bool textField);

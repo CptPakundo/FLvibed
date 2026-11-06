@@ -12,9 +12,13 @@
 #include "game/flicons.h"
 #include "game/flight.h"
 #include "game/hudinfo.h"
+#include "hud2_cue.h"
+#include "ui/hud_rows.h"
+#include "game/indicators.h"
 #include "game/render.h"
 #include "game/shipname.h"
 #include "game/space.h"
+#include "game/tractorfail.h"
 #include "game/promptshow.h"
 #include "game/hudwake.h"
 #include "hudhost.h"
@@ -26,6 +30,7 @@
 #include "hudvis.h"
 #include "log.h"
 #include "settings_bus.h"
+#include "str.h"
 #include "text.h"
 #include "ui/ui.h"
 #include "ui/uiopt.h"
@@ -37,12 +42,7 @@ namespace hud2
 {
 using namespace hud2kit;
 static const wchar_t kDot[] = L" \u00B7 ";
-std::wstring Upper(std::wstring s)
-{
-    for (wchar_t& c : s)
-        c = static_cast<wchar_t>(towupper(c));
-    return s;
-}
+std::wstring Upper(std::wstring s) { return str::Upper(std::move(s)); }
 static std::wstring Dist(float m)
 {
     wchar_t b[32];
@@ -52,6 +52,8 @@ static std::wstring Dist(float m)
         swprintf_s(b, L"%.0f m", m);
     return b;
 }
+// The distance the game's own label reads, so card, bracket and cue agree on one number: to the surface, clamped at 0 (docs\FREELANCER_RE.md).
+static std::wstring SurfaceDist(const space::Contact& c) { return Dist(std::max(0.0f, c.distance - hudinfo::ObjectRadius(c.id))); }
 static std::wstring Clock(float s)
 {
     if (s < 0)
@@ -402,6 +404,92 @@ static float Bearing(const float pos[3], const fl::Kinematics& k)
     return atan2f(-y, x) * 180.0f / 3.14159265f;
 }
 
+// The weapon group cue's marks (UI_HUD2_GROUP_CUE.md): the groups that have guns, then M and T while the ship carries them. A cruise disruptor on the torpedo
+// hardpoint gets no letter: T says torpedo, and it does no damage to aim for. Any read failing leaves a mark unlit, an empty row hides.
+static void FillCue(Model& m, bool flying)
+{
+    namespace hc = hud2cue;
+    m.nCue = 0, m.cueDigits = 0, m.cueShow = false;
+    if (!hudrows::g.groupCue || !flying)
+        return;
+    const aim::Target t = aim::Current();
+    const float W = static_cast<float>(fl::ScreenWidth()), Hs = static_cast<float>(fl::ScreenHeight());
+    // the aim point: the screen's centre on the pad's gimbal, the cursor on keyboard and mouse
+    const float ax = m.kbm ? static_cast<float>(fl::MouseX()) : W / 2, ay = m.kbm ? static_cast<float>(fl::MouseY()) : Hs / 2;
+    const float ring = g_L.R > 0 ? g_L.R : 0.10f * Hs;
+    const bool onTarget = m.target && hud2cue::InCentre(t.screenX, t.screenY, t.onScreen, m.tMark.x, m.tMark.y, m.tMark.r, m.tMark.onScreen, ax, ay, ring);
+    const float dist = std::max(0.0f, t.dist - t.radius);
+    space::GunFire fire[16];
+    const int nFire = space::GunFireAt(t.world, fire, 16);
+    const std::vector<space::Weapon> pw = space::PlayerWeapons();
+    const std::vector<hudinfo::WeaponInfo> wi = hudinfo::Weapons();
+    auto fireOf = [&](const space::Weapon& w, hc::Gun& g)
+    {
+        g.ammo = w.ammo;
+        for (int i = 0; i < nFire; ++i)
+            if (_stricmp(fire[i].hardpoint, w.hardpoint) == 0)
+                g.reach = fire[i].reach, g.fire = fire[i].fire;
+    };
+    const int ag = hudinfo::ActiveWeaponGroup();
+    const int activeNum = ag > 0 ? ag : g_ctx.weaponGroup;
+    const bool two = uiopt::Get().weaponGroups == 2;
+    bool hide = false;
+    int nCue = 0;
+    auto add = [&](wchar_t ch, const hc::Gun* guns, int n, bool selected, bool locked, float reload)
+    {
+        const hc::Verdict v = hc::Judge(guns, n, onTarget, dist);
+        hide = hide || v == hc::Hide;
+        Model::CueMark& c = m.cue[nCue];
+        c.ch = ch, c.selected = selected, c.amber = v == hc::Amber, c.locked = locked, c.reload = reload, c.want = v == hc::Lit;
+        ++nCue;
+    };
+    // the groups: the rows the loadout shows, each by the game's own number
+    for (int r = 0; r < m.nGroups && r < 3; ++r)
+    {
+        const int num = m.realGroups ? m.groupNum[r] : 0;
+        hc::Gun guns[16];
+        int n = 0;
+        for (const space::Weapon& w : pw)
+        {
+            if (w.homing || n >= 16)
+                continue;
+            bool member = !m.realGroups;
+            for (const hudinfo::WeaponInfo& info : wi)
+                if (m.realGroups && !info.launcher && info.arch == w.archId && (info.groups & (1u << (num - 1))))
+                    member = true;
+            if (member)
+                fireOf(w, guns[n++]);
+        }
+        const bool selected = two ? num == 1 || num == 2 : r == m.activeGroup || num == activeNum;
+        add(static_cast<wchar_t>(L'0' + (num ? num : r + 1)), guns, n, selected, false, 0);
+    }
+    m.cueDigits = nCue;
+    // M and T: rounds by ammo (the active flag reads 0 for launchers), the reach a LOCK seeker's
+    for (const bool torpedo : {false, true})
+    {
+        hc::Gun guns[8];
+        int n = 0;
+        float reload = 0;
+        for (const space::Weapon& w : pw)
+        {
+            const bool onTorpedo = _strnicmp(w.hardpoint, "HpTorpedo", 9) == 0;
+            if (!w.homing || w.cruiseDisruptor || onTorpedo != torpedo || n >= 8)
+                continue;
+            fireOf(w, guns[n++]);
+            if (w.refire > 0 && w.elapsed < w.refire)
+                reload = std::max(reload, w.elapsed / w.refire);
+        }
+        if (n && nCue < hc::kMaxMarks)
+            add(torpedo ? L'T' : L'M', guns, n, false, m.locked, reload);
+    }
+    m.nCue = nCue;
+    // shown with a target or in a fight; never in calm travel, a cruise or a lane
+    const bool want = m.target || g_combat;
+    m.cueShow = want && !hide && m.cruise == 0 && !m.cine && !(m.man && (m.manName == L"TRADE LANE" || m.manName == L"LANE" || m.manName == L"DOCK"));
+    if (m.presetDrawn == hud2preset::Focus)
+        m.cueShow = m.cueShow && (m.tCol == kHostile || g_combat);
+}
+
 static ai::Self g_self;
 static bool g_haveSelf = false;
 static fl::Kinematics g_kin;
@@ -467,7 +555,9 @@ void Alert(const wchar_t* title, u32 col, int side)
 // The stacks slide (continuous motion, never a step): each card eases to the place the layout gives it.
 void SlideAlerts(float dt)
 {
-    auto slide = [dt](float& y, float to) { y = y < 0 ? to : y + (to - y) * std::min(1.0f, dt / 0.08f); };
+    // (skin_motion's fades and none: no travel, a card stands at its place at once)
+    const bool still = hudrows::g.skinMotion != 0;
+    auto slide = [dt, still](float& y, float to) { y = y < 0 || still ? to : y + (to - y) * std::min(1.0f, dt / 0.08f); };
     if (g_m.alertSide)
         slide(g_m.alertYNow, g_L.alertY);
     for (int i = 0; i < 2; ++i)
@@ -500,6 +590,52 @@ void AlertPrompt(presets::Action a, const wchar_t* label)
         ++g_m.nAlertPrompts;
 }
 
+// The game's "Tractor Failure" with its reason in the game's own words (GitHub issue 33): no text, no card, and the subtitles' line stays as it was.
+bool AlertTractor(int reason)
+{
+    const std::wstring why = tractorfail::Shout(text::Ids(tractorfail::TextIds(reason)));
+    if (why.empty())
+        return false;
+    Alert(L"TRACTOR FAILURE", kChrome);
+    AlertNone(why.c_str());
+    return true;
+}
+// A refusal since the last look: one compare in the slow pass while there is none.
+static void TractorCard()
+{
+    static u32 seen = 0;
+    const HudBus* bus = g_host->GetHudBus ? g_host->GetHudBus() : nullptr;
+    if (!bus || bus->version < 6 || !bus->ReadTractorFail)
+        return;
+    int reason = 0;
+    u32 age = 0;
+    const u32 serial = bus->ReadTractorFail(&reason, &age);
+    if (serial == seen)
+        return;
+    seen = serial;
+    if (tractorfail::Fresh(age))
+        AlertTractor(reason);
+}
+
+// The target on the screen. Again at the draw (RenderUnderHud): from the frame's start the caret trailed the ship by about a frame (motion p2l).
+void ProjectTarget(Model& m)
+{
+    float c[3] = {}, radius = 0, s[3] = {}, e[3] = {}, rot[9] = {};
+    m.tMark.onScreen = false;
+    if (m.target && space::TargetBody(c, radius) && fl::WorldToScreen(c, s))
+    {
+        const float W = static_cast<float>(fl::ScreenWidth()), Hs = static_cast<float>(fl::ScreenHeight());
+        m.tMark.x = s[0], m.tMark.y = s[1], m.tMark.onScreen = s[0] >= 0 && s[0] <= W && s[1] >= 0 && s[1] <= Hs;
+        m.tMark.r = 0;
+        if (fl::FlightScreenAxes(rot))
+        {
+            const float edge[3] = {c[0] + rot[0] * radius, c[1] + rot[3] * radius, c[2] + rot[6] * radius};
+            if (fl::WorldToScreen(edge, e))
+                m.tMark.r = sqrtf((e[0] - s[0]) * (e[0] - s[0]) + (e[1] - s[1]) * (e[1] - s[1]));
+        }
+    }
+}
+
 void Fast(float dt)
 {
     Model& m = g_m;
@@ -508,6 +644,36 @@ void Fast(float dt)
     m.shield = g_haveSelf ? g_self.shield : -1;
     m.power = g_haveSelf ? g_self.power : -1;
     g_haveKin = fl::PlayerKinematics(g_kin);
+    // the cue's fill: the verdict comes at 10 Hz, its hold and ease run per frame
+    {
+        static hud2cue::Hold holds[hud2cue::kMaxMarks];
+        m.cueAnyLit = false;
+        for (int i = 0; i < m.nCue && i < hud2cue::kMaxMarks; ++i)
+        {
+            m.cue[i].litA = holds[i].Step(m.cue[i].want, dt);
+            m.cueAnyLit = m.cueAnyLit || m.cue[i].litA > 0.5f;
+        }
+    }
+    // the targeting display's anchors, per frame: 10 Hz is too slow for a mark on a moving ship (docs\research\target-info-display.md 3.3)
+    {
+        ProjectTarget(m);
+        indicators::Mark rec[64];
+        const int n = m.target || m.nThreats ? indicators::Read(rec, 64) : 0;
+        m.tWaypoint = false;
+        int marks = 0;
+        for (int i = 0; i < n; ++i)
+        {
+            if (rec[i].id == m.targetId && (rec[i].flags & 0x200))
+                m.tWaypoint = true;
+            for (int t = 0; t < m.nThreats && t < 4 && marks < kMaxMarks; ++t)
+                if (rec[i].id && rec[i].id == m.threats[t].id && rec[i].id != m.targetId && rec[i].onScreen)
+                {
+                    Model::Mark& k = m.marks[marks++];
+                    k.x = rec[i].x, k.y = rec[i].y, k.name = m.threats[t].name, k.dist = m.threats[t].dist, k.col = m.threats[t].col, k.hull = -1;
+                }
+        }
+        m.nMarks = marks;
+    }
     m.speed = g_m.man && g_m.manName == L"TRADE LANE" ? g_posSpeed : 0;
     m.speed = g_haveKin ? std::max(m.speed, sqrtf(g_kin.vel[0] * g_kin.vel[0] + g_kin.vel[1] * g_kin.vel[1] + g_kin.vel[2] * g_kin.vel[2])) : m.speed;
     flight::Model fm;
@@ -520,6 +686,8 @@ void Fast(float dt)
         m.chargeLeft = std::max(0.0f, fm.cruiseChargeTime - fm.cruiseChargeElapsed);
     }
     m.burner = hudinfo::AfterburnerOn();
+    m.boost = hudinfo::ThrustGauge();
+    m.cruiseWait = hudinfo::CruiseDisruptLeft();
     m.kill = hudinfo::EngineKilled();
     m.throttle = fl::GetThrottle();
     m.reverse = m.throttle < -0.01f;
@@ -697,11 +865,11 @@ void Slow()
                 m.lootDist = Dist(c.distance);
             }
         }
-        if (hostile && c.id != tid && m.nThreats < 2 && c.distance < 10000)
+        if (hostile && c.id != tid && m.nThreats < (m.kbm && !tid ? 4 : 2) && c.distance < 10000)
         {
             Model::Threat& t = m.threats[m.nThreats++];
             t.name = hudinfo::DisplayName(c.id); // as the game names it ("Unknown ..." for an unvisited solar)
-            t.dist = Dist(c.distance);
+            t.dist = SurfaceDist(c);
             t.col = kHostile;
             t.id = c.id;
             t.icon = flicons::Enemy;
@@ -723,7 +891,7 @@ void Slow()
         m.tName = hudinfo::DisplayName(c.id);
         if (m.tName.empty() && !c.ship)
             m.tName = text::Ids(c.nameIds);
-        m.tDist = Dist(c.distance);
+        m.tDist = SurfaceDist(c);
         // (another player's ship too: the game's own 3D target label reads "Navy - FLvibedTester", its affiliation)
         m.tFaction = hudinfo::FactionName(c.id);
         m.tClass = hudinfo::ClassName(c.id);
@@ -1009,6 +1177,31 @@ void Slow()
         for (const space::Missile& mi : space::Missiles())
             if (mi.targetsPlayer && m.missiles < 3)
                 m.missileAng[m.missiles++] = Bearing(mi.pos, g_kin);
+
+    {
+        float cur = 0, mx = 0;
+        bool up = true;
+        m.shieldUp = !space::ShieldOf(me, cur, mx, up) || up;
+    }
+    FillCue(m, g_ctx.space && !g_ctx.modal);
+
+    // ---- the game's own warnings, read from the alerts themselves (hudvis): the value the game uses, at the moment it uses it
+    m.radiation = hudvis::AlertSeen(hudvis::kRadiation);
+    m.lag = hudvis::AlertSeen(hudvis::kLag);
+    m.tail = hudvis::AlertSeen(hudvis::kTail);
+    // the game names no ship for the tail: the nearest ship astern within its 500 m, else straight behind, the bottom of the ring
+    if (m.tail)
+    {
+        m.tailAng = 90;
+        float best = 600;
+        if (g_haveKin)
+            for (const space::Contact& c : all)
+            {
+                const float back = (c.pos[0] - g_kin.pos[0]) * g_kin.rot[2] + (c.pos[1] - g_kin.pos[1]) * g_kin.rot[5] + (c.pos[2] - g_kin.pos[2]) * g_kin.rot[8];
+                if (c.ship && c.id != me && c.distance < best && back > 0)
+                    best = c.distance, m.tailAng = Bearing(c.pos, g_kin);
+            }
+    }
 
     // ---- the objective
     ObjectiveStep st = {};
@@ -1419,12 +1612,23 @@ void Slow()
         Alert(L"CRUISE DISRUPTED", kAmber);
         AlertPrompt(A::Cruise, L"RECHARGE");
     }
+    // entering a damaging zone: a card once, the nav's line after it
+    {
+        static bool radiationWas = false;
+        if (m.radiation && !radiationWas && perf::Now() - g_spaceSince >= 1.5)
+        {
+            Alert(L"RADIATION", kAmber, 1);
+            AlertNone(L"LEAVE THE ZONE");
+        }
+        radiationWas = m.radiation;
+    }
     const float free = g_haveSelf ? g_self.holdFree : 1;
     if (g_haveSelf && free >= 0 && free < 1 && g_prevFree >= 1)
     {
         Alert(L"CARGO HOLD FULL", kChrome);
         AlertNone(L"NO ROOM FOR LOOT");
     }
+    TractorCard();
     if (g_haveSelf && g_self.shieldMax > 0)
         g_prevShield = shield;
     g_prevHull = m.hull >= 0 ? m.hull : 1;
@@ -1441,10 +1645,13 @@ void Simulate(Model& m)
 {
     if (g_sim.empty())
         return;
-    const bool combat = g_sim == "combat" || g_sim == "torpedo" || g_sim == "critical";
-    m.hull = combat ? 0.88f : 1, m.shield = combat ? 0.22f : 1, m.power = combat ? 0.64f : 1;
+    const bool longList = g_sim == "alertlist" || g_sim == "alertlistpad"; // (GitHub issue 35's scene, both forms)
+    const bool combat = g_sim == "combat" || g_sim == "torpedo" || g_sim == "critical" || longList;
+    m.hull = combat ? 0.88f : 1, m.shield = combat ? 0.22f : 1, m.power = combat ? 0.64f : 1, m.boost = combat ? 0.45f : 1;
     if (g_sim == "critical") // (the ring's low states: the flashes, the hull's bloom)
         m.hull = 0.18f, m.shield = 0.10f;
+    if (g_sim == "lowenergy") // (the energy meter near empty: both ends drained towards the middle, GitHub issue 28)
+        m.power = 0.12f;
     m.speed = combat ? 84.0f : g_sim == "dock" ? 300.0f : g_sim == "lane" ? 2600.0f : 80.0f;
     m.cruise = g_sim == "cruise" ? 1 : g_sim == "dock" ? 2 : 0;
     m.charge = 0.58f, m.chargeLeft = 2.1f;
@@ -1461,6 +1668,17 @@ void Simulate(Model& m)
     m.target = true;
     m.tBars = false, m.tLevel = -1;
     m.missiles = 0;
+    m.tail = g_sim == "hazard", m.tailAng = 130, m.radiation = g_sim == "hazard", m.lag = g_sim == "hazard";
+    // the cue's states (UI_HUD2_GROUP_CUE.md 8), every one on the row at once
+    m.nCue = 0, m.cueShow = false;
+    if (g_sim == "groups")
+    {
+        const wchar_t chars[5] = {L'1', L'2', L'3', L'M', L'T'};
+        for (int i = 0; i < 5; ++i)
+            m.cue[i] = Model::CueMark(), m.cue[i].ch = chars[i];
+        m.cue[0].selected = true, m.cue[0].litA = 1, m.cue[1].litA = 1, m.cue[3].litA = 1, m.cue[3].locked = true, m.cue[4].reload = 0.33f;
+        m.nCue = 5, m.cueDigits = 3, m.cueShow = true, m.cueAnyLit = true;
+    }
     m.nThreats = 0;
     m.alertLeft = 0, m.held[0].left = m.held[1].left = 0;
     m.hot[0] = m.hot[1] = m.hot[2] = m.hot[3] = false;
@@ -1488,8 +1706,20 @@ void Simulate(Model& m)
         AlertPrompt(A::Battery, L"BATTERY");
         m.hot[1] = true, m.hotCol[1] = kShield, m.hot[2] = true, m.hotCol[2] = kHostile;
         m.locked = true;
+        // the targeting display on a target that stands still: the lint reads the form, its numbers as a live one's
+        m.targetId = 424242, m.tMark.onScreen = true, m.tMark.x = 0.62f * g_L.W, m.tMark.y = 0.38f * g_L.H, m.tMark.r = 0.02f * g_L.H;
         AddCtx(A::Reverse, L"REVERSE");
         AddCtx(A::Turret, L"TURRET");
+        if (longList)
+        {
+            static const wchar_t* const kNames[7] = {L"Von Claussen", L"Bernhard Trautermann", L"Wolf Vorkeuffer", L"Norman Dethmar",
+                                                     L"Ulrich Roeser", L"Markus Semmerling", L"Arno Schroder"};
+            for (int i = 0; i < 7; ++i)
+                m.threats[i] = {kNames[i], L"458 m", kHostile};
+            m.nThreats = 7, m.list = true, m.listTotal = 7, m.listFirst = 0, m.kbm = g_sim == "alertlist";
+            m.alert = L"MISSILE INCOMING", m.alertSide = 1, m.nAlertPrompts = 0;
+            AlertPrompt(A::Cm, L"FLARE");
+        }
     }
     else if (g_sim == "travel")
     {

@@ -1,7 +1,7 @@
 # GitHub issue 31: with weapon_groups 2 the triggers fire their groups under the autopilot as in free flight, and HUD 2 shows both. A virtual pad, a background game, the autopilot
 # flying: the held commands (debug `owners`), the HUD's two glyphs, LT no longer the afterburner, and the display at hand-back. Exit 1 = a failure. -Root: a control run on another build.
 # Usage (PowerShell tool): tests\ap_groups.ps1 [-Instance 5] [-Root <a checkout>]   build\release
-param([int]$Instance = 5, [string]$Root = (Split-Path $PSScriptRoot -Parent))
+param([string]$Instance = 5, [string]$Root = (Split-Path $PSScriptRoot -Parent))
 $ErrorActionPreference = 'Stop'
 $env:FLVIBED_INSTANCE = "$Instance"
 . (Join-Path $Root 'tools\harness\flctl.ps1')

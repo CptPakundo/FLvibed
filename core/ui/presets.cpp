@@ -186,6 +186,70 @@ bool Find(const Table& t, Action a, glyphs::Id& btn, int& slot)
     return false;
 }
 
+// ---------------------------------------------------------------- the layout card's words
+const char* ActionWord(Action a)
+{
+    static const char* const kWords[static_cast<int>(Action::COUNT)] = {
+        "",                "Fire",            "Missile",         "Torpedo",        "Cruise",          "Afterburner",     "Reverse",
+        "Steer",           "Throttle",        "Strafe",          "Aim",            "Dock, jump, go to", "Cancel, drop cruise", "Tractor",
+        "Turret view",     "Formation",       "Go to",           "Engine kill",    "Target list",     "Action wheel",
+        "Target ahead, next", "Nearest target", "Next enemy",    "Clear target",   "Rear view",       "Autopilot",       "Neural Net",
+        "Pause",           "Nanobot",         "Battery",         "Countermeasure", "Mine",            "Next weapon group", "Take the ship back",
+        "Goal panel",      "Accept",          "Cruise disruptor", "Scan",          "Fire group 1",    "Fire group 2"};
+    const int i = static_cast<int>(a);
+    return i >= 0 && i < static_cast<int>(Action::COUNT) ? kWords[i] : "";
+}
+
+// A button's slots in words: "Missile; hold: torpedo". The later slots start in lower case, inside the sentence.
+static std::string BindingWords(const Binding& b)
+{
+    std::string s = ActionWord(b.tap);
+    const auto add = [&s](const char* how, Action a)
+    {
+        std::string w = ActionWord(a);
+        if (w.empty())
+            return;
+        w[0] = static_cast<char>(tolower(static_cast<unsigned char>(w[0])));
+        s += (s.empty() ? "" : "; ") + std::string(how) + w;
+    };
+    add("hold: ", b.hold);
+    add("double tap: ", b.dbl);
+    return s;
+}
+
+std::vector<LayoutLine> LayoutLines(const Table& t)
+{
+    std::vector<LayoutLine> out;
+    const auto line = [&out](glyphs::Id id, const std::string& words)
+    {
+        if (!words.empty())
+            out.push_back({id, words});
+    };
+    const auto stick = [&t](glyphs::Id axis, glyphs::Id click)
+    {
+        std::string s = BindingWords(t.b[axis]), c = BindingWords(t.b[click]);
+        if (c.empty())
+            return s;
+        c[0] = static_cast<char>(tolower(static_cast<unsigned char>(c[0])));
+        return s.empty() ? "Click: " + c : s + "; click: " + c;
+    };
+    for (const glyphs::Id id : {glyphs::RT, glyphs::LT, glyphs::RB, glyphs::LB, glyphs::A, glyphs::B, glyphs::X, glyphs::Y})
+        line(id, BindingWords(t.b[id]));
+    line(glyphs::RS, stick(glyphs::RS, glyphs::R3));
+    line(glyphs::LS, stick(glyphs::LS, glyphs::L3));
+    std::string dpad;
+    for (const glyphs::Id id : {glyphs::DU, glyphs::DD, glyphs::DL, glyphs::DR})
+    {
+        const std::string w = BindingWords(t.b[id]);
+        if (!w.empty())
+            dpad += (dpad.empty() ? "" : ", ") + w;
+    }
+    line(glyphs::DU, dpad);
+    line(glyphs::VIEW, BindingWords(t.b[glyphs::VIEW]));
+    line(glyphs::MENU, BindingWords(t.b[glyphs::MENU]));
+    return out;
+}
+
 // ---------------------------------------------------------------- the dispatcher
 // (not Turret: each turret hold toggles the view itself; a latch made every second hold a no-op)
 static bool Latchable(Action a)

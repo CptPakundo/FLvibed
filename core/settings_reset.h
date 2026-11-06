@@ -41,20 +41,69 @@ inline int Run(const char* dir)
     return moved;
 }
 
+// The first-start card (docs\UI_OPTIONS.md 5a) shows once, on a fresh install. `first_card` in [FLvibed] of FLvibed.ini records it; the settings of a player upgrading are the
+// sign of an old install, so their stamp goes in silently. The modules write FLController.ini at their first run, so core\flvibed.cpp asks before anything starts.
+enum class FirstCard
+{
+    Nothing, // stamped already
+    Stamp,   // an upgrade: stamp it, no card
+    Show     // a fresh install
+};
+constexpr FirstCard FirstCardFor(bool stamped, bool settingsFound)
+{
+    return stamped ? FirstCard::Nothing : settingsFound ? FirstCard::Stamp : FirstCard::Show;
+}
+
+inline bool CardStamped(const char* dir)
+{
+    char ini[MAX_PATH];
+    return sprintf_s(ini, "%sFLvibed.ini", dir) >= 0 && GetPrivateProfileIntA("FLvibed", "first_card", 0, ini) != 0;
+}
+
+inline void StampCard(const char* dir)
+{
+    char ini[MAX_PATH];
+    if (sprintf_s(ini, "%sFLvibed.ini", dir) >= 0)
+        WritePrivateProfileStringA("FLvibed", "first_card", "1", ini);
+}
+
+inline bool SettingsFound(const char* dir)
+{
+    char file[MAX_PATH];
+    return sprintf_s(file, "%sFLController.ini", dir) >= 0 && GetFileAttributesA(file) != INVALID_FILE_ATTRIBUTES;
+}
+
 // One value moved, not a reset: 0.3.5 raised `rumble`'s default from 60 to 100 and the first run writes every default to FLController.ini, so an untouched install
 // holds 60 and would never see it (the owner, 6 Nov 2026). A stored 60 becomes 100, once per install: [FLvibed] settings_moved in FLvibed.ini says it ran, so a
 // player who sets 60 afterwards keeps it. Any other value stays. Returns true when it moved the value. A later move raises kMoved.
-constexpr int kMoved = 1;
+// 0.4.0 retires `deck_mode` into `hud_size`: 1 on becomes large (3), 2 off normal (2), 0 automatic stays automatic; the old key goes.
+constexpr int kMoved = 2;
 inline bool MoveValues(const char* dir)
 {
     char ini[MAX_PATH], controller[MAX_PATH];
     if (sprintf_s(ini, "%sFLvibed.ini", dir) < 0 || sprintf_s(controller, "%sFLController.ini", dir) < 0)
         return false;
-    if (GetPrivateProfileIntA("FLvibed", "settings_moved", 0, ini) >= kMoved)
+    const int was = GetPrivateProfileIntA("FLvibed", "settings_moved", 0, ini);
+    if (was >= kMoved)
         return false;
-    const bool moved = GetPrivateProfileIntA("Controller", "rumble", -1, controller) == 60;
-    if (moved)
+    bool moved = false;
+    if (was < 1 && GetPrivateProfileIntA("Controller", "rumble", -1, controller) == 60)
+    {
         WritePrivateProfileStringA("Controller", "rumble", "100", controller);
+        moved = true;
+    }
+    const int deck = GetPrivateProfileIntA("Controller", "deck_mode", -1, controller);
+    if (deck >= 0)
+    {
+        if (static_cast<int>(GetPrivateProfileIntA("Controller", "hud_size", -1, controller)) < 0)
+        {
+            char size[16];
+            sprintf_s(size, "%d", deck == 1 ? 3 : deck == 2 ? 2 : 0);
+            WritePrivateProfileStringA("Controller", "hud_size", size, controller);
+        }
+        WritePrivateProfileStringA("Controller", "deck_mode", nullptr, controller);
+        moved = true;
+    }
     char level[16];
     sprintf_s(level, "%d", kMoved);
     WritePrivateProfileStringA("FLvibed", "settings_moved", level, ini);

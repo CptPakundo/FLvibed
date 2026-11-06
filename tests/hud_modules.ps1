@@ -1,7 +1,7 @@
 # The HUD's module rows in game (docs\MODULES_PLAN.md P9): Controller without the HUD, Subtitles without it, the HUD without the Controller. Background games,
 # frames in research\experience\runs\hud_modules. Prints what it read; exit 1 on a failure.
 # Usage (PowerShell tool): tests\hud_modules.ps1 [-Row pad,subs,hud] [-Instance 1]    build\release
-param([string[]]$Row = @('pad', 'subs', 'hud'), [int]$Instance = 1)
+param([string[]]$Row = @('pad', 'subs', 'hud'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"

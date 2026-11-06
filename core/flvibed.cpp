@@ -134,8 +134,11 @@ static void RegisterModules(HINSTANCE self)
         // a release that changed the defaults resets an older release's settings first (settings_reset.h), before
         // the switches below or any module read them
         slash[1] = '\0';
+        const bool oldSettings = settings_reset::SettingsFound(g_iniPath); // (before the reset moves them aside and before any module writes its ini)
         settings_reset::Run(g_iniPath);
         settings_reset::MoveValues(g_iniPath);
+        if (settings_reset::FirstCardFor(settings_reset::CardStamped(g_iniPath), oldSettings) == settings_reset::FirstCard::Stamp)
+            settings_reset::StampCard(g_iniPath);
         strcpy_s(slash + 1, MAX_PATH - (slash + 1 - g_iniPath), "FLvibed.ini");
     }
     ReadRows();

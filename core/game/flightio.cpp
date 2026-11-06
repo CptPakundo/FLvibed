@@ -4,6 +4,7 @@
 #include "dimouse.h"
 #include "game/fl.h"
 #include "game/hostcalls.h"
+#include "log.h"
 
 #include <map>
 
@@ -19,6 +20,23 @@ struct HoldState
 };
 static std::map<int, HoldState> g_holding;
 static float g_frameDt = 0;
+
+// A hold ends with its release: the map's mask says so, or the map does not list the command and so says nothing. Without it a slide up or down held on vanilla's or a
+// mod's key map never stopped (the game re-reads the held commands only on a key-up, 0x4D812D). tests\strafe_release.ps1.
+static bool EndsWithKeyUp(int cmd)
+{
+    if (fl::CommandFlags(cmd) & fl::CMDF_KEYUP)
+        return true;
+    if (fl::CommandMapped(cmd))
+        return false;
+    static bool logged[fl::CMD_COUNT];
+    if (cmd > 0 && cmd < fl::CMD_COUNT && !logged[cmd])
+    {
+        logged[cmd] = true;
+        Log("key map: %s is not listed: its release is sent anyway", fl::CmdName(cmd));
+    }
+    return true;
+}
 
 // Send the events a key bound to `cmd` would produce (per its keymap.ini "state" mask).
 void Hold(int cmd, bool want, inputrules::Owner owner)
@@ -44,7 +62,7 @@ void Hold(int cmd, bool want, inputrules::Owner owner)
         fl::FireCommand(cmd, true);
         h.repeat = 1.0f / 15.0f;
     }
-    if (!want && (flags & fl::CMDF_KEYUP))
+    if (!want && EndsWithKeyUp(cmd))
         fl::FireCommand(cmd, false);
 }
 
@@ -102,7 +120,7 @@ void ReleaseAll()
         if (h.second.down)
         {
             fl::SetHeld(h.first, false);
-            if (fl::CommandFlags(h.first) & fl::CMDF_KEYUP)
+            if (EndsWithKeyUp(h.first))
                 fl::FireCommand(h.first, false);
             h.second.down = false;
             h.second.owner = inputrules::OwnerNone;

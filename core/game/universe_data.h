@@ -32,6 +32,7 @@ struct System
     std::unordered_map<u32, StrictZone> strict; // zone id -> why it is costly
     std::vector<LethalSphere> lethal;           // SPHERE zones whose damage is >= lethalDamage per second
     std::unordered_map<u32, u32> dockRings;     // planet id -> its docking ring (the object whose dock_with = its base)
+    std::unordered_map<u32, int> fieldKinds;    // a field's zone id -> 1 [asteroids], 2 [nebula]
 };
 
 // The system's file from universe.ini's sections ([system] nickname + file, relative to DATA\UNIVERSE), "" if unknown.

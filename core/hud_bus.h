@@ -151,7 +151,7 @@ struct HudBus
 {
     u32 version; // 1; 2 adds the lane (PublishLane / ReadLane / LaneFrame) - read them only when version >= 2; 3 adds the
                  // floor and the docked subtitles (PublishFloor ... DockedSubsFrame) - only when version >= 3; 4 adds FLUF
-                 // (ReadFluf, SetFlufPolicy) - only when version >= 4; 5 adds ReadFlufExtra
+                 // (ReadFluf, SetFlufPolicy) - only when version >= 4; 5 adds ReadFlufExtra; 6 adds the tractor's refusal
     void (*PublishLayout)(const HudLayout* layout);
     // Copies the last layout; false when none was ever published.
     bool (*ReadLayout)(HudLayout* out);
@@ -176,4 +176,7 @@ struct HudBus
     void (*SetFlufPolicy)(int policy); // `fluf_windows` (the controller's registry; 2 until it says otherwise)
     // version 5 (appended)
     bool (*ReadFlufExtra)(HudFlufExtra* out); // the last snapshot's per-window extras (call after ReadFluf)
+    // version 6 (appended): why the game last played its "Tractor Failure" line (core\game\tractorfail.h; core\host\tractorhook.* notes it). Read gives its serial, 0 = none yet.
+    void (*NoteTractorFail)(int reason);
+    u32 (*ReadTractorFail)(int* reason, u32* ageMs);
 };

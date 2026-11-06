@@ -204,6 +204,7 @@ static float Left(float W, float H, float y0, float y1, float right)
 // with its label at the nominal size, wF with the label at the fit rule's floor, ph the pill's height, pitch the gap
 // between pills in a row (pixels). The confirm = the A pill wherever the owner listed it (the dealers put their bumpers
 // first: BUY stays), else the first; BACK = the last.
+static const float* g_stackW = nullptr; // HUD 2's pills can stack (promptfit LaneLayout's wS); the classic look's cannot
 static void Layout(float W, float H, const float* wN, const float* wF, float ph, float pitch, Placed& out)
 {
     int confirm = 0;
@@ -216,7 +217,62 @@ static void Layout(float W, float H, const float* wN, const float* wF, float ph,
     promptfit::LaneLayout(
         W, H, g_count, confirm, wN, wF, ph, pitch, winplates::NeuroNetBottom(),
         [&](float y0, float y1, float right) { return Left(W, H, y0, y1, right); },
-        [](float x0, float x1, float below) { return winplates::LowestKeepOut(x0, x1, below); }, out, g_dropped);
+        [](float x0, float x1, float below) { return winplates::LowestKeepOut(x0, x1, below); }, out, g_dropped, g_stackW, g_stackW ? W - H * 0.012f : 0.0f);
+}
+
+// Symmetry (the owner, 6 Nov 2026): a row of pills stands centred on the screen where its band leaves the room, else where the lane put it; a column stands centred between
+// the panel beside it and the screen's edge, its height centred on that panel.
+static void CentreLane(float W, float H, Placed& p)
+{
+    if (p.mode == Mode::Column)
+    {
+        float right = 0, top = 0, bottom = 0, widest = 0;
+        if (!winplates::PanelBeside(p.ry0, p.ry1, right, top, bottom))
+            return;
+        for (int i = 0; i < g_count; ++i)
+            if (p.use[i])
+                widest = std::max(widest, p.w[i]);
+        const float cx = (right + W) / 2;
+        if (widest <= 0 || cx - widest / 2 < right)
+            return;
+        float dy = (top + bottom) / 2 - (p.ry0 + p.ry1) / 2, x0 = 1e9f, x1 = -1e9f;
+        if (p.ry1 - p.ry0 > bottom - top)
+            dy = 0;
+        // (where the column goes may stand beside a wider panel than where it was: it touched the transfer window's, the owner, 6 Nov 2026)
+        float r2 = 0, t2 = 0, b2 = 0;
+        if (winplates::PanelBeside(p.ry0 + dy, p.ry1 + dy, r2, t2, b2) && r2 > right)
+        {
+            right = r2;
+            if (cx - widest / 2 < right || (right + W) / 2 - widest / 2 < right)
+                return;
+        }
+        const float cxNow = (right + W) / 2;
+        for (int i = 0; i < g_count; ++i)
+            if (p.use[i])
+            {
+                p.x0[i] = cxNow - p.w[i] / 2, p.cy[i] += dy;
+                x0 = std::min(x0, p.x0[i]), x1 = std::max(x1, p.x0[i] + p.w[i]);
+            }
+        p.rx0 = x0, p.rx1 = x1, p.ry0 += dy, p.ry1 += dy;
+        return;
+    }
+    if (p.mode != Mode::Row)
+        return;
+    float x0 = 1e9f, x1 = -1e9f;
+    for (int i = 0; i < g_count; ++i)
+        if (p.use[i])
+            x0 = std::min(x0, p.x0[i]), x1 = std::max(x1, p.x0[i] + p.w[i]);
+    if (x1 < x0)
+        return;
+    // (something stands at the left of the band, the NeuroNet's strip: the row stays at the right edge, its mirror. Centred, the two read lopsided, the owner, 6 Nov 2026)
+    if (Left(W, H, p.ry0, p.ry1, x1) > W * deckmode::SideW() + 1)
+        return;
+    const float dx = W / 2 - (x0 + x1) / 2;
+    if (Left(W, H, p.ry0, p.ry1, x1 + dx) > x0 + dx)
+        return;
+    for (int i = 0; i < g_count; ++i)
+        p.x0[i] += dx;
+    p.rx0 += dx, p.rx1 += dx;
 }
 
 // Where each hold pill's word goes this frame (promptfit.h ChooseHold; WordAt::None for every pill without a hold).
@@ -359,7 +415,8 @@ static void Fallback(const Placed& p, int sw, int sh)
 static promptfit::PillSteady g_steady;
 static void HoldLane(const Placed& before, const promptfit::HoldPlan& planBefore, float W, float H, const float* widths)
 {
-    if (before.mode == Mode::None)
+    // (the hold keeps pills from flickering, never over a panel: the infocard's plate opened under the bottom row, which stood on it for the wait, the owner, 6 Nov 2026)
+    if (before.mode == Mode::None || winplates::Blocked(before.rx0, before.ry0, before.rx1, before.ry1))
         g_steady.NewLane();
     promptfit::LaneKey k;
     k.mode = g_last.mode, k.x0 = static_cast<int>(g_last.rx0), k.y0 = static_cast<int>(g_last.ry0);
@@ -391,7 +448,7 @@ static void DrawHud2(void* device, int sw, int sh, bool visible)
     // the outline alone) - the widths include the word, so the lane's fallbacks act on the real pill
     promptfit::HoldDims d;
     d.word = hud2kit::TextWidth(L"HOLD", floorSize), d.gapBefore = promptfit::GapBefore(g), d.ringChord = promptfit::RingChord(g);
-    float bN[kMax] = {}, bF[kMax] = {}, gls[kMax] = {}, lbl[kMax] = {}, wN[kMax] = {}, wF[kMax] = {};
+    float bN[kMax] = {}, bF[kMax] = {}, gls[kMax] = {}, lbl[kMax] = {}, wN[kMax] = {}, wF[kMax] = {}, bS[kMax] = {};
     bool hold[kMax] = {};
     for (int i = 0; i < g_count; ++i)
     {
@@ -401,10 +458,14 @@ static void DrawHud2(void* device, int sw, int sh, bool visible)
         lbl[i] = hud2kit::TextWidth(p.label ? p.label : L"", floorSize);
         bN[i] = promptfit::PillWidth(H, gls[i], hud2kit::TextWidth(p.label ? p.label : L"", size));
         bF[i] = promptfit::PillWidth(H, gls[i], lbl[i]);
+        bS[i] = p.hold ? 0 : H * 0.024f + std::max(gls[i], hud2kit::TextWidth(p.label ? p.label : L"", size));
     }
+    g_stackW = bS;
     const Placed before = g_last;
     const promptfit::HoldPlan planBefore = g_plan;
     LayoutHold(W, H, bN, bF, gls, lbl, hold, d, 2 * half, pitch, floorSize, wN, wF);
+    g_stackW = nullptr;
+    CentreLane(W, H, g_last);
     HoldLane(before, planBefore, W, H, bN);
     for (int i = 0; i < g_count; ++i) // (a word above its pill belongs to the lane's area: the subtitles keep clear of it)
         if (g_last.use[i] && promptfit::Raised(g_plan.at[i]))
@@ -427,6 +488,19 @@ static void DrawHud2(void* device, int sw, int sh, bool visible)
         const float x0 = g_last.x0[i], y = g_last.cy[i], x1 = x0 + w[i];
         if (y != lastY)
             ++g_rows, lastY = y;
+        if (g_last.stack[i]) // two slots tall: the glyphs over the whole word
+        {
+            const float tall = 2 * half + H * 0.004f, a = p.enabled ? 1.0f : 0.45f;
+            hud2kit::Plate(x0, y - tall, x1, y + tall, H * 0.008f, hud2kit::kTL | hud2kit::kTR | hud2kit::kBR | hud2kit::kBL, 205 / 255.0f, hud2kit::kChrome, 80 / 255.0f);
+            const float gw = hud2kit::GlyphWidth(p.btn, g), g2 = p.btn2 != glyphs::COUNT ? hud2kit::GlyphWidth(p.btn2, g) + H * 0.006f : 0;
+            float cx = (x0 + x1) / 2 - (gw + g2) / 2;
+            hud2kit::Glyph(p.btn, cx + gw / 2, y - tall / 2, g, hud2kit::Argb(hud2kit::kChrome, a), false);
+            if (p.btn2 != glyphs::COUNT)
+                hud2kit::Glyph(p.btn2, cx + gw + g2 - (g2 - H * 0.006f) / 2, y - tall / 2, g, hud2kit::Argb(hud2kit::kChrome, a), false);
+            hud2kit::Text((x0 + x1) / 2, y + tall / 2, p.label ? p.label : L"", size, hud2kit::Argb(hud2kit::kInk, a), hud2kit::Center);
+            ++g_drawn;
+            continue;
+        }
         hud2kit::Plate(x0, y - half, x1, y + half, H * 0.008f, hud2kit::kTL | hud2kit::kTR | hud2kit::kBR | hud2kit::kBL,
                        205 / 255.0f, hud2kit::kChrome, 80 / 255.0f);
         const float a = p.enabled ? 1.0f : 0.45f;

@@ -19,12 +19,18 @@ struct Fonts
     render::Font title;   // page titles and section headers (Agency FB, ~0.028 H)
     render::Font label;   // row labels, the control words, button captions (Agency FB, ~0.024 H)
     render::Font body;    // the rollover help, value captions (Arial Unicode MS, ~0.016 H)
+    render::Font big;     // PageFontsFor only: the page's and its dialogs' titles
     int sh = 0;           // built for this screen height
     int percent = 100;    // and this text_size
+    float floorH = 0;     // and this text floor (hud_size)
+    size_t chars = 0;     // and this many characters (render::Unmet grows them)
     bool ok = false;
 };
 // The fonts for the screen height (rebuilt when it or text_size changes; the game's faces when its files load).
 const Fonts& FontsFor(int sh, int textSizePercent);
+// The options page's own sizes (docs\UI_OPTIONS.md 8), times `percent`: label 0.032 H, body (values, the description) 0.030 H, title (section labels) 0.024 H, big 0.040 H,
+// all in the game's label face. Kept apart from FontsFor, which the pad screens share.
+const Fonts& PageFontsFor(int sh, int percent);
 void FreeFonts(); // before the logic unloads (the textures belong to this DLL)
 std::wstring Widen(const char* utf8);
 std::string Narrow(const std::wstring& s);
@@ -49,6 +55,7 @@ struct UiInput
     // edges (with auto-repeat on up / down / left / right while held)
     bool up = false, down = false, left = false, right = false;
     bool accept = false, back = false, tabPrev = false, tabNext = false, pageUp = false, pageDown = false;
+    bool defaultKey = false, cancelKey = false; // with SetPageKeys: the keys D and C
     bool anyPad = false; // the pad produced something this frame (the device that drives the focus)
     bool anyKey = false;
     // the pointer: the game's cursor in screen pixels; click = the left button's press edge, held = down now
@@ -62,6 +69,10 @@ class Input
   public:
     void Init();
     void Reset(); // forget held keys (the page closed)
+    // Held directions: seconds to the first repeat and between repeats.
+    void SetRepeat(float first, float next) { repeatFirst_ = first, repeatNext_ = next; }
+    // The options page's letters count as navigation: Q and E the tabs, D and C its chips. Off for the pad screens, whose keys go to the game.
+    void SetPageKeys(bool on) { pageKeys_ = on; }
     // From the host's OnRawKey (the game's thread, before the game acts). Returns true when the key is one the page
     // uses (to be swallowed while it is open): navigation keys, and every key while capturing.
     bool PushKey(int vk, bool down, bool capturing);
@@ -91,6 +102,8 @@ class Input
     std::vector<KeyEvent> keys_;
     bool keyDown_[256] = {};
     float repeat_[4] = {};  // up, down, left, right: time until the next repeat while held
+    float repeatFirst_ = 0.45f, repeatNext_ = 0.09f;
+    bool pageKeys_ = false;
     bool prevClick_ = false;
     float backHold_ = 0;
 };
@@ -112,9 +125,15 @@ struct RowStyle
     bool enabled = true;   // false: greyed (a parent row is off)
     bool changed = false;  // the dot before the label (differs from the default)
     const wchar_t* note = nullptr; // "AFTER RESTART" / "AT THE NEXT LOAD" after the value
+    bool bare = false;     // the value alone: no box, arrows or track (a row that cannot change; the second signal beside the grey)
+    bool lit = false;      // the row has the focus: label and value in the active yellow
+    bool ownCase = false;  // the label as written, not in the game's capitals
+    float indent = 0;      // the label moves right by this (a row under a head on MORE)
 };
 void RowLabel(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::wstring& label);
 void RowToggle(const Fonts& f, const RowGeom& g, const RowStyle& s, bool on);
+// A feature's switch: the value in `argb`, right-aligned, its box unless `box` is false; `on` ticks the box.
+void RowHead(const Fonts& f, const RowGeom& g, const std::wstring& word, u32 argb, bool box, bool on);
 void RowPicker(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::wstring& word);
 // t = the value's position 0..1; caption = the value text left of the track
 void RowSlider(const Fonts& f, const RowGeom& g, const RowStyle& s, float t, const std::wstring& caption);

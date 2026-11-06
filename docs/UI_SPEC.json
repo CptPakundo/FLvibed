@@ -1138,19 +1138,80 @@
    {
     "name": "FREELANCER",
     "values": {
-     "holds_as_toggles": false
+     "holds_as_toggles": "HOLD"
     }
    },
    {
     "name": "ACE",
     "values": {
-     "holds_as_toggles": false
+     "holds_as_toggles": "HOLD"
     }
    },
    {
     "name": "ASSISTED",
     "values": {
-     "holds_as_toggles": true
+     "holds_as_toggles": "TOGGLE"
+    }
+   }
+  ],
+  "button_hints": [
+   {
+    "name": "WHEN USEFUL",
+    "values": {
+     "prompt_bar": "CONTEXTUAL",
+     "world_prompts": "CONTEXTUAL",
+     "hud_context": "CONTEXTUAL",
+     "hud_prompts": "ON CHANGE",
+     "button_legend": "ON",
+     "hud_glyphs": true
+    }
+   },
+   {
+    "name": "ALWAYS",
+    "values": {
+     "prompt_bar": "ALWAYS",
+     "world_prompts": "CONTEXTUAL",
+     "hud_context": "CONTEXTUAL",
+     "hud_prompts": "ALWAYS",
+     "button_legend": "ON",
+     "hud_glyphs": true
+    }
+   },
+   {
+    "name": "OFF",
+    "values": {
+     "prompt_bar": "OFF",
+     "world_prompts": "OFF",
+     "hud_context": "OFF",
+     "hud_prompts": "ON CHANGE",
+     "button_legend": "OFF",
+     "hud_glyphs": false
+    }
+   }
+  ],
+  "hit_effects": [
+   {
+    "name": "FULL",
+    "values": {
+     "shield_cue": true,
+     "shield_cue_intensity": 1.0,
+     "hull_cue": true
+    }
+   },
+   {
+    "name": "SOFT",
+    "values": {
+     "shield_cue": true,
+     "shield_cue_intensity": 0.5,
+     "hull_cue": true
+    }
+   },
+   {
+    "name": "OFF",
+    "values": {
+     "shield_cue": false,
+     "shield_cue_intensity": 1.0,
+     "hull_cue": false
     }
    }
   ]
@@ -1288,8 +1349,7 @@
        "keys": [
         "X"
        ],
-       "label": "DELETE",
-       "v": "hold"
+       "label": "DELETE"
       },
       {
        "keys": [
@@ -1439,8 +1499,7 @@
        "keys": [
         "X"
        ],
-       "label": "DELETE",
-       "v": "hold"
+       "label": "DELETE"
       },
       {
        "keys": [
@@ -2295,7 +2354,8 @@
         "COMMS",
         "CONTACT FILTER",
         "AUTOPILOT GOALS",
-        "REAR VIEW"
+        "REAR VIEW",
+        "HUD FADES"
        ],
        "sel": null,
        "t": "wheel"
@@ -3659,7 +3719,8 @@
       "The game's two-list window, adapted: bumpers switch the side (your cargo / the dealer), D-pad walks the rows, triggers set the quantity (hold = fast), A buys or sells, Y = all you can afford / all you have. The transfer panel in the middle shows the running total and the profit against known prices.",
       "Keyboard and mouse keep the game's own window.",
       "Built: the prompt bar caps at five, so the D-pad ITEM prompt is left out (LB / RB side, LT / RT QUANTITY, A BUY / SELL, Y MAX, B CLOSE); the middle panel shows QUANTITY n / max under the game's own total (the game's price text is not readable by FLvibed), not a running total of its own.",
-      "Built 5 Nov 2026 (GitHub issue 20's comment, the owner's decision): A held 0.6 s buys or sells, one trade a hold, as a job or a ship is taken; a tap never trades. The row is selected again after each trade, so holding again repeats it. QUANTITY and MAX show only while the game offers a slider."
+      "Built 5 Nov 2026 (GitHub issue 20's comment, the owner's decision): A held 0.6 s buys or sells, one trade a hold, as a job or a ship is taken; a tap never trades. The row is selected again after each trade, so holding again repeats it. QUANTITY and MAX show only while the game offers a slider.",
+      "RS moves the description while it overflows, then the list under the focus or the left stick's cursor; on a filter or the transfer panel the list last focused. A list that fits moves nothing."
      ],
      "prompts": [
       {
@@ -3746,9 +3807,10 @@
      "id": "default",
      "label": "Pad",
      "notes": [
-      "Same window as the trader plus X for the category filter (the game's icon row) and a compare line (equipped vs selected) in the middle panel; A held buys or sells.",
+      "Same window as the trader plus X for the category filter (the game's icon row) and a compare line (equipped vs selected) in the middle panel; A held buys or sells; on a filter A reads SELECT and a hold trades nothing.",
       "Built: Y = MAX quantity, no COMPARE line (the game's stat text is not readable); the list re-sorts after each mount toggle: mounted first.",
-      "Built 5 Nov 2026 (GitHub issues 17, 20): A held buys or sells as at the trader; LS click mounts / unmounts one of your rows through the game's toggle box (until 0.3.0 this was A, which left nothing able to sell). The bar takes five, so its middle follows the item: LT / RT QUANTITY and Y MAX with a slider, LS MOUNT on a row with a box (taking Y's place), X FILTER when no slider needs the place (X still works)."
+      "Built 5 Nov 2026 (GitHub issues 17, 20): A held buys or sells as at the trader; LS click mounts / unmounts one of your rows through the game's toggle box (until 0.3.0 this was A, which left nothing able to sell). The bar takes five, so its middle follows the item: LT / RT QUANTITY and Y MAX with a slider, LS MOUNT on a row with a box (taking Y's place), X FILTER when no slider needs the place (X still works).",
+      "RS moves the description while it overflows, then the list under the focus or the left stick's cursor; on a filter or the transfer panel the list last focused. A list that fits moves nothing."
      ],
      "prompts": [
       {
@@ -3832,7 +3894,8 @@
      "id": "default",
      "label": "Pad",
      "notes": [
-      "Cycle the offered ships, read the stats, hold A to buy (the trade-in shown first)."
+      "Cycle the offered ships, read the stats, hold A to buy (the trade-in shown first).",
+      "The final stage (the game's Cargo Transfer window): the focus opens on BUY SHIP, a fresh hold of A buys, letting go early cancels, there is no tap. Its words stand on a plate, and the prompts keep off them. A hold carried in from the first stage counts for nothing until A is released. On a row A held is TRANSFER, the trade-in: LT / RT QUANTITY and Y MAX as at the dealers. LB / RB walk the two lists and BUY SHIP (the pill reads SIDE / BUY SHIP off it). The game hides BUY SHIP and says how much is missing while the player cannot pay: the focus opens on the player's rows, and BUY SHIP joins the walk once enough is sold. Keyboard and mouse: unchanged."
      ],
      "prompts": [
       {
@@ -3872,36 +3935,144 @@
  ],
  "tabs": [
   {
-   "id": "general",
-   "label": "GENERAL",
+   "id": "hud",
+   "label": "HUD",
+   "head": "hud_style",
    "sections": [
     {
-     "label": "MODULES",
+     "label": "",
      "rows": [
       {
-       "def": true,
-       "help": "Dialogue subtitles. FLvibed needs this module or the Controller module: with both off it does not start at all, this page included, so one of the two stays on. Takes effect after the game restarts.",
-       "id": "mod_subtitles",
-       "key": "mod_subtitles",
-       "kind": "toggle",
-       "label": "Subtitles module",
-       "needs": "restart",
+       "def": "ENABLED",
+       "help": "The new flight display and menu look. On the pad: keyboard and mouse keep the game's HUD. Disabled: the game's own HUD.",
+       "id": "hud_style",
+       "key": "hud_style",
+       "kind": "picker",
+       "label": "HUD 2",
+       "needs": "live",
+       "options": [
+        "ENABLED",
+        "ON THE PAD",
+        "DISABLED"
+       ],
        "parent": null,
-       "tier": "player",
-       "value": true
+       "tier": "simple",
+       "value": "ENABLED",
+       "head": "hud",
+       "off_help": "HUD 2 is disabled, so this has no effect. Your setting is kept."
       },
       {
-       "def": true,
-       "help": "The whole game on a controller: its prompts, screens and on-screen keyboard. Turning it off leaves the rows below as they are. FLvibed needs this module or the Subtitles module, so one of the two stays on. Takes effect after the game restarts.",
-       "id": "mod_controller",
-       "key": "mod_controller",
-       "kind": "toggle",
-       "label": "Controller module",
-       "needs": "restart",
+       "def": "AUTOMATIC",
+       "help": "Automatic: Large on a handheld, Normal elsewhere. Small is close to the game's own HUD. This page follows it.",
+       "id": "hud_size",
+       "key": "hud_size",
+       "kind": "picker",
+       "label": "HUD size",
+       "needs": "live",
+       "options": [
+        "AUTOMATIC",
+        "SMALL",
+        "NORMAL",
+        "LARGE"
+       ],
        "parent": null,
-       "tier": "player",
-       "value": true
+       "tier": "simple",
+       "value": "AUTOMATIC"
       },
+      {
+       "id": "game_text_size",
+       "key": "game_text_size",
+       "label": "Window text size",
+       "kind": "picker",
+       "help": "The game's text in dealers, job boards and the Neural Net. Automatic follows HUD size. Applies at the main menu.",
+       "needs": "live",
+       "tier": "simple",
+       "parent": null,
+       "options": [
+        "AUTOMATIC",
+        "NORMAL",
+        "LARGE",
+        "EXTRA LARGE"
+       ],
+       "def": "AUTOMATIC",
+       "value": "AUTOMATIC"
+      },
+      {
+       "def": "FADES",
+       "help": "Fades: parts of the HUD fade out in calm flight and return when they matter. Always: everything stays.",
+       "id": "hud_fade",
+       "key": "hud_fade",
+       "kind": "picker",
+       "label": "HUD in calm flight",
+       "needs": "live",
+       "options": [
+        "FADES",
+        "ALWAYS"
+       ],
+       "parent": null,
+       "tier": "simple",
+       "value": "FADES"
+      },
+      {
+       "def": "WHEN LOW",
+       "help": "Your shield and hull as numbers beside the ring round the crosshair: when low, always, or never.",
+       "id": "hud_numbers",
+       "key": "hud_numbers",
+       "kind": "picker",
+       "label": "Numbers on the ring",
+       "needs": "live",
+       "options": [
+        "WHEN LOW",
+        "ALWAYS",
+        "NEVER"
+       ],
+       "parent": null,
+       "tier": "simple",
+       "value": "WHEN LOW"
+      },
+      {
+       "id": "button_hints",
+       "key": "button_hints",
+       "label": "Button hints",
+       "kind": "picker",
+       "help": "Which button does what. When useful: only when something new is possible. If unsure, leave this.",
+       "needs": "live",
+       "tier": "simple",
+       "parent": null,
+       "options": [
+        "WHEN USEFUL",
+        "ALWAYS",
+        "OFF",
+        "CUSTOM"
+       ],
+       "def": "WHEN USEFUL",
+       "bundle": "button_hints",
+       "value": "WHEN USEFUL"
+      },
+      {
+       "id": "hit_effects",
+       "key": "hit_effects",
+       "label": "Hit effects",
+       "kind": "picker",
+       "help": "Flashes at the screen's edge when your ship is hit. Choose Soft or Off if flashes bother you.",
+       "needs": "live",
+       "tier": "simple",
+       "parent": null,
+       "options": [
+        "FULL",
+        "SOFT",
+        "OFF",
+        "CUSTOM"
+       ],
+       "def": "FULL",
+       "bundle": "hit_effects",
+       "value": "FULL"
+      }
+     ]
+    },
+    {
+     "label": "HUD",
+     "rows": [
       {
        "def": true,
        "help": "HUD 2, the Extended HUD 2 look and the shield and reticle cues, with keyboard and mouse or a controller. Off: the game's own HUD. It needs the Subtitles or the Controller module on. Takes effect after the game restarts.",
@@ -3911,65 +4082,214 @@
        "label": "HUD module",
        "needs": "restart",
        "parent": null,
+       "tier": "advanced",
+       "value": true
+      },
+      {
+       "def": "HUD 2",
+       "help": "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game's controls stay as they are); Classic = the game's own look in the menus. With the HUD row set to Classic, everything keeps the game's look whatever this says.",
+       "id": "ui_style",
+       "key": "ui_style",
+       "kind": "picker",
+       "label": "Menus and rooms look",
+       "needs": "live",
+       "options": [
+        "CLASSIC",
+        "HUD 2"
+       ],
+       "parent": null,
+       "tier": "advanced",
+       "value": "HUD 2"
+      },
+      {
+       "id": "hud_preset",
+       "key": "hud_preset",
+       "label": "HUD 2 layout",
+       "kind": "picker",
+       "help": "Experimental: HUD 2's layout. Standard is today's HUD 2. Focus is calmer: in calm flight no ring, two thin shield and hull arcs and the instruments at the screen's edges. The Speedrun and Guided layouts are planned and cannot be chosen yet.",
+       "needs": "live",
+       "tier": "advanced",
+       "parent": null,
+       "options": [
+        "STANDARD",
+        "FOCUS (EXPERIMENTAL)"
+       ],
+       "def": "STANDARD",
+       "value": "STANDARD"
+      },
+      {
+       "def": "FULL",
+       "help": "Full: bars breathe and panels travel. Fades: changes fade in place. None: everything cuts. Input never waits for it.",
+       "id": "skin_motion",
+       "key": "skin_motion",
+       "kind": "picker",
+       "label": "HUD motion",
+       "needs": "live",
+       "options": [
+        "FULL",
+        "FADES",
+        "NONE"
+       ],
+       "parent": null,
+       "tier": "advanced",
+       "value": "FULL"
+      },
+      {
+       "def": 100,
+       "help": "How opaque HUD 2 is overall.",
+       "id": "hud_opacity",
+       "key": "hud_opacity",
+       "kind": "slider",
+       "label": "HUD opacity",
+       "max": 100,
+       "min": 40,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
+       "tier": "player",
+       "unit": "%",
+       "value": 100,
+       "words": []
+      },
+      {
+       "def": 100,
+       "help": "The size of HUD 2's panels, text and glyphs.",
+       "id": "hud_scale",
+       "key": "hud_scale",
+       "kind": "slider",
+       "label": "HUD size",
+       "max": 130,
+       "min": 80,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
+       "tier": "player",
+       "unit": "%",
+       "value": 100,
+       "words": []
+      },
+      {
+       "def": true,
+       "help": "In a fight, the nearest hostiles under the target card, with the buttons that pick them.",
+       "id": "hud_threats",
+       "key": "hud_threats",
+       "kind": "toggle",
+       "label": "Threat list",
+       "needs": "live",
+       "parent": null,
        "tier": "player",
        "value": true
       },
       {
+       "def": "CONTEXTUAL",
+       "help": "Beside the bottom panels, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons: moving the ship on the left, firing and using on the right.",
+       "id": "hud_context",
+       "key": "hud_context",
+       "kind": "picker",
+       "label": "Context prompts",
+       "needs": "live",
+       "options": [
+        "CONTEXTUAL",
+        "OFF"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "CONTEXTUAL"
+      },
+      {
+       "id": "hud_prompts",
+       "key": "hud_prompts",
+       "label": "Show context prompts",
+       "kind": "picker",
+       "help": "When the context prompts show in flight. On change: they appear when they change or right after you act (dock, cruise, a target, a maneuver), stay four seconds, then fade out. Always: they stay on screen.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "options": [
+        "ALWAYS",
+        "ON CHANGE"
+       ],
+       "def": "ON CHANGE",
+       "value": "ON CHANGE"
+      },
+      {
        "def": true,
-       "help": "The Advanced Autopilot, its goal panel and the maneuver bar's button, with keyboard and mouse or a controller. It needs the Subtitles or the Controller module on. Takes effect after the game restarts.",
-       "id": "mod_autopilot",
-       "key": "mod_autopilot",
+       "help": "A short card when something needs you now (shield failing, missile incoming, cruise disrupted, hold full, loot the tractor refused and why), naming the button that helps; that slot lights up.",
+       "id": "hud_alerts",
+       "key": "hud_alerts",
        "kind": "toggle",
-       "label": "Autopilot module",
-       "needs": "restart",
+       "label": "Alerts",
+       "needs": "live",
        "parent": null,
        "tier": "player",
        "value": true
       },
       {
        "def": true,
-       "help": "Speedrun mode: NEW GAME offers it, then the timer, the splits and LiveSplit, with keyboard and mouse or a controller. It needs the Subtitles or the Controller module on. Takes effect after the game restarts.",
-       "id": "mod_speedrun",
-       "key": "mod_speedrun",
+       "help": "Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers.",
+       "id": "hud_info",
+       "key": "hud_info",
        "kind": "toggle",
-       "label": "Speedrun module",
-       "needs": "restart",
+       "label": "Situation details",
+       "needs": "live",
        "parent": null,
        "tier": "player",
        "value": true
       },
       {
        "def": true,
-       "help": "Borderless windowed, the window's fit to its monitor, and running out of focus. It needs the Subtitles or the Controller module on. Takes effect after the game restarts.",
-       "id": "mod_display",
-       "key": "mod_display",
+       "help": "The game's wireframe pictures of your target and your ship in HUD 2's panels (else their icons).",
+       "id": "hud_wireframes",
+       "key": "hud_wireframes",
        "kind": "toggle",
-       "label": "Display module",
-       "needs": "restart",
+       "label": "Wireframe views",
+       "needs": "live",
        "parent": null,
        "tier": "player",
        "value": true
       },
       {
-       "def": true,
-       "help": "The recorder of stalled ships, a log for bug reports. It changes nothing in the game. It needs the Subtitles or the Controller module on. Takes effect after the game restarts.",
-       "id": "mod_npc",
-       "key": "mod_npc",
-       "kind": "toggle",
-       "label": "NPC module",
-       "needs": "restart",
+       "def": 120,
+       "help": "How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse.",
+       "id": "hud_transition",
+       "key": "hud_transition",
+       "kind": "slider",
+       "label": "HUD switch fade",
+       "max": 400,
+       "min": 0,
+       "needs": "live",
        "parent": null,
+       "step": 20,
+       "tier": "advanced",
+       "unit": " ms",
+       "value": 120,
+       "words": []
+      },
+      {
+       "def": 100,
+       "help": "Size of FLvibed's own UI text (prompts, panels, the status strip). The subtitles have their own size.",
+       "id": "text_size",
+       "key": "text_size",
+       "kind": "slider",
+       "label": "Text size",
+       "max": 150,
+       "min": 80,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
        "tier": "player",
-       "value": true
+       "unit": "%",
+       "value": 100,
+       "words": []
       },
       {
        "def": true,
-       "help": "Movies fitted to the screen, the choice of intro and the skip of the startup movies. It needs the Subtitles or the Controller module on. Takes effect after the game restarts.",
-       "id": "mod_movies",
-       "key": "mod_movies",
+       "help": "HUD 2: the text in the game's windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all.",
+       "id": "window_text",
+       "key": "window_text",
        "kind": "toggle",
-       "label": "Movies module",
-       "needs": "restart",
+       "label": "Larger window text",
+       "needs": "live",
        "parent": null,
        "tier": "player",
        "value": true
@@ -3977,45 +4297,60 @@
      ]
     },
     {
-     "label": "SETTINGS",
+     "label": "CUES",
      "rows": [
       {
-       "def": false,
-       "help": "Adds the developer and tuning keys to every tab, as they are named in the ini files.",
-       "id": "show_advanced",
-       "key": "show_advanced",
+       "def": true,
+       "help": "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2's danger alerts.",
+       "id": "shield_cue",
+       "key": "shield_cue",
        "kind": "toggle",
-       "label": "Show advanced settings",
+       "label": "Shield hit cue",
        "needs": "live",
        "parent": null,
        "tier": "player",
-       "value": false
+       "value": true
       },
       {
-       "btn": "RESET EVERYTHING",
-       "def": null,
-       "help": "Every FLvibed setting back to its default. The game's own options are not touched.",
-       "id": "reset_all",
-       "key": "reset_all",
-       "kind": "button",
-       "label": "Reset all FLvibed settings",
+       "def": 1.0,
+       "help": "Strength of the shield cue.",
+       "id": "shield_cue_intensity",
+       "key": "shield_cue_intensity",
+       "kind": "slider",
+       "label": "Shield cue intensity",
+       "max": 2,
+       "min": 0,
        "needs": "live",
-       "parent": null,
+       "parent": "shield_cue",
+       "step": 0.05,
        "tier": "player",
-       "value": null
+       "unit": "",
+       "value": 1.0,
+       "words": []
       },
       {
-       "btn": "VERSION, CREDITS, LICENCES",
-       "def": null,
-       "help": "Version, credits and licences.",
-       "id": "about",
-       "key": "about",
-       "kind": "button",
-       "label": "About FLvibed",
+       "def": true,
+       "help": "With the shield cue: hull hits show your ship's own hull hit effect at the screen edge.",
+       "id": "hull_cue",
+       "key": "hull_cue",
+       "kind": "toggle",
+       "label": "Hull hit cue",
+       "needs": "live",
+       "parent": "shield_cue",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue).",
+       "id": "reticle_cue",
+       "key": "reticle_cue",
+       "kind": "toggle",
+       "label": "Reticle cue",
        "needs": "live",
        "parent": null,
        "tier": "player",
-       "value": null
+       "value": true
       }
      ]
     }
@@ -4025,7 +4360,206 @@
    "id": "controller",
    "label": "CONTROLLER",
    "presetKey": "pad_preset",
+   "head": "mod_controller",
    "sections": [
+    {
+     "label": "",
+     "rows": [
+      {
+       "def": true,
+       "help": "The whole game on a controller: prompts, screens, on-screen keyboard. Takes effect at the next start.",
+       "id": "mod_controller",
+       "key": "mod_controller",
+       "kind": "toggle",
+       "label": "Controller",
+       "needs": "restart",
+       "parent": null,
+       "tier": "simple",
+       "value": true,
+       "head": "controller",
+       "off_help": "The controller is disabled, so this has no effect. Your setting is kept."
+      },
+      {
+       "def": "FREELANCER",
+       "help": "The whole flight layout. Press {A} to see every button.",
+       "id": "pad_preset",
+       "key": "pad_preset",
+       "kind": "picker",
+       "label": "Layout",
+       "needs": "live",
+       "options": [
+        "FREELANCER",
+        "ACE",
+        "ASSISTED",
+        "CUSTOM"
+       ],
+       "parent": null,
+       "preset": true,
+       "tier": "simple",
+       "value": "FREELANCER",
+       "value_help": {
+        "FREELANCER": "Freelancer: the game's controls on a pad, the right stick steers. Press {A} to see every button.",
+        "ACE": "Ace: arcade flight, the left stick steers and the triggers are the throttle. Press {A} to see every button.",
+        "ASSISTED": "Assisted: the autopilot flies, you aim and decide. Press {A} to see every button.",
+        "CUSTOM": "Custom: for now the same as Freelancer. Press {A} to see every button."
+       }
+      },
+      {
+       "def": false,
+       "help": "Stick up turns the nose down, as in a flight simulator.",
+       "id": "invert_y",
+       "key": "invert_y",
+       "kind": "toggle",
+       "label": "Invert steering",
+       "needs": "live",
+       "parent": null,
+       "tier": "simple",
+       "value": false
+      },
+      {
+       "def": "GIMBAL",
+       "help": "Gimbal: the stick steers and the reticle locks onto your target. Reticle: the stick moves the reticle, with aim assist.",
+       "id": "aim_mode",
+       "key": "aim_mode",
+       "kind": "picker",
+       "label": "Aim",
+       "needs": "live",
+       "options": [
+        "GIMBAL",
+        "RETICLE"
+       ],
+       "parent": null,
+       "tier": "simple",
+       "value": "GIMBAL"
+      },
+      {
+       "def": "SOFT",
+       "help": "Softer is gentler near the centre, for fine aim. If unsure, leave it on Soft.",
+       "id": "steer_expo",
+       "key": "steer_expo",
+       "kind": "picker",
+       "label": "Steering response",
+       "max": 4,
+       "min": 1,
+       "needs": "live",
+       "parent": null,
+       "step": 0.1,
+       "tier": "simple",
+       "unit": "",
+       "value": "SOFT",
+       "words": [],
+       "options": [
+        "LINEAR",
+        "SOFT",
+        "SOFTER",
+        "SOFTEST"
+       ]
+      },
+      {
+       "def": 24,
+       "help": "How far a stick moves before the game reacts. Raise it if the ship drifts by itself.",
+       "id": "stick_deadzone",
+       "key": "stick_deadzone",
+       "kind": "slider",
+       "label": "Stick dead zone",
+       "max": 90,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 2,
+       "tier": "simple",
+       "unit": "%",
+       "value": 24,
+       "words": []
+      },
+      {
+       "def": 100,
+       "help": "Vibration strength for everything: your ship, weapons, hits and warnings. Zero switches it off.",
+       "id": "rumble",
+       "key": "rumble",
+       "kind": "slider",
+       "label": "Rumble",
+       "max": 100,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 10,
+       "tier": "simple",
+       "unit": "%",
+       "value": 100,
+       "words": []
+      },
+      {
+       "id": "trigger_effects",
+       "key": "trigger_effects",
+       "label": "Trigger effects",
+       "kind": "picker",
+       "help": "Your triggers feel the ship: weight, vibration, a wall when you cannot fire. On Xbox: pulses, by USB or dongle.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "def": "FULL",
+       "options": [
+        "FULL",
+        "LIGHT",
+        "OFF"
+       ],
+       "value": "FULL"
+      },
+      {
+       "def": "AUTOMATIC",
+       "help": "Which button pictures to show. Automatic follows the connected controller.",
+       "id": "glyph_style",
+       "key": "glyph_style",
+       "kind": "picker",
+       "label": "Button prompts",
+       "needs": "live",
+       "options": [
+        "AUTOMATIC",
+        "XBOX",
+        "PLAYSTATION",
+        "NINTENDO",
+        "STEAM"
+       ],
+       "parent": null,
+       "tier": "simple",
+       "value": "AUTOMATIC"
+      },
+      {
+       "def": "CYCLE ON {Y}",
+       "help": "One button: one fire button. Cycle: {Y} steps through your groups. Two triggers: a group on each trigger.",
+       "id": "weapon_groups",
+       "key": "weapon_groups",
+       "kind": "picker",
+       "label": "Weapon groups",
+       "needs": "live",
+       "options": [
+        "CYCLE ON {Y}",
+        "ONE BUTTON",
+        "TWO TRIGGERS"
+       ],
+       "parent": null,
+       "tier": "simple",
+       "value": "CYCLE ON {Y}"
+      },
+      {
+       "def": "HOLD",
+       "help": "Toggle: boost, reverse and rear view go on with one press and off with the next. Nothing needs holding.",
+       "id": "holds_as_toggles",
+       "key": "holds_as_toggles",
+       "kind": "picker",
+       "label": "Held buttons",
+       "needs": "live",
+       "parent": null,
+       "tier": "simple",
+       "value": "HOLD",
+       "options": [
+        "HOLD",
+        "TOGGLE"
+       ]
+      }
+     ]
+    },
     {
      "label": "INPUT",
      "rows": [
@@ -4041,25 +4575,6 @@
         "AUTOMATIC",
         "CONTROLLER",
         "KEYBOARD AND MOUSE"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "AUTOMATIC"
-      },
-      {
-       "def": "AUTOMATIC",
-       "help": "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro) and the Steam Deck; choose one if yours is detected wrongly. Steam is the Steam Deck and Steam Controller's own naming: Xbox's face buttons and View / Menu, with L1 / L2 / R1 / R2.",
-       "id": "glyph_style",
-       "key": "glyph_style",
-       "kind": "picker",
-       "label": "Button prompts",
-       "needs": "live",
-       "options": [
-        "AUTOMATIC",
-        "XBOX",
-        "PLAYSTATION",
-        "NINTENDO",
-        "STEAM"
        ],
        "parent": null,
        "tier": "player",
@@ -4137,6 +4652,125 @@
        "parent": null,
        "def": true,
        "value": true
+      },
+      {
+       "id": "trigger_strength",
+       "key": "trigger_strength",
+       "label": "Trigger strength",
+       "kind": "slider",
+       "help": "How strong the trigger effects are, on top of Full or Light. A DualSense Edge needs its trigger stops at Long.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "unit": "%",
+       "words": [],
+       "def": 100,
+       "min": 0,
+       "max": 100,
+       "step": 10,
+       "value": 100
+      },
+      {
+       "id": "haptics_mode",
+       "key": "haptics_mode",
+       "label": "Haptics",
+       "kind": "picker",
+       "help": "Waveform drives a USB DualSense's grips directly and needs its speaker at four channels in the Sound panel. Automatic: motors for now.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "def": "AUTOMATIC",
+       "options": [
+        "AUTOMATIC",
+        "MOTORS",
+        "WAVEFORM"
+       ],
+       "value": "AUTOMATIC"
+      },
+      {
+       "id": "haptics_ship",
+       "key": "haptics_ship",
+       "label": "Ship and engine",
+       "kind": "slider",
+       "help": "The engine, afterburner, cruise charge, tractor, nebulas and asteroids. Zero leaves the ship quiet.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "unit": "%",
+       "words": [],
+       "def": 100,
+       "min": 0,
+       "max": 100,
+       "step": 10,
+       "value": 100
+      },
+      {
+       "id": "haptics_weapons",
+       "key": "haptics_weapons",
+       "label": "Weapons",
+       "kind": "slider",
+       "help": "Your guns, missiles, mines and countermeasures. Zero: no grain under your fire.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "unit": "%",
+       "words": [],
+       "def": 100,
+       "min": 0,
+       "max": 100,
+       "step": 10,
+       "value": 100
+      },
+      {
+       "id": "haptics_danger",
+       "key": "haptics_danger",
+       "label": "Hits and danger",
+       "kind": "slider",
+       "help": "Hits from where they came, missiles, collisions, blasts, radiation, a failing hull.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "unit": "%",
+       "words": [],
+       "def": 100,
+       "min": 0,
+       "max": 100,
+       "step": 10,
+       "value": 100
+      },
+      {
+       "id": "haptics_setpieces",
+       "key": "haptics_setpieces",
+       "label": "Set pieces",
+       "kind": "slider",
+       "help": "Trade lanes, jump gates, jump holes, docking and launching.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "unit": "%",
+       "words": [],
+       "def": 100,
+       "min": 0,
+       "max": 100,
+       "step": 10,
+       "value": 100
+      },
+      {
+       "id": "haptics_prompts",
+       "key": "haptics_prompts",
+       "label": "Prompts",
+       "kind": "slider",
+       "help": "The autopilot handing the ship back, and boxes that wait for your answer.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "unit": "%",
+       "words": [],
+       "def": 100,
+       "min": 0,
+       "max": 100,
+       "step": 10,
+       "value": 100
       }
      ]
     },
@@ -4144,53 +4778,17 @@
      "label": "LAYOUT",
      "rows": [
       {
-       "def": "FREELANCER",
-       "help": "The whole flight layout. Freelancer: targets and weapons on the fingers, consumables on the D-pad. Ace: arcade flight (left stick steers, triggers are the throttle). Assisted: the autopilot flies, you aim and decide. Custom: for now the same as Freelancer; a bindings editor is not built yet.",
-       "id": "pad_preset",
-       "key": "pad_preset",
-       "kind": "picker",
-       "label": "Preset",
-       "needs": "live",
-       "options": [
-        "FREELANCER",
-        "ACE",
-        "ASSISTED",
-        "CUSTOM"
-       ],
-       "parent": null,
-       "preset": true,
-       "tier": "player",
-       "value": "FREELANCER"
-      },
-      {
-       "btn": "BINDINGS EDITOR: NOT BUILT YET",
+       "btn": "SEE THE LAYOUT",
        "def": null,
-       "help": "A bindings editor is not built yet; the presets apply. Every binding is in the project's living spec.",
+       "help": "Every button of the layout, read-only. LB and RB go through the layouts.",
        "id": "edit_bindings",
        "key": "edit_bindings",
        "kind": "button",
-       "label": "Bindings",
+       "label": "Every button",
        "needs": "live",
        "parent": null,
        "tier": "player",
        "value": null
-      },
-      {
-       "def": "CYCLE ON Y",
-       "help": "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one; Y is cruise. Cycle: Y tap flips to the next group that has guns, Y held is cruise. Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel; Y is cruise. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse).",
-       "id": "weapon_groups",
-       "key": "weapon_groups",
-       "kind": "picker",
-       "label": "Weapon groups",
-       "needs": "live",
-       "options": [
-        "SIMPLE (ONE FIRE BUTTON)",
-        "CYCLE ON Y",
-        "TWO GROUPS ON THE TRIGGERS"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "CYCLE ON Y"
       },
       {
        "id": "y_swap",
@@ -4203,40 +4801,12 @@
        "parent": null,
        "def": false,
        "value": false
-      },
-      {
-       "def": false,
-       "help": "Afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons.",
-       "id": "holds_as_toggles",
-       "key": "holds_as_toggles",
-       "kind": "toggle",
-       "label": "Holds as toggles",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": false
       }
      ]
     },
     {
      "label": "AIM",
      "rows": [
-      {
-       "def": "GIMBAL",
-       "help": "Gimbal: the right stick steers and the reticle locks onto the selected hostile's lead cross. Reticle: the stick moves the reticle itself.",
-       "id": "aim_mode",
-       "key": "aim_mode",
-       "kind": "picker",
-       "label": "Aim mode",
-       "needs": "live",
-       "options": [
-        "GIMBAL",
-        "RETICLE"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "GIMBAL"
-      },
       {
        "def": 90,
        "help": "Gimbal: how far from the screen centre a hostile's lead cross may be for the reticle to lock on. 90 = the whole screen.",
@@ -4255,38 +4825,21 @@
        "words": []
       },
       {
-       "def": false,
-       "help": "Stick up turns the nose down.",
-       "id": "invert_y",
-       "key": "invert_y",
-       "kind": "toggle",
-       "label": "Invert Y",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": false
-      },
-      {
-       "def": 1.5,
-       "help": "How the stick's deflection maps to turning. Linear = 1:1; higher values keep small inputs gentle and the full stick fast.",
-       "id": "steer_expo",
-       "key": "steer_expo",
+       "id": "steer_curve",
+       "key": "steer_curve",
+       "label": "Steering curve",
        "kind": "slider",
-       "label": "Steering response",
-       "max": 4,
-       "min": 1,
+       "help": "The steering response as a number: the curve's exponent, 1 = linear.",
        "needs": "live",
-       "parent": null,
-       "step": 0.1,
        "tier": "player",
+       "parent": null,
        "unit": "",
-       "value": 1.5,
-       "words": [
-        "LINEAR",
-        "SOFT",
-        "SOFTER",
-        "SOFTEST"
-       ]
+       "words": [],
+       "min": 1,
+       "max": 4,
+       "step": 0.1,
+       "def": 1.5,
+       "value": 1.5
       },
       {
        "def": 0.77,
@@ -4328,23 +4881,6 @@
      "label": "STICKS",
      "rows": [
       {
-       "def": 0.24,
-       "help": "Radial deadzone of both sticks (0..0.9). The device switch ignores stick motion inside it.",
-       "id": "stick_deadzone",
-       "key": "stick_deadzone",
-       "kind": "slider",
-       "label": "Stick deadzone",
-       "max": 0.9,
-       "min": 0,
-       "needs": "live",
-       "parent": null,
-       "step": 0.01,
-       "tier": "player",
-       "unit": "",
-       "value": 0.24,
-       "words": []
-      },
-      {
        "def": 0.12,
        "help": "How far a trigger must be pulled before it counts.",
        "id": "trigger_threshold",
@@ -4376,23 +4912,6 @@
        "tier": "player",
        "unit": "",
        "value": 0.9,
-       "words": []
-      },
-      {
-       "def": 100,
-       "help": "Vibration strength: your ship being hit (heavier for hull than shield), your shield failing, the autopilot handing the ship back, and a game box waiting for your answer. 0 = off. Never the only cue. Silent while the game is in the background, paused (except those boxes), in menus and cutscenes, and while you play with keyboard and mouse.",
-       "id": "rumble",
-       "key": "rumble",
-       "kind": "slider",
-       "label": "Rumble",
-       "max": 100,
-       "min": 0,
-       "needs": "live",
-       "parent": null,
-       "step": 10,
-       "tier": "player",
-       "unit": "%",
-       "value": 100,
        "words": []
       }
      ]
@@ -4434,22 +4953,6 @@
     {
      "label": "MENUS AND PROMPTS",
      "rows": [
-      {
-       "def": "HUD 2",
-       "help": "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game's controls stay as they are); Classic = the game's own look in the menus. With the HUD row set to Classic, everything keeps the game's look whatever this says.",
-       "id": "ui_style",
-       "key": "ui_style",
-       "kind": "picker",
-       "label": "Menus and rooms look",
-       "needs": "live",
-       "options": [
-        "CLASSIC",
-        "HUD 2"
-       ],
-       "parent": null,
-       "tier": "advanced",
-       "value": "HUD 2"
-      },
       {
        "def": "EVERYWHERE",
        "help": "FLvibed's own cursor on the left stick, on every screen by default: moving the stick shows it and the game reacts as to the mouse (a bar character lights up, a button highlights, a row focuses); it slows over and pulls toward targets; a D-pad or bumper press hides it and focus navigation carries on from there. A = click either way. Off = focus navigation only.",
@@ -4535,64 +5038,6 @@
        "value": "CONTEXTUAL"
       },
       {
-       "def": true,
-       "help": "Show the autopilot's prompts and status to players who have not used it yet. Off: nothing about the autopilot shows until you switch it on once.",
-       "id": "ap_hints",
-       "key": "ap_hints",
-       "kind": "toggle",
-       "label": "Autopilot hints",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": 100,
-       "help": "Size of FLvibed's own UI text (prompts, panels, the status strip). The subtitles have their own size.",
-       "id": "text_size",
-       "key": "text_size",
-       "kind": "slider",
-       "label": "Text size",
-       "max": 150,
-       "min": 80,
-       "needs": "live",
-       "parent": null,
-       "step": 10,
-       "tier": "player",
-       "unit": "%",
-       "value": 100,
-       "words": []
-      },
-      {
-       "def": "AUTOMATIC",
-       "help": "Steam Deck mode: larger text and no safe margins at the screen's edge. Automatic turns it on at exactly 1280x800.",
-       "id": "deck_mode",
-       "key": "deck_mode",
-       "kind": "picker",
-       "label": "Steam Deck mode",
-       "needs": "live",
-       "options": [
-        "AUTOMATIC",
-        "ON",
-        "OFF"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "AUTOMATIC"
-      },
-      {
-       "def": true,
-       "help": "HUD 2: the text in the game's windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all.",
-       "id": "window_text",
-       "key": "window_text",
-       "kind": "toggle",
-       "label": "Larger window text",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
-      },
-      {
        "def": 10,
        "help": "Right stick scrolling, notches per second.",
        "id": "wheel_rate",
@@ -4607,208 +5052,6 @@
        "tier": "player",
        "unit": "",
        "value": 10,
-       "words": []
-      }
-     ]
-    },
-    {
-     "label": "HUD",
-     "rows": [
-      {
-       "def": "HUD 2 ALWAYS",
-       "help": "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. It is the default for the controller and for keyboard and mouse alike, and it also covers the menus and rooms (the game's screens take its look; the row 'Menus and rooms look' can keep the game's own). On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's own HUD and screens (with the controller's glyphs and legend).",
-       "id": "hud_style",
-       "key": "hud_style",
-       "kind": "picker",
-       "label": "HUD",
-       "needs": "live",
-       "options": [
-        "CLASSIC",
-        "HUD 2 ON THE PAD",
-        "HUD 2 ALWAYS"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "HUD 2 ALWAYS"
-      },
-      {
-       "id": "hud_preset",
-       "key": "hud_preset",
-       "label": "HUD 2 layout",
-       "kind": "picker",
-       "help": "Experimental: HUD 2's layout. Standard is today's HUD 2. Focus is calmer: in calm flight no ring, two thin shield and hull arcs and the instruments at the screen's edges. The Speedrun and Guided layouts are planned and cannot be chosen yet.",
-       "needs": "live",
-       "tier": "advanced",
-       "parent": null,
-       "options": [
-        "STANDARD",
-        "FOCUS (EXPERIMENTAL)"
-       ],
-       "def": "STANDARD",
-       "value": "STANDARD"
-      },
-      {
-       "def": "CONTEXTUAL",
-       "help": "Contextual: in flight HUD 2 fades out while you fly calmly; each part comes back when it matters - the ring and speed when you steer or boost, the target card when you switch targets, the weapons when you fire, the objectives when they change - and fades again 4 seconds later. Alerts, low shield or hull, incoming missiles and fights always show. Full: everything always shown.",
-       "id": "hud_fade",
-       "key": "hud_fade",
-       "kind": "picker",
-       "label": "HUD visibility",
-       "needs": "live",
-       "options": [
-        "FULL",
-        "CONTEXTUAL"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "CONTEXTUAL"
-      },
-      {
-       "def": 100,
-       "help": "How opaque HUD 2 is overall.",
-       "id": "hud_opacity",
-       "key": "hud_opacity",
-       "kind": "slider",
-       "label": "HUD opacity",
-       "max": 100,
-       "min": 40,
-       "needs": "live",
-       "parent": null,
-       "step": 10,
-       "tier": "player",
-       "unit": "%",
-       "value": 100,
-       "words": []
-      },
-      {
-       "def": 100,
-       "help": "The size of HUD 2's panels, text and glyphs.",
-       "id": "hud_scale",
-       "key": "hud_scale",
-       "kind": "slider",
-       "label": "HUD size",
-       "max": 130,
-       "min": 80,
-       "needs": "live",
-       "parent": null,
-       "step": 10,
-       "tier": "player",
-       "unit": "%",
-       "value": 100,
-       "words": []
-      },
-      {
-       "def": "WHEN LOW",
-       "help": "The shield, hull and power numbers at the ends of the ring's arcs: only when a value runs low, always, or never (the arcs alone).",
-       "id": "hud_numbers",
-       "key": "hud_numbers",
-       "kind": "picker",
-       "label": "Numbers on the ring",
-       "needs": "live",
-       "options": [
-        "WHEN LOW",
-        "ALWAYS",
-        "NEVER"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "WHEN LOW"
-      },
-      {
-       "def": true,
-       "help": "In a fight, the nearest hostiles under the target card, with the buttons that pick them.",
-       "id": "hud_threats",
-       "key": "hud_threats",
-       "kind": "toggle",
-       "label": "Threat list",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": "CONTEXTUAL",
-       "help": "Beside the bottom panels, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons: moving the ship on the left, firing and using on the right.",
-       "id": "hud_context",
-       "key": "hud_context",
-       "kind": "picker",
-       "label": "Context prompts",
-       "needs": "live",
-       "options": [
-        "CONTEXTUAL",
-        "OFF"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "CONTEXTUAL"
-      },
-      {
-       "id": "hud_prompts",
-       "key": "hud_prompts",
-       "label": "Show context prompts",
-       "kind": "picker",
-       "help": "When the context prompts show in flight. On change: they appear when they change or right after you act (dock, cruise, a target, a maneuver), stay four seconds, then fade out. Always: they stay on screen.",
-       "needs": "live",
-       "tier": "player",
-       "parent": null,
-       "options": [
-        "ALWAYS",
-        "ON CHANGE"
-       ],
-       "def": "ON CHANGE",
-       "value": "ON CHANGE"
-      },
-      {
-       "def": true,
-       "help": "A short card when something needs you now (shield failing, missile incoming, cruise disrupted, hold full), naming the button that helps; that slot lights up.",
-       "id": "hud_alerts",
-       "key": "hud_alerts",
-       "kind": "toggle",
-       "label": "Alerts",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers.",
-       "id": "hud_info",
-       "key": "hud_info",
-       "kind": "toggle",
-       "label": "Situation details",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "The game's wireframe pictures of your target and your ship in HUD 2's panels (else their icons).",
-       "id": "hud_wireframes",
-       "key": "hud_wireframes",
-       "kind": "toggle",
-       "label": "Wireframe views",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": 120,
-       "help": "How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse.",
-       "id": "hud_transition",
-       "key": "hud_transition",
-       "kind": "slider",
-       "label": "HUD switch fade",
-       "max": 400,
-       "min": 0,
-       "needs": "live",
-       "parent": null,
-       "step": 20,
-       "tier": "advanced",
-       "unit": " ms",
-       "value": 120,
        "words": []
       },
       {
@@ -4850,59 +5093,6 @@
        "parent": null,
        "tier": "player",
        "value": true
-      },
-      {
-       "def": true,
-       "help": "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2's danger alerts.",
-       "id": "shield_cue",
-       "key": "shield_cue",
-       "kind": "toggle",
-       "label": "Shield hit cue",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": 1.0,
-       "help": "Strength of the shield cue.",
-       "id": "shield_cue_intensity",
-       "key": "shield_cue_intensity",
-       "kind": "slider",
-       "label": "Shield cue intensity",
-       "max": 2,
-       "min": 0,
-       "needs": "live",
-       "parent": "shield_cue",
-       "step": 0.05,
-       "tier": "player",
-       "unit": "",
-       "value": 1.0,
-       "words": []
-      },
-      {
-       "def": true,
-       "help": "With the shield cue: hull hits show your ship's own hull hit effect at the screen edge.",
-       "id": "hull_cue",
-       "key": "hull_cue",
-       "kind": "toggle",
-       "label": "Hull hit cue",
-       "needs": "live",
-       "parent": "shield_cue",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue).",
-       "id": "reticle_cue",
-       "key": "reticle_cue",
-       "kind": "toggle",
-       "label": "Reticle cue",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
       }
      ]
     },
@@ -4920,64 +5110,484 @@
        "parent": null,
        "tier": "player",
        "value": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "subtitles",
+   "label": "SUBTITLES",
+   "head": "enabled",
+   "sections": [
+    {
+     "label": "",
+     "rows": [
+      {
+       "def": true,
+       "help": "Spoken lines as text, in flight, in bases and in cutscenes.",
+       "id": "enabled",
+       "key": "enabled",
+       "kind": "toggle",
+       "label": "Subtitles",
+       "needs": "live",
+       "parent": null,
+       "tier": "simple",
+       "value": true,
+       "head": "subtitles",
+       "off_help": "Subtitles are disabled, so this has no effect. Your setting is kept."
       },
       {
-       "id": "maneuver_watchdog",
-       "key": "maneuver_watchdog",
-       "label": "Restart stalled maneuvers",
-       "kind": "toggle",
-       "help": "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed leaves the maneuver and starts it again, up to 3 times, and logs what happened.",
+       "def": "MEDIUM",
+       "help": "The size of the subtitles only. The sample above shows it.",
+       "id": "size",
+       "key": "size",
+       "kind": "picker",
+       "label": "Text size",
        "needs": "live",
-       "tier": "player",
-       "parent": null,
+       "options": [
+        "SMALL",
+        "MEDIUM",
+        "LARGE",
+        "EXTRA LARGE",
+        "HUGE"
+       ],
+       "parent": "enabled",
+       "tier": "simple",
+       "value": "MEDIUM"
+      },
+      {
+       "def": 60,
+       "help": "How solid the panel behind the text is. More is easier to read over bright scenes.",
+       "id": "background_opacity",
+       "key": "background_opacity",
+       "kind": "slider",
+       "label": "Background",
+       "max": 100,
+       "min": 0,
+       "needs": "live",
+       "parent": "enabled",
+       "step": 10,
+       "tier": "simple",
+       "unit": "%",
+       "value": 60,
+       "words": []
+      },
+      {
+       "def": "OWN ROW",
+       "help": "Who is speaking: on a row of its own, in front of the line, or not at all.",
+       "id": "speaker_names",
+       "key": "speaker_names",
+       "kind": "picker",
+       "label": "Speaker names",
+       "needs": "live",
+       "options": [
+        "OWN ROW",
+        "INLINE",
+        "OFF"
+       ],
+       "parent": "enabled",
+       "tier": "simple",
+       "value": "OWN ROW"
+      },
+      {
+       "def": "CHAT WINDOW",
+       "help": "Other pilots' talk outside the story: in the chat window, as subtitles, or off.",
+       "id": "chatter",
+       "key": "chatter",
+       "kind": "picker",
+       "label": "Radio chatter",
+       "needs": "live",
+       "options": [
+        "CHAT WINDOW",
+        "SUBTITLES",
+        "OFF"
+       ],
+       "parent": "enabled",
+       "tier": "simple",
+       "value": "CHAT WINDOW"
+      }
+     ]
+    },
+    {
+     "label": "TEXT",
+     "rows": [
+      {
        "def": true,
+       "help": "Dialogue subtitles. FLvibed needs this module or the Controller module: with both off it does not start at all, this page included, so one of the two stays on. Takes effect after the game restarts.",
+       "id": "mod_subtitles",
+       "key": "mod_subtitles",
+       "kind": "toggle",
+       "label": "Subtitles module",
+       "needs": "restart",
+       "parent": null,
+       "tier": "advanced",
+       "value": true
+      },
+      {
+       "def": "GAME",
+       "help": "The game's own fonts, or Segoe UI.",
+       "id": "font",
+       "key": "font",
+       "kind": "picker",
+       "label": "Font",
+       "needs": "live",
+       "options": [
+        "GAME",
+        "SEGOE UI"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "GAME"
+      },
+      {
+       "def": "WHITE",
+       "help": "White or yellow text.",
+       "id": "text_color",
+       "key": "text_color",
+       "kind": "picker",
+       "label": "Text colour",
+       "needs": "live",
+       "options": [
+        "WHITE",
+        "YELLOW"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "WHITE"
+      },
+      {
+       "def": true,
+       "help": "A text shadow for readability.",
+       "id": "shadow",
+       "key": "shadow",
+       "kind": "toggle",
+       "label": "Shadow",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "BACKGROUND",
+     "rows": [
+      {
+       "def": "HUD PANEL",
+       "help": "In flight: the space HUD's panel look, or the soft navy panel used everywhere else.",
+       "id": "background_style",
+       "key": "background_style",
+       "kind": "picker",
+       "label": "Background",
+       "needs": "live",
+       "options": [
+        "HUD PANEL",
+        "PLAIN"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "HUD PANEL"
+      }
+     ]
+    },
+    {
+     "label": "SPEAKERS",
+     "rows": [
+      {
+       "def": true,
+       "help": "Story speakers' names in their own colours.",
+       "id": "speaker_colors",
+       "key": "speaker_colors",
+       "kind": "toggle",
+       "label": "Speaker colours",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "A hostile speaker gets the HUD's red triangle before the name.",
+       "id": "hostile_marker",
+       "key": "hostile_marker",
+       "kind": "toggle",
+       "label": "Hostile marker",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "CHANNELS",
+     "rows": [
+      {
+       "def": true,
+       "help": "Story cutscene lines.",
+       "id": "story",
+       "key": "story",
+       "kind": "toggle",
+       "label": "Story",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Mission comms.",
+       "id": "comms",
+       "key": "comms",
+       "kind": "toggle",
+       "label": "Comms",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Bar and base conversations.",
+       "id": "bar",
+       "key": "bar",
+       "kind": "toggle",
+       "label": "Bar",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Neural Net lines.",
+       "id": "neural_net",
+       "key": "neural_net",
+       "kind": "toggle",
+       "label": "Neural Net",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
        "value": true
       },
       {
        "def": false,
-       "help": "The game keeps running while its window is not in focus (Freelancer pauses otherwise).",
-       "id": "run_in_background",
-       "key": "run_in_background",
+       "help": "Also copy every story, mission and Neural Net line into the chat window, so its log holds every spoken line - a rolling history to scroll back through. The subtitles stay as they are.",
+       "id": "chat_all_dialogue",
+       "key": "chat_all_dialogue",
        "kind": "toggle",
-       "label": "Keep the game running in the background",
+       "label": "Dialogue also in the chat window",
        "needs": "live",
-       "parent": null,
+       "parent": "enabled",
        "tier": "player",
        "value": false
       },
       {
-       "def": "ALL",
-       "help": "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command's or a module's window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. While FLUF's command palette is open (typing or not) FLvibed's keys all pass to FLUF, like a chat box.",
-       "id": "fluf_windows",
-       "key": "fluf_windows",
+       "id": "chat_size",
+       "key": "chat_size",
+       "label": "Side chat size",
        "kind": "picker",
-       "label": "FLUF windows",
+       "help": "The text size of HUD 2's side chat (the comm feed beside the HUD): Normal is a little larger than the game's own chat text, Large the bigger size of earlier versions.",
        "needs": "live",
-       "options": [
-        "IGNORE",
-        "PLAYER WINDOWS",
-        "ALL"
-       ],
-       "parent": null,
        "tier": "player",
-       "value": "ALL"
+       "parent": "enabled",
+       "options": [
+        "NORMAL",
+        "LARGE"
+       ],
+       "def": "NORMAL",
+       "value": "NORMAL"
       },
       {
-       "def": "AUTO",
-       "help": "A window without frame covering the monitor at its resolution - never exclusive fullscreen. Auto: only when nothing else provides it (HD Edition does); Always: also then; Off: the game's own mode. With FLUF, Alt+Enter switches to a bordered window. Next start.",
-       "id": "borderless",
-       "key": "borderless",
-       "kind": "picker",
-       "label": "Borderless window",
-       "needs": "restart",
-       "options": [
-        "OFF",
-        "AUTO",
-        "ALWAYS"
-       ],
+       "def": true,
+       "help": "Subtitles over the intros and startup movies.",
+       "id": "movie_subtitles",
+       "key": "movie_subtitles",
+       "kind": "toggle",
+       "label": "Movie subtitles",
+       "needs": "live",
        "parent": null,
        "tier": "player",
-       "value": "AUTO"
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "PLACEMENT",
+     "rows": [
+      {
+       "def": "TOP PANEL",
+       "help": "A HUD panel at the top centre (the maneuver bar moves left), the top third, or between the bottom panels. The bar moves at the next load.",
+       "id": "space_position",
+       "key": "space_position",
+       "kind": "picker",
+       "label": "In flight",
+       "needs": "load",
+       "options": [
+        "TOP PANEL",
+        "TOP THIRD",
+        "BOTTOM"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "TOP PANEL"
+      },
+      {
+       "def": true,
+       "help": "In flight the game's comm window sits in a slot inside the subtitle panel.",
+       "id": "comm_portrait",
+       "key": "comm_portrait",
+       "kind": "toggle",
+       "label": "Comm portrait in the panel",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "The off-screen target arrows are kept clear of the HUD panels and the subtitles.",
+       "id": "hud_arrows",
+       "key": "hud_arrows",
+       "kind": "toggle",
+       "label": "Keep the HUD arrows clear",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": "IN THE BLACK BAR",
+       "help": "Letterboxed scenes: inside the lower bar (inline name, no backing), or on the bar's top edge in the picture.",
+       "id": "letterbox_mode",
+       "key": "letterbox_mode",
+       "kind": "picker",
+       "label": "Cutscenes",
+       "needs": "live",
+       "options": [
+        "IN THE BLACK BAR",
+        "ON THE PICTURE"
+       ],
+       "parent": "enabled",
+       "tier": "player",
+       "value": "IN THE BLACK BAR"
+      },
+      {
+       "def": true,
+       "help": "Letterboxed scenes show one speaker at a time.",
+       "id": "cinematic_single_speaker",
+       "key": "cinematic_single_speaker",
+       "kind": "toggle",
+       "label": "One speaker at a time in cutscenes",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "MOTION",
+     "rows": [
+      {
+       "def": true,
+       "help": "Lines fade in and out and the stack glides; off = instant.",
+       "id": "motion",
+       "key": "motion",
+       "kind": "toggle",
+       "label": "Motion",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "id": "stack_fit",
+       "key": "stack_fit",
+       "label": "Stacked lines shrink to",
+       "kind": "slider",
+       "help": "When several speakers' lines are on screen together they shrink together, down to this size, so the stack keeps about one line's height; 1 = off.",
+       "needs": "live",
+       "tier": "player",
+       "parent": "enabled",
+       "unit": "",
+       "words": [],
+       "min": 0.5,
+       "max": 1.0,
+       "step": 0.05,
+       "def": 0.7,
+       "value": 0.7
+      },
+      {
+       "def": true,
+       "help": "The word being spoken grows slightly (lines with word timings).",
+       "id": "word_pop",
+       "key": "word_pop",
+       "kind": "toggle",
+       "label": "Spoken-word pop",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "Neural Net lines coded by severity (colour, brightness pulses).",
+       "id": "neural_net_severity",
+       "key": "neural_net_severity",
+       "kind": "toggle",
+       "label": "Neural Net severity colours",
+       "needs": "live",
+       "parent": "enabled",
+       "tier": "player",
+       "value": true
+      },
+      {
+       "id": "neural_net_reason",
+       "key": "neural_net_reason",
+       "label": "Tractor Failure says why",
+       "kind": "toggle",
+       "help": "The Tractor Failure line adds why the item was refused: cargo hold, nanobots, shield batteries or that ammo full. With HUD 2's Alerts on, the alert card says it whatever this row says.",
+       "needs": "live",
+       "tier": "player",
+       "parent": "enabled",
+       "def": true,
+       "value": true
+      },
+      {
+       "def": 1,
+       "help": "Seconds a line stays after its audio.",
+       "id": "linger",
+       "key": "linger",
+       "kind": "slider",
+       "label": "Linger",
+       "max": 5,
+       "min": 0,
+       "needs": "live",
+       "parent": "enabled",
+       "step": 0.25,
+       "tier": "advanced",
+       "unit": " s",
+       "value": 1,
+       "words": []
+      },
+      {
+       "def": 1.25,
+       "help": "Seconds a line pushed out by a newer speaker stays.",
+       "id": "retire_delay",
+       "key": "retire_delay",
+       "kind": "slider",
+       "label": "Retire delay",
+       "max": 5,
+       "min": 0,
+       "needs": "live",
+       "parent": "enabled",
+       "step": 0.25,
+       "tier": "advanced",
+       "unit": " s",
+       "value": 1.25,
+       "words": []
       }
      ]
     }
@@ -4987,17 +5597,32 @@
    "id": "autopilot",
    "label": "AUTOPILOT",
    "presetKey": "preset",
+   "head": "mod_autopilot",
    "sections": [
     {
      "label": "",
      "rows": [
       {
+       "def": true,
+       "help": "The Advanced Autopilot, its goal panel and its button. Takes effect at the next start.",
+       "id": "mod_autopilot",
+       "key": "mod_autopilot",
+       "kind": "toggle",
+       "label": "Autopilot",
+       "needs": "restart",
+       "parent": null,
+       "tier": "simple",
+       "value": true,
+       "head": "autopilot",
+       "off_help": "The autopilot is disabled, so this has no effect. Your setting is kept."
+      },
+      {
        "def": "COMPETENT",
-       "help": "A bundle of the rows below. Competent: plays with what you have seen. Speedrun: knows everything the game data tells. Changing a row below makes it Custom.",
+       "help": "How the autopilot flies, in one word. Changing one of its settings reads Custom.",
        "id": "preset",
        "key": "preset",
        "kind": "picker",
-       "label": "Preset",
+       "label": "Autopilot style",
        "needs": "live",
        "options": [
         "COMPETENT",
@@ -5007,9 +5632,89 @@
        ],
        "parent": null,
        "preset": true,
-       "tier": "player",
-       "value": "COMPETENT"
+       "tier": "simple",
+       "value": "COMPETENT",
+       "value_help": {
+        "COMPETENT": "Competent: flies well, and knows only what you have seen. It uses your missiles and repairs when needed.",
+        "SPEEDRUN": "Speedrun: knows everything in the game's data, flies for time and leaves loot behind.",
+        "NO CONSUMABLES": "No consumables: as Competent, but it never spends your missiles, repairs or countermeasures.",
+        "CUSTOM": "Custom: your own mix. Show all settings lists its rows on this tab."
+       }
       },
+      {
+       "def": "OBJECTIVE FIRST",
+       "help": "Objective first: the mission, then your waypoints, then your target. Target only: just the target you picked.",
+       "id": "start_smart",
+       "key": "start_smart",
+       "kind": "picker",
+       "label": "When it starts",
+       "needs": "live",
+       "options": [
+        "OBJECTIVE FIRST",
+        "TARGET ONLY"
+       ],
+       "parent": null,
+       "tier": "simple",
+       "value": "OBJECTIVE FIRST"
+      },
+      {
+       "def": 35,
+       "help": "How far to push the stick to take the ship back. Zero: only the autopilot button does.",
+       "id": "autopilot_cancel",
+       "key": "autopilot_cancel",
+       "kind": "slider",
+       "label": "Stick takes over",
+       "max": 100,
+       "min": 0,
+       "needs": "live",
+       "parent": null,
+       "step": 5,
+       "tier": "simple",
+       "unit": "%",
+       "value": 35,
+       "words": []
+      },
+      {
+       "def": true,
+       "help": "When the autopilot docks, skip the docking scene.",
+       "id": "skip_dock_scene",
+       "key": "skip_dock_scene",
+       "kind": "toggle",
+       "label": "Skip docking scenes",
+       "needs": "live",
+       "parent": null,
+       "tier": "simple",
+       "value": true
+      },
+      {
+       "def": "K",
+       "help": "The keyboard key that starts and stops the autopilot. A key the game already uses is refused.",
+       "id": "autopilot_key",
+       "key": "autopilot_key",
+       "kind": "key",
+       "label": "Autopilot key",
+       "needs": "live",
+       "parent": null,
+       "tier": "simple",
+       "value": "K"
+      },
+      {
+       "def": true,
+       "help": "Show the autopilot's prompts before you first use it. Disabled: nothing about it shows until you start it once.",
+       "id": "ap_hints",
+       "key": "ap_hints",
+       "kind": "toggle",
+       "label": "Autopilot hints",
+       "needs": "live",
+       "parent": null,
+       "tier": "simple",
+       "value": true
+      }
+     ]
+    },
+    {
+     "label": "STYLE",
+     "rows": [
       {
        "def": "WHAT YOU HAVE SEEN",
        "help": "What the autopilot may know: only what you have seen in this game (bases, routes, enemies), or everything the game data tells.",
@@ -5155,63 +5860,6 @@
       },
       {
        "def": true,
-       "help": "The autopilot's own dock skips its docking / landing cutscene, as your Escape does.",
-       "id": "skip_dock_scene",
-       "key": "skip_dock_scene",
-       "kind": "toggle",
-       "label": "Skip docking cutscenes",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": 35,
-       "help": "Stick deflection that hands the ship back to you. 0 = never (only the button, the key or the pad hold stop it). Letting go does not re-engage it.",
-       "id": "autopilot_cancel",
-       "key": "autopilot_cancel",
-       "kind": "slider",
-       "label": "Hand back on stick input",
-       "max": 100,
-       "min": 0,
-       "needs": "live",
-       "parent": null,
-       "step": 5,
-       "tier": "player",
-       "unit": "%",
-       "value": 35,
-       "words": []
-      },
-      {
-       "def": "K",
-       "help": "Toggles the autopilot from the keyboard. A key the game binds is refused.",
-       "id": "autopilot_key",
-       "key": "autopilot_key",
-       "kind": "key",
-       "label": "Autopilot key",
-       "needs": "live",
-       "parent": null,
-       "tier": "player",
-       "value": "K"
-      },
-      {
-       "def": "OBJECTIVE FIRST",
-       "help": "What the autopilot key, the bar button and View held start. Objective first (default): the mission's objective if there is one, else your waypoints (across systems), else the target. The target only: fight, escort, dock or fly to the selected target.",
-       "id": "start_smart",
-       "key": "start_smart",
-       "kind": "picker",
-       "label": "Autopilot start",
-       "needs": "live",
-       "options": [
-        "THE TARGET ONLY",
-        "OBJECTIVE FIRST"
-       ],
-       "parent": null,
-       "tier": "player",
-       "value": "OBJECTIVE FIRST"
-      },
-      {
-       "def": true,
        "help": "The fifth button on the maneuver bar (keyboard and mouse HUD).",
        "id": "maneuver_button",
        "key": "maneuver_button",
@@ -5275,10 +5923,149 @@
        "words": []
       }
      ]
+    }
+   ]
+  },
+  {
+   "id": "more",
+   "label": "MORE",
+   "sections": [
+    {
+     "label": "",
+     "head": "mod_movies",
+     "indent": true,
+     "rows": [
+      {
+       "def": true,
+       "help": "Movies fitted to the screen, the choice of intro, skipping the startup movies. Takes effect at the next start.",
+       "id": "mod_movies",
+       "key": "mod_movies",
+       "kind": "toggle",
+       "label": "Movie handling",
+       "needs": "restart",
+       "parent": null,
+       "tier": "simple",
+       "value": true,
+       "head": "movies",
+       "off_help": "Movie handling is disabled, so this has no effect. Your setting is kept."
+      },
+      {
+       "def": "PLAY",
+       "help": "Skip goes straight to the main menu.",
+       "id": "movie_skip",
+       "key": "movie_skip",
+       "kind": "picker",
+       "label": "Startup movies",
+       "needs": "live",
+       "options": [
+        "PLAY",
+        "SKIP"
+       ],
+       "parent": null,
+       "tier": "simple",
+       "value": "PLAY"
+      },
+      {
+       "def": "AS INSTALLED",
+       "help": "Which intro plays. Only the versions this install has are offered.",
+       "id": "movie_intro",
+       "key": "movie_intro",
+       "kind": "picker",
+       "label": "Intro",
+       "needs": "live",
+       "options": [
+        "AS INSTALLED",
+        "HD",
+        "ORIGINAL 2003",
+        "FULL (BONUS DVD)"
+       ],
+       "parent": null,
+       "tier": "simple",
+       "value": "AS INSTALLED"
+      },
+      {
+       "def": true,
+       "help": "Movies keep their aspect ratio and the encoded black bars are zoomed out of view.",
+       "id": "movie_fit",
+       "key": "movie_fit",
+       "kind": "toggle",
+       "label": "Fit movies to the screen",
+       "needs": "live",
+       "parent": null,
+       "tier": "player",
+       "value": true
+      }
+     ]
     },
     {
-     "label": "SPEEDRUN MODE",
+     "label": "",
+     "head": "mod_display",
+     "indent": true,
      "rows": [
+      {
+       "def": true,
+       "help": "Borderless window, fit to the monitor, running in the background. Takes effect at the next start.",
+       "id": "mod_display",
+       "key": "mod_display",
+       "kind": "toggle",
+       "label": "Window handling",
+       "needs": "restart",
+       "parent": null,
+       "tier": "simple",
+       "value": true,
+       "head": "display",
+       "off_help": "Window handling is disabled, so this has no effect. Your setting is kept."
+      },
+      {
+       "def": false,
+       "help": "The game normally pauses when you switch to another window.",
+       "id": "run_in_background",
+       "key": "run_in_background",
+       "kind": "toggle",
+       "label": "Keep running in background",
+       "needs": "live",
+       "parent": null,
+       "tier": "simple",
+       "value": false
+      },
+      {
+       "def": "AUTO",
+       "help": "A window without frame covering the monitor at its resolution - never exclusive fullscreen. Auto: only when nothing else provides it (HD Edition does); Always: also then; Off: the game's own mode. With FLUF, Alt+Enter switches to a bordered window. Next start.",
+       "id": "borderless",
+       "key": "borderless",
+       "kind": "picker",
+       "label": "Borderless window",
+       "needs": "restart",
+       "options": [
+        "OFF",
+        "AUTO",
+        "ALWAYS"
+       ],
+       "parent": null,
+       "tier": "player",
+       "value": "AUTO"
+      }
+     ]
+    },
+    {
+     "label": "",
+     "head": "mod_speedrun",
+     "indent": true,
+     "rows": [
+      {
+       "def": true,
+       "help": "The New Game choice, the timer, the splits and LiveSplit. Takes effect at the next start.",
+       "id": "mod_speedrun",
+       "key": "mod_speedrun",
+       "kind": "toggle",
+       "label": "Speedrun mode",
+       "needs": "restart",
+       "parent": null,
+       "tier": "simple",
+       "value": true,
+       "head": "speedrun",
+       "off_help": "Speedrun mode is disabled, so this has no effect. Your setting is kept."
+      },
       {
        "def": true,
        "help": "In a speedrun-mode game: the run time, the current split and the delta against your best; on HUD 2 under the target card, on the classic HUD under the NeuroNet box.",
@@ -5337,507 +6124,115 @@
        "value": true
       }
      ]
-    }
-   ]
-  },
-  {
-   "id": "subtitles",
-   "label": "SUBTITLES",
-   "sections": [
+    },
     {
-     "label": "TEXT",
+     "label": "",
+     "head": "mod_npc",
+     "indent": true,
      "rows": [
       {
        "def": true,
-       "help": "Subtitles on. Every other row here depends on it.",
-       "id": "enabled",
-       "key": "enabled",
+       "help": "Writes a log when a ship near you stalls, for bug reports. Changes nothing in the game. Takes effect at the next start.",
+       "id": "mod_npc",
+       "key": "mod_npc",
        "kind": "toggle",
-       "label": "Subtitles",
+       "label": "Bug recorder",
+       "needs": "restart",
+       "parent": null,
+       "tier": "simple",
+       "value": true,
+       "head": "npc",
+       "off_help": "The bug recorder is disabled, so this has no effect. Your setting is kept."
+      }
+     ]
+    },
+    {
+     "label": "SYSTEM",
+     "rows": [
+      {
+       "def": "ALL",
+       "help": "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command's or a module's window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. While FLUF's command palette is open (typing or not) FLvibed's keys all pass to FLUF, like a chat box.",
+       "id": "fluf_windows",
+       "key": "fluf_windows",
+       "kind": "picker",
+       "label": "FLUF windows",
        "needs": "live",
+       "options": [
+        "IGNORE",
+        "PLAYER WINDOWS",
+        "ALL"
+       ],
        "parent": null,
        "tier": "player",
-       "value": true
+       "value": "ALL"
       },
       {
-       "def": "MEDIUM",
-       "help": "Text size: 3.0 % to 7.2 % of the screen height.",
-       "id": "size",
-       "key": "size",
-       "kind": "picker",
-       "label": "Text size",
-       "needs": "live",
-       "options": [
-        "SMALL",
-        "MEDIUM",
-        "LARGE",
-        "EXTRA LARGE",
-        "HUGE"
-       ],
-       "parent": "enabled",
-       "tier": "player",
-       "value": "MEDIUM"
-      },
-      {
-       "def": "GAME",
-       "help": "The game's own fonts, or Segoe UI.",
-       "id": "font",
-       "key": "font",
-       "kind": "picker",
-       "label": "Font",
-       "needs": "live",
-       "options": [
-        "GAME",
-        "SEGOE UI"
-       ],
-       "parent": "enabled",
-       "tier": "player",
-       "value": "GAME"
-      },
-      {
-       "def": "WHITE",
-       "help": "White or yellow text.",
-       "id": "text_color",
-       "key": "text_color",
-       "kind": "picker",
-       "label": "Text colour",
-       "needs": "live",
-       "options": [
-        "WHITE",
-        "YELLOW"
-       ],
-       "parent": "enabled",
-       "tier": "player",
-       "value": "WHITE"
-      },
-      {
-       "def": true,
-       "help": "A text shadow for readability.",
-       "id": "shadow",
-       "key": "shadow",
+       "id": "maneuver_watchdog",
+       "key": "maneuver_watchdog",
+       "label": "Restart stalled maneuvers",
        "kind": "toggle",
-       "label": "Shadow",
+       "help": "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed leaves the maneuver and starts it again, up to 3 times, and logs what happened.",
        "needs": "live",
-       "parent": "enabled",
        "tier": "player",
+       "parent": null,
+       "def": true,
        "value": true
       }
      ]
     },
-    {
-     "label": "BACKGROUND",
-     "rows": [
-      {
-       "def": "HUD PANEL",
-       "help": "In flight: the space HUD's panel look, or the soft navy panel used everywhere else.",
-       "id": "background_style",
-       "key": "background_style",
-       "kind": "picker",
-       "label": "Background",
-       "needs": "live",
-       "options": [
-        "HUD PANEL",
-        "PLAIN"
-       ],
-       "parent": "enabled",
-       "tier": "player",
-       "value": "HUD PANEL"
-      },
-      {
-       "def": 60,
-       "help": "Backing opacity in percent.",
-       "id": "background_opacity",
-       "key": "background_opacity",
-       "kind": "slider",
-       "label": "Background opacity",
-       "max": 100,
-       "min": 0,
-       "needs": "live",
-       "parent": "enabled",
-       "step": 5,
-       "tier": "player",
-       "unit": "%",
-       "value": 60,
-       "words": []
-      }
-     ]
-    },
-    {
-     "label": "SPEAKERS",
-     "rows": [
-      {
-       "def": "OWN ROW",
-       "help": "The name on its own row, inline as \"Name: text\", or off.",
-       "id": "speaker_names",
-       "key": "speaker_names",
-       "kind": "picker",
-       "label": "Speaker names",
-       "needs": "live",
-       "options": [
-        "OWN ROW",
-        "INLINE",
-        "OFF"
-       ],
-       "parent": "enabled",
-       "tier": "player",
-       "value": "OWN ROW"
-      },
-      {
-       "def": true,
-       "help": "Story speakers' names in their own colours.",
-       "id": "speaker_colors",
-       "key": "speaker_colors",
-       "kind": "toggle",
-       "label": "Speaker colours",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "A hostile speaker gets the HUD's red triangle before the name.",
-       "id": "hostile_marker",
-       "key": "hostile_marker",
-       "kind": "toggle",
-       "label": "Hostile marker",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      }
-     ]
-    },
-    {
-     "label": "CHANNELS",
-     "rows": [
-      {
-       "def": true,
-       "help": "Story cutscene lines.",
-       "id": "story",
-       "key": "story",
-       "kind": "toggle",
-       "label": "Story",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "Mission comms.",
-       "id": "comms",
-       "key": "comms",
-       "kind": "toggle",
-       "label": "Comms",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "Bar and base conversations.",
-       "id": "bar",
-       "key": "bar",
-       "kind": "toggle",
-       "label": "Bar",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "Neural Net lines.",
-       "id": "neural_net",
-       "key": "neural_net",
-       "kind": "toggle",
-       "label": "Neural Net",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": "CHAT WINDOW",
-       "help": "NPC lines that do not open their comm portrait - generic radio chatter between others, broadcasts, announcements: to the chat window (default; every line kept in its log, under HUD 2 also in its comm feed), as subtitles (only while the dialogue leaves room - never over a story line), or off. Story lines and anyone speaking to you with their portrait are always the subtitles.",
-       "id": "chatter",
-       "key": "chatter",
-       "kind": "picker",
-       "label": "Radio chatter",
-       "needs": "live",
-       "options": [
-        "CHAT WINDOW",
-        "SUBTITLES",
-        "OFF"
-       ],
-       "parent": "enabled",
-       "tier": "player",
-       "value": "CHAT WINDOW"
-      },
-      {
-       "def": false,
-       "help": "Also copy every story, mission and Neural Net line into the chat window, so its log holds every spoken line - a rolling history to scroll back through. The subtitles stay as they are.",
-       "id": "chat_all_dialogue",
-       "key": "chat_all_dialogue",
-       "kind": "toggle",
-       "label": "Dialogue also in the chat window",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": false
-      },
-      {
-       "id": "chat_size",
-       "key": "chat_size",
-       "label": "Side chat size",
-       "kind": "picker",
-       "help": "The text size of HUD 2's side chat (the comm feed beside the HUD): Normal is a little larger than the game's own chat text, Large the bigger size of earlier versions.",
-       "needs": "live",
-       "tier": "player",
-       "parent": "enabled",
-       "options": [
-        "NORMAL",
-        "LARGE"
-       ],
-       "def": "NORMAL",
-       "value": "NORMAL"
-      }
-     ]
-    },
-    {
-     "label": "PLACEMENT",
-     "rows": [
-      {
-       "def": "TOP PANEL",
-       "help": "A HUD panel at the top centre (the maneuver bar moves left), the top third, or between the bottom panels. The bar moves at the next load.",
-       "id": "space_position",
-       "key": "space_position",
-       "kind": "picker",
-       "label": "In flight",
-       "needs": "load",
-       "options": [
-        "TOP PANEL",
-        "TOP THIRD",
-        "BOTTOM"
-       ],
-       "parent": "enabled",
-       "tier": "player",
-       "value": "TOP PANEL"
-      },
-      {
-       "def": true,
-       "help": "In flight the game's comm window sits in a slot inside the subtitle panel.",
-       "id": "comm_portrait",
-       "key": "comm_portrait",
-       "kind": "toggle",
-       "label": "Comm portrait in the panel",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "The off-screen target arrows are kept clear of the HUD panels and the subtitles.",
-       "id": "hud_arrows",
-       "key": "hud_arrows",
-       "kind": "toggle",
-       "label": "Keep the HUD arrows clear",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": "IN THE BLACK BAR",
-       "help": "Letterboxed scenes: inside the lower bar (inline name, no backing), or on the bar's top edge in the picture.",
-       "id": "letterbox_mode",
-       "key": "letterbox_mode",
-       "kind": "picker",
-       "label": "Cutscenes",
-       "needs": "live",
-       "options": [
-        "IN THE BLACK BAR",
-        "ON THE PICTURE"
-       ],
-       "parent": "enabled",
-       "tier": "player",
-       "value": "IN THE BLACK BAR"
-      },
-      {
-       "def": true,
-       "help": "Letterboxed scenes show one speaker at a time.",
-       "id": "cinematic_single_speaker",
-       "key": "cinematic_single_speaker",
-       "kind": "toggle",
-       "label": "One speaker at a time in cutscenes",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      }
-     ]
-    },
-    {
-     "label": "MOTION",
-     "rows": [
-      {
-       "def": true,
-       "help": "Lines fade in and out and the stack glides; off = instant.",
-       "id": "motion",
-       "key": "motion",
-       "kind": "toggle",
-       "label": "Motion",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "id": "stack_fit",
-       "key": "stack_fit",
-       "label": "Stacked lines shrink to",
-       "kind": "slider",
-       "help": "When several speakers' lines are on screen together they shrink together, down to this size, so the stack keeps about one line's height; 1 = off.",
-       "needs": "live",
-       "tier": "player",
-       "parent": "enabled",
-       "unit": "",
-       "words": [],
-       "min": 0.5,
-       "max": 1.0,
-       "step": 0.05,
-       "def": 0.7,
-       "value": 0.7
-      },
-      {
-       "def": true,
-       "help": "The word being spoken grows slightly (lines with word timings).",
-       "id": "word_pop",
-       "key": "word_pop",
-       "kind": "toggle",
-       "label": "Spoken-word pop",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": true,
-       "help": "Neural Net lines coded by severity (colour, brightness pulses).",
-       "id": "neural_net_severity",
-       "key": "neural_net_severity",
-       "kind": "toggle",
-       "label": "Neural Net severity colours",
-       "needs": "live",
-       "parent": "enabled",
-       "tier": "player",
-       "value": true
-      },
-      {
-       "def": 1,
-       "help": "Seconds a line stays after its audio.",
-       "id": "linger",
-       "key": "linger",
-       "kind": "slider",
-       "label": "Linger",
-       "max": 5,
-       "min": 0,
-       "needs": "live",
-       "parent": "enabled",
-       "step": 0.25,
-       "tier": "advanced",
-       "unit": " s",
-       "value": 1,
-       "words": []
-      },
-      {
-       "def": 1.25,
-       "help": "Seconds a line pushed out by a newer speaker stays.",
-       "id": "retire_delay",
-       "key": "retire_delay",
-       "kind": "slider",
-       "label": "Retire delay",
-       "max": 5,
-       "min": 0,
-       "needs": "live",
-       "parent": "enabled",
-       "step": 0.25,
-       "tier": "advanced",
-       "unit": " s",
-       "value": 1.25,
-       "words": []
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "id": "movies",
-   "label": "MOVIES",
-   "sections": [
     {
      "label": "",
      "rows": [
       {
-       "def": true,
-       "help": "Movies keep their aspect ratio and the encoded black bars are zoomed out of view.",
-       "id": "movie_fit",
-       "key": "movie_fit",
+       "def": false,
+       "help": "Every tab also lists the rest of its settings, as they were before this page. Advanced mode replaces this later.",
+       "id": "show_advanced",
+       "key": "show_advanced",
        "kind": "toggle",
-       "label": "Fit movies to the screen",
+       "label": "Show all settings",
        "needs": "live",
        "parent": null,
-       "tier": "player",
-       "value": true
+       "tier": "simple",
+       "value": false
       },
       {
-       "def": "PLAY",
-       "help": "Play or skip the startup movies.",
-       "id": "movie_skip",
-       "key": "movie_skip",
-       "kind": "picker",
-       "label": "Startup movies",
+       "id": "other_changed",
+       "key": "other_changed",
+       "label": "Other changed settings",
+       "kind": "button",
+       "help": "Settings that have no row here and differ from their defaults. Reset them sets them back.",
        "needs": "live",
-       "options": [
-        "PLAY",
-        "SKIP"
-       ],
+       "tier": "simple",
        "parent": null,
-       "tier": "player",
-       "value": "PLAY"
+       "def": null,
+       "btn": "RESET THEM",
+       "value": null
       },
       {
-       "def": "AS INSTALLED",
-       "help": "Which intro plays. Only the files present are offered.",
-       "id": "movie_intro",
-       "key": "movie_intro",
-       "kind": "picker",
-       "label": "Intro",
+       "btn": "RESET EVERYTHING",
+       "def": null,
+       "help": "Every FLvibed setting back to its default, hidden ones too. It asks first.",
+       "id": "reset_all",
+       "key": "reset_all",
+       "kind": "button",
+       "label": "Reset",
        "needs": "live",
-       "options": [
-        "AS INSTALLED",
-        "HD",
-        "ORIGINAL 2003",
-        "FULL (BONUS DVD)"
-       ],
        "parent": null,
-       "tier": "player",
-       "value": "AS INSTALLED"
+       "tier": "simple",
+       "value": null
       },
       {
-       "def": true,
-       "help": "Subtitles over the intros and startup movies.",
-       "id": "movie_subtitles",
-       "key": "movie_subtitles",
-       "kind": "toggle",
-       "label": "Movie subtitles",
+       "btn": "VERSION AND CREDITS",
+       "def": null,
+       "help": "FLvibed {version}, its credits and licences, and where the settings files are.",
+       "id": "about",
+       "key": "about",
+       "kind": "button",
+       "label": "About",
        "needs": "live",
        "parent": null,
-       "tier": "player",
-       "value": true
+       "tier": "simple",
+       "value": null
       }
      ]
     }
@@ -8432,6 +8827,42 @@
    "Guided: Z3 / Z4 without numbers",
    "the unverified game facts of 6: the native bracket label's text height at 4K / 720p (decides 1.7 pair 1 A vs B), the objective banner's duration and visibility, USER_MINIMIZE_HUD's native effect under HUD 2, USER_NEXT_SUBTARGET with the target panel hidden, the DualSense Create button under Steam Input, the lane-disrupted result code, the order of space::Contacts, the dialogue panel's real height, the compact forms' scale headroom",
    "the lint's action-reach rule needs a prompt catalogue (controller_setups here is the requirements half)"
+  ]
+ },
+ "first_card": {
+  "title": "BEFORE YOU FLY",
+  "lead": "Nothing here is required. It is all in Options, FLVIBED, later too.",
+  "subtitles": {
+   "key": "card_subtitles",
+   "label": "Subtitles",
+   "options": [
+    "OFF",
+    "SMALL",
+    "MEDIUM",
+    "LARGE",
+    "EXTRA LARGE",
+    "HUGE"
+   ],
+   "def": "MEDIUM",
+   "help": "Spoken lines as text, and their size. The sample above shows it."
+  },
+  "rows": [
+   {
+    "key": "hud_size",
+    "help": "How large the HUD and FLvibed's text are. This card follows it."
+   },
+   {
+    "key": "card_subtitles",
+    "help": "Spoken lines as text, and their size. The sample above shows it."
+   },
+   {
+    "key": "hit_effects",
+    "help": "Flashes at the screen's edge when your ship is hit. Choose Soft or Off if flashes bother you."
+   },
+   {
+    "key": "holds_as_toggles",
+    "help": "Toggle: boost, reverse and rear view go on with one press and off with the next. Nothing needs holding."
+   }
   ]
  }
 }

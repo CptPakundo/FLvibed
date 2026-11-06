@@ -7,6 +7,7 @@
 #include "hud2.h"
 #include "game/space.h"
 #include "ui/hud2_kit.h"
+#include "hud2_bars.h"
 #include "hud2_preset.h"
 
 #include <istream>
@@ -49,6 +50,17 @@ struct AlertCard
     float yNow = -1; // its top as it slides (-1: not placed yet)
 };
 
+constexpr int kMaxMarks = 4; // the other ships that wear a mark
+
+// The failing bars' effects this frame (hud2_bars.h), read by the parts.
+struct BarFx
+{
+    float glowShield = 0, glowHull = 0, glowBoost = 0, glowTShield = 0, glowTHull = 0, glowEscort[3] = {};
+    hud2bars::BloomOut bloomShield, bloomHull, bloomBoost, bloomCruise, bloomTShield, bloomTHull;
+    float cruiseFill = 0; // the cruise arc as drawn, 0..1
+    float beat = 0; // the alert cards' glow, on the worst bar's beat
+};
+
 struct Model
 {
     State state = State::Calm;
@@ -67,6 +79,8 @@ struct Model
     float charge = 0, chargeLeft = 0;
     bool burner = false, kill = false, reverse = false;
     float throttle = 0; // the throttle, -1..1 (fl::GetThrottle)
+    bool tail = false;         // a ship on the player's tail (the game's TrailAlert), its bearing as the missiles' below
+    float tailAng = 90;
     int missiles = 0;          // missiles homing on the player
     float missileAng[3] = {};  // their screen bearings (degrees, 0 = right, clockwise)
     float hitAng = 0, hitAge = -1; // the last hit's side and its age (s), -1 none
@@ -82,6 +96,7 @@ struct Model
     u32 manCol = hud2kit::kChrome;
     float progress = -1;
     std::wstring eta;   // "0:12", "9 RINGS \u00B7 0:48"
+    bool peek = false;  // a peek shows: the keyboard form's maneuver row stands whole, in words
     bool ap = false;    // the AUTOPILOT chip
     std::wstring apMode; // what it does when the game's maneuver chip says nothing ("FIGHT", "TRAVEL TO ...")
     std::wstring wait;   // the autopilot's wait reason
@@ -95,6 +110,8 @@ struct Model
     std::wstring place; // system / zone after a system change
     float placeLeft = 0;
     std::wstring where; // the standing system / zone line ("NEW YORK", a middle dot, "LIBERTY SPACE"), dim under the headline
+    bool radiation = false; // the game's RadiationAlert: the nav's amber line stands while it lasts
+    bool lag = false;       // the game's LagAlert (multiplayer): one small word in the same block
     bool news = false;  // the NeuroNet has news (the game's own flash state), the dot beside the chip
     Prompt neuro;       // the NeuroNet chip's button
     Prompt tractorBtn; // the tractor's glyph for Focus's band LOOT n (Standard: the right lane's TRACTOR n, 5.23)
@@ -107,6 +124,33 @@ struct Model
     bool tBars = false;
     float tShield = -1, tHull = -1;
     flicons::Icon tIcon = flicons::Station;
+    bool tWaypoint = false; // the target is also a waypoint (the game's record says so): a small diamond round the caret
+    struct
+    {
+        bool onScreen = false;
+        float x = 0, y = 0, r = 0; // its centre and on-screen radius, pixels, this frame
+    } tMark;
+    struct Mark
+    {
+        float x = 0, y = 0, hull = -1;
+        std::wstring name, dist;
+        u32 col = 0;
+    } marks[kMaxMarks];
+    int nMarks = 0;
+    BarFx fx;
+    bool shieldUp = true; // the player's shield is up: a failed one's value climbs while it is offline
+    // the weapon group cue (hud2_cue.h): the marks, the groups first
+    struct CueMark
+    {
+        wchar_t ch = 0;
+        bool selected = false, amber = false, locked = false, want = false;
+        float litA = 0;   // the fill, eased
+        float reload = 0; // the refire's bar 0..1, M and T only
+    } cue[5];
+    int nCue = 0, cueDigits = 0;
+    bool cueShow = false, cueAnyLit = false;
+    float boost = -1; // the boost left, 0..1 (hudinfo::ThrustGauge), under 0 unknown
+    float cruiseWait = 0; // what is left of a disruption's wait, 1..0 (hudinfo::CruiseDisruptLeft)
     bool tViewOk = false; // the target has a body for the game's 3D view (a ship, station, planet, gate), else the flat icon
     bool tMission = false; // the target is an object the current objective names (Focus's lane rule, PRESETS 2.2)
     bool tView = false, shipView = false; // the game's 3D views drawn in the card's / the ship panel's window (hudvis)
@@ -186,6 +230,7 @@ struct Model
 struct Fades
 {
     float nav = 1, ring = 1, target = 1, ship = 1, loadout = 1, context = 1, alert = 1;
+    float ringOn = 1; // the centre's own fade: the letterbox takes it in every preset and hud_fade setting, which `ring` alone does not
     float enemyCue = 0; // the enemies cue in the card's corner (DrawEnemyCue)
     float wakeTarget = 1, wakeHints = 1; // CONTEXTUAL (0.2.1): the target element woken (the K&M list without a target),
                                          // the card corner's LB hints (with the prompts: hud_prompts)
@@ -214,6 +259,7 @@ struct NavStyle
     // smaller than this frame's text; 0 = the drawn text's
     float scrimR = 0, scrimB = 0;
     float* textOut = nullptr; // out (optional): this frame's text block's right [0] and bottom [1] (the scrim's raw extent)
+    float* artOut = nullptr;  // out (optional): where the radiation art stands, x [0] and y [1]; 0 = the line is not drawn
 };
 
 // The layout in pixels (fractions of H x scale), from hud2.cpp; the parts draw inside it.
@@ -240,6 +286,7 @@ struct Layout
     bool ctxWrap[3] = {};              // squeezed: its label wraps onto two lines (0.2.1: prompts never marquee)
     float ctxTall = 0;                 // ... and its plate grows upward by this
     float ctxTop;
+    float dlgX0 = 0, dlgY0 = 0, dlgX1 = 0, dlgY1 = 0; // the subtitles' dialogue panel, 0 none (pixels)
     float alertY, alertX0, alertX1, alertY1;
     float heldX[2] = {}, heldY[2] = {}; // the held alert cards' places (hud2_layout.h Out)
     bool heldShow[2] = {};
@@ -265,11 +312,23 @@ std::string LintCommand(std::istream& in);
 // hud2_parts.cpp
 // `dim` = the calm fade of the arcs and their numbers (the speed and the charge stay at `a`).
 void DrawRing(const Model& m, const Layout& L, float a, float dim);
+// The tail's mark at its bearing, on the hit flash's circle, steady while the game's warning lasts; no slot in the alert stacks.
+void DrawTailMark(const Model& m, const Layout& L, float a);
 // Returns the right edge of what it drew (the HUD bus publishes the nav rectangle from it); `bottom` = its last line's.
 float DrawNav(const Model& m, const Layout& L, float a, const NavStyle& ns = NavStyle(), float* bottom = nullptr);
 void DrawTarget(const Model& m, const Layout& L, float a);
+// The card's left column, pixels: the wireframe's where the target has one, the flat icon's where it has none (UI_HUD2_SIZE_AUDIT.md 3.2).
+float CardColumn(const Model& m, const Layout& L);
 // `textH` = the hints' text size (H x k): Standard 0.024, Focus 0.026 (PRESETS 2.2 Calm).
 void DrawCalmHints(const Model& m, const Layout& L, float a, float textH = 0.024f);
+// hud2_target.cpp: the targeting display, stepped once a frame with skin_motion, drawn while hudvis::TargetFormOn.
+std::string TargetFormState();
+void StepTargetForm(const Model& m, const Layout& L, float dt, int motion, bool ringUp);
+void DrawTargetForm(const Model& m, const Layout& L, float a, int motion);
+// hud2_cue.cpp: the weapon group cue above the ring.
+void DrawCue(const Model& m, const Layout& L, float a, int motion);
+// hud2_parts.cpp: the failing bars, stepped once a frame into m.fx.
+void StepBars(Model& m, float dt, int motion);
 // The enemies cue under the hints (no target, hostiles near, the pad): ENEMIES NEARBY n, [RS] TARGET NEAREST; its
 // bottom in H x k below the card's top (the HUD bus's keep-out)
 constexpr float kEnemyCueBottom = 0.135f;
@@ -304,6 +363,9 @@ float SlotKeyWidth(const Model& m, const Layout& L, bool focus);
 float CardContentWidth(const Model& m, const Layout& L);
 float ShipContentWidth(const Model& m, const Layout& L);
 float LoadoutContentWidth(const Model& m, const Layout& L);
+float CardContentHeight(const Model& m, const Layout& L);    // (the owner, 6 Nov 2026: equal air, none wasted; 0 = no target)
+// The card's foot row (the pad's clear prompt, the keyboard's keys): its centre above the plate's bottom edge.
+float CardFootUp(const Layout& L);
 float ShipContentHeight(const Model& m, const Layout& L);    // (0.2.1 round 6: the heights to content)
 float LoadoutContentHeight(const Model& m, const Layout& L); //   0 = not drawn yet (the maximum)
 float ListContentWidth(const Model& m, const Layout& L);   // hud2_click.cpp: the threat / contact list under the card

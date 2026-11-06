@@ -152,6 +152,8 @@ void Frame(int percent, bool menu)
         Apply(percent);
 }
 
+int Applied() { return g_applied; }
+
 void RichNow(int percent)
 {
     g_richSet = WriteRich(fontscale::ParseRich(ReadFile("rich_fonts.ini")), percent);

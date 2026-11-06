@@ -39,6 +39,41 @@ void Gamepad::Init()
     Log("XInput: not available, only the virtual pad will work");
 }
 
+// An Xbox pad in the HID list (padbackend::XboxHid), for its trigger motors. `last`: the answer when the list cannot be read.
+static bool HidListHasXbox(bool last)
+{
+    UINT n = 0;
+    if (GetRawInputDeviceList(nullptr, &n, sizeof(RAWINPUTDEVICELIST)) != 0)
+        return last;
+    std::vector<RAWINPUTDEVICELIST> list(n);
+    n = n ? GetRawInputDeviceList(list.data(), &n, sizeof(RAWINPUTDEVICELIST)) : 0;
+    if (n == static_cast<UINT>(-1))
+        return last;
+    for (UINT i = 0; i < n && i < list.size(); ++i)
+    {
+        if (list[i].dwType != RIM_TYPEHID)
+            continue;
+        RID_DEVICE_INFO info = {};
+        info.cbSize = sizeof(info);
+        UINT size = sizeof(info);
+        if (GetRawInputDeviceInfoW(list[i].hDevice, RIDI_DEVICEINFO, &info, &size) == static_cast<UINT>(-1))
+            continue;
+        wchar_t path[512] = {};
+        UINT chars = 512;
+        if (GetRawInputDeviceInfoW(list[i].hDevice, RIDI_DEVICENAME, path, &chars) != static_cast<UINT>(-1) &&
+            padbackend::XboxHid(info.hid.dwVendorId, info.hid.usUsagePage, info.hid.usUsage, wcsstr(path, L"IG_") != nullptr))
+            return true;
+    }
+    return false;
+}
+
+// Wine and Proton: ntdll says so. Trigger rumble through Wine's WGI could cost the plain rumble (docs\research\pad-native-features.md 2).
+static bool OnWine()
+{
+    static const bool wine = GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version") != nullptr;
+    return wine;
+}
+
 // A PlayStation or Nintendo pad in the HID list (padbackend::HidCandidate). RawInput: XInput hides the vendor, and this costs no device access.
 static bool HidListHasCandidate(bool last)
 {
@@ -219,6 +254,8 @@ std::string Gamepad::BackendStatus() const
 void Gamepad::ReadReal(XINPUT_STATE& out, bool& ok, float dt)
 {
     ok = false;
+    if (padBackend == 1 && impulseOn_) // (one SDL, its hints set at its start: this one reads)
+        Impulse(dt, false, true);
     if (padBackend == 1 && ReadSdl(out, ok, false))
         return;
     if (!g_getState && !DevActive())
@@ -251,8 +288,10 @@ void Gamepad::ReadReal(XINPUT_STATE& out, bool& ok, float dt)
     {
         handsOnSdl_ = xinputBeside_ = false;
         Filter(false);
+        Impulse(dt, ok, false);
         return;
     }
+    Impulse(dt, ok, true);
     XINPUT_STATE sdl = {};
     bool sdlOk = false;
     const bool answered = ReadSdl(sdl, sdlOk, want);
@@ -278,6 +317,60 @@ void Gamepad::ReadReal(XINPUT_STATE& out, bool& ok, float dt)
     Filter(answered && sdlOk && !IgnoreRealNow(true));
     if (onSdl)
         out = sdl, ok = true;
+}
+
+// An Xbox pad's four motors through SDL's WGI driver, XInput still reading (padbackend::ImpulseRoute). `fallback`: the fallback wants SDL, whose hints are set at its start,
+// so this gives it way at once. A look every kImpulseLook, not a frame: the output needs no read.
+void Gamepad::Impulse(float dt, bool xinputPad, bool fallback)
+{
+    const bool hostHas = HostAtLeast(41) && g_host->SdlPad && g_host->SdlPadTriggerRumble;
+    static const bool background = EnvVar("FLVIBED_BACKGROUND") == "1"; // a test game leaves the machine's own pad alone
+    if (!impulseOn_ && (fallback || !impulseWanted || !xinputPad)) // (no pad, no cost)
+        return;
+    impulseLook_ -= dt;
+    if (impulseLook_ > 0 && !(fallback && impulseOn_))
+        return;
+    impulseLook_ = padbackend::kImpulseLook;
+    hidTimerXbox_ -= padbackend::kImpulseLook;
+    if (hidTimerXbox_ <= 0)
+        hidTimerXbox_ = padbackend::kHidRescan, xboxSeen_ = HidListHasXbox(xboxSeen_);
+    const bool up = impulseOn_ && sdl_.status == padbackend::kSdlRunning;
+    const bool want = impulse_.Want(impulseWanted, hostHas, xinputPad && xboxSeen_, fallback, OnWine(), background || DevActive(), up && sdl_.connected, up,
+                                    padbackend::kImpulseLook);
+    if (!want)
+    {
+        if (impulseOn_)
+        {
+            if (impulseReady_)
+            {
+                g_host->SdlPadRumble(0, 0, 0);
+                g_host->SdlPadTriggerRumble(0, 0, 0);
+            }
+            g_host->SdlPad(0, nullptr);
+            sdl_ = {};
+            Log("pad backend: SDL3's output for the Xbox pad stopped: XInput's two motors");
+        }
+        impulseOn_ = impulseReady_ = false;
+        return;
+    }
+    if (!impulseOn_)
+        Log("pad backend: SDL3 starting for the Xbox pad's trigger motors, XInput still reads it");
+    impulseOn_ = true;
+    const int status = g_host->SdlPad(padbackend::kSdlStartImpulse, &sdl_);
+    const bool ready = status == padbackend::kSdlRunning && sdl_.connected && sdl_.count == 1;
+    if (status == padbackend::kSdlFailed)
+        impulse_.GiveUp();
+    if (ready != impulseReady_)
+        Log("pad backend: the Xbox pad's four motors %s", ready ? "through SDL's WGI driver" : "back on XInput");
+    impulseReady_ = ready;
+}
+
+void Gamepad::RumbleTriggers(float left, float right, float seconds)
+{
+    if (!HostAtLeast(41) || !g_host->SdlPadTriggerRumble || (ignoreReal && (left > 0 || right > 0)))
+        return;
+    const u16 l = static_cast<u16>(Clampf(left, 0, 1) * 65535), r = static_cast<u16>(Clampf(right, 0, 1) * 65535);
+    g_host->SdlPadTriggerRumble(l, r, (l || r) ? static_cast<u32>(Clampf(seconds, 0, 60) * 1000) + 100 : 0);
 }
 
 // A mapper's keys and mouse dropped by the host while SDL holds a pad and the game is in front (padbackend::DropInjected)
@@ -439,9 +532,59 @@ bool Gamepad::IgnoreRealNow(bool focusOnly)
     return focusgate::IgnoreReal(focusOnly, front);
 }
 
+void Gamepad::Wave(bool want)
+{
+    if (!HostAtLeast(41) || !g_host->PadWave)
+        return;
+    if (!want && !waveOpen_)
+        return;
+    const int state = g_host->PadWave(want ? 1 : 0); // (host\hapticwave.h: 2 running, under 0 failed)
+    waveOpen_ = want;
+    const bool running = want && state == 2;
+    if (state < 0 && !waveWhy_[0])
+    {
+        g_host->PadWaveWhy(waveWhy_, sizeof(waveWhy_));
+        Log("haptics: no waveform: %s", waveWhy_);
+    }
+    if (!want)
+        waveWhy_[0] = 0;
+    waveRunning_ = running;
+}
+
+void Gamepad::WaveFeed(const wavesynth::WaveFrame& f)
+{
+    if (waveRunning_)
+        g_host->PadWaveFeed(&f);
+}
+
+void Gamepad::TriggerEffects(const u8* left, const u8* right)
+{
+    if (HostAtLeast(41) && g_host->SdlPadTriggers)
+        g_host->SdlPadTriggers(left, right);
+}
+
+haptics::PadFacts Gamepad::Facts() const
+{
+    haptics::PadFacts f;
+    f.connected = cur_.connected;
+    f.sdl = sdlSource_ && sdl_.connected;
+    f.type = sdl_.type;
+    f.impulseRoute = impulseReady_ && !sdlSource_;
+    f.waveRunning = waveRunning_;
+    return f;
+}
+
+bool Gamepad::OutputIsReal() const
+{
+    if (DevActive())
+        return false;
+    const ShmBlock* s = shm::Get();
+    return !(s && s->version >= 3 && s->sdlAttached);
+}
+
 void Gamepad::Rumble(float low, float high, float seconds)
 {
-    if (sdlSource_)
+    if (sdlSource_ || impulseReady_) // (with the trigger motors on SDL's WGI driver its two motors go there too: XInput's would fight them)
     {
         // the SDL backend's pad (sent by the host's SDL thread); the same gate and the same timer as XInput's
         if (ignoreReal && (low > 0 || high > 0))

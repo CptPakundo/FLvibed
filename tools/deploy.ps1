@@ -49,6 +49,8 @@ $exeDir = Join-Path (Get-FLInstallDir) 'EXE'
 # The test install's game data stays in the install (user, 18 Oct 2026: nothing of this project's game in the places a
 # personal Freelancer install uses): refuse to run it while flplusplus would write to the shared Documents folder.
 Assert-FLDataSeparate
+# (flsweep's attended fullscreen row sets FLVIBED_ATTENDED: the owner watches and the screen may be taken)
+if ($Background -and -not $env:FLVIBED_ATTENDED) { Assert-FLNoFullscreen $exeDir }
 if ($Impl -and $Release) { throw '-Impl hot-reloads the dev build; the release build has no separate logic DLL' }
 
 # ---------------------------------------------------------------- build
@@ -95,9 +97,10 @@ foreach ($m in ($Modules -split ',')) {   # (one string through pwsh -File)
     $named[$name] = if ($null -eq $value) { 1 } else { [int]$value }
 }
 # + the settings stamp (core\settings_reset.h kVersion): a test start never runs the release's settings reset
+# + the first card's stamp (docs\UI_OPTIONS.md 5a): a test start never stalls on the first-start card; a test of the card clears it, or opens it with `ui card`
 $lines = @($known | ForEach-Object { "$_ = $([int]($named[$_] -eq 1))" }) + @($rows | Where-Object { $named.Contains($_) } | ForEach-Object { "$_ = $($named[$_])" })
 $ini = "[Modules]`r`n" + ($lines -join "`r`n") + "`r`n" +
-    "[FLvibed]`r`nsettings_version = 2`r`n"
+    "[FLvibed]`r`nsettings_version = 2`r`nfirst_card = 1`r`n"
 $iniPath = Join-Path $exeDir 'FLvibed.ini'
 $iniChanged = -not (Test-Path $iniPath) -or ((Get-Content $iniPath -Raw) -ne $ini)
 if ($iniChanged) { [IO.File]::WriteAllText($iniPath, $ini) }
@@ -195,6 +198,7 @@ if ($running) {   # one reload for all the logic, through either module's channe
 if ($NoStart) { return }
 $saveName = ''
 if ($Save) {
+    $Save = Resolve-FLFixture $Save   # (a mod's own fixture; no map, the name as given)
     # Freelancer lists the saves it finds when it starts: a save from elsewhere is copied into the save folder under
     # its own name first; it is loaded by name (Load-FLSave) once the main menu runs.
     $saveDir = Get-FLSaveDir # the test install's own folder (tools\fldata.ps1), never a personal install's

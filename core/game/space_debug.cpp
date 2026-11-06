@@ -407,6 +407,15 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
         *reply = out.str();
         return true;
     }
+    if (cmd == "repnames") // repnames: each ship's name, its record and the cached text (namecut.h)
+    {
+        std::ostringstream out;
+        for (const Contact& c : Contacts())
+            if (c.ship && c.rep)
+                out << c.id << " " << text::Utf8(RepNameSources(c.rep)) << "\n";
+        *reply = out.str();
+        return true;
+    }
     if (cmd == "contacts") // contacts [dock|ships|all]: objects of the player's system, nearest first
     {
         const std::vector<Contact> list = Contacts();

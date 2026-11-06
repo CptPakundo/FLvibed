@@ -6,6 +6,7 @@
 #include "lookahead.h"
 #include "situation.h"
 #include "situation_exec.h"
+#include "str.h"
 #include "autopilot_objective_impl.h"
 
 namespace autopilot
@@ -719,13 +720,7 @@ void DecideBody(const char* reason)
                         continue;
                     bool same = c.nameIds == l.nameIds;
                     if (!same && c.rep && !want.empty())
-                    {
-                        const std::wstring rn = space::RepName(c.rep);
-                        std::string n;
-                        for (wchar_t ch : rn)
-                            n += ch < 128 ? static_cast<char>(ch) : '?';
-                        same = n == want;
-                    }
+                        same = str::SameText(space::RepName(c.rep), want);
                     if (same)
                         oc = c;
                 }

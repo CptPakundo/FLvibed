@@ -77,9 +77,10 @@ void GiveBackGame();        // a fault's or a reload's stop: the ship's personal
 bool Active();
 bool Fly(float dt); // actuator.cpp: the frame's slot
 void DockSkip(float dt, bool cutscene); // its own dock's cutscene, each frame
-// The autopilot began the dock that is running now (its own request: stopped "docking" in the last 5 s, or the
-// objective mode is on): its docking / landing cutscene is skipped as a player's Escape skips it.
+// The autopilot began the dock that is running now (its own request: stopped "docking" in the last 5 s, its run still
+// flying that dock, or the objective mode is on): its docking / landing cutscene is skipped as a player's Escape skips it.
 bool OwnDock();
+u32 OwnDockObject(u32 target); // the object of that dock, `target` when no run of ours names one
 Mode Current();
 // Read only, for the module's own panels (autopilot_view.cpp); the HUD and the pad read core\ui\views.h.
 u32 TargetId();

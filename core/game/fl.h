@@ -242,6 +242,8 @@ enum CmdFlags : u32
     CMDF_SHIFT_IGNORE = 8,
 };
 u32 CommandFlags(int cmd); // CMDF_KEYDOWN if the command is not in the key map
+// In the key map. The game takes every command by id whether or not the map lists it, and vanilla's and mods' maps lack some of HDE's (the slide up / down).
+bool CommandMapped(int cmd);
 
 // Fire a key command through Freelancer's own dispatcher, as if a bound key went down/up.
 bool FireCommand(int cmd, bool down);
@@ -264,7 +266,8 @@ inline u32 MouseButtons() { return Mem<u32>(exe::MouseButtons); }
 inline bool GameInvertY() { return exe::GameOption.ok() && hk::Call<int(__cdecl*)(int)>(exe::GameOption, 0x17) != 0; }
 inline HWND MainWindow() { return Mem<HWND>(exe::MainHwnd); }
 bool GamePaused();
-inline float GetThrottle() { return Mem<float>(exe::PlayerThrottle); }
+// The game's getter, which asks the ship first: the variable alone reads 0 after a launch while the ship holds full throttle, and a step built on it dropped the speed.
+inline float GetThrottle() { return exe::GetThrottle.ok() ? hk::Call<float(__cdecl*)()>(exe::GetThrottle) : Mem<float>(exe::PlayerThrottle); }
 inline void SetThrottle(float t) { hk::Call<void(__cdecl*)(float)>(exe::SetThrottle, t); }
 inline u32 CurrentCamera() { return Mem<u32>(exe::CurrentCamera); }
 // The current 3D camera's projection, read once under a guard (the offsets were read raw in three

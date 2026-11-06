@@ -145,6 +145,7 @@ in it (`hk::Sym`, `core\hook.h`).
   0x41D9C0 at [0x616840]/[0x616844], then the trail. FLvibed's host clears that byte around the game's call
   and puts it back (the pad screens with the pad cursor hidden): the poll, the hit test and the hover run as before (the
   hovered control's cursor name still changes), only the arrow is not drawn.
+- **FLSharp's `cursor_fix`** (HDE repository's build, not 0.7.1's) hooks 0x41F30A; its hook returns the same flag unless the cursor is outside the window (source read). `exe::CursorShown` and `exe::CurrentCursor` are anchored on the setter 0x41DDA0 and the name getter 0x41DDB0, clear of it.
 - **The current cursor [0x616858]** (`exe::CurrentCursor`, read from disassembly 25 Oct 2026): the poll half never reads
   it (first read at 0x41F317, after the CursorShown gate at 0x41F30A); written at 0x41DF07 / 0x41E6FE. FLUF's ImGui
   cursor (it NOPs 0x41F33E-0x41F6E9) draws the arrow this names at [0x616840]/[0x616844] and ignores CursorShown, so
@@ -181,8 +182,8 @@ in it (`hk::Sym`, `core\hook.h`).
   flexe.h), not by a key. So the one game-side place to swap accept / back would be HandleKey (cmd 0x0F <-> 0x11) -
   which would also swap flight's USER_CANCEL and the scene skip: FLvibed's `confirm_button` stays a pad-side role
   remap (docs\UI_BUILD.md 5). **Who registers what** (the 52 calls of 0x5760D0 and their pushed command, 29 Oct 2026):
-  USER_ENTER only in five screens - the exit (Alt+F4) dialog 0x471810 (`ExitFrame`, YES / NO / CANCEL / ENTER), a
-  second exit-window variant 0x472230 (CANCEL / ENTER), the error dialog 0x4725B0 ("Freelancer Encountered an Error",
+  USER_ENTER only in five screens - the exit (Alt+F4) dialog 0x471810 (`ExitFrame`, YES / NO / CANCEL / ENTER), the
+  "please wait" box 0x472230 (NN_NetworkOperation, not an exit variant; CANCEL / ENTER), the error dialog 0x4725B0 ("Freelancer Encountered an Error",
   CANCEL / ENTER), the delete-save confirm 0x4883B0 (`Confirm_deleteBox`, YES / NO / CANCEL / ENTER) and the pause
   menu; the text prompt dialog 0x472AB0 (`PromptFrame`) takes YES / NO / CANCEL; about twenty other screens take
   USER_CANCEL alone. So Enter is no general "accept" in the game: the main menu, dealers, Options and the NeuroNet
@@ -198,6 +199,7 @@ in it (`hk::Sym`, `core\hook.h`).
 | 0x673550 / 0x673554 | float mouse-flight timer (engaged when ≥ 0.25 s) / u8 engaged flag. Code outside the steering function (e.g. 0x4C86DC, the HUD "MOUSE FLIGHT" label) treats timer ≥ 0.25 as "mouse flight on" |
 | 0x4C7C80 | `bool IsMouseFlightToggleOn()` |
 | 0x4C7AF0 | `void __cdecl SetPlayerThrottle(float -1..1)` — stores 0x673564, updates behavior throttle, cancels cruise at 0 |
+| 0x4C7A00 | `float __cdecl` the player's throttle (`exe::GetThrottle`): no ship = a constant, else the player's inspect vt +0x4C writes the ship's own throttle into 0x673564 and returns it. So the variable alone is stale, 0 after a launch while the ship holds 1.0: a step built on it dropped the ship from 80 m/s (FrontierSpace runs 6 Nov 2026: about 30 at the first W under HUD 2). From disassembly; `fl::GetThrottle` calls it, flown on HDE 0.7.1 and FrontierSpace 6 Nov 2026 |
 | 0x4E1C20 | the target panel's update: `CShip::VerifyTarget`'s three callers sit in its helper 0x4E3BD0, and it clears the player's target past 10 km in some cases. From decompiled code, not verified in game: under HUD 2 the panel is hidden and none of it runs (filed in `MODULES_PLAN.md` "P11e's record") |
 | 0x4D85C0 | HUD_Maneuvers window's update (vt 0x5D8344 + 0x2C): **applies the throttle keys.** USER_INC / DEC_THROTTLE (0x4D82ED / 0x4D830D) only store a rate of +/-1 per second (float 0x5D8294) at part + 0x3E8 while the key is down (0x67C290), 0 at key-up; this update adds rate x frame dt to the throttle. A hidden bar is not updated, so with the bar hidden the keys do nothing (verified in game 5 Nov 2026, `tests\win7_speed.ps1`: HUD 2 top speed 0 m/s, classic HUD 80; hudvis.cpp StepThrottleKeys). The mouse wheel steps 0.2 at once (0x4D8354, float 0x5D8298), no update needed |
 | | after a launch the ship holds 80 m/s in free flight with the player's throttle at 0.00 until the throttle is next set (measured 5 Nov 2026, SaveC701): the throttle variable alone does not say the speed |
@@ -331,6 +333,23 @@ in it (`hk::Sym`, `core\hook.h`).
   wins below ~2.5 km on the Starflier, cruise beyond (2 km 11.4 vs 12.7 s; 5 km 26.4 vs 22.7). The fast dock's
   predictions matched its runs within 0.1 s while lined up from the start; ~1 s short with a turn at the staging point
   (turns are not modelled yet). CShip::get_time_to_accelerate / get_distance_travelled take the throttle first.
+- **Docking camera** (decompiled 6 Nov 2026, HDE 0.7.1; not seen in game unless marked). The 0x120 test (0x54B394 in
+  0x54B230) is on the **dock object's** own type bits (the object of `get_docking_port`, its type through vt[0x88]), not
+  the bay type; no object = no camera. With it, the camera still needs the hardpoint `HPDockCam` + 'A' + the bay index on
+  that object (0x543F00, `sprintf "%s%c"`), else none: a mod's station without it has no scene. Exclusion 4 follows
+  either way (0x54B48B). The client's land callback 0x543B40 looks up `HPDockCamA` when the camera is not on yet and ends
+  with 0x54BBD0(3.0), the 3 s fade (the camera's +0xF8 / +0xFC / +0x100, counted down in 0x51EAE0). Game data
+  (`docs\kb\generated\solars.tsv`, solararch.ini): 224 solars have `base` and `dock_with`, all of archetype type STATION
+  (battleships, liners, depots, outposts, mining bases too), 26 rings have `dock_with` only, 27 planets `base` only
+  (their ring docks), and one more `base` without `dock_with`: Nomad_city (dyson_city, type SATELLITE). So every dock into a
+  base passes 0x120 and carries a dock target; the inverse (gates, holes, airlocks answer 0) is not read.
+  **USER_CANCEL there:** the camera refuses it (vt[0x70] / vt[0x74] = 0x53E180, return 0), so ObjectAction 0x54BCB0 hands
+  it to the controller's vt[0x1CC]; **that handler is not resolved**, so whether the skip tells the server or finishes
+  locally is unknown. Seen in game 6 Nov 2026: single player ends the scene at rings and stations alike (0.4 s to docked);
+  on a local server two taps at a ring changed nothing (1.14 s, the scene's own length; `docs\kb\navigation-and-hazards.md`). **The lock:** Common.dll's dock op state setter
+  0x62C3D10 calls `lock_maneuvers(true)` in state 9 unless the target has 0xC0 or 0x800; the op reaches 9 by 3 -> 6 ->
+  (7) -> 9, or goes 3 -> 4 (waits on the bay's path animation, not followed past 4) by byte +0x334 (0x62C4900, source
+  not traced). In game rings lock before the camera, stations nearly never (`docs\kb\navigation-and-hazards.md`).
 - The planet launch's short cutscene after the launch sequence also uses the docking camera; a USER_CANCEL there did
   not open the pause menu (M01 launch).
 - **Content.dll is unloaded and reloaded by the game** (seen when loading a game from the death dialog): IAT patches
@@ -827,7 +846,8 @@ in it (`hk::Sym`, `core\hook.h`).
   FindByID, CECargo::cast), takes min(amount, held = CECargo +0x28), checks the archetype class (vtable +0x10:
   Archetype::AClassType RepairKit 26 / ShieldBattery 27) and sends `IServer::SPRequestUseItem({ship, id, amount},
   client)` through the server pointer [0x67ECD0] (0x5355ED, vtable +0xE0). Called with amount 1: batteries 3 -> 2,
-  shield 0.47 -> 0.90 of 600 (`ai::UseConsumable`, debug `usebattery <n>` / `usenano <n>`).
+  shield 0.47 -> 0.90 of 600 (`ai::UseConsumable`, debug `usebattery <n>` / `usenano <n>`). A kit at hull 1: the call goes out and the count stays 10 (6 Nov 2026, `tests\loot_full.ps1`).
+- **Cursors:** `DATA\mouse.ini` [Cursor] (read by Freelancer.exe 0x41DF30, its floats kept raw): `spin = 10` on `fire`, `fire_neutral`, `fire_friendly`, 0 or none on the rest, every cursor one frame. The unit is not traced.
 - **Spawns:** Content.dll spawns every NPC in single player (random encounters and mission ships alike) through
   pub::SpaceObj::Create (ShipInfo: system +4, archetype +8, position +0xC; the FLHookSDK offsets of the later fields do
   not match this version), one spawn helper (Content.dll +0x936A0) and one caller of it: no in-game flag tells a
@@ -897,7 +917,24 @@ Verified in game on instance 5 (SaveC705, HDE 0.7.1, 4K) unless marked; screensh
   charge clock (+0x50, GetCruiseChargeTimeElapsed) to -CRUISE_DISRUPT_TIME (Common.dll export, 5.0 s in HDE); it counts
   up to 0 - so a negative clock = disrupted, (5 + clock) s ago (static reading of Common.dll RVA 0x36250; not yet seen
   in game: spawned fc_lr_pi_fighter_d3 never disrupted a cruising ship). The game's cruise line reads the same clock
-  (ratio < 0: "Cruise Disrupted - n", HUD_CruiseProgress 0x4D5EB0).
+  (ratio < 0: "Cruise Disrupted - n", HUD_CruiseProgress 0x4D5EB0). Turned off normally, EngageCruise(false, false) sets a positive clock to 0: no wait to charge again.
+- **Tractor failure codes** (6 Nov 2026, GitHub issue 33; decompiled, HDE 0.7.1, **not verified in game**): CETractor::VerifyTarget (Common.dll RVA 0x3E4A0) returns
+  a TractorFailureCode, asked in this order: 1 no loot; 2 beyond [Tractor] max_length; 3 the item's volume (Equipment +0x5C) > 0 and above
+  CShip::get_cargo_hold_remaining; then by the item's type (vt +0x10): RepairKit 0x1A with get_repair_kit_capacity_remaining 0 = 5, ShieldBattery 0x1B with
+  get_shield_battery_capacity_remaining 0 = 4, munition / mine / countermeasure 0x1F-0x21 with get_ammo_capacity_remaining 0 = 6. The limits: Archetype::Ship +0x140
+  nanobot_limit, +0x144 shield_battery_limit (-1 = none); ammo the Common.dll global MAX_PLAYER_AMMO (RVA 0x18D1D4, 50 in HDE's Common.dll) minus the count of the
+  stack with that archetype, and no look at what is mounted: ammo for an unmounted gun obeys the same limit, and HDE's data has no per-item `ammo_limit`.
+  CETractor::AddTarget gives a non-zero code to CEquip::Notify(0x14, &code); TractorArm::Update re-verifies every frame of a pull and gives it through
+  Notify(0x15, arm), the code at arm +0x20. The client's listener exe::TractorNotify (0x52F740, CliTractor; vtable only), for the player's ship with no other arm
+  pulling (0x14) or this the last one (0x15): code 2 QueueNN target_out_of_range, codes 3-6 QueueNN nnv_tractor_failure; it queues nothing else. So the game knows
+  the reason and says the same line for all four. No voice line exists for nanobots, batteries or ammo (subtitles.tsv nnvoice); `insufficient_cargo_space` is only
+  the inventory screens' (0x47F720, 0x4C1AE0, 0x4C6530), never the tractor's. The hold-full card (CARGO HOLD FULL / NO ROOM FOR LOOT) is FLvibed's own, on the hold's
+  free room falling under 1 (hud2_data.cpp), not on an attempt. Texts that exist: resources 932 / 933 / 975 "Storage capacity for Nanobots / Shield Batteries /
+  this ammo is full." (the equipment dealer, 0x47FEF0), 1841 "You don't have enough cargo space."
+  The client verifies first: 0x534E60 (one item) and 0x535010 (a list) call AddTarget on the client's own ship and send to the server only what passed, in
+  multiplayer too, so these codes and the line reach a multiplayer client for its own ship; a refusal only the server makes (a plugin) never reaches this path.
+  USER_COLLECT_LOOT (0x4DE4C0) lists the loot within 1,000 m (literal 1e6 squared, not the tractor's range), volume-0 items first, then by value, and calls AddTarget on
+  each with no filter: each refusal before the first success gives a Notify, none after (arms active); QueueNN skips a line already queued. Seen in game 6 Nov 2026: a kit (200 cr) at the maximum beside a `no_thruster` (6,000 cr), both volume 0: the thruster arrived, no refusal at all.
 - **Tractor:** CETractor::CountActiveArms > 0 while it pulls (USER_COLLECT_LOOT after a kill: 1 for ~1 s, then the 6
   loot objects vanished into the hold; USER_TRACTOR_BEAM with nothing targeted did nothing). Loot in reach = CLoot
   objects within the tractor's [Tractor] max_length (Starflier 1500 m). (`destroytarget` kills of spawned pirates DID
@@ -1008,7 +1045,7 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
 | 0x67DCD8 | hovered control (vt[0x3C] enter, vt[0x38] hover, vt[0x40] leave with the ray); 0x59DAA0 returns it |
 | 0x59E080 | per-frame UI update (computes hover); 0x59E300 UI render (FLUF hook) |
 | Neural Net hull / engine warnings | (verified in code 19 Oct 2026) the player ship's hull damage handler (0x545FBA..0x546038) plays NNVoice `hull_breach_imminent` ("HULL BREACH IMMINENT", id at 0x678B50, via 0x489E80) once when the relative hull (CSimple::get_relative_health) drops below the float at 0x5DFB40 (0.2; exe::HullCriticalFrac), flag ship +0x154 set; the flag clears when the hull is back at or above it. `engine_critical` (0x678B4C) plays when a damaged collision group of the player ship (CArchGroup type bits 0x3F00) drops low (0x545A15). Both are subtitled in the NN column (danger severity) |
-| NPC names | (verified 20 Oct 2026) a ship's pilot name is its reputation's name record: Common.dll `Reputation::Vibe::GetName(rep, FmtStr& name, FmtStr& short, const u16*& cached)`; when nothing is cached Freelancer.exe 0x41D440 formats `name` with **0x41C970** `int thiscall(const FmtStr*, wchar_t* out, int maxChars) ret 8` (exe::FmtStrFormat: loads the template string - 16163 "%s0 %s1" - and fills in the values) and caches it with SetName. NPC names come from faction_prop.ini `firstname_male` / `lastname` string-id ranges (FmtStr::append_string x2). FLvibed: space::RepName, spawner names its ships the same way |
+| NPC names | (verified 20 Oct 2026) a ship's pilot name is its reputation's name record: Common.dll `Reputation::Vibe::GetName(rep, FmtStr& name, FmtStr& short, const u16*& cached)`; when nothing is cached Freelancer.exe 0x41D440 formats `name` with **0x41C970** `int thiscall(const FmtStr*, wchar_t* out, int maxChars) ret 8` (exe::FmtStrFormat: loads the template string - 16163 "%s0 %s1" - and fills in the values) into 24 characters (0x41D516 `push 18h`) and caches it with SetName: a long name stays cut at 23 in the cache and everywhere that reads it ("Rookie Robert Washingto"). The FmtStr may hold it whole, without a prefix the cache may carry ("Escort 1 ", "Transport DSE "), and its template runs on past the name ("%s0 %s1 %s2 %d0": a call sign, " Black 17" or " 0"). **An encounter's pilot has no name there (seen in game 6 Nov 2026, `repnames`):** the record reads "Rogues Raiders Silver 12" while the cache reads "Rookie Thomas Carmichae": rank, first and last name stand only in the cached text. FLvibed finishes the last word from faction_prop.ini's `lastname` pools when one surname alone fits: `core\game\namecut.h`. NPC names come from faction_prop.ini `firstname_male` / `lastname` string-id ranges (FmtStr::append_string x2). FLvibed: space::RepName, spawner names its ships the same way |
 | HUD_DamageIndicator | **the HUD's hit-direction arcs** (verified 19 Oct 2026): instance [0x674A10]; 4 arcs, intensity floats at +0x38C, +0x3B8, +0x3E4, +0x410 (+0x410 = the right arc, seen in game; each covers ~90 deg), cap 1.0, fade over ~1 s. Inputs: 0x4D6F10 thiscall(source point) - ahead of the ship = no arc, roughly straight behind = +0.35 on all four, else +0.7 on the arc toward it; fed by 0x4D6CD0 (from 0x545ED0, vtable slot 0x1A4 of the player's ship class 0x5DFD6C: a round hit; source = hit point + 1000 x the round's velocity backwards) and 0x4D6F00 (from 0x5363F2: an explosion within its radius of the player, its centre). 0x4D6D40 thiscall(point): contact hits (0x545E90, slot 0x1A0: collision physics 0x525480). So the arcs only show off-screen sources; FLvibed hooks 0x4D6F10 / 0x4D6D40 for the exact point (exe::DmgIndSource / DmgIndContact). **Not every input is damage** (25 Oct 2026, HUD 2 FIX2, instance 5, SaveC705 vs Rogues): source reports (kind 1) came with no hull or shield change within 0.5 s (3 in one fight; the explosion path 0x4D6F00 feeds the indicator for any blast within its radius), so HUD 2's hit flash pairs a report with a hull / shield drop |
 | 0x59E300 | **UI pass** (verified 19 Oct 2026): returns at once while [0x67DCF0] > 0; sets the UI camera 0x67DBF8, draws every visible control of 0x67DBE8 (sorted by +0x70 layer / +0x68 depth, vt[0x34] draw) - the whole space HUD included - then 0x417F10, 0x563AF0 and the cursor 0x41F150. Called by each state's frame after its 3D scene; in space 0x54B0C2..0x54B123: camera (state +0xBA0) update, BeginScene check 0x424F30, the world draw (0x4EC400, camera vt[0x78]), then 0x59E300. Its entry = between the 3D scene and the HUD (FLvibed's under-HUD draw point) |
 | 0x59DA10 | `FindControl(const char* name)` |
@@ -1040,6 +1077,10 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
 - **Fonts:** `DATA\FONTS\fonts.ini` [FontFiles] lists the game's font files (AGENCYB / AGENCYR / ARIALUNI.TTF);
   [TrueType] nicknames map faces and heights (fraction of the screen height): HUD and labels Agency FB (HudSmall
   0.029, ItemName 0.035, MissionObjective 0.06), body text Arial Unicode MS (ListText / ToolTip 0.03).
+- **The game's text is not ASCII, and the faces differ** (read 6 Nov 2026 from the string tables of HDE 0.7.1 and GDI's glyph indices): U+2019 stands in 1343 strings,
+  the guns Death's Hand, Gaia's Savior, Rowlett's Revenge and Thor's Hammer among them; also U+2013 / 2014 / 2018 / 201C / 201D / 2022 / 2026, German, French and
+  Spanish letters, U+2007, U+200A, U+2074. Agency FB holds Latin-1, those marks and ten letters of Latin Extended-A; no arrows, no superscripts, no Cyrillic. Arial Unicode MS
+  holds all of it. GDI's `TextOutW` draws some of what Agency FB lacks from another font (arrows, CJK) and its empty box for the rest (U+010D, U+0416, U+2011). `core\game\glyphset.h`.
 - **Flight HUD top centre (HDE 0.7.1, 16:9, measured on 4K frames):** the maneuver bar ends 0.086 H; a small box
   hangs under its left end to 0.153 H.
 
@@ -1101,6 +1142,14 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
 - **The NeuroNet windows are inside NN_MainButton:** the nav map `NeuroNetNavMap` (vt 0x5D2F84) is a child of the switch
   button `NNNavmapButton` (likewise inventory / log / player info / help under `NN<name>Button`); a window is open while
   its switch button shows (bit 1; the `...ButtonRoot` icons are the box's buttons). Hiding the root hides an open window.
+- **The NeuroNet's window manager** (`exe::NNManager`; decompiled 6 Nov 2026, not verified in game; code `core\game\nnwin.*`): its key handler 0x45CAE0 is
+  the sub-object at +0x32C, so its "+0x7C" is the manager's **+0x3A8, the open window**, and **+0x3AC holds that window's command** (0x63 map, 0x65 status, 0x66
+  inventory, 0x67 log, 0x68 chat, 0x69 group, 0x6A help). A window asked for while another is open waits at **+0x524, its command at +0x528**, for the close's
+  callback 0x45D5A0. Seven-entry tables at +0x3B8 (switch buttons) and +0x3D4 (Roots), indexed map 0, inventory 1, log 2, status 3, help 4, chat 5, group 6;
+  the chat and group slots are 0 in single player. **Each slide's 0.30 s is a float in .rdata, `exe::NNSlideTime` 0x5CEA10**, read by the manager alone at its
+  four slide sites (0x45CDBE, 0x45D10E, 0x45D277, 0x45D68C): no immediate, so no code patch and no hook on 0x55E120 is needed (a hook there would also miss
+  the close's 0x55E590). 0x5A0300 / 0x5A0320 (vt[0x80] / vt[0x84] of every window class) set and clear the modal byte +0x2D0; the manager's open and switch
+  do not call them, so a NeuroNet window is not modal by that road: probe N1 of `modules\hud\docs\UI_HUD2_BUILD_040.md` reads it.
 - **The cruise line:** `HUD_CruiseProgress` (vt 0x5D7EBC, its text built by 0x4D5DB0) draws its text child `CruiseProgressText` itself
   (0x4D5EB0): while the engine charges "%s - %d%%" with IDS 1413 "CRUISE ENGINE CHARGING - WEAPONS OFFLINE", while the
   charge clock is negative (disrupted) "%s - %d" with IDS 1615 "Cruise Disrupted" and the seconds left (ceil).
@@ -1124,7 +1173,8 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
 - **`Targetable_Objects`' children are the HUD's alert icons:** `ReticleRangeText`, `MissileAlert` (the red missile in a
   ring at (0.224, 0.213, -0.6) UI camera space - the classic target panel's top-left corner; it blinks while a missile homes
   on the player: the game sets its visible bit on and off), `TrailAlert` (-0.224, 0.213), `RadiationAlert` (0.224, 0.177),
-  `LagAlert` (-0.224, 0.177). Clearing `MissileAlert`'s bits 0|1 every frame (before the UI pass) hides it alone; the
+  `LagAlert` (-0.224, 0.177). Whether the zone still bites is the byte 0x674C08 (`exe::RadiationZone`, set from the zone word's bit 0x40000 and ship +0x218 = 0, cleared
+  by 0x4F52F3 when the ship goes; 0x4F5340 reads it for the blink at 0x4EC63C: the control's own bit says only this blink tick). The alerts are image controls (`exe::VtImage`; factory 0x5A0DB0 with the class name `StaticControl`, art `Interface\hud\HUD_radiationalert.3db`): their vt[0x14] is 0x5896B0 (`exe::ImageSetPosition`), not the base setter, and keeps the asked position at +0x2E0. The art stands at +0x60 plus the offset the constructor stores at +0xA8 (init 0x588540; scale at +0xB4): read in game, an alert's +0x60 and +0x2E0 are all zero, so its whole place, depth included, is in +0xA8. (0x5A3950 is the same shape for the buttons.) Clearing `MissileAlert`'s bits 0|1 every frame (before the UI pass) hides it alone; the
   brackets, their name / distance label ("Fort Bush 1341-M") and bars are the parent's own draw (no child controls).
 - **A trade lane ring's name on the target panel / contact list** ("Colorado Jump Gate->Fort Bush"; verified against the
   classic HUD 25 Oct 2026): built by 0x4E8D30 (called from the name builder at 0x4E884A for an object of type bit 7) - it
@@ -1339,8 +1389,7 @@ Every window is a root control named after its class; a window is open when its 
   Line / Help`, `Full_Cargobar`, `CargoLabel`, `InfoCard_Info` (the infocard), `ShipView_Info`; the equipment
   dealer's filters `Filter_Weapons / _Ammo / _Equipment / _CargoBay` (icon buttons, children of the NN_Inventory side); the inventory window shows `Filter_Commodity` as well, in flight too.
   A window's side for any control: walk the parent chain to `NN_Dealer` (the dealer's) or `NN_Inventory` (the
-  player's). The text controls (vt 0x5E4F24) keep no readable string in their first 0x3A8 bytes (the pointer at +0x338
-  is a render object): the pad's quantity line reads the slider (position = the quantity, range top - 1 = what fits),
+  player's). The text controls (vt 0x5E4F24) keep their string behind +0x334 (the text object's +0 is the wide pointer, reallocated at every set; vt[0xA8] message 0x1F returns it, decompiled, not read in game; +0x338 is a render object): the pad's quantity line reads the slider (position = the quantity, range top - 1 = what fits),
   not the game's price text.
 - **Two rungs of Agency FB can differ in weight, not only size:** at 800 lines ItemName 0.035 and SubHeader 0.0385 draw one row at a median stem of 1 and 2 px (ink 556 and 1122 px); at 4K about 3 and 4 px. Read from frames, GitHub issue 22; not read whether it is hinting or a real weight.
 - **The game's text size is its font's, and can change live** (verified in game 4 Nov 2026, 1280x800, a dealer open): a text
@@ -1405,6 +1454,11 @@ Every window is a root control named after its class; a window is open when its 
   (`exe::MouseX` / `MouseY`) against the map's rectangle (+0x424..+0x434): called natively it selects under the
   cursor, focus or not (`uiclick::MapClick`). From decompiled code, not verified in game: ev[0] -2 is taken alike; ev[1] 2 in view 2 arms a drag
   (+0x7D4, the start at +0x7D8 / +0x7DC), ev[1] 3 is another mouse event that opens the object under the selection.
+- **The nav map's labels and records** (decompiled 6 Nov 2026, not verified in game; 0x4999D0, 0x499C20): a record is labelled when its type (+0x00) is 0, its
+  name ids (+0x4C) are not 0, its byte +0x48 is set and its flags (+0x04) hold 2 (first pass), 0xC40 (second) or 0x200101 (third): those three passes are the
+  game's rank, and +0x48 is what keeps a hidden object off the map. Not in layers 4, 6, 7 (`exe::NavMapMode`). A mark's place, in units of the box's half size,
+  y down: view 1, (x / +0x4A8, z / +0x4AC); view 2, Z (x / +0x4A8 + Cx / Hx) and Z (z / +0x4AC - Cy / Hy), with Z = +0x3F8, C = +0x46C, H = half of +0x418. A label's
+  "*" prefix is byte +0x80.
 - **The pad's HUD hit suppression and the NeuroNet windows:** the windows and the NeuroNet box's buttons all hang under
   the HUD root NN_MainButton, so `SetHudHitSuppression` over the HUD's roots took them from the cursor too: the game's
   hit test answered 0 for the box's five buttons and the map, in flight with the pad or the autopilot (issue 2, verified
@@ -1546,6 +1600,12 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
   bit, so a button with no press yet holds what the heap held (seen: D4, AE, CE, 16, 74, 8E). In `NN_ShipTrader` 0x4B85F0 0x27 on a row whose price is within +0x3A4 and whose +0x3FC is 0
   closes the window and goes to the final stage (0x4421A0, its only caller 0x4B88E2; the other way there is 0x26 from the buy button, with no refusal check). Forced by poke at 1280x800
   and seen at 4K: a plain click of `ShipTraderShipNameIconFrame2` with the bit set and +0x3FC 0 lands on the final stage. Of the 20 window handlers this page names, only this one handles 0x27.
+- **A dealer's two scroll bars (GitHub issue 36):** `NN_Dealer` and its partner each find their own child `Inventory_Scroll` in the shared setup 0x47B410 (site 0x47B42E, kept at +0x3D0), and each keeps its own list position +0x3C4, written only from its own bar (0x3E at 0x4822A0 and 0x479D10). Nothing in those handlers ties the two (decompiled; in game 6 Nov 2026 each bar moved alone at the commodity and equipment dealers, both lists overflowing, at 4K and 1280x800). A bar is hidden while its list fits (`hidden en` / `shown en` in `research\evidence\controller_ui\hud2x_trees.md`), so `FindVisible("Inventory_Scroll")` returns the first bar shown, and which that is depends on the lists, not on the focus. `Inventory_Scroll#2` counts shown bars only: read `SideOf`, not the number. The pad: `padbases.cpp` ListBar.
+- **The ship dealer's final stage (GitHub issue 34):** no window of its own: `NN_Dealer` with its partner, in mode +0x978 = 2, opened by 0x4421A0 through 0x477BF0 / 0x477AB0(2, ...). **Seen in game (6 Nov 2026, 4K, SaveC701; `research\experience\runs\p11g_worktree\issue22\p11g_4k_2\3840x2160\`, the frame and `walk.log`):** the title "Cargo Transfer", the text "This is the final stage of trading ships", the player's INVENTORY left, DEALER and SHIP PRICE right, BUY SHIP under the middle panel; the controls are the equipment dealer's (the five `Filter_*`, `ItemView0N`, `EquipToggleN`, `Inventory_Close`) plus `ContinueButton` and `BackToShipDealer`, and the pad reads `screen=equipment`. **From decompiled code, not verified in game:**
+  - `NN_Dealer`'s builder 0x480D10 makes `ContinueButton` (+0x9E0, a wire button; hint IDS 816 "Complete the purchase of this ship.") and `ContinueText` (+0x9E4) only in mode 2, and `BackToShipDealer` (+0x9EC), `ShipDealerShipPrice` (+0x9F0), `ShipBuyProblem` (+0x9E8) only with a ship (`PlayerShipArch` 0x4C3E10 not 0). On open, 0x47ADE0 (0xEF01) calls 0x482040: the caption becomes IDS 1121 BUY SHIP, the transfer panel's words IDS 1162 TRANSFER, +0x98C 0.
+  - **BUY SHIP stands only while the player can pay:** the update 0x47FEF0 works out the price less the trade-in (+0x9FC), less what went to the dealer's side, plus what came back, against the credits (0x4C4CE0). Seen in game: the button gone at too few credits, and back once a transfer covers the sum. Short of it, the button and caption get property 1 = 1 (`ControlSetProperty` 0x5A13C0: +0x6C bits 0 and 1 cleared, so `FindVisible` no longer finds them), and `ShipBuyProblem` says IDS 1584 "You need %s more credits to purchase the ship." So the first stage's budget (+0x3A4, trade-in with the equipment: $6,750 on a $4,800 Starflier) can pass a ship the final stage holds back until enough is sold. Measured in game (6 Nov 2026, Starflier for a Rhino offered at 9170): +0x9FC is an integer, 4800, and the purchase charged 9170 - 4800 = 4370 exactly; +0x9F8 read 7900 at that moment, so it is not the offer's price, though the decompiled sum reads it (what it holds: unread).
+  - **The purchase:** `ContinueButton`'s 0x26 at 0x4822A0: no ship: the window closes; +0x98C 0: 0x483AE0 checks the same sum, sets the ship, the equipment and the credits, and otherwise queues a Neural Net line. `BackToShipDealer`'s 0x26 closes and reopens the ship dealer (0x442200(7)). `BuySellTradeButton` in mode 2 moves the selected item between the two lists, which is the trade-in; nothing is sold until the purchase.
+  - **So the pad's way (0.4.0):** `padbases.cpp` ShipFinal. Before it no pad input reached `ContinueButton`: the name is in no version of the pad's code, and A has been the dealer's own since the first one, on a row the trade, elsewhere `IsWindowControl`, which lacked it. `uiclick::Click` never differed for it: the double-click bit (above) is read by `NN_ShipTrader`'s rows, and `NN_Dealer` has no 0x27 case, so both of that fix's paths came to the same 0x26 (read from the code, not run).
 - **Room characters' name card:** while hovered (+0x2F8) the per-frame code (0x4449D0, site 0x444BE8) shows the wide string
   at **+0x2FC**, lines separated by '\n': faction, [role,] name ("Liberty Population / Manhattan Bartender / Bob
   Swaffar", "Liberty Police, Inc. / Detective Kim Bailey"); the player's own character in the room is "Trent" (one line,
@@ -1588,6 +1648,8 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
 - **Job board:** the type word is the hint IDS of `MissionVendorIconFrameN` / `SummaryBoxN` and of the detail's
   `MissionVendorIcon` (13050 "Kill Ships", 13052 "Assassinate"); "Difficulty : n" and "Reward : n" are lines of the detail
   text itself (and of the offer dialog's `OfferDialogOfferText`) - no separate field read.
+- **Read from the window work of 6 Nov 2026 (frames and numbers, 1280x800 and 4K):** the text object's +0x24 leaves a blank line out (the welcome text: 156 for seven lines of 26); a line's vt[0x18] gives its size, height second. A room button's +0x333 reads lit on no button; the current room's button is the hotspot whose label equals the room's nickname, as the builder 0x43F2E0 compares it. After a room change a RoomControl of the room before stands for about 0.6 s. A dealer sets `ErrorHelp` shown again every frame, so clearing state bit 1 does not hide it (the ship dealer's does stay hidden); its position is left alone. An icon button's vt[0x14] does not take the +0x60 position back: the ship dealer's X went 1000 px left; the position property (vt[0xA8] 6, local position +0xA8) moves a button and its hit box. The dealers' slide pauses on its way; the close X's final column is 0.611 H right of the screen's middle at both sizes. Log and Info open at their head: probed, +0x364 (a rich text's pixel scroll, with +0x360 across; 0x5798B0 sets both, the text's origin and the bar) reads 0, +0x408 (its vertical alignment: 0 by the scroll, 1 top, 2 middle, 3 foot) 0. What read as a clipped first line in the walks was tests\ship_buy_pad.ps1's own stick push: one step of the pad's scroll. A rich box draws into a bitmap of its own (+0x3E0 x +0x3E4, 1024 x 512 here) and clips there.
+- **A text control's lines are drawn from one point (0x4143C0, read 6 Nov 2026):** line i at that point's y + i x the line height, so a control's y is its text's top. Each line goes through 0x4142F0 with a mode from the control's +0x358 (values 1 and 2 are treated apart there; which is centre and which right not read). So a text's left depends on that mode and only its top is safe to use without it.
 - **Text controls (vt 0x5E4F24) have no extents:** ui::ControlRect gives their box's top-left point (the anchor), e.g.
   `MissionVendorMissionReward`, `OfferDialogTitle`; the art `OfferDialogBackground` has none either.
 ## Saves (verified in game 17 Oct 2026)
@@ -1678,11 +1740,14 @@ hud2x_layers_2026-10-25\README.md`, `*_rects.json`), the HOST-X track's disassem
   (`modules\autopilot\docs\AUTOPILOT_UX.md` 2a.2): read it, never keep a list of our own. Before any runtime read: signed
   symbols in `core\flexe.h` and a verification against a save's lines.
 
+- **The target indicators as data (read from the disassembly 6 Nov 2026, not verified in game):** the object is `Targetable_Objects` - 0x38 (`exe::VtHudIndicators`). Its per-contact records are a vector at +0x370 (begin +0x374, end +0x378), stride 0x34 (0x4ED180 moves them 13 dwords at a time). 0x4EF030 draws one target: `if (+0x7A0)` the corners, `test esi` on +0x7B4 at 0x4EF54A the waypoint diamond, so nulling either is safe; HudDrawPart also returns false on a null part. `get_closest_trailing_ship` (0x4F188C) returns a distance on the FPU, compared with 500 m: the game names no ship for the tail.
 - **The HUD's target distance is a surface distance, clamped at 0** (22 Oct 2026, from the speedrun recordings, vanilla
   HUD): run 1 reads "0-M" on the target label and in the contact list while sitting against the cruiser RNC
   Saarbrucken's mid-hull, and a generator reads 0 as it blows (`research\evidence\speedrun\reference\frames\`). Whether
   that surface is the bounding sphere or the real hull is not yet checked in game. The vanilla HUD's left bottom box
   is the thruster / afterburner energy gauge (drains on the afterburner, refills at rest), not the throttle.
+  **FireResult, seen in game** (6 Nov 2026, instance 11, Justice Mk I x2, `tests\haptics_game.ps1`, frames `runs\haptics_game`): `CEGun::CanFire` answers 6 `cruise` from the cruise charge on and 7 `lane` on a lane, and held fire then sends no bolt (bolts in the frame at rest, none in cruise; the capacitor dips to 0.99 at rest and stays at 1). **The launcher's refire clock runs all the same:** `refireDelayElapsed` falls as often as at rest (25 in 3 s), so it alone does not prove a shot, and under held fire `CanFire` answers 2 `refire` before it gets to `cruise`, so a lock must be read from the cruise state and the lane too.
+  **Its value is Common.dll `CShip::get_thrust_power_ratio`** (6 Nov 2026, measured in game, instance 11, Starflier, `tests\haptics_game.ps1`; `hudinfo::ThrustGauge`): 1.00 falling linearly to 0.017 over 15.2 s of held afterburner, the burner ending there (the 15.4 s measured before), then rising linearly back to 1.00 in about 10 s at rest.
 
 ## The live trigger table (verified in game 29-30 Oct 2026, HDE 0.7.1, instance 9; code `core\game\mission_live.*`, debug `mission live [raw]`; IDEAS A39)
 The story mission's live triggers - what `[TriggerSave]` writes - read from Content.dll at run time. Static reading and
@@ -1752,6 +1817,7 @@ and HDE 0.7.1 / upstream: same TimeDateStamp 0x3ECBB142, same RVAs; v1.0's diffe
   (0x471F30; **asks "EXIT GAME?"** - verified 28 Oct 2026, HDE and vanilla: `ExitButtonBox0` = YES (left),
   `ExitButtonBox1` = NO, the MMOk button class vt 0x5E614C; YES ends the process at once, exit code 0; the pause menu's
   Quit = the PauseButtonBox with action code 5 (`pausecodes`), asking in NN_Confirm `Confirm_delBtnYes` / `No`); ids 0x10/0x03/0x0A are acted on after a short transition (+0x568 id, +0x56C pending, then +0x80).
+- **The load's frame, the save list and the menu's buttons (6 Nov 2026; decompiled and signed, not verified in game unless marked):** 0x578F70 `thiscall(float dt)`: BeginScene, 0x59E500, the bar, its text, then `exe::UiBatchClose` 0x59E5A0 from 0x5790ED with the scene open (probe 9, seen on every path). Its float is the seconds since the last tick, no progress: the bar control (vt 0x5E44A4) adds it to +0x330, wrapping at +0x338, so **no 0..1 progress exists**. `exe::SaveList` 0x67E970 (manager 0x67E7B8 + 0x1B8): node [next, prev, record]; record +0 file name, +0x200 hidden, +0x218 description, +0x224 description id, +0x228 FILETIME; filled at the startup scan, no screen needed. The menu's update 0x566510 rewrites every button through its vt[0x14] while the slide runs (a double at menu +0x560, probe 8) and leaves them alone at rest; a button draws its own caption. ToolTip: +0x159 showing, text likely the wide pointer at +0x104, placed at +0x60. The Rollover's text field is unknown. `Version` is the TextControl at 0x67BCC8.
 - **Main menu load screen** = character select, static 0x67AE10 (vt 0x5E2A84, handler 0x56C360): buttons
   LoadCharacter (+0xC8, id 0x3003), DeleteCharacter (+0xCC), MainMenu; save list = list control at +0xD8 (vt
   0x5E5CB4, also the `CharSelDesc` control): +0x8A4 rows, +0x8AC selected (-1 none), +0x8C row data (CHARACTER_ID =
@@ -1862,6 +1928,7 @@ and HDE 0.7.1 / upstream: same TimeDateStamp 0x3ECBB142, same RVAs; v1.0's diffe
   FindFirst(1 << 8): an NPC's 600/600). All exported by HDE's and the vanilla 1.1 Common.dll.
 - **The player's cash:** Freelancer.exe int at 0x673364 (`exe::PlayerCash`): getter 0x4C4CE0, setter 0x4C4CF0 (arg 2 =
   set without the "cash up" sound 0x26) - the only .data int that held a new MP character's 2000.
+- **Dialogs (6 Nov 2026, decompiled, not verified in game unless marked):** no dialog keeps a question or string id: a text control's ids go through 0x58A5F0 and only the text stays. `NN_Confirm` 0x5D22E4: `Confirm_deleteBox`, `Confirm_delTxt`, `Confirm_delBtnYes` / `No`, `Confirm_delBtnYesText` / `NoText`; the caller passes a raw string: 1883 "QUIT TO MAIN MENU" (pause code 5), 1884 "ARE YOU SURE YOU WANT TO DELETE %s?", 1899 multiplayer's "Do you want to leave this server and choose another?". `NN_Exit` 0x5D035C: `ExitFrame`, `ExitTextFrame`, `ExitText` 1830 "EXIT GAME?", `ExitButtonBox0 / 1`, `ExitButtonText0 / 1` (names seen in game); Alt-F4 (WM_SYSCOMMAND SC_CLOSE, 0x5B274D) and the menu's EXIT call 0x471F30(0) alike, so only the screen behind tells them apart. `NN_Error` 0x5D0634: `Frame`, `Text`, `ErrorOkayButton`, `ErrorOkayText`, `ErrorDialogTitle`. `NN_Prompt` 0x5D07BC: one class for 0x472AB0, 0x473F70, 0x474260: `PromptFrame`, `PromptText` (rich text, string not located), `PromptEdit`, `PromptNo`, `PromptOk` / `PromptYes`, `PromptExit`; +0x33C its mode. `NN_NetworkOperation` / `BlockingDialog` 0x5D0554 (0x472230): `ExitFrame`, `ExitText` 1846. Abort mission is no dialog: `NavMapAbortMissionButton`, `NavMapAbortYes / NoButton`, `NavMapAbortMissionText` are the map's, its rich text at +0x8F4. No ship purchase confirm was found.
 - **Modal dialog loops:** 0x4740F0 (the MULTIPLAYER button's "Which type of multiplayer game?" prompt: `PromptYes` =
   LAN, `PromptNo` = INTERNET, `PromptExit`) and its siblings 0x473A00..0x474600 loop on Sleep(10), 0x5B2360 (the frame timer
   0x42D770 + the up-time 0x67ECD8; not the message pump, which is 0x5B0B60 - corrected 30 Oct 2026), the UI update 0x59E080 and a render that calls UiRender (0x473DC4) and CursorUpdate (0x473F35) - never the

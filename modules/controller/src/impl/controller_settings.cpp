@@ -140,9 +140,27 @@ static const settings::Def kOptions[] = {
     {"holds_as_toggles", settings::Bool, &g_opt.holdsAsToggles, 0, 1,
      "afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons"},
     {"rumble", settings::Int, &g_opt.rumble, 0, 100,
-     "vibration strength in percent (0 = off): hits on your ship by their weight, your shield failing, the "
+     "vibration strength in percent (0 = off), last in the mix: the ship, weapons, hits and warnings, set pieces, the "
      "autopilot's hand-back pulse and the game's boxes that wait for your answer; only while the controller is in use "
-     "and the game is in front, never in cutscenes or the menus, and the world's effects never while paused"},
+     "and the game is in front, never in true cinematics or the menus, and the world's effects never while paused"},
+    {"trigger_effects", settings::Int, &g_opt.triggerEffects, 0, 2,
+     "what the triggers do: 0 off, 1 light, 2 full. A DualSense's triggers feel weight, vibration and a wall when you "
+     "cannot fire; an Xbox pad's trigger motors pulse (on USB or its dongle; over Bluetooth Windows is reported to "
+     "drop them). A DualSense Edge's Medium and Short stops turn the effects off"},
+    {"trigger_strength", settings::Int, &g_opt.triggerStrength, 0, 100,
+     "the trigger effects' strength in percent, on top of trigger_effects"},
+    {"haptics_mode", settings::Int, &g_opt.hapticsMode, 0, 2,
+     "0 automatic (motors until the waveform is proven), 1 motors, 2 waveform: a USB DualSense's grips driven as audio, "
+     "its speaker set to four channels in the Sound panel; any failure falls back to motors and says why"},
+    {"haptics_ship", settings::Int, &g_opt.hapticsClass[0], 0, 100,
+     "percent: the engine, afterburner, cruise charge, tractor, nebulas and asteroids"},
+    {"haptics_weapons", settings::Int, &g_opt.hapticsClass[1], 0, 100, "percent: your guns, missiles, mines and countermeasures"},
+    {"haptics_danger", settings::Int, &g_opt.hapticsClass[2], 0, 100,
+     "percent: hits from where they came, missiles, collisions, blasts, radiation, a failing hull"},
+    {"haptics_setpieces", settings::Int, &g_opt.hapticsClass[3], 0, 100, "percent: trade lanes, jump gates and holes, docking and launching"},
+    {"haptics_prompts", settings::Int, &g_opt.hapticsClass[4], 0, 100, "percent: the autopilot's hand-back and the game's boxes"},
+    {"haptics_device", settings::Int, &g_opt.hapticsDevice, 0, 1,
+     "0: nothing beyond a stop reaches a real pad, debug `haptics record` alone sees the output (a background game is always 0)"},
     {"pad_cursor", settings::Int, &g_opt.padCursor, 0, 2,
      "a cursor on the left stick where pointing is natural: 0 off, 1 rooms and maps, 2 everywhere; it slows over "
      "targets, the D-pad hides it"},
@@ -158,7 +176,7 @@ static const settings::Def kOptions[] = {
      "off"},
     FLV_ROW_AP_HINTS(g_opt)
     FLV_ROW_TEXT_SIZE
-    FLV_ROW_DECK_MODE
+    FLV_ROW_HUD_SIZE
     FLV_HUD_ROWS_TEXT
     {"hud_glyphs", settings::Bool, &g_opt.hudGlyphs, 0, 1,
      "in pad mode the HUD's own buttons carry the glyph of the button that acts on them"},
@@ -228,6 +246,11 @@ void UnregisterBus()
     }
     g_busController = g_busAutopilot = 0;
     g_bus = nullptr;
+}
+
+bool SetAndSave(const char* key, const char* value)
+{
+    return g_bus && g_bus->Set("Controller", key, value) && g_bus->Save("Controller");
 }
 
 static std::string ConfigPath()

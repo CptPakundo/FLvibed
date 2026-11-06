@@ -13,7 +13,8 @@ function ro() { return !(isEditor && editTools); }
 const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
-function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+// (the spec's {A} .. {Y} name a pad's button in the live family in game, its {version} the build; here plain)
+function esc(s) { return String(s).replace(/\{([ABXY])\}/g, '$1').replace('{version}', '0.4.0').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 function allRows() { const out = []; spec.tabs.forEach(t => t.sections.forEach(s => s.rows.forEach(r => out.push({ r, t, s })))); return out; }
 function findRow(id) { return allRows().find(x => x.r.id === id) || null; }
 function rowByKey(key) { return allRows().find(x => x.r.key === key); }
@@ -100,11 +101,11 @@ function renderOptions(stage, c) {
   h.push(`<div class="abs tabs" style="left:${tabsX}px;top:${c.tabsY}px">` + spec.tabs.map(t => `<div class="game tab${t.id === tab.id ? ' sel' : ''}${editMode && selected && selected.type === 'tab' && selected.id === t.id ? ' edit-sel' : ''}" data-tab="${t.id}" draggable="${editMode}">${esc(t.label)}</div>`).join('') + `</div>`);
   const rows = []; let firstVisible = null;
   tab.sections.forEach((s, si) => {
-    const vis = s.rows.filter(r => showAdv || r.tier !== 'advanced');
+    const vis = s.rows.filter(r => showAdv || r.tier === 'simple');
     if (!vis.length && !editMode) return;
     if (s.label || editMode) rows.push(`<div class="game sec${editMode && selected && selected.type === 'section' && selected.tab === tab.id && selected.index === si ? ' edit-sel' : ''}" data-sec="${si}">${esc(s.label || (editMode ? '(unnamed section)' : ''))}</div>`);
     s.rows.forEach(r => {
-      if (!showAdv && r.tier === 'advanced' && !editMode) return;
+      if (!showAdv && r.tier !== 'simple' && !editMode) return;
       if (!firstVisible && !parentOff(r)) firstVisible = r.id;
       const cls = ['row'];
       if (isChanged(r)) cls.push('changed'); if (parentOff(r)) cls.push('disabled'); if (r.tier === 'advanced') cls.push('adv');
@@ -185,7 +186,7 @@ document.addEventListener('keydown', (e) => {
   if (cap) { e.preventDefault(); const name = keyName(e); if (name === 'ESCAPE') { delete cap.r.capture; render(); return; } cap.r.value = name; delete cap.r.capture; touched(); render(); const b = BOUND[name]; toast(b ? `${name} is bound by the game (${b}): it would be refused` : `${name}: free`); return; }
   if (e.target.matches('input, textarea, select') || editMode) return;
   if (view !== 'main' && view !== 'ingame') return;
-  const tab = tabOf(curTab); const vis = tab.sections.flatMap(s => s.rows).filter(r => (showAdv || r.tier !== 'advanced') && !parentOff(r));
+  const tab = tabOf(curTab); const vis = tab.sections.flatMap(s => s.rows).filter(r => (showAdv || r.tier === 'simple') && !parentOff(r));
   let i = vis.findIndex(r => r.id === focusRow);
   if (e.key === 'ArrowDown') { i = Math.min(vis.length - 1, i + 1); focusRow = vis[i].id; }
   else if (e.key === 'ArrowUp') { i = Math.max(0, i - 1); focusRow = vis[i].id; }

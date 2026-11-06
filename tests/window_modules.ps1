@@ -2,7 +2,7 @@
 # open, the nav map by F6: the mode goes to space-ui, the panel closes, the autopilot flies on (only the pause holds it). Row two: all on: the options page's Autopilot tab has
 # its values (163 rows against the bus's old cap of 160 greyed all of it). Exit 1 on a failure.
 # Usage (PowerShell tool): tests\window_modules.ps1 [-Instance 1]    build\release
-param([int]$Instance = 1)
+param([string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -38,7 +38,8 @@ try {
     Start-Sleep -Seconds 2
     Check (@(Get-Content (Join-Path (Get-FLInstallDir) 'EXE\FLController.log') | Where-Object { $_ -match 'settings bus: .* Autopilot [1-9]' }).Count -eq 1) 'the Autopilot section is on the bus'
     $null = Send-FL 'ui options open'
-    $null = Send-FL 'ui tab 2'
+    $null = Send-FL 'ui tab 4'; $null = Send-FL 'ui focus show_advanced'; $null = Send-FL 'ui press a' # (the style's rows stand behind Show all settings)
+    $null = Send-FL 'ui tab 3'
     $rows = "$(Send-FL 'ui rows')"
     Check ($rows -match 'AUTOPILOT' -and $rows -match 'preset = \((?!CUSTOM)' -and $rows -match 'knowledge = \d') 'its rows have their values, the preset is named'
     $null = Send-FL 'ui options close'

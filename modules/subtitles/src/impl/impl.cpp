@@ -5,6 +5,7 @@
 #include "flexe.h"
 #include "log.h"
 #include "settings_bus.h"
+#include "str.h"
 #include "chat.h"
 #include "data.h"
 #include "display.h"
@@ -17,6 +18,7 @@
 #include "game/render.h"
 #include "game/room.h"
 #include "game/space.h"
+#include "game/tractorfail.h"
 
 #include <sstream>
 #include <unordered_map>
@@ -103,7 +105,7 @@ static std::wstring JoinPieces(const std::vector<const data::Line*>& parts)
         if (t.empty())
             continue;
         if (fresh)
-            t[0] = towupper(t[0]);
+            str::Capitalize(t);
         out += (out.empty() ? L"" : L" ") + t;
         const wchar_t last = t.back();
         fresh = last == L'!' || last == L'?' || (last == L'.' && !(t.size() > 1 && t[t.size() - 2] == L'.'));
@@ -436,12 +438,16 @@ static void OnSoundStart(u32 id, const void*, u32 caller)
     const bool nn = ln->kind == data::Kind::Nn;
     if (nn && display::Hud2ShowsAlert(ln->id))
         return; // HUD 2's alert card shows this event (one place per event)
+    const std::wstring why = nn ? display::TractorWhy(ln->id) : std::wstring();
+    if (!why.empty() && display::Hud2Cards())
+        return; // HUD 2's card says the line and its reason
+    const bool withWhy = !why.empty() && display::Get().nnReason;
     const bool bar = _strnicmp(ln->id.c_str(), "gcs_", 4) == 0;
-    std::wstring text = ln->text;
+    std::wstring text = withWhy ? tractorfail::Caption(ln->text, why) : ln->text;
     if (bar && ln->kind == data::Kind::Chunk && !Ended(text))
         text += L'.'; // a bar piece played alone is a sentence (joined pieces: see DISPLAY_PLAN, $BGCS)
-    if (bar && !text.empty())
-        text[0] = towupper(text[0]);
+    if (bar)
+        str::Capitalize(text);
     const display::Category cat = nn ? display::Category::Nn : bar ? display::Category::Bar : display::Category::Story;
     const display::Relation rel = nn                                       ? display::Relation::Computer
                                   : speakers::Hostile(ln->speaker, ln->id) ? display::Relation::Hostile
@@ -454,7 +460,7 @@ static void OnSoundStart(u32 id, const void*, u32 caller)
     if (speaker.empty() && bar && !ln->voice.empty())
         speaker = BarSpeakerInRoom(data::CreateID(ln->voice.c_str()));
     display::Show(cat, speaker, rel, text, ln->sec, nn ? display::NnSeverity(ln->id) : 0, false,
-                  ln->wordStarts.empty() ? nullptr : &ln->wordStarts);
+                  ln->wordStarts.empty() || withWhy ? nullptr : &ln->wordStarts);
 }
 
 static void OnVoiceLookup(u32 voice, u32 msg, void* sound, u32 caller)
@@ -895,6 +901,20 @@ static void TrackMenu()
     inMenu = menu;
 }
 
+// Docking: with the dock scene skipped (`skip_dock_scene`) a space line stood over the base for its whole span ("This is Fort Bush to Piranha patrol...").
+static void TrackDocked()
+{
+    static bool docked = false;
+    const bool base = Mem<u32>(exe::PlayerBase) != 0; // (the ship's id stays set in a base: only this says the step, p2q)
+    if (base && !docked)
+    {
+        display::EndWithClip();
+        if (g_trace)
+            Log("docked: lines end with their clips");
+    }
+    docked = base;
+}
+
 // A game load (HostApi v9: the host counts Content.dll's loads) drops the previous game's lines too: a load straight
 // from flight may never show a menu frame to TrackMenu (spec_020 run: the Fort Bush police comm stayed
 // stacked over SaveS401's first line). Read once per frame: the count only changes at the load itself.
@@ -916,6 +936,7 @@ static void ImplOnFrame(double dt)
 {
     ++g_frames;
     TrackMenu();
+    TrackDocked();
     TrackGameLoad();
     TrackBarConversation();
     mixcues::Tick();

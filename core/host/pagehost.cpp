@@ -27,6 +27,7 @@ static void LetGo()
 {
     input::SetHudHitSuppression(false, nullptr, 0);
     router::SetCursorHidden(false); // the HUD's idle cursor
+    router::SetLoadDraw(nullptr);   // (its code goes with the logic)
     if (!g_flies)
         return;
     input::ClearAllHeld();
@@ -296,14 +297,20 @@ void Start()
     g_host.calls.MouseCapture = dimouse::Capture;
     g_host.calls.LastRealMouseTick = dimouse::LastRealTick;
     g_host.calls.UiGeneration = uihooks::Generation;
+    g_host.calls.SetTargetMute = uihooks::SetTargetMute;
+    g_host.calls.TargetMuteReady = uihooks::TargetMuteReady;
     g_host.calls.GetRoomCharacters = router::RoomCharacters;
     g_host.calls.SetKeepRunning = focus::SetKeepRunning;
     g_host.calls.SetCursorHidden = router::SetCursorHidden;
+    g_host.calls.SetLoadDraw = router::SetLoadDraw;
     g_hud = router::ModuleOn(modules::kHud);
     g_flies = router::ModuleOn(modules::kAutopilot) || g_hud;
     g_story = g_flies || router::ModuleOn(modules::kSpeedrun);
     if (g_hud)
+    {
         uihooks::Install(KeyCmd);
+        uihooks::InstallTargetMute();
+    }
     if (g_story)
     {
         g_host.calls.SetHeld = input::SetHeld;

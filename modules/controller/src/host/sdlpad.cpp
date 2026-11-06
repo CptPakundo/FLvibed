@@ -56,16 +56,31 @@ static_assert(XINPUT_GAMEPAD_A == 0x1000 && XINPUT_GAMEPAD_BACK == 0x0020 && XIN
 
 namespace sdlpad
 {
-static SRWLOCK g_lock = SRWLOCK_INIT; // guards g_state and g_rumble
+static SRWLOCK g_lock = SRWLOCK_INIT; // guards g_state, g_path and the output blocks
 static SdlPadState g_state = {};
+static char g_path[260] = {}; // the open pad's device path
 static struct
 {
     u16 low, high;
     u32 ms, seq;
 } g_rumble = {};
+static struct
+{
+    u16 left, right;
+    u32 ms, seq;
+} g_triggerRumble = {};
+constexpr int kEffectBytes = 11;
+static struct
+{
+    u8 left[kEffectBytes], right[kEffectBytes];
+    u32 seq;
+} g_triggers = {};
 static HANDLE g_thread = nullptr, g_kick = nullptr;
 static volatile LONG g_status = padbackend::kSdlOff;
 static volatile LONG g_stop = 0, g_busy = 0, g_seq = 0;
+static volatile LONG g_asked = 0; // GetTickCount of the logic's last call: the lease on what the pad is holding
+constexpr DWORD kLeaseMs = 1000;  // nothing from the logic for this long, the thread puts the pad to rest by itself
+constexpr DWORD kLeaseLookMs = 250;
 
 static void Copy(char* dst, size_t cap, const char* src)
 {
@@ -86,6 +101,7 @@ static void Hint(const char* name, const char* value) { SDL_SetHintWithPriority(
 
 // ---- A mapper's keys and mouse (padbackend::DropInjected). Low-level hooks on a thread of their own, only while the logic says so (Filter); nobody else pays
 static volatile LONG g_nativeOnly = 0; // started by the fallback: only the physical PlayStation or Switch pad, set by Pad before the thread starts
+static volatile LONG g_outputOnly = 0; // started for an Xbox pad's four motors: SDL's WGI driver sends, XInput goes on reading (padbackend::ImpulseRoute)
 static HANDLE g_hookThread = nullptr;
 static DWORD g_hookThreadId = 0;
 static volatile LONG g_filterOn = 0, g_lastInput = 0, g_dropped = 0, g_said = 0;
@@ -155,6 +171,18 @@ static DWORD WINAPI HookThread(void*)
     HMODULE self = nullptr;
     GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>(&HookThread), &self);
     HHOOK keys = SetWindowsHookExA(WH_KEYBOARD_LL, KeyHook, self, 0), mouse = SetWindowsHookExA(WH_MOUSE_LL, MouseHook, self, 0);
+    // (a low-level hook runs on this thread and maps no module: the exe's handle serves as well. A machine can refuse every DLL's handle with error 126, whichever the DLL and
+    // the process: seen 6 Nov 2026 from a bare PowerShell with six system DLLs, FLvibed's handle and file being right. The mapper's keys then counted twice)
+    if (!keys || !mouse)
+    {
+        const DWORD first = GetLastError();
+        const HMODULE exe = GetModuleHandleA(nullptr);
+        if (!keys)
+            keys = SetWindowsHookExA(WH_KEYBOARD_LL, KeyHook, exe, 0);
+        if (!mouse)
+            mouse = SetWindowsHookExA(WH_MOUSE_LL, MouseHook, exe, 0);
+        Log("SDL3 pad backend: the low-level hooks by the DLL's handle %p: error %lu; by the exe's: keys %d mouse %d", self, first, keys ? 1 : 0, mouse ? 1 : 0);
+    }
     if (!keys || !mouse)
         Log("SDL3 pad backend: no low-level hook (error %lu): a mapper's keys may count twice", GetLastError());
     MSG m;
@@ -197,6 +225,11 @@ static SDL_Gamepad* OpenFirst(int& count)
 {
     SDL_JoystickID* ids = SDL_GetGamepads(&count);
     SDL_Gamepad* pad = nullptr;
+    if (g_outputOnly && count != 1) // which of two is XInput's pad? Nothing cheap says: two motors by XInput
+    {
+        SDL_free(ids);
+        return nullptr;
+    }
     for (int i = 0; ids && i < count && !pad; ++i)
     {
         const unsigned vendor = SDL_GetGamepadVendorForID(ids[i]);
@@ -269,9 +302,12 @@ static bool SDLCALL DevTriggers(void* ud, Uint16 left, Uint16 right)
     Record(*static_cast<int*>(ud), kSdlOutTriggers, left, right);
     return true;
 }
-static bool SDLCALL DevEffect(void* ud, const void*, int size)
+// (a trigger block: `b` holds both triggers' modes and first zone bytes, right, left, right, left, so a test reads which stance went out)
+static bool SDLCALL DevEffect(void* ud, const void* data, int size)
 {
-    Record(*static_cast<int*>(ud), kSdlOutEffect, static_cast<u32>(size), 0);
+    const u8* p = static_cast<const u8*>(data);
+    const u32 b = size >= 23 ? p[10] | p[21] << 8 | p[11] << 16 | static_cast<u32>(p[22]) << 24 : 0;
+    Record(*static_cast<int*>(ud), kSdlOutEffect, static_cast<u32>(size), b);
     return true;
 }
 
@@ -417,6 +453,29 @@ static void Feed()
     }
 }
 
+// ---- what the pad holds beyond the thread's life: its firmware keeps a trigger effect until told otherwise (docs\research\haptics-best-in-class.md 2)
+// The DualSense's effect block as SDL_hidapi_ps5.c lays it out: the enable bits first, the right trigger at 10, the left at 21.
+static bool SendTriggers(SDL_Gamepad* pad, const u8* left, const u8* right)
+{
+    u8 block[47] = {};
+    block[0] = 0x04 | 0x08; // both triggers: the bits that leave the rumble and audio haptics alone
+    memcpy(block + 10, right, kEffectBytes);
+    memcpy(block + 21, left, kEffectBytes);
+    return SDL_SendGamepadEffect(pad, block, sizeof(block));
+}
+
+// Everything off on this pad. `driven`: something was sent that a stop has to take back.
+static void ToRest(SDL_Gamepad* pad, bool& driven)
+{
+    if (!pad || !driven)
+        return;
+    static const u8 kOff[kEffectBytes] = {0x05};
+    SendTriggers(pad, kOff, kOff);
+    SDL_RumbleGamepadTriggers(pad, 0, 0, 0);
+    SDL_RumbleGamepad(pad, 0, 0, 0);
+    driven = false;
+}
+
 static DWORD WINAPI Thread(void*)
 {
     char env[8];
@@ -434,11 +493,21 @@ static DWORD WINAPI Thread(void*)
     Hint(SDL_HINT_JOYSTICK_ENHANCED_REPORTS, "auto");
     Hint(SDL_HINT_JOYSTICK_DIRECTINPUT, "0");
     Hint(SDL_HINT_JOYSTICK_RAWINPUT, "0");
-    Hint(SDL_HINT_JOYSTICK_WGI, "0");
+    // (WGI takes an Xbox pad only with XInput and RawInput off inside SDL; loaded at run time, so Windows 7 just finds nothing)
+    Hint(SDL_HINT_JOYSTICK_WGI, g_outputOnly ? "1" : "0");
+    if (g_outputOnly)
+        Hint(SDL_HINT_JOYSTICK_HIDAPI, "0");
     Hint(SDL_HINT_JOYSTICK_GAMEINPUT, "0");
+    // A background test game leaves the machine's own pad alone: SDL's HIDAPI driver would open it (and an open writes its lights), so only the virtual test pads exist for it
+    const bool testGame = GetEnvironmentVariableA("FLVIBED_BACKGROUND", env, sizeof(env)) == 1 && env[0] == '1';
+    if (testGame)
+    {
+        Hint(SDL_HINT_JOYSTICK_HIDAPI, "0");
+        Log("SDL3 pad backend: a background game: SDL opens no real pad, the test pads alone");
+    }
     // The fallback reads the physical pad: not XInput's pads through SDL (a mirror, or a real Xbox pad listed first), and not Steam's filter, which from memory hides that
     // pad from a game Steam starts, so that native comes first there too. If Steam hides it some other way, SDL finds no pad and XInput's is the pad.
-    Hint(SDL_HINT_XINPUT_ENABLED, g_nativeOnly ? "0" : "1");
+    Hint(SDL_HINT_XINPUT_ENABLED, g_nativeOnly || g_outputOnly ? "0" : "1");
     if (g_nativeOnly)
     {
         Hint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES, "");
@@ -472,13 +541,29 @@ static DWORD WINAPI Thread(void*)
     Publish(s);
     InterlockedCompareExchange(&g_status, padbackend::kSdlRunning, padbackend::kSdlStarting); // (a Stop that timed out said Failed: it stands)
 
-    u32 rumbleDone = 0; // (a command left from before a stop is over: it must not play at the restart)
+    u32 rumbleDone = 0, triggersDone = 0, triggerRumbleDone = 0; // (a command left from before a stop is over: it must not play at the restart)
     AcquireSRWLockExclusive(&g_lock);
-    rumbleDone = g_rumble.seq;
+    rumbleDone = g_rumble.seq, triggersDone = g_triggers.seq, triggerRumbleDone = g_triggerRumble.seq;
     ReleaseSRWLockExclusive(&g_lock);
+    bool driven = false; // the open pad holds something of ours, by these three:
+    bool motorsOn = false, triggerMotorsOn = false, stanceOn = false;
+    SDL_Gamepad* padWas = nullptr;
+    u32 padSerial = 0, effectFails = 0;
+    const bool quiet = testGame; // nothing new reaches a real pad, should one ever open
     while (true)
     {
-        WaitForSingleObject(g_kick, INFINITE);
+        // the lease: a pad left stiff or shaking by a logic that stopped asking (a fault, a hang, a load) goes to rest by itself; a player with nothing driven pays no wake-ups
+        if (WaitForSingleObject(g_kick, driven ? kLeaseLookMs : INFINITE) == WAIT_TIMEOUT)
+        {
+            if (GetTickCount() - static_cast<DWORD>(g_asked) >= kLeaseMs)
+            {
+                ToRest(pad, driven);
+                motorsOn = triggerMotorsOn = stanceOn = false;
+                ++padSerial; // (the logic that comes back sends what the pad should hold again)
+                Log("SDL3 pad backend: nothing from the logic for %lu ms: the pad put to rest", kLeaseMs);
+            }
+            continue;
+        }
         if (g_stop)
             break;
         InterlockedExchange(&g_busy, 1);
@@ -500,6 +585,7 @@ static DWORD WINAPI Thread(void*)
                 SDL_free(SDL_GetGamepads(&count));
             if (!pad || SDL_GetGamepadID(pad) != g_tp[test].id)
             {
+                ToRest(pad, driven);
                 if (pad)
                     SDL_CloseGamepad(pad);
                 if ((pad = SDL_OpenGamepad(g_tp[test].id)) != nullptr)
@@ -530,12 +616,41 @@ static DWORD WINAPI Thread(void*)
             }
         }
         InterlockedExchange(&g_inUse, test);
+        if (pad != padWas)
+        {
+            ++padSerial, driven = motorsOn = triggerMotorsOn = stanceOn = false, padWas = pad;
+            const char* path = pad ? SDL_GetGamepadPath(pad) : nullptr;
+            AcquireSRWLockExclusive(&g_lock);
+            Copy(g_path, sizeof(g_path), test >= 0 ? nullptr : path); // (a test pad has no endpoint, and must never reach for one)
+            ReleaseSRWLockExclusive(&g_lock);
+        }
         AcquireSRWLockShared(&g_lock);
         const auto rumble = g_rumble;
+        const auto triggerRumble = g_triggerRumble;
+        const auto triggers = g_triggers;
         ReleaseSRWLockShared(&g_lock);
         if (pad && rumble.seq != rumbleDone)
+        {
             SDL_RumbleGamepad(pad, rumble.low, rumble.high, rumble.ms);
+            motorsOn = rumble.low || rumble.high;
+        }
         rumbleDone = rumble.seq;
+        const bool mayDrive = test >= 0 || !quiet;
+        if (pad && mayDrive && triggerRumble.seq != triggerRumbleDone)
+        {
+            SDL_RumbleGamepadTriggers(pad, triggerRumble.left, triggerRumble.right, triggerRumble.ms);
+            triggerMotorsOn = triggerRumble.left || triggerRumble.right;
+        }
+        triggerRumbleDone = triggerRumble.seq;
+        if (pad && mayDrive && triggers.seq != triggersDone)
+        {
+            if (SendTriggers(pad, triggers.left, triggers.right))
+                stanceOn = triggers.left[0] != 0x05 || triggers.right[0] != 0x05;
+            else if (!effectFails++)
+                Log("SDL3 pad backend: the pad refused a trigger effect: %s - the motors go on", SDL_GetError());
+        }
+        triggersDone = triggers.seq;
+        driven = motorsOn || triggerMotorsOn || stanceOn;
 
         SdlPadState r = {};
         r.status = padbackend::kSdlRunning;
@@ -556,17 +671,20 @@ static DWORD WINAPI Thread(void*)
             r.type = SDL_GetGamepadType(pad);
             r.vendor = SDL_GetGamepadVendor(pad);
             r.product = SDL_GetGamepadProduct(pad);
+            r.link = SDL_GetGamepadConnectionState(pad);
             Copy(r.name, sizeof(r.name), SDL_GetGamepadName(pad));
             if (padbackend::HasInput(r.buttons, r.lx, r.ly, r.rx, r.ry, r.lt, r.rt, g_stickDeadzone, g_triggerThreshold))
                 InterlockedExchange(&g_lastInput, static_cast<LONG>(GetTickCount()));
         }
         r.dropped = static_cast<u32>(g_dropped);
+        r.padSerial = padSerial, r.effectFails = effectFails;
         r.seq = static_cast<u32>(InterlockedIncrement(&g_seq));
         Publish(r);
         InterlockedExchange(&g_busy, 0);
     }
     if (pad)
     {
+        ToRest(pad, driven);
         SDL_RumbleGamepad(pad, 0, 0, 0);
         SDL_CloseGamepad(pad);
         pad = nullptr;
@@ -610,6 +728,7 @@ static bool g_stuck = false; // a stop timed out: never a second SDL in the proc
 
 int Pad(int on, SdlPadState* out)
 {
+    InterlockedExchange(&g_asked, static_cast<LONG>(GetTickCount()));
     if (!on)
     {
         if (g_thread && !g_stuck)
@@ -621,6 +740,7 @@ int Pad(int on, SdlPadState* out)
     else if (!g_thread && !g_stuck)
     {
         InterlockedExchange(&g_nativeOnly, on == 2);
+        InterlockedExchange(&g_outputOnly, on == padbackend::kSdlStartImpulse);
         g_kick = CreateEventA(nullptr, FALSE, FALSE, nullptr);
         g_done = CreateEventA(nullptr, FALSE, FALSE, nullptr);
         AcquireSRWLockExclusive(&g_lock);
@@ -672,6 +792,34 @@ void Rumble(u16 low, u16 high, u32 ms)
 {
     AcquireSRWLockExclusive(&g_lock);
     g_rumble.low = low, g_rumble.high = high, g_rumble.ms = ms, ++g_rumble.seq;
+    ReleaseSRWLockExclusive(&g_lock);
+    if (g_status == padbackend::kSdlRunning && g_kick)
+        SetEvent(g_kick);
+}
+
+bool Path(char* out, int len)
+{
+    AcquireSRWLockShared(&g_lock);
+    Copy(out, static_cast<size_t>(len), g_path);
+    ReleaseSRWLockShared(&g_lock);
+    return out[0] != 0;
+}
+
+void Triggers(const u8* left, const u8* right)
+{
+    AcquireSRWLockExclusive(&g_lock);
+    memcpy(g_triggers.left, left, kEffectBytes);
+    memcpy(g_triggers.right, right, kEffectBytes);
+    ++g_triggers.seq;
+    ReleaseSRWLockExclusive(&g_lock);
+    if (g_status == padbackend::kSdlRunning && g_kick)
+        SetEvent(g_kick);
+}
+
+void TriggerRumble(u16 left, u16 right, u32 ms)
+{
+    AcquireSRWLockExclusive(&g_lock);
+    g_triggerRumble.left = left, g_triggerRumble.right = right, g_triggerRumble.ms = ms, ++g_triggerRumble.seq;
     ReleaseSRWLockExclusive(&g_lock);
     if (g_status == padbackend::kSdlRunning && g_kick)
         SetEvent(g_kick);

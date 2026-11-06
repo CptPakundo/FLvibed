@@ -7,6 +7,8 @@
 #include "aim.h"
 #include "debugverbs.h"
 #include "deckmode.h"
+#include "handheld.h"
+#include "hudsize.h"
 #include "dimouse.h"
 #include "enabled_gate.h"
 #include "events.h"
@@ -84,6 +86,24 @@ void OnKeyCmd(int cmd, bool down)
 
 // The player ship's state once a second, as an event when it changed (hull to 0.1 %, shield to 1 %, consumables): the run's own track, comparable
 // with the footage's HUD scans, per section of a mission.
+int ApplySize()
+{
+    static handheld::Facts facts;
+    static handheld::Verdict verdict;
+    static bool read = false;
+    const float W = static_cast<float>(fl::ScreenWidth()), H = static_cast<float>(fl::ScreenHeight());
+    if (!read)
+        facts = handheld::Read(), read = true, facts.W = -1;
+    if (W != facts.W || H != facts.H)
+    {
+        facts.W = W, facts.H = H;
+        verdict = handheld::Decide(facts);
+        Log("hud_size: automatic reads %s at %.0fx%.0f (%s; model '%s', board '%s')", verdict.preset == hudsize::Large ? "large" : "normal",
+            W, H, verdict.why, facts.systemProduct.c_str(), facts.boardProduct.c_str());
+    }
+    return hudsize::Apply(hudsize::Resolve(opts.hudSize, verdict.preset), H, opts.textSize);
+}
+
 static void TrackSelf()
 {
     static DWORD next = 0;
@@ -204,6 +224,8 @@ void OnRenderOverlay()
         pad.DrawPrompts(); // the shared prompt bar (every pad screen sets it per frame)
     options_page::Draw(); // the FLVIBED OPTIONS page over everything while it is open
     views::BarDraw();     // the bar's autopilot button glyph
+    if (views::hud.Top)
+        views::hud.Top(Device()); // HUD 2's cursor and tooltips, over all of it
 }
 
 // Before every device Reset (the host's Reset hook): every state block this logic holds goes - HUD 2's batcher's and the shared renderer's. Under
@@ -366,9 +388,7 @@ void OnFrame(double dtd)
         if (pad.Options)
             pad.Options();
         uiopt::UiOptions& u = uiopt::Get();
-        // (Steam Deck mode: the screen says, deck_mode overrides; the player's own text_size stays theirs)
-        deckmode::g_on = deckmode::Active(opts.deckMode, static_cast<float>(fl::ScreenWidth()), static_cast<float>(fl::ScreenHeight()));
-        u.textSize = deckmode::TextSize(deckmode::g_on, opts.textSize);
+        u.textSize = ApplySize(); // (hud_size; the player's own text_size stays theirs)
         if (views::hud.GameText)
             views::hud.GameText(g_mode == Mode::Menu);
         const hudrows::Values& h = hudrows::g;

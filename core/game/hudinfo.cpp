@@ -9,6 +9,7 @@
 #include "fldll.h"
 #include "flexe.h"
 #include "game/ai.h"
+#include "game/fl.h"
 #include "game/flhash.h"
 #include "game/geom.h"
 #include "game/hostcalls.h"
@@ -36,8 +37,10 @@ struct Fns
     void*(__cdecl* findObj)(const u32&, u32) = nullptr;        // CObject::Find (adds a reference)
     u32(__thiscall* releaseObj)(void*) = nullptr;              // CObject::Release
     u32(__thiscall* getType)(const void*) = nullptr;           // CSimple::get_type
+    float(__thiscall* physRadius)(const void*, float*) = nullptr; // CSimple::get_physical_radius_r
     u32(__thiscall* rootId)(const void*) = nullptr;            // Archetype::Root::get_id
     bool(__thiscall* anyThrusters)(const void*) = nullptr;     // CShip::any_thrusters_on
+    float(__thiscall* thrustRatio)(const void*) = nullptr;     // CShip::get_thrust_power_ratio
     void*(__thiscall* equipFirst)(void*, u32) = nullptr;       // CEquipManager::FindFirst(EquipmentClass)
     void*(__thiscall* equipById)(void*, u16) = nullptr;        // CEquipManager::FindByID(sub-object id)
     bool(__thiscall* equipActive)(const void*) = nullptr;      // CEquip::IsActive
@@ -89,8 +92,10 @@ const Fns& F()
     Get(f.findObj, c, "?Find@CObject@@SAPAU1@ABIW4Class@1@@Z");
     Get(f.releaseObj, c, "?Release@CObject@@QAEIXZ");
     Get(f.getType, c, "?get_type@CSimple@@QBEIXZ");
+    Get(f.physRadius, c, "?get_physical_radius_r@CSimple@@UBEMAAVVector@@@Z");
     Get(f.rootId, c, "?get_id@Root@Archetype@@QBEIXZ");
     Get(f.anyThrusters, c, "?any_thrusters_on@CShip@@QBE_NXZ");
+    Get(f.thrustRatio, c, "?get_thrust_power_ratio@CShip@@QBEMXZ");
     Get(f.equipFirst, c, "?FindFirst@CEquipManager@@QAEPAVCEquip@@I@Z");
     Get(f.equipById, c, "?FindByID@CEquipManager@@QAEPAVCEquip@@G@Z");
     Get(f.equipActive, c, "?IsActive@CEquip@@UBE_NXZ");
@@ -314,6 +319,29 @@ bool ObjectType(u32 id, u32& type, u32& cls)
     {
     }
     return false;
+}
+
+float RadiusOf(u32 id)
+{
+    const Fns& f = F();
+    if (!id || !f.findObj || !f.releaseObj || !f.physRadius)
+        return 0;
+    static const u32 classes[] = {kClassShip, kClassSolar, kClassLoot};
+    __try
+    {
+        for (u32 c : classes)
+            if (void* o = f.findObj(id, c))
+            {
+                float centre[3];
+                const float r = f.physRadius(o, centre);
+                f.releaseObj(o);
+                return r > 0 ? r : 0.0f;
+            }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+    return 0;
 }
 
 // A client object's u32 answer (CObject::Find in the ship / solar classes, the reference released after).
@@ -1068,6 +1096,8 @@ std::wstring FactionName(u32 objId)
     return groups[group] = ids ? IdsText(ids) : std::wstring();
 }
 
+float ObjectRadius(u32 id) { return RadiusOf(id); }
+
 std::wstring ClassName(u32 objId)
 {
     u32 type = 0, cls = 0;
@@ -1214,6 +1244,8 @@ std::wstring DisplayName(u32 objId)
 // ================================================================================================ the player's ship
 bool AfterburnerOn() { return Guard(F().anyThrusters, PlayerShip(), false); }
 bool AfterburnerKnown() { return F().anyThrusters != nullptr; }
+float ThrustGauge() { return Guard(F().thrustRatio, PlayerShip(), -1.0f); }
+u32 EngineArch() { return EquipArchId(PlayerEngine()); }
 
 bool EngineKilled()
 {
@@ -1500,6 +1532,16 @@ bool CruiseDisrupted(float withinSeconds)
     return elapsed < 0 && t + elapsed <= withinSeconds;
 }
 
+float CruiseDisruptLeft()
+{
+    const Fns& f = F();
+    void* e = PlayerEngine();
+    if (!e || !f.disruptTime)
+        return 0;
+    const float elapsed = Guard(f.cruiseElapsed, e, 0.0f), t = ReadF32(reinterpret_cast<uintptr_t>(f.disruptTime), 0);
+    return elapsed < 0 && t > 0 ? std::min(1.0f, -elapsed / t) : 0.0f;
+}
+
 // ================================================================================================ combat
 float MissileLock()
 {
@@ -1514,10 +1556,23 @@ float MissileLock()
     void* ship = PlayerShip();
     if (!ship)
         return -1;
+    // every missile's time_to_lock is 0 in the game's data, so the clock alone reads 1 on any ship, behind the player too: a lock also wants the target
+    // inside the seeker's range and half-angle, off the ship's nose (the screen's axes: the back axis points at the viewer)
+    float c[3] = {}, radius = 0, rot[9] = {}, d[3] = {};
+    if (!space::TargetBody(c, radius) || !fl::FlightScreenAxes(rot))
+        return -1;
+    for (int i = 0; i < 3; ++i)
+        d[i] = c[i] - p.pos[i];
+    const float dist = sqrtf(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+    const float ahead = dist > 1 ? -(d[0] * rot[2] + d[1] * rot[5] + d[2] * rot[8]) / dist : 1;
     float best = -1;
     for (const space::Weapon& w : space::PlayerWeapons())
-        if (w.homing && w.active && w.ammo != 0)
-            best = std::max(best, GunLock(EquipById(ship, w.subObj), w.projArch));
+        if (w.homing && w.ammo != 0) // (active or not: a launcher on its own key is in no active group, p2p: every one read active=0)
+        {
+            const float clock = GunLock(EquipById(ship, w.subObj), w.projArch);
+            const bool seen = dist - radius <= w.seekerRange && ahead >= cosf(w.seekerFovDeg * 0.0174533f);
+            best = std::max(best, seen ? clock : std::min(clock, 0.0f));
+        }
     return best;
 }
 

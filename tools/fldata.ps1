@@ -35,6 +35,31 @@ function Assert-FLWillLoad([string]$ExeDir) {
     }
 }
 
+# Before every background test start: the game must not open exclusive fullscreen, which changes the owner's screen mode.
+# 6 Nov 2026: FrontierSpace's patches.ini (FLPatch, run time) sets the byte Set-FLInstanceDisplay writes to 1, its comment
+# calling that windowed; started with `display = 0` the game took the whole screen at 1024x768. So the mode a game will
+# really start in = the patches.ini row for file offset 1B16CC when FLPatch.dll is listed, else the exe's own byte. An exe
+# of another build (no `mov byte ptr [esp+79h]` there) cannot be judged: refused too. Throws instead of starting.
+function Assert-FLNoFullscreen([string]$ExeDir) {
+    $bytes = [IO.File]::ReadAllBytes((Join-Path $ExeDir 'Freelancer.exe'))
+    if ($bytes.Length -le 0x1B16CC -or (($bytes[0x1B16C8..0x1B16CB] | ForEach-Object { $_.ToString('X2') }) -join '') -ne 'C6442479') {
+        throw "Freelancer.exe in $ExeDir has no display-mode byte at 0x1B16CC: its mode cannot be read, not started in the background"
+    }
+    $mode = $bytes[0x1B16CC]; $from = 'the exe'
+    $patches = Join-Path $ExeDir 'patches.ini'
+    $dacom = Join-Path $ExeDir 'dacom.ini'
+    if ((Test-Path -LiteralPath $patches) -and (Test-Path -LiteralPath $dacom) -and
+        (Get-Content -LiteralPath $dacom | Where-Object { $_ -match '^\s*FLPatch\.dll\b' })) {
+        $at = $false
+        foreach ($l in Get-Content -LiteralPath $patches) {
+            if ($l -match '^\s*\[Patch\]') { $at = $false }
+            elseif ($l -match '^\s*offset\s*=\s*0*1B16CC\s*$') { $at = $true }
+            elseif ($at -and $l -match '^\s*value\s*=\s*([0-9A-Fa-f]{2})\s*$') { $mode = [Convert]::ToByte($Matches[1], 16); $from = 'patches.ini' }
+        }
+    }
+    if ($mode -ne 0) { throw "this game would open exclusive fullscreen ($from sets 0x1B16CC to $mode) and take the screen: not started in the background" }
+}
+
 # Creates (or completes) instance <n>'s mirror of the test install: every file hard-linked, except what a game or a
 # deploy writes per instance - the SAVE folder (copied: own saves, PerfOptions), logs, FLvibed's own files in EXE
 # (deploy copies them; a linked DLL loaded by another instance could not be replaced) and the .ini files deploy and
@@ -73,9 +98,9 @@ function New-FLInstance([int]$N) {
 # Freelancer.exe is a hard link of the install's: the first mode change replaces it with a copy (the install keeps its
 # bytes), and only an exe whose bytes at those offsets are the expected ones is patched (another build: refused).
 # Fullscreen is exclusive fullscreen: it takes the screen - never for a background test while the user works.
-function Set-FLInstanceDisplay([int]$N, [ValidateSet('borderless', 'windowed', 'fullscreen')][string]$Mode = 'borderless',
+function Set-FLInstanceDisplay([string]$N, [ValidateSet('borderless', 'windowed', 'fullscreen')][string]$Mode = 'borderless',
                                [string]$Size) {
-    if ($N -lt 1) { throw 'Set-FLInstanceDisplay: instances only (n >= 1); the main install keeps the user''s options' }
+    if (-not $N -or $N -eq '0') { throw 'Set-FLInstanceDisplay: instances only (a number >= 1 or a prepared folder''s name); the main install keeps the user''s options' }
     $inst = Join-Path $script:FLDataRoot "Install\instances\$N\Freelancer HD Edition"
     $exe = Join-Path $inst 'EXE\Freelancer.exe'
     if (-not (Test-Path -LiteralPath $exe)) { throw "no instance $N at $inst (deploy.ps1 -Instance $N makes it)" }
@@ -138,6 +163,35 @@ function Get-FLUserDataDir([string]$InstallDir = (Get-FLInstallDir)) {
 
 # The single-player save folder (Accts\SinglePlayer under the user-data folder).
 function Get-FLSaveDir([string]$InstallDir = (Get-FLInstallDir)) { Join-Path (Get-FLUserDataDir $InstallDir) 'Accts\SinglePlayer' }
+
+# An NPC archetype by this install's name for it: the nickname itself when DATA\MISSIONS\npcships.ini has it (the main install, every numbered instance), else one of the
+# same family whose level range covers it (fc_lr_pi_fighter_d1 on a mod with fc_lr_pi_fighter2_d1), else the name as given, which `spawn` refuses by name.
+function Resolve-FLNpc([string]$Name, [string]$InstallDir = (Get-FLInstallDir)) {
+    $ini = Join-Path $InstallDir 'DATA\MISSIONS\npcships.ini'
+    if (-not (Test-Path -LiteralPath $ini) -or $Name -notmatch '^(.*?)\d*_d(\d+)') { return $Name }
+    $family = $Matches[1]; $level = [int]$Matches[2]
+    $all = @([regex]::Matches((Get-Content -LiteralPath $ini -Raw), '(?im)^\s*nickname\s*=\s*(\S+)') | ForEach-Object { $_.Groups[1].Value })
+    if ($all -contains $Name) { return $Name }
+    foreach ($n in $all) {
+        if ($n -match "^$([regex]::Escape($family))\d*_d(\d+)(?:-(\d+))?$" -and $level -ge [int]$Matches[1] -and $level -le [int]$(if ($Matches[2]) { $Matches[2] } else { $Matches[1] })) { return $n }
+    }
+    $Name
+}
+
+# A fixture by this install's name for it. A mod's instance lacks the test install's fixtures, so tools\mkmodfixtures.ps1
+# writes the mod's own and a map, <install>\SAVE\fixtures.map, one "SaveC702.fl<TAB>SaveF702.fl" a line. No map (every numbered instance, the main install): the name
+# as given. A name the map lacks stays as given and fails where any missing save fails.
+function Resolve-FLFixture([string]$Name, [string]$InstallDir = (Get-FLInstallDir)) {
+    $map = Join-Path $InstallDir 'SAVE\fixtures.map'
+    if (-not (Test-Path -LiteralPath $map)) { return $Name }
+    $leaf = Split-Path $Name -Leaf
+    if ($leaf -notmatch '\.fl$') { $leaf += '.fl' }
+    foreach ($row in Get-Content -LiteralPath $map) {
+        $from, $to = $row -split "`t", 2
+        if ($to -and $from -ieq $leaf) { return $to }
+    }
+    $Name
+}
 
 # Throws when the test install would write to the shared default folder (the separation is off).
 function Assert-FLDataSeparate([string]$InstallDir = (Get-FLInstallDir)) {

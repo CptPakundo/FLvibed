@@ -2,6 +2,7 @@
 // uses - text.cpp's Utf8, the subtitles' data.cpp and uikit.cpp had their own copies).
 #include "str.h"
 
+#include "game/glyphset.h"
 #include "test.h"
 
 void Test_str()
@@ -21,4 +22,31 @@ void Test_str()
     // length-based: an embedded NUL is kept (the old uikit copy stopped at it)
     const std::string withNul("a\0b", 3);
     CHECK(str::Widen(withNul).size() == 3 && str::Narrow(str::Widen(withNul)) == withNul);
+
+    // capitals: the game's names past ASCII, each by its UTF-8 bytes
+    CHECK(str::Upper(L"Fort Bush 7") == L"FORT BUSH 7");
+    CHECK(str::Upper(str::Widen("Grafenw\xC3\xB6hr")) == str::Widen("GRAFENW\xC3\x96HR"));
+    CHECK(str::Upper(str::Widen("Cura\xC3\xA7""ao")) == str::Widen("CURA\xC3\x87" "AO"));
+    CHECK(str::Upper(str::Widen("Pequ\xC3\xB1" "a")) == str::Widen("PEQU\xC3\x91" "A"));
+    CHECK(str::Upper(str::Widen("Gro\xC3\x9Fglockner")) == L"GROSSGLOCKNER");
+    CHECK(str::Upper(str::Widen("Death\xE2\x80\x99s Hand")) == str::Widen("DEATH\xE2\x80\x99S HAND"));
+    CHECK(str::Upper(str::Widen("\xC5\x93 \xC5\xA1 \xC5\xBE \xC3\xBF")) == str::Widen("\xC5\x92 \xC5\xA0 \xC5\xBD \xC5\xB8"));
+    CHECK(str::Upper(L"").empty());
+    // what comes out has its glyph: the capital of every character of the fonts' set is in the set
+    for (const wchar_t c : glyphset::Base())
+        for (const wchar_t up : str::Upper(std::wstring(1, c)))
+            CHECK(glyphset::Base().find(up) != std::wstring::npos);
+
+    std::wstring sentence = str::Widen("\xC3\xBC" "ber");
+    str::Capitalize(sentence);
+    CHECK(sentence == str::Widen("\xC3\x9C" "ber"));
+    sentence = str::Widen("\xC3\x9F");
+    str::Capitalize(sentence);
+    CHECK(sentence == str::Widen("\xC3\x9F"));
+
+    // a rep name against its id's text: the names of M07, M08 and M10 (the old compare folded them to '?' and never matched)
+    CHECK(str::SameText(str::Widen("Cruiser RNC K\xC3\xB6ln"), "Cruiser RNC K\xC3\xB6ln"));
+    CHECK(str::SameText(str::Widen("Tekagi\xE2\x80\x99s Transport"), "Tekagi\xE2\x80\x99s Transport"));
+    CHECK(!str::SameText(str::Widen("Cruiser RNC K\xC3\xB6ln"), "Cruiser RNC K?ln"));
+    CHECK(!str::SameText(L"Cruiser RNC Bonn", "Cruiser RNC K\xC3\xB6ln"));
 }

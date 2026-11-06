@@ -14,6 +14,8 @@ void Shutdown();
 // (impl.cpp), unregistered at Shutdown (the PAGE track; the definitions sit by kOptions in controller.cpp).
 void RegisterBus();
 void UnregisterBus();
+// One [Controller] row by the bus, as the options page changes it: live, then saved. False when the bus refuses it.
+bool SetAndSave(const char* key, const char* value);
 std::string DescribeState();
 std::string DescribeOwners();
 void PublishPadFlight();

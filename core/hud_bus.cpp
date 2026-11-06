@@ -123,10 +123,29 @@ void SetFlufPolicy(int policy) { fluf::SetPolicy(policy); }
 // version 5: the same snapshot's per-window extras
 bool ReadFlufExtra(HudFlufExtra* out) { return fluf::ReadExtra(out); }
 
-const HudBus g_bus = {5,          PublishLayout, ReadLayout,        PublishSubtitles, ReadSubtitles,
+// version 6: the tractor's last refusal, kept here so a logic reload loses nothing
+u32 g_tractorSerial = 0;
+int g_tractorReason = 0;
+DWORD g_tractorTick = 0;
+void NoteTractorFail(int reason)
+{
+    g_tractorReason = reason;
+    g_tractorTick = GetTickCount();
+    ++g_tractorSerial;
+}
+u32 ReadTractorFail(int* reason, u32* ageMs)
+{
+    if (reason)
+        *reason = g_tractorReason;
+    if (ageMs)
+        *ageMs = GetTickCount() - g_tractorTick;
+    return g_tractorSerial;
+}
+
+const HudBus g_bus = {6,          PublishLayout, ReadLayout,        PublishSubtitles, ReadSubtitles,
                       Frame,       PublishLane,   ReadLane,          LaneFrame,        PublishFloor,
                       ReadFloor,   FloorFrame,    PublishDockedSubs, ReadDockedSubs,   DockedSubsFrame,
-                      ReadFluf,    SetFlufPolicy, ReadFlufExtra};
+                      ReadFluf,    SetFlufPolicy, ReadFlufExtra,     NoteTractorFail,  ReadTractorFail};
 } // namespace
 
 extern "C" const HudBus* flv_hud_bus() { return &g_bus; }

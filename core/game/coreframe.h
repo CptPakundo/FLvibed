@@ -18,7 +18,7 @@ struct Options
     int flufWindows = 2;          // fluf_windows: FLUF's windows 0 ignored, 1 player windows (keep-outs, the pad drives them), 2 all
     bool runInBackground = false; // run_in_background
     int textSize = 100;           // text_size: FLvibed's own UI text, percent (80..150)
-    int deckMode = 0;             // deck_mode: Steam Deck mode, 0 automatic (at 1280x800), 1 on, 2 off (core\game\deckmode.h)
+    int hudSize = 0;              // hud_size: 0 automatic, 1 small, 2 normal, 3 large (core\game\hudsize.h)
 };
 inline Options opts;
 
@@ -28,6 +28,9 @@ inline u32 g_frame = 0;
 inline std::vector<uintptr_t> g_hudRoots;
 
 void OnFrame(double dt);
+// `hud_size` for this frame: asks the machine once (core\game\handheld.h, never from DllMain), writes the size globals
+// (core\game\hudsize.h) and returns the text_size to draw with.
+int ApplySize();
 // The entry faulted: every module gives the game back what it changed (the hidden panels first), then the held commands go, with their key-ups. The host calls
 // this once, at the top of the next frame: outside the scene, no logic on the stack.
 void OnFault();

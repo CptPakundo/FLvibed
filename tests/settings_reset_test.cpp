@@ -61,6 +61,24 @@ void Test_settings_reset()
     CHECK(WriteTextFile(pad, "[Controller]\r\nrumble = 60\r\n"));
     CHECK(!settings_reset::MoveValues(dir.c_str()));
     CHECK(rumble() == 60);
+    // 0.4.0: deck_mode moves into hud_size and goes, a hud_size already there stays, 0.3.5's move does not run again
+    const auto size = [&pad] { return GetPrivateProfileIntA("Controller", "hud_size", -1, pad.c_str()); };
+    const auto deck = [&pad] { return GetPrivateProfileIntA("Controller", "deck_mode", -1, pad.c_str()); };
+    for (const int from : {0, 1, 2})
+    {
+        char file[96];
+        sprintf_s(file, "[Controller]\r\nrumble = 60\r\ndeck_mode = %d\r\n", from);
+        CHECK(WriteTextFile(ini, "[FLvibed]\r\nsettings_version = 2\r\nsettings_moved = 1\r\n"));
+        CHECK(WriteTextFile(pad, file));
+        CHECK(settings_reset::MoveValues(dir.c_str()));
+        CHECK(size() == (from == 1 ? 3 : from == 2 ? 2 : 0));
+        CHECK(deck() == -1);
+        CHECK(rumble() == 60);
+    }
+    CHECK(WriteTextFile(ini, "[FLvibed]\r\nsettings_version = 2\r\nsettings_moved = 1\r\n"));
+    CHECK(WriteTextFile(pad, "[Controller]\r\ndeck_mode = 1\r\nhud_size = 1\r\n"));
+    CHECK(settings_reset::MoveValues(dir.c_str()));
+    CHECK(size() == 1);
     // any other value stays, and the move is spent
     CHECK(WriteTextFile(ini, "[FLvibed]\r\nsettings_version = 2\r\n"));
     CHECK(WriteTextFile(pad, "[Controller]\r\nrumble = 45\r\n"));

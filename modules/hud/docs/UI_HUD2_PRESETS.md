@@ -35,10 +35,10 @@ Today: 9.7 % boxed in calm, 18.6 % in combat [C].
 
 ### 1.3 Sightlines and the centre stack
 - **Zones are data** in UI_SPEC.json, derived from rules; a plate inside a zone fails the lint.
-- **Exemptions by name**: the subtitles' dialogue panel and name-tab body; the alert card (≤ 3 s); a peek; the K&M click-pinned contact list (S2 only).
+- **Exemptions by name**: the subtitles' dialogue panel and name-tab body; the alert card (≤ 3 s); a peek; the K&M click-pinned contact list (S2 only). The same for a list the player opened on the pad, by input parity: S2 only, at most 10 rows; the automatic combat list keeps the rule (the driver's decision of 6 Nov 2026, for the owner to review).
 - **Native S1 occupants**: the bracket label and the objective banner. They are no longer debt: §1.7 makes them the only home of what they show (the bracket label's part replaced 6 Nov 2026: §1.7 pair 1).
 - **Centre stack, every preset** [D]:
-  - Inside r 0.045 only native markers. The speed stays at (+0.058, 0.030) [C]; in 0.4.0 it moves under the meter, and the lower centre's start with it (`UI_HUD2_INPUTS.md` 7b).
+  - Inside r 0.045 only native markers. The speed stood at (+0.058, 0.030) [C] until 0.4.0, which moves it under the meter (R + 0.0285, built on `build-040`), and the lower centre's start with it (`UI_HUD2_INPUTS.md` 7b).
   - The 6 o'clock sector (±55°) is the ship's; the ship starts at 0.667-0.685 H in the release captures [C]. Where chevrons cross the reticle lane or the throttle word, the chevrons draw on top and the text dims to 30 %. The hit flash draws above the throttle arc.
   - **Ship keep-out** for new text: x 0.40-0.60 W, y 0.63-0.92 (WARN; frames of a light fighter, a Defender, a freighter).
     Since the owner's 31 Oct 2026 rule (§7, `UI_HUD2.md` 5.23) the stricter **lower centre** holds: in those columns, from

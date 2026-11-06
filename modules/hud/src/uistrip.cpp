@@ -9,6 +9,7 @@
 
 #include "ui/flufaware.h"
 #include "hudhost.h"
+#include "nnstrip.h"
 #include "ui/hud2_kit.h"
 #include "ui/views.h"
 #include "safemem.h"
@@ -20,11 +21,13 @@
 #include "ui/winplates.h"
 #include "uiskin.h"
 #include "windowtext.h"
+#include "windowtext.h"
 #include "flexe.h"
 #include "game/baseinfo.h"
 #include "game/deckmode.h"
 #include "game/render.h"
 #include "game/room.h"
+#include "str.h"
 #include "text.h"
 
 #include <sstream>
@@ -39,6 +42,7 @@ using namespace hud2kit;
 constexpr u32 kGood = 0x60D660, kFair = 0xE8D25C, kHigh = 0xEC6048; // the mock's GOOD / FAIR / HIGH
 constexpr u32 kNumber = 0x68A0C8; // CHROME one step dimmer: a decision number is a label, not a headline (critique 2, 2)
 constexpr float kRefresh = 0.1f;  // the readers at most 10 Hz
+constexpr float kWordNameRoom = 0.185f; // a row's name line less the FAIR / GOOD word, fractions of H
 
 std::vector<DrawnRect> g_drawnRects; // this frame's drawings (pixels): the prompt lane's keep-outs (Drawn)
 std::vector<DrawnRect> g_flufLast;   // the last drawn frame's (FLUF's windows over them dim the overlay: Draw)
@@ -50,6 +54,7 @@ struct Word // one decision number: text, anchor (pixels), alignment, colour
     float x = 0, y = 0, maxW = 0;
     Align align = Right;
     u32 rgb = kNumber;
+    float scale = 1;
 };
 
 struct State
@@ -96,12 +101,7 @@ std::wstring Money(long long v)
     return L"$" + out;
 }
 
-std::wstring Upper(std::wstring s)
-{
-    for (wchar_t& ch : s)
-        ch = static_cast<wchar_t>(towupper(ch));
-    return s;
-}
+std::wstring Upper(std::wstring s) { return str::Upper(std::move(s)); }
 
 bool CtlRect(u32 ctl, ui::Item& it) { return ctl && ui::ControlRect(ctl, it) && it.hw > 0 && it.hh > 0; }
 
@@ -172,6 +172,9 @@ void DealWords(float H)
             const bool sameRow = nm && CtlRect(nm, nr) && nr.y < r.y && r.y - nr.y < H * 0.06f && fabsf(nr.x - r.x) < H * 0.4f;
             w.y = sameRow ? nr.y : r.y - r.hh - H * 0.016f;
             w.align = Right;
+            // a name that fills its line has no room for the word, and no smaller font to go to: the mark beside the price still says it
+            if (windowtext::TextWidthPx(nm) > kWordNameRoom * H)
+                continue;
             g.words.push_back(w);
         }
 }
@@ -188,6 +191,8 @@ std::wstring Percent(float a, float b) // a vs b as "+18 %", "=" within half a p
 
 void CompareLine(float H)
 {
+    if (baseinfo::Find("WelcomeText"))
+        return; // (nothing is selected: a highlighted row kept its comparison over the welcome text)
     baseinfo::Gun s, m;
     if (!baseinfo::CompareSelected(s, m))
         return;
@@ -267,12 +272,91 @@ void CompareLine(float H)
         w.y = y;
         w.align = Left;
         w.maxW = colX1 - colX0; // the panel's inner width at every aspect
+        w.scale = Clampf(pitch / (H * 0.0265f), 1.0f, 1.2f); // (as large as their pitch allows: with one or two lines there is room)
         g.words.push_back(w);
         y += pitch;
     }
 }
+// One refusal, HUD 2's: the game's own white line in the centre panel said it again (the owner, 6 Nov 2026). Bit 1 of the control's state, the skin's way of hiding; the line comes back
+// the moment HUD 2 has none, so a refusal it has no words for still shows
+u32 g_shipError = 0;
+void ShipError(u32 hide)
+{
+    u8 st = 0;
+    if (g_shipError && g_shipError != hide && winplates::NameIs(g_shipError, "ErrorHelp") && winplates::R8(g_shipError + winplates::kState, st))
+        winplates::W8(g_shipError + winplates::kState, st | 2);
+    g_shipError = hide;
+    if (hide && winplates::R8(hide + winplates::kState, st) && (st & 2))
+        winplates::W8(hide + winplates::kState, st & ~2);
+}
+
+// The dealers' refusal, as the ship dealer's: HUD 2's amber line for the game's small white one (the owner, 6 Nov 2026). A level reads as there, NEEDS LEVEL n; any other keeps the game's words,
+// wrapped in the panel. It stands where the game's line stood, over the item.
+void DealError(float H)
+{
+    const u32 ctl = baseinfo::Find("ErrorHelp");
+    std::wstring text;
+    ui::Item at, item, icon, close;
+    if (!ctl || !CtlRect(baseinfo::Find("Inventory_Close"), close) || !winplates::TextOf(ctl, text) || !ui::ControlRect(ctl, at))
+    {
+        windowtext::Park(0);
+        return;
+    }
+    for (wchar_t& c : text)
+        c = static_cast<wchar_t>(towupper(c));
+    const size_t digit = text.find_first_of(L"0123456789");
+    if (text.find(L"LEVEL") != std::wstring::npos && digit != std::wstring::npos)
+    {
+        const size_t end = text.find_first_not_of(L"0123456789", digit);
+        text = L"NEEDS LEVEL " + text.substr(digit, end == std::wstring::npos ? end : end - digit);
+    }
+    const bool row = CtlRect(baseinfo::Find("TransferItemView"), item) && CtlRect(baseinfo::Find("TransferItemButton"), icon);
+    const float cx = row ? (icon.x - icon.hw + item.x + item.hw) / 2 : at.x, room = row ? item.x + item.hw - (icon.x - icon.hw) : H * 0.34f;
+    // between the panel's top and the item, by what that room holds: the largest size whose lines fit, centred in it (four lines at one size ran over the item)
+    const float top = close.y - H * 0.030f, foot = row ? item.y - item.hh - H * 0.010f : top + H * 0.13f;
+    std::vector<std::wstring> lines;
+    float scale = 1.3f;
+    for (;; scale -= 0.05f)
+    {
+        const float size = H * 0.024f * scale;
+        lines.assign(1, L"");
+        size_t from = 0;
+        while (from < text.size())
+        {
+            size_t space = text.find(L' ', from);
+            space = space == std::wstring::npos ? text.size() : space;
+            const std::wstring word = text.substr(from, space - from);
+            const std::wstring wider = lines.back().empty() ? word : lines.back() + L" " + word;
+            if (hud2kit::TextWidth(wider, size, 0.06f) > room && !lines.back().empty())
+                lines.push_back(word);
+            else
+                lines.back() = wider;
+            from = space + 1;
+        }
+        if (static_cast<float>(lines.size()) * size * 1.25f <= foot - top || scale <= 0.8f)
+            break;
+    }
+    const float size = H * 0.024f * scale, pitch = size * 1.25f;
+    float y = (top + foot) / 2 - pitch * (static_cast<float>(lines.size()) - 1) / 2;
+    for (const std::wstring& l : lines)
+    {
+        Word w;
+        w.text = l, w.x = cx, w.y = y, w.rgb = kWarn, w.align = Center, w.maxW = room, w.scale = scale;
+        g.words.push_back(w);
+        y += pitch;
+    }
+    windowtext::Park(ctl);
+}
+
 void ShipLines(float H)
 {
+    winplates::SetWordsRoom(0);
+    u32 hideError = 0;
+    struct Apply
+    {
+        u32& ctl;
+        ~Apply() { ShipError(ctl); }
+    } applyError{hideError}; // (every way out of here)
     baseinfo::ShipOffer o;
     if (!baseinfo::SelectedShip(o))
         return;
@@ -290,6 +374,7 @@ void ShipLines(float H)
         return;
     const float right = low.x + low.hw;
     float y = low.y + low.hh + H * 0.032f;
+    winplates::SetWordsRoom(0.046f + (o.refusal ? 0.035f : 0.0f)); // (the plate holds these lines)
     if (o.refusal)
     {
         Word w; // the game's own refusal first, in amber (design 10: the refusal beside TRADE-IN / NET, then no delta)
@@ -307,6 +392,9 @@ void ShipLines(float H)
             w.x = right, w.y = y, w.rgb = kWarn, w.align = Right, w.maxW = H * 0.6f;
             g.words.push_back(w);
             y += H * 0.035f;
+            hideError = baseinfo::Find("ErrorHelp");
+            if (!hideError)
+                hideError = g_shipError; // (hidden, it is off the visible list: it stays hidden while the refusal stands)
         }
     }
     if (o.credits >= 0 && o.budget >= o.credits && o.price >= 0)
@@ -338,8 +426,9 @@ void JobLine(float H)
     Word w;
     w.text = Upper(type);
     w.x = accept.x + accept.hw;
-    w.y = r.y + std::max(H * 0.036f, windowtext::TextHeight(reward) + H * 0.008f); // (windowtext grows the reward)
+    w.y = r.y + std::max(H * 0.044f, windowtext::TextHeight(reward) + H * 0.016f); // (windowtext grows the reward)
     w.align = Right;
+    w.rgb = kInk, w.scale = 1.35f; // (with the reward, what the job is: the owner, 6 Nov 2026)
     g.words.push_back(w);
 }
 void OfferLine(float H, const std::vector<void*>& chars)
@@ -443,7 +532,22 @@ void Read()
     // the decision numbers
     DealWords(H);
     CompareLine(H);
+    DealError(H);
+    const size_t shipFrom = g.words.size();
     ShipLines(H);
+    // the refusal and the trade-in stand in the centre panel: it has the room, and the list's panel ends under its rows (the owner, 6 Nov 2026)
+    ui::Item close;
+    if (g.words.size() > shipFrom && CtlRect(baseinfo::Find("ShipTraderCancelButton"), close))
+    {
+        // (under the ship's preview, whatever its size: the panel ends under them. One size for the lines, the largest the longest leaves inside the panel's edges)
+        const float cx = close.x - H * 0.6075f, room = H * 0.35f;
+        float widest = 1;
+        for (size_t i = shipFrom; i < g.words.size(); ++i)
+            widest = std::max(widest, hud2kit::TextWidth(g.words[i].text, H * 0.024f, 0.06f));
+        const float scale = Clampf(room / widest, 1.0f, 1.5f), pitch = H * 0.024f * scale * 1.35f, y0 = g.words[shipFrom].y + H * 0.024f * (scale - 1) * 0.6f;
+        for (size_t i = shipFrom; i < g.words.size(); ++i)
+            g.words[i].x = cx, g.words[i].y = y0 + pitch * static_cast<float>(i - shipFrom), g.words[i].align = Center, g.words[i].maxW = room, g.words[i].scale = scale;
+    }
     JobLine(H);
     const std::vector<void*> chars = Characters();
     OfferLine(H, chars);
@@ -615,7 +719,9 @@ void DrawStrip(float W, float H, float k)
         l3[0].gapBefore = 0;
         l2.resize(cargoAt);
     }
-    if (!l2.empty())
+    // (not over a NeuroNet window: the row stood on the status window's title at both sizes, and these windows say the same. The dealers keep it: their deltas are here)
+    float nn[4];
+    if (!l2.empty() && !nnstrip::Rect(nn))
         lines.push_back(l2);
     if (!l3.empty())
         lines.push_back(l3);
@@ -708,13 +814,15 @@ void DrawCard(float W, float H, float k)
 
 void DrawWords(float H, float k)
 {
-    const float size = H * 0.024f * k;
+    winplates::ClearSkinItems();
     for (const Word& w : g.words)
     {
+        const float size = H * 0.024f * k * w.scale;
         const float tw = w.maxW > 0 ? hud2kit::TextFit(w.x, w.y, w.text, size, w.maxW, Argb(w.rgb, 1), w.align, 0.06f)
                                     : hud2kit::Text(w.x, w.y, w.text, size, Argb(w.rgb, 1), w.align, 0.06f);
         const float x0 = w.align == Right ? w.x - tw : w.align == Center ? w.x - tw / 2 : w.x;
         g_drawnRects.push_back({x0, w.y - size * 0.6f, x0 + tw, w.y + size * 0.6f, 2});
+        winplates::AddSkinItem(x0, w.y - size * 0.6f, x0 + tw, w.y + size * 0.6f);
     }
 }
 } // namespace
@@ -725,13 +833,16 @@ void Update(float dt, bool on)
     {
         g.on = g.show = false;
         g.bottom = 0;
+        ShipError(0);
+        windowtext::Park(0);
+        winplates::ClearSkinItems();
         return;
     }
     if (!g.on)
         g.clock = kRefresh; // read at once when switched on
     g.on = true;
     g.clock += dt;
-    if (g.clock >= kRefresh)
+    if (g.clock >= kRefresh || winplates::FitOpen()) // (in a dealer every frame: the comparison stayed over the welcome text after a deselect)
     {
         g.clock = 0;
         Read();

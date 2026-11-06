@@ -174,7 +174,7 @@ part of their topic; `deploy.ps1` parse-checks every `*.ps1` in the tool folders
   `spawn-solar` events and flctl `Get-FLMissionSolars`; S416); 30 Oct 2026), the first run from it writes `fit-load` / `unfit` (+ `fit_note`) and logs
   `SAVE-FIT` (marks not back within 5 s of the load = unfit, the run ends HARNESS), `fit` once that run reached its first
   checkpoint, `unfit` when it ended STALL before it - `docs\TESTING.md`
-  "The test loop" 4), `tools\harness\flleg.ps1 [-ApSet 'k v','k v'] [-Cmd 'godmode on']` (through `pwsh -File`: double-quote a value
+  "The test loop" 4), `tools\harness\flleg.ps1 [-ApSet 'k v','k v'] [-Cmd 'godmode on'] [-NoFailStates]` (through `pwsh -File`: double-quote a value
   with a space - a single-quoted one splits)
   (autopilot switches sent after the boot - a set's A/B in one build; `tools\flset.ps1` runs one set side) `tools\harness\flleg.ps1
   -Instance n -Save s -Label l` (a leg on its own instance with evidence, history `research\experience\legs\legs.tsv`
@@ -238,7 +238,11 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   `pauseload`, `saves`, `loadsave <file>`, `pendingload` (the CHARACTER_ID the in-game load / death dialog last loaded),
   `ctlinfo <Control>` (addresses for RE), `prompttrace [reset]` (controller only: every change of the pills' decision and the
   hover help, per frame, the last 256: a one-frame blink shows here, a poll misses it), `uiskin jobheight <px>` (controller
-  only: the job text's height as the plate reads it, 0 = the game's), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
+  only: the job text's height as the plate reads it, 0 = the game's), `uiskin seams` (every shown control still drawing art nobody hid or claimed: the 3.3 audit of `modules\hud\docs\UI_HUD2_SKIN.md`, walks the tree, rests on no counter), `uiskin loadplace <0|1>` (the loading screen tries the player's base and system: its probe), `gametext frame <0|1>` (NN_Inventory on the one frame of R8, off until probe 18), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
+  only: the job text's height as the plate reads it, 0 = the game's), `nnstrip [state]` (the strip of words: standing, its tab, the manager's open and
+  held commands, its rectangle, the click box), `nnstrip go <tab>` / `step <dir>` / `close` (what a click and the bumpers press), `nnstrip slide <seconds>` (each NeuroNet
+  slide, 0 the game's), `navskin [state]` (the map's frame and words: bound, failed, every chip with its rectangle, the layer, the view), `navskin native on|off` (the
+  old map from its next open: what `skin_native = navmap` will set), `navskin press <id>` (a chip's action), `navnew [state]|on|off` (the new map, off by default: grown, transform, records, labels shown and dropped), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
   `mines=` (the mines counted by ammo, as the countermeasures).
 - **The controller's host part** (`modules\controller\src\host\main.cpp`; `uigen` in `core\host\uihooks.cpp`): `uigen` - the UI generation counter of HostApi v23 ("uigen N adds A removes
   R": the game's control list adds / removes; Extended HUD 2 finds windows by it; still in a calm room or calm flight);
@@ -310,9 +314,10 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   y1 z1 half step`: a grid of parallel rays as a map ('.' clear, digits = the hit's tenth of the length); `ap rayraw
   ...`: every raw hit with object class, id, crc - a solar's moving part is class 0x1; session 6).
 - **The UI build's commands** (25 Oct 2026; each module's `Command()` in `modules\<name>\src`, the exact syntax from its usage
-  line): `ui options [open|close|cancel] | tab <n|name> | rows | press <up|down|left|right|a|b|lb|rb|pgup|pgdn ...> |
-  focus <key> | default | state` (the FLVIBED options page: open standalone, switch tabs, the rows with their values,
-  queued presses for the next frame, the focus onto a row, this tab's defaults, the hosting state); `uibtn` (host-side:
+  line): `ui options [open|close|cancel] | tab <n|name> | rows | press <up|down|left|right|a|b|x|y|lb|rb|pgup|pgdn ...> |
+  focus <key> | default | card | state` (the FLVIBED options page: open standalone, switch tabs 0 hud, 1 controller, 2 subtitles, 3 autopilot, 4 more, the rows with their
+  values and head states, queued presses for the next frame, the focus onto a row, this tab's defaults, the first-start card, the hosting state); `tools\deploy.ps1` writes
+  the card's stamp `first_card = 1`, so a test start never stalls on it; `uibtn` (host-side:
   the native buttons' state, controls and placement, the raw-key counters), `uibtn click <1 bar|2 options page|3 pause>`
   (a click through the game's own release path), `uibtn mesh [<path relative to DATA>]` (the bar button's mesh for the
   next HUD build); `device` (the input-device service: pad / keyboard-and-mouse and why); `fluf` (FLUF awareness,
@@ -324,9 +329,9 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   `winmode` (host-side: borderless windowed - setting, provider, the game's windowed style, DPI awareness, setups /
   rewrites / toggles, the window / client / monitor rectangles, render size); `winmode altenter` (host-side, background
   test starts only: one display setup as FLUF's Alt+Enter makes it, refused unless FLvibed's rewrite applies - never
-  exclusive fullscreen);
+  exclusive fullscreen; `deploy.ps1 -Background` itself refuses a game that would open fullscreen, `Assert-FLNoFullscreen`, and only `FLVIBED_ATTENDED` from `flsweep -Attended` passes);
   `ui ...` with the controller off answers on the subtitles' channel (`core\host\pagehost.cpp`); `hooks` (host-side, both modules: every detour's mode, place and where the function's own jump leads; each channel lists its module's hooks and the ones the router shares, the core's own on the controller's, `core\host\commands.cpp`); `padhud on|off|state` (the pad
-  HUD layer: badges, legend, status line; the Classic HUD); `hud2 alert shield|hull|missile|cargo` (that alert's card on the live HUD, 3 s, for frames: UI_HUD2.md 5.40); `hud2 on|off|auto|state|sim <name>[+comm]|sim list|sim off|tree
+  HUD layer: badges, legend, status line; the Classic HUD); `hud2 alert shield|hull|missile|cargo|tractor <3-6>` (that alert's card on the live HUD, 3 s, for frames: UI_HUD2.md 5.40; event `tractor-fail reason=` when the game refuses loot: `core\game\tractorfail.h`); `hud2 on|off|auto|state|sim <name>[+comm]|sim list|sim off|tree
   <root>|hit <x> <y>` (HUD 2, `modules\hud\docs\UI_HUD2.md`: forced on / off or back to `hud_style`, its state and the published
   layout (the nav line also `event` = the dock / lane / jump answer, `comm` = the subtitles' dialogue panel shows a line,
   `cine` = the letterbox, `fight` = the threat list's rule; HUD 2 FIX2 25 Oct 2026; the `preset=` line, `modules\hud\docs\UI_HUD2_PRESETS.md` 6 step 4:
@@ -353,7 +358,7 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   PRESETS 6 step 7's), `hud2 state`'s `focus` line its reveal (`held=`, `peek=`, `fight=`, `form=`, the arcs, `speed=`, `escorts=`; no `hold=` since the hold strip went, B9); `hud2 viewback on|off`
   the dark backing under the game's 3D views with the target panel's pulses and the view's object, `hud2 viewzoom <f>`
   the views' rectangles over their windows, 1.5 by default; `hud2 tree roots` every top-level control of the game's
-control list with its vtable and state, `hud2 tree <control name>` any named control's tree); `hudinfo [wg|engine|lock|
+control list with its vtable, state and registry row, `hud2 tree <control name>` any named control's tree; `hud2 form [on|off]` the targeting display or the game's bracket, `hud2 marks` the game's indicator records beside the target's projection; `hud2 sim hazard` radiation, tail and lag, `hud2 sim groups` the cue's states; `hud2 lint` reports `steady=` beside `boxed=`; `hud2 peek` also on Standard); `hudinfo [wg|engine|lock|
   tractor|obj <id>|sys [id]|equip <arch>]` (HUD 2's readers, `core\game\hudinfo.h`, and their research dumps); `stalls [hold <id|0>]` (the NPC stall recorder `stallrec.*`: its counts and file `EXE\FLvibed_npc_stalls.log`; `hold`, TEST ONLY, makes that ship's samples stand still: an NPC's brain overrides every directive, so a real ship cannot be stopped from here); `track [range]` (ships and loot near the player, one line each with position, target, health, attitude: a harness samples NPC motion from it); `wgroups open|close|up|down|a|next|prev|state` (the weapon group editor: the group, the groups with guns, each gun's toggle number and on / off); `picker open|close|a|b|up|down|next|prev|cat <name>|state` (the target
   picker); `awheel open|pick <n>|commit|cancel|rear|state` (the action wheel; `wheel` is the mouse wheel); `goals
   open|close|toggle|tab <0-2>|up|down|a|x|y|left|right|rebuild|click <slot>|state` (the autopilot goal panel; `state`

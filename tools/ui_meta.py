@@ -11,8 +11,9 @@ reads rows, defaults and values from the settings bus and uses this file for the
 The alias table ALIASES maps a spec key to (bus section, registry key, value coding) where the registry's key or value
 coding differs from the spec's: a picker's option i is written to the registry as `values[i]` when the alias gives a
 list, else as its index; a slider's value is divided by `scale` on the way in (autopilot_cancel: the spec's 0..100 % over
-the registry's 0..1). Every other spec key is its own registry key in the tab's default section (GENERAL -> Modules /
-Controller, CONTROLLER -> Controller, AUTOPILOT -> Autopilot, SUBTITLES / MOVIES -> Subtitles).
+the registry's 0..1). Every other spec key is its own registry key in the tab's default section (HUD, CONTROLLER, MORE ->
+Controller, AUTOPILOT -> Autopilot, SUBTITLES -> Subtitles): the tabs follow the modules (docs\\UI_OPTIONS.md), the ini sections stay
+where they always were, so a row whose section is not its tab's says so here.
 
 Usage (the repository's Python: research\\tools\\ocr\\.venv\\Scripts\\python.exe -I):
     tools\\ui_meta.py            regenerate core\\ui_meta.h
@@ -27,12 +28,12 @@ SPEC = os.path.join(ROOT, "docs", "UI_SPEC.json")
 OUT = os.path.join(ROOT, "core", "ui_meta.h")
 
 # tab id -> the bus section its rows live in unless an alias says otherwise
-TAB_SECTION = {"general": "Controller", "controller": "Controller", "autopilot": "Autopilot",
-               "subtitles": "Subtitles", "movies": "Subtitles"}
+TAB_SECTION = {"hud": "Controller", "controller": "Controller", "autopilot": "Autopilot",
+               "subtitles": "Subtitles", "more": "Controller"}
 
 # spec key -> dict(section=, key=, values=[registry value per option], scale=, virtual=True)
 ALIASES = {
-    # GENERAL: the module switches live in FLvibed.ini [Modules] (the HOST track registers the section)
+    # the module switches live in FLvibed.ini [Modules] (the HOST track registers the section)
     "mod_subtitles": dict(section="Modules", key="subtitles"),
     "mod_controller": dict(section="Modules", key="controller"),
     "mod_hud": dict(section="Modules", key="hud"),
@@ -41,10 +42,23 @@ ALIASES = {
     "mod_display": dict(section="Modules", key="display"),
     "mod_npc": dict(section="Modules", key="npc"),
     "mod_movies": dict(section="Modules", key="movies"),
-    # GENERAL buttons: no registry row (the page acts)
+    # the page's buttons: no registry row (the page acts)
     "reset_all": dict(virtual=True),
     "about": dict(virtual=True),
+    "other_changed": dict(virtual=True),
+    # HUD
+    "hud_style": dict(values=["2", "1", "0"]),      # ENABLED = 2, ON THE PAD = 1, DISABLED = 0
+    "hud_fade": dict(values=["1", "0"]),            # FADES = 1, ALWAYS = 0
+    "game_text_size": dict(values=["0", "100", "125", "150"]),  # AUTOMATIC = 0 (follows hud_size), else percent
+    "button_hints": dict(virtual=True),             # bundles: the table applied through the bus; CUSTOM when a member deviates
+    "hit_effects": dict(virtual=True),
     # CONTROLLER
+    "steer_expo": dict(values=["1", "1.5", "3", "4"]),  # the curve's exponent; the same key as a number: steer_curve
+    "steer_curve": dict(key="steer_expo"),
+    "stick_deadzone": dict(scale=100.0),            # [Controller] stick_deadzone 0..0.9 <- 0..90 %
+    "weapon_groups": dict(values=["1", "0", "2"]),  # CYCLE = 1, ONE BUTTON = 0, TWO TRIGGERS = 2
+    "trigger_effects": dict(values=["2", "1", "0"]),  # FULL = 2, LIGHT = 1, OFF = 0
+    "holds_as_toggles": dict(values=["0", "1"]),    # a Bool row with two words
     "aim_mode": dict(values=["1", "0"]),            # GIMBAL = 1, RETICLE = 0 (controller.cpp kOptions)
     "button_legend": dict(values=["0", "1"]),       # ON = 0, OFF = 1 (the registry row's coding: 0 on, 1 off)
     "edit_bindings": dict(virtual=True),            # the Bindings screen (phase D)
@@ -52,6 +66,8 @@ ALIASES = {
     "preset": dict(virtual=True),                   # the preset table applied through the bus; CUSTOM when a row deviates
     "autopilot_cancel": dict(section="Controller", scale=100.0),  # [Controller] autopilot_cancel 0..1 <- 0..100 %
     "autopilot_key": dict(section="Controller"),
+    "ap_hints": dict(section="Controller"),
+    "start_smart": dict(values=["1", "0"]),         # OBJECTIVE FIRST = 1, TARGET ONLY = 0
     "maneuver_button": dict(section="Controller"),
     "speedrun_timer": dict(section="Controller"),
     "livesplit": dict(section="Controller"),        # OFF = 0, LIVESPLIT SERVER (TCP) = 1
@@ -62,7 +78,14 @@ ALIASES = {
     # SUBTITLES: registry codings that differ from the option order
     "background_style": dict(values=["1", "0"]),    # HUD PANEL = 1, PLAIN = 0
     "space_position": dict(values=["2", "1", "0"]), # TOP PANEL = 2, TOP THIRD = 1, BOTTOM = 0
+    # MORE: the movies' rows stay in [Subtitles]
+    "movie_fit": dict(section="Subtitles"),
+    "movie_skip": dict(section="Subtitles"),
+    "movie_intro": dict(section="Subtitles"),
 }
+
+# The spec's preset groups: the row that names each group.
+PRESET_GROUPS = [("autopilot", "preset"), ("controller", "pad_preset"), ("button_hints", "button_hints"), ("hit_effects", "hit_effects")]
 
 BUTTONS = ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "L3", "R3", "LS", "RS", "DU", "DD", "DL", "DR", "VIEW", "MENU"]
 
@@ -144,7 +167,8 @@ def gen(spec):
     w("    Key = 'k',    // a String row holding a key name; click / A = press a key")
     w("    Button = 'b'  // an action (no registry row)")
     w("};")
-    w("enum Tier : char { Player = 'P', Advanced = 'A' };")
+    w("// Simple: on the page always. Player, Advanced: with Show all settings; away from their default they come back under YOU CHANGED.")
+    w("enum Tier : char { Simple = 'S', Player = 'P', Advanced = 'A' };")
     w("enum Needs : char { Live = 'l', Load = 'd', Restart = 'r' };")
     w("")
     w("struct Row")
@@ -166,7 +190,10 @@ def gen(spec):
     w("    const char* parent; // the spec key of the row that greys this one out when off; null = none")
     w("    bool preset;        // the tab's preset row (applies a preset table; CUSTOM when a member row deviates)")
     w("    const char* btn;    // Button: its caption")
-    w("    const char* help;   // the rollover line")
+    w("    const char* help;   // the description band's line")
+    w("    const char* head;   // a feature's switch: its [Modules] row's name (core\\modules_rules.h); null = not a head")
+    w("    const char* offHelp; // a head: the words of the rows under it while it is off")
+    w("    const char* const* valueHelp; // Picker: the description per option (null entry = `help`); null = none")
     w("};")
     w("")
     w("struct Section")
@@ -174,6 +201,8 @@ def gen(spec):
     w("    const char* label; // \"\" = no header")
     w("    const Row* rows;")
     w("    int count;")
+    w("    const char* head;  // the spec key of the head these rows stand under; null = none")
+    w("    bool indent;       // its rows stand indented under their head (MORE)")
     w("};")
     w("")
     w("struct Tab")
@@ -242,22 +271,30 @@ def gen(spec):
                     w("inline constexpr const char* %s[] = {%s};" % (oname, ", ".join(cstr(o) for o in opts)))
                 if vals:
                     w("inline constexpr const char* %s[] = {%s};" % (vname, ", ".join(cstr(v) for v in vals)))
+                vh = row.get("value_help") or {}
+                hname = "kHelp_%s" % ident(key)
+                if vh:
+                    if set(vh) - set(opts):
+                        raise SystemExit("%s: value_help for words it does not have: %s" % (key, sorted(set(vh) - set(opts))))
+                    w("inline constexpr const char* %s[] = {%s};" % (hname, ", ".join(cstr(vh.get(o)) for o in opts)))
                 kind_c = {"toggle": "Toggle", "picker": "Picker", "slider": "Slider", "key": "Key", "button": "Button"}[kind]
-                tier_c = "Advanced" if row.get("tier") == "advanced" else "Player"
+                tier_c = {"simple": "Simple", "advanced": "Advanced"}.get(row.get("tier"), "Player")
                 needs_c = {"live": "Live", "load": "Load", "restart": "Restart"}[row.get("needs", "live")]
                 row_inits.append(
-                    "    {%s, %s, %s, %s, %s, %s, %d, %s, %sf, %sf, %sf, %sf, %s, %s, %s, %s, %s, %s, %s, %s}," % (
+                    "    {%s, %s, %s, %s, %s, %s, %d, %s, %sf, %sf, %sf, %sf, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s}," % (
                         cstr(key), cstr(section), cstr(regkey), kind_c, cstr(row["label"]),
                         oname if opts else "nullptr", len(opts), vname if vals else "nullptr",
                         num(row.get("min") if kind == "slider" else 0), num(row.get("max") if kind == "slider" else 0),
                         num(row.get("step") if kind == "slider" else 0), num(alias.get("scale", 1.0)),
                         cstr(row.get("unit", "") or ""), cstr(reg_default(row, alias)) if not virtual else "nullptr",
-                        tier_c, needs_c, cstr(row.get("parent")), "true" if row.get("preset") else "false",
-                        cstr(row.get("btn")), cstr(row.get("help", ""))))
+                        tier_c, needs_c, cstr(row.get("parent")), "true" if row.get("preset") or row.get("bundle") else "false",
+                        cstr(row.get("btn")), cstr(row.get("help", "")), cstr(row.get("head")), cstr(row.get("off_help")),
+                        hname if vh else "nullptr"))
             w("inline constexpr Row %s[] = {" % rows_name)
             L.extend(row_inits)
             w("};")
-            sec_defs.append("    {%s, %s, %d}," % (cstr(sec["label"]), rows_name, len(sec["rows"])))
+            sec_defs.append("    {%s, %s, %d, %s, %s}," % (cstr(sec["label"]), rows_name, len(sec["rows"]), cstr(sec.get("head", tab.get("head"))),
+                                                         "true" if sec.get("indent") else "false"))
         w("inline constexpr Section kSections_%s[] = {" % tid)
         L.extend(sec_defs)
         w("};")
@@ -295,7 +332,14 @@ def gen(spec):
             val = "%g" % (float(v) / alias.get("scale", 1.0))
         return section, regkey, val
 
-    for group in ("autopilot", "controller"):
+    w("// A preset row (a real key or a bundle) and its table.")
+    w("struct PresetSet")
+    w("{")
+    w("    const char* rowKey;")
+    w("    const Preset* presets;")
+    w("    int count;")
+    w("};")
+    for group, _ in PRESET_GROUPS:
         names = []
         for p in spec["presets"][group]:
             pname = "kPreset_%s_%s" % (group, ident(p["name"]))
@@ -310,6 +354,22 @@ def gen(spec):
         w("};")
         w("inline constexpr int k%sPresetCount = %d;" % (group.capitalize(), len(spec["presets"][group])))
         w("")
+
+    w("inline constexpr PresetSet kPresetSets[] = {")
+    for group, rowkey in PRESET_GROUPS:
+        if rowkey not in rows_by_key:
+            raise SystemExit("preset group %s: no row %s" % (group, rowkey))
+        w("    {%s, k%sPresets, k%sPresetCount}," % (cstr(rowkey), group.capitalize(), group.capitalize()))
+    w("};")
+    w("inline const PresetSet* FindPresets(const char* rowKey)")
+    w("{")
+    w("    for (const PresetSet& s : kPresetSets)")
+    w("        if (strcmp(s.rowKey, rowKey) == 0)")
+    w("            return &s;")
+    w("    return nullptr;")
+    w("}")
+    w("")
+    gen_first_card(spec, rows_by_key, w)
 
     # ---- bindings
     def bindset(name, table, var):
@@ -367,6 +427,35 @@ def gen(spec):
     gen_hud2(spec, w)
     w("} // namespace uimeta")
     return "\n".join(L) + "\n"
+
+
+def gen_first_card(spec, rows_by_key, w):
+    """The first-start card (docs\\UI_OPTIONS.md 5a; UI_SPEC.json "first_card"): its words, its rows by key with the card's own
+    description, and the one row of its own, Subtitles, which writes the head and the size together."""
+    fc = spec.get("first_card")
+    if not fc:
+        raise SystemExit("UI_SPEC.json has no first_card: apply tools\\uimock\\patches\\2026-11-06_options_simple.json first")
+    own = fc["subtitles"]
+    w("// The first-start card: its words, and its rows by key with the card's own description. Its Subtitles row is the card's own:")
+    w("// option 0 is the head off, option i the head on and `size` i - 1.")
+    w("struct CardRow")
+    w("{")
+    w("    const char* key;")
+    w("    const char* help;")
+    w("};")
+    w("inline constexpr const char* kCardTitle = %s;" % cstr(fc["title"]))
+    w("inline constexpr const char* kCardLead = %s;" % cstr(fc["lead"]))
+    w("inline constexpr const char* kOpt_card_subtitles[] = {%s};" % ", ".join(cstr(o) for o in own["options"]))
+    w("inline constexpr Row kCardSubtitles = {%s, \"Subtitles\", nullptr, Picker, %s, kOpt_card_subtitles, %d, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, \"\", nullptr, "
+      "Simple, Live, nullptr, false, nullptr, %s, nullptr, nullptr, nullptr};" % (cstr(own["key"]), cstr(own["label"]), len(own["options"]), cstr(own["help"])))
+    w("inline constexpr CardRow kCardRows[] = {")
+    for r in fc["rows"]:
+        if r["key"] != own["key"] and r["key"] not in rows_by_key:
+            raise SystemExit("first_card: no row %s" % r["key"])
+        w("    {%s, %s}," % (cstr(r["key"]), cstr(r["help"])))
+    w("};")
+    w("inline constexpr int kCardRowCount = %d;" % len(fc["rows"]))
+    w("")
 
 
 # ---- HUD 2 layout presets (modules\hud\docs\UI_HUD2_PRESETS.md 6 step 1; UI_SPEC.json "hud2_presets")

@@ -45,9 +45,18 @@ void LogSetSink(void (*sink)(const char* line), const char* dllDir)
     g_dllDir = dllDir ? dllDir : "";
 }
 
+static void (*g_claimed)(const char* line) = nullptr; // LogClaimPlain's sink
+
+void LogClaimPlain(void (*sink)(const char* line))
+{
+    g_claimed = sink;
+    g_sink = sink;
+}
+
 int LogAttach(void (*sink)(const char* line), const char* dllDir)
 {
-    LogSetSink(sink, dllDir);
+    if (!g_claimed || g_claimed == sink)
+        LogSetSink(sink, dllDir);
     for (int i = 0; i < g_channelCount; ++i)
         if (g_channels[i].sink == sink)
             return i;

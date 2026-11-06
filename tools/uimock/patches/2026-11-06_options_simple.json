@@ -1,0 +1,154 @@
+{
+ "new_rows": [
+  {"key": "game_text_size", "label": "Window text size", "kind": "picker", "options": ["AUTOMATIC", "NORMAL", "LARGE", "EXTRA LARGE"], "def": "AUTOMATIC", "tier": "simple",
+   "help": "The game's text in dealers, job boards and the Neural Net. Automatic follows HUD size. Applies at the main menu."},
+  {"key": "button_hints", "label": "Button hints", "kind": "picker", "options": ["WHEN USEFUL", "ALWAYS", "OFF", "CUSTOM"], "def": "WHEN USEFUL", "tier": "simple", "bundle": "button_hints",
+   "help": "Which button does what. When useful: only when something new is possible. If unsure, leave this."},
+  {"key": "hit_effects", "label": "Hit effects", "kind": "picker", "options": ["FULL", "SOFT", "OFF", "CUSTOM"], "def": "FULL", "tier": "simple", "bundle": "hit_effects",
+   "help": "Flashes at the screen's edge when your ship is hit. Choose Soft or Off if flashes bother you."},
+  {"key": "steer_curve", "label": "Steering curve", "kind": "slider", "min": 1, "max": 4, "step": 0.1, "def": 1.5,
+   "help": "The steering response as a number: the curve's exponent, 1 = linear."},
+  {"key": "other_changed", "label": "Other changed settings", "kind": "button", "def": null, "btn": "RESET THEM", "tier": "simple",
+   "help": "Settings that have no row here and differ from their defaults. Reset them sets them back."}
+ ],
+ "retab": [
+  {"id": "hud", "label": "HUD", "head": "hud_style", "sections": [
+   {"label": "", "rows": ["hud_style", "hud_size", "game_text_size", "hud_fade", "hud_numbers", "button_hints", "hit_effects"]},
+   {"label": "HUD", "rows": ["mod_hud", "ui_style", "hud_preset", "hud_opacity", "hud_scale", "hud_threats", "hud_context", "hud_prompts", "hud_alerts", "hud_info", "hud_wireframes", "hud_transition", "text_size", "window_text"]},
+   {"label": "CUES", "rows": ["shield_cue", "shield_cue_intensity", "hull_cue", "reticle_cue"]}
+  ]},
+  {"id": "controller", "label": "CONTROLLER", "presetKey": "pad_preset", "head": "mod_controller", "sections": [
+   {"label": "", "rows": ["mod_controller", "pad_preset", "invert_y", "aim_mode", "steer_expo", "stick_deadzone", "rumble", "glyph_style", "weapon_groups", "holds_as_toggles"]},
+   {"label": "INPUT", "rows": ["input_mode", "glyph_look", "confirm_button", "pause_on_disconnect", "pad_backend", "pad_sdl_fallback"]},
+   {"label": "LAYOUT", "rows": ["edit_bindings", "y_swap"]},
+   {"label": "AIM", "rows": ["aim_cone", "steer_curve", "steer_scale", "aim_smooth"]},
+   {"label": "STICKS", "rows": ["trigger_threshold", "throttle_rate"]},
+   {"label": "TARGETING", "rows": ["auto_target", "fire_target"]},
+   {"label": "MENUS AND PROMPTS", "rows": ["pad_cursor", "cursor_speed", "cursor_magnet", "prompt_bar", "world_prompts", "wheel_rate", "hud_glyphs", "button_legend", "ap_status_line"]},
+   {"label": "SYSTEM", "rows": ["focus_only"]}
+  ]},
+  {"id": "subtitles", "label": "SUBTITLES", "head": "enabled", "sections": [
+   {"label": "", "rows": ["enabled", "size", "background_opacity", "speaker_names", "chatter"]},
+   {"label": "TEXT", "rows": ["mod_subtitles", "font", "text_color", "shadow"]},
+   {"label": "BACKGROUND", "rows": ["background_style"]},
+   {"label": "SPEAKERS", "rows": ["speaker_colors", "hostile_marker"]},
+   {"label": "CHANNELS", "rows": ["story", "comms", "bar", "neural_net", "chat_all_dialogue", "chat_size", "movie_subtitles"]},
+   {"label": "PLACEMENT", "rows": ["space_position", "comm_portrait", "hud_arrows", "letterbox_mode", "cinematic_single_speaker"]},
+   {"label": "MOTION", "rows": ["motion", "stack_fit", "word_pop", "neural_net_severity", "linger", "retire_delay"]}
+  ]},
+  {"id": "autopilot", "label": "AUTOPILOT", "presetKey": "preset", "head": "mod_autopilot", "sections": [
+   {"label": "", "rows": ["mod_autopilot", "preset", "start_smart", "autopilot_cancel", "skip_dock_scene", "autopilot_key", "ap_hints"]},
+   {"label": "STYLE", "rows": ["knowledge", "engage", "auto_fire", "missiles", "countermeasures", "repair", "loot", "caution", "avoid", "fast_dock", "maneuver_button", "pilot", "engage_radius", "follow_distance"]}
+  ]},
+  {"id": "more", "label": "MORE", "sections": [
+   {"label": "", "head": "mod_movies", "indent": true, "rows": ["mod_movies", "movie_skip", "movie_intro", "movie_fit"]},
+   {"label": "", "head": "mod_display", "indent": true, "rows": ["mod_display", "run_in_background", "borderless"]},
+   {"label": "", "head": "mod_speedrun", "indent": true, "rows": ["mod_speedrun", "speedrun_timer", "livesplit", "livesplit_port", "livesplit_gametime"]},
+   {"label": "", "head": "mod_npc", "indent": true, "rows": ["mod_npc"]},
+   {"label": "SYSTEM", "rows": ["fluf_windows", "maneuver_watchdog"]},
+   {"label": "", "rows": ["show_advanced", "other_changed", "reset_all", "about"]}
+  ]}
+ ],
+ "presets": {
+  "controller": [
+   {"name": "FREELANCER", "values": {"holds_as_toggles": "HOLD"}},
+   {"name": "ACE", "values": {"holds_as_toggles": "HOLD"}},
+   {"name": "ASSISTED", "values": {"holds_as_toggles": "TOGGLE"}}
+  ],
+  "button_hints": [
+   {"name": "WHEN USEFUL", "values": {"prompt_bar": "CONTEXTUAL", "world_prompts": "CONTEXTUAL", "hud_context": "CONTEXTUAL", "hud_prompts": "ON CHANGE", "button_legend": "ON", "hud_glyphs": true}},
+   {"name": "ALWAYS", "values": {"prompt_bar": "ALWAYS", "world_prompts": "CONTEXTUAL", "hud_context": "CONTEXTUAL", "hud_prompts": "ALWAYS", "button_legend": "ON", "hud_glyphs": true}},
+   {"name": "OFF", "values": {"prompt_bar": "OFF", "world_prompts": "OFF", "hud_context": "OFF", "hud_prompts": "ON CHANGE", "button_legend": "OFF", "hud_glyphs": false}}
+  ],
+  "hit_effects": [
+   {"name": "FULL", "values": {"shield_cue": true, "shield_cue_intensity": 1.0, "hull_cue": true}},
+   {"name": "SOFT", "values": {"shield_cue": true, "shield_cue_intensity": 0.5, "hull_cue": true}},
+   {"name": "OFF", "values": {"shield_cue": false, "shield_cue_intensity": 1.0, "hull_cue": false}}
+  ]
+ },
+ "rows": {
+  "hud_style": {"label": "HUD 2", "options": ["ENABLED", "ON THE PAD", "DISABLED"], "def": "ENABLED", "value": "ENABLED", "tier": "simple", "head": "hud",
+   "off_help": "HUD 2 is disabled, so this has no effect. Your setting is kept.",
+   "help": "The new flight display and menu look. On the pad: keyboard and mouse keep the game's HUD. Disabled: the game's own HUD."},
+  "hud_size": {"tier": "simple", "help": "Automatic: Large on a handheld, Normal elsewhere. Small is close to the game's own HUD. This page follows it."},
+  "hud_fade": {"label": "HUD in calm flight", "options": ["FADES", "ALWAYS"], "def": "FADES", "value": "FADES", "tier": "simple",
+   "help": "Fades: parts of the HUD fade out in calm flight and return when they matter. Always: everything stays."},
+  "hud_numbers": {"label": "Numbers on the ring", "tier": "simple", "help": "Your shield and hull as numbers beside the ring round the crosshair: when low, always, or never."},
+  "mod_controller": {"label": "Controller", "tier": "simple", "head": "controller",
+   "off_help": "The controller is disabled, so this has no effect. Your setting is kept.",
+   "help": "The whole game on a controller: prompts, screens, on-screen keyboard. Takes effect at the next start."},
+  "pad_preset": {"label": "Layout", "tier": "simple", "help": "The whole flight layout. Press {A} to see every button.",
+   "value_help": {"FREELANCER": "Freelancer: the game's controls on a pad, the right stick steers. Press {A} to see every button.",
+    "ACE": "Ace: arcade flight, the left stick steers and the triggers are the throttle. Press {A} to see every button.",
+    "ASSISTED": "Assisted: the autopilot flies, you aim and decide. Press {A} to see every button.",
+    "CUSTOM": "Custom: for now the same as Freelancer. Press {A} to see every button."}},
+  "invert_y": {"label": "Invert steering", "tier": "simple", "help": "Stick up turns the nose down, as in a flight simulator."},
+  "aim_mode": {"label": "Aim", "tier": "simple", "help": "Gimbal: the stick steers and the reticle locks onto your target. Reticle: the stick moves the reticle, with aim assist."},
+  "steer_expo": {"label": "Steering response", "kind": "picker", "options": ["LINEAR", "SOFT", "SOFTER", "SOFTEST"], "def": "SOFT", "value": "SOFT", "words": [], "tier": "simple",
+   "help": "Softer is gentler near the centre, for fine aim. If unsure, leave it on Soft."},
+  "stick_deadzone": {"label": "Stick dead zone", "min": 0, "max": 90, "step": 2, "def": 24, "value": 24, "unit": "%", "tier": "simple",
+   "help": "How far a stick moves before the game reacts. Raise it if the ship drifts by itself."},
+  "rumble": {"label": "Rumble", "tier": "simple", "help": "Vibration strength: hits on your ship and warnings. Zero switches it off."},
+  "glyph_style": {"label": "Button prompts", "tier": "simple", "help": "Which button pictures to show. Automatic follows the connected controller."},
+  "weapon_groups": {"label": "Weapon groups", "options": ["CYCLE ON {Y}", "ONE BUTTON", "TWO TRIGGERS"], "def": "CYCLE ON {Y}", "value": "CYCLE ON {Y}", "tier": "simple",
+   "help": "One button: one fire button. Cycle: {Y} steps through your groups. Two triggers: a group on each trigger."},
+  "holds_as_toggles": {"label": "Held buttons", "kind": "picker", "options": ["HOLD", "TOGGLE"], "def": "HOLD", "value": "HOLD", "tier": "simple",
+   "help": "Toggle: boost, reverse and rear view go on with one press and off with the next. Nothing needs holding."},
+  "edit_bindings": {"label": "Every button", "btn": "SEE THE LAYOUT", "help": "Every button of the layout, read-only. LB and RB go through the layouts."},
+  "enabled": {"label": "Subtitles", "tier": "simple", "head": "subtitles",
+   "off_help": "Subtitles are disabled, so this has no effect. Your setting is kept.",
+   "help": "Spoken lines as text, in flight, in bases and in cutscenes."},
+  "mod_subtitles": {"tier": "advanced"},
+  "mod_hud": {"tier": "advanced"},
+  "size": {"label": "Text size", "tier": "simple", "help": "The size of the subtitles only. The sample above shows it."},
+  "background_opacity": {"label": "Background", "step": 10, "tier": "simple", "help": "How solid the panel behind the text is. More is easier to read over bright scenes."},
+  "speaker_names": {"label": "Speaker names", "tier": "simple", "help": "Who is speaking: on a row of its own, in front of the line, or not at all."},
+  "chatter": {"label": "Radio chatter", "tier": "simple", "help": "Other pilots' talk outside the story: in the chat window, as subtitles, or off."},
+  "mod_autopilot": {"label": "Autopilot", "tier": "simple", "head": "autopilot",
+   "off_help": "The autopilot is disabled, so this has no effect. Your setting is kept.",
+   "help": "The Advanced Autopilot, its goal panel and its button. Takes effect at the next start."},
+  "preset": {"label": "Autopilot style", "tier": "simple", "help": "How the autopilot flies, in one word. Changing one of its settings reads Custom.",
+   "value_help": {"COMPETENT": "Competent: flies well, and knows only what you have seen. It uses your missiles and repairs when needed.",
+    "SPEEDRUN": "Speedrun: knows everything in the game's data, flies for time and leaves loot behind.",
+    "NO CONSUMABLES": "No consumables: as Competent, but it never spends your missiles, repairs or countermeasures.",
+    "CUSTOM": "Custom: your own mix. Show all settings lists its rows on this tab."}},
+  "start_smart": {"label": "When it starts", "options": ["OBJECTIVE FIRST", "TARGET ONLY"], "def": "OBJECTIVE FIRST", "value": "OBJECTIVE FIRST", "tier": "simple",
+   "help": "Objective first: the mission, then your waypoints, then your target. Target only: just the target you picked."},
+  "autopilot_cancel": {"label": "Stick takes over", "tier": "simple", "help": "How far to push the stick to take the ship back. Zero: only the autopilot button does."},
+  "skip_dock_scene": {"label": "Skip docking scenes", "tier": "simple", "help": "When the autopilot docks, skip the docking scene."},
+  "autopilot_key": {"label": "Autopilot key", "tier": "simple", "help": "The keyboard key that starts and stops the autopilot. A key the game already uses is refused."},
+  "ap_hints": {"label": "Autopilot hints", "tier": "simple", "help": "Show the autopilot's prompts before you first use it. Disabled: nothing about it shows until you start it once."},
+  "mod_movies": {"label": "Movie handling", "tier": "simple", "head": "movies",
+   "off_help": "Movie handling is disabled, so this has no effect. Your setting is kept.",
+   "help": "Movies fitted to the screen, the choice of intro, skipping the startup movies. Takes effect at the next start."},
+  "movie_skip": {"label": "Startup movies", "tier": "simple", "help": "Skip goes straight to the main menu."},
+  "movie_intro": {"label": "Intro", "tier": "simple", "help": "Which intro plays. Only the versions this install has are offered."},
+  "mod_display": {"label": "Window handling", "tier": "simple", "head": "display",
+   "off_help": "Window handling is disabled, so this has no effect. Your setting is kept.",
+   "help": "Borderless window, fit to the monitor, running in the background. Takes effect at the next start."},
+  "run_in_background": {"label": "Keep running in background", "tier": "simple", "help": "The game normally pauses when you switch to another window."},
+  "mod_speedrun": {"label": "Speedrun mode", "tier": "simple", "head": "speedrun",
+   "off_help": "Speedrun mode is disabled, so this has no effect. Your setting is kept.",
+   "help": "The New Game choice, the timer, the splits and LiveSplit. Takes effect at the next start."},
+  "mod_npc": {"label": "Bug recorder", "tier": "simple", "head": "npc",
+   "off_help": "The bug recorder is disabled, so this has no effect. Your setting is kept.",
+   "help": "Writes a log when a ship near you stalls, for bug reports. Changes nothing in the game. Takes effect at the next start."},
+  "show_advanced": {"label": "Show all settings", "tier": "simple", "help": "Every tab also lists the rest of its settings, as they were before this page. Advanced mode replaces this later."},
+  "reset_all": {"label": "Reset", "btn": "RESET EVERYTHING", "tier": "simple", "help": "Every FLvibed setting back to its default, hidden ones too. It asks first."},
+  "about": {"label": "About", "btn": "VERSION AND CREDITS", "tier": "simple", "help": "FLvibed {version}, its credits and licences, and where the settings files are."}
+ },
+ "top": {
+  "first_card": {
+   "title": "BEFORE YOU FLY",
+   "lead": "Nothing here is required. It is all in Options, FLVIBED, later too.",
+   "subtitles": {"key": "card_subtitles", "label": "Subtitles", "options": ["OFF", "SMALL", "MEDIUM", "LARGE", "EXTRA LARGE", "HUGE"], "def": "MEDIUM",
+    "help": "Spoken lines as text, and their size. The sample above shows it."},
+   "rows": [
+    {"key": "hud_size", "help": "How large the HUD and FLvibed's text are. This card follows it."},
+    {"key": "card_subtitles", "help": "Spoken lines as text, and their size. The sample above shows it."},
+    {"key": "hit_effects", "help": "Flashes at the screen's edge when your ship is hit. Choose Soft or Off if flashes bother you."},
+    {"key": "holds_as_toggles", "help": "Toggle: boost, reverse and rear view go on with one press and off with the next. Nothing needs holding."}
+   ]
+  }
+ }
+}

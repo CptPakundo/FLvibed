@@ -457,6 +457,29 @@ std::wstring BaseName()
     return cache[base] = strid ? TrimW(text::Ids(strid)) : L"";
 }
 
+std::string RoomKey()
+{
+    static std::unordered_map<u32, std::string> cache;
+    if (!Docked())
+        return "";
+    const Fns& f = F();
+    u32 loc = 0;
+    if (CallU(f.location, loc) != 0 || !loc)
+        return "";
+    if (auto it = cache.find(loc); it != cache.end())
+        return it->second;
+    char room[128], base[128];
+    if (!Nick(f.locNick, loc, room, sizeof(room)) || !Nick(f.baseNick, Mem<u32>(exe::PlayerBase), base, sizeof(base)))
+        return "";
+    std::string r = room;
+    const size_t bl = strlen(base);
+    if (r.size() > bl + 1 && _strnicmp(r.c_str(), base, bl) == 0 && r[bl] == '_')
+        r = r.substr(bl + 1);
+    else if (const size_t us = r.rfind('_'); us != std::string::npos)
+        r = r.substr(us + 1);
+    return cache[loc] = r;
+}
+
 std::wstring RoomName()
 {
     static std::unordered_map<u32, std::wstring> cache;
@@ -486,10 +509,7 @@ std::wstring RoomName()
             const std::wstring t = HintText(h.ctl);
             if (!t.empty())
             {
-                std::wstring u;
-                for (wchar_t ch : t)
-                    u += static_cast<wchar_t>(towupper(ch));
-                return cache[loc] = u;
+                return cache[loc] = str::Upper(t);
             }
         }
     // the NavBar not built yet (a room's entry): the nickname's word, CamelCase split - not cached

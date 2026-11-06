@@ -21,6 +21,12 @@ struct UiOptions
     bool swapY = false;             // y_swap
     bool holdsAsToggles = false;    // holds_as_toggles
     int rumble = 100;               // rumble: 0..100 %
+    int triggerEffects = 2;         // trigger_effects: 0 off, 1 light, 2 full
+    int triggerStrength = 100;      // trigger_strength: 0..100 %
+    int hapticsMode = 0;            // haptics_mode: 0 automatic, 1 motors, 2 waveform
+    int hapticsClass[5] = {100, 100, 100, 100, 100}; // haptics_ship / _weapons / _danger / _setpieces / _prompts: percent, in haptics::Class's order
+    int hapticsDevice = 1;          // haptics_device: 0 nothing new reaches a real pad, the recording alone
+    bool padTriggers = false;       // the pad in use has triggers to drive: the options page shows the row
     int padCursor = 1;              // pad_cursor: 0 off, 1 rooms and maps, 2 everywhere (phase D)
     int cursorMagnet = 60;          // cursor_magnet % (phase D)
     int promptBar = 0;              // prompt_bar: 0 contextual, 1 always, 2 off (phase D)

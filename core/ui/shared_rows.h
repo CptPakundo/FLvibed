@@ -119,9 +119,10 @@ struct Values
     {"text_size", settings::Int, &coreframe::opts.textSize, 80, 150, \
      "size of FLvibed's own UI text (prompts, panels, the status line) in percent; the subtitles have their own"},
 
-#define FLV_ROW_DECK_MODE \
-    {"deck_mode", settings::Int, &coreframe::opts.deckMode, 0, 2, \
-     "Steam Deck mode, larger text and no safe margins at the screen's edge: 0 automatic (on at 1280x800), 1 on, 2 off"},
+#define FLV_ROW_HUD_SIZE \
+    {"hud_size", settings::Int, &coreframe::opts.hudSize, 0, 3, \
+     "the size of HUD 2 and FLvibed's text: 0 automatic (large on a handheld, normal elsewhere), 1 small (close to the " \
+     "game's own HUD), 2 normal, 3 large (larger text, no safe margins at the screen's edge)"},
 
 // The subtitles' registry holds these; with the subtitles off the Movies module does (modules\movies\src\impl\movies.cpp).
 #define FLV_ROW_MOVIE_FIT(value) \

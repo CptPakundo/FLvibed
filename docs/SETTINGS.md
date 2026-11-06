@@ -5,7 +5,7 @@ in the source and regenerate.** `set <name> <value>` / `ap set` change a value l
 help lines; `config settings` / `ap settings` / `settings` list them in the game. Behaviour, measurements and the why of
 each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DISPLAY_PLAN.md`, `modules\hud\docs\HUD_CUES.md`.
 
-## [Controller] - EXE\FLController.ini [Controller] (77 keys; source `modules\controller\src\impl\controller_settings.cpp`)
+## [Controller] - EXE\FLController.ini [Controller] (89 keys; source `modules\controller\src\impl\controller_settings.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -50,7 +50,16 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `weapon_groups` | int | 0 .. 2 | 1 | 0 simple: RT fires the active group, Y is cruise; 1 cycle: Y tap flips to the next group, Y held is cruise; 2 two groups: RT fires group 1 and LT group 2 (afterburner moves to the LS click), Y is cruise. Launchers fire only on their own buttons |
 | `y_swap` | bool | 0 \| 1 | false | the Freelancer layout with weapon_groups 1: Y tap is cruise and Y held flips to the next group, instead of the other way round |
 | `holds_as_toggles` | bool | 0 \| 1 | false | afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons |
-| `rumble` | int | 0 .. 100 | 100 | vibration strength in percent (0 = off): hits on your ship by their weight, your shield failing, the autopilot's hand-back pulse and the game's boxes that wait for your answer; only while the controller is in use and the game is in front, never in cutscenes or the menus, and the world's effects never while paused |
+| `rumble` | int | 0 .. 100 | 100 | vibration strength in percent (0 = off), last in the mix: the ship, weapons, hits and warnings, set pieces, the autopilot's hand-back pulse and the game's boxes that wait for your answer; only while the controller is in use and the game is in front, never in true cinematics or the menus, and the world's effects never while paused |
+| `trigger_effects` | int | 0 .. 2 | 2 | what the triggers do: 0 off, 1 light, 2 full. A DualSense's triggers feel weight, vibration and a wall when you cannot fire; an Xbox pad's trigger motors pulse (on USB or its dongle; over Bluetooth Windows is reported to drop them). A DualSense Edge's Medium and Short stops turn the effects off |
+| `trigger_strength` | int | 0 .. 100 | 100 | the trigger effects' strength in percent, on top of trigger_effects |
+| `haptics_mode` | int | 0 .. 2 | 0 | 0 automatic (motors until the waveform is proven), 1 motors, 2 waveform: a USB DualSense's grips driven as audio, its speaker set to four channels in the Sound panel; any failure falls back to motors and says why |
+| `haptics_ship` | int | 0 .. 100 | ? | percent: the engine, afterburner, cruise charge, tractor, nebulas and asteroids |
+| `haptics_weapons` | int | 0 .. 100 | ? | percent: your guns, missiles, mines and countermeasures |
+| `haptics_danger` | int | 0 .. 100 | ? | percent: hits from where they came, missiles, collisions, blasts, radiation, a failing hull |
+| `haptics_setpieces` | int | 0 .. 100 | ? | percent: trade lanes, jump gates and holes, docking and launching |
+| `haptics_prompts` | int | 0 .. 100 | ? | percent: the autopilot's hand-back and the game's boxes |
+| `haptics_device` | int | 0 .. 1 | 1 | 0: nothing beyond a stop reaches a real pad, debug `haptics record` alone sees the output (a background game is always 0) |
 | `pad_cursor` | int | 0 .. 2 | 2 | a cursor on the left stick where pointing is natural: 0 off, 1 rooms and maps, 2 everywhere; it slows over targets, the D-pad hides it |
 | `cursor_magnet` | int | 0 .. 100 | 60 | how strongly the pad cursor slows over and pulls toward a clickable element, percent |
 | `prompt_bar` | int | 0 .. 2 | 0 | the bottom-right row of button prompts on controller screens: 0 contextual (every window, menu and modal while it is open; a base room when new or a decision is pending), 1 always, 2 off |
@@ -59,8 +68,8 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `world_prompts` | int | 0 .. 1 | 0 | a prompt by the target when something unusual is possible now (dock in range, loot in reach): 0 contextual, 1 off |
 | `ap_hints` | bool | 0 \| 1 | true | show the autopilot's prompts and status before it was ever used; 0 = nothing about it shows until you switch it on once |
 | `text_size` | int | 80 .. 150 | 100 | size of FLvibed's own UI text (prompts, panels, the status line) in percent; the subtitles have their own |
-| `deck_mode` | int | 0 .. 2 | 0 | Steam Deck mode, larger text and no safe margins at the screen's edge: 0 automatic (on at 1280x800), 1 on, 2 off |
-| `game_text_size` | int | 100 .. 150 | 100 | size of the game's own text in every window, in percent; takes effect at the main menu |
+| `hud_size` | int | 0 .. 3 | 0 | the size of HUD 2 and FLvibed's text: 0 automatic (large on a handheld, normal elsewhere), 1 small (close to the game's own HUD), 2 normal, 3 large (larger text, no safe margins at the screen's edge) |
+| `game_text_size` | int | 0 .. 150 | 0 | size of the game's own text in every window: 0 automatic (follows hud_size), else 100 to 150 percent; takes effect at the main menu |
 | `window_text` | bool | 0 \| 1 | true | HUD 2: the text in the game's windows takes the room it has, the prices most, labels less, headings and buttons not at all |
 | `hud_glyphs` | bool | 0 \| 1 | true | in pad mode the HUD's own buttons carry the glyph of the button that acts on them |
 | `button_legend` | int | 0 .. 1 | 0 | the contextual list of the actions available now with their buttons, right-middle of the screen: 0 = on, 1 = off (the row's order: ON / OFF) |
@@ -79,13 +88,16 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `hud_threats` | bool | 0 \| 1 | true | HUD 2 lists the next hostiles under the target card during a fight |
 | `hud_context` | int | 0 .. 1 | 0 | the buttons for what you can do now, under your ship: 0 contextual, 1 off |
 | `hud_prompts` | int | 0 .. 1 | 1 | when the context prompts show in flight: 0 always, 1 when they change or right after you act (dock, cruise, a target, a maneuver), then they fade out after 4 seconds |
-| `hud_alerts` | bool | 0 \| 1 | true | short warning cards (shield failing, missile incoming, cargo hold full) with the buttons that answer them |
+| `group_cue` | bool | 0 \| 1 | true | the weapon group cue above the ring: your groups, M and T, filled when the target is in the centre and in reach |
+| `hud_alerts` | bool | 0 \| 1 | true | short warning cards (shield failing, missile incoming, cargo hold full, loot the tractor refused and why) with the buttons that answer them |
 | `hud_info` | bool | 0 \| 1 | true | extra information when it matters: docking queue, jump countdown, mission timers, formation, tractor |
 | `hud_wireframes` | bool | 0 \| 1 | true | the game's wireframe views in the target card and the ship panel where they can be kept (else flat icons) |
 | `hud_transition` | int | 0 .. 400 | 120 | advanced: how long HUD 2 takes to fade in when you switch to the controller, in milliseconds |
 | `hud_preset` | int | 0 .. 1 | 0 | experimental: HUD 2's layout preset - 0 Standard (default: today's HUD 2), 1 Focus (a calmer HUD that shows less until it matters); Speedrun and Guided are planned |
 | `maneuver_button` | bool | 0 \| 1 | true | the fifth button on the maneuver bar (keyboard and mouse HUD) toggles the autopilot |
 | `ui_style` | int | 0 .. 1 | 1 | The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (default; the game's controls stay as they are); Classic = the game's own |
+| `skin_motion` | int | 0 .. 2 | 0 | HUD 2's motion, in flight and in the menus and dialogs: 0 full, 1 fades (no breathing or travel, a change fades in place), 2 none (a change cuts) |
+| `skin_native` | string | - | ? | advanced, for troubleshooting: a comma list of window names that keep the game's look (pause, navmap, cursor ...); empty by default |
 
 ## [Autopilot] - EXE\FLController.ini [Autopilot] (165 keys; source `modules\autopilot\src\autopilot_settings.cpp`)
 
@@ -257,7 +269,7 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `consumables` | word | needed | never | needed | sets missiles, repair and countermeasures together (user, 18 Oct 2026) |
 | `p.<field>` | string | - | - | a personality field of the [Pilot] by its ini name (e.g. p.trail_distance = 200) |
 
-## [Subtitles] - EXE\FLSubtitles.ini [Subtitles] (42 keys; source `modules\subtitles\src\impl\display.cpp`)
+## [Subtitles] - EXE\FLSubtitles.ini [Subtitles] (43 keys; source `modules\subtitles\src\impl\display.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -281,6 +293,7 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `font` | int | 0 .. 1 | 0 | 0 the game's own fonts, 1 Segoe UI |
 | `motion` | bool | 0 \| 1 | true | lines fade in / out and the stack glides; 0 = instant |
 | `neural_net_severity` | bool | 0 \| 1 | true | Neural Net lines coded by severity (colour, brightness pulses) |
+| `neural_net_reason` | bool | 0 \| 1 | true | the Tractor Failure line says why the item was refused (hold, nanobots, shield batteries or ammo full); with HUD 2's alerts on, the alert card says it |
 | `bottom_movie` | float | 0 .. 0.9f | 0.025 | movies: the lowest row's bottom edge, inside the lower letterbox bar |
 | `linger` | float | 0 .. 5 | 1.0 | seconds a line stays after its audio |
 | `retire_delay` | float | 0 .. 5 | 1.25 | seconds a line pushed out by a newer speaker stays (never below its reading minimum); 0 = at once |

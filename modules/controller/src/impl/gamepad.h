@@ -3,7 +3,10 @@
 #include "common.h"
 #include "../api.h"
 #include "../pad_backend.h"
+#include "../wave_synth.h"
 #include "focus_gate.h"
+#include "haptics_rules.h"
+#include "haptics_render.h"
 #include "pad_slots.h"
 
 #include <Xinput.h>
@@ -41,6 +44,23 @@ class Gamepad
     Gamepad SwappedAB() const;
 
     void Rumble(float low, float high, float seconds);
+    // Both triggers' effects (11 bytes each, haptics::StanceBytes), through the host's SDL thread; nothing on an older host or with no SDL running.
+    void TriggerEffects(const u8* left, const u8* right);
+    // An Xbox pad's trigger motors, as Rumble.
+    void RumbleTriggers(float left, float right, float seconds);
+    // The grips' stream: `want` (the mode, a DualSense on USB, a real pad in a foreground game) opens or closes it; its state decides Facts().waveRunning. A failure stands
+    // until `want` goes false. The reason of the last failure, "" none.
+    void Wave(bool want);
+    void WaveFeed(const wavesynth::WaveFrame& f);
+    const char* WaveWhy() const { return waveWhy_; }
+    bool Wired() const { return sdl_.link == 1; }
+    bool impulseWanted = false; // `trigger_effects` on: an Xbox pad's four motors may go through SDL
+    // Grows whenever SDL's open pad changes: what was sent to the last one is gone.
+    u32 PadSerial() const { return sdl_.padSerial; }
+    // What haptics_render.h needs to know of the pad in use.
+    haptics::PadFacts Facts() const;
+    // The output goes to a physical pad, not a test pad of the device layer or of SDL.
+    bool OutputIsReal() const;
     int ActiveIndex() const { return slots_.Index(); }
     // A pad answers on an XInput slot (a real one, or a device-layer test pad: DevActive).
     bool HasRealController() const { return realConnected_; }
@@ -75,12 +95,18 @@ class Gamepad
     bool ReadSdl(XINPUT_STATE& out, bool& ok, bool fallback); // true = the SDL backend answered for this frame (ok: a pad)
     bool Candidate(float dt);                                 // the HID list holds a pad for the fallback (rescanned at kHidRescan)
     void Filter(bool on);
+    void Impulse(float dt, bool xinputPad, bool fallback);    // SDL's output for an Xbox pad, kept up or stopped
 
     focusgate::Held realHeld_;
     // the SDL backend (pad_backend 1)
     bool sdlOn_ = false, sdlSource_ = false, sdlWarned_ = false;
     padbackend::Fallback fallback_;
     padbackend::Hands hands_;
+    padbackend::ImpulseRoute impulse_;
+    bool waveOpen_ = false, waveRunning_ = false;
+    char waveWhy_[128] = {};
+    bool impulseOn_ = false, impulseReady_ = false, xboxSeen_ = false;
+    float impulseLook_ = 0, hidTimerXbox_ = 0;
     bool handsOnSdl_ = false, xinputBeside_ = false; // the fallback's reader this frame; XInput's pad read while SDL holds a pad at rest
     bool filterOn_ = false;
     bool candidate_ = false;

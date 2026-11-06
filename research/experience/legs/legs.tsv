@@ -1377,3 +1377,10 @@ date	label	save	outcome	secs	boot	fps	commit	instance	detail
 2026-11-05 21:21	M13-p11e-last	SaveS450.fl	FAIL	382	12	114	559e28dc	2	FAILED (FAILED: 1344 116751625 player-death) total 382 s; mode=menu; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 655 116576171 autopilot objective decide reason=objective text=24485 verb=3 ref=0 target=0 nav=0
 2026-11-05 21:22	M13-p11e-last	SaveS450.fl	PASS	451	13	119	559e28dc	1	SUCCESS total 451 s
 2026-11-05 21:22	M13-p11e-last	SaveS450.fl	PASS	488	12	122	559e28dc	3	SUCCESS total 488 s
+2026-11-06 07:56	M12-skipdock	Save5e67.fl	PASS	397	23	65	4103fba9	8	SUCCESS total 397 s
+2026-11-06 08:08	M04-skipdock	Save6380.fl	PASS	1079	14	77	4103fba9	7	SUCCESS total 1079 s
+2026-11-06 08:09	M05-skipdock	Save1d87.fl	PASS	1150	14	84	4103fba9	6	SUCCESS total 1150 s
+2026-11-06 16:24	m08_040	Save3a48.fl	PASS	662	13	156	ffa099eb	12	SUCCESS total 662 s
+2026-11-06 16:31	m10_040	Save7b39.fl	PASS	1125	13	165	ffa099eb	21	SUCCESS total 1125 s
+2026-11-06 16:54	m07_040	Save766f.fl	FAIL	606	11	161	ffa099eb	11	FAILED (FAIL STATE (CHECKPOINT M07.sinclair not reached: segment over 182 s, par 91.2 s - Tau-31 lanes)) total 606 s; mode=space; room: hotspots 0 busy: no navbar; dialogs: none; offers: none; last story event: 512 186788812 objective-client seq=14 obj=23240 "Destroy the Rheinland Blockade Ships" st
+2026-11-06 17:29	m07_040b	Save766f.fl	PASS	1708	11	179	e920ec57	11	SUCCESS total 1708 s

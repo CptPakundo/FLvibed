@@ -14,6 +14,11 @@ void GenerationReply(char* reply, size_t len); // the `uigen` verb
 // The game's damage indicator's hits on the player ship (the HUD's hit cues, the autopilot). Idempotent.
 void InstallHits();
 u32 PlayerHit(float pos[3], u32* kind, u32* tick); // sequence, 0 = none yet
+// The game's target label and bars left out of its indicator draw while HUD 2's targeting display stands (UI_HUD2_SKIN.md 6.10). Both the vertex gate and the
+// text gate or neither: TargetMuteReady says whether the mute can hold. Idempotent; an unsigned symbol leaves the game's drawing as it is.
+void InstallTargetMute();
+void SetTargetMute(bool on);
+bool TargetMuteReady();
 void TraceKeys(bool on);                        // debug `trace keys`
 bool TraceKeys();
 } // namespace uihooks

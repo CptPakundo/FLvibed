@@ -15,7 +15,7 @@ void Test_hud2_sim()
         CHECK(p.ok && !p.off && p.base == n);
         CHECK(p.comm == (std::string(n) == "comm"));
     }
-    CHECK(sizeof(kNames) / sizeof(kNames[0]) == 18);
+    CHECK(sizeof(kNames) / sizeof(kNames[0]) == 23);
     // +comm over any state
     {
         const Parsed p = Parse("lane+comm");

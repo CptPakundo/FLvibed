@@ -5,7 +5,7 @@
 # The clicks are the game's own virtual mouse (`mouse`, `mbtn`): NEW GAME's click opens the list and starts nothing; Escape closes it and no Exit question comes;
 # a click on SPEEDRUN MODE starts the game's New Game.
 # Usage (PowerShell tool): tests\speedrun_modules.ps1 [-Row start,split,pad] [-Instance 1]    build\release. Exit 1 on a failure.
-param([string[]]$Row = @('start', 'split', 'pad'), [int]$Instance = 1)
+param([string[]]$Row = @('start', 'split', 'pad'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"

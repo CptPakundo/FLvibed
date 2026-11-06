@@ -1,0 +1,28 @@
+{
+  "_about": "0.4.0 (6 Nov 2026), the owner: full haptics. modules\\controller\\docs\\HAPTICS.md 10. Trigger effects stands beside Rumble and shows in simple mode only with a pad that has triggers to drive; the rest under Show all settings. Nothing felt yet.",
+  "add_rows": {
+    "controller/": {"after": "rumble", "rows": [
+      {"key": "trigger_effects", "label": "Trigger effects", "kind": "picker", "def": "FULL", "options": ["FULL", "LIGHT", "OFF"],
+       "help": "Your triggers feel the ship: weight, vibration, a wall when you cannot fire. On Xbox: pulses, by USB or dongle."}
+    ]},
+    "controller/INPUT": {"first": false, "rows": [
+      {"key": "trigger_strength", "label": "Trigger strength", "kind": "slider", "def": 100, "min": 0, "max": 100, "step": 10, "unit": "%",
+       "help": "How strong the trigger effects are, on top of Full or Light. A DualSense Edge needs its trigger stops at Long."},
+      {"key": "haptics_mode", "label": "Haptics", "kind": "picker", "def": "AUTOMATIC", "options": ["AUTOMATIC", "MOTORS", "WAVEFORM"],
+       "help": "Waveform drives a USB DualSense's grips directly and needs its speaker at four channels in the Sound panel. Automatic: motors for now."},
+      {"key": "haptics_ship", "label": "Ship and engine", "kind": "slider", "def": 100, "min": 0, "max": 100, "step": 10, "unit": "%",
+       "help": "The engine, afterburner, cruise charge, tractor, nebulas and asteroids. Zero leaves the ship quiet."},
+      {"key": "haptics_weapons", "label": "Weapons", "kind": "slider", "def": 100, "min": 0, "max": 100, "step": 10, "unit": "%",
+       "help": "Your guns, missiles, mines and countermeasures. Zero: no grain under your fire."},
+      {"key": "haptics_danger", "label": "Hits and danger", "kind": "slider", "def": 100, "min": 0, "max": 100, "step": 10, "unit": "%",
+       "help": "Hits from where they came, missiles, collisions, blasts, radiation, a failing hull."},
+      {"key": "haptics_setpieces", "label": "Set pieces", "kind": "slider", "def": 100, "min": 0, "max": 100, "step": 10, "unit": "%",
+       "help": "Trade lanes, jump gates, jump holes, docking and launching."},
+      {"key": "haptics_prompts", "label": "Prompts", "kind": "slider", "def": 100, "min": 0, "max": 100, "step": 10, "unit": "%",
+       "help": "The autopilot handing the ship back, and boxes that wait for your answer."}
+    ]}
+  },
+  "rows": {
+    "rumble": {"help": "Vibration strength for everything: your ship, weapons, hits and warnings. Zero switches it off."}
+  }
+}

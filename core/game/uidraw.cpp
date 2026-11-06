@@ -200,10 +200,8 @@ textfit::Result FitText(const render::Font& f, const std::wstring& s, float maxW
     adv.resize(s.size());
     auto advance = [&](wchar_t ch)
     {
-        auto it = f.glyphs.find(ch);
-        if (it == f.glyphs.end())
-            it = f.glyphs.find(L'?');
-        return it != f.glyphs.end() ? static_cast<float>(it->second.advance) : 0.0f;
+        const render::Glyph* g = render::GlyphFor(f, ch);
+        return g ? static_cast<float>(g->advance) : 0.0f;
     };
     for (size_t i = 0; i < s.size(); ++i)
         adv[i] = advance(s[i]);

@@ -25,7 +25,9 @@ void ClearAlerts(); // out of space: an alert's timer stands still there, and it
 void SlideAlerts(float dt);
 void AlertNone(const wchar_t* s);
 void AlertPrompt(presets::Action a, const wchar_t* label);
+bool AlertTractor(int reason); // core\game\tractorfail.h
 void Fast(float dt);
+void ProjectTarget(Model& m); // the target on the screen, at the moment of the call
 void Slow();
 void Simulate(Model& m);
 } // namespace hud2

@@ -125,6 +125,8 @@ player's own presses too). Verified: debug `cue ring 0..3` frames (research\expe
 `ap start hold` + `ap stop` = exactly 2 pulses. Tinting the game's own reticle sprite would need its HUD element (RE).
 
 ## Haptics: the pad's vibration (skeleton built 30 Oct 2026, WORK_QUEUE Q5 slice 3, IDEAS U30)
+**Superseded in part for 0.4.0:** the engine, its table and its gates are `modules\controller\docs\HAPTICS.md`. What follows is the first set's history; the rule stands: never the only cue.
+
 The cue rules hold for the motors too: one meaning per effect, short (every effect under 0.5 s), never the only cue,
 an off switch (`rumble` 0). `src\impl\haptics_rules.h` (pure, unit test `haptics`) + `haptics.cpp` (the game side):
 game event -> **the effect table** (`kEffects`, one row each: category, low / high motor at full strength, attack /

@@ -51,6 +51,10 @@ bool BuildFont(Font& font, const wchar_t* face, int px, int weight, const std::w
 void FreeFont(Font& font);
 
 int TextWidth(const Font& font, const std::wstring& s);
+// The glyph drawn for `c`: its own, else glyphset::Resolve's stand-in; nullptr when the font holds neither. A character
+// not in the atlas joins Unmet(), the characters each font's owner adds at its next build (at most 256, each once).
+const Glyph* GlyphFor(const Font& font, wchar_t c);
+const std::wstring& Unmet();
 
 // Back buffer size in pixels (0 if unknown).
 bool ScreenSize(int& w, int& h);

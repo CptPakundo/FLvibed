@@ -250,10 +250,8 @@ static void UpdateModes(float dt, Out& out)
         // not a mission taking over (was: travel to Manhattan's ring stopped "mission controls the ship" one frame
         // before the docking cutscene, and the harness read a failure). Our request is the sign: the dock
         // port no longer reads as held at that moment (the second run of 19 Oct).
-        const bool travelDock = g.mode == Mode::Travel && g.dock.fastRequested && g.tr.step < g.tr.plan.steps.size() &&
-                                g.tr.plan.steps[g.tr.step].kind == route::Kind::Dock;
-        const bool ourDock = travelDock || (g.mode == Mode::Dock && g.started);
-        Stop(ourDock ? StopReason::Docking : StopReason::MissionControls);
+        u32 object;
+        Stop(OurDock(object) ? StopReason::Docking : StopReason::MissionControls);
         return;
     }
     // Our ship destroyed: stop before anything reads the fight (was: on the death frame the target vanished with our
@@ -358,14 +356,22 @@ static void UpdateModes(float dt, Out& out)
             {
                 if (g.target)
                     space::SetTarget(g.target);
-                const int want = g.mode == Mode::Goto        ? ai::OpGoto
-                                 : g.mode == Mode::Dock      ? ai::OpDock
-                                 : g.mode == Mode::Formation ? ai::OpFormation
-                                                             : ai::OpFace;
+                g.dock.toRange = g.mode == Mode::Dock && DockBeyondRange();
+                const int want = g.mode == Mode::Goto || g.dock.toRange ? ai::OpGoto
+                                 : g.mode == Mode::Dock                 ? ai::OpDock
+                                 : g.mode == Mode::Formation            ? ai::OpFormation
+                                                                        : ai::OpFace;
                 MarkSubmit();
                 ai::Maneuver(want, false);
             }
             g.started = true;
+            break;
+        }
+        if (g.mode == Mode::Dock && g.dock.toRange && !DockBeyondRange())
+        {
+            g.dock.toRange = false;
+            MarkSubmit();
+            ai::Maneuver(ai::OpDock, false);
             break;
         }
         // The game ends the maneuver itself (arrival, refused): hand back without touching it, once it has acted on our

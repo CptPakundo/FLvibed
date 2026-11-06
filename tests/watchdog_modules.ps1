@@ -2,7 +2,7 @@
 # it read as stopped; the live part must then log one stall and re-issue the goto, free flight first. Rows: the autopilot off with the pad's entry, core's page
 # host with no module at all, the HUD alone. A real stall is not reproduced here (docs\FREELANCER_RE.md "Formation"): the rule itself has tests\maneuver_watch_test.cpp.
 # Usage (PowerShell tool): tests\watchdog_modules.ps1 [-Row pad,core,hud] [-Instance 1]    build\release. Exit 1 on a failure.
-param([string[]]$Row = @('pad', 'core', 'hud'), [int]$Instance = 1)
+param([string[]]$Row = @('pad', 'core', 'hud'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"

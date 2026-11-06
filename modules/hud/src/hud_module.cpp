@@ -6,8 +6,16 @@
 #include "gametext.h"
 #include "hudvis.h"
 #include "hud2.h"
+#include "navnew.h"
+#include "navskin.h"
+#include "nnstrip.h"
 #include "reticlecue.h"
 #include "shieldcue.h"
+#include "skindialog.h"
+#include "skinload.h"
+#include "skinmenu.h"
+#include "skinover.h"
+#include "skinchip.h"
 #include "ui/flufaware.h"
 #include "ui/hud_rows.h"
 #include "ui/options_page.h"
@@ -16,6 +24,7 @@
 #include "uiskin.h"
 #include "uistrip.h"
 #include "windowtext.h"
+#include "ui/winplates.h"
 
 #include <sstream>
 
@@ -25,7 +34,8 @@ static void Cues(float dt, bool flying, bool autopilot)
     reticlecue::Update(dt, flying, autopilot);
 }
 
-static void GameText(bool menu) { gametext::Frame(hudrows::g.gameTextSize, menu); }
+static int GameTextPercent() { return hudsize::GameTextPercent(hudrows::g.gameTextSize, hudsize::g_preset); }
+static void GameText(bool menu) { gametext::Frame(GameTextPercent(), menu); }
 
 // The game's mouse cursor under hud_fade 1 (core\game\hudwake.h CursorStep): in flight with the keyboard and mouse it hides after 3 s without mouse movement
 // or a button and shows again the frame either comes; shown in every other context (a menu, the map, a dialog / popup = any non-HUD window, the options page,
@@ -61,8 +71,10 @@ static void Skin(float dt, bool padOwns, bool enabled, bool docked)
     sc.pad = padOwns;
     sc.enabled = enabled;
     uiskin::Update(dt, sc);
+    skinmenu::Frame(dt, !padOwns);
+    nnstrip::Update(dt, padOwns);
     uistrip::Update(dt, enabled && uiStyle == 1 && docked);
-    windowtext::Frame(h.windowText && enabled && uiStyle == 1 && h.gameTextSize == 100);
+    windowtext::Frame(h.windowText && enabled && uiStyle == 1);
 }
 
 static bool UnderBegin(void* device, bool flying)
@@ -92,20 +104,43 @@ static void Overlay(void* device, bool menuOver, bool noUnderPass)
 
 static const std::vector<views::HudRect>* StripDrawn() { return &uistrip::Drawn(); }
 
+// Before the prompt lane: the docked overlay, then the dialogs over the game's UI, the lane staying above them
+static void Strip(void* device)
+{
+    uistrip::Draw(device);
+    uiskin::DrawModal(device);
+}
+
+// Last of the overlay
+static void Top(void* device) { skinover::Draw(device, uiskin::On(), uiskin::PadOwns()); }
+
+// One click box: the strip and the map's chips hold it while a NeuroNet window stands, HUD 2's keyboard form otherwise.
+static void Hotspot(int slot)
+{
+    if (!skinchip::OnClick(slot))
+        hud2::OnHotspot(slot);
+}
+
 static void Attach()
 {
     LogJoin(hostcalls::g.LogWrite);
     using modslots::kHud;
 #define G(fn) modslots::Guard<kHud, fn>::Call
-    views::skin = {G(uiskin::On)};
+    views::skin = {G(uiskin::On), G(skindialog::ActionWord), G(skindialog::SafeWord), G(skindialog::FocusAction),
+                   G(skinmenu::Offered), G(skinmenu::Focus), G(skinmenu::Go)};
     views::hud = {G(hud2::TargetCardAnchor), G(hud2::BottomPanelsTop), G(uistrip::StripRight), G(uistrip::StripBottom), G(hud2::Active), G(hud2::RingRadius),
-                  G(hud2::CycleListFilter), G(hud2::LockNotice), G(hud2::NoteAction), G(hud2::OnHotspot), G(uistrip::Active), G(StripDrawn), G(uiskin::DrawOver), G(Cues), G(GameText), G(hud2::Update),
-                  G(Cursor), G(Skin), G(UnderBegin), G(UnderEnd), G(Overlay), G(uistrip::Draw), G(hud2::OnDeviceLost)};
+                  G(hud2::CycleListFilter), G(hud2::LockNotice), G(hud2::NoteAction), G(Hotspot), G(uistrip::Active), G(StripDrawn), G(uiskin::DrawOver), G(Cues), G(GameText), G(hud2::Update),
+                  G(Cursor), G(Skin), G(UnderBegin), G(UnderEnd), G(Overlay), G(Strip), G(hud2::OnDeviceLost), G(Top), G(nnstrip::Rect),
+                  G(navskin::Chips), G(navskin::ChipPress), G(navskin::ChipStep), G(navskin::ChipFocus)};
+    if (hostcalls::g.SetLoadDraw)
+        hostcalls::g.SetLoadDraw(G(skinload::Draw));
 #undef G
 }
 
 static void Detach()
 {
+    if (hostcalls::g.SetLoadDraw)
+        hostcalls::g.SetLoadDraw(nullptr);
     views::skin = {};
     views::hud = {};
 }
@@ -116,8 +151,11 @@ static void Shutdown()
     shieldcue::Shutdown();
     reticlecue::Shutdown();
     hud2::Shutdown(); // the game's panels back, the textures freed
+    skinover::Shutdown(); // the game's cursor back
     uiskin::Shutdown(); // the windows' art and colours back
     uistrip::Shutdown();
+    nnstrip::Shutdown();
+    navnew::Shutdown();
 }
 
 // A fault: the game's panels first, the cursor and the click box; the windows' art after (its list is on the heap), and the state blocks, which would fail the
@@ -128,11 +166,16 @@ static void Fault(int phase)
     {
         hudvis::GiveBack();
         hostcalls::CursorHide(hostcalls::kCursorHideIdle, false);
+        hostcalls::CursorHide(hostcalls::kCursorHideSkin, false);
+        if (hostcalls::g.SetLoadDraw)
+            hostcalls::g.SetLoadDraw(nullptr);
         if (hostcalls::g.SetHudHotspots)
             hostcalls::g.SetHudHotspots(nullptr, 0);
     }
     else
     {
+        nnstrip::Shutdown();
+        navnew::Shutdown();
         uiskin::GiveBack();
         hud2::OnDeviceLost();
         windowtext::Frame(false); // every text's own font and box; game_text_size's table stays until the game reads it again
@@ -182,6 +225,12 @@ static std::string Verb(const std::string& op, std::istream& in)
         return uiskin::Command(in);
     if (op == "uistrip") // Extended HUD 2's docked overlay (the STRIP track): uistrip [state] | data | research ... | hover <i>
         return uistrip::Command(in);
+    if (op == "nnstrip") // the strip of words on the NeuroNet windows: nnstrip [state] | go <tab> | step <dir> | close | slide <seconds>
+        return nnstrip::Command(in);
+    if (op == "navskin") // the map's frame and words: navskin [state] | native on|off | press <id>
+        return navskin::Command(in);
+    if (op == "navnew") // the new map, off until its checks pass: navnew [state] | on | off
+        return navnew::Command(in);
     if (op == "gametext") // gametext [rich <percent>]: the size as applied (gametext.h); rich: that table alone, now (research)
     {
         std::string what;
@@ -191,8 +240,17 @@ static std::string Verb(const std::string& op, std::istream& in)
             gametext::RichNow(pct);
         if (what == "window")
             return windowtext::Status();
+        if (what == "frame") // gametext frame 0|1: NN_Inventory on the one frame (R8), until probe 18 clears it
+        {
+            windowtext::SetInventoryFrame(pct != 0);
+            return windowtext::Status();
+        }
         if (what == "texts")
             return windowtext::Texts();
+        if (what == "bar")
+            return winplates::BarReport();
+        if (what == "fit")
+            return winplates::FitReport() + windowtext::Overflows();
         return gametext::Status();
     }
     return std::string();
@@ -200,12 +258,12 @@ static std::string Verb(const std::string& op, std::istream& in)
 
 static bool Command(const std::string& op, std::istream& in, std::string& reply)
 {
-    if (op != "hud2" && op != "uiskin" && op != "uistrip" && op != "gametext" && op != "cue")
+    if (op != "hud2" && op != "uiskin" && op != "uistrip" && op != "nnstrip" && op != "navskin" && op != "navnew" && op != "gametext" && op != "cue")
         return false;
     reply = Verb(op, in);
     return true;
 }
 
-static const modslots::Module kModule = {nullptr, Shutdown, nullptr, nullptr, Command, nullptr, Attach, Detach, Fault};
+static const modslots::Module kModule = {nullptr, Shutdown, nullptr, nullptr, Command, nullptr, Attach, Detach, Fault, skindialog::EnterKey};
 
 extern "C" const modslots::Module* flv_hud_module() { return &kModule; }

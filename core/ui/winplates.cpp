@@ -4,6 +4,7 @@
 #include "ui/winplates.h"
 
 #include "flexe.h"
+#include "game/baseinfo.h"
 #include "game/deckmode.h"
 #include "game/fl.h"
 #include "game/hostcalls.h"
@@ -12,6 +13,7 @@
 #include "ui/gamecard.h"
 #include "ui/ui.h"
 #include "ui/views.h"
+#include "ui/winfit.h"
 
 namespace winplates
 {
@@ -78,6 +80,24 @@ bool W32(u32 a, u32 v)
     }
 }
 
+bool TextOf(u32 ctl, std::wstring& out)
+{
+    u32 vt = 0, obj = 0, text = 0;
+    out.clear();
+    if (!ctl || !R32(ctl, vt) || !exe::VtTitleText.is(vt) || !R32(ctl + 0x334, obj) || !obj || !R32(obj, text) || !text)
+        return false;
+    for (int i = 0; i < 512; ++i)
+    {
+        wchar_t c = 0;
+        if (!RBytes(text + static_cast<u32>(i) * 2, &c, 2))
+            return false;
+        if (!c)
+            break;
+        out.push_back(c);
+    }
+    return !out.empty();
+}
+
 bool NameIs(u32 ctl, const char* want)
 {
     char n[33] = {};
@@ -135,7 +155,12 @@ bool RectOf(u32 ctl, Box& b)
     ui::Item it;
     u32 vt = 0;
     const bool front = ctl && R32(ctl, vt) && exe::VtFrontButton.is(vt); // (the main menu's buttons: their own layout)
-    if (!ctl || !(front ? ui::FrontButtonRect(ctl, it) : ui::ControlRect(ctl, it)))
+    bool found = false;
+    if (ctl && exe::VtFrontTextButton.is(vt)) // (a .page button reports no extents of its own: the hit test's rectangle)
+        for (const ui::Item& i : ui::CollectAllCached())
+            if (i.ctl == ctl)
+                it = i, found = true;
+    if (!ctl || !(found || (front ? ui::FrontButtonRect(ctl, it) : ui::ControlRect(ctl, it))))
         return false;
     b.cx = it.x, b.cy = it.y;
     b.box = it.hw > 0.5f && it.hh > 0.5f;
@@ -165,7 +190,7 @@ extern const FamilyDef kFamilies[] = {
     // above it, the info box 0.300..0.634 x 0.640..0.871 H; the bottom lane; the front buttons draw their own frames
     // (front-button class, no +0x84 checked) and the title is a front label (no +0x348): both native.
     // research\evidence\controller_ui\hud2x_inventory.md 1.3, hud2x_trees.md "load_front"
-    {"loadfront", &exe::VtLoadScreen, true, false, {"bigBox", "smallBox"}, {}, false,
+    {"loadfront", &exe::VtLoadScreen, true, false, {"bigBox", "smallBox"}, {"LoadCharacter", "DeleteCharacter", "MainMenu"}, true,
      {{"CharSelDesc", -0.033f, -0.121f, 0.809f, 0.644f, kTLBR, 0.072f, 0, 0, Always, 0.80f},
       {"CharSelDesc", -0.422f, 0.404f, -0.088f, 0.635f, kTLBR, 0, 0, 0, Always, 0.80f}},
      {}, FocusButton, nullptr, nullptr, 0},
@@ -182,35 +207,41 @@ extern const FamilyDef kFamilies[] = {
      {}, FocusButton, nullptr, nullptr, 0},
     {"jobboard", &exe::VtMissionVendor, false, false,
      {"MissionVendorBackground", "MissionVendorHeadlinesFrame", "MissionVendorStoryFrame", "MissionVendorVideoFrame"}, {},
-     false, {{"MissionVendorBackground", -0.504f, -0.437f, 0.536f, 0.213f, kTLBR, 0.066f, 0.406f, 0, Always, 0.85f}},
+     false, {{"MissionVendorBackground", -0.534f, -0.437f, 0.536f, 0.213f, kTLBR, 0.066f, 0.406f, 0, Always, 0.85f}}, // (x: centred on the screen, the air even: its left stood 0.03 H short)
      {"MissionVendorTitle"}, FocusLeft, "MissionVendorSummaryBox", nullptr, 0.082f},
     {"news", &exe::VtNews, false, false, {"NewsBackground", "NewsHeadlinesFrame", "NewsStoryFrame", "NewsVideoFrame"}, {},
      // (trimmed for the lane: the ticker ends 0.903 H, 0.905 at 21:9 -> 0.909)
-     false, {{"NewsBackground", -0.504f, -0.437f, 0.536f, 0.343f, kTLBR, 0.066f, 0.410f, 0.700f, Always, 0.85f, 0.3224f}},
+     false, {{"NewsBackground", -0.534f, -0.437f, 0.536f, 0.343f, kTLBR, 0.066f, 0.410f, 0.700f, Always, 0.85f, 0.3224f}},
      {"NewsTitle"}, FocusButton, nullptr, nullptr, 0},
     {"offer", &exe::VtOfferDialog, false, false, {"OfferDialogBackground"}, {}, false,
      {{"OfferDialogBackground", -0.439f, -0.285f, 0.431f, 0.265f, kTLBR, 0.085f, 0, 0, Always, 0.85f}},
      {"OfferDialogTitle"}, FocusButton, nullptr, nullptr, 0},
     // the commodity / equipment dealer: NN_Dealer + its partner NN_Inventory (whose own mesh is all four panels)
-    {"dealer", &exe::VtDealer, false, false, {}, {}, false,
-     {{"Inventory_Close", -1.250f, -0.038f, -0.828f, 0.457f, kTLBR, 0.092f, 0, 0, SellFull, 0.85f},
-      {"Inventory_Close", -1.250f, -0.038f, -0.828f, 0.127f, kTLBR, 0.092f, 0, 0, SellEmpty, 0.85f},
+    // (WelcomeLine: the game's line under its welcome title stands where a two-line title ends; a third line ran through it. The plate's rule takes its place, under the title as it stands)
+    {"dealer", &exe::VtDealer, false, false, {"WelcomeLine"}, {}, false,
+     {{"Inventory_Close", -1.250f, -0.038f, -0.828f, 0.457f, kTLBR, 0.098f, 0, 0, SellFull, 0.85f},
+      {"Inventory_Close", -1.250f, -0.038f, -0.828f, 0.127f, kTLBR, 0.098f, 0, 0, SellEmpty, 0.85f},
       // (the transfer plate reaches under its QUANTITY n / m label; the infocard plate starts 0.010 H below it - critique 3,
       // 5. 5 Nov 2026: the infocard took 0.022 H more, for the larger text: windowtext's boxes follow these two numbers)
-      {"Inventory_Close", -0.810f, -0.038f, -0.418f, 0.470f, kTLBR, 0, 0, 0, Xfer, 0.85f},
+      {"Inventory_Close", -0.810f, -0.038f, -0.418f, 0.470f, kTLBR, 0, 0, 0, Xfer, 0.85f, 0, kStackLift},
       {"Inventory_Close", -0.810f, -0.038f, -0.418f, 0.355f, kTLBR, 0, 0, 0, NoXfer, 0.85f}, // (the welcome text at windowtext's size)
-      {"Inventory_Close", -0.404f, -0.038f, 0.022f, 0.422f, kTLBR, 0.092f, 0, 0, Always, 0.85f},
-      {"Inventory_Close", -1.200f, 0.480f, -0.060f, 0.779f, kTLBR, 0.052f, 0, 0, Xfer, 0.85f}},
+      {"Inventory_Close", -0.404f, -0.038f, 0.022f, 0.422f, kTLBR, 0.098f, 0, 0, Always, 0.85f},
+      // (no rule: a long heading wraps and its second line stood on it)
+      {"Inventory_Close", -1.200f, 0.480f, -0.060f, 0.779f, kTLBR, 0, 0, 0, Xfer, 0.85f}, // (not the panels' full width: the prompts' column stands beside it)
+      // (a keep-out too: bare on the room the final stage's words took the lane's pills over them at 4K. No title, so no rule: it ran through the text)
+      {"Inventory_Close", -1.200f, 0.480f, -0.060f, 0.779f, kTLBR, 0, 0, 0, ShipWords, 0.85f}},
      {"PlayerTitle"}, FocusPair, "ItemButton", "ItemView", 0},
     {"shipdealer", &exe::VtShipTrader, false, true, {}, {}, false,
-     {{"ShipTraderCancelButton", -1.2365f, 0.007f, -0.8265f, 0.222f, kTLBR, 0.075f, 0, 0, Always, 0.85f},
+     // (the X stands on the headings' line, windowtext's kShipCloseDrop under the game's place: the panels start at the headings, not 0.06 H over them, the owner, 6 Nov 2026)
+     {{"ShipTraderCancelButton", -1.2365f, -0.039f, -0.8265f, 0.172f, kTLBR, 0.070f, 0, 0, Always, 0.85f}, // (its top and rule the dealer list's: the two side panels even)
       // the centre panel keeps its full height (collapsed to its title, the live 3D preview and the
       // refusal floated over the room's display ship); the native frame 0.680..1.098 x 0.160..0.702 H at 4K, the X at
       // 1.500, 0.208 H; it holds the refusal (ErrorHelp) too, so no plate of its own
-      {"ShipTraderCancelButton", -0.8125f, -0.033f, -0.4025f, 0.470f, kTLBR, 0, 0, 0, Always, 0.85f},
+      {"ShipTraderCancelButton", -0.8125f, -0.039f, -0.4025f, 0.420f, kTLBR, 0, 0, 0, Always, 0.85f},
       // (the dealer list's plate reaches up over the close X - 0.04 H higher than the mock, whose X hung outside it)
-      {"ShipTraderCancelButton", -0.3885f, -0.033f, 0.0235f, 0.352f, kTLBR, 0.115f, 0, 0, Always, 0.85f},
-      {"ShipTraderCancelButton", -1.1885f, 0.482f, -0.0985f, 0.779f, kTLBR, 0.052f, 0, 0, Always, 0.85f}},
+      {"ShipTraderCancelButton", -0.3885f, -0.039f, 0.0235f, 0.302f, kTLBR, 0.070f, 0, 0, Always, 0.85f, 0, 0, true},
+      // (the air round its text even; not the panels' full width: the prompts' column stands beside it)
+      {"ShipTraderCancelButton", -1.1885f, 0.432f, -0.0575f, 0.729f, kTLBR, 0, 0, 0, Always, 0.85f}},
      {"ShipTraderTitle"}, FocusPair, "ShipTraderShipNameIconFrame", "ShipTraderShipNameFrame", 0},
     // the repair dialog (its own art, like the NeuroNet windows; verify 25 Oct 2026: it had no family and stayed native
     // among skinned screens): one plate from the close X (its frame measured at 4K: 0.630..1.178 x 0.195..0.804 H, the
@@ -225,20 +256,24 @@ extern const FamilyDef kFamilies[] = {
      {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0.057f, 0, 0, Always, 0.85f}}, {"PlayerTitle"}, FocusPair, "ItemButton",
      "ItemView", 0},
     {"log", &exe::VtStoryStar, false, true, {}, {}, false,
-     {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0.057f, 0, 0, Always, 0.85f}}, {"StoryStarTitle"}, FocusButton, nullptr,
+     {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0.056f, 0, 0, Always, 0.85f}}, {"StoryStarTitle"}, FocusButton, nullptr,
      nullptr, 0},
     {"playerinfo", &exe::VtPlayerInfo, false, true, {}, {}, false,
      {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0.057f, 0, 0, Always, 0.85f}}, {"PlayerInfoMainTitle"}, FocusButton,
      nullptr, nullptr, 0},
     {"help", &exe::VtHelp, false, true, {}, {}, false,
-     {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0.057f, 0, 0, Always, 0.85f}}, {"PlayerInfoTitle"}, FocusButton, nullptr,
+     {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0.056f, 0, 0, Always, 0.85f}}, {"PlayerInfoTitle"}, FocusButton, nullptr,
      nullptr, 0},
-    // the nav map stays native (fails closed): its draw 0x4926D0 neither is nor calls the base draw within reach, so
-    // its own art's +0x84 is not trusted (the probe wrote it unchecked); its side windows hold the mission / info
-    // content and have no plate measured. Only the focus. (Asked of HOST-X: the nav map's draw path.)
+    // the nav map: only the focus here. Its frame's writes and its panels are the HUD's navskin, by the probes' reads of its draw (modules\hud\docs\UI_HUD2_SKIN.md 6.1):
+    // this table's own check does not fit it, since its draw 0x4926D0 calls the art half 0x5A06A0 and never the base draw.
     {"navmap", &exe::VtNavMap, false, false, {}, {}, false, {}, {}, FocusButton, nullptr, nullptr, 0},
-    // the yes / no dialog: its own dimming box stays (decided); only the focus
-    {"confirm", &exe::VtConfirm, false, false, {}, {}, false, {}, {}, FocusButton, nullptr, nullptr, 0},
+    // the dialogs (UI_HUD2_SKIN.md 6.2): their ornate art goes through skindialog, which alone decides whether a dialog takes the skin, and draws the plate
+    // over the UI pass: under it the buttons of the screen behind would show through. Named art: 6.2's list; no plates here, no scrim of their own
+    {"confirm", &exe::VtConfirm, false, false, {"Confirm_deleteBox"}, {}, false, {}, {}, FocusButton, nullptr, nullptr, 0},
+    {"exit", &exe::VtExit, false, false, {"ExitFrame", "ExitTextFrame"}, {}, false, {}, {}, FocusButton, nullptr, nullptr, 0},
+    {"error", &exe::VtError, false, false, {"Frame"}, {}, false, {}, {}, FocusButton, nullptr, nullptr, 0},
+    {"prompt", &exe::VtPrompt, false, false, {"PromptFrame"}, {}, false, {}, {}, FocusButton, nullptr, nullptr, 0},
+    {"netop", &exe::VtNetOperation, false, false, {"ExitFrame"}, {}, false, {}, {}, FocusButton, nullptr, nullptr, 0},
     // the docked frame: handled by DrawDocked (the art here; the plates from the buttons)
     {"navbar", &exe::VtNavBar, false, false, {"ManeuverFrame", "ManeuverTab"}, {}, false, {}, {}, FocusButton, nullptr,
      nullptr, 0},
@@ -251,8 +286,8 @@ extern const FamilyDef kFamilies[] = {
     // the mission message box (pub::Player::PopUpDialog - M01's tutorial boxes, the story's YES / NO / LATER boxes; vt
     // 0x5D24F4 = VtMissionMessage): its root draws its own art like the NeuroNet windows - one plate from the root's own
     // rect, hidden only while that rect is known (HideOwnAll: else native)
-    {"popup", &exe::VtMissionMessage, false, true, {}, {}, false,
-     {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0, 0, 0, Always, 0.85f}}, {}, FocusButton, nullptr, nullptr, 0},
+    {"popup", &exe::VtMissionMessage, false, true, {}, {"MMOkButton"}, true,
+     {{"", -0.007f, -0.012f, 0.019f, 0.015f, kTLBR, 0, 0, 0, Always, 0.85f}}, {"MissionMessageTitle"}, FocusButton, nullptr, nullptr, 0},
 };
 const int kFamilyCount = sizeof(kFamilies) / sizeof(kFamilies[0]);
 int FamilyIndex(const char* label)
@@ -276,6 +311,11 @@ extern const int kFamPause = FamilyIndex("pause");
 extern const int kFamJobBoard = FamilyIndex("jobboard");
 extern const int kFamMainMenu = FamilyIndex("mainmenu");
 extern const int kFamPopup = FamilyIndex("popup");
+extern const int kFamExit = FamilyIndex("exit");
+extern const int kFamError = FamilyIndex("error");
+extern const int kFamPrompt = FamilyIndex("prompt");
+extern const int kFamNetOp = FamilyIndex("netop");
+extern const int kFamHelp = FamilyIndex("help");
 
 std::vector<Win> g_wins;
 bool g_on = false;
@@ -424,7 +464,7 @@ void Resolve(Win& w)
                 else if (strstr(n, "Descrip"))
                     w.field = c;
             }
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < kPlates; ++i)
     {
         const PlateDef& p = f.plates[i];
         if (!p.anchor || !*p.anchor)
@@ -436,11 +476,14 @@ void Resolve(Win& w)
     {
         w.condCtl = Child(w.root, "BuySellTradeButton");
         w.condCtl4 = Child(w.root, "TransferItemView");
+        w.condCtl5 = Child(w.root, "BackToShipDealer");
         w.condCtl2 = w.partner ? Child(w.partner, "ItemView01") : 0;
         w.condCtl3 = w.partner ? Child(w.partner, "Full_Cargobar") : 0;
     }
     if (w.fam == kFamJobBoard)
         w.storyText = Child(w.root, "MissionVendorMissionFullText");
+    if (w.fam == kFamHelp)
+        w.storyText = Child(w.root, "PlayerInfoText");
 }
 
 // The windows open now (one walk of the flat control list): kept, added (applied) or dropped (gone: nothing written).
@@ -559,6 +602,7 @@ bool CondOk(const Win& w, const PlateDef& p, u32 anchor)
     case AnchorShown: return Shown(anchor);
     case Xfer: return FullyShown(w.condCtl) || FullyShown(w.condCtl4);
     case NoXfer: return !FullyShown(w.condCtl) && !FullyShown(w.condCtl4);
+    case ShipWords: return !FullyShown(w.condCtl) && !FullyShown(w.condCtl4) && Shown(w.condCtl5);
     // (an empty player list collapses its plate - unless the cargo bar shows: a plate covers every visible native child,
     // - the "Cargo Space" bar floated on the room under the collapsed plate)
     case SellFull: return !w.condCtl2 || FullyShown(w.condCtl2) || Shown(w.condCtl3);
@@ -578,7 +622,251 @@ float RichTextBottom(u32 ctl)
         content = static_cast<u32>(g_jobHeightTest);
     if (view == 0 || view > static_cast<u32>(g_sh) || content == 0 || content > 100000u)
         return 0;
-    return b.cy + static_cast<float>(std::min(view, content));
+    u32 top = 0;
+    return (R32(ctl + 0x34C, top) && top && top < 16384 ? static_cast<float>(top) : b.cy) + static_cast<float>(std::min(view, content));
+}
+
+static float g_wordsRoom = 0;
+void SetWordsRoom(float room) { g_wordsRoom = room; }
+static float g_rootGrow = 0;
+void SetRootGrow(float grow) { g_rootGrow = grow; }
+
+// The panels fitted to what they hold (winfit.h; the owner, 6 Nov 2026). Per family, per plate: how it takes part. Families not here stand as the table says: their content is
+// not all controls to read (Options' pages, the menus, the repair list's rows, the news ticker that scrolls, the root-framed NeuroNet windows).
+using FitKind = winfit::Kind;
+struct FitRow
+{
+    const char* family;
+    FitKind kinds[kPlates];
+};
+static const FitRow kFits[] = {
+    // (the collapsed SellEmpty plate stays out of the row; the infocard and the final stage's words stand under it)
+    {"dealer", {FitKind::Hug, FitKind::Keep, FitKind::Hug, FitKind::Hug, FitKind::Hug, FitKind::Under, FitKind::Under}},
+    // (the centre holds the 3D view, which has no extents to read)
+    {"shipdealer", {FitKind::Hug, FitKind::Match, FitKind::Hug, FitKind::Under}},
+    {"jobboard", {FitKind::Hug}},
+    {"offer", {FitKind::Hug}},
+};
+constexpr winfit::Rules kFitRules = {0.018f, 0.012f, 0.06f, 0.12f, 0.15f}; // fractions of H
+constexpr int kFitEvery = 1; // frames between measures: every frame, or a panel lags what it backs (the owner, 6 Nov 2026)
+constexpr float kFitSpeed = 3.0f; // an edge's travel, H per second
+static std::vector<winfit::Rect> g_skinItems; // what the skin draws in a window itself: its panel holds that too
+void ClearSkinItems() { g_skinItems.clear(); }
+void AddSkinItem(float x0, float y0, float x1, float y1) { g_skinItems.push_back({x0, y0, x1, y1}); }
+
+struct FitState
+{
+    u32 root = 0;
+    float y0[kPlates] = {}, y1[kPlates] = {};         // what each edge is off the table's, pixels, now
+    float wantY0[kPlates] = {}, wantY1[kPlates] = {}; // ... and where it is going
+    bool measured = false;
+    u32 mask = 0; // the plates standing: another set is another state of the window
+    int age = 0, rest = 0;
+    float cx = 0, cy = 0;
+    ULONGLONG tick = 0;
+    std::vector<winfit::Panel> panels; // the last solve, for the report
+};
+static FitState g_fit[32];
+
+static const FitRow* FitOf(int fam)
+{
+    for (const FitRow& r : kFits)
+        if (!strcmp(r.family, kFamilies[fam].label))
+            return &r;
+    return nullptr;
+}
+
+// A text's real height. The object's +0x24 leaves a blank line out (the welcome text: 156 for seven lines of 26), and the game draws line i at i x the line's height (0x4143C0), blank or not:
+// so the panel ended a line short of the text it holds. A line's vt[0x18] gives its size, the height second.
+static bool LinePitch(u32 line, int& pitch)
+{
+    int size[2] = {};
+    __try
+    {
+        reinterpret_cast<void(__thiscall*)(u32, int*)>(Mem<u32>(Mem<u32>(line) + 0x18))(line, size);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+    pitch = size[1];
+    return true;
+}
+float TextHeightPx(u32 ctl)
+{
+    u32 obj = 0, a = 0, e = 0, h = 0, first = 0;
+    if (!R32(ctl + 0x334, obj) || !obj || !R32(obj + 0x10, a) || !R32(obj + 0x14, e) || e <= a || !R32(obj + 0x24, h) || !h || h >= 4096)
+        return 0;
+    const int lines = static_cast<int>((e - a) >> 3);
+    int pitch = 0;
+    if (R32(a, first) && first && LinePitch(first, pitch) && pitch > 0 && pitch < 512)
+        return std::max(static_cast<float>(h), static_cast<float>(pitch * lines));
+    return static_cast<float>(h);
+}
+
+// Everything the eye sees in a window: text by its measured lines, rich text by what it really fills, buttons by their frames. No art (a static image's place is its camera's) and no
+// scroll bar (no extents). The game's text stands at its top, line under line (0x4143C0); its left depends on its alignment, so a text is a place on the panel's axis, not a width.
+static void FitItems(u32 parent, int depth, std::vector<winfit::Panel>& ps, float reach)
+{
+    if (!parent || depth > 8)
+        return;
+    u32 c = 0;
+    R32(parent + kChild, c);
+    for (int guard = 0; c && guard < 400; ++guard)
+    {
+        u32 vt = 0;
+        if (FullyShown(c) && R32(c, vt))
+        {
+            Box b;
+            if (exe::VtTitleText.is(vt) || exe::VtTextEdit.is(vt))
+            {
+                const float h = TextHeightPx(c);
+                if (h > 0 && RectOf(c, b))
+                    winfit::Add(ps, {b.cx, b.cy, b.cx, b.cy + h}, reach);
+            }
+            else if (exe::VtText.is(vt))
+            {
+                u32 left = 0, top = 0, w = 0, h = 0, content = 0;
+                if (R32(c + 0x348, left) && R32(c + 0x34C, top) && R32(c + 0x358, w) && R32(c + 0x35C, h) && R32(c + 0x380, content) && w && h && w < 16384 && h < 16384)
+                {
+                    const float x = static_cast<float>(static_cast<int>(left)), y = static_cast<float>(static_cast<int>(top));
+                    winfit::Add(ps, {x, y, x + static_cast<float>(w), y + static_cast<float>(content ? std::min(h, content) : h)}, reach);
+                }
+            }
+            else if ((!exe::VtImage.is(vt) || NameIs(c, "Full_Cargobar")) && RectOf(c, b) && b.box && b.x1 - b.x0 < g_W * 0.9f)
+                winfit::Add(ps, {b.x0, b.y0, b.x1, b.y1}, reach);
+            FitItems(c, depth + 1, ps, reach);
+        }
+        if (!R32(c + kSibling, c))
+            break;
+    }
+}
+
+// The table's rectangles in, the fitted ones out. Measured in the geometry pass only, once the window stands still (its slide would be read as content); the paint pass reads the same state.
+static void FitPlates(const Win& w, const FitRow& row, float x0[], float y0[], float x1[], float y1[], const bool on[], const Box& still, bool haveStill)
+{
+    FitState& s = g_fit[w.fam];
+    if (s.root != w.root)
+        s = FitState(), s.root = w.root;
+    if (!g_paint)
+    {
+        // The window changed state (a row selected, a refusal, the list emptied): another plate stands, and it answers now, from nothing: an old offset left it short of its text
+        u32 mask = 0;
+        for (int i = 0; i < kPlates; ++i)
+            mask |= on[i] ? 1u << i : 0;
+        if (mask != s.mask)
+        {
+            s.mask = mask, s.measured = false, s.age = kFitEvery;
+            for (int i = 0; i < kPlates; ++i)
+                s.y0[i] = s.y1[i] = s.wantY0[i] = s.wantY1[i] = 0;
+        }
+        if (haveStill)
+        {
+            s.rest = fabsf(still.cx - s.cx) > 0.5f || fabsf(still.cy - s.cy) > 0.5f ? 0 : s.rest + 1;
+            s.cx = still.cx, s.cy = still.cy;
+        }
+        if (s.rest >= 2 && ++s.age >= kFitEvery)
+        {
+            s.age = 0;
+            std::vector<winfit::Panel> ps;
+            int index[kPlates] = {};
+            for (int i = 0; i < kPlates; ++i)
+                if (on[i])
+                {
+                    winfit::Panel p;
+                    p.plate = {x0[i], y0[i], x1[i], y1[i]};
+                    p.kind = row.kinds[i];
+                    if (kFamilies[w.fam].plates[i].rule > 0)
+                        p.least = y0[i] + Hf(kFamilies[w.fam].plates[i].rule + kFitRules.air);
+                    index[ps.size()] = i;
+                    ps.push_back(p);
+                }
+            const float reach = Hf(kFitRules.reach);
+            FitItems(w.root, 0, ps, reach);
+            FitItems(w.partner, 0, ps, reach);
+            for (const winfit::Rect& r : g_skinItems) // (the comparison, the trade-in, the refusal: no controls, but the eye reads them as the panel's)
+                winfit::Add(ps, r, reach);
+            for (size_t i = 0; i < ps.size(); ++i)
+            {
+                const PlateDef& def = kFamilies[w.fam].plates[index[i]];
+                if (def.cond == Xfer && def.liftFoot > 0 && g_padDevice && ps[i].has && uiclick::FindVisible("QuantitySlider")) // (the pad's QUANTITY n / m line under the block)
+                    ps[i].foot += Hf(0.030f);
+            }
+            const winfit::Rules r = {Hf(kFitRules.air), Hf(kFitRules.gap), Hf(kFitRules.snap), reach, Hf(kFitRules.least)};
+            winfit::Solve(ps, r);
+            for (size_t i = 0; i < ps.size(); ++i)
+            {
+                const int at = index[i];
+                s.wantY0[at] = ps[i].plate.y0 - y0[at], s.wantY1[at] = ps[i].plate.y1 - y1[at];
+                if (!s.measured) // (the first fit is where the window opens: nothing to travel from)
+                    s.y0[at] = s.wantY0[at], s.y1[at] = s.wantY1[at];
+            }
+            s.measured = true;
+            s.panels = std::move(ps);
+        }
+        const ULONGLONG now = GetTickCount64();
+        const float step = Hf(kFitSpeed) * static_cast<float>(std::min<ULONGLONG>(now - s.tick, 100)) / 1000.0f;
+        s.tick = now;
+        for (int i = 0; i < kPlates; ++i)
+            s.y0[i] = winfit::Toward(s.y0[i], s.wantY0[i], step), s.y1[i] = winfit::Toward(s.y1[i], s.wantY1[i], step);
+    }
+    for (int i = 0; i < kPlates; ++i)
+        if (on[i])
+            y0[i] += s.y0[i], y1[i] += s.y1[i];
+}
+
+bool FitOpen()
+{
+    for (const Win& w : g_wins)
+        if (FitOf(w.fam) && Shown(w.root))
+            return true;
+    return false;
+}
+
+float FitBoxShift(int fam)
+{
+    if (fam < 0 || fam >= kFamilyCount || !g_on)
+        return 0;
+    const FitRow* row = FitOf(fam);
+    if (!row)
+        return 0;
+    for (int i = 0; i < kPlates; ++i)
+        if (row->kinds[i] == FitKind::Under && fabsf(g_fit[fam].wantY0[i]) > 0)
+            return g_fit[fam].wantY0[i];
+    return 0;
+}
+
+std::string FitReport()
+{
+    std::string o;
+    char line[160];
+    for (const Win& w : g_wins)
+    {
+        if (!FitOf(w.fam) || !Shown(w.root))
+            continue;
+        const FitState& s = g_fit[w.fam];
+        for (const winfit::Panel& p : s.panels)
+        {
+            const float H = g_H > 0 ? g_H : 1;
+            sprintf_s(line, "fit %s kind=%d plate %.3f %.3f %.3f %.3f air top=%.3f foot=%.3f left=%.3f right=%.3f\n", kFamilies[w.fam].label, static_cast<int>(p.kind), p.plate.x0 / H, p.plate.y0 / H, p.plate.x1 / H,
+                      p.plate.y1 / H, p.has ? (p.top - p.plate.y0) / H : -1, p.has ? (p.plate.y1 - p.foot) / H : -1, p.has ? (p.left - p.plate.x0) / H : -1, p.has ? (p.plate.x1 - p.right) / H : -1);
+            o += line;
+        }
+    }
+    for (const Win& w : g_wins)
+        if (FitOf(w.fam) && Shown(w.root))
+            for (const winfit::Rect& r : g_skinItems)
+            {
+                bool inside = false;
+                for (const winfit::Panel& p : g_fit[w.fam].panels)
+                    inside = inside || (r.x1 > p.plate.x0 && r.x0 < p.plate.x1 && r.y0 >= p.plate.y0 && r.y1 <= p.plate.y1);
+                if (!inside)
+                {
+                    sprintf_s(line, "over panel skin line %.0f %.0f %.0f %.0f\n", r.x0, r.y0, r.x1, r.y1);
+                    o += line;
+                }
+            }
+    return o.empty() ? "fit: no fitted window open\n" : o;
 }
 
 void WindowPlates(const Win& w, WindowPass& out)
@@ -586,7 +874,40 @@ void WindowPlates(const Win& w, WindowPass& out)
     const FamilyDef& f = kFamilies[w.fam];
     Box root;
     const bool haveRoot = RectOf(w.root, root) && root.box;
-    for (int i = 0; i < 6; ++i)
+    // The dealer's plates all hang on its right window's close X, and its two windows slide in from opposite sides: painted during the slide, they opened offset and then settled
+    // (the owner, 6 Nov 2026). They wait for the X to stand still.
+    // Standing still is not enough: the slide pauses on its way, and the plates painted there, offset, with the prompts pushed to the top right by them (the owner, 6 Nov 2026). They wait for the X
+    // to reach its column, the same from the screen's middle at every size (0.611 H, read at 4K and at 800 lines), and until then the prompts keep clear of where the plates will stand.
+    bool settled = true;
+    float homeX = 0, homeY = 0;
+    if (w.fam == kFamDealer || w.fam == kFamShipDealer)
+    {
+        static u32 rootWas = 0;
+        static float xWas = 0, yWas = 0;
+        static int rest = 0;
+        static ULONGLONG restAt = 0;
+        homeX = g_W / 2 + Hf(0.611f), homeY = Hf(w.fam == kFamDealer ? 0.209f : 0.259f);
+        u32 ctl = 0;
+        for (int i = 0; i < kPlates && !ctl; ++i)
+            ctl = w.anchors[i];
+        Box a;
+        if (ctl && RectOf(ctl, a))
+        {
+            const ULONGLONG now = GetTickCount64();
+            if (w.root != rootWas || fabsf(a.cx - xWas) > 0.5f || fabsf(a.cy - yWas) > 0.5f)
+                rest = 0, restAt = now;
+            else
+                ++rest;
+            rootWas = w.root, xWas = a.cx, yWas = a.cy;
+            // (a mod's window that ends elsewhere: still for half a second is its place)
+            settled = (fabsf(a.cx - homeX) <= Hf(0.006f) && rest >= 2) || now - restAt >= 500;
+        }
+    }
+    float rx0[kPlates] = {}, ry0[kPlates] = {}, rx1[kPlates] = {}, ry1[kPlates] = {};
+    bool on[kPlates] = {};
+    Box still;
+    bool haveStill = false;
+    for (int i = 0; i < kPlates; ++i)
     {
         const PlateDef& p = f.plates[i];
         if (!p.anchor)
@@ -597,12 +918,14 @@ void WindowPlates(const Win& w, WindowPass& out)
         {
             if (!haveRoot)
                 continue;
-            x0 = root.x0 + Hf(p.x0), y0 = root.y0 + Hf(p.y0), x1 = root.x1 + Hf(p.x1), y1 = root.y1 + Hf(p.y1);
+            x0 = root.x0 + Hf(p.x0), y0 = root.y0 + Hf(p.y0), x1 = root.x1 + Hf(p.x1), y1 = root.y1 + Hf(p.y1 + (w.fam == kFamLog || w.fam == kFamHelp ? g_rootGrow : 0));
         }
         else
         {
             if (!w.anchors[i] || !RectOf(w.anchors[i], a) || !CondOk(w, p, w.anchors[i]))
                 continue;
+            if (!settled)
+                a.cx = homeX, a.cy = homeY;
             if (p.anchor[0] == '#')
                 x0 = a.x0 + Hf(p.x0), y0 = a.y0 + Hf(p.y0), x1 = a.x1 + Hf(p.x1), y1 = a.y1 + Hf(p.y1);
             else
@@ -610,11 +933,49 @@ void WindowPlates(const Win& w, WindowPass& out)
         }
         if (p.trim > 0 && g_laneTrim) // (the lane in use: the plate ends at its content - rule 3)
             y1 += Hf(p.trim - p.y1);
+        if (p.cond == NoXfer && uiclick::FindVisible("BackToShipDealer")) // (the ship's final stage: the panel holds its BUY SHIP, which stood bare under it)
+            y1 += Hf(0.115f);
+        if (p.holdsWords)
+            y1 += Hf(g_wordsRoom);
+        if (p.liftFoot > 0 && !uiclick::FindVisible("QuantitySlider")) // (the ship's final stage keeps more of it: its refusal, two lines, rose with the block)
+            y1 -= Hf(uiclick::FindVisible("BackToShipDealer") ? 0.02f : p.liftFoot);
         if (w.fam == kFamJobBoard) // (the plate holds its text: it grows to it, with the margin under the text it keeps today)
             if (const float bottom = RichTextBottom(w.storyText))
                 y1 = std::max(y1, bottom + Hf(0.030f));
-        if (g_paint)
-            g_ops->Plate(x0, y0, x1, y1, p);
+        if (w.fam == kFamHelp) // (INFO's plate ends at its content: one line in a 0.55 H plate breaks "never empty", R8)
+            if (const float bottom = RichTextBottom(w.storyText))
+                y1 = std::min(y1, bottom + Hf(0.030f));
+        on[i] = true, rx0[i] = x0, ry0[i] = y0, rx1[i] = x1, ry1[i] = y1;
+        if (!haveStill && *p.anchor)
+            still = a, haveStill = true;
+    }
+    if (const FitRow* fit = g_on ? FitOf(w.fam) : nullptr) // (only over the skin's own plates: under the game's art its frames stand)
+        FitPlates(w, *fit, rx0, ry0, rx1, ry1, on, still, haveStill && settled);
+    for (int i = 0; i < kPlates; ++i)
+    {
+        if (!on[i])
+            continue;
+        const PlateDef& p = f.plates[i];
+        const float x0 = rx0[i], y0 = ry0[i], x1 = rx1[i], y1 = ry1[i];
+        if (g_paint && settled)
+        {
+            PlateDef q = p;
+            if (p.cond == NoXfer)
+            {
+                const u32 title = Child(w.root, "WelcomeText");
+                Box b;
+                if (FullyShown(title) && RectOf(title, b) && TextHeightPx(title) > 0)
+                    q.rule = (b.cy + TextHeightPx(title) + Hf(0.008f) - y0) / g_H;
+            }
+            g_ops->Plate(x0, y0, x1, y1, q);
+        }
+        else if (g_paint)
+        {
+            // (still reported, with nothing to see: the skin's watchdog takes a window with no plate for a fault after 30 frames, which a slide outlasts at a high frame rate)
+            PlateDef held = p;
+            held.rule = held.div1 = held.div2 = 0;
+            g_ops->Plate(x0, y0, x0, y0, held);
+        }
         if (f.modal)
             g_lowestModalY1 = std::max(g_lowestModalY1, y1);
         Keep(x0, y0, x1, y1); // (modal plates too: the lane keeps clear of them in 2D)
@@ -659,6 +1020,77 @@ void WindowPlates(const Win& w, WindowPass& out)
     }
 }
 
+// What the room bar did, frame by frame, when it changed: `gametext bar` reads and clears it. A slide is over before a frame can be saved, so it is read as numbers
+struct BarStep
+{
+    ULONGLONG tick;
+    float bx0, bx1, by1, sx0, sx1, sy1, lit;
+    int draw, rooms;
+};
+static std::vector<BarStep> g_barSteps;
+static BarStep g_barWas = {};
+static ULONGLONG g_barMoved = 0;
+static void BarRecord(const BarStep& s)
+{
+    {
+        const BarStep& l = g_barWas;
+        const bool same = fabsf(l.bx0 - s.bx0) < 0.5f && fabsf(l.bx1 - s.bx1) < 0.5f && fabsf(l.by1 - s.by1) < 0.5f && fabsf(l.sx0 - s.sx0) < 0.5f && fabsf(l.sx1 - s.sx1) < 0.5f && fabsf(l.sy1 - s.sy1) < 0.5f &&
+                          fabsf(l.lit - s.lit) < 0.5f && l.draw == s.draw && l.rooms == s.rooms;
+        if (!same)
+            g_barMoved = s.tick;
+        g_barWas = s;
+    }
+    if (!g_barSteps.empty())
+    {
+        const BarStep& l = g_barSteps.back();
+        if (fabsf(l.bx0 - s.bx0) < 0.5f && fabsf(l.bx1 - s.bx1) < 0.5f && fabsf(l.by1 - s.by1) < 0.5f && fabsf(l.sx0 - s.sx0) < 0.5f && fabsf(l.sx1 - s.sx1) < 0.5f && fabsf(l.sy1 - s.sy1) < 0.5f &&
+            fabsf(l.lit - s.lit) < 0.5f && l.draw == s.draw && l.rooms == s.rooms)
+            return;
+    }
+    if (g_barSteps.size() < 400)
+        g_barSteps.push_back(s);
+}
+bool BarBusy() { return GetTickCount64() - g_barMoved < 300; }
+
+bool WindowOpen()
+{
+    for (const Win& w : g_wins)
+        if (w.fam != kFamNavBar && w.fam != kFamNNBox && w.fam != kFamMainMenu && Shown(w.root))
+            return true;
+    return false;
+}
+
+// The button of the room the player is in, as the game finds it: its builder compares each hotspot's room switch with the room's nickname (0x43F2E0). The bar's own marks say nothing: +0x333 reads
+// no button lit, and the sub-row's middle, which stood in for it, slides, and for 0.6 s after a room change stands under another room's button (the owner's video, 6 Nov 2026)
+static u32 CurrentRoomButton()
+{
+    static std::string key;
+    static u32 gen = 0xFFFFFFFFu, ctl = 0;
+    const std::string now = baseinfo::RoomKey();
+    if (now != key || gen != g_gen)
+    {
+        key = now, gen = g_gen, ctl = 0;
+        for (const room::Hotspot& h : room::Hotspots())
+            if (!_stricmp(h.label.c_str(), now.c_str()) && !strncmp(h.control.c_str(), "ButtonControl", 13))
+                ctl = h.ctl;
+    }
+    return ctl;
+}
+
+std::string BarReport()
+{
+    std::string o;
+    char line[160];
+    const ULONGLONG t0 = g_barSteps.empty() ? 0 : g_barSteps.front().tick;
+    for (const BarStep& s : g_barSteps)
+    {
+        sprintf_s(line, "bar %5llu ms bar %.0f..%.0f foot %.0f sub %.0f..%.0f foot %.0f lit %.0f draw %d rooms %d\n", s.tick - t0, s.bx0, s.bx1, s.by1, s.sx0, s.sx1, s.sy1, s.lit, s.draw, s.rooms);
+        o += line;
+    }
+    g_barSteps.clear();
+    return o;
+}
+
 // The docked frame: the room bar's slim glass under the room icons, the current room's yellow underline, the
 // current room's sub-buttons' plate (the game's tab art hidden), the NeuroNet box's plate; LB / RB at the bar's ends
 // in pad mode.
@@ -667,6 +1099,11 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
 {
     float bx0 = 1e9f, by0 = 1e9f, bx1 = -1e9f, by1 = -1e9f, sx0 = 1e9f, sy0 = 1e9f, sx1 = -1e9f, sy1 = -1e9f;
     float litX = -1, anyRoom = 0;
+    Box cur;
+    const u32 curButton = CurrentRoomButton();
+    const bool haveCur = curButton && FullyShown(curButton) && RectOf(curButton, cur) && cur.box;
+    if (haveCur)
+        litX = cur.cx;
     u32 c = 0;
     R32(bar.root + kChild, c);
     for (int guard = 0; c && guard < 64; ++guard)
@@ -680,17 +1117,16 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
             if (button)
             {
                 bx0 = std::min(bx0, b.x0), by0 = std::min(by0, b.y0), bx1 = std::max(bx1, b.x1), by1 = std::max(by1, b.y1);
-                u8 lit = 0;
-                if (R8(c + kLit, lit) && lit == 1)
-                    litX = b.cx;
             }
-            else
+            else if (!haveCur || fabsf(b.cx - cur.cx) <= Hf(0.13f)) // (one left from the room before stands under another button)
                 sx0 = std::min(sx0, b.x0), sy0 = std::min(sy0, b.y0), sx1 = std::max(sx1, b.x1), sy1 = std::max(sy1, b.y1),
                 ++anyRoom;
         }
         if (!R32(c + kSibling, c))
             break;
     }
+    if (!g_paint)
+        BarRecord({GetTickCount64(), bx1 > bx0 ? bx0 : -1, bx1 > bx0 ? bx1 : -1, bx1 > bx0 ? by1 : -1, anyRoom ? sx0 : -1, anyRoom ? sx1 : -1, anyRoom ? sy1 : -1, litX, draw ? 1 : 0, static_cast<int>(anyRoom)});
     if (bx1 > bx0)
     {
         const float x0 = bx0 - Hf(0.029f), x1 = bx1 + Hf(0.029f), y0 = -Hf(0.02f), y1 = by1 + Hf(0.020f);
@@ -698,8 +1134,6 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
             g_ops->Glass(x0, y0, x1, y1, kBR | kBL, 0.82f);
         if (draw)
             Keep(x0, y0, x1, y1);
-        if (litX < 0 && anyRoom) // no lit flag read: the room whose sub-row hangs under it
-            litX = (sx0 + sx1) / 2;
         if (litX >= 0 && draw && g_paint)
             g_ops->Underline(litX, y1);
         if (anyRoom && draw)
@@ -712,7 +1146,7 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
             Keep(x0 - Hf(0.050f), y0, x1 + Hf(0.050f), y1);
         // one glyph, one meaning not while an open window binds the bumpers itself - the dealers
         // (SIDE), the NeuroNet log (MISSION / LOG), the nav map (SYSTEM / UNIVERSE)
-        bool bumpers = false;
+        bool bumpers = views::HudNNStrip(); // (the strip's tabs)
         for (const Win& w : g_wins)
             if ((w.fam == kFamDealer || w.fam == kFamLog || w.fam == kFamNavMap) && Shown(w.root))
                 bumpers = true;
@@ -830,6 +1264,23 @@ float LowestKeepOut(float x0, float x1, float below)
     return y;
 }
 
+bool Blocked(float x0, float y0, float x1, float y1)
+{
+    for (const KeepOut& k : g_keep)
+        if (k.x0 < x1 && k.x1 > x0 && k.y0 < y1 && k.y1 > y0)
+            return true;
+    return false;
+}
+
+bool PanelBeside(float y0, float y1, float& right, float& top, float& bottom)
+{
+    bool found = false;
+    for (const KeepOut& k : g_keep)
+        if (k.y0 < y1 && k.y1 > y0 && (!found || k.x1 > right))
+            found = true, right = k.x1, top = k.y0, bottom = k.y1;
+    return found;
+}
+
 float LaneLeft(float W, float H, float y0, float y1, float right)
 {
     const float gap = H * 0.012f;
@@ -847,6 +1298,15 @@ float LaneLeft(float W, float H, float y0, float y1, float right)
     if (sr > 0 && sb > 0)
         block(0, 0, sr, sb * H);
     return std::min(left, right);
+}
+
+bool IsTitle(const char* control)
+{
+    for (const FamilyDef& f : kFamilies)
+        for (const char* t : f.titles)
+            if (t && strcmp(t, control) == 0)
+                return true;
+    return false;
 }
 
 bool PlateOffsets(const char* family, const char* anchor, float out[4])

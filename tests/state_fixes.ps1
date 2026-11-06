@@ -4,7 +4,7 @@
 #   load     a load from the pause menu stops the objective mode and any running mode, and reads the save's mode (no Mode::Menu on that way)
 #   rs       the right stick moves the dealer's list, a pad player's only way down a long text as well
 # Frames: runs\state_fixes. Usage (PowerShell tool): tests\state_fixes.ps1 [-Row pause,rear,load,rs] [-Instance 1]    build\release. Exit 1 = a check failed.
-param([string[]]$Row = @('pause', 'rear', 'load', 'rs'), [int]$Instance = 1)
+param([string[]]$Row = @('pause', 'rear', 'load', 'rs'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -72,7 +72,8 @@ try {
         Check ($after -match 'objective=off') 'and the objective mode'
         Settle 200
         Check ([regex]::Match((Send-FL 'ap status'), 'mode=(\S+)').Groups[1].Value -eq 'off') 'nothing flies the new game unasked'
-        $line = @(Get-FLLog 400 | Where-Object { $_ -match 'session: .*savec705' }) | Select-Object -Last 1
+        $fixture = [IO.Path]::GetFileNameWithoutExtension((Resolve-FLFixture 'SaveC705.fl')).ToLower()   # (a mod's own fixture)
+        $line = @(Get-FLLog 400 | Where-Object { $_ -match "session: .*$fixture" }) | Select-Object -Last 1
         Check ([bool]$line) "the session read the save with no menu on the way ($line)"
     }
     if ('rs' -in $Row) {

@@ -26,6 +26,7 @@
 #include "input.h"
 #include "moviehooks.h"
 #include "pagehost.h"
+#include "tractorhook.h"
 #include "uibtn.h"
 #include "uihooks.h"
 #include "win7sim.h"

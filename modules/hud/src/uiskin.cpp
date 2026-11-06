@@ -23,8 +23,17 @@
 #include "ui/glyphs.h"
 #include "safemem.h"
 #include "hudhost.h"
+#include "skin_rules.h"
+#include "skindialog.h"
+#include "skinkit.h"
+#include "skinload.h"
+#include "skinmenu.h"
+#include "skinover.h"
+#include "ui/hud_rows.h"
 #include "ui/hud2_kit.h"
 #include "log.h"
+#include "navskin.h"
+#include "nnstrip.h"
 #include "ui/ui.h"
 #include "ui/uiopt.h"
 #include "ui/winplates.h"
@@ -43,6 +52,8 @@ using namespace hud2kit;
 using namespace winplates;
 
 Context g_c;
+float g_dt = 0, g_scrim = 0, g_dialogScrim = 0, g_frameScrim = 0; // the frame's step; the eased scrims, 0..1 of their peak
+const int kFamPlayerInfo = FamilyIndex("playerinfo");
 bool g_applied = false; // something is written
 u32 g_reclears = 0, g_ownRefused = 0;
 float g_lastMs = 0;
@@ -66,6 +77,9 @@ bool DrawReachesBase(u32 ctl)
     // read 25 Oct 2026; the probe hid the save screen's buttons this way) - not a call to the base draw. (A signed
     // IconButtonDraw symbol would let the slot itself be checked: asked of HOST-X.)
     if (exe::VtIconButton.is(vt))
+        return true;
+    // the .page text button: +0x84 = -1 takes its frame and keeps caption, hit and click (probe 6)
+    if (exe::VtFrontTextButton.is(vt))
         return true;
     u8 code[0x300] = {}; // (NN_Inventory / NN_Dealer 0x479700 calls it at +0x126)
     if (!RBytes(draw, code, sizeof(code)))
@@ -117,6 +131,17 @@ void HideOwn(Win& w, u32 ctl)
     }
     if (W32(ctl + kOwnMesh, kNoMesh))
         w.own.push_back({ctl, h});
+}
+
+// The nav map's frame: its draw 0x4926D0 never reaches the base draw whole but calls the art half 0x5A06A0 itself, which skips a handle of -1 (probe 1, 12a).
+void HideMapFrame(Win& w)
+{
+    u32 h = 0;
+    for (const Own& o : w.own)
+        if (o.ctl == w.root)
+            return;
+    if (R32(w.root + kOwnMesh, h) && h != kNoMesh && W32(w.root + kOwnMesh, kNoMesh))
+        w.own.push_back({w.root, h});
 }
 
 u32 Rgba(u32 rgb, u8 a) // hud2kit's 0xRRGGBB -> the text control's bytes R G B A
@@ -182,16 +207,37 @@ void HideOwnAll(Win& w)
     g_applied = true;
 }
 
+// One window fails, one window goes native (UI_HUD2_SKIN.md 3.1, 8): a window that fell keeps the game's look until it closes; it is built anew at the next
+// open, which tries again. skin_native holds the same by name, for good.
+std::vector<u32> g_fell;
+ULONGLONG g_fellAt = 0;
+bool Fell(u32 root) { return std::find(g_fell.begin(), g_fell.end(), root) != g_fell.end(); }
+bool Listed(const char* label) { return skinrules::NativeListed(hudrows::g.skinNative, label); }
+bool Native(const Win& w) { return Fell(w.root) || Listed(kFamilies[w.fam].label); }
+
 // A window's writes, from the registry's Resolve while the skin is on.
 void WriteWindow(Win& w)
 {
+    if (Native(w))
+        return;
     const FamilyDef& f = kFamilies[w.fam];
     const u32 roots[2] = {w.root, w.partner};
+    std::vector<u32> words;
+    if (skindialog::IsDialog(w.fam))
+    {
+        bool menu = false;
+        for (const Win& m : g_wins)
+            menu |= m.fam == kFamMainMenu && Shown(m.root);
+        if (!skindialog::Prepare(w, menu, words))
+            return;
+    }
     for (const char* n : f.art)
         if (n)
             for (u32 r : roots)
                 if (r)
                     HideArt(w, Child(r, n));
+    for (u32 c : words)
+        HideArt(w, c);
     HideOwnAll(w);
     if (w.fam == kFamMainMenu) // its direct children: every `bImg` (art)
     {
@@ -205,13 +251,91 @@ void WriteWindow(Win& w)
             if (!R32(c + kSibling, c))
                 break;
         }
+        Recolour(w, Child(w.root, "Version"), Rgba(kDim, 0xFF)); // the corner's one line, DIM
+    }
+    if (w.fam == kFamNavMap)
+    {
+        navskin::Hides hides;
+        if (navskin::Bind(w.root, hides))
+        {
+            for (int i = 0; i < hides.nArt; ++i)
+                HideArt(w, hides.art[i]);
+            HideMapFrame(w);
+        }
     }
     for (const char* n : f.titles)
         if (n)
             for (u32 r : roots)
                 if (r)
-                    Recolour(w, Child(r, n));
+                    Recolour(w, Child(r, n), w.fam == kFamPopup ? Rgba(kInk, 0xFF) : kTitleColour);
     g_applied = true;
+}
+
+// The class rule (UI_HUD2_SKIN.md 3.3, 12a row 6) for what has no family: a `.page` screen, a mod's included. Art by bit 1, a text button's frame by +0x84: each
+// only where its rectangle is known, for a plate never stands without its art hidden nor art hidden without its plate. A control of any other class stays
+// visible. Pages rebuild on entry, so it runs at each new generation of the tree.
+Win g_page;
+u32 g_pageGen = 0xFFFFFFFFu;
+void PageRule()
+{
+    if (g_pageGen == g_gen || Listed("page"))
+        return;
+    g_pageGen = g_gen;
+    u32 head = 0, node = 0;
+    if (!exe::UiControls.ok() || !R32(static_cast<u32>(exe::UiControls.get()), head) || !head || !R32(head + 4, node))
+        return;
+    // what the game rebuilt is gone with its controls; what stands keeps its memory, for its write can only go back through it
+    const auto gone = [](u32 ctl)
+    {
+        u32 vt = 0;
+        u8 st = 0;
+        return !R32(ctl, vt) || !(exe::VtPageObject.is(vt) || exe::VtFrontTextButton.is(vt)) || !R8(ctl + kState, st) || (st & 4);
+    };
+    g_page.art.erase(std::remove_if(g_page.art.begin(), g_page.art.end(), [&](const Art& a) { return gone(a.ctl); }), g_page.art.end());
+    g_page.own.erase(std::remove_if(g_page.own.begin(), g_page.own.end(), [&](const Own& o) { return gone(o.ctl); }), g_page.own.end());
+    for (int n = 0; node && node != head && n < 8000; ++n)
+    {
+        u32 ctl = 0, vt = 0;
+        u8 st = 0;
+        if (!R32(node + 8, ctl) || !R32(node + 4, node))
+            break;
+        if (!ctl || !R32(ctl, vt) || !R8(ctl + kState, st) || (st & 4) || !(st & 1))
+            continue;
+        const bool art = exe::VtPageObject.is(vt), button = exe::VtFrontTextButton.is(vt);
+        if (!art && !button)
+            continue;
+        bool family = false;
+        for (const Win& w : g_wins)
+            family |= IsAncestor(w.root, ctl);
+        Box b;
+        if (family || !RectOf(ctl, b) || !b.box)
+            continue;
+        if (art)
+            HideArt(g_page, ctl);
+        else
+            HideOwn(g_page, ctl);
+    }
+}
+
+void PagePaint()
+{
+    for (const Art& a : g_page.art)
+    {
+        Box b;
+        if (Shown(a.ctl) && RectOf(a.ctl, b) && b.box)
+            skinkit::Plate(b.x0, b.y0, b.x1, b.y1, kTLBR);
+    }
+    const float mx = static_cast<float>(fl::MouseX()), my = static_cast<float>(fl::MouseY());
+    for (const Own& o : g_page.own)
+    {
+        Box b;
+        if (FullyShown(o.ctl) && RectOf(o.ctl, b) && b.box)
+        {
+            skinkit::ChipGlass(b.x0, b.y0, b.x1, b.y1);
+            if (Enabled(o.ctl) && mx >= b.x0 && mx <= b.x1 && my >= b.y0 && my <= b.y1)
+                skinkit::Focus(b.x0, b.y0, b.x1, b.y1);
+        }
+    }
 }
 
 // After +0x84 is given back: the engine's mesh instance gets the control's current pose again. The window's setters
@@ -276,6 +400,39 @@ void Restore(Win& w)
     w.art.clear(), w.own.clear(), w.colour.clear(), w.tabs.clear();
 }
 
+// The focused word in INK (UI_HUD2_SKIN.md 4, R9): one text control at a time, through the same +0x348 as the titles. Only a text control takes it, and it is
+// written each frame it differs, since the game recolours a hovered row itself; what the game wrote last is what goes back.
+struct FocusWord
+{
+    u32 ctl = 0, before = 0;
+    char name[40] = {};
+} g_word;
+const u32 kInkColour = Rgba(kInk, 0xFF);
+
+void RestoreWord()
+{
+    u32 c = 0;
+    if (g_word.ctl && NameIs(g_word.ctl, g_word.name) && R32(g_word.ctl + kColour, c) && c == kInkColour)
+        W32(g_word.ctl + kColour, g_word.before);
+    g_word.ctl = 0;
+}
+
+void FocusWordStep(u32 focus)
+{
+    char name[33] = {}, word[40] = {};
+    u32 parent = 0, ctl = 0, vt = 0, c = 0;
+    if (focus && RBytes(focus + kName, name, 32) && skinrules::FocusWord(name, word, sizeof(word)) && R32(focus + kParent, parent))
+        ctl = Child(parent, word);
+    if (!ctl || !R32(ctl, vt) || !exe::VtTitleText.is(vt) || !R32(ctl + kColour, c))
+        ctl = 0;
+    if (ctl != g_word.ctl)
+        RestoreWord();
+    if (!ctl)
+        return;
+    if (c != kInkColour && W32(ctl + kColour, kInkColour))
+        g_word.ctl = ctl, g_word.before = c, strcpy_s(g_word.name, word);
+}
+
 // a cached window still exists: its vtable, not deleted (+0x6C bit 2)
 void RestoreTip()
 {
@@ -304,6 +461,20 @@ void ApplyTip()
             want = tip;
         }
     }
+    // the Shadow tier (UI_HUD2_SKIN.md 6.6): the game's box hidden only while its text reads; drawn again by skinover. Not under a card, which carries the words
+    static u32 shadow = 0, shadowGen = 0xFFFFFFFFu;
+    if (shadowGen != g_gen || (shadow && !NameIs(shadow, "ToolTip")))
+    {
+        shadow = static_cast<u32>(ui::FindControl("ToolTip")), shadowGen = g_gen;
+        u32 vt = 0;
+        if (shadow && (!R32(shadow, vt) || !exe::VtToolTip.is(vt)))
+            shadow = 0;
+    }
+    const bool read = !want && shadow && !Listed("tooltip") && skinover::TipRead(shadow);
+    if (read)
+        want = shadow;
+    else if (want || !shadow)
+        skinover::TipRead(0);
     if (want && !NameIs(want, "ToolTip"))
         want = 0;
     if (g_tip && g_tip != want)
@@ -320,7 +491,13 @@ void ApplyTip()
 
 void RestoreAll()
 {
+    skindialog::Clear();
+    skinmenu::GiveBack();
+    RestoreWord();
+    navskin::Unbind();
     RestoreTip();
+    Restore(g_page);
+    g_pageGen = 0xFFFFFFFFu;
     for (Win& w : g_wins)
         if (Valid(w.root, w.vt))
             Restore(w);
@@ -328,54 +505,117 @@ void RestoreAll()
     g_applied = false;
 }
 
+void Fall(Win& w, const char* why)
+{
+    Restore(w);
+    skindialog::Forget(w.root);
+    g_fell.push_back(w.root);
+    g_fellAt = GetTickCount64();
+    Log("skin: %s goes native until it closes (%s)", kFamilies[w.fam].label, why);
+}
+
+// Windows that closed may try again at their next open.
+void PruneFell()
+{
+    for (size_t i = g_fell.size(); i-- > 0;)
+    {
+        bool live = false;
+        for (const Win& w : g_wins)
+            live |= w.root == g_fell[i];
+        if (!live)
+            g_fell.erase(g_fell.begin() + static_cast<std::ptrdiff_t>(i));
+    }
+    skindialog::Prune();
+}
+
 // every frame: the art bits the game re-showed cleared again (the NavBar's frame / tab do it each frame)
+void ReclearList(const std::vector<Art>& art)
+{
+    for (const Art& a : art)
+    {
+        u8 st = 0;
+        if (R8(a.ctl + kState, st) && (st & 2) && StartsWithName(a.ctl, a.name))
+            W8(a.ctl + kState, static_cast<u8>(st & ~2)), ++g_reclears;
+    }
+}
 void Reclear()
 {
     for (Win& w : g_wins)
-        for (const Art& a : w.art)
+        ReclearList(w.art);
+    ReclearList(g_page.art);
+}
+
+// The first sight of a window with no family says so, once: "complete" is a checked claim, and an unknown window stays native (UI_HUD2_SKIN.md 3.3).
+void NoteUnknownRoots()
+{
+    static u32 seenGen = 0xFFFFFFFFu;
+    static std::set<std::string> seen;
+    if (seenGen == g_gen)
+        return;
+    seenGen = g_gen;
+    for (uintptr_t r : ui::VisibleRoots())
+    {
+        bool known = false;
+        for (const Win& w : g_wins)
+            known |= w.root == static_cast<u32>(r);
+        if (known)
+            continue;
+        u32 vt = 0;
+        const std::string name = ui::ControlName(r);
+        if (R32(static_cast<u32>(r), vt) && seen.insert(name).second)
+            Log("skin: native window %s vt 0x%08X", name.c_str(), vt);
+    }
+}
+
+// `uiskin seams`: every shown control drawing art nobody hid or claimed. It walks the tree on request and rests on no counter: key capture and jettison never move
+// the generation (12a row 12). A static image or a page object counts as art; so does an icon or page button that still has its frame.
+std::string Seams()
+{
+    std::ostringstream o;
+    u32 head = 0, node = 0;
+    if (!exe::UiControls.ok() || !R32(static_cast<u32>(exe::UiControls.get()), head) || !head || !R32(head + 4, node))
+        return "no control list";
+    int count = 0;
+    for (int n = 0; node && node != head && n < 8000; ++n)
+    {
+        u32 ctl = 0, vt = 0, mesh = kNoMesh;
+        if (!R32(node + 8, ctl) || !R32(node + 4, node))
+            break;
+        if (!ctl || !FullyShown(ctl) || !R32(ctl, vt))
+            continue;
+        bool art = exe::VtImage.is(vt) || exe::VtPageObject.is(vt);
+        if (!art && (exe::VtIconButton.is(vt) || exe::VtFrontTextButton.is(vt)))
+            art = R32(ctl + kOwnMesh, mesh) && mesh != kNoMesh;
+        if (!art)
+            continue;
+        bool up = true; // a hidden parent hides it
+        u32 p = ctl;
+        for (int i = 0; p && i < 32; ++i)
         {
-            u8 st = 0;
-            if (R8(a.ctl + kState, st) && (st & 2) && StartsWithName(a.ctl, a.name))
-                W8(a.ctl + kState, static_cast<u8>(st & ~2)), ++g_reclears;
+            up = up && FullyShown(p);
+            if (!R32(p + kParent, p))
+                break;
         }
+        if (!up)
+            continue;
+        ++count;
+        if (count <= 200)
+        {
+            char line[96];
+            sprintf_s(line, "  seam %s vt 0x%08X\n", ui::ControlName(ctl), vt);
+            o << line;
+        }
+    }
+    return "seams " + std::to_string(count) + "\n" + o.str();
 }
 
 // ---------------------------------------------------------------- drawing (fractions of H)
 inline float Hf(float f) { return f * g_H; }
 
-void Rim(float x0, float y0, float x1, float y1, float c, int corners, float a)
-{
-    const float tl = (corners & kTL) ? c : 0, tr = (corners & kTR) ? c : 0, br = (corners & kBR) ? c : 0,
-                bl = (corners & kBL) ? c : 0;
-    const float pts[16] = {x0 + tl, y0, x1 - tr, y0, x1, y0 + tr, x1, y1 - br, x1 - br, y1, x0 + bl, y1, x0, y1 - bl, x0, y0 + tl};
-    Outline(pts, 8, std::max(2.0f, Hf(0.0013f)), Argb(kChrome, a));
-}
-
-// one HUD 2 plate: glass 85 %, the firmer rim (CHROME 70 %), chamfers 0.012 H
-void Glass(float x0, float y0, float x1, float y1, int corners, float fill = 0.85f, float rimA = 0.69f)
-{
-    if (x1 - x0 < 4 || y1 - y0 < 4)
-        return;
-    const float c = Hf(0.012f);
-    Plate(x0, y0, x1, y1, c, corners, fill, kChrome, 0);
-    Rim(x0, y0, x1, y1, c, corners, rimA);
-}
-
-void RuleAt(float x0, float x1, float y, float a = 130 / 255.0f)
-{
-    Line(x0 + Hf(0.020f), y, x1 - Hf(0.020f), y, std::max(2.0f, Hf(0.0012f)), Argb(kChrome, a));
-}
-
-// The one focus style: the fill, ACTIVE edges top and bottom (the fill alone measured olive (86, 85, 49)
-// over the navy glass and half-read "disabled") and the bar outside the left edge.
-void FocusFill(float x0, float y0, float x1, float y1, float fill = 0.32f)
-{
-    const float g = Hf(0.008f), bw = Hf(0.005f), e = std::max(1.0f, Hf(0.002f));
-    Rect(x0, y0, x1 - x0, y1 - y0, Argb(kActive, fill));
-    Rect(x0, y0, x1 - x0, e, Argb(kActive, 0.85f));
-    Rect(x0, y1 - e, x1 - x0, e, Argb(kActive, 0.85f));
-    Rect(x0 - g - bw, y0, bw, y1 - y0, Argb(kActive, 1));
-}
+using skinkit::Rim;
+inline void Glass(float x0, float y0, float x1, float y1, int corners, float fill = 0.85f) { skinkit::Plate(x0, y0, x1, y1, corners, fill); }
+inline void RuleAt(float x0, float x1, float y, float a = 130 / 255.0f) { skinkit::Rule(x0, x1, y, a); }
+inline void FocusFill(float x0, float y0, float x1, float y1, float fill = 0.32f) { skinkit::Focus(x0, y0, x1, y1, fill); }
 // The confirm dialog's focus: its own dimming box (kept, decided) is drawn over the UI pass's glass and dimmed the fill
 // to (33, 27, 54) - so the confirm's focus box is remembered here and drawn in the overlay pass (DrawOver).
 Box g_overFocus;
@@ -488,6 +728,8 @@ u32 SelectionFor(const Win& w, u32 hov)
     return hov;
 }
 
+u32 g_focusCtl = 0; // the control the focus stands on this frame: its word goes to INK
+
 // The drawn element of the hovered control (the one focus style: modules\hud\docs\UI_HUD2_EXTENDED.md 10 "Focus").
 bool FocusBox(const Win& w, u32 hov, Box& out)
 {
@@ -542,6 +784,7 @@ bool FocusBox(const Win& w, u32 hov, Box& out)
                 out.y1 = std::max(out.y1, o.y1);
         }
     }
+    g_focusCtl = hov;
     return true;
 }
 
@@ -551,8 +794,10 @@ bool FocusBox(const Win& w, u32 hov, Box& out)
 // box runs 51 px past the plate's fixed foot there, so a job of seven or eight lines ran out of the window.
 int g_jobHeightTest = 0; // debug `uiskin jobheight <px>`: the text's height as read (0: the game's). A raw text set on this
                          // control ended the game on 4 Nov 2026 (its vt[0xA8] message 0x1D): never write text to it that way
+int g_platesPainted = 0; // this window's, this frame: art hidden with no plate standing is the fault section 8 forbids
 void PaintPlate(float x0, float y0, float x1, float y1, const PlateDef& p)
 {
+    ++g_platesPainted;
     Glass(x0, y0, x1, y1, p.corners, p.fill);
     if (p.rule > 0)
         RuleAt(x0, x1, y0 + Hf(p.rule));
@@ -576,11 +821,18 @@ const Ops kOps = {WriteWindow, Restore, PaintPlate, TabPlate, PaintGlass, PaintU
 
 bool DrawWindow(const Win& w, u32 hov) // true: it drew the focus
 {
+    if (Native(w))
+        return false;
+    if (skindialog::IsDialog(w.fam)) // (their own pass; a dialog that stays the game's keeps today's mark on the confirm alone)
+    {
+        if (skindialog::Skinned(w.root) || w.fam != kFamConfirm)
+            return skindialog::Skinned(w.root);
+    }
     WindowPass pass;
     WindowPlates(w, pass);
     const int page = pass.page;
     const u32 currentTab = pass.currentTab;
-    const bool haveTabFocus = pass.haveTabFocus;
+    const bool haveTabFocus = pass.haveTabFocus && !(w.fam == kFamMainMenu && skinmenu::Focused()); // (one focus per screen: CONTINUE has it)
     Box tabFocus = pass.tabFocus;
     // the save description's field (its own art hidden): a visible field
     if (const u32 d = w.field)
@@ -610,6 +862,49 @@ bool DrawWindow(const Win& w, u32 hov) // true: it drew the focus
     return true;
 }
 
+// One family's pass under its own guard: a fault there stops that window, not the module.
+int DrawGuarded(const Win& w, u32 hov) // 1 it drew the focus, 0 not, -1 a fault
+{
+    __try
+    {
+        return DrawWindow(w, hov) ? 1 : 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return -1;
+    }
+}
+
+// How many frames a window with art hidden may stand with no plate: a slide or a rebuild can lose an anchor for a moment.
+constexpr int kNoPlateFrames = 30;
+struct NoPlate
+{
+    u32 root;
+    int frames;
+};
+std::vector<NoPlate> g_noPlate;
+bool PlateMissing(const Win& w)
+{
+    bool anyPlate = false;
+    for (const PlateDef& p : kFamilies[w.fam].plates)
+        anyPlate |= p.anchor != nullptr;
+    if (!anyPlate || (w.art.empty() && w.own.empty()))
+        return false;
+    for (size_t i = 0; i < g_noPlate.size(); ++i)
+        if (g_noPlate[i].root == w.root)
+        {
+            if (g_platesPainted > 0)
+            {
+                g_noPlate.erase(g_noPlate.begin() + static_cast<std::ptrdiff_t>(i));
+                return false;
+            }
+            return ++g_noPlate[i].frames >= kNoPlateFrames;
+        }
+    if (g_platesPainted == 0)
+        g_noPlate.push_back({w.root, 1});
+    return false;
+}
+
 // The control the focus is on: the pad's focus IS the game's cursor on a control (padbases / padmenus / the generic
 // D-pad focus place it), and the game recomputes its hovered control only while it has the window's focus - so the
 // game's own hit test at the cursor, asked again only when the cursor or the window set changed (cached).
@@ -633,23 +928,22 @@ void OneCurrentTab(Win& w)
 
 u32 FocusedControl()
 {
-    static int lx = -1, ly = -1;
-    static u32 lgen = 0, lhit = 0;
-    static ULONGLONG lat = 0;
-    const int mx = fl::MouseX(), my = fl::MouseY();
-    const ULONGLONG now = GetTickCount64();
-    if (mx != lx || my != ly || g_gen != lgen || now - lat > 250) // (and 4 Hz: a window sliding under a still cursor)
-    {
-        lx = mx, ly = my, lgen = g_gen, lat = now;
-        lhit = static_cast<u32>(ui::HitTest(static_cast<float>(mx), static_cast<float>(my)));
-    }
-    return lhit ? lhit : static_cast<u32>(ui::Hovered());
+    // (every frame: at 4 Hz the highlight stood for frames on a spot its control had left, the owner, 6 Nov 2026)
+    const u32 hit = static_cast<u32>(ui::HitTest(static_cast<float>(fl::MouseX()), static_cast<float>(fl::MouseY())));
+    const u32 focus = hit ? hit : static_cast<u32>(ui::Hovered());
+    char name[16] = {};
+    // (the bar settling: the cursor still stands where the last room left it, and a box flashed on a room button on the way)
+    // (and with a window open the pad's focus is the window's: the cursor crossed a room button on its way to a row still sliding in, and the box flashed on it)
+    if (focus && (winplates::BarBusy() || (g_c.pad && winplates::WindowOpen())) && RBytes(focus + kName, name, 15) && (!strncmp(name, "ButtonControl", 13) || !strncmp(name, "RoomControl", 11)))
+        return 0;
+    return focus;
 }
 
 void Draw(void* device)
 {
     g_haveOverFocus = false;
-    if (g_wins.empty() || !device || g_sh < 100)
+    // (multiplayer's CHAT and GROUP are NeuroNet windows no family knows: the strip stands on them all the same)
+    if ((g_wins.empty() && nnstrip::ScrimAlpha() <= 0) || !device || g_sh < 100)
         return;
     struct PaintScope
     {
@@ -662,6 +956,7 @@ void Draw(void* device)
     if (!Begin(device, g_sw, g_sh, std::max(8, static_cast<int>(0.026f * g_H * k + 0.5f))))
         return;
     SetAlpha(1), SetOffset(0, 0);
+    skinkit::SetScreen(g_W, g_H);
     const Win* bar = nullptr;
     const Win* nn = nullptr;
     bool conversation = false; // a mission offer: the game hides the room bar and the NeuroNet box meanwhile
@@ -676,8 +971,17 @@ void Draw(void* device)
         else if (w.fam == kFamOffer && Shown(w.root))
             conversation = true;
     }
-    if (g_modalOpen) // the full-screen scrim (the black planes are hidden)
-        Rect(0, 0, g_W, g_H, Argb(0x060716, 0.70f));
+    // the full-screen scrim (the black planes are hidden): it eases in and out, and input never waits for it
+    g_scrim = skinrules::EaseStep(g_scrim, g_modalOpen, g_dt, hudrows::g.skinMotion);
+    skinkit::Scrim(skinrules::kScrimModal, g_scrim);
+    // R8's one scrim behind the NeuroNet windows (a dealer's NN_Inventory is the dealer's, no window of this family)
+    bool neural = false;
+    for (const Win& w : g_wins)
+        neural |= (w.fam == kFamInventory || w.fam == kFamLog || w.fam == kFamPlayerInfo || w.fam == kFamHelp) && Shown(w.root) && !Native(w);
+    neural |= nnstrip::ScrimAlpha() > 0; // (the strip knows the map)
+    g_frameScrim = skinrules::EaseStep(g_frameScrim, neural && !g_scene, g_dt, hudrows::g.skinMotion);
+    if (!g_modalOpen)
+        skinkit::Scrim(skinrules::kScrimMap, g_frameScrim); // (one scrim from MAP to INVENTORY: R8; the map's number, the owner's)
     // the docked frame while the game draws it (not under a modal menu: the NavBar is not drawn while paused)
     // (not in a NeuroNet window's close: the game hides the bar's and the box's art that frame while their controls
     // still read shown - the empty plates stood one frame, 26 Oct 2026, research\experience\runs\dealer_close_2026-10-26)
@@ -691,11 +995,20 @@ void Draw(void* device)
         if (w.fam == kFamOptions && Shown(w.root))
             OneCurrentTab(w);
     const u32 hov = FocusedControl();
+    g_focusCtl = 0;
     bool focused = false, window = false;
-    for (const Win& w : g_wins)
+    for (Win& w : g_wins)
         if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || kFamilies[w.fam].modal) &&
             !(w.fam == kFamMainMenu && g_modalOpen)) // (the main menu's plates never over a modal screen's scrim)
-            focused |= DrawWindow(w, hov), window = true;
+        {
+            g_platesPainted = 0;
+            const int drew = DrawGuarded(w, hov);
+            if (drew < 0)
+                Fall(w, "a fault in its pass");
+            else if (!Native(w) && PlateMissing(w))
+                Fall(w, "no plate could stand");
+            focused |= drew > 0, window = true;
+        }
     // one focus mark per screen while a window owns the input, no mark on the room bar / its sub-row
     // (Player Status / Inventory left a second bar on the room's sub-tab under the resting cursor)
     if (window)
@@ -710,25 +1023,45 @@ void Draw(void* device)
                 if (FocusBox(w, hov, fb))
                     FocusFill(fb.x0, fb.y0, fb.x1, fb.y1);
             }
+    FocusWordStep(g_focusCtl);
+    PagePaint();
+    {
+        u32 menu = 0;
+        for (const Win& w : g_wins)
+            if (w.fam == kFamMainMenu && Shown(w.root) && !g_modalOpen && !Native(w))
+                menu = w.root;
+        if (menu)
+            skinmenu::Draw(menu);
+    }
+    const Win* map = nullptr;
+    for (const Win& w : g_wins)
+        if (w.fam == kFamNavMap)
+            map = &w;
+    navskin::Draw(g_scene || g_modalOpen ? nullptr : map, g_c.pad);
+    nnstrip::Draw();
     SetKeepDestAlpha();
     End();
 }
 } // namespace
 
-void Update(float, const Context& c)
+void Update(float dt, const Context& c)
 {
+    g_dt = dt;
     g_c = c;
     g_padDevice = c.pad;
     g_ops = &kOps;
 }
 
 bool On() { return g_c.enabled && g_c.style == 1; }
+bool PadOwns() { return g_c.pad; }
 
 void RenderUnder(void* device)
 {
     perf::Scope ps("uiskin");
     const double t0 = perf::Now();
     static bool wasOn = false;
+    nnstrip::BeginPass();
+    navskin::BeginPass();
     g_on = On();
     if (!g_on)
     {
@@ -757,12 +1090,33 @@ void RenderUnder(void* device)
         }
         g_genSeen = 0xFFFFFFFFu; // (out of the scene: the rescan writes the windows again)
     }
+    skinload::Ended(); // (no UI pass runs in a load)
     Refresh();
+    PruneFell();
+    NoteUnknownRoots();
+    PageRule();
+    if (navskin::TakeFailure()) // (one window fails, one window goes native: its writes back at once)
+        for (Win& w : g_wins)
+            if (w.fam == kFamNavMap && Valid(w.root, w.vt))
+                Restore(w);
+    bool mapUp = false;
+    for (const Win& w : g_wins)
+        mapUp |= w.fam == kFamNavMap;
+    if (!mapUp)
+        navskin::Unbind();
     Reclear();
     ApplyTip();
+    {
+        const Win* menu = nullptr;
+        for (const Win& w : g_wins)
+            if (w.fam == kFamMainMenu && Shown(w.root) && !Native(w))
+                menu = &w;
+        static const std::vector<u32> none;
+        skinmenu::Layout(menu ? menu->root : 0, menu ? menu->tabs : none, !g_scene);
+    }
     Geometry(device);
     Draw(device);
-    g_lastMs = static_cast<float>((perf::Now() - t0) * 1000.0);
+    g_lastMs =static_cast<float>((perf::Now() - t0) * 1000.0);
 }
 
 bool ModalOpen()
@@ -773,9 +1127,37 @@ bool ModalOpen()
         return false;
     Refresh();
     for (const Win& w : g_wins)
-        if ((kFamilies[w.fam].modal || w.fam == kFamConfirm) && Valid(w.root, w.vt) && Shown(w.root))
+        if ((kFamilies[w.fam].modal || skindialog::IsDialog(w.fam)) && Valid(w.root, w.vt) && Shown(w.root))
             return true;
     return false;
+}
+
+void DrawModal(void* device)
+{
+    if (!g_on || !device)
+        return;
+    bool open = false;
+    for (const Win& w : g_wins)
+        open |= skindialog::Skinned(w.root) && Shown(w.root);
+    const ULONGLONG now = GetTickCount64();
+    const bool note = g_fellAt && now - g_fellAt < 4000;
+    g_dialogScrim = skinrules::EaseStep(g_dialogScrim, open, g_dt, hudrows::g.skinMotion);
+    if (g_dialogScrim <= 0 && !note)
+        return;
+    int sw = 0, sh = 0;
+    render::SetDevice(device);
+    if (!render::ScreenSize(sw, sh) || sh < 100 || !Begin(device, sw, sh, std::max(8, static_cast<int>(0.026f * sh + 0.5f))))
+        return;
+    SetAlpha(1), SetOffset(0, 0);
+    skinkit::SetScreen(static_cast<float>(sw), static_cast<float>(sh));
+    skinkit::Scrim(skinrules::kScrimModal, g_dialogScrim);
+    const u32 hov = open ? FocusedControl() : 0;
+    for (Win& w : g_wins)
+        if (skindialog::Skinned(w.root) && Shown(w.root) && !skindialog::Draw(w, hov))
+            Fall(w, "its boxes cannot be read or do not fit");
+    if (note) // a window in the game's ornate look would read as a new bug: one line says it is on purpose
+        Text(sw * 0.05f, sh * 0.90f, L"THIS WINDOW KEEPS THE GAME'S LOOK", skinkit::Px(0.024f), Argb(kAmber, 1));
+    End();
 }
 
 void DrawOver(void* device)
@@ -789,6 +1171,7 @@ void DrawOver(void* device)
     if (!Begin(device, sw, sh, std::max(8, static_cast<int>(0.026f * sh + 0.5f))))
         return;
     SetAlpha(1), SetOffset(0, 0);
+    skinkit::SetScreen(static_cast<float>(sw), static_cast<float>(sh));
     // (over the dialog's text: a lighter fill than under the glass, the edges and bar carry the mark)
     FocusFill(g_overFocus.x0, g_overFocus.y0, g_overFocus.x1, g_overFocus.y1, 0.22f);
     End();
@@ -841,6 +1224,15 @@ std::string Command(std::istream& in)
         }
         return "list " + std::to_string(n) + " controls\n" + o.str();
     }
+    if (what == "seams") // what is still drawn in the game's art: empty is the claim "complete" makes
+        return Seams();
+    if (what == "loadplace") // loadplace <0|1>: the loading screen tries the player's base and system (the probe of UI_HUD2_SKIN.md 6.4)
+    {
+        int on = 0;
+        in >> on;
+        skinload::SetPlaceProbe(on != 0);
+        return skinload::Status();
+    }
     if (what == "rescan")
     {
         g_genSeen = 0xFFFFFFFFu;
@@ -859,7 +1251,8 @@ std::string Command(std::istream& in)
           << (g_genHost ? " (host v23)" : " (poll 500 ms)") << " rescans=" << g_rescans << " reclears=" << g_reclears
           << " ownRefused=" << g_ownRefused << " reposed=" << g_reposed << "/" << g_reposeFaults << " reposeRefused=" << g_reposeRefused << " modal=" << g_modalOpen << " docked=" << g_dockedFrame
           << " scene=" << g_scene << " scenes=" << g_scenes << " tip=" << (g_tip ? 1 : 0) << " tipHides=" << g_tipHides
-          << " ms=" << g_lastMs << " windows=" << g_wins.size();
+          << " ms=" << g_lastMs << " windows=" << g_wins.size() << " page=" << g_page.art.size() << "/" << g_page.own.size() << " fell=" << g_fell.size() << " "
+          << skinmenu::Status() << " " << skinload::Status() << " " << skinover::Status();
         const u32 hov = FocusedControl();
         char hn[33] = {};
         u8 hs = 0;
@@ -884,7 +1277,7 @@ std::string Command(std::istream& in)
         }
         return o.str();
     }
-    return "usage: uiskin state | windows | restore | rescan";
+    return "usage: uiskin state | windows | restore | rescan | seams | loadplace <0|1>";
 }
 
 } // namespace uiskin

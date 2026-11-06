@@ -945,6 +945,7 @@ struct State
         float fastStill = 0;                  // seconds at rest while lined up and not yet requested (failsafe)
         float bayP2[3] = {}, bayAxis[3] = {}; // the bay's outer approach point and its outward axis (mount -> p2)
         bool fastLined = false, fastRequested = false, fastTried = false, fastBurn = false;
+        bool toRange = false; // flying to the game's dock range by its Goto: DockBeyondRange
         Progress fastBest = {1e30f, 0}; // the approach's progress: nearest to the bay so far, and when
         float ringNear = 1e30f;         // a ring run requested at p2 (ring_request): the nearest to p2 so far
         // (fastLane: in fastKind, DockKind::Lane)
@@ -1324,6 +1325,8 @@ u32 ObjectiveLastReal();
 void SetObjectiveLastReal(u32 v);
 // `ap look` (LOOK L0): the look-ahead's verdict now and every fact it read (autopilot_objective.cpp; lookahead.h).
 std::string LookCommand();
+// This run asked the game for the dock that is on, with `object` (0: the plain Dock mode on the current target).
+bool OurDock(u32& object);
 // The game docks the ship on its own: a dock port held with no request of ours (a mission's Act_DockRequest).
 bool GameDocksUs();
 ULONGLONG SinceGameGrant(); // ms since the last dock grant we did not request (a mission's Act_DockRequest); ~0 none
@@ -1411,6 +1414,7 @@ bool StartPass(u32 ring, float radius);
 u32 EnteringShip(float dist);
 void QueuedShortcut();
 bool FastApproach(float dt, Out& out);
+bool DockBeyondRange();
 char HoldLook(const float at[3], float look[3]);
 u32 MissionSubject();
 u32 RestSubject(char& why);

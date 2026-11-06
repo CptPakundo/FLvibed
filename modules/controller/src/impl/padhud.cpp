@@ -8,11 +8,13 @@
 #include "game/ai.h"
 #include "game/flight.h"
 #include "game/gamefont.h"
+#include "game/glyphset.h"
 #include "game/render.h"
 #include "game/space.h"
 #include "ui/glyphs.h"
 #include "host.h"
 #include "log.h"
+#include "str.h"
 #include "text.h"
 #include "ui/ui.h"
 #include "ui/uiopt.h"
@@ -68,12 +70,7 @@ struct Shown
 };
 static Shown g_s;
 
-static std::wstring Upper(std::wstring s)
-{
-    for (wchar_t& c : s)
-        c = static_cast<wchar_t>(towupper(c));
-    return s;
-}
+static std::wstring Upper(std::wstring s) { return str::Upper(std::move(s)); }
 
 static std::wstring Dist(float m)
 {
@@ -352,23 +349,25 @@ void Update(float, const Context& c)
 // ---------------------------------------------------------------- fonts (the game's own: core\game\gamefont)
 static render::Font g_font, g_small;
 static int g_fontPx = 0, g_smallPx = 0;
+static size_t g_fontChars = 0;
 static void* g_fontDev = nullptr;
 
 static const std::wstring& Chars()
 {
     static std::wstring c;
+    static size_t seen = 0;
     if (c.empty())
-    {
-        for (wchar_t ch = 32; ch < 127; ++ch)
-            c += ch;
-        c += L"\u00B7\u2212\u00C9\u00E9\u00DC\u00FC\u00D6\u00F6\u00C4\u00E4";
-    }
+        c = glyphset::Base();
+    const std::wstring& met = render::Unmet();
+    for (; seen < met.size(); ++seen)
+        if (c.find(met[seen]) == std::wstring::npos)
+            c += met[seen];
     return c;
 }
 
 static bool Fonts(int px, int smallPx, void* dev)
 {
-    if (g_font.texture && g_fontPx == px && g_smallPx == smallPx && g_fontDev == dev)
+    if (g_font.texture && g_fontPx == px && g_smallPx == smallPx && g_fontDev == dev && g_fontChars == Chars().size())
         return true;
     // Agency FB (the HUD's labels) when the game's fonts load, else Segoe UI, a little smaller to read alike
     const bool game = gamefont::Load();
@@ -376,7 +375,7 @@ static bool Fonts(int px, int smallPx, void* dev)
     if (!render::BuildFont(g_font, gamefont::LabelFace(), static_cast<int>(px * k), 700, Chars()) ||
         !render::BuildFont(g_small, gamefont::LabelFace(), static_cast<int>(smallPx * k), game ? 700 : 600, Chars()))
         return false;
-    g_fontPx = px, g_smallPx = smallPx, g_fontDev = dev;
+    g_fontPx = px, g_smallPx = smallPx, g_fontDev = dev, g_fontChars = Chars().size();
     return true;
 }
 

@@ -62,7 +62,8 @@ static void ReadCommandFlags(u32* cache)
     }
 }
 
-u32 CommandFlags(int cmd)
+// The key map's masks, 0 for a command it does not list; re-read at most every 2 s (the player can edit the controls).
+static u32 MapFlags(int cmd)
 {
     static u32 cache[CMD_COUNT];
     static DWORD cacheTick = 0;
@@ -74,10 +75,16 @@ u32 CommandFlags(int cmd)
             ReadCommandFlags(cache);
         cacheTick = now;
     }
-    if (cmd < 0 || cmd >= CMD_COUNT || !cache[cmd])
-        return CMDF_KEYDOWN;
-    return cache[cmd];
+    return cmd < 0 || cmd >= CMD_COUNT ? 0 : cache[cmd];
 }
+
+u32 CommandFlags(int cmd)
+{
+    const u32 flags = MapFlags(cmd);
+    return flags ? flags : CMDF_KEYDOWN;
+}
+
+bool CommandMapped(int cmd) { return MapFlags(cmd) != 0; }
 
 bool FireCommand(int cmd, bool down)
 {

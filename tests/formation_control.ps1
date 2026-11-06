@@ -3,7 +3,7 @@
 # wing leader for 6 s; odd rounds touch nothing, even rounds churn as the section does. One line a round in
 # runs\formation_control\<label>.txt: leader, maximum distance, the speed range, cruise seen, whether the maneuver stayed formation.
 # Usage (PowerShell tool): tests\formation_control.ps1 -Label <name> [-Rounds 30] [-Instance 1]   uses build\release
-param([Parameter(Mandatory)][string]$Label, [int]$Rounds = 30, [int]$Instance = 1)
+param([Parameter(Mandatory)][string]$Label, [int]$Rounds = 30, [string]$Instance = 1, [string]$Dll = '') # -Dll: another build's release DLL (build\ref_*), as tests\pixels.ps1
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -14,7 +14,10 @@ $file = Join-Path $dir "$Label.txt"
 function Note([string]$line) { Add-Content -LiteralPath $file -Value $line; Write-Host $line }
 
 $dist = { param($id) $c = @(Get-FLContacts -All) | Where-Object Id -eq $id | Select-Object -First 1; if ($c) { [double]$c.Distance } else { -1 } }
-& (Join-Path $root 'tools\deploy.ps1') -Background -NoBuild -Release -Instance $Instance -Save SaveC705.fl | Select-Object -Last 1
+$release = Join-Path $root 'build\release\FLvibed.dll'; $kept = "$release.kept"
+if ($Dll) { [IO.File]::Copy($release, $kept, $true); [IO.File]::Copy((Resolve-Path $Dll).Path, $release, $true) }
+try { & (Join-Path $root 'tools\deploy.ps1') -Background -NoBuild -Release -Instance $Instance -Save SaveC705.fl | Select-Object -Last 1 }
+finally { if ($Dll) { [IO.File]::Copy($kept, $release, $true); [IO.File]::Delete($kept) } }
 try {
     for ($r = 1; $r -le $Rounds; $r++) {
         $churned = ($r % 2) -eq 0
@@ -54,6 +57,12 @@ try {
                 if ($p.Op -ne 'formation') { $lost = "op $($p.Op)"; break }
             }
             Note ("round {0} {1} friend {2} {3} leader {4} max {5:N0} v {6:N0}-{7:N0} cruise {8}/{9} {10} | {11}" -f $r, $(if ($churned) { 'churn  ' } else { 'control' }), $friend.Id, $friend.Name, $leader, $maxD, $minV, $maxV, $cruise, $i, $(if ($lost) { "LOST $lost" } elseif ($maxD -gt 300) { 'OVER' } else { 'ok' }), ($series -join ' '))
+            # (a lost round says why: what the game read of the leader and the friend, and the log around it)
+            if ($lost) {
+                Note "  lost: leader $(@((Send-FL 'contacts all') -split "`n" | Where-Object { $_ -match "^($leader|$($friend.Id)) " }) -join ' / ')"
+                Note "  lost: pilot $(Send-FL 'ai self')"
+                @(Get-Content -LiteralPath (Join-Path (Get-FLInstallDir) 'EXE\FLController.log') | Where-Object { $_ -notmatch 'render: font' } | Select-Object -Last 24) | ForEach-Object { Note "  lost: $_" }
+            }
             $null = Stop-FLManeuver
         } catch { Note "round $r error: $_" }
     }

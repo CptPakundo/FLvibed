@@ -4,7 +4,7 @@
 #   rear       RS held latches the rear view, turret view on and off ends it, the latch goes with it, one hold starts it again
 #   inventory  USER_INVENTORY in flight: X steps the filters as at the dealer, FILTER is on the prompt bar, nothing of the flight moves
 # Frames: runs\pad_toggles. Usage (PowerShell tool): tests\pad_toggles.ps1 [-Row boost,rear,rs,inventory,docked] [-Instance 1]   build\release. Exit 1 = a failure.
-param([string[]]$Row = @('boost', 'rear', 'rs', 'inventory', 'docked'), [int]$Instance = 1)
+param([string[]]$Row = @('boost', 'rear', 'rs', 'inventory', 'docked'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -60,7 +60,7 @@ try {
         Set-FLPad -Buttons RS; Start-Sleep -Milliseconds 700; Clear-FLPad; $null = Wait-FLFramesPassed 20
     }
     if ('rs' -in $Row) {
-        "--- rs: $(Send-FL 'spawn fc_lr_pi_fighter_d1 player 3 1500')"
+        "--- rs: $(Send-FL "spawn $(Resolve-FLNpc 'fc_lr_pi_fighter_d1') player 3 1500")"
         $null = Wait-FLFramesPassed 200
         Clear-FLPad; Set-FLPad -LX 0.01; $null = Wait-FLFramesPassed 20; Clear-FLPad; $null = Wait-FLFramesPassed 20
         Press-FLPad @('RS'); $null = Wait-FLFramesPassed 150 # (a tap is delivered when the double tap's window closes)

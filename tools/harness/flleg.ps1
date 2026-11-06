@@ -6,6 +6,7 @@
 # -Instance: a number or a named instance folder (Install\instances\vanilla11c: vanilla 1.1; deploy.ps1 -Instance)
 param([Parameter(Mandatory)][string]$Instance, [Parameter(Mandatory)][string]$Save, [Parameter(Mandatory)][string]$Label,
       [int]$TimeoutSec = 3600, [double]$BudgetSec = 0, [switch]$KeepGame, [switch]$Chain,
+      [switch]$NoFailStates,   # Leg.ps1: no stop on a checkpoint's limit (a run for a behaviour, not a time)
       # autopilot switches for this leg, sent after the boot ('ring_request 10'): a change set's A/B in one build
       # (docs\TESTING.md "The test loop" 3); the transcript records them
       [string[]]$ApSet = @(),
@@ -97,7 +98,7 @@ $full = [bool](Import-Csv (Join-Path $fl 'docs\legs_reference.tsv') -Delimiter "
 "leg $legName $(if ($full) { 'full (from its start save)' } else { 'part run' })"
 $f0 = Get-FLFrame; $sw = [Diagnostics.Stopwatch]::StartNew()
 $res = & (Join-Path $fl 'tools\harness\missions\Leg.ps1') -Label $Label -TimeoutSec $TimeoutSec -BudgetSec $BudgetSec `
-         -Out (Join-Path $dir 'phases.tsv') -Chain:$Chain -Full:$full -SaveAt $SaveAt -StartCp $StartCp -StopAt $StopAt `
+         -Out (Join-Path $dir 'phases.tsv') -Chain:$Chain -NoFailStates:$NoFailStates -Full:$full -SaveAt $SaveAt -StartCp $StartCp -StopAt $StopAt `
          -StartSave $(if ($StartCp) { Split-Path $path -Leaf } else { '' }) -GameClock:$GameClock *>&1 |
        ForEach-Object { "$_" }
 $res

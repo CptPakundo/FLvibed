@@ -1372,7 +1372,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   stopped and the re-plan enters past the hackers (`route [ring ...]` debug; 20-21 Oct 2026); holds begun in a jump
   rest at the exit (no cruise while jumping); free-flight legs are planned the way the avoidance flies them, round a
   planet's lethal zone in the way (`avoid::PathLength`, 21 Oct 2026: Leeds' ring behind its planet was 4.8 s over
-  every plan). **Fast dock** (`fast_dock`, user's player-style approach: the bay's p2,
+  every plan). **A dock past the game's range** (`DockBeyondRange`, 6 Nov 2026): over 0.95 of `space::DockRange` the dock starts as the game's Goto and becomes the dock inside it; flown from 49 km on FrontierSpace (136 s) and from 57 km on stock HDE (205 s), `tests\dock_far.ps1`. **Fast dock** (`fast_dock`, user's player-style approach: the bay's p2,
   request just before; `dock_request_distance`, `dock_arrive_speed`, `dock_stage`): rings straight in (A/B 20 Oct 2026:
   31.2 s vs line-up 36.4 vs the game's dock 37.9, Manhattan 5 km); at bases the request goes in at the normal point and
   the server's reply decides (`DockReply`, host API v14: 3 = queued; user decision 21 Oct 2026: no hold short on our own
@@ -1383,8 +1383,9 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   answer decides, no rush and no queued take-over): the legs never logged a formation success (0 of 125 tries 28-30
   Oct) and the rush cost +91 s over its own ETA on gate s7arb3 (17 rushes, 13 at holes; `..\..\docs\research\
   gap_decomposition.md` 4) - A/B pending, the default unchanged until it is judged.
-  `skip_dock_scene`: the autopilot's own docks skip their docking / landing cutscene (0.4 s). Lane speed learned per
-  lane; `eta`, `worth`.
+  `skip_dock_scene`: the autopilot's own docks skip their docking / landing cutscene (0.4 s): rings and stations, which
+  reach the docking camera differently (`..\..\..\docs\kb\navigation-and-hazards.md`); never in multiplayer. Lane
+  speed learned per lane; `eta`, `worth`.
 - **Settings** `[Autopilot]` in FLController.ini (`ap set <name> <v>` live; `config save`): pilot, engage, auto_fire,
   missiles, countermeasures, evade, fire_cone, follow_distance, follow_offset, escort_radius, hold_radius (hold mode:
   run to the point, the game's Idle stop, the nose to the hold's target or along the next leg of the game's route, by

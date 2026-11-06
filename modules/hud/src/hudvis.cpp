@@ -3,12 +3,17 @@
 
 #include "game/fl.h"
 #include "flexe.h"
+#include "game/hostcalls.h"
 #include "game/hudinfo.h"
+#include "game/indicators.h"
+#include "hud2_roots.h"
 #include "log.h"
 #include "safemem.h"
 #include "ui/ui.h"
 
+#include <algorithm>
 #include <sstream>
+#include <vector>
 
 namespace hudvis
 {
@@ -30,6 +35,10 @@ struct Root
     u32 rewrites = 0;    // frames the game had shown it again (the per-frame re-hide)
     uintptr_t aux[8] = {}; // controls under the root its keep() reads (cached with the root)
     int nAux = 0;
+    uintptr_t art[8] = {}; // the art of a root kept for a window under it (the registry's KeepNoArt)
+    int nArt = 0;
+    bool artHidden = false;
+    DWORD seenAt = 0;      // the game last showed it (an alert: AlertSeen)
 };
 
 // The cruise line "Cruise Disrupted - n" (the seconds until the cruise engine can charge again) carries what HUD 2's
@@ -75,10 +84,12 @@ static bool NeuroNetWindowOpen(const Root& r)
     return false;
 }
 
-// The switch buttons under the NeuroNet root (direct children named NN...Button)
+// The switch buttons under the NeuroNet root (direct children named NN...Button), and its art: the box's background and the five
+// icon buttons (NN...ButtonRoot). A window hangs under its switch button, so those are never touched.
 static void FindNeuroNetButtons(Root& r)
 {
     r.nAux = 0;
+    r.nArt = 0;
     u32 c = 0;
     safemem::Read(r.ctl + kChild, &c, 4);
     for (int guard = 0; c && guard < 32 && r.nAux < 8; ++guard)
@@ -89,6 +100,8 @@ static void FindNeuroNetButtons(Root& r)
             const size_t len = strlen(n);
             if (len > 8 && strncmp(n, "NN", 2) == 0 && strcmp(n + len - 6, "Button") == 0)
                 r.aux[r.nAux++] = c;
+            else if (r.nArt < 8 && (strcmp(n, "NNBackground") == 0 || (len > 10 && strcmp(n + len - 10, "ButtonRoot") == 0)))
+                r.art[r.nArt++] = c;
         }
         if (!safemem::Read(c + kSibling, &c, 4))
             break;
@@ -158,6 +171,11 @@ static Root g_roots[] = {
     // over HUD 2's card, the known bug): HUD 2's MISSILE INCOMING card and the ring's chevrons carry it. Only this child:
     // its parent draws the brackets and arrows (kept native)
     {"MissileAlert", "missilealert", nullptr, true},
+    // the other three alerts of the same parent (UI_HUD2_SKIN.md 6.8), each with its home: the nav's amber line, the ring's tail mark, the
+    // nav's small word. While they are hidden the game goes on showing them, and each frame's re-hide reads that: AlertSeen
+    {"RadiationAlert", "radiation", nullptr, true},
+    {"TrailAlert", "tail", nullptr, true},
+    {"LagAlert", "lag", nullptr, true},
     // the game's comm window (HUD_Receiver: the portrait, its outline, the caption): HUD 2 keeps it, only a modal menu over the
     // flight hides it - its pieces stood bare around the pause menu with no plate (UI_HUD2.md 5.34)
     {"CommText", "comm", AlwaysKept},
@@ -209,7 +227,7 @@ static bool Valid(const Root& r, bool name)
 
 static void Drop(Root& r)
 {
-    r.ctl = 0, r.vtable = 0, r.hidden = false, r.name[0] = 0, r.nAux = 0;
+    r.ctl = 0, r.vtable = 0, r.hidden = false, r.name[0] = 0, r.nAux = 0, r.nArt = 0, r.artHidden = false;
     ++g_drops;
 }
 
@@ -230,18 +248,48 @@ static void Find(Root& r)
     r.name[32] = 0;
     r.ctl = c;
     r.hidden = false;
-    r.nAux = 0;
+    r.nAux = 0, r.nArt = 0, r.artHidden = false;
     if (r.keep == NeuroNetWindowOpen)
         FindNeuroNetButtons(r);
     ++g_finds;
 }
 
+// A kept root's art, hidden by bit 1 alone, every frame: the game shows it again by itself, and bit 0 carries the box's update.
+static void HideKeptArt(Root& r)
+{
+    for (int i = 0; i < r.nArt; ++i)
+    {
+        u8 st = 0;
+        u32 parent = 0;
+        if (safemem::Read(r.art[i] + kParent, &parent, 4) && parent == r.ctl && ReadState(r.art[i], st) && (st & 2))
+            WriteState(r.art[i], static_cast<u8>(st & ~2));
+    }
+    r.artHidden = r.nArt > 0;
+}
+
+static void RestoreKeptArt(Root& r)
+{
+    if (!r.artHidden)
+        return;
+    r.artHidden = false;
+    for (int i = 0; i < r.nArt; ++i)
+    {
+        u8 st = 0;
+        u32 parent = 0;
+        if (safemem::Read(r.art[i] + kParent, &parent, 4) && parent == r.ctl && ReadState(r.art[i], st) && (st & 1) && !(st & 2))
+            WriteState(r.art[i], static_cast<u8>(st | 2));
+    }
+}
+
 static void Restore(Root& r)
 {
+    RestoreKeptArt(r);
     if (!r.hidden)
         return;
     u8 st = 0;
-    if (Valid(r, true) && ReadState(r.ctl, st))
+    // (not an alert: it blinks, so the game's next tick shows it anyway, and a scene that stops the tick - the death -
+    // kept the restored icons standing over it)
+    if (!r.self && Valid(r, true) && ReadState(r.ctl, st))
         WriteState(r.ctl, static_cast<u8>(st | r.saved));
     r.hidden = false;
 }
@@ -679,11 +727,204 @@ static void StepContactList(uintptr_t window)
     }
 }
 
+// ---- the radiation art beside the nav's line (UI_HUD2_SKIN.md 6.8): the game's own control, moved there and held steady, so nothing of the game
+// ships. Its place goes back when the line goes. Fails closed: a slot that is not the signed setter leaves the line without its art.
+struct RadiationArt
+{
+    bool want = false;
+    float px = 0, py = 0;
+    uintptr_t ctl = 0; // the control moved
+    u32 setter = 0;     // its signed vt[0x14]
+    float home[3] = {}; // its own place, as that setter takes it
+    bool shown = false;
+    const char* why = "not asked"; // `hud2 state`: what the last frame decided
+} g_radArt;
+
+const char* RadiationArtWhy() { return g_radArt.why; }
+
+void SetRadiationArt(float px, float py, bool show)
+{
+    g_radArt.want = show, g_radArt.px = px, g_radArt.py = py;
+}
+
+static void CallSetPosition(u32 setter, uintptr_t ctl, const float* pos)
+{
+    __try
+    {
+        reinterpret_cast<void(__thiscall*)(u32, const float*)>(setter)(static_cast<u32>(ctl), pos);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+}
+
+static void RadiationArtBack()
+{
+    RadiationArt& a = g_radArt;
+    if (a.ctl)
+    {
+        const Root* r = RootByLabel("radiation");
+        if (r && r->ctl == a.ctl)
+        {
+            CallSetPosition(a.setter, a.ctl, a.home);
+            u8 st = 0;
+            if (a.shown && ReadState(a.ctl, st)) // (dark: the game's next blink shows it if the zone still bites)
+                WriteState(a.ctl, static_cast<u8>(st & ~3));
+        }
+    }
+    a.ctl = 0, a.shown = false;
+}
+
+// True: the control stands at the line this frame, shown.
+static bool RadiationArtStep(Root& r)
+{
+    RadiationArt& a = g_radArt;
+    const auto no = [&a](const char* why) { a.why = why; return false; };
+    // (the flag first: this step forces the control shown, so the control itself can no longer say the zone ended)
+    if (!a.want)
+        return no("not asked");
+    if (!r.ctl || !exe::RadiationZone.ok())
+        return no("unsigned");
+    u32 vt = 0, slot = 0;
+    float cx, cy, kx, ky, pos[3] = {};
+    if (!safemem::Read(r.ctl, &vt, 4) || !safemem::Read(vt + 0x14, &slot, 4))
+        return no("unreadable");
+    if (!exe::ImageSetPosition.is(slot))
+        return no("another setter");
+    // an image control's art stands at +0x60 + the offset the constructor kept at +0xA8 (0x588540): for the alerts +0x60 is
+    // zero and the whole place is the offset, the depth in it
+    float off[3] = {};
+    if (!safemem::Read(r.ctl + 0x60, pos, sizeof(pos)) || !safemem::Read(r.ctl + 0xA8, off, sizeof(off)))
+        return no("unreadable");
+    const float depth = pos[2] + off[2];
+    if (depth > -0.01f)
+        return no("no depth");
+    if (!UiCam(cx, cy, kx, ky))
+        return no("no camera");
+    if (a.ctl != r.ctl)
+        a.ctl = r.ctl, a.setter = slot, a.home[0] = pos[0], a.home[1] = pos[1], a.home[2] = pos[2];
+    const float want[3] = {(a.px - cx) / kx * -depth - off[0], (a.py - cy) / ky * -depth - off[1], pos[2]};
+    if (fabsf(want[0] - pos[0]) > 1e-5f || fabsf(want[1] - pos[1]) > 1e-5f) // (a move marks the art for rebuilding)
+        CallSetPosition(slot, r.ctl, want);
+    u8 st = 0;
+    if (ReadState(r.ctl, st) && (st & 3) != 3)
+        WriteState(r.ctl, static_cast<u8>(st | 3));
+    r.hidden = false;
+    a.shown = true;
+    a.why = "shown";
+    return true;
+}
+
+bool AlertSeen(int which)
+{
+    static const char* const kLabels[] = {"radiation", "tail", "lag"};
+    if (which < 0 || which >= 3)
+        return false;
+    if (which == kRadiation && exe::RadiationZone.ok()) // the game's own flag: the art's forced show would latch the control's word
+        return Mem<u8>(exe::RadiationZone) != 0;
+    const Root* r = RootByLabel(kLabels[which]);
+    return r && r->ctl && r->seenAt && GetTickCount() - r->seenAt < kAlertHoldMs;
+}
+
+// The game's top-level controls against the registry: a shown root with no row stays shown and gets one line, once per name. On the hide's start and
+// on a new UI generation only: never a walk per frame.
+static void AuditRoots()
+{
+    static std::vector<std::string> logged;
+    if (!exe::UiControls.ok())
+        return;
+    u32 node = 0;
+    safemem::Read(exe::UiControls.get(), &node, 4);
+    for (int guard = 0; node && guard < 4000; ++guard)
+    {
+        u32 c = 0, next = 0, parent = 1, vt = 0;
+        u8 st = 0;
+        char n[33] = {};
+        safemem::Read(node + 8, &c, 4), safemem::Read(node + 4, &next, 4);
+        if (c && safemem::Read(c + kParent, &parent, 4) && parent == 0 && ReadState(c, st) && (st & 2) && safemem::Read(c + kName, n, 32) && n[0] &&
+            !hudroots::Find(n) && std::find(logged.begin(), logged.end(), n) == logged.end() && logged.size() < 64)
+        {
+            safemem::Read(c, &vt, 4);
+            logged.push_back(n);
+            Log("hudvis: unknown root %s vt 0x%08X stays shown", n, vt);
+        }
+        node = next;
+    }
+}
+
+// ---- the game's bracket under HUD 2's targeting display (UI_HUD2_SKIN.md 6.10): the corners and the waypoint diamond by nulling the indicators' art, which the draw
+// tests before use; label and bars by the host's mute. All or nothing: the form draws only while this stands.
+struct BracketOff
+{
+    uintptr_t obj = 0;
+    u32 corners = 0, diamond = 0;
+    bool on = false;
+} g_bracket;
+bool g_formWanted = false;
+
+void SetTargetForm(bool want) { g_formWanted = want; }
+bool TargetFormOn() { return g_bracket.on; }
+
+static void WriteField(uintptr_t a, u32 v)
+{
+    __try
+    {
+        *reinterpret_cast<volatile u32*>(a) = v;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+}
+
+static void BracketBack()
+{
+    if (hostcalls::g.SetTargetMute)
+        hostcalls::g.SetTargetMute(false);
+    if (g_bracket.on && indicators::Object() == g_bracket.obj)
+    {
+        u32 v = 1;
+        if (safemem::Read(g_bracket.obj + indicators::kCorners, &v, 4) && !v)
+            WriteField(g_bracket.obj + indicators::kCorners, g_bracket.corners);
+        v = 1;
+        if (safemem::Read(g_bracket.obj + indicators::kDiamond, &v, 4) && !v)
+            WriteField(g_bracket.obj + indicators::kDiamond, g_bracket.diamond);
+    }
+    g_bracket = BracketOff();
+}
+
+static void BracketStep(bool hide)
+{
+    const bool can = hide && g_formWanted && hostcalls::g.TargetMuteReady && hostcalls::g.TargetMuteReady() && hostcalls::g.SetTargetMute;
+    if (!can)
+    {
+        if (g_bracket.on)
+            BracketBack();
+        return;
+    }
+    const uintptr_t obj = indicators::Object();
+    if (g_bracket.on && obj != g_bracket.obj) // a rebuilt HUD: the old object is gone, the new one starts whole
+        g_bracket = BracketOff();
+    if (!obj)
+        return;
+    if (!g_bracket.on)
+    {
+        u32 corners = 0, diamond = 0;
+        if (!safemem::Read(obj + indicators::kCorners, &corners, 4) || !safemem::Read(obj + indicators::kDiamond, &diamond, 4) || !corners)
+            return;
+        WriteField(obj + indicators::kCorners, 0);
+        WriteField(obj + indicators::kDiamond, 0);
+        g_bracket.obj = obj, g_bracket.corners = corners, g_bracket.diamond = diamond, g_bracket.on = true;
+        hostcalls::g.SetTargetMute(true);
+    }
+}
+
 static bool g_holdChat = false; // HoldChat
 static void HideChat();
 
 void GiveBack()
 {
+    BracketBack();
+    RadiationArtBack();
     for (Root& r : g_roots)
         Restore(r);
     RestoreArrival();
@@ -696,9 +937,18 @@ void Apply(bool hide)
     hide = hide || menu;
     if (menu)
         ++g_menuFrames;
+    // the first hide of a flight: the roots are looked up on this very pass, not at the next 2 Hz try, or the native HUD draws once
+    static bool wasHide = false;
+    static u32 auditGen = 0;
+    const bool started = hide && !wasHide;
+    if (started)
+        g_lastFind = 0;
+    wasHide = hide;
     ApplyArrival(hide);
+    BracketStep(hide);
     if (!hide)
     {
+        RadiationArtBack();
         DrawViews(false);
         for (Root& r : g_roots)
             if (!g_holdChat || strcmp(r.label, "chat") != 0)
@@ -713,6 +963,11 @@ void Apply(bool hide)
         return;
     }
     Revalidate(now, false);
+    {
+        const u32 gen = hostcalls::g.UiGeneration ? hostcalls::g.UiGeneration() : 0;
+        if (started || gen != auditGen)
+            auditGen = gen, AuditRoots();
+    }
     ApplyHoverHelp(menu);
     for (Root& r : g_roots)
     {
@@ -723,10 +978,25 @@ void Apply(bool hide)
         if (r.ctl && (menu ? r.keep == KeyboardForm : r.keep && r.keep(r)))
         {
             Restore(r);
+            if (r.nArt && !menu) // (a kept root loses its art all the same: 3.1's rule)
+                HideKeptArt(r);
             continue;
         }
+        RestoreKeptArt(r); // (only a kept root hides art: a hidden root takes it with it)
         u8 st = 0;
-        if (!r.ctl || !ReadState(r.ctl, st) || !(st & 3))
+        if (!r.ctl || !ReadState(r.ctl, st))
+            continue;
+        const bool radiation = strcmp(r.label, "radiation") == 0;
+        if (st & 3)
+            r.seenAt = now;
+        if (radiation)
+        {
+            if (RadiationArtStep(r))
+                continue;
+            if (g_radArt.ctl)
+                RadiationArtBack();
+        }
+        if (!(st & 3))
             continue;
         if (r.hidden)
             ++r.rewrites;
@@ -776,6 +1046,8 @@ static void HideChat()
 
 void Invalidate()
 {
+    BracketBack();
+    RadiationArtBack();
     for (Root& r : g_roots)
     {
         Restore(r);
@@ -865,8 +1137,8 @@ std::string Tree(const std::string& label)
                 u8 st = 0;
                 u32 vt = 0;
                 safemem::Read(c + kName, n, 32), safemem::Read(c + kState, &st, 1), safemem::Read(c, &vt, 4);
-                char b[96];
-                sprintf_s(b, "%08X vt=%08X state=%02X %s\n", c, vt, st, n);
+                char b[128];
+                sprintf_s(b, "%08X vt=%08X state=%02X %-28s %s\n", c, vt, st, n, hudroots::ActionName(hudroots::Find(n)));
                 o << b;
             }
             node = next;
@@ -878,9 +1150,14 @@ std::string Tree(const std::string& label)
         {
             std::ostringstream o;
             int budget = 300;
-            u32 child = 0;
+            u32 child = 0, vt = 0, slot = 0, parent = 0;
             safemem::Read(r.ctl + kChild, &child, 4);
-            o << r.name << "\n";
+            safemem::Read(r.ctl, &vt, 4), safemem::Read(vt + 0x14, &slot, 4), safemem::Read(r.ctl + kParent, &parent, 4);
+            float a[3] = {}, b[3] = {};
+            safemem::Read(r.ctl + 0x60, a, sizeof(a)), safemem::Read(r.ctl + 0xA8, b, sizeof(b));
+            char line[160];
+            sprintf_s(line, " vt=%08X set=%08X parent=%08X +60=(%g %g %g) +A8=(%g %g %g)", vt, slot, parent, a[0], a[1], a[2], b[0], b[1], b[2]);
+            o << r.name << line << "\n";
             Walk(child, 1, o, budget);
             return o.str();
         }

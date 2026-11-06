@@ -4,6 +4,7 @@
 #include "dimouse.h"
 #include "game/events.h"
 #include "game/fl.h"
+#include "game/nnwin.h"
 #include "ui/views.h"
 #include "device.h"
 #include "game/render.h"
@@ -13,7 +14,9 @@
 #include "gamepad.h"
 #include "ui/glyphs.h"
 #include "log.h"
+#include "padmap_zones.h"
 #include "promptbar.h"
+#include "str.h"
 #include "text.h"
 #include "ui/ui.h"
 #include "ui/uikit.h"
@@ -48,6 +51,8 @@ static float g_trigRepeat[2] = {};
 static bool g_trigWas[2] = {};
 static float g_sinceMapA = 1e9f; // seconds since the last A over the map area (the "again = waypoint" rule)
 static float g_mapAx = 0, g_mapAy = 0;
+static padzones::Zones g_zones; // the skin's two zones; with no chips one zone, as ever
+static float g_homePending = 0; // on the way to the ship's system through the universe view
 static std::string g_lastAction;
 static struct
 {
@@ -64,12 +69,7 @@ static bool ClickName(const char* name, const char* why)
     return ok;
 }
 
-static std::wstring Upper(std::wstring s)
-{
-    for (wchar_t& c : s)
-        c = static_cast<wchar_t>(towupper(c));
-    return s;
-}
+static std::wstring Upper(std::wstring s) { return str::Upper(std::move(s)); }
 
 // The map's zoom buttons exist only in the popup of a selection (never with nothing selected: 0x49EA50 shows them), and
 // each view has one: the sector view the out button, the others the in button. So a trigger first selects what lies
@@ -121,19 +121,33 @@ static void BuildDests()
     g_sel = std::clamp(g_sel, 0, std::max(0, static_cast<int>(g_dests.size()) - 1));
 }
 
-static void Prompts(bool inSpace)
+static void Prompts(bool inSpace, bool strip, bool panel)
 {
     using promptbar::Prompt;
     Prompt p[5];
     int n = 0;
+    if (panel && !g_list)
+    {
+        p[n++] = {Id::A, L"PRESS"};
+        p[n++] = {Id::LS, L"MAP"};
+        if (inSpace)
+            p[n++] = {Id::VIEW, L"DESTINATIONS"};
+        p[n++] = {Id::L3, L"MY SYSTEM"};
+        p[n++] = {Id::B, L"BACK"};
+        promptbar::Set("navmap.panel", p, n, false);
+        return;
+    }
     if (!inSpace)
     {
         // docked: the same map window, without the flight's travel and the destination list (this system's objects
         // are space objects)
-        p[n++] = {Id::A, L"SELECT \u00b7 AGAIN = WAYPOINT"};
-        p[n++] = {Id::X, L"REMOVE \u00b7 HOLD CLEAR"};
+        p[n++] = {Id::A, strip ? L"SELECT" : L"SELECT \u00b7 AGAIN = WAYPOINT"};
+        p[n++] = {Id::X, strip ? L"REMOVE" : L"REMOVE \u00b7 HOLD CLEAR"};
         p[n++] = {Id::LT, L"ZOOM", false, Id::RT};
-        p[n++] = {Id::LB, L"SYSTEM / UNIVERSE", false, Id::RB};
+        if (strip)
+            p[n++] = {Id::R3, L"SYSTEM / SIRIUS"};
+        else
+            p[n++] = {Id::LB, L"SYSTEM / UNIVERSE", false, Id::RB};
         p[n++] = {Id::B, L"CLOSE"};
         promptbar::Set("navmap.docked", p, n, false);
         return;
@@ -148,13 +162,72 @@ static void Prompts(bool inSpace)
         promptbar::Set("navmap.dest", p, n, true);
         return;
     }
-    p[n++] = {Id::A, L"SELECT \u00B7 AGAIN = WAYPOINT"};
-    p[n++] = {Id::X, L"REMOVE \u00B7 HOLD CLEAR"};
+    // (beside the strip the lane has half the screen: the short words; the long ones' second halves stand in the spec)
+    p[n++] = {Id::A, strip ? L"SELECT" : L"SELECT \u00B7 AGAIN = WAYPOINT"};
+    p[n++] = {Id::X, strip ? L"REMOVE" : L"REMOVE \u00B7 HOLD CLEAR"};
     Prompt y = {Id::Y, L"TRAVEL"};
     p[n++] = y;
     p[n++] = {Id::LT, L"ZOOM", false, Id::RT};
-    p[n++] = {Id::VIEW, L"DESTINATIONS"};
+    if (strip)
+        p[n++] = {Id::R3, L"SYSTEM / SIRIUS"};
+    else
+        p[n++] = {Id::VIEW, L"DESTINATIONS"};
     promptbar::Set("navmap", p, n, false);
+}
+
+// The skin's chips as the zones see them; a press and a step go to the HUD by the chip's id. No chips, no zones: the map's one zone.
+static padzones::Out Zones(const Gamepad& pad)
+{
+    constexpr int kMax = 40;
+    views::MapChip chips[kMax];
+    padzones::Cell cells[kMax];
+    const int n = g_list ? 0 : views::HudMapChips(chips, kMax);
+    for (int i = 0; i < n; ++i)
+        cells[i] = {chips[i].x0, chips[i].y0, chips[i].x1, chips[i].y1, chips[i].id, chips[i].enabled, chips[i].stepper};
+    padzones::In in;
+    in.dpad = pad.Pressed(XINPUT_GAMEPAD_DPAD_UP)      ? padzones::Up
+              : pad.Pressed(XINPUT_GAMEPAD_DPAD_DOWN)  ? padzones::Down
+              : pad.Pressed(XINPUT_GAMEPAD_DPAD_LEFT)  ? padzones::Left
+              : pad.Pressed(XINPUT_GAMEPAD_DPAD_RIGHT) ? padzones::Right
+                                                       : padzones::None;
+    const PadState& s = pad.Cur();
+    in.stick = s.lx != 0 || s.ly != 0;
+    in.a = pad.Pressed(XINPUT_GAMEPAD_A), in.b = pad.Pressed(XINPUT_GAMEPAD_B);
+    const padzones::Out o = g_zones.Step(in, cells, n);
+    if (n)
+        g_owned |= XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_LEFT | XINPUT_GAMEPAD_DPAD_RIGHT;
+    if (o.ownsA)
+        g_owned |= XINPUT_GAMEPAD_A;
+    if (o.ownsB)
+        g_owned |= XINPUT_GAMEPAD_B;
+    views::HudMapChipFocus(g_zones.focus);
+    if (o.press >= 0)
+        views::HudMapChipPress(o.press);
+    if (o.stepId >= 0)
+        views::HudMapChipStep(o.stepId, o.stepDir);
+    return o;
+}
+
+// One press for SYSTEM / SIRIUS, one back to the ship's system (6.1). The game shows one of its two buttons at a time, so from another system the way home is
+// the universe first: the second click waits for the view to change (its zoom takes 1.5 s), and gives up rather than arrive late.
+static void ViewPresses(const Gamepad& pad, float dt)
+{
+    g_owned |= XINPUT_GAMEPAD_RIGHT_THUMB | XINPUT_GAMEPAD_LEFT_THUMB;
+    if (pad.Pressed(XINPUT_GAMEPAD_RIGHT_THUMB))
+        ClickName(Vis("NavMapUniverseButton") ? "NavMapUniverseButton" : "NavMapShipButton", "system / sirius");
+    if (pad.Pressed(XINPUT_GAMEPAD_LEFT_THUMB))
+    {
+        if (Vis("NavMapShipButton"))
+            ClickName("NavMapShipButton", "my system");
+        else if (ClickName("NavMapUniverseButton", "my system"))
+            g_homePending = 3.0f;
+    }
+    if (g_homePending > 0)
+    {
+        g_homePending -= dt;
+        if (Vis("NavMapShipButton"))
+            g_homePending = 0, ClickName("NavMapShipButton", "my system");
+    }
 }
 
 bool Update(float dt, const Gamepad& pad, bool mayOpen)
@@ -168,7 +241,8 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
         {
             Log("pad map %s", open ? "open" : "closed");
             g_list = false;
-            g_xHeld = 0, g_xFired = false, g_sinceMapA = 1e9f;
+            g_xHeld = 0, g_xFired = false, g_sinceMapA = 1e9f, g_homePending = 0;
+            g_zones.Reset();
         }
         g_open = open;
         g_refresh = 0.1f;
@@ -192,6 +266,11 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
             BuildDests();
         events::Push("pad map: destination list %s (%d)", g_list ? "open" : "closed", static_cast<int>(g_dests.size()));
     }
+    const bool strip = views::HudNNStrip();
+    const padzones::Out zone = Zones(pad);
+    const bool panel = g_zones.zone == padzones::Zone::Panel;
+    if (strip)
+        ViewPresses(pad, dt);
     if (g_list)
     {
         g_owned |= XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_A;
@@ -212,7 +291,7 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
             }
         }
     }
-    else
+    else if (!zone.ownsA)
     {
         // A over the map area: the game's own click selects (the free cursor's button); a second A at the same spot
         // within 2 s plots the selection as a waypoint (the map's own Set Waypoint button)
@@ -235,7 +314,7 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
         }
     }
     // X: remove the last waypoint; held: clear the route
-    const bool xDown = pad.Down(XINPUT_GAMEPAD_X);
+    const bool xDown = !panel && pad.Down(XINPUT_GAMEPAD_X);
     const float xBefore = g_xHeld;
     g_xHeld = xDown ? g_xHeld + dt : 0;
     if (!xDown)
@@ -265,7 +344,7 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
         }
     }
     // Y: travel the route with the autopilot (the list as it is)
-    if (inSpace && pad.Pressed(XINPUT_GAMEPAD_Y))
+    if (inSpace && !panel && pad.Pressed(XINPUT_GAMEPAD_Y))
     {
         if (!inSpace)
             events::Push("pad map: travel refused (not in space)");
@@ -283,7 +362,7 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
     const u32 trig[2] = {PAD_LT, PAD_RT};
     for (int i = 0; i < 2; ++i)
     {
-        const bool down = pad.Down(trig[i]);
+        const bool down = !panel && pad.Down(trig[i]);
         g_trigRepeat[i] -= dt;
         if (down && (!g_trigWas[i] || g_trigRepeat[i] <= 0))
         {
@@ -292,15 +371,26 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
         }
         g_trigWas[i] = down;
     }
+    // the bumpers: the strip's tabs while it stands (the system and the universe have ViewPresses); else the ship's system / the universe
     if (pad.Pressed(XINPUT_GAMEPAD_LEFT_SHOULDER))
-        ClickName("NavMapShipButton", "system");
+    {
+        if (strip)
+            nnwin::Step(-1);
+        else
+            ClickName("NavMapShipButton", "system");
+    }
     if (pad.Pressed(XINPUT_GAMEPAD_RIGHT_SHOULDER))
-        ClickName("NavMapUniverseButton", "universe");
+    {
+        if (strip)
+            nnwin::Step(+1);
+        else
+            ClickName("NavMapUniverseButton", "universe");
+    }
     // B: the map's own close button (else the game's Escape through the free cursor's B)
     if (Vis("NavMapCloseButton"))
     {
         g_owned |= XINPUT_GAMEPAD_B;
-        if (pad.Pressed(XINPUT_GAMEPAD_B))
+        if (pad.Pressed(XINPUT_GAMEPAD_B) && !zone.ownsB)
         {
             if (g_list)
                 g_list = false;
@@ -308,7 +398,7 @@ bool Update(float dt, const Gamepad& pad, bool mayOpen)
                 ClickName("NavMapCloseButton", "close");
         }
     }
-    Prompts(inSpace);
+    Prompts(inSpace, strip, g_zones.zone == padzones::Zone::Panel);
     return true;
 }
 
@@ -378,7 +468,7 @@ std::string Status()
     std::ostringstream o;
     const u32 map = g_open ? Vis("NeuroNetNavMap") : 0;
     o << "map open=" << g_open << " view=" << (map ? static_cast<int>(Mem<u32>(map + 0x7D0)) : -1) << " list=" << g_list
-      << " dests=" << g_dests.size() << " sel=" << g_sel
+      << " zone=" << (g_zones.zone == padzones::Zone::Panel ? "panel" : "canvas") << " focus=" << g_zones.focus << " dests=" << g_dests.size() << " sel=" << g_sel
       << " owned=0x" << std::hex << g_owned << std::dec << " drawnRows=" << g_drawn.rows << " last='" << g_lastAction
       << "' waypoints=" << space::Waypoints().size();
     return o.str();

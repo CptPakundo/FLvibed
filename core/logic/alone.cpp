@@ -69,7 +69,7 @@ template <size_t N> static void AddRows(const settings::Def (&rows)[N]) { g_defs
 // Who uses a row owns it here: core's first, each module's with the module.
 static void BuildRows()
 {
-    const settings::Def core[] = {FLV_ROW_MANEUVER_WATCHDOG(g_rows) FLV_ROW_FLUF_WINDOWS FLV_ROW_TEXT_SIZE FLV_ROW_DECK_MODE FLV_ROW_SHOW_ADVANCED(g_rows)};
+    const settings::Def core[] = {FLV_ROW_MANEUVER_WATCHDOG(g_rows) FLV_ROW_FLUF_WINDOWS FLV_ROW_TEXT_SIZE FLV_ROW_HUD_SIZE FLV_ROW_SHOW_ADVANCED(g_rows)};
     AddRows(core);
     const auto on = [](int row) { return hostcalls::g.ModuleOn && hostcalls::g.ModuleOn(row); };
     if (on(modules::kDisplay))

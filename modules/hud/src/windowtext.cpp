@@ -6,14 +6,17 @@
 #include "windowtext.h"
 
 #include "flexe.h"
+#include "game/deckmode.h"
 #include "game/roletext.h"
 #include "gametext.h"
+#include "skin_rules.h"
 #include "hook.h"
 #include "log.h"
 #include "game/room.h"
 #include "game/fl.h"
 #include "safemem.h"
 #include "ui/ui.h"
+#include "ui/winplates.h"
 
 #include <map>
 #include <sstream>
@@ -40,14 +43,18 @@ constexpr u32 kBarCopy = 0x3DC; // the scroll bar's own copy of its pose (0x595F
 // A name stays at its base: its length is what the list holds, which is not known until it scrolls into view, so a name's top would change the column's font under the
 // player's eyes, and at 800 lines the next rung is also visibly bolder (GitHub issue 22). Numbers are short: they climb.
 constexpr float kPriceTop = 0.045f, kNameTop = 0;
+constexpr float kPriceFit = 0.039f; // what a row's price stands at, under the game's own size: bigger, it crossed the row's line and crowded the word over it (the owner, 6 Nov 2026)
 constexpr float kTraderPriceTop = 0.0435f; // the commodity trader's rows carry the FAIR / GOOD word over the price (uistrip)
 constexpr float kDealNumberTop = 0.0435f, kDealLabelTop = 0.0385f, kHelpTop = 0.035f;
 // One size for every item of an opening: a size per item read as text changing at random (GitHub issue 22). At 125 a long heading wraps across the plate's rule, which no
 // height shows ("SM-a Rampart Heavy Fighter Molecular Shield", frame z1_gear). A description too long for it scrolls in its box.
 constexpr int kRichSize = 115;
+constexpr float kRichLine = 0.03625f; // a rich line's pitch at that size, fractions of H (29 px at 800 lines)
 constexpr float kBoxGap = 0.02f;   // fractions of H between the description and the stats
 constexpr float kBarRoom = 0.03f;  // the game's scroll bar stands right of a box: the wide box ends this short of the plate's edge
 constexpr int kPlaceRest = 4;      // frames a window stands still before its boxes change
+constexpr float kStatsW = 0.335f;  // the stats' labels, fractions of H: the longest ("Shield Damage Per Shot:") on one line, for a wrapped label moved every value after it a row off its own
+constexpr float kRowFloor = 0.024f; // a row's text gives way this far, fractions of H, sooner than it runs into its neighbour or out of its row (the owner, 6 Nov 2026)
 
 // Where a text's grown height goes: 0 down (its top stays), 0.5 both ways, 1 up (its foot stays)
 struct TextRole
@@ -55,6 +62,7 @@ struct TextRole
     const char* name; // a printf form when count > 0
     int first, count;
     float top, anchor;
+    bool under = false; // the top holds under the game's size too: two lines the game stands closer than its font
 };
 struct RowRole
 {
@@ -78,6 +86,11 @@ struct Spec
     float boxHeight;         // the boxes' height, fractions of H, when no anchor says it (0 = the game's)
     const char* wordless;    // the control that says the rows have no word over the price
     float drop;              // the window stands this much lower, fractions of H (move the map, not the subtitles)
+    int frame;               // R8: 1 the window stands on the one frame, 2 only with g_inventoryFrame
+    float boxFoot = 0;       // the box grows to its text up to here, fractions of H, in whole lines: a box cut through a line showed half of it
+    float ruleTop = 0;       // the box starts this far under the window's top, fractions of H: under the title's rule, which ran through its first line
+    float footOff = 0;       // ... and ends this far off the window's foot, in whole lines
+    float grow = 0;          // the window stands this much taller than the game's, fractions of H: there is the screen for it (the owner, 6 Nov 2026)
 };
 
 const TextRole kDealerTexts[] = {
@@ -101,10 +114,15 @@ const RowRole kShipRows[] = {
     {"ShipTraderShipName%d", "ShipTraderShipClass%d", "ShipTraderShipPrice%d", 0, 3, kNameTop, kPriceTop, 0.065f},
     {"ShipTraderCurrentShipName", "ShipTraderCurrentShipClass", "ShipTraderCurrentShipPrice", 0, 0, kNameTop, kPriceTop, 0.065f},
 };
-// (a job row's and the chosen job's Dest and Title lines stand 18 px apart at 800 lines: no room for more, they stay)
+// (a job row's and the chosen job's Dest and Title lines stand 0.0255 H apart, and the game's font ran one into the other)
+constexpr float kJobLineTop = 0.035f; // (PlaceFramed spreads a row's two lines over its frame, which makes this room)
 const TextRole kJobTexts[] = {
     {"MissionVendorSummaryReward%d", 0, 5, 0.04f, 0.5f},
-    {"MissionVendorMissionReward", 0, 0, 0.04f, 0}, // (uistrip's type word goes under it by TextHeight)
+    {"MissionVendorSummaryDest%d", 0, 5, kJobLineTop, 0, true},
+    {"MissionVendorSummaryTitle%d", 0, 5, kJobLineTop, 0, true},
+    {"MissionVendorMissionDest", 0, 0, kJobLineTop, 0, true},
+    {"MissionVendorMissionTitle", 0, 0, kJobLineTop, 0, true},
+    {"MissionVendorMissionReward", 0, 0, 0.05f, 0}, // (uistrip's type word goes under it by TextHeight)
     {"MissionVendorMissionReject", 0, 0, kHelpTop, 0},
 };
 const TextRole kNewsTexts[] = {
@@ -121,6 +139,9 @@ const TextRole kSaveTexts[] = {
     {"LoadSave_InfoShipData", 0, 0, kHelpTop, 0},
 };
 
+constexpr float kTextWindowGrow = 0.15f; // the plate from under the room's tab to over the prompts' lane
+// The box's top under the window's: a small gap under the rule, which stands higher with the title for more text (winplates' 0.056). It ends on a whole line
+constexpr float kTextWindowTop = 0.056f;
 // The dealer first: its partner NN_Inventory is also a window of its own in the NeuroNet
 const Spec kSpecs[] = {
     // the boxes: the plate's 0.480 .. 0.779 (uiskin's "dealer" family) less a little room at its head; 7 stats at 115 % need 234 px at
@@ -132,21 +153,21 @@ const Spec kSpecs[] = {
     {"NN_ShipTrader", nullptr, kShipTexts, 1, kShipRows, 2,
      {"ShipInfoCard_Facts", "ShipInfoCard_Stats", "ShipInfoCard_Values", nullptr},
      "ShipInfoCard_Facts", "ShipInfoCard_Stats", "ShipInfoCard_Values", nullptr,
-     "ShipTraderCancelButton", 0.486f, 0.7795f, 0, 0, nullptr},
-    {"NN_MissionVendor", nullptr, kJobTexts, 3, nullptr, 0, {"MissionVendorMissionFullText", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
+     "ShipTraderCancelButton", 0.436f, 0.7295f, 0, 0, nullptr}, // (from the X where it stands now: StandShipHead)
+    {"NN_MissionVendor", nullptr, kJobTexts, 7, nullptr, 0, {"MissionVendorMissionFullText", nullptr, nullptr, nullptr},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 0, 0.888f},
     {"NN_News", nullptr, kNewsTexts, 2, nullptr, 0, {"NewsStoryText", nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
     {"NN_Inventory", nullptr, kInventoryTexts, 1, kInventoryRows, 1, {"InfoCard_Info", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.40f, nullptr},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.40f, nullptr, 0, 2},
     {"NeuroNetStoryStar", nullptr, nullptr, 0, nullptr, 0, {"StoryStarHistoryText", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.089f, kTextWindowGrow},
     {"NN_Help", nullptr, nullptr, 0, nullptr, 0, {"PlayerInfoText", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.475f, nullptr},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.015f, kTextWindowGrow},
     {"ScriptSequence_OfferDialog", nullptr, nullptr, 0, nullptr, 0, {"OfferDialogOfferText", nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
     {"NN_PlayerInfo", nullptr, kPlayerTexts, 1, nullptr, 0, {nullptr, nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1},
     {"NN_LoadSave", nullptr, kSaveTexts, 4, nullptr, 0, {nullptr, nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
     // the nav map: its toolbar lay under the top panel of subtitles (UI_HUD2.md 5.34) and there is room under the map
@@ -248,6 +269,28 @@ bool SetPos(u32 ctl, const float* pos)
     }
 }
 
+// A row of a list: two lines in a frame the game draws. The game's offsets are for its own fonts: a larger price crossed the frame's foot (the owner, 6 Nov 2026). So each line is
+// placed by the frame as it stands: the first under its top, the others on its foot. One rule for every list.
+struct FramedRole
+{
+    const char *frame, *top, *low1, *low2; // printf forms when count > 0
+    int first, count;
+};
+const FramedRole kFramed[] = {
+    {"ItemView%02d", "ItemName%02d", "ItemQuantity%02d", "ItemPrice%02d", 1, 5},
+    {"TransferItemView", "TransferItemName", "TransferItemQuantity", "TransferItemPrice", 0, 0},
+    {"ShipTraderShipNameFrame%d", "ShipTraderShipName%d", "ShipTraderShipClass%d", "ShipTraderShipPrice%d", 0, 3},
+    {"ShipTraderCurrentShipFrame", "ShipTraderCurrentShipName", "ShipTraderCurrentShipClass", "ShipTraderCurrentShipPrice", 0, 0},
+    {"MissionVendorSummaryBox%d", "MissionVendorSummaryDest%d", "MissionVendorSummaryTitle%d", nullptr, 0, 5},
+    {"PlayerInfoFactionFrame%d", "PlayerInfoFactionName%d", nullptr, nullptr, 0, 6},
+};
+struct Framed
+{
+    u32 frame = 0, top = 0, low1 = 0, low2 = 0;
+};
+constexpr float kFramePad = 0.003f; // between a line's ink and its frame, fractions of H
+constexpr float kInkTop = 0.10f, kInkFoot = 0.90f; // where a font's ink starts and ends in its line
+
 // What a control held before this module touched it
 struct Base
 {
@@ -267,12 +310,17 @@ struct Column
     float topName = 0, topPrice = 0, pitch = 0;
     roletext::Pick pick{-1, -1}, base{-1, -1}, cap{-1, -1};
     bool started = false;
+    int nameRungs = 0; // rungs over the base, one fixed size for the whole opening (R1, GitHub issue 22)
+    int overflow = 0;  // names wider than the row at that size, read as they came into view: the game has no marquee, a probe counts them
+    float secondBase = 0; // the second line's own height
+    int secondRung = -1;  // its rung, -1 not read yet
 };
 struct Single
 {
     u32 ctl = 0;
     float top = 0, anchor = 0;
     int rung = -1; // down only while the window is open
+    bool under = false;
 };
 enum class Kind
 {
@@ -296,6 +344,10 @@ std::map<u32, float> g_heights; // font -> height, every font of the ladder
 std::map<u32, Base> g_base;
 std::vector<Column> g_columns;
 std::vector<Single> g_singles;
+std::vector<Single> g_loose; // every other text of the window: no role, but it stays in its box
+int g_looseSteps = 0;
+std::vector<Framed> g_framed;
+u32 g_welcomeText = 0, g_welcomeHelp = 0, g_shipTitle = 0, g_shipClose = 0, g_viewName = 0, g_viewClass = 0;
 std::vector<u32> g_boxes;
 u32 g_facts = 0, g_stats = 0, g_values = 0, g_wide = 0, g_anchor = 0;
 int g_rich = 100;
@@ -311,6 +363,19 @@ float HeightOf(u32 font)
     return it == g_heights.end() ? 0 : it->second;
 }
 
+// The dealer's quantity block, its button with it: it rises into the slider's room while the game hides the slider (the owner, 6 Nov 2026: no empty room), and goes back with it.
+struct Lifted
+{
+    u32 ctl;
+    float y;
+};
+std::vector<Lifted> g_lifted;
+float g_liftNow = 0;
+u32 g_jobReward = 0;
+constexpr float kRewardLeft = 0.0375f; // the job's reward ends on ACCEPT JOB's right edge, as the type word under it: it stood past it (fractions of H)
+constexpr float kStackNudge = 0.018f; // with the slider showing: the slack over the block, so the line at its foot stands clear of the plate's edge
+const char* const kLiftNames[] = {"QuantityText", "QuantityEdit", "QuantityPrice", "TransferPriceText", "QuantityTotal", "QuantityTotalText", "PlusMinus", "ShipBuyProblem"};
+
 void Remember(u32 ctl)
 {
     if (!IsText(ctl))
@@ -322,13 +387,13 @@ void Remember(u32 ctl)
 }
 
 // The new font, the text's grown height going where its role says: a font grows down from the text's top.
-void Apply(u32 ctl, const Rung& r, float anchor)
+void Apply(u32 ctl, const Rung& r, float anchor, bool under = false)
 {
     const auto it = g_base.find(ctl);
     if (it == g_base.end() || !it->second.font)
         return;
     Base& b = it->second;
-    const u32 font = r.height <= b.height + 0.0001f ? b.font : r.font;
+    const u32 font = fabsf(r.height - b.height) <= 0.0001f || (!under && r.height < b.height) ? b.font : r.font; // (`under`: a text that would run into its neighbour goes below the game's size)
     if (b.applied == font || (!b.applied && font == b.font))
         return;
     if (!SetFont(ctl, font))
@@ -408,17 +473,21 @@ void Collect(const Spec& s)
 {
     g_columns.assign(static_cast<size_t>(s.rowCount), Column());
     g_singles.clear();
+    g_loose.clear();
     g_boxes.clear();
     g_facts = g_stats = g_values = g_wide = g_anchor = 0;
     for (int c = 0; c < s.rowCount; ++c)
     {
         Column& col = g_columns[static_cast<size_t>(c)];
         col.topName = s.rows[c].topName, col.topPrice = s.rows[c].topPrice, col.pitch = s.rows[c].pitch;
+        // (a size the player raised already grew the names: the rung is for the game's own size)
+        col.nameRungs = gametext::Applied() == 100 ? skinrules::NameRungs(static_cast<float>(fl::ScreenHeight()), col.pitch) : 0;
         if (s.wordless && c == 0 && !uiclick::FindVisible(s.wordless))
             col.topPrice = kTraderPriceTop;
     }
     std::map<std::string, Slot> slots;
     Slots(s, slots);
+    std::map<std::string, u32> named[3]; // by side
 
     const u32 head = Mem<u32>(exe::UiControls);
     u32 node = head ? R32(head + 4) : 0;
@@ -429,13 +498,29 @@ void Collect(const Spec& s)
             continue;
         char n[40] = {}; // (ui::ControlName keeps one buffer: Side asks it again)
         strncpy_s(n, ui::ControlName(ctl), 32);
+        if (const int sd = Side(ctl, s))
+            named[sd][n] = ctl;
+        if (strcmp(n, "MissionVendorMissionReward") == 0)
+            g_jobReward = ctl;
+        if (strcmp(s.window, "NN_Dealer") == 0)
+            for (const char* l : kLiftNames)
+                if (strcmp(l, n) == 0)
+                {
+                    float pos[3] = {};
+                    if (safemem::Read(ctl + kPos, pos, sizeof(pos)))
+                        g_lifted.push_back({ctl, pos[1]});
+                }
         const auto slot = slots.find(n);
         bool box = false;
         for (const char* b : s.boxes)
             box = box || (b && strcmp(b, n) == 0);
         const bool anchor = s.anchor && strcmp(s.anchor, n) == 0;
         if (slot == slots.end() && !box && !anchor)
+        {
+            if (IsText(ctl) && Side(ctl, s) && !winplates::IsTitle(n))
+                g_loose.push_back({ctl, 0, 0, -1});
             continue;
+        }
         const int side = Side(ctl, s);
         if (!side)
             continue;
@@ -454,18 +539,50 @@ void Collect(const Spec& s)
         const Slot& at = slot->second;
         if (at.role)
         {
-            g_singles.push_back({ctl, at.role->top, at.role->anchor, -1});
+            g_singles.push_back({ctl, at.role->top, at.role->anchor, -1, at.role->under});
             continue;
         }
         RowCtl& r = g_columns[static_cast<size_t>(at.column)].rows[side * 100 + at.row];
         (at.kind == Kind::Name ? r.name : at.kind == Kind::Second ? r.second : r.price) = ctl;
     }
+    g_framed.clear();
+    const auto welcome = [&](const char* name) -> u32
+    {
+        const auto it = named[1].find(name);
+        return it == named[1].end() ? 0 : it->second;
+    };
+    g_welcomeText = welcome("WelcomeText"), g_welcomeHelp = welcome("WelcomeHelp");
+    g_shipTitle = welcome("ShipTraderTitle"), g_shipClose = welcome("ShipTraderCancelButton"), g_viewName = welcome("ShipTraderViewName"), g_viewClass = welcome("ShipTraderViewClass");
+    for (const auto& side : named)
+        for (const FramedRole& r : kFramed)
+            for (int i = 0; i < (r.count ? r.count : 1); ++i)
+            {
+                const auto at = [&](const char* form) -> u32
+                {
+                    if (!form)
+                        return 0;
+                    const auto it = side.find(r.count ? Named(form, r.first + i) : std::string(form));
+                    return it == side.end() ? 0 : it->second;
+                };
+                Framed f;
+                f.frame = at(r.frame), f.top = at(r.top), f.low1 = at(r.low1), f.low2 = at(r.low2);
+                if (f.frame && f.top)
+                    g_framed.push_back(f);
+            }
     for (const Column& c : g_columns)
         for (const auto& kv : c.rows)
             for (u32 ctl : {kv.second.name, kv.second.second, kv.second.price})
                 Remember(ctl);
     for (const Single& t : g_singles)
         Remember(t.ctl);
+    for (const Single& t : g_loose)
+        Remember(t.ctl);
+    const auto reward = g_base.find(g_jobReward);
+    if (reward != g_base.end())
+    {
+        reward->second.pos[0] -= kRewardLeft;
+        SetPos(g_jobReward, reward->second.pos);
+    }
 }
 
 // One column: measured at its base fonts, one size for all its rows; down at once when a text needs it, up only at the next opening
@@ -486,7 +603,10 @@ void Rows(Column& c, float screenH)
         if (nameBase <= 0 || priceBase <= 0 || nameNow <= 0 || priceNow <= 0)
             return;
         room.nameBase = nameBase, room.priceBase = priceBase;
-        rows.push_back({name.width * nameBase / nameNow, second.valid ? second.width : 0, price.width * priceBase / priceNow});
+        const float secondNow = second.valid ? HeightOf(second.font) : 0;
+        if (second.valid && c.secondBase <= 0)
+            c.secondBase = g_base[r.second].height;
+        rows.push_back({name.width * nameBase / nameNow, second.valid && secondNow > 0 ? second.width * c.secondBase / secondNow : 0, price.width * priceBase / priceNow});
         if (room.width <= 0)
         {
             // from the name's left to the price's right, by their boxes (pixels through the name's own wrap: its width in both units)
@@ -506,6 +626,15 @@ void Rows(Column& c, float screenH)
     }
     if (rows.empty() || room.width <= 0)
         return;
+    // (the frame says the room, where there is one: the two controls' boxes said more than it holds, and a name ran out of it)
+    for (const auto& kv : c.rows)
+        for (const Framed& f : g_framed)
+            if (f.top == kv.second.name)
+            {
+                ui::Item fr;
+                if (Shown(f.frame) && ui::ControlRect(f.frame, fr) && fr.hw > 0.5f)
+                    room.width = std::min(room.width, fr.hw * 2 - 0.02f * screenH);
+            }
     room.height = c.pitch * screenH;
     room.gap = 0.01f * screenH;
     room.screenH = screenH;
@@ -513,18 +642,63 @@ void Rows(Column& c, float screenH)
     {
         c.base = {roletext::RungAt(g_ladder, room.nameBase), roletext::RungAt(g_ladder, room.priceBase)};
         c.cap = {c.topName > 0 ? roletext::RungAt(g_ladder, c.topName) : roletext::RungAt(g_ladder, room.nameBase), c.topPrice > 0 ? roletext::RungAt(g_ladder, c.topPrice) : roletext::RungAt(g_ladder, room.priceBase)};
-        if (c.base.name < 0 || c.base.price < 0 || c.cap.name < c.base.name || c.cap.price < c.base.price)
+        c.cap.name = std::max(c.cap.name, c.base.name), c.cap.price = std::max(c.cap.price, c.base.price); // (a top under the game's size: the commodity rows' sat just under it, and these rows went unmanaged)
+        if (c.base.name < 0 || c.base.price < 0)
             return;
         c.started = true;
     }
-    const roletext::Pick p = roletext::PickRows(rows, room, g_ladder, c.base, c.cap);
+    roletext::Pick p = roletext::PickRows(rows, room, g_ladder, c.base, c.cap);
+    p.price = std::min(p.price, std::max(0, roletext::RungAt(g_ladder, kPriceFit)));
+    if (c.nameRungs != 0)
+    {
+        // the name's rung stands whatever scrolls into view; the price gives way to it, for the row's height is what cannot grow
+        p.name = std::clamp(c.base.name + c.nameRungs, 0, static_cast<int>(g_ladder.size()) - 1);
+        while (p.price > c.base.price && (g_ladder[static_cast<size_t>(p.name)].height + g_ladder[static_cast<size_t>(p.price)].height) * roletext::kInk > c.pitch)
+            --p.price;
+    }
+    // Nothing in a row runs into its neighbour or out of its row. A name wider than its room takes the column down, and it stays down for this opening: one step when the long
+    // name first shows, not a size per item (GitHub issue 22). So does the second line against the price, the price first
+    const int floorRung = std::max(0, roletext::RungAt(g_ladder, kRowFloor));
+    const float H1 = 1.0f / room.nameBase, nameRoom = room.width;
+    const auto nameOver = [&](int rung)
+    {
+        int over = 0;
+        for (const roletext::Row& r : rows)
+            over += r.name * g_ladder[static_cast<size_t>(rung)].height * H1 * roletext::kWidthMargin > nameRoom ? 1 : 0;
+        return over;
+    };
+    while (p.name > floorRung && nameOver(p.name) > 0)
+        --p.name;
+    c.nameRungs = p.name - c.base.name;
+    c.overflow = nameOver(p.name);
+    if (c.secondBase > 0)
+    {
+        if (c.secondRung < 0)
+            c.secondRung = roletext::RungAt(g_ladder, c.secondBase);
+        const auto collides = [&](int second, int price)
+        {
+            for (const roletext::Row& r : rows)
+                if (r.price > 0 && r.second > 0 &&
+                    (r.second * g_ladder[static_cast<size_t>(second)].height / c.secondBase + r.price * g_ladder[static_cast<size_t>(price)].height / room.priceBase) * roletext::kWidthMargin + room.gap > room.width)
+                    return true;
+            return false;
+        };
+        const int was = c.secondRung;
+        while (c.secondRung >= 0 && p.price > c.base.price && collides(c.secondRung, p.price))
+            --p.price;
+        while (c.secondRung > floorRung && collides(c.secondRung, p.price))
+            --c.secondRung;
+        if (c.secondRung != was && c.secondRung >= 0)
+            for (const auto& kv : c.rows)
+                Apply(kv.second.second, g_ladder[static_cast<size_t>(c.secondRung)], 0, true);
+    }
     if (p.name == c.pick.name && p.price == c.pick.price)
         return;
     c.pick = p, c.cap = p;
     for (const auto& kv : c.rows)
     {
-        Apply(kv.second.name, g_ladder[static_cast<size_t>(p.name)], 0);
-        Apply(kv.second.price, g_ladder[static_cast<size_t>(p.price)], 1);
+        Apply(kv.second.name, g_ladder[static_cast<size_t>(p.name)], 0, true);
+        Apply(kv.second.price, g_ladder[static_cast<size_t>(p.price)], 1, true);
     }
 }
 
@@ -547,16 +721,129 @@ void Singles()
         if (n.shown && n.valid && n.lines > 0 && !wraps)
         {
             const float now = HeightOf(n.font), wrap = static_cast<float>(R32(obj + kWrapPx));
-            while (now > 0 && wrap > 0 && s.rung > 0 && g_ladder[static_cast<size_t>(s.rung)].height > base->second.height + 0.0001f &&
+            while (now > 0 && wrap > 0 && s.rung > 0 && (s.under || g_ladder[static_cast<size_t>(s.rung)].height > base->second.height + 0.0001f) &&
                    n.width / now * g_ladder[static_cast<size_t>(s.rung)].height * roletext::kWidthMargin > wrap)
                 --s.rung;
         }
-        Apply(s.ctl, g_ladder[static_cast<size_t>(s.rung)], s.anchor);
+        Apply(s.ctl, g_ladder[static_cast<size_t>(s.rung)], s.anchor, s.under);
+    }
+}
+
+void PlaceFramed(float screenH)
+{
+    enum Where
+    {
+        Top,
+        Foot,
+        Middle,
+        Exact, // y0 is the line's top
+    };
+    const auto empty = [&](u32 ctl)
+    {
+        const Now n = Read(ctl);
+        return !n.shown || !n.valid || n.lines < 1 || n.width < 0.012f * screenH; // (an empty row's name is one space)
+    };
+    const auto put = [&](u32 ctl, float y0, float y1, Where where)
+    {
+        const Now n = Read(ctl);
+        ui::Item it;
+        float pos[3] = {};
+        if (!n.shown || !n.valid || n.lines < 1 || !ui::ControlRect(ctl, it) || !safemem::Read(ctl + kPos, pos, sizeof(pos)))
+            return;
+        const float line = n.height / static_cast<float>(n.lines);
+        const float want = where == Exact ? y0 : where == Foot ? y1 - kFramePad * screenH - line * kInkFoot : where == Top ? y0 + kFramePad * screenH - line * kInkTop : (y0 + y1) / 2 - n.height / 2;
+        if (fabsf(it.y - want) < 1.0f)
+            return;
+        const float dy = (it.y - want) / screenH;
+        pos[1] += dy;
+        SetPos(ctl, pos);
+        const auto base = g_base.find(ctl);
+        if (base != g_base.end())
+            base->second.pos[1] += dy; // (a later font keeps the place)
+    };
+    for (const Framed& f : g_framed)
+    {
+        ui::Item fr;
+        if (!Shown(f.frame) || !ui::ControlRect(f.frame, fr) || fr.hh <= 0.5f)
+            continue;
+        const float y0 = fr.y - fr.hh, y1 = fr.y + fr.hh;
+        // a name at the smallest size that still wants the frame's width: it starts nearer the frame's left, sooner than past its right
+        const Now name = Read(f.top);
+        const auto nameBase = g_base.find(f.top);
+        if (name.shown && name.valid && nameBase != g_base.end())
+        {
+            float pos[3] = {};
+            const float margin = 0.0125f * screenH;
+            const float over = std::clamp(name.width + margin + 2 - fr.hw * 2, 0.0f, margin - 2);
+            if (safemem::Read(f.top + kPos, pos, sizeof(pos)) && fabsf(pos[0] - (nameBase->second.pos[0] - over / screenH)) * screenH >= 1.0f)
+            {
+                pos[0] = nameBase->second.pos[0] - over / screenH;
+                SetPos(f.top, pos);
+            }
+        }
+        const bool noTop = empty(f.top), noLow = (!f.low1 || empty(f.low1)) && (!f.low2 || empty(f.low2));
+        put(f.top, y0, y1, noLow ? Middle : Top);
+        put(f.low1, y0, y1, noTop ? Middle : Foot);
+        put(f.low2, y0, y1, noTop ? Middle : Foot);
+    }
+    // the welcome text under its title as it stands: the title takes two lines or three by the base's name
+    const Now title = Read(g_welcomeText);
+    ui::Item t;
+    if (title.shown && title.valid && title.lines > 0 && ui::ControlRect(g_welcomeText, t))
+        put(g_welcomeHelp, t.y + title.height + 0.024f * screenH, 0, Exact);
+}
+
+// A text with no role that the game wrote wider than its box (a long name, another language): it runs over its neighbour or out of its panel, so it steps down, a few rungs at most, and
+// stays down for the opening. It is the same whatever its alignment: a text no wider than its box cannot leave it. A text that wraps grows instead, and its panel with it (winfit.h).
+void Loose()
+{
+    constexpr int kMostSteps = 3;
+    const int floorRung = std::max(0, roletext::RungAt(g_ladder, kRowFloor));
+    for (Single& s : g_loose)
+    {
+        const Now n = Read(s.ctl);
+        if (!n.shown || !n.valid || n.lines != 1)
+            continue;
+        const u32 obj = R32(s.ctl + kObj);
+        u8 wraps = 0;
+        safemem::Read(obj + 0x30, &wraps, 1);
+        const float now = HeightOf(n.font), wrap = static_cast<float>(R32(obj + kWrapPx));
+        if (wraps || now <= 0 || wrap <= 0)
+            continue;
+        const int first = roletext::RungAt(g_ladder, g_base[s.ctl].height);
+        if (s.rung < 0)
+            s.rung = first;
+        const int was = s.rung;
+        while (s.rung > floorRung && s.rung > first - kMostSteps && n.width / now * g_ladder[static_cast<size_t>(s.rung)].height * roletext::kWidthMargin > wrap)
+            --s.rung;
+        if (s.rung != was && s.rung >= 0)
+        {
+            ++g_looseSteps;
+            Apply(s.ctl, g_ladder[static_cast<size_t>(s.rung)], 0, true);
+        }
     }
 }
 
 // The boxes take the plate's room: the full height, the description the width up to the stats. By absolute targets, so a window that
 // comes back as it was asks for nothing. True when a box changed: its pixels are new only after the next draw.
+// A box's height in the setter's units for this many pixels: by what the height it has came to, for the width's scale is not the height's (a whole number of lines came out a part of one over).
+// The pixels are new only after a draw: asked once, it waits for them, or it would correct a correction
+static struct
+{
+    u32 box;
+    float units, pixels;
+} g_askedHeight = {};
+static float ToPixels(u32 box, float units, float pixels, float want)
+{
+    if (g_askedHeight.box == box && fabsf(g_askedHeight.units - units) < 0.002f && g_askedHeight.pixels == pixels)
+        return units;
+    if (pixels <= 0 || fabsf(pixels - want) <= 1.0f)
+        return units;
+    const float next = units * want / pixels;
+    g_askedHeight = {box, next, pixels};
+    return next;
+}
+
 bool PlaceBoxes(const Spec& s, float screenH)
 {
     if (!exe::RichSetSize.ok())
@@ -574,7 +861,15 @@ bool PlaceBoxes(const Spec& s, float screenH)
     g_placeKey = place;
     if (g_placeRest < kPlaceRest)
         return false;
-    const float top = anchored ? anchor.y + s.boxTop * screenH : 0, bottom = anchored ? anchor.y + s.boxBottom * screenH : 0;
+    // the trade words at the ship's final stage have no heading: they stand even in the plate, not hard under its top
+    const bool bare = g_wide && !(IsRich(g_stats) && Shown(g_stats)) && uiclick::FindVisible("BackToShipDealer");
+    // (the panel under the row takes the room the row leaves: its boxes go with it, beyond a pixel's noise)
+    float shift = s.anchor ? winplates::FitBoxShift(strcmp(s.window, "NN_Dealer") == 0 ? winplates::kFamDealer : winplates::kFamShipDealer) : 0;
+    shift = fabsf(shift) < 0.004f * screenH ? 0 : shift;
+    ui::Item rootIt;
+    const bool rooted = s.ruleTop > 0 && ui::ControlRect(g_window, rootIt) && rootIt.hh > 0.5f;
+    const float top = anchored ? anchor.y + (s.boxTop + (bare ? 0.016f : 0.0f)) * screenH + shift : rooted ? rootIt.y - rootIt.hh + s.ruleTop * screenH : 0;
+    const float bottom = anchored ? anchor.y + s.boxBottom * screenH : rooted ? rootIt.y + rootIt.hh + (s.footOff + s.grow) * screenH : 0;
     bool changed = false;
     for (u32 box : g_boxes)
     {
@@ -588,7 +883,7 @@ bool PlaceBoxes(const Spec& s, float screenH)
         if (w <= 0 || h <= 0 || px <= 0)
             continue; // not drawn yet
         const float k = static_cast<float>(px) / w;
-        if (anchored)
+        if (anchored || rooted)
         {
             const float up = static_cast<float>(static_cast<int>(R32(box + kTop))) - top;
             if (fabsf(up) >= 1.5f)
@@ -599,14 +894,39 @@ bool PlaceBoxes(const Spec& s, float screenH)
             }
         }
         float wantW = w, wantH = h;
+        if (box == g_stats && IsRich(g_values) && Shown(g_values))
+        {
+            // the labels' width, from the values' left edge: the description gives up what they take
+            const float left = static_cast<float>(static_cast<int>(R32(g_values + kLeft))) - kStatsW * screenH;
+            const float dx = left - static_cast<float>(static_cast<int>(R32(box + kLeft)));
+            if (fabsf(dx) >= 1.5f)
+            {
+                pos[0] += dx / k;
+                SetPos(box, pos);
+                changed = true;
+            }
+            wantW = kStatsW * screenH / k;
+        }
         if (box == g_facts && IsRich(g_stats) && Shown(g_stats))
-            wantW = (static_cast<float>(static_cast<int>(R32(g_stats + kLeft)) - static_cast<int>(R32(box + kLeft))) - kBoxGap * screenH) / k;
+            wantW = (static_cast<float>(static_cast<int>(R32(g_stats + kLeft)) - static_cast<int>(R32(box + kLeft))) - (kBoxGap + kBarRoom) * screenH) / k; // (its scroll bar stands right of it: on the labels without the room)
         if (box == g_wide && anchored)
             wantW = (anchor.x + (s.plateRight - kBarRoom) * screenH - static_cast<float>(static_cast<int>(R32(box + kLeft)))) / k;
         if (anchored)
             wantH = (bottom - top) / k;
+        else if (rooted)
+        {
+            const float line = kRichLine * screenH * static_cast<float>(g_rich) / kRichSize;
+            wantH = ToPixels(box, h, static_cast<float>(R32(box + kBoxH)), floorf((bottom - top) / line) * line);
+        }
         else if (s.boxHeight > 0)
             wantH = s.boxHeight * screenH / k;
+        else if (s.boxFoot > 0)
+        {
+            const float line = kRichLine * screenH * static_cast<float>(g_rich) / kRichSize, text = static_cast<float>(R32(box + kTextH));
+            const float lines = floorf((s.boxFoot * screenH - static_cast<float>(static_cast<int>(R32(box + kTop)))) / line);
+            if (text > 0 && lines >= 2)
+                wantH = ToPixels(box, h, static_cast<float>(R32(box + kBoxH)), std::min(text, lines * line) + 2);
+        }
         if (fabsf(wantW - w) > 0.002f || fabsf(wantH - h) > 0.002f)
         {
             // The setter sets the scroll bar's pose from the box's width, and a bar that holds that width already lands a width too
@@ -669,11 +989,13 @@ void FitRich()
     for (u32 box : g_boxes)
         if (IsRich(box) && Shown(box))
             boxes.push_back(box);
-    gametext::RichSet(kRichSize);
+    // (a window with a stats table stays at kRichSize whatever the window text does: the table is sized for it, and at 125 % a label wrapped at 800 lines, which put every
+    // number beside the wrong label and laid two bars over the values. tests\docked_text.ps1 LABELS)
+    const int chosen = g_stats ? kRichSize : std::max(kRichSize, gametext::Applied());
+    gametext::RichSet(chosen);
     g_richFits = 1;
     for (u32 box : boxes)
         Relay(box);
-    const int chosen = kRichSize;
     gametext::RichSet(chosen);
     g_rich = chosen;
     for (u32 box : boxes)
@@ -717,13 +1039,149 @@ void Drop(const Spec& s)
     hk::Call<void(__thiscall*)(u32, const float*)>(exe::NavMapSetPosition, g_window, pos);
 }
 
+// R8: the window's top left on the one frame, once it has stopped sliding, through its own signed setter. A correction by measure, as the UI's units are not quite
+// pixels: a few tries, then it stands where it stands. No hook on the slide yet (0x55E120 goes with the strip's work), so the window arrives at the game's place first.
+bool g_inventoryFrame = true; // (the window keeps its rows' hit boxes as the status and log do: tests\\docked_text.ps1)
+void Place(const Spec& s)
+{
+    const u32 set = R32(R32(g_window) + 0x14);
+    if ((s.frame == 2 && !g_inventoryFrame) || g_dropTries >= 3 || !(exe::ControlSetPosition.is(set) || exe::InventorySetPosition.is(set)))
+        return;
+    float pos[3] = {};
+    ui::Item it;
+    if (!safemem::Read(g_window + 0x60, pos, sizeof(pos)) || !ui::ControlRect(g_window, it) || it.hw <= 0.5f)
+        return;
+    u32 key = 0, kx = 0;
+    memcpy(&key, &pos[1], 4);
+    memcpy(&kx, &pos[0], 4);
+    key = key * 31 + kx;
+    g_dropRest = key == g_dropKey ? g_dropRest + 1 : 0;
+    g_dropKey = key;
+    if (g_dropRest < kPlaceRest)
+        return;
+    const float H = static_cast<float>(fl::ScreenHeight()), W = static_cast<float>(fl::ScreenWidth());
+    // centred between what stands around it (the owner, 6 Nov 2026): on the screen's middle, and between the strip's tabs and the prompts' row; a window that grows downwards stands higher by half of it
+    const float dx = (W / 2 - it.x) / H, dy = (it.y - H * (skinrules::kFrameCentreY - s.grow / 2)) / H;
+    if (fabsf(dx) < 0.002f && fabsf(dy) < 0.002f)
+        return;
+    pos[0] += dx, pos[1] += dy;
+    ++g_dropTries;
+    g_dropRest = 0;
+    hk::Call<void(__thiscall*)(u32, const float*)>(exe::ControlSetPosition.is(set) ? exe::ControlSetPosition : exe::InventorySetPosition, g_window, pos);
+}
+
+// A button to a height on the screen, through the position property as a text is. Checked: it must stay on its column. A button that leaves it goes back and is left alone for the
+// opening: every plate of a window can hang on one (the ship dealer's X went 1000 px left through vt[0x14], whose position is not the local one, and took the panels with it)
+bool g_moveRefused = false;
+void MoveButton(u32 ctl, float y, float H)
+{
+    ui::Item it, after;
+    float pos[3] = {};
+    if (g_moveRefused || !ctl || !ui::ControlRect(ctl, it) || fabsf(it.y - y) < 1.0f || !safemem::Read(ctl + kPos, pos, sizeof(pos)))
+        return;
+    const float was = pos[1];
+    pos[1] += (it.y - y) / H;
+    if (!SetPos(ctl, pos))
+        return;
+    if (!ui::ControlRect(ctl, after) || fabsf(after.x - it.x) > 2.0f)
+    {
+        pos[1] = was;
+        SetPos(ctl, pos);
+        g_moveRefused = true;
+        Log("windowtext: a button left its column when moved: left where the game has it");
+    }
+}
+
+// The ship dealer's head: its side panels start at their headings, so the X goes on the headings' line and the ship's name under the panels' top. By where they stand, as StretchFoot
+void StandShipHead(float H)
+{
+    constexpr float kTopAir = 0.018f, kViewAir = 0.012f;
+    const Now title = Read(g_shipTitle), name = Read(g_viewName), kind = Read(g_viewClass);
+    ui::Item t, v;
+    if (!title.shown || !title.valid || title.lines < 1 || !ui::ControlRect(g_shipTitle, t))
+        return;
+    MoveButton(g_shipClose, t.y + title.height / 2, H);
+    const float top = t.y - kTopAir * H + kViewAir * H;
+    const auto stand = [&](u32 ctl, const Now& n, float want)
+    {
+        float p[3] = {};
+        if (n.shown && n.valid && ui::ControlRect(ctl, v) && fabsf(v.y - want) >= 1.0f && safemem::Read(ctl + kPos, p, sizeof(p)))
+        {
+            p[1] += (v.y - want) / H;
+            SetPos(ctl, p);
+        }
+    };
+    stand(g_viewName, name, top);
+    stand(g_viewClass, kind, top + name.height);
+}
+
+// The log's two buttons at the window's foot, taller as it is: by where they stand, so a window the game keeps across openings is never moved twice
+void StretchFoot(const Spec& s, float H)
+{
+    constexpr float kButtonFoot = 0.0515f, kCaptionUp = 0.022f;
+    static const char* const kPairs[][2] = {{"MissionButton", "MissionText"}, {"LogButton", "LogText"}};
+    ui::Item root;
+    if (s.grow <= 0 || !ui::ControlRect(g_window, root) || root.hh <= 0.5f)
+        return;
+    // the title at the window's top: the rule under it stands higher now
+    const u32 title = winplates::Child(g_window, strcmp(s.window, "NN_Help") == 0 ? "PlayerInfoTitle" : "StoryStarTitle");
+    ui::Item t;
+    float tp[3] = {};
+    const float titleTop = root.y - root.hh;
+    if (title && ui::ControlRect(title, t) && fabsf(t.y - titleTop) >= 1.0f && safemem::Read(title + kPos, tp, sizeof(tp)))
+    {
+        tp[1] += (t.y - titleTop) / H;
+        SetPos(title, tp);
+    }
+    if (strcmp(s.window, "NeuroNetStoryStar") != 0)
+        return;
+    const float want = root.y + root.hh + (s.grow - kButtonFoot) * H;
+    for (const auto& pair : kPairs)
+    {
+        const u32 button = winplates::Child(g_window, pair[0]), text = winplates::Child(g_window, pair[1]);
+        ui::Item it;
+        float pos[3] = {};
+        MoveButton(button, want, H);
+        if (text && ui::ControlRect(text, it) && fabsf(it.y - (want - kCaptionUp * H)) >= 1.0f && safemem::Read(text + kPos, pos, sizeof(pos)))
+        {
+            pos[1] += (it.y - (want - kCaptionUp * H)) / H;
+            SetPos(text, pos);
+        }
+    }
+}
+
+void Lift(float want)
+{
+    if (want == g_liftNow)
+        return;
+    g_liftNow = want;
+    for (const Lifted& l : g_lifted)
+    {
+        float pos[3] = {};
+        if (!safemem::Read(l.ctl + kPos, pos, sizeof(pos)))
+            continue;
+        pos[1] = l.y + want;
+        SetPos(l.ctl, pos);
+        const auto it = g_base.find(l.ctl);
+        if (it != g_base.end())
+            it->second.pos[1] = pos[1];
+    }
+}
+
 void Closed()
 {
+    g_lifted.clear();
+    g_framed.clear();
+    g_moveRefused = false;
+    g_liftNow = 0;
+    g_jobReward = 0;
     g_dropRest = g_dropTries = 0;
-    if (g_rich != 100)
-        gametext::RichSet(100);
-    g_rich = 100;
+    const int base = gametext::Applied();
+    if (g_rich != base)
+        gametext::RichSet(base);
+    g_rich = base;
     g_richKey = 0;
+    winplates::SetRootGrow(0);
     g_spec = nullptr; // (the window's controls are gone: the game builds new ones at each opening, often at the same addresses)
     g_base.clear();
     g_boxes.clear();
@@ -773,6 +1231,9 @@ void Frame(bool on)
 {
     if (!on)
     {
+        Lift(0);
+        if (const auto reward = g_base.find(g_jobReward); reward != g_base.end())
+            reward->second.pos[0] += kRewardLeft;
         for (auto& kv : g_base)
             if (IsText(kv.first))
                 PutBack(kv.first, kv.second);
@@ -796,8 +1257,9 @@ void Frame(bool on)
         const Spec* spec = Find(window);
         if (!spec)
             return;
-        if (g_ladder.empty())
-            BuildLadder();
+        static int ladderAt = 0; // (a size that took effect at the main menu changed every font's height)
+        if (g_ladder.empty() || ladderAt != gametext::Applied())
+            BuildLadder(), ladderAt = gametext::Applied();
         g_spec = spec, g_window = window;
         g_base.clear();
         Collect(*spec);
@@ -807,14 +1269,48 @@ void Frame(bool on)
     const float screenH = static_cast<float>(fl::ScreenHeight());
     if (g_spec->drop > 0)
         Drop(*g_spec);
+    else if (g_spec->frame)
+        Place(*g_spec);
     for (Column& c : g_columns)
         Rows(c, screenH);
     Singles();
+    Loose();
+    PlaceFramed(screenH);
+    StretchFoot(*g_spec, screenH);
+    if (g_shipClose)
+        StandShipHead(screenH);
+    winplates::SetRootGrow(g_spec->grow);
+    if (!g_lifted.empty())
+        Lift(uiclick::FindVisible("QuantitySlider") ? kStackNudge : winplates::kStackLift);
     if (PlaceBoxes(*g_spec, screenH))
         g_richKey = 0; // fitted after the next draw has the new pixels
     else
         FitRich();
 }
+
+void SetInventoryFrame(bool on) { g_inventoryFrame = on; }
+
+// A text off the screen while HUD 2 says it: the dealer shows its refusal again every frame, so hiding it by its state does nothing. By its position, which the game leaves alone
+static u32 g_parked = 0;
+static float g_parkedPos[3] = {};
+void Park(u32 ctl)
+{
+    if (ctl == g_parked)
+        return;
+    if (g_parked && IsText(g_parked) && strcmp(ui::ControlName(g_parked), "ErrorHelp") == 0)
+        SetPos(g_parked, g_parkedPos);
+    g_parked = 0;
+    float pos[3] = {};
+    if (ctl && IsText(ctl) && safemem::Read(ctl + kPos, pos, sizeof(pos)))
+    {
+        memcpy(g_parkedPos, pos, sizeof(pos));
+        pos[0] -= 8.0f;
+        if (SetPos(ctl, pos))
+            g_parked = ctl;
+    }
+}
+
+float TextWidthPx(u32 ctl) { return IsText(ctl) && Shown(ctl) ? static_cast<float>(R32(R32(ctl + kObj) + kExtW)) : 0.0f; }
 
 float TextHeight(u32 ctl)
 {
@@ -854,6 +1350,45 @@ std::string Texts()
     return o.str();
 }
 
+// Every text out of its frame or box, for the walk: nothing is judged by eye
+std::string Overflows()
+{
+    std::ostringstream o;
+    const float H = static_cast<float>(fl::ScreenHeight());
+    for (const Framed& f : g_framed)
+    {
+        ui::Item fr;
+        if (!Shown(f.frame) || !ui::ControlRect(f.frame, fr) || fr.hh <= 0.5f)
+            continue;
+        for (u32 ctl : {f.top, f.low1, f.low2})
+        {
+            const Now n = Read(ctl);
+            ui::Item it;
+            if (!n.shown || !n.valid || n.lines < 1 || !ui::ControlRect(ctl, it))
+                continue;
+            const float line = n.height / static_cast<float>(n.lines);
+            if (it.y + line * kInkTop < fr.y - fr.hh - 1 || it.y + line * kInkFoot > fr.y + fr.hh + 1 || n.width > fr.hw * 2)
+                o << "over frame " << ui::ControlName(ctl) << " y " << it.y << " h " << n.height << " w " << n.width << " frame " << fr.y - fr.hh << ".." << fr.y + fr.hh << " wide " << fr.hw * 2 << "\n";
+        }
+    }
+    const auto box = [&](const std::vector<Single>& list)
+    {
+        for (const Single& s : list)
+        {
+            const Now n = Read(s.ctl);
+            const u32 obj = R32(s.ctl + kObj);
+            u8 wraps = 0;
+            safemem::Read(obj + 0x30, &wraps, 1);
+            const u32 wrap = R32(obj + kWrapPx);
+            if (n.shown && n.valid && n.lines == 1 && !wraps && wrap && n.width > static_cast<float>(wrap))
+                o << "over box " << ui::ControlName(s.ctl) << " w " << n.width << " box " << wrap << "\n";
+        }
+    };
+    box(g_singles);
+    box(g_loose);
+    return o.str();
+}
+
 // A label that wraps puts every number beside the wrong label, and stats over their box scroll apart from their values. Read at rest: the boxes grow after a first fit.
 static bool LabelsApart()
 {
@@ -867,15 +1402,19 @@ std::string Status()
     std::ostringstream o;
     o << "windowtext window=" << (g_spec ? g_spec->window : "none") << " ladder=" << g_ladder.size() << " fonts=" << g_heights.size() << " columns";
     for (const Column& c : g_columns)
-        o << " " << c.pick.name << "/" << c.pick.price;
-    o << " singles=" << g_singles.size() << " rich=" << g_rich << " tries=" << g_richFits << " ms=" << g_richMs << " labelsOff=" << (LabelsApart() ? 1 : 0);
+        o << " " << c.pick.name << "/" << c.pick.price << " over=" << c.overflow;
+    o << " inventoryFrame=" << g_inventoryFrame;
+    o << " loose=" << g_loose.size() << "/" << g_looseSteps << " singles=" << g_singles.size() << " rich=" << g_rich << " tries=" << g_richFits << " ms=" << g_richMs << " labelsOff=" << (LabelsApart() ? 1 : 0);
     for (u32 box : g_boxes)
         if (IsRich(box))
         {
             float w = 0;
             safemem::Read(box + kSizeW, &w, 4);
+            float barPos = -1;
+            if (const u32 bar = R32(box + kBar))
+                safemem::Read(bar + 0x3C8, &barPos, 4);
             o << "\n  " << ui::ControlName(box) << " shown=" << Shown(box) << " w=" << w << " box " << R32(box + kBoxW) << " x " << R32(box + kBoxH)
-              << " text " << R32(box + kTextH) << " bar " << (R32(box + 0x3F0) ? 1 : 0);
+              << " text " << R32(box + kTextH) << " bar " << (R32(box + 0x3F0) ? 1 : 0) << " at " << barPos << " top " << static_cast<int>(R32(box + kTop));
         }
     return o.str();
 }

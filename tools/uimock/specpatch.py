@@ -10,8 +10,11 @@ patch.json: { "add_rows": {"<tab id>/<section label>": {"first": true | "after":
 "slider", "def", "options" | "min" / "max" / "step" / "unit", "help", "tier"}]}}, "rows": {"<key>": {"def": .., "value": ..,
 "help": ".."}}, "states": {"<screen>/<state>": {"notes": [".."], "prompts": [[["<key>", ..], "<label>", "hold"?], ..] (the
 list replaced whole), "extras": {"<t>": {"<field>": value}}}}, "decisions": {"<id>": {"note": ".."}}, "top": {"<key>": <block>},
-"bindings": {"presets/<PRESET>/flight/<input>" | "common/<context>/<input>": {"tap" | "hold" | "dbl": "<action>"}} }. "top" sets a
-spec-only top-level block (the spec half only; e.g. "hud2_presets", Q7). A decision note is appended to the
+"bindings": {"presets/<PRESET>/flight/<input>" | "common/<context>/<input>": {"tap" | "hold" | "dbl": "<action>"}},
+"new_rows": [row, ..], "retab": [{"id", "label", "presetKey"?, "head"?, "sections": [{"label", "head"?, "indent"?, "rows": ["<key>", ..]}]}],
+"presets": {"<group>": [{"name", "values": {..}}]} }. "top" sets a spec-only top-level block (the spec half only; e.g. "hud2_presets", Q7).
+"retab" rebuilds the tabs from the rows by key, new_rows included: every existing row must land once; the mock-up's TABS block is then
+written from the patched spec, so it needs --spec as well. "presets" sets whole groups in both halves. A decision note is appended to the
 existing note (" | " between). The spec file's top-level shape is either the artifact's document ({spec: {...}}) or the
 spec itself (docs\\UI_SPEC.json with an `_about` line).
 """
@@ -131,10 +134,10 @@ def patch_js(src, patch):
 
 
 def row_js(r):
-    """A spec row as the mock-up source writes it (T / P / S helpers)."""
+    """A spec row as the mock-up source writes it (T / P / S / K / B helpers)."""
     o = {}
-    for f in ('help', 'tier', 'unit', 'parent', 'words', 'needs'):
-        if f in r and r[f] not in (None, '', [], 'player', 'live'):
+    for f in ('help', 'tier', 'unit', 'parent', 'words', 'needs', 'preset', 'btn', 'head', 'bundle', 'off_help', 'value_help'):
+        if f in r and r[f] not in (None, '', [], {}, False, 'player', 'live'):
             o[f] = r[f]
     opts = '{ ' + ', '.join('%s: %s' % (k, js_literal(v) if not isinstance(v, list) else
                                        '[' + ', '.join(js_literal(x) for x in v) + ']') for k, v in o.items()) + ' }'
@@ -146,7 +149,51 @@ def row_js(r):
                                            opts)
     if r['kind'] == 'slider':
         return "S(%s, %s, %s, %s, %s, %s, %s)" % (k, lab, r['min'], r['max'], r['step'], js_literal(r['def']), opts)
+    if r['kind'] == 'key':
+        return "K(%s, %s, %s, %s)" % (k, lab, js_literal(r['def']), opts)
+    if r['kind'] == 'button':
+        return "B(%s, %s, %s)" % (k, lab, opts)
     sys.exit('row kind %s not supported' % r['kind'])
+
+
+def retab_js(src, spec):
+    """The mock-up's TABS block written from the spec (patch['retab']): the rows moved tab, so a line-by-line patch cannot follow them."""
+    lines = src.split('\n')
+    start = next(i for i, l in enumerate(lines) if l.startswith('const TABS = ['))
+    end = next(i for i in range(start, len(lines)) if lines[i].startswith('];'))
+    out = []
+    for ti, t in enumerate(spec['tabs']):
+        head = "  { id: %s, label: %s, " % (js_literal(t['id']), js_literal(t['label']))
+        for f in ('presetKey', 'head'):
+            if t.get(f):
+                head += "%s: %s, " % (f, js_literal(t[f]))
+        out.append(head + 'sections: [')
+        for si, s in enumerate(t['sections']):
+            extra = ''.join(", %s: %s" % (f, js_literal(s[f])) for f in ('head', 'indent') if s.get(f))
+            out.append("    { label: %s, rows: [" % js_literal(s['label']) if not extra else
+                       "    { label: %s%s, rows: [" % (js_literal(s['label']), extra))
+            body = ['      ' + row_js(r) for r in s['rows']]
+            out.append(',\n'.join(body) + ' ] }' + (',' if si + 1 < len(t['sections']) else ' ] }' + (',' if ti + 1 < len(spec['tabs']) else '')))
+    lines[start + 1:end] = out
+    return '\n'.join(lines)
+
+
+def presets_js(src, patch):
+    """patch['presets'] in the mock-up source: each group's lines inside const PRESETS, replaced or added before its close."""
+    lines = src.split('\n')
+    for group, items in patch.get('presets', {}).items():
+        start = next(i for i, l in enumerate(lines) if l.startswith('const PRESETS = {'))
+        end = next(i for i in range(start, len(lines)) if lines[i].startswith('};'))
+        text = ["  %s: [" % group] + ["    { name: %s, values: %s }%s" % (js_literal(p['name']), json.dumps(p['values'], ensure_ascii=False),
+                                                                        ',' if i + 1 < len(items) else '') for i, p in enumerate(items)] + ['  ],']
+        at = next((i for i in range(start, end) if lines[i].startswith('  %s: [' % group)), None)
+        if at is None:
+            lines[end - 1] = lines[end - 1].rstrip().rstrip(',') + ','
+            lines[end:end] = text
+        else:
+            close = next(i for i in range(at, end) if lines[i].startswith('  ]'))
+            lines[at:close + 1] = text
+    return '\n'.join(lines)
 
 
 def full_row(r):
@@ -248,6 +295,23 @@ def patch_spec(doc, patch):
     spec = doc['spec'] if 'spec' in doc and 'tabs' in doc['spec'] else doc
     for path, fields in patch.get('bindings', {}).items():
         binding_entry(spec, path).update(fields)
+    if 'retab' in patch:
+        pool = {r['key']: r for t in spec['tabs'] for s in t['sections'] for r in s['rows']}
+        for r in patch.get('new_rows', []):
+            pool[r['key']] = full_row(r)
+        placed = [k for t in patch['retab'] for s in t['sections'] for k in s['rows']]
+        missing = sorted(set(pool) - set(placed))
+        twice = sorted({k for k in placed if placed.count(k) > 1})
+        unknown = sorted(set(placed) - set(pool))
+        if missing or twice or unknown:
+            sys.exit('retab: rows left out %s, placed twice %s, unknown %s' % (missing, twice, unknown))
+        tabs = []
+        for t in patch['retab']:
+            tab = {k: v for k, v in t.items() if k != 'sections'}
+            tab['sections'] = [dict({k: v for k, v in s.items() if k != 'rows'}, rows=[pool[k] for k in s['rows']]) for s in t['sections']]
+            tabs.append(tab)
+        spec['tabs'] = tabs
+    spec.get('presets', {}).update(patch.get('presets', {}))
     for where, p in patch.get('add_rows', {}).items():
         tab, label = where.split('/', 1)
         t = next((t for t in spec['tabs'] if t['id'] == tab), None)
@@ -318,17 +382,23 @@ def main():
     ap.add_argument('--out')
     a = ap.parse_args()
     patch = json.load(open(a.patch, encoding='utf-8'))
-    if a.js:
-        src = open(a.js, encoding='utf-8').read()
-        src = patch_bindings_js(add_rows_js(src, patch), patch)
-        open(a.js, 'w', encoding='utf-8', newline='\n').write(patch_js(src, patch))
-        print('patched', a.js)
+    if 'retab' in patch and not (a.js and a.spec):
+        sys.exit('retab needs --js and --spec: the mock-up takes its TABS block from the patched spec')
+    doc = None
     if a.spec:
         doc = json.load(open(a.spec, encoding='utf-8'))
         doc = patch_spec(doc, patch)
         out = a.out or a.spec
         json.dump(doc, open(out, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, indent=1)
         print('patched', out)
+    if a.js:
+        src = open(a.js, encoding='utf-8').read()
+        src = patch_bindings_js(add_rows_js(src, patch), patch)
+        src = presets_js(patch_js(src, patch), patch)
+        if 'retab' in patch:
+            src = retab_js(src, doc['spec'] if 'spec' in doc and 'tabs' in doc['spec'] else doc)
+        open(a.js, 'w', encoding='utf-8', newline='\n').write(src)
+        print('patched', a.js)
 
 
 if __name__ == '__main__':

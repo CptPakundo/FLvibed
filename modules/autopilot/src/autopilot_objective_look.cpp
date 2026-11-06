@@ -7,6 +7,7 @@
 #include "lookahead.h"
 #include "situation.h"
 #include "situation_exec.h"
+#include "str.h"
 #include "autopilot_objective_impl.h"
 
 namespace autopilot
@@ -71,13 +72,7 @@ static space::Contact ContactByPilot(u32 nameIds, const std::vector<space::Conta
             continue;
         bool same = c.nameIds == nameIds;
         if (!same && c.rep && !want.empty())
-        {
-            const std::wstring rn = space::RepName(c.rep);
-            std::string n;
-            for (wchar_t ch : rn)
-                n += ch < 128 ? static_cast<char>(ch) : '?';
-            same = n == want;
-        }
+            same = str::SameText(space::RepName(c.rep), want);
         if (same)
             return c;
     }
@@ -718,13 +713,7 @@ static bool TrapAnchor(const mission::LockTrap& tp, const std::vector<space::Con
                 continue;
             bool same = c.nameIds == tp.nameIds;
             if (!same && c.rep && !want.empty())
-            {
-                const std::wstring rn = space::RepName(c.rep);
-                std::string n;
-                for (wchar_t ch : rn)
-                    n += ch < 128 ? static_cast<char>(ch) : '?';
-                same = n == want;
-            }
+                same = str::SameText(space::RepName(c.rep), want);
             if (same)
                 return memcpy(p, c.pos, 3 * sizeof(float)), true;
         }

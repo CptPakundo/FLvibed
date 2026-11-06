@@ -72,7 +72,7 @@ struct Rules
 // hud_preset 1 = Focus (tools\ui_meta.py HUD2_PRESET_IDS order; hud2_preset.h Focus)
 constexpr int kFocusIndex = 1;
 static_assert(hp::kPresetCount == 4 && hp::kPresets[kFocusIndex].index == kFocusIndex, "uimeta::hud2p::kPresets order");
-// Standard: the letterbox collapses HUD 2 to the nav's chip, the ring and the alert (UI_SPEC.json Standard "letterbox":
+// Standard: the letterbox collapses HUD 2 to the nav's chip and the alert (the ring went too on the owner's word, 6 Nov 2026: it stayed alone in a jump; UI_SPEC.json Standard "letterbox":
 // "the jump countdown chip stays"; hud2.cpp Update's rule since the round 3 critique: the side panels straddled the
 // bars). No budget suppression: today's HUD is over the boxed budget in nearly every context (docs\hud2_lint_baseline.txt:
 // 15-19 % against 10 % calm / 17 % combat - the lint's WARN); the spec's compact calm forms bring Standard under it, and
@@ -85,8 +85,8 @@ static_assert(hp::kPresetCount == 4 && hp::kPresets[kFocusIndex].index == kFocus
 // The presets not built draw as Standard (hud2preset::Drawn): RulesOf answers Standard's for them.
 inline const Rules& RulesOf(int drawn)
 {
-    static constexpr Rules kStandard = {Bit(Nav) | Bit(Ring) | Bit(Alert), false, {}, 0};
-    static constexpr Rules kFocus = {Bit(Nav) | Bit(Ring) | Bit(Alert), false, {}, 0, 1, true, Bit(Ship), true, true};
+    static constexpr Rules kStandard = {Bit(Nav) | Bit(Alert), false, {}, 0, 0, false, 0, false, true};
+    static constexpr Rules kFocus = {Bit(Nav) | Bit(Alert), false, {}, 0, 1, true, Bit(Ship), true, true};
     return drawn == kFocusIndex ? kFocus : kStandard;
 }
 // The elements the context suppresses (the letterbox today). hud2.cpp Update takes the fades' targets from it, the
@@ -122,6 +122,8 @@ struct Measures
     // (pixels) as hud2.cpp eased them from the measures (hud2_parts.cpp *ContentWidth, its minimum and hysteresis);
     // the spec's widths (std_ov kCardW / kShipW / kLoadW(Kbm)) are their maxima. 0 = unmeasured: the maxima.
     float cardW = 0, shipW = 0, loadW = 0;
+    float cardH = 0;      // the target card's height for its rows (pixels, eased; hud2_parts.cpp CardContentHeight), 0 = unmeasured: the spec's
+    float cardFloorH = 0; // the card's least height, live only: under k 1 the pad's rows stand at the text floor (the hull's row ran past the plate at 1280x800, p2t)
     // their HEIGHTS too (0.2.1 round 6, the owner: one gun row and no launcher left a big empty area): the ship panel and
     // the loadout base panel (pixels, eased the same way; hud2_parts.cpp *ContentHeight), anchored to the bottom margin;
     // std_ov::kShipH / the preset's loadout h their maxima, kShipMinH / kLoadMinH their floors. 0 = unmeasured.
@@ -170,6 +172,7 @@ struct Out
     Rect ship, loadout;
     Rect cons; // the consumables' cross stacked on the loadout's right end (the owner's decision 3): the
                // loadout's base panel holds the weapons only; part of the Loadout element (its fades, its budget)
+    float consCells = 0; // what the cross covers when it stands as small dark cells with no plate (pixels squared; 0: `cons` whole)
     int nCtx = 0; // the context prompts that stay (the last give way first)
     float ctxY = 0, ctxX0 = 0, ctxX1 = 0, ctxTop = 0; // the baseline; the prompts' extent (both lanes); the top
     promptfit::HoldPlan ctxPlan;
@@ -204,9 +207,9 @@ struct Out
 // UI_SPEC.json "hud2_presets" Standard; step 8 retires them into the spec's compact / fight forms (UI_HUD2_PRESETS.md 2.1).
 namespace std_ov
 {
-constexpr float kCardW = 0.44f;     // card width: the spec's card is 0.36 wide (calm compact and combat full); today 0.44
-constexpr float kCardHKbm = 0.22f;  // card height, K&M: the spec gives one height per form (0.215 off screen); today's K&M
-                                    // card adds 0.005 for its footer row (the clicks); the pad's 0.215 IS the spec's
+constexpr float kCardW = 0.36f;     // the card to its spec (UI_HUD2_SIZE_AUDIT.md 3.2)
+constexpr float kCardH = 0.17f, kCardHKbm = 0.21f; // its height, the keyboard form's with its click row
+constexpr float kCardColView = 0.13f, kCardColIcon = 0.085f; // its left column: a wireframe view's, or the flat icon's
 constexpr float kNavMinW = 0.25f;   // nav width rule: the spec's w_max 0.38 (calm); today's nav takes 0.25..0.62 H x k
 constexpr float kNavMaxW = 0.62f;   //   and keeps 0.42 H free for the dialogue panel before the card (SUBS, 25 Oct
 constexpr float kNavDialogue = 0.42f; //   2026: at 4:3 a nav to 0.515 W left the panel 0.105 W)
@@ -243,14 +246,15 @@ constexpr float kConsW = 0.20f;     // the consumables' cross stacked on the bas
                                     //   D-pad cross as it was (slots 0.046 at 1.15 x / 0.88 x 0.050), 0.0195 margins
 constexpr float kConsWKbm = 0.16f;  //   the keyboard form's 2 x 2 grid: 0.16 H x k + its two key columns (Measures::slotKeyW;
 constexpr float kConsKeyW = 0.03f;  //   0.03 H x k while unmeasured) - 0.018 margins, cells key + 0.008 + 0.046, 0.016 apart
-constexpr float kConsH = 0.15f;     //   0.15 tall: the cross's own height in the old plate (its geometry unchanged); the
-constexpr float kConsHKbm = 0.13f;  //   keyboard form's grid (2 x 0.046 + 0.02) 0.13
-constexpr float kConsGap = 0.012f;  //   0.012 H x k above the base panel (HUD 2's gap between plates)
+constexpr float kConsH = 0.136f;    //   0.136 tall (its cells' extent; the owner, 6 Nov 2026: less air between close elements), was 0.15: the cross's own height in the old plate (its geometry unchanged); the
+constexpr float kConsHKbm = 0.104f; //   keyboard form's grid (2 x 0.046 + 0.012) 0.104
+constexpr float kConsGap = 0.008f;  //   0.008 H x k above the base panel
 constexpr float kRingBus = 1.6f;    // the ring's bus rectangle: R x 1.6 (the arcs' numbers and chevrons; not in the spec)
 constexpr float kTopFreeH = 0.30f;  // the bus's topFree: the strip between the nav and the card, 0.30 H tall
 constexpr float kChatW = 0.30f;     // the bus's chatFree: 0.30 W from the margin, the nav + 0.02 H to the ship - 0.02 H
 constexpr float kChatGap = 0.02f;   //   (the spec's comm feed: x <= 0.469 H, bottom 0.76 - equal only at 16:9, k 1)
 } // namespace std_ov
+constexpr float kConsCell = 0.046f, kConsCrossCell = 0.036f; // the consumables' cells, H x k
 // How many overrides Standard carries (for `hud2 state`'s core line and the docs' list: UI_HUD2.md 5.17).
 constexpr int kStandardOverrides = 12; // card w, card h K&M, nav width, nav box, nav h, nav edge, list geometry, ship,
                                        // loadout w, the stacked cross (decision 3), ring bus, the bus's free areas
@@ -262,21 +266,32 @@ constexpr int kStandardOverrides = 12; // card w, card h K&M, nav width, nav box
 // centre stack's 0.01 H (Out::clearY0) to the screen's bottom - 0.85 H until 5.23. The context lanes stop at its columns
 // at every height (promptfit.h ContextLanes / LanesAbove); the lint's zone "bottom" FAILs anything drawn inside it
 // (hud2_lint.h ZonesOf), the transient overlays (the hit flash, the missile chevrons) apart.
+constexpr float kAlertClear = 0.01f; // an alert card from what it stands beside: the lint's gap, and room for its bloom
+constexpr float kCardGrow = 0.08f; // what the card and its list may add to the spec's width: the filter words ran off the screen at 1280x800
+constexpr float kLoadTopH = 0.8005f; // ... and never over S1's bottom edge, the lint's zone
+constexpr float kLoadGrowH = 0.03f; // and to its height: three keyed rows at the text floor need it (hud2_parts.cpp DrawLoadout)
+constexpr float kLoadGrow = 0.08f; // what a long loadout may add to the spec's width (ContentGrow); the bottom band stays clear
 constexpr float kBottomBandX0W = hp::kKeepX0W, kBottomBandX1W = hp::kKeepX1W;
 // The ring's geometry the zone's top follows (fractions of H x k; hud2_parts.cpp DrawRing / DrawSplitArcs draw with them):
 constexpr float kRingArcW = 0.0065f;  // the arcs' width (the ring's; Focus's split arcs and bottom arc alike)
 constexpr float kAlertStackH = 0.094f; // the two-line alert card beside the ring (GitHub issue 21)
 constexpr float kAlertSideR = 0.205f;  // its inner edge from the ring's centre: outside the missile chevrons (they end at 0.20)
-constexpr float kAlertStackGap = 0.012f; // between two stacked cards
+constexpr float kAlertStackGap = 0.008f; // between two stacked cards
 constexpr float kAlertDlgGap = 0.012f;   // a side's top card under the subtitles' dialogue (fractions of H)
-constexpr float kThrottleDR = 0.022f; // Standard's throttle arc at the ring's bottom centre: its radius beyond the ring
-constexpr float kThrottleW = 0.75f;   //   and its width, of the arcs' ("bottom center of the circle")
-// The ring's lowest drawn edge below the centre (pixels): Standard's family the throttle arc's outer edge (its BOOST / KILL /
-// REV word beside it ends there, DrawRing); Focus's split arcs (corners 1) the arcs' circle - its bottom arc on it since
-// 5.23 (it sat 0.012 inside, over the band).
+// The bottom of the reticle, form C (UI_HUD2_INPUTS.md 7b): the throttle inside the ring, centred, filling from the middle out; the meter on the ring; the speed
+// under it. Fractions of H x k about the ring's radius.
+constexpr float kThrottleDR = -0.020f; // the throttle arc's radius against the ring's
+constexpr float kThrottleW = 0.75f;    //   and its width, of the arcs'
+constexpr float kThrottleA0 = 78, kThrottleA1 = 102; // its span in degrees, 6 blocks
+constexpr int kThrottleBlocks = 6;
+constexpr float kSpeedDR = 0.0300f, kSpeedSize = 0.030f; // the speed: its centre beyond the ring, its size
+constexpr float kCruiseDY = 0.0515f;    // the cruise readout's line, from the centre: 0.01 H clear of the throttle arc's inner edge
+constexpr float kDriveDR = 0.022f;     // KILL, BOOST and REV keep the place they had beside the old arc: right of the speed
+// The ring's lowest drawn edge below the centre (pixels): Standard's family the speed's lower edge; Focus's split arcs (corners 1) the arcs' circle - its
+// bottom arc on it since 5.23 (it sat 0.012 inside, over the band).
 inline float RingBottom(bool splitArcs, float R, float H, float k)
 {
-    return splitArcs ? R + 0.5f * kRingArcW * H * k : R + (kThrottleDR + 0.5f * kThrottleW * kRingArcW) * H * k;
+    return splitArcs ? R + 0.5f * kRingArcW * H * k : R + (kSpeedDR + 0.5f * kSpeedSize) * H * k;
 }
 
 // ---- Focus's literals: what PRESETS 2.2 / UI_SPEC.json "focus" leave open (its `open` list: "the card / hints / fire strip
@@ -358,7 +373,7 @@ inline float Boxed(const Frame& f, const Out& o, u32 off)
     if (!(off & Bit(Ship)) && !(o.unplated & Bit(Ship)))
         a += o.ship.Area();
     if (!(off & Bit(Loadout)) && !(o.unplated & Bit(Loadout)))
-        a += o.loadout.Area() + o.cons.Area(); // (the base panel and the cross stacked on it)
+        a += o.loadout.Area() + (o.consCells > 0 ? o.consCells : o.cons.Area()); // (the base panel and the cross stacked on it)
     if (o.nCtx && !(off & Bit(Context))) // the pills' plates: their content + 0.012 H x k, +- 0.026 H x k about their
         for (int i = 0; i < o.nCtx && i < 3; ++i) // lines (hud2_parts.cpp DrawContext)
             a += Rect{o.ctxX[i] - 0.012f * o.H * o.k, o.ctxPY[i] - 0.026f * o.H * o.k,
@@ -465,10 +480,17 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
     L.nCtx = 0, L.ctxY = lineY * H, L.ctxPlan = promptfit::HoldPlan(), L.ctxFallback = false, L.ctxX0 = L.ctxX1 = 0;
     for (int i = 0; i < 3; ++i)
         L.ctxW[i] = L.ctxX[i] = L.ctxPY[i] = 0, L.ctxSide[i] = 0, L.ctxWrap[i] = false;
-    const promptfit::LaneGeom g =
+    promptfit::LaneGeom g =
         promptfit::ContextLanes(W, H, k, L.ship.x1, L.loadout.x0, lineY, kBottomBandX0W, kBottomBandX1W);
+    // the subtitles' panel over the left lane's upper row closes it: a prompt there takes the other lane (TURRET touched the panel at 1280x800)
+    if (f.dlg.fresh && f.dlg.x1 > f.dlg.x0)
+    {
+        const float rowY = g.y0 - g.pitch, half = 0.026f * H * k + 0.006f * H;
+        if (f.dlg.x1 * W > g.lx0 && f.dlg.y0 * H < rowY + half && f.dlg.y1 * H > rowY - half)
+            g.leftRows = 1;
+    }
     L.ctxTall = g.tall;
-    const float floorPx = std::max(0.024f * H, 14.0f); // (textfit.h MinSize: the labels' floor)
+    const float floorPx = textfit::MinSize(H); // (the labels' floor)
     // the narrowest a prompt is squeezed to: its label whole on two lines at the floor (0.2.1, the owner: prompts never
     // marquee - promptfit FitLabel); unmeasured, the old two floor-sized ems
     float minW[3] = {};
@@ -523,10 +545,17 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
 // ---- the panels sized to their content (0.2.1 round 3): the spec's width is the maximum, a measured (eased) content
 // width below it wins; 0 = unmeasured (the maximum: the tests' and the old frames' geometry)
 inline float ContentFit(float maxW, float measured) { return measured > 0 && measured < maxW ? measured : maxW; }
+// A panel that may pass its spec width for content that needs it, by at most `grow`: panels grow first, abbreviation last
+// (6 Nov 2026: the spec's width cut STARKILLER TORPEDO at 4K with room beside it). Unmeasured it stands at the spec's width.
+inline float ContentGrow(float specW, float grow, float measured)
+{
+    return measured > specW ? (measured < specW + grow ? measured : specW + grow) : ContentFit(specW, measured);
+}
 // The content widths' floors (fractions of H x k: hud2.cpp eases toward max(content, floor)) and the hysteresis: a
 // narrower content shrinks the panel only past kContentHyst (a growing one follows at once, eased fast)
-constexpr float kCardMinW = 0.30f, kShipMinW = 0.22f, kLoadMinW = 0.26f, kContentHyst = uiease::kContentHyst;
-constexpr float kShipMinH = 0.09f, kLoadMinH = 0.075f; // the heights' floors (round 6): the ship icon 0.075 + its air;
+constexpr float kCardAir = 0.014f; // the air over the card's first row and under its last
+constexpr float kCardMinW = 0.30f, kShipMinW = 0.12f, kLoadMinW = 0.20f, kContentHyst = uiease::kContentHyst;
+constexpr float kShipMinH = 0.09f, kLoadMinH = 0.05f; // the heights' floors (round 6): the ship icon 0.075 + its air;
                                                        //   a single gun row with its launcher's prompt room
 // A row label's real free room (0.2.1 round 4, the owner: a label scrolls only past the room its row keeps): from its
 // left edge to the row's right edge, less the row's items that actually show (a right-aligned value `valueW` + its
@@ -589,9 +618,9 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     {
     // the card: the top-right corner, its height the full form's off screen (today's card always carries the name and
     // the distance: the off-screen form, in every context), the K&M footer an override
-    const float cardH = hp::Num(p, "combat", "card", "h_off_screen", 0.215f);
-    L.card.x1 = W - L.mx, L.card.x0 = L.card.x1 - ContentFit(std_ov::kCardW * H * k, f.m.cardW), L.card.y0 = L.my,
-    L.card.y1 = L.my + (f.kbm ? std_ov::kCardHKbm : cardH) * H * k;
+    L.card.x1 = W - L.mx, L.card.x0 = L.card.x1 - ContentGrow(std_ov::kCardW * H * k, kCardGrow * H * k, f.m.cardW), L.card.y0 = L.my,
+    L.card.y1 = L.my + (f.kbm ? std_ov::kCardHKbm : std_ov::kCardH) * H * k;
+    L.card.y1 = f.m.cardH > 0 ? L.my + f.m.cardH : std::max(L.card.y1, L.my + f.m.cardFloorH); // (0 unmeasured)
     // the nav (top-left; override: its width rule and box)
     L.navMaxX = std::max(L.mx + std_ov::kNavMinW * H * k,
                          std::min(L.mx + std_ov::kNavMaxW * H * k, L.card.x0 - std_ov::kNavDialogue * H));
@@ -616,8 +645,8 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
                                                                            //  equal height dropped)
     const float loH = hp::Num(p, "combat", "loadout", "h", 0.15f);
     L.loadout.x1 = W - L.mx,
-    L.loadout.x0 = L.loadout.x1 - ContentFit((f.kbm ? std_ov::kLoadWKbm : std_ov::kLoadW) * H * k, f.m.loadW),
-    L.loadout.y1 = H - myBottom, L.loadout.y0 = L.loadout.y1 - ContentFit(loH * H * k, f.m.loadH);
+    L.loadout.x0 = L.loadout.x1 - ContentGrow((f.kbm ? std_ov::kLoadWKbm : std_ov::kLoadW) * H * k, kLoadGrow * H * k, f.m.loadW),
+    L.loadout.y1 = H - myBottom, L.loadout.y0 = L.loadout.y1 - ContentGrow(loH * H * k, std::max(0.0f, std::min(kLoadGrowH * H, L.loadout.y1 - kLoadTopH * H - loH * H * k)), f.m.loadH);
     // the consumables' cross stacked on the base panel's right end, right-aligned (decision 3): its bottom 0.012 H x k
     // above the base's top (S1's bottom edge 0.80 H stays the base's top; the cross lies right of S1, in the right rail's
     // lower end - the lint's S2 ends at its top: hud2_lint.h ZonesOf)
@@ -625,6 +654,11 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
                               : std_ov::kConsW * H * k;
     L.cons.x1 = L.loadout.x1, L.cons.x0 = L.cons.x1 - consW, L.cons.y1 = L.loadout.y0 - std_ov::kConsGap * H * k,
     L.cons.y0 = L.cons.y1 - (f.kbm ? std_ov::kConsHKbm : std_ov::kConsH) * H * k;
+    // no plate: four small dark cells, and the pad's cross in one of its own (UI_HUD2_SIZE_AUDIT.md 3.3)
+    {
+        const float cell = kConsCell * H * k, cross = kConsCrossCell * H * k;
+        L.consCells = 4 * cell * cell + (f.kbm ? 0.0f : cross * cross);
+    }
     }
     // the context prompts in two lanes hugging the bottom panels (PlaceContextLanes);
     // a preset with a pill cap (Focus: <= 1 calm, 2 combat) keeps its first ones
@@ -651,7 +685,9 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     auto besideAt = [&](int side, float y0, float w, float& x) {
         const float off = kAlertSideR * H * k, y1 = y0 + cardH;
         const float x0 = side < 0 ? L.cx - off - w : L.cx + off, x1 = x0 + w;
-        auto meets = [&](float a0, float b0, float a1, float b1) { return a1 > a0 && x0 < a1 && x1 > a0 && y0 < b1 && y1 > b0; };
+        const float clear = kAlertClear * H * k; // (the plate's bloom stands off it too)
+        auto meets = [&](float a0, float b0, float a1, float b1)
+        { return a1 > a0 && x0 - clear < a1 && x1 + clear > a0 && y0 - clear < b1 && y1 + clear > b0; };
         x = x0;
         return x0 >= L.mx * 0.5f && x1 <= W - L.mx * 0.5f && y1 <= H - L.my && !meets(L.nav.x0, L.nav.y0, L.nav.x1, L.nav.y1) &&
                !meets(L.ship.x0, L.ship.y0, L.ship.x1, L.ship.y1) && !meets(L.loadout.x0, L.loadout.y0, L.loadout.x1, L.loadout.y1) &&
@@ -680,6 +716,10 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
         {
             float x = 0;
             beside = besideAt(side, top, aw, x);
+            // a long list reaches past the ring: under it, still beside the meter, before the card leaves its side (issue 35)
+            const float under = L.thrY1 + kAlertStackGap * H * k;
+            if (!beside && f.list && under > top && besideAt(side, under, aw, x))
+                top = under, beside = true;
             if (beside)
                 L.alertX0 = x, L.alertX1 = x + aw, L.alertY = top, at = 1;
         }

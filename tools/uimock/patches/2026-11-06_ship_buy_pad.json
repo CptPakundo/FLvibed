@@ -1,0 +1,8 @@
+{
+  "_about": "0.4.0 (6 Nov 2026), GitHub issue 34: the pad finishes a ship purchase. The final stage's BUY SHIP takes the same hold on A as every purchase; on a row the hold is the game's TRANSFER; LB / RB reach BUY SHIP.",
+  "states": {
+    "shipdealer/default": {
+      "notes": ["The final stage (the game's Cargo Transfer window): the focus opens on BUY SHIP, a fresh hold of A buys, letting go early cancels, there is no tap. A hold carried in from the first stage counts for nothing until A is released. On a row A held is TRANSFER, the trade-in: LT / RT QUANTITY and Y MAX as at the dealers. LB / RB walk the two lists and BUY SHIP (the pill reads SIDE / BUY SHIP off it). The game hides BUY SHIP and says how much is missing while the player cannot pay: the focus opens on the player's rows, and BUY SHIP joins the walk once enough is sold. Keyboard and mouse: unchanged."]
+    }
+  }
+}

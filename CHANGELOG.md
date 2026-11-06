@@ -1,5 +1,101 @@
 # Changelog
 
+## 0.4.0 (6 Nov 2026)
+
+- **Haptics, on every pad** (built, not yet felt on a pad): one engine fed by the game. A near-quiet bed from your engine's own numbers; hits, blasts and collisions
+  from the side they came; guns by their rate and damage; missiles felt before they are seen; the cruise charge and its release, lanes ring by ring, jump gates
+  and holes; radiation, nebulas and asteroids. Maximum strength is kept for the biggest moments. Everything else in the mix follows Rumble.
+- **Adaptive Triggers on a DualSense:** gun power and the thruster gauge are pull weight that thins as they drain, vibration while you fire and on the afterburner,
+  limp when empty, a wall when you cannot fire. A held trigger settles so it does not tire the finger. **Trigger effects:** FULL, LIGHT, OFF.
+- **Impulse Triggers on Xbox One and Series pads** on USB or the dongle: the trigger motors pulse with your guns and from the side of a hit. Over Bluetooth, the two
+  main motors only.
+- **Waveform on a USB DualSense,** opt-in for now under Show all settings: its grips driven as audio, the speaker set to four channels in the Sound panel.
+- Show all settings has a strength for each of Ship and engine, Weapons, Hits and danger, Set pieces and Prompts. Steam Input is never needed for any of it.
+- Autopilot: docking at a base beyond the game's dock range no longer stops at once. It flies into range, then docks (the original game and mods built on it allow 10 km, HD Edition 50 km).
+- On the original game and on mods built on it, a pad strafe up or down no longer keeps sliding after the stick is let go.
+- Beside a newer FLSharp, FLvibed no longer refuses two of its cursor addresses. A game with no startup movies keeps FLvibed's core lines in `FLController.log`.
+- **HUD size:** one row, AUTOMATIC, SMALL, NORMAL, LARGE. Small is close to the game's own HUD, Large is what Steam Deck mode was, and Automatic reads the
+  machine. A saved Steam Deck mode moves into it.
+- **Windows fit what they hold:** the dealers', ship dealer's, job board's and offer's panels are now sized from the game's own controls as they stand: side-by-side panels end level, the infocard takes the room they leave, a short list shortens its panel and an edge travels instead of jumping. A text wider than its box steps down, the job lines no longer touch, and the job board, news and inventory stand centred. Every list row places its lines by its own frame, so a price no longer crosses it and a line alone stands in the middle. Text boxes end on a whole line, the log and info text start under their title's rule, and both windows use more of the screen. Dealers refuse in HUD 2's amber line, as the ship dealer does; the ship's refusal and trade-in stand in the centre panel and its panels start at their headings. The room bar's underline stands on the current room's button and no longer slides, no highlight flashes on the bar while a window opens, and a dealer's panels and prompts no longer open offset. The prompts keep to the column beside the infocard, with a stacked pill where one is too wide.
+- The native HUD no longer shows for one frame when a load reaches space, and the NeuroNet box's art no longer stands under a window in flight.
+- The flight HUD covers less: hold and credits leave it, the ship panel stands only in a fight or formation, the target card is narrower and shorter, the
+  consumables are small dark cells with no plate, the escorts a slim plate. A fight shows two context prompts at most.
+- **The bottom of the reticle** (GitHub issue 28): the energy meter drains to the middle, the throttle sits inside the ring and fills from the middle out, and
+  the speed stands under the meter. Every ring arc has a thin dark edge, so it reads over a bright planet.
+- The target card and the threat list read the same distance as the game's own label, to the surface.
+- Keyboard and mouse: one lit chip with its key names the running maneuver, and the whole row reads in words while the mouse is on it. The target card's
+  buttons read NEXT and CLEAR, and up to four hostiles are listed while no target is held.
+- The Neural Net's lines no longer run off the screen's edge at 1280x800.
+- **The targeting display:** HUD 2 replaces the game's bracket, label and bars. A new target opens as a small card beside the ship, then settles into marks
+  the ship wears: the attitude by shape as well as colour, two bars, name and distance. Inside the ring they move to a seat beside the cue.
+- **The weapon group cue** (GitHub issue 26): a row above the ring with your groups, then M and T. The selected group is yellow; a mark fills when your target
+  is in the centre and in its reach; M or T glows under a tick while locked, shows a thin bar while reloading, and goes amber with a slash when it cannot fire.
+  `group_cue` turns it off.
+- **Failing bars:** a bar running low breathes in its own colour, faster as it falls, always under 3 Hz; a bar that breaks blooms. The HUD's motion has a row:
+  `skin_motion`, full, fades or none.
+- The flight HUD's label reads NEURAL NET, the game's own name for it.
+- **One strip of words on every NeuroNet window:** LOG, INVENTORY, MAP, STATUS, INFO, with CHAT and GROUP in multiplayer, in place of the box's icons. The open
+  one is yellow and underlined, and a click switches straight to a window, also during a slide. A CLOSE chip stands at the lane's right end on keyboard and
+  mouse. The five windows share one scrim.
+- **The nav map's frame comes off, and words replace its icons:** PHYSICAL, POLITICAL, PATROLS, MINING, BASES, LEGEND, MISSION, LABELS, SYSTEM, SIRIUS and what a
+  selection offers, in panels beside the map, each calling the game's own button. A button the game disables shows disabled. The map keeps its size for now: the grown map (a test switch, `navnew`) is built but off, and the frame and words stand around the game's own map.
+- **The pad on the map has two zones:** the map itself (left stick, triggers, A, X, Y) and its panels (the D-pad walks every word, A presses, the left stick or B
+  returns), so a press never means two things. RS click is SYSTEM / SIRIUS, LS click back to the ship's system.
+- **The pad reaches every NeuroNet window:** under HUD 2, LB and RB step the strip from any of them, wrapping. Only the map had a pad route until now. The log's
+  MISSION and LOG move to the D-pad's left and right.
+- Loot the tractor refuses says why, in the game's own words (GitHub issue 33): HUD 2's card, or the Neural Net line.
+- An alert card no longer lies over another part of the HUD, at any HUD size, and its words stay on it (GitHub issue 35).
+- Names with an apostrophe, a curly quote or an accented letter read right on the pad's screens, not with a question mark: Death's Hand in the weapon group window (GitHub issue 37).
+- Names in capitals keep their accents as capitals: GRAFENWÖHR, GROSSGLOCKNER. Unproven: not seen in game yet (`tests\apostrophe_game.md`).
+- Autopilot: a mission ship whose name has an accent or apostrophe is found by its name, Tekagi's Transport and the Rheinland cruisers among them. Unproven: not seen in game yet (`tests\apostrophe_game.md`).
+- Radiation, a ship on your tail and multiplayer lag have homes in HUD 2 (GitHub issue 27): an amber line in the nav block with the game's own radiation art,
+  a mark on the ring at the ship's bearing, one small word. The game's icons no longer draw over the target card, the map or the pause menu.
+- **The options page has a simple mode:** five tabs by what they belong to (HUD, CONTROLLER, SUBTITLES, AUTOPILOT, MORE) and the settings most players
+  need, with no scrolling on a Steam Deck at the Large size. Your settings stay exactly as they are. A hidden setting you changed comes back on its tab under
+  YOU CHANGED, and **Show all settings** on MORE lists the rest. Each feature's switch is the first row of its tab, and off greys what stands under it; a
+  switch that needs a restart says so on the row, in amber. The page's text now follows HUD size, and the description stands in the page, under the rows.
+- **Page controls:** DEFAULT (X / D), CANCEL (Y / C) and CLOSE (B / Esc) carry their buttons, Q / E and LB / RB change the tab, and a held direction repeats
+  after 0.4 s. Esc on the hosted page now goes back to the game's Options column instead of leaving the screen.
+- **New rows:** Button hints and Hit effects, one word each over several settings, reading CUSTOM when you change a part of them; Window text size. Steering
+  response is a word now (the number is under Show all settings), Stick dead zone reads in percent. A on Layout shows every button of that layout.
+- **Disabling the Controller and Reset Everything now ask first,** with the safe answer focused. The rule that one of Subtitles and Controller stays on no longer
+  refuses you: disable both and the subtitles simply stay hidden.
+- **First start:** a fresh install meets one card over the main menu with HUD size, Subtitles, Hit effects and Held buttons; closing it is the skip. A player
+  upgrading never sees it.
+- HUD 2: the focused word on the pause menu, the job rows and the dealers' rows now reads in the bright text colour on its yellow block, so the row you are on is as legible as the rows around it.
+- HUD 2: the quit, delete and exit questions and the game's error and please-wait boxes are one centred dialog that says what it does (the multiplayer prompt keeps the game's look): QUIT ANYWAY, KEEP PLAYING, DELETE, KEEP SAVE. B and Escape answer safely. An amber edge marks what can lose progress. Any other text keeps the game's own words.
+- Pad: deleting a save is a press of X into the game's confirm, no longer a one-second hold.
+- HUD 2: **CONTINUE** on the main menu: one press loads your latest save. The menu's buttons are floating chips, the front load screen's too.
+- HUD 2: a new loading screen: a navy screen and, where the game gives it, where you are going, else LOADING; a bar only if the load runs past a second and a half.
+- HUD 2: its own cursor, an arrow, a reticle and word bubbles for all 19 of the game's cursors; tooltips and popups in HUD 2's look.
+- HUD 2: at 800 lines the names in the dealers' and inventory rows stand one size larger, the same size for a whole visit. Large keeps text by role in the windows. The log, status and info windows share one top line, left edge and dimmed backdrop, and INFO's plate ends at its text.
+- Pad: a tap on the dealer's own BUY or SELL does the trade, as an alternative to the hold on the row; the prompt says which.
+- Pad: a ship can be bought without a mouse (GitHub issue 34). The ship dealer's final stage opens on BUY SHIP: hold A, as for any purchase. On a row the hold is the game's TRANSFER, and LB / RB reach BUY SHIP from either list.
+- Pad: a button still held from the screen before no longer counts on the new one: release it first.
+- Pad: at the dealers a held A on a filter no longer trades the row selected behind it. The prompt reads SELECT there.
+- HUD 2: the ship dealer's final stage sets its words on a plate, and the prompts keep off them.
+- Subtitles: the fonts no longer rebuild every frame while a line and the Neural Net feed show together.
+- HUD 2: **a long pilot name reads whole,** past the game's own 23 characters, where the game's data can finish it.
+- HUD 2: the reticle goes with the rest of the HUD in a jump, a lane's entry and a dock's scene.
+- HUD 2: close to the reticle, the target's bars and words stand centred on top of it, just over the ring when no weapon group row shows, over an alert that stands there. With the ring faded they stay with the target.
+- HUD 2: the panels fit what they show, with even space around it: the target card, the ship panel, the loadout, the alert card and the contact rows. The consumables stand closer to the loadout.
+- HUD 2: the prompts beside the bottom panels mirror each other on the centre where the room allows, and a row of pad prompts stands centred under the screen where its band is free.
+- HUD 2: the reticle's bottom is now the boost meter, always there: yellow, emptying to the middle, breathing and blooming when it runs out as the hull does. The percentage stands beside BOOST.
+- HUD 2: the cruise meter stands at the reticle's top, in cyan, only while cruise charges or runs. Its glow grows as it charges; running, it breathes at 1 Hz; turned off, it blooms out gently. Disrupted, it turns red, breathes fast and empties the moment cruise can charge again.
+- HUD 2: the power meter moved inside the reticle's top.
+- Dealers: the stats line up with their labels and lose their scroll bars; prices, classes and long names no longer run into each other or out of their rows; the FAIR / GOOD word gives way on a long name, the coloured mark stays. The quantity block rises into the slider's room when there is no slider.
+- HUD 2: the prompts stand in a centred column balanced on the dealer's bottom panel, and bottom centre in rooms where the row has the room.
+- The Neural Net log, help and status windows stand centred between the docked strip and the prompts.
+- HUD 2: the on-target firing cursor turns again, as the game's does, at the rate of the game's data.
+- Pad: HUD FADES / HUD ALWAYS on the action wheel, the options page's setting, live and saved.
+- HUD 2: the target's bars and distance no longer vanish for good after a wide alert card has gone.
+- Pad: a mapper's keys are dropped again on a PC that refuses a hook by DLL.
+- HUD 2: a new alert card no longer lands on the one sliding out of its place. Under `skin_motion` Fades and None nothing on the HUD pulses or slides.
+- Pad: a dealer's first row is no longer missed when the window is still sliding in.
+- Pad: at the dealers the D-pad no longer stops on the room's bar, the NeuroNet's box behind the window or the description's scroll bar, and LB / RB bring the focus back from a filter when the other list is empty.
+- Pad: at the dealers the right stick scrolls the list you are on, by the D-pad or the cursor, and no longer the other side's (GitHub issue 36).
+- HUD 2: a window the skin cannot draw keeps the game's look until it closes, and one line says so. New rows: **Menu motion** (`skin_motion`) and `skin_native`, a list of windows that keep the game's look.
+
 ## 0.3.5rc (test build)
 
 A test build of 0.3.5: every change below, not yet through the full regression sweep and gate. Short checks only: unit tests, the module matrix, one start each of flight, a dock, a subtitle and a movie.
@@ -18,6 +114,8 @@ A test build of 0.3.5: every change below, not yet through the full regression s
 - Autopilot: stopping it during a coast gives you the engine back, and starting it again no longer sits there lit and doing nothing.
 - Autopilot: loading a save, from the pause menu too, stops it. It used to fly on into the game you loaded.
 - Autopilot: it keeps turning with the rear view on, and with the pause menu open in multiplayer, where the game has no pause.
+- After a launch, the first press of the throttle key no longer drops the ship's speed under HUD 2 (from 80 m/s to about 30). The pad's throttle and HUD 2's throttle reading had the same stale value.
+- Autopilot: **Skip docking cutscenes** now works on a trip to a station or base, not only to a planet (GitHub issue 32). In multiplayer the scenes play.
 - Autopilot: a dock you made by hand no longer stops its next start for four seconds.
 - Autopilot beside FLUF: FLUF's windows get the pad while it flies, and the stick there no longer takes the ship back.
 - Multiplayer: a server's word changed during a flight counts at once, not at the next start.

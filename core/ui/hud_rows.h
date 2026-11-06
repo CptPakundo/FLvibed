@@ -22,14 +22,16 @@ struct Values
 {
     ShieldCue shield;
     ReticleCue reticle;
-    int gameTextSize = 100; // the game's own text, percent (100..150; gametext.h)
+    int gameTextSize = 0;   // the game's own text, percent (100..150; gametext.h), 0 automatic: it follows hud_size
     bool windowText = true; // the game's windows' text by role, HUD 2 only (windowtext.h)
     // HUD 2 (modules\hud\docs\UI_HUD2.md 5.3; the codings: the rows' help)
     int hudStyle = 2, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0, hudPrompts = 1;
-    bool hudThreats = true, hudAlerts = true, hudInfo = true, hudWireframes = true;
+    bool hudThreats = true, hudAlerts = true, hudInfo = true, hudWireframes = true, groupCue = true;
     int hudTransition = 120;
     int hudPreset = 0; // hud_preset: HUD 2's layout preset (UI_HUD2_PRESETS.md 6 step 4)
     int uiStyle = 1;   // ui_style: the non-flight windows' look, 0 CLASSIC, 1 HUD 2 (uiskin.*, uistrip.*); only with HUD 2 on
+    int skinMotion = 0;     // skin_motion: the skin's own motion, 0 full, 1 fades, 2 none
+    std::string skinNative; // skin_native: family labels that stay the game's (hidden; troubleshooting and reports)
 };
 inline Values g;
 } // namespace hudrows
@@ -52,8 +54,9 @@ inline Values g;
      "batteries (blue) used (double ring)"},
 
 #define FLV_HUD_ROWS_TEXT \
-    {"game_text_size", settings::Int, &hudrows::g.gameTextSize, 100, 150, \
-     "size of the game's own text in every window, in percent; takes effect at the main menu"}, \
+    {"game_text_size", settings::Int, &hudrows::g.gameTextSize, 0, 150, \
+     "size of the game's own text in every window: 0 automatic (follows hud_size), else 100 to 150 percent; takes " \
+     "effect at the main menu"}, \
     {"window_text", settings::Bool, &hudrows::g.windowText, 0, 1, \
      "HUD 2: the text in the game's windows takes the room it has, the prices most, labels less, headings and buttons not at all"},
 
@@ -81,8 +84,10 @@ inline Values g;
     {"hud_prompts", settings::Int, &hudrows::g.hudPrompts, 0, 1, \
      "when the context prompts show in flight: 0 always, 1 when they change or right after you act (dock, cruise, " \
      "a target, a maneuver), then they fade out after 4 seconds"}, \
+    {"group_cue", settings::Bool, &hudrows::g.groupCue, 0, 1, \
+     "the weapon group cue above the ring: your groups, M and T, filled when the target is in the centre and in reach"}, \
     {"hud_alerts", settings::Bool, &hudrows::g.hudAlerts, 0, 1, \
-     "short warning cards (shield failing, missile incoming, cargo hold full) with the buttons that answer them"}, \
+     "short warning cards (shield failing, missile incoming, cargo hold full, loot the tractor refused and why) with the buttons that answer them"}, \
     {"hud_info", settings::Bool, &hudrows::g.hudInfo, 0, 1, \
      "extra information when it matters: docking queue, jump countdown, mission timers, formation, tractor"}, \
     {"hud_wireframes", settings::Bool, &hudrows::g.hudWireframes, 0, 1, \
@@ -98,7 +103,11 @@ inline Values g;
 #define FLV_HUD_ROWS_STYLE \
     {"ui_style", settings::Int, &hudrows::g.uiStyle, 0, 1, \
      "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (default; the " \
-     "game's controls stay as they are); Classic = the game's own"},
+     "game's controls stay as they are); Classic = the game's own"}, \
+    {"skin_motion", settings::Int, &hudrows::g.skinMotion, 0, 2, \
+     "HUD 2's motion, in flight and in the menus and dialogs: 0 full, 1 fades (no breathing or travel, a change fades in place), 2 none (a change cuts)"}, \
+    {"skin_native", settings::String, &hudrows::g.skinNative, 0, 0, \
+     "advanced, for troubleshooting: a comma list of window names that keep the game's look (pause, navmap, cursor ...); empty by default"},
 
 namespace hudrows
 {

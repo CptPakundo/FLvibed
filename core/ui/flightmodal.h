@@ -15,6 +15,7 @@
 #include "game/uidraw.h"
 #include "ui/glyphs.h"
 #include "ui/views.h"
+#include "str.h"
 #include "text.h"
 #include "ui/uikit.h"
 #include "ui/uiopt.h"
@@ -93,12 +94,7 @@ inline void Tap(int cmd)
         fl::FireCommand(cmd, false);
 }
 
-inline std::wstring Upper(std::wstring s)
-{
-    for (wchar_t& c : s)
-        c = static_cast<wchar_t>(towupper(c));
-    return s;
-}
+inline std::wstring Upper(std::wstring s) { return str::Upper(std::move(s)); }
 
 inline std::wstring Dist(float m)
 {

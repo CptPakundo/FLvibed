@@ -34,6 +34,7 @@ void NoteLoading(const std::string& file);
 bool SelectedSave(std::string& file);
 bool MainMenuVisible();
 u32 MainMenuButton(u32 id); // a shown main menu button by id, 0 = any shown one; 0 = none
+u32 MainMenuRoot();         // the window that holds the shown main menu buttons; 0 = none
 u32 CharSelect();           // the front end's load screen, 0 = closed
 const std::vector<menu::SaveEntry>& CachedSaves(); // the open load screen's list, refreshed at 2 Hz
 // The speedrun clock's state the sidecar stores with each save.

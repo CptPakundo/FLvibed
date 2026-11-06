@@ -52,6 +52,23 @@ void SetHoverHelp(bool allowed);
 // ToolTip stay as the game wants them (the pause menu's button help is the ToolTip). Cleared: the next Apply restores
 // what HUD 2 does not hide itself. Set by HUD 2's gate (hud2::SetMenuOver) before Apply, per frame (a flag write).
 void SetMenuOver(bool on);
+// The game's three alerts with a home in HUD 2 (UI_HUD2_SKIN.md 6.8). AlertSeen: the game showed that alert within the last kAlertHoldMs, its blink's
+// longest dark time: the switch hides them each frame and reads what the game wanted first. False while no hide runs.
+enum AlertId : int
+{
+    kRadiation,
+    kTail,
+    kLag
+};
+constexpr unsigned long kAlertHoldMs = 2200;
+bool AlertSeen(int which);
+// The game's radiation art held steady at this pixel beside the nav's line while `show` (a request holds until changed); off gives its place back.
+void SetRadiationArt(float px, float py, bool show);
+const char* RadiationArtWhy(); // `hud2 state`: "shown", or what kept the art away
+// HUD 2's targeting display wanted this frame (a request holds until changed). TargetFormOn: the game's corners, diamond, label and bars are off, so the form may
+// draw; false leaves the native bracket and no form (a refused symbol, the module off, no indicators).
+void SetTargetForm(bool want);
+bool TargetFormOn();
 // The game's own 3D views without their panels, both drawn by the target panel's own view draw (exe::TargetViewDraw, the
 // same on every build): which 0 = the player's ship (the status panel's watched object), 1 = the target (the target
 // panel's). Called each frame while HUD 2 wants the view

@@ -3,6 +3,8 @@
 
 #include "uihooks.h"
 
+#include "safemem.h"
+
 namespace uihooks
 {
 // UiControlAdd / UiControlRemove: a count per call, nothing else (the game's thread only). Both detours or none: gated together (Generation 0 = unavailable).
@@ -150,6 +152,66 @@ void InstallHits()
     g_origDmgContact =
         static_cast<DmgPointFn>(hk::Detour(exe::DmgIndContact, DmgContactHook, 6, "player hit points (shield cue)"));
 }
+
+// ---- the target label's mute. The draw also plays the target sound and does more than draw, so it always runs: only its vertices and its text go.
+typedef void(__fastcall* IndicatorDrawFn)(void* self, void* edx, void* obj, const float* rec);
+typedef void(__cdecl* HudVertexFn)(float x, float y, float z);
+typedef void(__fastcall* TextDrawFn)(void* self, void* edx);
+static IndicatorDrawFn g_origIndicatorDraw = nullptr;
+static HudVertexFn g_origHudVertex = nullptr;
+static TextDrawFn g_origTextDraw = nullptr;
+static int g_textTries = 0; // (a refused patch tries again, a few times; then the native target stays)
+constexpr int kTextTries = 8;
+static bool g_muteWanted = false, g_muting = false;
+constexpr uintptr_t kIndicatorText = 0x40C;
+constexpr int kTextDrawSlot = 0x34 / 4;
+
+static void __cdecl HudVertexHook(float x, float y, float z)
+{
+    if (!g_muting) // (100 callers: one branch)
+        g_origHudVertex(x, y, z);
+}
+
+static void __fastcall TextDrawHook(void* self, void* edx)
+{
+    if (!g_muting)
+        g_origTextDraw(self, edx);
+}
+
+static void __fastcall IndicatorDrawHook(void* self, void* edx, void* obj, const float* rec)
+{
+    if (!g_origTextDraw && self && g_textTries < kTextTries)
+    {
+        // the text's class is known only at run time: its draw slot patched once, chained, gated by the flag. Before
+        // the mute is wanted: TargetMuteReady answers yes only once this holds, so the corners never go without the label.
+        uintptr_t text = 0;
+        void** vt = nullptr;
+        if (safemem::Read(reinterpret_cast<uintptr_t>(self) + kIndicatorText, &text, sizeof text) && text &&
+            safemem::Read(text, &vt, sizeof vt) && vt)
+        {
+            ++g_textTries;
+            g_origTextDraw = reinterpret_cast<TextDrawFn>(hk::PatchVtable(vt, kTextDrawSlot, reinterpret_cast<void*>(TextDrawHook)));
+            if (g_origTextDraw || g_textTries == kTextTries)
+                Log("target label: the text's draw slot hooked (vtable %p): %s", vt, g_origTextDraw ? "ok" : "REFUSED");
+        }
+    }
+    g_muting = g_muteWanted && g_origTextDraw; // (never half a label)
+    g_origIndicatorDraw(self, edx, obj, rec);
+    g_muting = false;
+}
+
+void InstallTargetMute()
+{
+    if (g_origHudVertex)
+        return;
+    // HudVertex: mov ecx,ds:[...] (6 bytes); HudIndicatorDraw: mov eax,fs:[0] (6 bytes). The vertex gate first: the indicator hook mutes only with it in.
+    g_origHudVertex = static_cast<HudVertexFn>(hk::Detour(exe::HudVertex, HudVertexHook, 6, "HUD 2's targeting display"));
+    if (g_origHudVertex)
+        g_origIndicatorDraw = static_cast<IndicatorDrawFn>(hk::Detour(exe::HudIndicatorDraw, IndicatorDrawHook, 6, "HUD 2's targeting display"));
+}
+
+void SetTargetMute(bool on) { g_muteWanted = on; }
+bool TargetMuteReady() { return g_origHudVertex && g_origIndicatorDraw && g_origTextDraw; }
 
 void TraceKeys(bool on) { g_traceKeys = on; }
 bool TraceKeys() { return g_traceKeys; }

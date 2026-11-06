@@ -131,4 +131,33 @@ void Test_pad_backend()
     CHECK(StickY(-32768) == 32767 && StickY(32767) == -32767 && StickY(0) == 0 && StickY(-16384) == 16384);
     CHECK(Trigger(0) == 0 && Trigger(-5) == 0 && Trigger(32767) == 255 && Trigger(16384) == 128 && Trigger(64) == 0 &&
           Trigger(129) == 1);
+
+    // Impulse Triggers: Microsoft's own pad XInput reads; a Steam virtual pad, a Sony pad or a pad that is not XInput's are not it
+    CHECK(XboxHid(kVendorXbox, 1, 5, true));
+    CHECK(!XboxHid(0x28DE, 1, 5, true) && !XboxHid(kVendorSony, 1, 5, true) && !XboxHid(kVendorXbox, 1, 5, false) && !XboxHid(kVendorXbox, 1, 6, true));
+    // the route: on only with everything for it, closed by each thing against it
+    {
+        const float dt = kImpulseLook;
+        ImpulseRoute r;
+        CHECK(r.Want(true, true, true, false, false, false, false, false, dt));
+        CHECK(!r.Want(false, true, true, false, false, false, false, false, dt)); // `trigger_effects` off
+        CHECK(!r.Want(true, false, true, false, false, false, false, false, dt)); // an older host
+        CHECK(!r.Want(true, true, false, false, false, false, false, false, dt)); // no Xbox pad
+        CHECK(!r.Want(true, true, true, true, false, false, false, false, dt));   // the fallback owns SDL
+        CHECK(!r.Want(true, true, true, false, true, false, false, false, dt));   // Wine
+        CHECK(!r.Want(true, true, true, false, false, true, false, false, dt));   // a test: never the machine's own pad
+        // SDL up and no pad found (Windows 7, two pads): it gives up after kImpulseEmpty, and stays away until the pad comes back
+        ImpulseRoute e;
+        int looks = 0;
+        while (e.Want(true, true, true, false, false, false, false, true, dt) && looks < 1000)
+            ++looks;
+        CHECK(looks == static_cast<int>(kImpulseEmpty / dt) - 1);
+        CHECK(!e.Want(true, true, true, false, false, false, true, true, dt));
+        CHECK(!e.Want(true, true, false, false, false, false, false, false, dt)); // the pad left
+        CHECK(e.Want(true, true, true, false, false, false, false, false, dt));   // and came back
+        // a pad found keeps it
+        ImpulseRoute k;
+        for (int i = 0; i < 100; ++i)
+            CHECK(k.Want(true, true, true, false, false, false, true, true, dt));
+    }
 }

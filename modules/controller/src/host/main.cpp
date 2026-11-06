@@ -13,6 +13,7 @@
 #include "safemem.h"
 #include "version.h"
 #include "../shm.h"
+#include "hapticwave.h"
 #include "sdlpad.h"
 
 // The settings bus: one instance in FLvibed.dll (core\settings_bus.cpp, compiled plain), reached by this C symbol.
@@ -43,6 +44,7 @@ static void HostFailSafe()
     input::SetHudHitSuppression(false, nullptr, 0);
     router::ApSetGunAim(false, nullptr);
     router::SetCursorHidden(false);
+    router::SetLoadDraw(nullptr);
     dimouse::Reset();
 }
 static void HostSetKeyTrace(bool on) { uihooks::TraceKeys(on); }
@@ -130,6 +132,7 @@ static void StopLogic()
     input::SetHudHitSuppression(false, nullptr, 0);
     router::ApSetGunAim(false, nullptr); // v28: the guns' aim goes back to the game
     router::SetCursorHidden(false); // v20: the pad screens' cursor hide ends with the logic
+    router::SetLoadDraw(nullptr);   // v40: its code goes with the logic
     dimouse::Reset();
 }
 
@@ -596,13 +599,23 @@ void Start(HMODULE)
     g_host.SdlPad = sdlpad::Pad;                         // v33: the opt-in SDL3 gamepad backend (pad_backend 1; sdlpad.cpp)
     g_host.SdlPadRumble = sdlpad::Rumble;                // v33
     g_host.SdlPadFilter = sdlpad::Filter;                // v38: a mapper's keys and mouse dropped
+    g_host.SdlPadTriggers = sdlpad::Triggers;            // v41: Adaptive Triggers
+    g_host.SdlPadTriggerRumble = sdlpad::TriggerRumble;  // v41: Impulse Triggers
+    g_host.PadWave = hapticwave::Open;                   // v41: the DualSense grips' stream
+    g_host.PadWaveFeed = hapticwave::Feed;
+    g_host.PadWaveWhy = hapticwave::Why;
+    g_host.SetTargetMute = uihooks::SetTargetMute;       // v39: HUD 2's targeting display
+    g_host.TargetMuteReady = uihooks::TargetMuteReady;   // v39
     g_host.ModuleOn = router::ModuleOn;                  // v36: the cut modules' switches
     g_host.GameLoads = events::GameLoads;                // v34: the game loads (Content.dll loads)
     g_host.MissionSave = events::MissionSave;            // v35: the story's checkpoint saves (speedrun save:<ids> splits)
     g_host.SetSteerLift = input::SetSteerLift;           // v37: what the autopilot's steering may lift
+    g_host.SetLoadDraw = router::SetLoadDraw;            // v40: the load's frame
     // DmgIndSource: sub esp,88h (6 bytes); DmgIndContact: sub esp,3Ch; push esi; mov esi,ecx (6 bytes)
     if (router::ModuleOn(modules::kHud) || router::ModuleOn(modules::kAutopilot))
         uihooks::InstallHits();
+    if (router::ModuleOn(modules::kHud))
+        uihooks::InstallTargetMute();
     uihooks::Install(KeyCmd);
     input::Install();
     // FrameTimer: push ebp; mov ebp,esp; and esp,-8 (6 bytes). Passes through unless the debug `fixeddt` is on.

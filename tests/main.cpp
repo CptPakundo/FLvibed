@@ -16,10 +16,23 @@ void Test_ini();
 void Test_utf();
 void Test_textfit();
 void Test_roletext();
+void Test_skin_rules();
 void Test_marquee();
+void Test_glyphset();
 void Test_promptlabel();
 void Test_promptshow();
 void Test_hudwake();
+void Test_handheld();
+void Test_hud2_roots();
+void Test_hud2_bars();
+void Test_hud2_target();
+void Test_namecut();
+void Test_hud2_cue();
+void Test_winfit();
+void Test_nntabs();
+void Test_navmap_layout();
+void Test_padmap_zones();
+void Test_navmap_labels();
 void Test_movie_words();
 void Test_input_rules();
 void Test_mix_cues();
@@ -36,6 +49,7 @@ void Test_focus_gate();
 void Test_maneuver_watch();
 void Test_target_cycle();
 void Test_room_ring();
+void Test_dealer_rules();
 void Test_pad_slots();
 void Test_pad_backend();
 void Test_sdl_testpad();
@@ -45,7 +59,9 @@ void Test_promptfit();
 void Test_settings();
 void Test_settings_reset();
 void Test_mprules_tag();
+void Test_tractorfail();
 void Test_presets();
+void Test_options_rules();
 void Test_str();
 void Test_universe();
 void Test_linebreak();
@@ -63,6 +79,8 @@ void Test_modules_rules();
 void Test_settings_bus();
 void Test_ordnance();
 void Test_haptics();
+void Test_haptics_engine();
+void Test_wave_synth();
 void Test_jobs();
 void Test_objective_kinds();
 void Test_situation_io();
@@ -72,6 +90,7 @@ void Test_goalqueue();
 void Test_situation_exec();
 void Test_look();
 void Test_city_hold();
+void Test_dock_skip();
 void Test_strafe();
 void Test_hud2_lint();
 void Test_hud2_sim();
@@ -213,10 +232,23 @@ int main(int argc, char** argv)
         {"utf", Test_utf},
         {"textfit", Test_textfit},
         {"roletext", Test_roletext},
+        {"skin_rules", Test_skin_rules},
         {"marquee", Test_marquee},
+        {"glyphset", Test_glyphset},
         {"promptlabel", Test_promptlabel},
         {"promptshow", Test_promptshow},
         {"hudwake", Test_hudwake},
+        {"handheld", Test_handheld},
+        {"hud2_roots", Test_hud2_roots},
+        {"hud2_bars", Test_hud2_bars},
+        {"hud2_target", Test_hud2_target},
+        {"namecut", Test_namecut},
+        {"hud2_cue", Test_hud2_cue},
+    {"winfit", Test_winfit},
+        {"nntabs", Test_nntabs},
+        {"navmap_layout", Test_navmap_layout},
+        {"padmap_zones", Test_padmap_zones},
+        {"navmap_labels", Test_navmap_labels},
         {"movie_words", Test_movie_words},
     {"input_rules", Test_input_rules},
         {"mix_cues", Test_mix_cues},
@@ -233,6 +265,7 @@ int main(int argc, char** argv)
     {"maneuver_watch", Test_maneuver_watch},
     {"target_cycle", Test_target_cycle},
     {"room_ring", Test_room_ring},
+    {"dealer_rules", Test_dealer_rules},
     {"pad_slots", Test_pad_slots},
         {"pad_backend", Test_pad_backend},
         {"sdl_testpad", Test_sdl_testpad},
@@ -242,7 +275,9 @@ int main(int argc, char** argv)
         {"settings_reset", Test_settings_reset},
         {"promptfit", Test_promptfit},
         {"mprules_tag", Test_mprules_tag},
+        {"tractorfail", Test_tractorfail},
         {"presets", Test_presets},
+        {"options_rules", Test_options_rules},
         {"str", Test_str},
         {"universe", Test_universe},
         {"linebreak", Test_linebreak},
@@ -260,6 +295,8 @@ int main(int argc, char** argv)
         {"settings_bus", Test_settings_bus},
         {"ordnance", Test_ordnance},
         {"haptics", Test_haptics},
+        {"haptics_engine", Test_haptics_engine},
+        {"wave_synth", Test_wave_synth},
         {"jobs", Test_jobs},
         {"objective_kinds", Test_objective_kinds},
         {"situation_io", Test_situation_io},
@@ -269,6 +306,7 @@ int main(int argc, char** argv)
         {"situation_exec", Test_situation_exec},
         {"look", Test_look},
         {"city_hold", Test_city_hold},
+        {"dock_skip", Test_dock_skip},
         {"strafe", Test_strafe},
         {"hud2_lint", Test_hud2_lint},
         {"hud2_sim", Test_hud2_sim},

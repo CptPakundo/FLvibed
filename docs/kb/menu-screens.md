@@ -6,8 +6,8 @@ engine facts in `..\FREELANCER_RE.md` "Main menu, load screens, pause menu"; cod
 
 - **Load / save lists** `[game]`: a row is selected natively through the list's own fields (the hovered row +0x7C, the
   selected row +0x8AC / the in-game screen's +0xE88) and loaded through `menu::Load` (the game's load-by-index); the
-  virtual mouse cannot click out of focus, so the pad's single A on a row is a native select + load. Delete = a one-second
-  X hold, then the game's DELETE / `LoadSave_Delete` button, which asks in `NN_Confirm`.
+  virtual mouse cannot click out of focus, so the pad's single A on a row is a native select + load. Delete = a press of X
+  into the game's DELETE / `LoadSave_Delete` button, which asks in `NN_Confirm`.
 - **Save description** `[game]`: the game's edit (`LoadSave_Edit2`, 30 characters) receives text through the game's own
   WM_CHAR path, so FLvibed pre-fills "<location> - <date>" (the base's name from universe.ini `strid_name`, "Planet " dropped
   when the limit cuts it) and the on-screen keyboard types into it; Y opens the keyboard, A clicks SAVE GAME.

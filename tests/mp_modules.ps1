@@ -3,7 +3,7 @@
 # exist. Rows: `travel` and `off` alone, `travel` with the controller, for the same answers. Judged: `mp` reads the server's word; a combat start is refused on
 # travel, every start on off; a travel-class start flies on travel. Instance 21 (never the owner's copies).
 # Usage (PowerShell tool): tests\mp_modules.ps1 [-Row alone-travel,alone-off,pad-travel] [-Instance 21]    build\release. Exit 1 on a failure.
-param([string[]]$Row = @('alone-travel', 'alone-off', 'pad-travel'), [int]$Instance = 21)
+param([string[]]$Row = @('alone-travel', 'alone-off', 'pad-travel'), [string]$Instance = 21)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"

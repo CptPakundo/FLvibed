@@ -149,7 +149,7 @@ void UpdateUiNav(float dt)
     const PadState& ps = g_pad.Cur();
     const bool stickPoints = (ps.lx != 0 || ps.ly != 0) && padbases::CursorAllowed();
     // (While a snap is still travelling to its target the cursor position is stale.)
-    if (anyNew && g_snapHold <= 0 && !stickPoints)
+    if (anyNew && g_snapHold <= 0 && !stickPoints && !padbases::EntryFocus())
     {
         const int under = ui::FindAt(items, mx, my);
         if (under < 0 || !isNew(items[under].root))
