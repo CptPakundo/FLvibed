@@ -9,7 +9,7 @@
   limp when empty, a wall when you cannot fire. A held trigger settles so it does not tire the finger. **Trigger effects:** FULL, LIGHT, OFF.
 - **Impulse Triggers on Xbox One and Series pads** on USB or the dongle: the trigger motors pulse with your guns and from the side of a hit. Over Bluetooth, the two
   main motors only.
-- **Waveform on a USB DualSense,** opt-in for now under Show all settings: its grips driven as audio, the speaker set to four channels in the Sound panel.
+- **Waveform on a USB DualSense,** on by default, off under Show all settings (Motors): its grips driven as audio, the speaker set to four channels in the Sound panel. If it cannot start, the motors take over and the log says why.
 - Show all settings has a strength for each of Ship and engine, Weapons, Hits and danger, Set pieces and Prompts. Steam Input is never needed for any of it.
 - Autopilot: docking at a base beyond the game's dock range no longer stops at once. It flies into range, then docks (the original game and mods built on it allow 10 km, HD Edition 50 km).
 - On the original game and on mods built on it, a pad strafe up or down no longer keeps sliding after the stick is let go.
