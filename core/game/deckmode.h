@@ -1,27 +1,17 @@
-// FLvibed - Steam Deck mode: 1280x800 is almost only the Deck, a 7-inch screen held in the hands, so
-// the text is larger and the safe margins go: they are there for televisions that crop the picture's edge, which a handheld's
-// panel never does. modules\hud\docs\UI_HUD2.md 5.35.
-//
-// The signal is the resolution: Steam's own check (ISteamUtils::IsSteamRunningOnSteamDeck) needs the Steam SDK in a game Steam
-// launched, a Freelancer install has neither, and no environment variable is documented. `deck_mode` overrides it either way.
-// Pure: g_on is set once a frame by the controller and read by the layouts, so the tests set it too.
+// FLvibed - the Large size's margins and text: a handheld held in the hands crops nothing, so the safe margins that televisions
+// need go, and the text is larger. modules\hud\docs\UI_HUD2.md 5.35; who turns it on: `hud_size`, core\game\hudsize.h.
+// Pure: g_on is set once a frame by hudsize::Apply and read by the layouts, so the tests set it too.
 #pragma once
 
 namespace deckmode
 {
 inline bool g_on = false;
 
-// deck_mode: 0 automatic, 1 on, 2 off
-inline bool Active(int setting, float W, float H)
-{
-    return setting == 1 || (setting == 0 && W == 1280.0f && H == 800.0f);
-}
-
-// text_size at the Deck, the owner's pick from the frames at 100 / 120 / 135. A size the player chose stays theirs.
+// text_size at Large, the owner's pick from the frames at 100 / 120 / 135. A size the player chose stays theirs.
 constexpr int kTextSize = 120, kTextSizeDefault = 100;
 inline int TextSize(bool deck, int chosen) { return deck && chosen == kTextSizeDefault ? kTextSize : chosen; }
 
-// The edge gutter left in Deck mode: no safe area, only enough that a plate's rim does not touch the bezel (fractions of W / H).
+// The edge gutter left at Large: no safe area, only enough that a plate's rim does not touch the bezel (fractions of W / H).
 constexpr float kGutterW = 0.0125f, kGutterH = 0.015f;
 
 // The flight HUD's margins: the spec's value, or the gutter.

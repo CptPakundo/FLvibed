@@ -17,6 +17,8 @@
 #include <dinput.h>
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>
+#include <audioclient.h>
+#include <mmreg.h>
 #include <tlhelp32.h>
 #include <intrin.h>
 #include <share.h>
@@ -28,7 +30,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <cwchar>
 #include <deque>
 #include <fstream>
 #include <istream>

@@ -73,20 +73,28 @@ struct Table
     void (*SetKeyTrace)(bool on);
     void (*DeferToFrameEnd)(void (*fn)(void* ctx), void* ctx); // core's page host only: the controller's entry sets it by uiclick::SetDeferral
     void (*SetSteerLift)(bool underWindow, bool autopilot);
+    // HUD 2's targeting display: the game's label and bars muted; Ready false = the native bracket stays
+    void (*SetTargetMute)(bool on);
+    bool (*TargetMuteReady)();
+    void (*SetLoadDraw)(void (*draw)()); // the load's frame (core\host\router.h)
 };
 inline Table g = {};
 
-// The game's cursor arrow hidden while any source asks: the pad screens, the flight's idle cursor (hud_fade 1, core\game\hudwake.h CursorStep). The host
-// hears only the OR. A reloaded logic does not know what the host still holds, so its first call always sends.
+// The game's cursor arrow hidden while any source asks: the pad screens, the flight's idle cursor (hud_fade 1, core\game\hudwake.h CursorStep), HUD 2's own
+// cursor drawn in its place. The host hears only the OR. A reloaded logic does not know what the host still holds, so its first call always sends.
 enum : unsigned
 {
     kCursorHidePad = 1u,
-    kCursorHideIdle = 2u
+    kCursorHideIdle = 2u,
+    kCursorHideSkin = 4u
 };
+inline unsigned g_cursorHide = 0;
+// Another source hides the arrow: the skin draws nothing of its own then.
+inline bool CursorHiddenBesides(unsigned source) { return (g_cursorHide & ~source) != 0; }
 inline void CursorHide(unsigned source, bool on)
 {
-    static unsigned mask = 0;
     static int sent = -1;
+    unsigned& mask = g_cursorHide;
     mask = on ? (mask | source) : (mask & ~source);
     const int want = mask != 0 ? 1 : 0;
     if (want == sent)

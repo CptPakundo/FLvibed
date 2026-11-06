@@ -11,6 +11,9 @@ void LogSetSink(void (*sink)(const char* line), const char* dllDir);
 // makes `sink` the place of the plain Log() too, the lines of core\game itself: the channel attached last. Same sink, same
 // channel (a reload attaches again). Returns the channel.
 int LogAttach(void (*sink)(const char* line), const char* dllDir);
+// `sink` keeps the plain Log() whatever attaches after it. The controller's does: a game with no startup movie starts both logics at the first frame, in either order,
+// and core\game's lines then went to FLSubtitles.log, where the tools reading FLController.log saw neither faults nor sessions.
+void LogClaimPlain(void (*sink)(const char* line));
 int LogChannelOf(void (*sink)(const char* line)); // the channel of an attached sink, -1 without one
 void LogTo(int channel, const char* line); // a finished line, into one channel
 void LogV(int channel, const char* fmt, va_list args); // channel < 0: the plain Log()'s

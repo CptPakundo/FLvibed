@@ -1,6 +1,7 @@
 // The pad in bases and NeuroNet windows: room rings, characters, dealers and window buttons through the game's own logic.
 #include "padbases.h"
 
+#include "dealer_rules.h"
 #include "room_ring.h"
 
 #include "dimouse.h"
@@ -23,10 +24,12 @@
 #include "padmap.h"
 #include "promptbar.h"
 #include "game/menu.h"
+#include "game/nnwin.h"
 #include "text.h"
 #include "ui/ui.h"
 #include "ui/uikit.h"
 #include "ui/uiopt.h"
+#include "ui/views.h"
 
 #include <algorithm>
 #include <sstream>
@@ -48,6 +51,7 @@ enum class Screen
     Commodity,  // NN_Dealer without filters: ItemButton1..5 / ItemView01..05 (#2 = the cargo list NN_Inventory),
                 // Inventory_Scroll, QuantitySlider, BuySellTradeButton, Inventory_Close
     Equipment,  // NN_Dealer with Filter_Weapons / _Ammo / _Equipment / _CargoBay; the player's rows carry EquipToggleN
+                // (the ship dealer's final stage is this window too: ShipFinal)
     ShipDealer, // NN_ShipTrader: ShipTraderShipNameFrame0..2 (+ IconFrame), ShipTraderBuyButton, ShipTraderCancelButton
     NnLog,      // NeuroNetStoryStar: MissionButton / LogButton, ScrollV_1, StoryStarCloseButton
     NnPlayer,   // NN_PlayerInfo: PlayerInfoFactionFrame0..5, PlayerInfoScroll, PlayerInfoCloseButton
@@ -148,6 +152,7 @@ static bool g_aFired = false;
 // hold would find no button: the focused row is selected again. A few tries, as the clear comes a moment after the trade.
 static int g_tradeTries = 0;
 static float g_tradeWait = 0;
+static bool g_tradeBack = false; // the trade was a tap on the button itself: the focus returns to the row
 static float g_trigRepeat[2] = {}; // LT, RT repeat timers
 static float g_trigHeld[2] = {};
 static int g_filter = -1;
@@ -256,6 +261,9 @@ static bool IsRow(const char* n)
            Starts(n, "ShipTraderShipNameFrame") || Starts(n, "ShipTraderShipNameIconFrame") ||
            Starts(n, "PlayerInfoFactionFrame");
 }
+
+// Where a dealer's hold trades: a row, the game's BUY or SELL, its quantity slider. On a filter a row may stand selected behind the focus: the hold leaves it alone.
+static bool OnTrade(const char* n) { return IsRow(n) || Starts(n, "BuySell") || Starts(n, "QuantitySlider"); }
 
 // A modal window over the base or the NeuroNet window, the game's or FLvibed's: the pause menu (NN_Pause), its
 // confirm (NN_Confirm), the in-game load / save screens, the death dialog, the story popup (MMOkButton), the options
@@ -572,6 +580,14 @@ static u32 MountToggle(const char* rowName)
     return Vis(tname);
 }
 
+// The ship dealer's final stage: NN_Dealer in its ship mode (FREELANCER_RE "The ship dealer's final stage"). BackToShipDealer stands there; BUY SHIP (ContinueButton) goes
+// while the player cannot pay, and is alone when the player has no ship to go back from.
+static bool ShipFinal()
+{
+    return (g_screen == Screen::Commodity || g_screen == Screen::Equipment) && (Vis("BackToShipDealer") || Vis("ContinueButton"));
+}
+static bool IsBuyShip(const char* n) { return Starts(n, "Continue"); } // (the button, or its caption over it)
+
 // A dealer's focus on its transfer panel (the buy / sell button, the quantity slider) with a row to go back to: B = BACK
 static bool PanelFocus(const char* focusName)
 {
@@ -590,7 +606,7 @@ static void Prompts(const Gamepad& pad)
             p[n++] = {b, label, hold, b2, progress};
     };
     bool decision = false;
-    const float aProgress = g_aHeld > 0 ? std::min(1.0f, g_aHeld / 0.6f) : 0.0f;
+    const float aProgress = dealerrules::Progress(g_aHeld, g_aFired);
     switch (g_screen)
     {
     case Screen::Room:
@@ -660,18 +676,31 @@ static void Prompts(const Gamepad& pad)
         const bool buy = Vis("BuySellTradeButton") != 0;
         const bool qty = Vis("QuantitySlider") != 0;
         const bool mount = MountToggle(ui::ControlName(Focused())) != 0;
+        const bool shipFinal = ShipFinal();
+        const bool buyShip = shipFinal && Vis("ContinueButton");
+        const bool onBuyShip = buyShip && IsBuyShip(ui::ControlName(Focused()));
         // The bar takes five (the D-pad's ITEM, the obvious one, is left out), so the middle follows the selected item:
         // QUANTITY and MAX with a slider (GitHub issue 17: the equipment dealer never named the triggers), MOUNT on an
         // item of the player's with a box, FILTER when nothing needs its place.
-        // (the list side: short, so HUD 2's pills fit the column right of the description at 16:9 - promptbar rule 4)
-        add(Id::LB, L"SIDE", false, Id::RB);
+        // (the list side: short, so HUD 2's pills fit the column right of the description at 16:9 - promptbar rule 4; off the final stage's BUY SHIP it says the way back)
+        add(Id::LB, buyShip && !onBuyShip ? L"SIDE / BUY SHIP" : L"SIDE", false, Id::RB);
         if (qty)
             add(Id::LT, L"QUANTITY", false, Id::RT);
         else if (eq)
             add(Id::X, L"FILTER");
-        add(Id::A, g_side == 2 ? L"SELL" : L"BUY", true, Id::COUNT, aProgress);
-        if (n > 0)
-            p[n - 1].enabled = buy; // (greyed, not gone: the panel's button leaves for a few frames on a purchase)
+        // (on a row the hold; on the game's BUY or SELL itself a tap, and the lane says which: R16, UI_HUD2_SKIN.md 6.9. BUY SHIP is hold only: the focus opens there)
+        const bool onButton = Starts(ui::ControlName(Focused()), "BuySell");
+        const char* focusName = ui::ControlName(Focused());
+        if (onBuyShip)
+            add(Id::A, L"BUY SHIP", true, Id::COUNT, aProgress);
+        else if (focusName[0] && !OnTrade(focusName)) // (a filter: A is its tap, and a hold does nothing here)
+            add(Id::A, L"SELECT");
+        else
+        {
+            add(Id::A, shipFinal ? L"TRANSFER" : g_side == 2 ? L"SELL" : L"BUY", !onButton, Id::COUNT, onButton ? 0 : aProgress);
+            if (n > 0)
+                p[n - 1].enabled = buy; // (greyed, not gone: the panel's button leaves for a few frames on a purchase)
+        }
         if (mount)
             add(Id::L3, L"MOUNT");
         else if (qty)
@@ -679,7 +708,7 @@ static void Prompts(const Gamepad& pad)
         if (n < 4) // (it takes the fifth place only: the rest name the choices)
             add(Id::RS, L"SCROLL");
         add(Id::B, PanelFocus(ui::ControlName(Focused())) ? L"BACK" : L"CLOSE");
-        decision = buy;
+        decision = buy || buyShip;
         break;
     }
     case Screen::ShipDealer:
@@ -690,7 +719,10 @@ static void Prompts(const Gamepad& pad)
         decision = Vis("ShipTraderBuyButton") != 0;
         break;
     case Screen::NnLog:
-        add(Id::LB, L"MISSION / LOG", false, Id::RB);
+        if (views::HudNNStrip()) // (the bumpers are the strip's)
+            add(Id::DL, L"MISSION / LOG", false, Id::DR);
+        else
+            add(Id::LB, L"MISSION / LOG", false, Id::RB);
         add(Id::A, L"SELECT");
         add(Id::RS, L"SCROLL");
         add(Id::B, L"CLOSE");
@@ -786,42 +818,96 @@ static void Quantity(int delta, const char* why)
         events::Push("pad dealer: %s quantity -> %.0f", why, pos);
 }
 
-// The first row of a side's list (ItemView01 of the dealer's window / of the player's), 0 when that list has no rows.
-static u32 FirstRow(int side)
+// The visible control of that name on a side of a dealer: both windows use the same names, so a name alone finds whichever comes first.
+static u32 OnSide(const char* name, int side)
 {
+    u32 ctls[2] = {};
+    int sides[2] = {};
+    int count = 0;
     for (int n = 1; n <= 2; ++n)
     {
-        char name[16];
-        sprintf_s(name, "ItemView01#%d", n);
-        const u32 ctl = Vis(name);
-        if (ctl && SideOf(ctl, true) == side)
-            return ctl;
+        char tagged[48];
+        sprintf_s(tagged, "%s#%d", name, n);
+        if (const u32 ctl = Vis(tagged))
+            ctls[count] = ctl, sides[count++] = SideOf(ctl, true);
     }
-    return 0;
+    const int at = dealerrules::OnSide(sides, count, side);
+    return at < 0 ? 0 : ctls[at];
 }
 
-static void SwitchSide()
+// The first row of a side's list (ItemView01 of the dealer's window / of the player's), 0 when that list has no rows.
+static u32 FirstRow(int side) { return OnSide("ItemView01", side); }
+
+// A dealer's list bar for the control under the focus, by the same side the rows use; 0 while that list fits (each window has its own Inventory_Scroll, hidden then).
+static u32 ListBar(u32 focus)
 {
-    const int to = g_side == 1 ? 2 : 1;
-    const u32 ctl = FirstRow(to);
-    if (ctl && Snap(ctl))
+    const char* name = ui::ControlName(focus);
+    const bool onList = IsRow(name) || Starts(name, "Inventory_Scroll");
+    return OnSide("Inventory_Scroll", dealerrules::ListSide(onList ? SideOf(focus, true) : 0, g_side));
+}
+
+// The side keys: the two lists, and at the ship dealer's final stage BUY SHIP while the game shows it.
+static void SwitchSide(int dir)
+{
+    using dealerrules::Stop;
+    const u32 buyShip = ShipFinal() ? Vis("ContinueButton") : 0;
+    const Stop from = buyShip && IsBuyShip(ui::ControlName(Focused())) ? Stop::BuyShip : g_side == 2 ? Stop::Yours : Stop::Dealers;
+    const bool onRow = IsRow(ui::ControlName(Focused()));
+    const u32 yours = FirstRow(2), dealers = FirstRow(1);
+    const Stop to = dealerrules::NextStop(from, dir, yours != 0, dealers != 0, buyShip != 0);
+    if (to != from && Snap(to == Stop::BuyShip ? buyShip : to == Stop::Yours ? yours : dealers))
     {
-        g_side = to;
-        events::Push("pad dealer: side -> %s", to == 1 ? "dealer" : "yours");
+        if (to != Stop::BuyShip)
+            g_side = to == Stop::Yours ? 2 : 1;
+        events::Push("pad dealer: side -> %s", to == Stop::BuyShip ? "buy ship" : to == Stop::Dealers ? "dealer" : "yours");
         return;
     }
-    events::Push("pad dealer: no rows on the %s side", to == 1 ? "dealer" : "your");
+    // no other stop, and the focus off the rows (on a filter): the side keys still bring it back to this side's list
+    if (to == from && from != Stop::BuyShip && !onRow && Snap(from == Stop::Yours ? yours : dealers))
+    {
+        events::Push("pad dealer: side -> %s", from == Stop::Dealers ? "dealer" : "yours");
+        return;
+    }
+    events::Push("pad dealer: no rows on the %s side", from == Stop::Dealers ? "your" : "dealer");
+}
+
+// Where the focus opens at the final stage: on BUY SHIP, whose hold needs a fresh press; while the player cannot pay on the rows that can pay for it.
+static u32 ShipFinalEntry()
+{
+    if (const u32 buyShip = Vis("ContinueButton"))
+        return buyShip;
+    if (const u32 yours = FirstRow(2))
+        return yours;
+    if (const u32 dealers = FirstRow(1))
+        return dealers;
+    return Vis("Filter_Weapons");
 }
 
 // The equipment dealer's mount boxes stand above their rows' centres, so the D-pad's Up from a row lands on one, and A on it unmounts: on the pad LS click is the mount
-// (the row's own), so the focus passes over them. They stay on screen and the mouse's.
-bool SkipsFocus(const char* name) { return g_screen == Screen::Equipment && Starts(name, "EquipToggle"); }
+// (the row's own), so the focus passes over them. They stay on screen and the mouse's. A dealer's D-pad also passes over the room's bar and the NeuroNet's box behind the
+// window: A does nothing there (IsWindowControl), and at 16:9 Up from the dealer's rows stopped on the bar, short of the way back to the ship dealer.
+// The screen's own entry focus stands or is coming: the new window's auto-focus (the control nearest the centre) leaves it alone. It took the list's bar off the row at the
+// final stage with too few credits, where no affirmative button stands: the probe's list can lag the row the cursor just reached.
+constexpr float kEntryHoldSec = 0.6f;
+static float g_entryHold = 0;
+bool EntryFocus() { return g_enterSnap > 0 || g_entryHold > 0; }
+
+bool SkipsFocus(const char* name)
+{
+    if (g_screen != Screen::Equipment && g_screen != Screen::Commodity)
+        return false;
+    if (Starts(name, "ButtonControl") || Starts(name, "RoomControl") || (Starts(name, "NN") && strstr(name, "Button")))
+        return true;
+    if (Starts(name, "ScrollV_")) // (the description's bar is the right stick's: at 1280x800 Down from the last row stopped on it, short of the filters)
+        return true;
+    return g_screen == Screen::Equipment && Starts(name, "EquipToggle");
+}
 
 // A control of the open window the pad may click by A (never a room button behind it: the focus can rest on the NavBar
 // when a window opens without a root of its own - the dealers' lists hang under the NeuroNet's root). Not a mount box: the pad's cursor can still rest on one.
 static bool IsWindowControl(const char* n)
 {
-    return IsRow(n) || Starts(n, "Filter_") || Starts(n, "Inventory_") || Starts(n, "BuySell") ||
+    return IsRow(n) || Starts(n, "Filter_") || Starts(n, "Inventory_") || Starts(n, "BuySell") || Starts(n, "BackToShipDealer") ||
            Starts(n, "ShipTrader") || Starts(n, "MissionVendor") || Starts(n, "News") || Starts(n, "StoryStar") ||
            Starts(n, "PlayerInfo") || Starts(n, "MissionButton") || Starts(n, "LogButton") || Starts(n, "ShipView_");
 }
@@ -1018,7 +1104,7 @@ static void UpdateRoom(const Gamepad& pad)
 
 // The right stick moves the screen's text, else its list. The wheel the stick sends elsewhere reaches nothing here: the game hands it to the control under the
 // cursor and stops, and rows, rich text and scroll bars all ignore it (0x53F330, read in game on the dealer's list). So the bar itself moves, natively. A rich
-// text has a bar (kRichBar) only while it overflows; a name in `lists` is a bar.
+// text has a bar (kRichBar) only while it overflows; a name in `lists` is a bar. The two dealers have one per list: the list under the focus (ListBar).
 static u32 StickBar(bool listOnly = false)
 {
     constexpr u32 kRichBar = 0x3F0;
@@ -1049,6 +1135,8 @@ static u32 StickBar(bool listOnly = false)
                     if (uiclick::Scroll(bar, 0, false, &lo, &hi) >= 0 && hi - Mem<float>(bar + 0x3CC) > lo)
                         return bar;
                 }
+        if (s.screen == Screen::Commodity || s.screen == Screen::Equipment)
+            return ListBar(Focused());
         return s.lists[0] ? Vis(s.lists[0]) : 0;
     }
     return 0;
@@ -1084,7 +1172,9 @@ static void StickScroll(const PadState& s)
         // (a list's bar counts rows, a text's pixels: a step of about a line there)
         float lo = 0, hi = 0;
         const float before = uiclick::Scroll(bar, 0, false, &lo, &hi);
-        const float step = hi - lo > 100.0f ? 16.0f : 1.0f;
+        // (a rich text's bar counts pixels: a step of a whole line, so the stick never leaves a line cut at the box's edge; 16 px did. Its pitch: 0.03625 H in these windows, 0.0325 H on an infocard)
+    const float lineH = static_cast<float>(fl::ScreenHeight()) * (g_screen == Screen::NnLog || g_screen == Screen::NnHelp || g_screen == Screen::Jobs ? 0.03625f : 0.0325f);
+    const float step = hi - lo > 100.0f ? lineH : 1.0f;
         // (the stick up: back towards the top; a text at its end, or one whose bar does not move, leaves the stick to the list)
         if (uiclick::Scroll(bar, static_cast<float>(-rows) * step, false, nullptr, nullptr) == before)
             if (const u32 list = StickBar(true); list && list != bar)
@@ -1143,7 +1233,7 @@ static void UpdateWindow(const Gamepad& pad)
             g_side = side;
         if (IsRow(hname))
             g_lastRow = hovered;
-        if (const u32 bar = Vis("Inventory_Scroll"))
+        if (const u32 bar = ListBar(hovered))
         {
             float lo, hi;
             const float pos = uiclick::Scroll(bar, 0, false, &lo, &hi);
@@ -1154,7 +1244,13 @@ static void UpdateWindow(const Gamepad& pad)
         if (g_tradeTries > 0 && (g_tradeWait -= g_dt) <= 0)
         {
             --g_tradeTries, g_tradeWait = 0.3f;
-            if (!g_cursorShown && IsRow(hname) && !Vis("BuySellTradeButton"))
+            // (a tap on the button: the button leaves with the panel, so the focus goes back to its row, which the next try selects)
+            if (g_tradeBack && g_lastRow && !Vis("BuySellTradeButton"))
+            {
+                g_tradeBack = false;
+                Snap(g_lastRow);
+            }
+            else if (!g_cursorShown && IsRow(hname) && !Vis("BuySellTradeButton"))
                 reselect = true;
         }
         ReadQuantity();
@@ -1204,10 +1300,8 @@ static void UpdateWindow(const Gamepad& pad)
 
     // A: accept the offer; a job / ship by a short hold; buy / sell / mount in the dealers
     const bool aDown = pad.Down(XINPUT_GAMEPAD_A);
-    const float heldBefore = g_aHeld;
-    g_aHeld = aDown ? g_aHeld + g_dt : 0;
-    if (!aDown)
-        g_aFired = false;
+    const bool aTap = dealerrules::Tick(g_aHeld, g_aFired, aDown, g_dt);
+    const bool aFires = dealerrules::Fires(aDown, g_aFired, g_aHeld);
     switch (g_screen)
     {
     case Screen::Offer:
@@ -1219,12 +1313,12 @@ static void UpdateWindow(const Gamepad& pad)
     {
         g_owned |= XINPUT_GAMEPAD_A;
         const char* accept = g_screen == Screen::Jobs ? "MissionVendorAcceptButton" : "ShipTraderBuyButton";
-        if (aDown && !g_aFired && g_aHeld >= 0.6f)
+        if (aFires)
         {
             g_aFired = true;
             ClickName(accept, g_screen == Screen::Jobs ? "job accept" : "ship buy");
         }
-        else if (!aDown && heldBefore > 0 && heldBefore < 0.6f && !g_aFired && IsRow(hname))
+        else if (aTap && IsRow(hname))
             events::Push("pad %s: row %s %s", ScreenName(g_screen), hname, uiclick::Click(hovered) ? "clicked" : "no click");
         break;
     }
@@ -1235,17 +1329,36 @@ static void UpdateWindow(const Gamepad& pad)
                    XINPUT_GAMEPAD_DPAD_LEFT | XINPUT_GAMEPAD_DPAD_RIGHT;
         if (g_screen == Screen::Equipment)
             g_owned |= XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_LEFT_THUMB;
-        // A held buys or sells, as a job or a ship is taken: what moves money is never one tap (
-        // GitHub issue 20, which also found that nothing could be sold here: A was the mount box on every row of the
-        // player's). A tap acts on the focused control, a filter or a row; the transfer panel's own controls wait for the hold.
-        if (aDown && !g_aFired && g_aHeld >= 0.6f && Vis("BuySellTradeButton"))
+        // A held on a row buys or sells, as a job or a ship is taken (GitHub issue 20, which also found that nothing could be sold here: A was the mount box on
+        // every row of the player's). The hold needs its alternative on a purchase (R16): a tap on the game's own BUY or SELL does the trade, the focus having been
+        // moved there on purpose, so a tap on a row can never spend. A tap acts on the focused control, a filter or a row; the quantity slider waits for the hold.
+        // At the ship dealer's final stage the same hold buys the ship with the focus on BUY SHIP. It has no tap: the focus opens there by itself, and letting go early
+        // must cancel. Not during the window's slide: the hold waits for its end, as a press may come while the window still moves in.
+        const bool shipFinal = ShipFinal();
+        const char* trade = shipFinal ? "transfer" : g_side == 2 ? "sell" : "buy";
+        const dealerrules::Act act = dealerrules::HoldAct(IsBuyShip(hname), OnTrade(hname), shipFinal && Vis("ContinueButton"), Vis("BuySellTradeButton") != 0);
+        if (aFires && act == dealerrules::Act::BuyShip)
+        {
+            if (!room::NNWindowBusy())
+            {
+                g_aFired = true;
+                ClickName("ContinueButton", "ship trade");
+            }
+        }
+        else if (aFires && act == dealerrules::Act::Transfer)
         {
             g_aFired = true;
-            ClickName("BuySellTradeButton", g_side == 2 ? "sell" : "buy");
+            g_tradeBack = Starts(hname, "BuySell");
+            ClickName("BuySellTradeButton", trade);
             g_tradeTries = 3, g_tradeWait = 0.3f;
         }
-        else if (!aDown && heldBefore > 0 && heldBefore < 0.6f && !g_aFired && hovered && IsWindowControl(hname) &&
-                 !Starts(hname, "BuySell") && !Starts(hname, "QuantitySlider") && uiclick::Click(hovered))
+        else if (aTap && hovered && Starts(hname, "BuySell") && Vis("BuySellTradeButton"))
+        {
+            g_tradeBack = true;
+            ClickName("BuySellTradeButton", trade);
+            g_tradeTries = 3, g_tradeWait = 0.3f;
+        }
+        else if (aTap && hovered && IsWindowControl(hname) && !Starts(hname, "BuySell") && !Starts(hname, "QuantitySlider") && uiclick::Click(hovered))
             events::Push("pad dealer: %s clicked", hname);
         // LS click: the mount box (EquipToggleN) of one of the player's rows - the toggle class's own action through
         // uiclick::Click (exe::ToggleButtonActivate: the dealer mounts / unmounts the item, the box flips)
@@ -1257,9 +1370,10 @@ static void UpdateWindow(const Gamepad& pad)
         }
         if (pad.Pressed(XINPUT_GAMEPAD_Y))
             Quantity(1000, "max");
-        if (pad.Pressed(XINPUT_GAMEPAD_LEFT_SHOULDER) || pad.Pressed(XINPUT_GAMEPAD_RIGHT_SHOULDER) ||
-            pad.Pressed(XINPUT_GAMEPAD_DPAD_LEFT) || pad.Pressed(XINPUT_GAMEPAD_DPAD_RIGHT))
-            SwitchSide();
+        if (pad.Pressed(XINPUT_GAMEPAD_LEFT_SHOULDER) || pad.Pressed(XINPUT_GAMEPAD_DPAD_LEFT))
+            SwitchSide(-1);
+        else if (pad.Pressed(XINPUT_GAMEPAD_RIGHT_SHOULDER) || pad.Pressed(XINPUT_GAMEPAD_DPAD_RIGHT))
+            SwitchSide(+1);
         if (g_screen == Screen::Equipment && pad.Pressed(XINPUT_GAMEPAD_X))
             CycleFilter();
         // the triggers: one step per press, repeating while held (faster after 1.5 s)
@@ -1317,14 +1431,32 @@ static void UpdateWindow(const Gamepad& pad)
         }
         break;
     case Screen::NnLog:
-        g_owned |= XINPUT_GAMEPAD_LEFT_SHOULDER | XINPUT_GAMEPAD_RIGHT_SHOULDER;
-        if (pad.Pressed(XINPUT_GAMEPAD_LEFT_SHOULDER))
+    {
+        const bool strip = views::HudNNStrip(); // (the bumpers are the strip's: the log's own two tabs move to the D-pad)
+        const u32 mission = strip ? XINPUT_GAMEPAD_DPAD_LEFT : XINPUT_GAMEPAD_LEFT_SHOULDER;
+        const u32 log = strip ? XINPUT_GAMEPAD_DPAD_RIGHT : XINPUT_GAMEPAD_RIGHT_SHOULDER;
+        g_owned |= mission | log;
+        if (pad.Pressed(mission))
             ClickName("MissionButton", "log tab"), g_nnTab = 0;
-        if (pad.Pressed(XINPUT_GAMEPAD_RIGHT_SHOULDER))
+        if (pad.Pressed(log))
             ClickName("LogButton", "log tab"), g_nnTab = 1;
         break;
+    }
     default: break;
     }
+}
+
+// The strip of words stands: LB / RB step its tabs from any NeuroNet window, wrapping. Without it nothing here runs and each screen keeps its bumpers.
+static bool StepTabs(const Gamepad& pad)
+{
+    if (!views::HudNNStrip())
+        return false;
+    g_owned |= XINPUT_GAMEPAD_LEFT_SHOULDER | XINPUT_GAMEPAD_RIGHT_SHOULDER;
+    if (pad.Pressed(XINPUT_GAMEPAD_LEFT_SHOULDER))
+        nnwin::Step(-1);
+    if (pad.Pressed(XINPUT_GAMEPAD_RIGHT_SHOULDER))
+        nnwin::Step(+1);
+    return true;
 }
 
 void Update(float dt, const Gamepad& pad, Where where)
@@ -1377,7 +1509,8 @@ void Update(float dt, const Gamepad& pad, Where where)
             Log("pad screen %s -> none (modal window)", ScreenName(g_screen));
             LeaveChars();
             g_screen = Screen::None;
-            g_aHeld = 0, g_aFired = false, g_tradeTries = 0, g_lastScrollPos = -1, g_lastHovered = 0, g_closeHeld = 0;
+            dealerrules::NewScreen(g_aHeld, g_aFired, pad.Down(XINPUT_GAMEPAD_A));
+            g_tradeTries = 0, g_lastScrollPos = -1, g_lastHovered = 0, g_closeHeld = 0;
         }
         // the pause menu, its confirm, the save / load screens, the death dialog: padmenus' screens follow the pad
         // cursor rule; any other modal (a story popup) keeps the arrow
@@ -1393,7 +1526,8 @@ void Update(float dt, const Gamepad& pad, Where where)
         if (s2 != g_screen)
         {
             Log("pad screen %s -> %s", ScreenName(g_screen), ScreenName(s2));
-            g_aHeld = 0, g_aFired = false, g_tradeTries = 0, g_lastScrollPos = -1, g_lastHovered = 0, g_closeHeld = 0;
+            dealerrules::NewScreen(g_aHeld, g_aFired, pad.Down(XINPUT_GAMEPAD_A));
+            g_tradeTries = 0, g_lastScrollPos = -1, g_lastHovered = 0, g_closeHeld = 0;
             g_qtyPos = g_qtyMax = -1;
             if (g_screen == Screen::Room)
                 LeaveChars();
@@ -1417,10 +1551,14 @@ void Update(float dt, const Gamepad& pad, Where where)
     {
         // (retried for a second: right as the window appears its controls have no hit-testable place yet)
         // (tried at most every 0.1 s: the cached probe refreshes at its own pace)
+        // (and never during the window's slide: the row hit-tests where it is now, and the cursor stayed there while the row moved on: at the final stage it came to rest on
+        // the list's bar, no row selected and A dead)
         static float tryIn = 0;
-        g_enterSnap -= dt;
+        const bool sliding = room::NNWindowBusy();
+        if (!sliding)
+            g_enterSnap -= dt;
         tryIn -= dt;
-        if (tryIn <= 0)
+        if (tryIn <= 0 && !sliding)
         {
             tryIn = 0.1f;
             u32 first = 0;
@@ -1429,20 +1567,24 @@ void Update(float dt, const Gamepad& pad, Where where)
                 const std::vector<u32> ring = RepairRing();
                 first = ring.empty() ? 0 : ring.front();
             }
+            else if (ShipFinal())
+                first = ShipFinalEntry();
             else if (!(first = FirstRow(1)))
                 first = Vis("Filter_Weapons");
             if (first && Snap(first))
-                g_enterSnap = 0, g_lastHovered = 0, tryIn = 0;
+                g_enterSnap = 0, g_lastHovered = 0, tryIn = 0, g_entryHold = kEntryHoldSec;
         }
     }
     else
         g_enterSnap = 0;
+    g_entryHold = g_entryHold > dt ? g_entryHold - dt : 0;
     // the nav map (padmap) owns the frame while it is open, in space and docked
     const bool mapOpen =
         padmap::Update(dt, pad, (where == Where::SpaceUi && g_screen == Screen::None) || g_screen == Screen::NavMap);
     if (mapOpen)
         return;
-    if (g_screen == Screen::Room)
+    const bool tabs = StepTabs(pad);
+    if (g_screen == Screen::Room && !tabs) // (multiplayer's chat over a room: the bumpers are the strip's)
         UpdateRoom(pad);
     else if (g_screen != Screen::None && g_screen != Screen::NavMap) // (the map's first 100 ms: padmap opens it)
         UpdateWindow(pad);
@@ -1679,7 +1821,11 @@ void Draw(void* device)
         else
             swprintf_s(widest, L"QUANTITY %s", digits);
         const float tw = static_cast<float>(render::TextWidth(font, widest));
-        const float x = W * 0.5f - tw * 0.5f, y = H * 0.648f;
+        float y = H * 0.630f;
+        ui::Item total; // (under the block's last line, wherever it stands; the plate holds it: winplates)
+        if (ui::ControlRect(baseinfo::Find("QuantityTotal"), total) && total.y > 0)
+            y = total.y + H * 0.048f;
+        const float x = W * 0.5f - tw * 0.5f;
         render::Gradient(x - H * 0.01f, y - H * 0.003f, tw + H * 0.02f, font.lineHeight + H * 0.006f, Argb(kBack, 0.0f),
                          Argb(kBack, 0.5f), Argb(kBack, 0.5f), Argb(kBack, 0.0f));
         render::Text(x, y, line, Argb(kHud, 0.95f));

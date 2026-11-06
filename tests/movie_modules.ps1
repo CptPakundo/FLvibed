@@ -2,7 +2,7 @@
 # movies play. Screenshots in research\experience\runs\movie_modules. Prints what it read; exit 1 on a failure.
 # Usage (PowerShell tool): tests\movie_modules.ps1 [-Row all|subtitles|movies|reload] [-Instance 1]
 # all, subtitles, movies: build\release. reload: build\dev (a release never frees the logic).
-param([string[]]$Row = @('all', 'subtitles', 'movies', 'reload'), [int]$Instance = 1)
+param([string[]]$Row = @('all', 'subtitles', 'movies', 'reload'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"

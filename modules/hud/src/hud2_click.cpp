@@ -279,33 +279,31 @@ static void AutopilotGlyph(float cx, float cy, float s, u32 c) // the bar button
 float DrawManeuverRow(const Model& m, const Layout& L, float x, float y, float a, float& right)
 {
     SetAlpha(a);
-    const float H = L.H, k = L.k, g = 0.034f * H * k, kh = 0.024f * H * k, gap = 0.016f * H * k;
-    static const flicons::Icon icons[4] = {flicons::Free, flicons::Goto, flicons::Dock, flicons::Formation};
+    // words where the row had pictures (R4): the running maneuver alone, one lit chip with its key; the whole row in words on a peek, or while the mouse is on
+    // it, so every click keeps its place (UI_HUD2_BUILD_040.md Q3)
+    const float H = L.H, k = L.k, T = 0.024f * H * k, kh = 0.024f * H * k, gap = 0.016f * H * k, hh = 0.021f * H * k;
+    static const wchar_t* const kWords[5] = {L"FREE FLIGHT", L"GOTO", L"DOCK", L"FORMATION", L"AUTOPILOT"};
+    const int run = m.ap ? 4 : m.manRun >= 0 && m.manRun < 4 ? m.manRun : 0;
+    const int hover = HotHovered();
+    const bool whole = m.peek || (hover >= kHotMan && hover < kHotMan + 5);
     float cx = x;
     for (int i = 0; i < 5; ++i)
     {
-        const bool lit = i < 4 ? m.manRun == i : m.ap;
-        const bool hov = HotHovered() == kHotMan + i;
+        if (!whole && i != run)
+            continue;
+        const bool lit = i == run, hov = hover == kHotMan + i;
         const u32 col = lit ? kActive : hov ? kInk : kChrome;
-        const RecUnit unit; // (the maneuver's icon and its key)
-        // (tight keycaps: the floor-grown 0.033 H cap, 0.006 H below the row, came 0.0094 H from the headline's box under
-        // the row - the lint's panel.overlap; the owner's A1 "tightening the glyphs themselves")
+        const RecUnit unit; // (the maneuver's key and its word)
+        // (tight keycaps: the floor-grown 0.033 H cap, 0.006 H below the row, came 0.0094 H from the headline's box under the row - the lint's panel.overlap)
         const float kw = DrawPrompt(m.manBtn[i], 0, 0, kh, 0, true, true);
-        const float w = g + (kw > 0 ? kw + 0.004f * H * k : 0);
-        if (hov)
-            Plate(cx - 0.004f * H * k, y - g * 0.62f, cx + w + 0.004f * H * k, y + g * 0.62f, 0.004f * H * k,
-                  kTL | kTR | kBR | kBL, 0.5f, kInk, 0.6f);
-        if (i < 4)
-        {
-            if (!Icon(icons[i], cx + g / 2, y, g, Argb(col, 1)))
-                Disc(cx + g / 2, y, 0.006f * H * k, Argb(col, 1));
-        }
-        else
-            AutopilotGlyph(cx + g / 2, y, g, Argb(col, 1));
+        const float tw = TextWidth(kWords[i], T, 0.06f), w = (kw > 0 ? kw + 0.008f * H * k : 0) + tw;
+        Plate(cx - 0.006f * H * k, y - hh, cx + w + 0.006f * H * k, y + hh, 0.004f * H * k, kTL | kTR | kBR | kBL,
+              hov ? 0.5f : lit ? 0.35f : 0.2f, hov ? kInk : kChrome, hov ? 0.6f : 0);
         if (kw > 0)
-            DrawPrompt(m.manBtn[i], cx + g + 0.004f * H * k + kw / 2, y + g * 0.18f, kh, Argb(kChrome, 0.9f), false, true);
-        HotRect(kHotMan + i, cx - 0.004f * H * k, y - g * 0.62f, cx + w + 0.004f * H * k, y + g * 0.62f);
-        right = cx + w + 0.004f * H * k;
+            DrawPrompt(m.manBtn[i], cx + kw / 2, y, kh, Argb(kChrome, 0.9f), false, true);
+        Text(cx + (kw > 0 ? kw + 0.008f * H * k : 0), y, kWords[i], T, Argb(col, 1), Left, 0.06f);
+        HotRect(kHotMan + i, cx - 0.006f * H * k, y - hh, cx + w + 0.006f * H * k, y + hh);
+        right = cx + w + 0.006f * H * k;
         cx += w + gap;
     }
     return 0.048f * H * k;
@@ -316,52 +314,27 @@ void DrawCardIcons(const Model& m, const Layout& L, float a, bool compact)
     if (!m.target)
         return;
     SetAlpha(a);
-    // a row at the card's foot (the card is taller in the keyboard form), right-aligned: [key] icon NEXT  [key] x CLEAR.
-    // `compact` = Focus's card (its click row 0.040 under its rows, hud2_layout.h focus_ns::kCardFooterKbm): tight
-    // keycaps centred in the row, right of its 0.046 icon column - the faction line ran over the CTRL+R / CTRL+T keycaps
-    // there (B4-B7: "It is important for HUD elements inside cards to not overlap")
-    const float H = L.H, k = L.k, s = 0.028f * H * k, kh = 0.026f * H * k, T = 0.024f * H * k;
-    const float y = L.tgtY1 - (compact ? 0.020f : 0.026f) * H * k;
-    float x = L.tgtX1 - (compact ? 0.016f : 0.018f) * H * k; // right to left: clear, then next enemy
-    // the row stays right of the view's column (the round 3 bug: NEXT ENEMY's keycap sat in the view): the long labels
-    // when they fit, else the short ones, else the icons and keys alone
-    const float minX = L.tgtX0 + (compact ? 0.068f : 0.13f + 0.03f) * H * k;
-    static const wchar_t* kLabels[3][2] = {{L"CLEAR", L"NEXT ENEMY"}, {L"CLEAR", L"NEXT"}, {L"", L""}};
-    int form = 0;
-    for (; form < 2; ++form)
-    {
-        float w = 0;
-        for (int i = 0; i < 2; ++i)
-            w += TextWidth(kLabels[form][i], T, 0.08f) + 0.006f * H * k + s +
-                 DrawPrompt(i == 0 ? m.clearBtn : m.nextEnemyBtn, 0, 0, kh, 0, true, compact) + 0.006f * H * k +
-                 0.024f * H * k;
-        if (x - w >= minX)
-            break;
-    }
+    // a row at the card's foot (the card is taller in the keyboard form), right-aligned: [key] NEXT  [key] CLEAR, the pad's words (R4). `compact` = Focus's card:
+    // its click row 0.040 under its rows, right of its 0.046 icon column
+    const float H = L.H, k = L.k, kh = 0.026f * H * k, T = 0.024f * H * k;
+    // (0.0085 H down from the spec's line: the card's numbers above it stand at the text floor)
+    const float y = L.tgtY1 - (compact ? 0.020f * H * k : CardFootUp(L));
+    float x = L.tgtX1 - (compact ? 0.016f : 0.018f) * H * k; // right to left: clear, then next
     for (int i = 0; i < 2; ++i)
     {
         const int slot = i == 0 ? kHotClear : kHotNextEnemy;
         const Prompt& p = i == 0 ? m.clearBtn : m.nextEnemyBtn;
-        const wchar_t* label = kLabels[form][i];
+        const wchar_t* label = i == 0 ? L"CLEAR" : L"NEXT";
         const bool hov = HotHovered() == slot;
         const u32 col = Argb(hov ? kInk : kChrome, 1);
         const float x1 = x, lw0 = TextWidth(label, T, 0.08f);
-        const RecUnit unit; // (the key, its icon and its label: one click)
+        const RecUnit unit; // (the key and its label: one click)
         Text(x1, y, label, T, col, Right, 0.08f);
-        const float cx = x1 - lw0 - 0.006f * H * k - s / 2;
-        if (i == 0)
-        {
-            const float d = s * 0.26f, lw = std::max(1.5f, s * 0.09f);
-            Line(cx - d, y - d, cx + d, y + d, lw, col);
-            Line(cx - d, y + d, cx + d, y - d, lw, col);
-        }
-        else if (!Icon(flicons::Next, cx, y, s, col))
-            Ring(cx, y, s * 0.3f, 2, col);
-        float x0 = cx - s / 2;
-        const float kw = DrawPrompt(p, 0, 0, kh, 0, true, compact);
+        float x0 = x1 - lw0;
+        const float kw = DrawPrompt(p, 0, 0, kh, 0, true, true);
         if (kw > 0)
         {
-            DrawPrompt(p, x0 - 0.006f * H * k - kw / 2, y, kh, Argb(kChrome, 0.9f), false, compact);
+            DrawPrompt(p, x0 - 0.006f * H * k - kw / 2, y, kh, Argb(kChrome, 0.9f), false, true);
             x0 -= kw + 0.006f * H * k;
         }
         if (hov)
@@ -372,15 +345,15 @@ void DrawCardIcons(const Model& m, const Layout& L, float a, bool compact)
     }
 }
 
-// The K&M card's click row in its short form (CLEAR / NEXT) right of the view's column (DrawCardIcons, compact false)
+// The K&M card's click row right of the card's column (DrawCardIcons, compact false)
 float CardIconsContentWidth(const Model& m, const Layout& L)
 {
-    const float H = L.H, k = L.k, s = 0.028f * H * k, kh = 0.026f * H * k, T = 0.024f * H * k;
+    const float H = L.H, k = L.k, kh = 0.026f * H * k, T = 0.024f * H * k;
     float w = 0;
     for (int i = 0; i < 2; ++i)
-        w += TextWidth(i == 0 ? L"CLEAR" : L"NEXT", T, 0.08f) + 0.006f * H * k + s +
-             DrawPrompt(i == 0 ? m.clearBtn : m.nextEnemyBtn, 0, 0, kh, 0, true, false) + 0.006f * H * k + 0.024f * H * k;
-    return (0.13f + 0.03f) * H * k + w + 0.018f * H * k;
+        w += TextWidth(i == 0 ? L"CLEAR" : L"NEXT", T, 0.08f) + DrawPrompt(i == 0 ? m.clearBtn : m.nextEnemyBtn, 0, 0, kh, 0, true, true) + 0.006f * H * k +
+             0.024f * H * k;
+    return CardColumn(m, L) + 0.03f * H * k + w + 0.018f * H * k;
 }
 
 // The list's width (DrawList): its header (the filter words, or TARGETS / NEXT and the filter) and its rows
@@ -404,8 +377,8 @@ float ListContentWidth(const Model& m, const Layout& L)
     }
     float rows = 0;
     for (int i = 0; i < m.nThreats && i < 10; ++i)
-        rows = std::max(rows, 0.05f * H * k + TextWidth(m.threats[i].name, 0.026f * H * k) + 0.02f * H * k +
-                                  TextWidth(m.threats[i].dist, 0.026f * H * k));
+        rows = std::max(rows, 0.05f * H * k + TextWidth(m.threats[i].name, m.target ? 0.026f * H * k : T) + 0.02f * H * k +
+                                  TextWidth(m.threats[i].dist, m.target ? 0.026f * H * k : T));
     return std::max(head, rows) + 0.018f * H * k;
 }
 
@@ -448,9 +421,10 @@ void DrawList(const Model& m, const Layout& L, float a)
         {
             const RecUnit unit; // (the prompt and its own label)
             DrawPrompt(m.threatsBtn, gx + w1 / 2, yy, g, Argb(kChrome, 1));
-            gx += w1 + g * 0.3f;
-            if (w1 > 0) // (the keyboard has no key for the picker: no TARGETS label without its button)
-                gx += Text(gx, yy, L"TARGETS", T, Argb(kChrome, 1), Left, 0.08f) + 0.03f * H * k;
+            // (the keyboard has no key for the picker: no TARGETS label, and no gap, without its button - the gap alone,
+            // uncounted by ListContentWidth, left NEXT short of room: it scrolled as "|EXT" at 4K, "NE" at 1280x800)
+            if (w1 > 0)
+                gx += w1 + g * 0.3f, gx += Text(gx, yy, L"TARGETS", T, Argb(kChrome, 1), Left, 0.08f) + 0.03f * H * k;
             else if (!m.kbm)
                 gx = x0;
         }
@@ -467,18 +441,19 @@ void DrawList(const Model& m, const Layout& L, float a)
         }
         Text(right, yy, m.filter, T, Argb(kDim, 1), Right, 0.08f);
     }
-    yy += 0.044f * H * k;
+    yy += std::max(0.044f * H * k, 0.0455f * H); // (the header's keycap stands at the floor: 0.01 H to the first row)
     for (int i = 0; i < m.nThreats && i < 10; ++i)
     {
         const bool hov = m.kbm && HotHovered() == kHotRow + i, tgt = m.threats[i].id && m.threats[i].id == m.targetId;
         Plate(x0, yy - 0.019f * H * k, x1, yy + 0.019f * H * k, 0, 0, hov ? 0.75f : 120 / 255.0f, kChrome, hov ? 0.6f : 0);
-        if (!Icon(m.threats[i].icon, x0 + 0.024f * H * k, yy, 0.028f * H * k, Argb(m.threats[i].col, 1)))
-            Disc(x0 + 0.024f * H * k, yy, 0.006f * H * k, Argb(m.threats[i].col, 1));
-        const float dw = TextWidth(m.threats[i].dist, 0.026f * H * k);
-        TextMarquee(x0 + 0.05f * H * k, yy, m.threats[i].name, 0.026f * H * k,
-                    hud2layout::RowRoom(x0 + 0.05f * H * k, right, dw, 0.02f * H * k, false, 0, 0), // (real room)
+        if (!Icon(m.threats[i].icon, x0 + 0.032f * H * k, yy, 0.028f * H * k, Argb(m.threats[i].col, 1))) // (0.018 H from the edge, as the distance on the right)
+            Disc(x0 + 0.032f * H * k, yy, 0.006f * H * k, Argb(m.threats[i].col, 1));
+        const float rowT = m.target ? 0.026f * H * k : T; // (no target held: the rows stand alone, at the floor)
+        const float dw = TextWidth(m.threats[i].dist, rowT);
+        TextMarquee(x0 + 0.058f * H * k, yy, m.threats[i].name, rowT,
+                    hud2layout::RowRoom(x0 + 0.058f * H * k, right, dw, 0.02f * H * k, false, 0, 0), // (real room)
                 Argb(tgt ? kActive : kInk, 1));
-        Text(right, yy, m.threats[i].dist, 0.026f * H * k, Argb(kInk, 1), Right);
+        Text(right, yy, m.threats[i].dist, rowT, Argb(kInk, 1), Right);
         HotRect(kHotRow + i, x0, yy - 0.019f * H * k, x1, yy + 0.019f * H * k);
         yy += 0.042f * H * k;
     }
@@ -489,7 +464,7 @@ void DrawList(const Model& m, const Layout& L, float a)
         Text(right, yy - 0.008f * H * k, b, T, Argb(kDim, 1), Right, 0.06f);
     }
     else if (m.list && m.listTotal == 0)
-        Text(x0 + 0.05f * H * k, yy, L"NONE", T, Argb(kDim, 1), Left, 0.08f);
+        Text(x0 + 0.058f * H * k, yy, L"NONE", T, Argb(kDim, 1), Left, 0.08f);
 }
 
 // ---------------------------------------------------------------- debug

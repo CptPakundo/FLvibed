@@ -19,6 +19,7 @@ static void ImplInit(const HostApi* host)
 {
     g_host = host;
     LogSetSink(host->LogWrite, host->dllDir);
+    ::LogClaimPlain(host->LogWrite); // core\game's lines stay here, whichever logic starts last
     // what core's logic reaches the host for, until core has its own table (a part's HostApi is its module's)
     hostcalls::g = {host->SetHeld, host->ClearAllHeld, host->PushEvent, host->ChatLineAt, host->ServerTag,
                     host->GetSettingsBus, host->GetHudBus, host->GetD3DDevice, host->OptionsPageState, host->ShowOptionsPage,
@@ -40,7 +41,8 @@ static void ImplInit(const HostApi* host)
                     host->version >= 23 ? host->UiGeneration : nullptr, host->version >= 5 ? host->GetRoomCharacters : nullptr,
                     host->version >= 7 ? host->SetKeepRunning : nullptr, host->version >= 20 ? host->SetCursorHidden : nullptr,
                     host->version >= 32 ? host->FixedDt : nullptr, host->version >= 9 ? host->CommPlayer : nullptr, host->SetKeyTrace,
-                    nullptr, host->version >= 37 ? host->SetSteerLift : nullptr};
+                    nullptr, host->version >= 37 ? host->SetSteerLift : nullptr, host->version >= 39 ? host->SetTargetMute : nullptr,
+                    host->version >= 39 ? host->TargetMuteReady : nullptr, host->version >= 40 ? host->SetLoadDraw : nullptr};
     device_view::Publish();
     ctl::PublishPadFlight();
     ctl::PublishFrame();

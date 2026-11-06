@@ -1,7 +1,7 @@
 // FLvibed - a logic module's log channel. build.cmd's wrapper includes this INSIDE the module's namespace, right after the
 // core headers (no include guard: once per module, which is the point): the module's plain Log(...) and LogSetSink(...) find
 // these first, so its lines stay in its own file (FLSubtitles.log, FLController.log) while the logic shares one core\log.cpp.
-// A line from core\game itself goes to the channel attached last (core\log.h LogAttach).
+// A line from core\game itself goes to the channel attached last, or the claimed one (core\log.h LogAttach, LogClaimPlain).
 // Log is an object, not a function: a function would meet ::Log by argument lookup whenever an argument is a global type (a
 // RECT's member, a GUID), and the call would be ambiguous.
 inline int g_logChannel = -1;

@@ -99,6 +99,8 @@ Display-only, or run anyway: gauges, cruise line, damage arcs, comm window (its 
 | New-information flash on the log's button | skin probe 16 | not located |
 | Issue 12's mission cutscene; a Neural Net line in a cutscene | handoff | the gate's moments |
 
+**For the owner (driver's decision, 6 Nov 2026): BUY SHIP is hold only, a departure from R16.** R16 puts a tap beside every purchase's hold. The ship dealer's final stage opens with the focus on BUY SHIP by itself, so a tap there would spend a ship on a press the player may have meant for the window before; letting go early cancels instead (GitHub issue 34, `padbases.cpp`, `dealer_rules.h`). The row's own trade keeps both forms. Reversing it is one branch in `UpdateWindow`.
+
 ## 6. What the probes corrected in the record
 - `FREELANCER_RE`: "the inventory opens nothing docked" is wrong: it opens, `NN_Inventory` visible, skin family `inventory` (*game*, probe 15).
 - A NeuroNet window is **rebuilt at each open**: a new map object each time (*game*). Every write goes to the new instance; `+0x4A8` is rewritten on a return from the universe view.

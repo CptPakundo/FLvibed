@@ -4,7 +4,7 @@
 // drive the very code the game runs across the display matrix. No game, no device: the callers pass the measured widths
 // and their keep-out queries. Pixels in, pixels out; every size a fraction of H.
 #pragma once
-#include "game/deckmode.h"
+#include "game/hudsize.h"
 
 #include <algorithm>
 #include <string>
@@ -46,6 +46,8 @@ struct LanePlaced
     float widest = 0, column = 0;               // the widest pill, the free column's width at the bottom slot (status)
     bool atFloor = false;                       // the labels at the fit rule's floor
     float w[kLaneMax] = {};                     // each pill's width as placed
+    bool stack[kLaneMax] = {};                  // a column's pill too wide for it: its glyphs over its label, two slots tall
+    float sw[kLaneMax] = {};                    // its width so (the owner, 6 Nov 2026: taller, never a shorter word)
 };
 
 // The pills hold still (GitHub issue 10). Traced frame by frame at 1280x800: the buy button hides for two frames on every
@@ -117,7 +119,7 @@ private:
 // the column; two rows at the bottom (labels at the floor); the column at the floor; only then the last resorts.
 template <class LeftFn, class LowFn>
 inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, const float* wF, float ph, float pitch,
-                       float nnBottom, LeftFn left, LowFn lowest, LanePlaced& out, int& dropped)
+                       float nnBottom, LeftFn left, LowFn lowest, LanePlaced& out, int& dropped, const float* wS = nullptr, float columnEdge = 0)
 {
     out = LanePlaced();
     n = n < 0 ? 0 : (n > kLaneMax ? kLaneMax : n);
@@ -136,7 +138,7 @@ inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, co
         ~Commit()
         {
             for (int i = 0; i < n; ++i)
-                o.w[i] = w[i];
+                o.w[i] = o.stack[i] ? o.sw[i] : w[i];
         }
     } commit{out, w, n};
     const float right = W - W * deckmode::SideW();
@@ -184,31 +186,50 @@ inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, co
     const float slot = ph + H * 0.008f;
     auto column = [&]()
     {
+        // (wS: a pill wider than the column stands stacked, in two slots, sooner than the whole lane leaves for the top)
+        // (columnEdge: where a column that the caller centres in its gap may reach: the safe margin alone cost the trader two of its five prompts)
+        const float edge = columnEdge > 0 ? columnEdge : right, leftEdge = left(by1 - ph, by1, right), room = edge - leftEdge;
+        bool st[kLaneMax] = {};
+        float wide[kLaneMax] = {};
         float maxW = 0;
+        int need = 0;
         for (int i = 0; i < n; ++i)
-            maxW = std::max(maxW, w[i]);
-        out.widest = maxW, out.column = right - left(by1 - ph, by1, right);
+        {
+            st[i] = wS && w[i] > room && wS[i] > 0 && wS[i] <= room;
+            wide[i] = st[i] ? wS[i] : w[i];
+            maxW = std::max(maxW, wide[i]);
+            need += st[i] ? 2 : 1;
+        }
+        out.widest = maxW, out.column = room;
         int free = 0;
-        for (; free < n; ++free)
+        for (; free < need; ++free)
         {
             const float y1 = by1 - free * slot, y0 = y1 - ph;
-            if (y0 < H * 0.25f || right - left(y0, y1, right) < maxW)
+            if (y0 < H * 0.25f || edge - left(y0, y1, right) < maxW)
                 break;
         }
         if (free < std::min(n, 2))
             return false;
-        int k = n;
-        while (k > free && dropOne())
-            --k;
+        const auto slots = [&]()
+        {
+            int k = 0;
+            for (int i = 0; i < n; ++i)
+                k += out.use[i] ? (st[i] ? 2 : 1) : 0;
+            return k;
+        };
+        while (slots() > free && dropOne())
+        {
+        }
         int s = 0; // the last kept pill at the bottom slot
         for (int i = n - 1; i >= 0; --i)
             if (out.use[i])
             {
-                out.x0[i] = right - w[i], out.cy[i] = by1 - s * slot - ph * 0.5f;
-                ++s;
+                out.stack[i] = st[i], out.sw[i] = wide[i];
+                out.x0[i] = std::max(right - wide[i], leftEdge), out.cy[i] = by1 - s * slot - (st[i] ? (ph + slot) * 0.5f : ph * 0.5f);
+                s += st[i] ? 2 : 1;
             }
         out.mode = LaneMode::Column;
-        out.rx0 = right - maxW, out.ry0 = by1 - (s - 1) * slot - ph, out.rx1 = right, out.ry1 = by1;
+        out.rx0 = std::max(right - maxW, leftEdge), out.ry0 = by1 - (s - 1) * slot - ph, out.rx1 = out.rx0 + maxW, out.ry1 = by1;
         return true;
     };
     w = wN, out.atFloor = false;
@@ -313,13 +334,21 @@ inline float PillWidth(float H, float glyphs, float label)
 // One prompt's width without a HOLD word: glyph (g tall) + 0.3 g + the label. A hold's word adds HoldExtra (below).
 inline float ContextPromptWidth(float glyph, float g, float label) { return glyph + g * 0.3f + label; }
 
-// HUD 2's scale k (hud2.cpp ComputeLayout): hud_scale x text_size, never under 1, the aspect factor, then what the panels
-// fit (the bottom row, the right column, the centre column).
+// The lit part of a centred meter (GitHub issue 28): the span [lo, hi] of a0..a1 that `frac` fills, about its middle.
+inline void CentredLit(float a0, float a1, float frac, float& lo, float& hi)
+{
+    const float f = frac < 0 ? 0 : frac > 1 ? 1 : frac, mid = (a0 + a1) * 0.5f, half = (a1 - a0) * 0.5f * f;
+    lo = mid - half, hi = mid + half;
+}
+
+// HUD 2's scale k (hud2.cpp ComputeLayout): hud_scale x text_size, never under 1, on the size preset's base (hud_size, so
+// 100 means the preset's own: core\game\hudsize.h), the aspect factor, then what the panels fit (the bottom row, the right
+// column, the centre column).
 inline float Hud2Scale(float W, float H, int hudScale, int textSize, bool kbm)
 {
     auto clampf = [](float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); };
     float k = clampf(hudScale / 100.0f, 0.8f, 1.3f) * clampf(textSize / 100.0f, 0.8f, 1.5f);
-    k = std::max(k, 1.0f);
+    k = std::max(k, 1.0f) * hudsize::g_baseK;
     k *= clampf(0.9f * W / (1.6f * H), 0.8f, 1.0f);
     k = std::min(k, std::min((0.9f * W - 0.02f * H) / ((kbm ? 1.06f : 1.02f) * H), (0.88f * H) / ((kbm ? 0.662f : 0.622f) * H)));
     k = std::min(k, 0.426f / 0.36f);
@@ -702,6 +731,7 @@ struct LaneGeom
     float y0 = 0;           // the baseline row's centre line
     float pitch = 0;        // the rows' pitch (the row above at y0 - pitch)
     int rows = 2;
+    int leftRows = 2;       // the left lane's: 1 while the subtitles' panel stands over its upper row
     float tall = 0;         // what a wrapped prompt's plate grows upward (two label lines: FitLabel, 0.2.1) - the row
                             // above moves up by it where its lane's baseline row holds a wrapped prompt
 };
@@ -715,6 +745,10 @@ inline LaneGeom ContextLanes(float W, float H, float k, float shipX1, float loX0
     const float pad = 0.012f * H * k, panelGap = 0.012f * H * k;
     g.lx0 = shipX1 + panelGap + pad, g.lx1 = bandX0W * W - pad;
     g.rx1 = loX0 - panelGap - pad, g.rx0 = bandX1W * W + pad;
+    // mirrored on the screen's centre, from the panel that reaches nearer it (the owner, 6 Nov 2026: symmetrical prompts), where that leaves a lane room for a whole prompt
+    const float reach = std::min(W / 2 - g.lx0, g.rx1 - W / 2);
+    if (g.lx1 - (W / 2 - reach) >= 0.20f * H * k)
+        g.lx0 = W / 2 - reach, g.rx1 = W / 2 + reach;
     g.y0 = lineY * H, g.pitch = 0.06f * H * k, g.rows = 2, g.tall = kWrapTall * H * k;
     return g;
 }
@@ -782,10 +816,11 @@ inline LanesPlaced PlaceLanes(const float* w, const float* minW, const int* side
                     tall[s] = true; // (a wrapped prompt is alone in its row: the row above is still empty here)
                 o.moved[i] = s != own, used[s][r] = true, placed = true;
             };
-            for (int r = 0; r < rows && !placed; ++r) // whole
+            const int laneRows = s == 0 && g.leftRows < rows ? g.leftRows : rows;
+            for (int r = 0; r < laneRows && !placed; ++r) // whole
                 if (wi <= room(r) + 0.5f)
                     put(r, wi);
-            for (int r = 0; r < rows && !placed; ++r) // squeezed, alone in its row
+            for (int r = 0; r < laneRows && !placed; ++r) // squeezed, alone in its row
                 if (!used[s][r] && room(r) >= mi - 0.5f && room(r) > 0)
                     put(r, std::min(wi, room(r)));
         }

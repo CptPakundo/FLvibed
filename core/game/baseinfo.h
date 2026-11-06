@@ -20,6 +20,7 @@ bool Docked();
 std::wstring BaseName();
 // The room as a word from its nickname ("Li01_01_ShipDealer" -> "SHIP DEALER"), "" unknown.
 std::wstring RoomName();
+std::string RoomKey(); // the room's nickname less the base's (Bar, Trader, ShipDealer): what a room button's hotspot label says
 // The player's system ("New York"), "" unknown.
 std::wstring SystemName();
 // The player ship's archetype name ("Starflier"), "" unknown.

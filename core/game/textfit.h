@@ -22,9 +22,10 @@ constexpr wchar_t kEllipsis = 0x2026;
 // smallest screen the game's own resolution list offers (800x600); there Agency FB's bold caps stand ~10 px with the
 // one-pixel outline - the smallest size it stays readable at (judged on the 720p / 4:3 frames of fix_text_2026-10-25).
 constexpr float kMinPx = 14.0f;
+inline float g_floorH = 0.024f; // the floor in force: `hud_size` Small lowers it (core\game\hudsize.h)
 inline float MinSize(float screenH)
 {
-    const float h = 0.024f * screenH;
+    const float h = g_floorH * screenH;
     return h > kMinPx ? h : kMinPx;
 }
 

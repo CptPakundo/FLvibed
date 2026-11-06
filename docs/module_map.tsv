@@ -37,10 +37,12 @@ file	barbutton.cpp	modules/autopilot/src/barbutton.cpp	Autopilot	maneuver-bar 5t
 file	barbutton.h	modules/autopilot/src/barbutton.h	Autopilot	maneuver-bar 5th button glyph/state + autopilot key (OnKey)
 file	checkpoints_gen.h	modules/speedrun/src/checkpoints_gen.h	Speedrun	speedrun cluster (plan: proposed Speedrun module)
 file	city_hold.h	modules/autopilot/src/city_hold.h	Autopilot	autopilot cluster (plan section 1)
+file	dock_skip.h	modules/autopilot/src/dock_skip.h	Autopilot	skip_dock_scene's pure half: whose dock it is, with what
 file	controller.cpp	modules/controller/src/impl/controller.cpp	Controller	the pad: options, modes' pad screens, flight bindings, its places in core's frame (P9: the hub dissolved into core\game\coreframe.*)
 file	controller.h	modules/controller/src/impl/controller.h	Controller	ctl:: API: Init/OnFrame (router), LastSteerX/Y, FpsCap; the other modules reach the pad through core\ui\views.h
 file	device.cpp	modules/controller/src/impl/device.cpp	Controller	input-device service: padOwns also feeds hud2 (hc.pad), uiskin (sc.pad), controller.cpp
 file	device.h	modules/controller/src/impl/device.h	Controller	pad cluster (plan section 1)
+file	dealer_rules.h	modules/controller/src/impl/dealer_rules.h	Controller	the pad's held A and the ship dealer's final stage: pure rules, testsdealer_rules_test.cpp
 file	fl.cpp	core/game/fl.cpp	core	Freelancer.exe helper wrappers (fl::)
 file	flightmodal.h	core/ui/flightmodal.h	core	decided: the modal kit Controller and Autopilot both draw with goes to core with the row kit (P4) | shared modal kit of picker/wheel/wgroups (Controller) and goals.cpp (Autopilot): core or Controller?
 file	flufaware.cpp	core/ui/flufaware.cpp	core	FLUF awareness (plan Core)
@@ -59,6 +61,10 @@ file	goals.h	modules/autopilot/src/goals.h	Autopilot	autopilot goal panel (pad +
 file	haptics.cpp	modules/controller/src/impl/haptics.cpp	Controller	pad cluster (plan section 1)
 file	haptics.h	modules/controller/src/impl/haptics.h	Controller	pad cluster (plan section 1)
 file	haptics_rules.h	modules/controller/src/impl/haptics_rules.h	Controller	pad cluster (plan section 1)
+file	haptics_render.h	modules/controller/src/impl/haptics_render.h	Controller	the haptics renderers: Caps, stances, trigger bytes, the sinks
+file	wave_synth.h	modules/controller/src/wave_synth.h	Controller	the DualSense grips' synth and the stream's rules, pure, host and logic
+file	hapticwave.cpp	modules/controller/src/host/hapticwave.cpp	Controller	the DualSense grips' WASAPI stream, host thread, behind its probe
+file	hapticwave.h	modules/controller/src/host/hapticwave.h	Controller	the DualSense grips' WASAPI stream, host thread, behind its probe
 file	host.h	modules/controller/src/impl/host.h	Controller	HostApi wrappers of the controller's part; the shared services are core\game\hostcalls.h
 file	hud2.cpp	modules/hud/src/hud2.cpp	HUD	HUD cluster (plan section 1)
 file	hud2.h	modules/hud/src/hud2.h	HUD	HUD cluster (plan section 1)
@@ -131,6 +137,17 @@ file	uikit.cpp	core/ui/uikit.cpp	core	options page / row kit / UI options struct
 file	uikit.h	core/ui/uikit.h	core	options page / row kit / UI options struct (plan: Options -> Core)
 file	uiopt.cpp	core/ui/uiopt.cpp	core	options page / row kit / UI options struct (plan: Options -> Core)
 file	uiopt.h	core/ui/uiopt.h	core	UiOptions struct copied each frame from controller.cpp g_opt (OnFrame, the 'controller UI's settings' block); read by device, glyphs, presets, padhud, hud2
+file	skin_rules.h	modules/hud/src/skin_rules.h	HUD	the skin's sizes and pure rules (UI_HUD2_SKIN.md 4): tests\skin_rules_test.cpp
+file	skindialog.cpp	modules/hud/src/skindialog.cpp	HUD	the dialogs in one plate (UI_HUD2_SKIN.md 6.2)
+file	skindialog.h	modules/hud/src/skindialog.h	HUD	the dialogs in one plate (UI_HUD2_SKIN.md 6.2)
+file	skinload.cpp	modules/hud/src/skinload.cpp	HUD	the loading screen, form C
+file	skinload.h	modules/hud/src/skinload.h	HUD	the loading screen, form C
+file	skinmenu.cpp	modules/hud/src/skinmenu.cpp	HUD	CONTINUE, the six places, the version line
+file	skinmenu.h	modules/hud/src/skinmenu.h	HUD	CONTINUE, the six places, the version line
+file	skinover.cpp	modules/hud/src/skinover.cpp	HUD	HUD 2's cursor set, the ToolTip's Shadow tier
+file	skinover.h	modules/hud/src/skinover.h	HUD	HUD 2's cursor set, the ToolTip's Shadow tier
+file	skinkit.cpp	modules/hud/src/skinkit.cpp	HUD	the skin's primitives
+file	skinkit.h	modules/hud/src/skinkit.h	HUD	the skin's primitives
 file	uiskin.cpp	modules/hud/src/uiskin.cpp	HUD	HUD cluster (plan section 1)
 file	uiskin.h	modules/hud/src/uiskin.h	HUD	HUD cluster (plan section 1)
 file	uistrip.cpp	modules/hud/src/uistrip.cpp	HUD	HUD cluster (plan section 1)
@@ -234,6 +251,7 @@ hostapi	controller.ServerTag	modules/controller/src/api.h:258	core	mprules.cpp
 hostapi	controller.FixedDt	modules/controller/src/api.h:261	core	debug `fixeddt` / `timing` (debug.cpp:498-514), test only
 hostapi	controller.SdlPad	modules/controller/src/api.h:268	Controller	gamepad.cpp:91,:97,:112
 hostapi	controller.SdlPadRumble	modules/controller/src/api.h:271	Controller	gamepad.cpp:345
+hostapi	controller.SetLoadDraw	modules/controller/src/api.h	core	router::SetLoadDraw: the HUD's loading screen (skinload.cpp), v39
 hostapi	controller.SdlPadFilter	modules/controller/src/api.h	Controller	gamepad.cpp Filter: a mapper's keys and mouse dropped (sdlpad.cpp hooks, dimouse::NoteMotion / MaskInjectedButton at the reads)
 hostapi	controller.GameLoads	modules/controller/src/api.h:276	core	HostGameLoads(): controller.cpp:2584 router (mission::ForgetGame, autopilot::ArbiterForgetGame); subtitles has its own copy
 hostapi	controller.MissionSave	modules/controller/src/api.h:280	Speedrun	livesplit.cpp:569,:648 (save:<ids> splits)
@@ -318,6 +336,15 @@ setting	Controller.weapon_groups	modules/controller/src/impl/controller.cpp	Cont
 setting	Controller.y_swap	modules/controller/src/impl/controller.cpp	Controller	g_opt.swapY
 setting	Controller.holds_as_toggles	modules/controller/src/impl/controller.cpp	Controller	g_opt.holdsAsToggles; also read by HUD (hud2.cpp, hud2_lint_live.cpp, hud2_preset.h)
 setting	Controller.rumble	modules/controller/src/impl/controller.cpp	Controller	g_opt.rumble
+setting	Controller.trigger_effects	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.triggerEffects
+setting	Controller.trigger_strength	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.triggerStrength
+setting	Controller.haptics_mode	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.hapticsMode
+setting	Controller.haptics_ship	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.hapticsClass[0]
+setting	Controller.haptics_weapons	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.hapticsClass[1]
+setting	Controller.haptics_danger	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.hapticsClass[2]
+setting	Controller.haptics_setpieces	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.hapticsClass[3]
+setting	Controller.haptics_prompts	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.hapticsClass[4]
+setting	Controller.haptics_device	modules/controller/src/impl/controller_settings.cpp	Controller	g_opt.hapticsDevice
 setting	Controller.pad_cursor	modules/controller/src/impl/controller.cpp	Controller	g_opt.padCursor
 setting	Controller.cursor_magnet	modules/controller/src/impl/controller.cpp	Controller	g_opt.cursorMagnet
 setting	Controller.prompt_bar	modules/controller/src/impl/controller.cpp	Controller	g_opt.promptBar
@@ -326,7 +353,7 @@ setting	Controller.borderless	modules/controller/src/impl/controller.cpp	Display
 setting	Controller.world_prompts	modules/controller/src/impl/controller.cpp	Controller	g_opt.worldPrompts
 setting	Controller.ap_hints	modules/controller/src/impl/controller.cpp	core	g_opt.apHints; uiopt apHints: read by controller.cpp (hc.apKnown :2841, pc.apKnown) feeding HUD and padhud prompts, newgame.cpp; autopilot feature display: HUD + Controller + Autopilot all read the derived flag
 setting	Controller.text_size	modules/controller/src/impl/controller.cpp	core	g_opt.textSize; FLvibed's own UI text: read by HUD (hud2), Controller (pad screens), core (options page, uikit), Speedrun (runtimer)
-setting	Controller.deck_mode	modules/controller/src/impl/controller.cpp	core	g_opt.deckMode; core/game/deckmode.h; controller.cpp OnFrame :2658 evaluates and publishes to uiopt for every module
+setting	Controller.hud_size	core/ui/shared_rows.h	core	coreframe::opts.hudSize; core/game/hudsize.h; coreframe::ApplySize evaluates it for every module, core/game/handheld.* answers Automatic
 setting	Controller.game_text_size	modules/controller/src/impl/controller.cpp	HUD	decided: as gametext.cpp; the key stays in [Controller] | g_opt.gameTextSize; gametext.cpp (owner ?); read by controller.cpp OnFrame :2662 gametext::Frame and windowtext (HUD gate)
 setting	Controller.window_text	modules/controller/src/impl/controller.cpp	HUD	g_opt.windowText; windowtext (HUD): controller.cpp OnFrame :2903 passes it to windowtext::Frame
 setting	Controller.hud_glyphs	modules/controller/src/impl/controller.cpp	Controller	g_opt.hudGlyphs
@@ -353,7 +380,9 @@ setting	Controller.hud_transition	modules/controller/src/impl/controller.cpp	HUD
 setting	Controller.hud_preset	modules/controller/src/impl/controller.cpp	HUD	g_opt.hudPreset; HUD 2 (uiopt copy each frame, controller.cpp OnFrame :2653); ui_style read in controller.cpp :2896 and passed to uiskin/uistrip
 setting	Controller.maneuver_button	modules/controller/src/impl/controller.cpp	Autopilot	g_opt.maneuverButton; read by barbutton.cpp through the settings bus (:107 autopilot_key, :143 maneuver_button); autopilot_key also by hud2.cpp:274 (HUD shows the key)
 setting	Controller.ui_style	modules/controller/src/impl/controller.cpp	HUD	g_opt.uiStyle; HUD 2 (uiopt copy each frame, controller.cpp OnFrame :2653); ui_style read in controller.cpp :2896 and passed to uiskin/uistrip
-setting	Controller.enabled	modules/controller/src/impl/controller.cpp	core	`set enabled` only (not a registry row, not saved): g_opt.enabled gates the whole OnFrame tail at :2640 (autopilot, pad, HUD 2, uiskin all stop) - a router-level kill switch
+setting	Controller.skin_motion	core/ui/hud_rows.h	HUD	hudrows::g.skinMotion: uiskin's scrims, the loading screen
+setting	Controller.skin_native	core/ui/hud_rows.h	HUD	hudrows::g.skinNative: family labels that stay the game's (UI_HUD2_SKIN.md 8)
+setting	Controller.enabledmodules/controller/src/impl/controller.cpp	core	`set enabled` only (not a registry row, not saved): g_opt.enabled gates the whole OnFrame tail at :2640 (autopilot, pad, HUD 2, uiskin all stop) - a router-level kill switch
 setting	Controller.pump_no_block	core/host/fixes.cpp:84	core	read straight from FLController.ini by the host (default 1): the GetMessageA import patch; not in any registry
 setting	FLvibed.settings_version	core/settings_reset.h:27	core	FLvibed.ini [FLvibed] version stamp: resets older defaults before modules read their ini
 setting	Autopilot.pilot	modules/autopilot/src/autopilot_settings.cpp:26	Autopilot	g_set.pilot; also shown by padhud.cpp (status) and options_page.cpp (core)
@@ -568,6 +597,7 @@ hook	exe::SetAppActive (Detour)	core/host/focus.cpp	core	keep running out of foc
 hook	exe::HandleKey (Detour)	core/host/uihooks.cpp	core	two consumers (P9): ImplApi OnKeyCmd -> ctl::OnKeyCmd (maneuver-lock notice, hud2::NoteAction wake cues): only HUD consumes it; also the debug key `trace`
 hook	exe::WinKey (Detour)	core/host/input.cpp	core	raw keys: ImplApi OnRawKey chain (flufaware core, options_page core, goals Autopilot, barbutton Autopilot) + LastRealKeyTick for the Controller's input-device switch; the autopilot key works on K&M through it
 hook	exe::CursorUpdate (Detour)	core/host/router.cpp	core	merged in P2: one hook here, dispatched by the router; OnRenderOverlay (HUD, Controller, Autopilot, Speedrun, core drawing) + modal-loop frame serving (ModalFrame) + pad-cursor hiding; the subtitles host hooks the same function (subtitles main.cpp:862)
+hook	exe::UiBatchClose (Detour)	core/host/router.cpp	core	the load's frame: the HUD's loading screen, filtered on exe::LoadBracketCall; in the router, for the logic reloads and the draw must not
 hook	exe::UiRender (Detour)	core/host/router.cpp	core	OnRenderUnderHud: HUD (hud2::RenderUnderHud, uiskin::RenderUnder, shieldcue::Render) and core (options_page::RenderUnder) + uibtn::BeforeUiDraw (core options page hidden under FLvibed's page)
 hook	exe::FrameUpdate (Detour)	core/host/router.cpp	core	merged in P2: one hook here, dispatched by the router; the whole controller logic frame (see frame rows); the subtitles host hooks the same function (subtitles main.cpp:855); newest hook is outermost, see hook.h Detour
 hook	exe::MouseSteer (Detour)	core/host/input.cpp	core	mouse-flight override (HostApi SetSteer): Controller pad steering and Autopilot steering (controller.cpp UpdateAutopilot) both write it
@@ -969,6 +999,7 @@ file	fixes.h	core/host/fixes.h	core	the game fixes
 file	win7sim.cpp	core/host/win7sim.cpp	core	FLVIBED_SIM_WIN7's run-time half: GetProcAddress and LoadLibrary answer as Windows 7
 file	win7sim.h	core/host/win7sim.h	core	the Windows 7 simulation
 file	modules_rules.h	core/modules_rules.h	core	the [Modules] rows, pure: inheritance, what the save writes
+file	options_rules.h	core/ui/options_rules.h	core	the options page's rules, pure: head states, what a head writes, YOU CHANGED, preset words, button names
 file	hostcalls.h	core/game/hostcalls.h	core	the host services core's logic calls, handed over at the module's Init
 file	events_log.cpp	core/game/events_log.cpp	core	the logic's side of the event log
 file	gamemode.h	core/game/gamemode.h	core	where the player is: the modes, their names, detection
@@ -1027,6 +1058,7 @@ file	alone.h	core/logic/alone.h	core	what the controller's entry gives the Autop
 file	alone.cpp	core/logic/alone.cpp	core	what the controller's entry gives the Autopilot and the HUD with the controller off: rows, their file, verbs
 file	winplates.cpp	core/ui/winplates.cpp	core	the window registry, plates' rectangles, prompt lane's keep-outs: Controller on the classic HUD and the HUD's skin both need it
 file	winplates.h	core/ui/winplates.h	core	as winplates.cpp
+file	winfit.h	core/ui/winfit.h	core	winplates.cpp's pure rule: a window's panels fitted to what they hold
 file	gamecard.cpp	core/ui/gamecard.cpp	core	the game's name card under ui_style 0, a card's place by a character: pad's offer word and uistrip
 file	gamecard.h	core/ui/gamecard.h	core	as gamecard.cpp
 file	hud_rows.h	core/ui/hud_rows.h	core	the HUD's rows and values, listed by two tables
@@ -1051,3 +1083,40 @@ file	controller_internal.h	modules/controller/src/impl/controller_internal.h	Con
 file	controller_settings.cpp	modules/controller/src/impl/controller_settings.cpp	Controller	the options table, the ini, set and config
 file	controller_flight.cpp	modules/controller/src/impl/controller_flight.cpp	Controller	the pad in flight, the test bot
 file	controller_menus.cpp	modules/controller/src/impl/controller_menus.cpp	Controller	D-pad navigation, the free cursor, FLUF's windows
+file	hud2_roots.h	modules/hud/src/hud2_roots.h	HUD	the registry of native flight roots (UI_HUD2_SKIN.md 3.1)
+file	hud2_bars.h	modules/hud/src/hud2_bars.h	HUD	failing bars, pure (UI_HUD2_SKIN.md 6.11)
+file	hud2_target.h	modules/hud/src/hud2_target.h	HUD	the targeting display's rules, pure (UI_HUD2_SKIN.md 6.10)
+file	hud2_target.cpp	modules/hud/src/hud2_target.cpp	HUD	the targeting display drawn
+file	namecut.h	core/game/namecut.h	core	a pilot's name past the game's 23-character cut, pure
+file	glyphset.h	core/game/glyphset.h	core	the characters every font atlas holds and the one table of stand-ins, pure
+file	hudsize.h	core/game/hudsize.h	core	hud_size, pure: the size presets' scale, floor and margins
+file	handheld.h	core/game/handheld.h	core	is this machine a handheld, pure chain and SMBIOS reader
+file	handheld.cpp	core/game/handheld.cpp	core	reads the machine for handheld.h
+file	handhelds.inc	core/game/handhelds.inc	core	the handheld model table (data)
+file	indicators.h	core/game/indicators.h	core	the game's target indicators as data, pure decode
+file	indicators.cpp	core/game/indicators.cpp	core	reads the indicators' records
+file	hud2_cue.h	modules/hud/src/hud2_cue.h	HUD	the weapon group cue's rules, pure (UI_HUD2_GROUP_CUE.md)
+file	hud2_cue.cpp	modules/hud/src/hud2_cue.cpp	HUD	the weapon group cue drawn
+file	nntabs.h	core/game/nntabs.h	core	the NeuroNet's tabs, pure: order, step, the press held through a slide (UI_HUD2_SKIN.md 6.1)
+file	nnwin.h	core/game/nnwin.h	core	the NeuroNet's windows as tabs: the HUD's strip and the pad's bumpers ask through it
+file	nnwin.cpp	core/game/nnwin.cpp	core	the manager's reads, the game's commands, the slide's seconds
+file	navmap_layout.h	modules/hud/src/navmap_layout.h	HUD	the strip's place and the map's solver, pure (UI_HUD2_SKIN.md 6.1)
+file	skinchip.h	modules/hud/src/skinchip.h	HUD	the skin's words as chips and their clicks: moves to skinkit when that lands
+file	skinchip.cpp	modules/hud/src/skinchip.cpp	HUD	the chips drawn, the click box held while a NeuroNet window stands
+file	nnstrip.h	modules/hud/src/nnstrip.h	HUD	the strip of words on the NeuroNet windows
+file	nnstrip.cpp	modules/hud/src/nnstrip.cpp	HUD	the strip drawn, its keep-out, its clicks, its verb
+command	nnstrip	modules/hud/src/hud_module.cpp	HUD	
+file	navskin.h	modules/hud/src/navskin.h	HUD	the nav map's frame and words (UI_HUD2_SKIN.md 6.1, the first step)
+file	navskin.cpp	modules/hud/src/navskin.cpp	HUD	the chips' table, the panels, the view for the pad's panel zone
+file	navnew.h	modules/hud/src/navnew.h	HUD	the new map's seam, off (UI_HUD2_SKIN.md 6.1, step 10)
+file	navnew.cpp	modules/hud/src/navnew.cpp	HUD	the new map, behind its seam
+command	navskin	modules/hud/src/hud_module.cpp	HUD	
+file	padmap_zones.h	modules/controller/src/impl/padmap_zones.h	Controller	the map's two zones, pure (UI_HUD2_SKIN.md 6.1)
+file	navmap_labels.h	modules/hud/src/navmap_labels.h	HUD	the new map's gate, transform and declutter, pure (UI_HUD2_SKIN.md 6.1)
+command	navnew	modules/hud/src/hud_module.cpp	HUD	
+file	tractorfail.h	core/game/tractorfail.h	core	why the tractor refused an item: pure; HUD 2 and the subtitles read it (GitHub issue 33)
+file	tractorhook.cpp	core/host/tractorhook.cpp	core	the code the game played Tractor Failure for, onto the HUD bus
+file	tractorhook.h	core/host/tractorhook.h	core	its entry
+hook	exe::TractorNotify (Detour)	core/host/tractorhook.cpp	core	listens: the event of a refused or lost tractor target (HUD and Subtitles read the reason)
+hook	exe::QueueNN (Detour)	core/host/tractorhook.cpp	core	listens: inside TractorNotify, the game queued its failure line
+setting	Subtitles.neural_net_reason	modules/subtitles/src/impl/display.cpp	Subtitles	g_set.nnReason

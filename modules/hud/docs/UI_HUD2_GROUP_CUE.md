@@ -1,6 +1,6 @@
 # The weapon group cue (design, 5 Nov 2026; P11f's last feature, on the owner's word)
 
-**Status:** design, ruled by the owner on 6 Nov 2026 (section 0). Not built. Game facts: `research\evidence\hud2_skin\09_weapon_cue_facts.md`; the source games: `08_mechwarrior_cue_reader.md`. Frames: `research\evidence\hud2_skin\mock\group_cue_4k.png`, `group_cue_1280x800.png`, `group_cue_states.png` (`tools\uimock\hud2s.py`). Build lane: after P11e, the 12 probes and the most-seen screens.
+**Status:** design, ruled by the owner on 6 Nov 2026 (section 0). Built on `build-040`, not seen in game (`UI_HUD2_BUILD_040.md`). Game facts: `research\evidence\hud2_skin\09_weapon_cue_facts.md`; the source games: `08_mechwarrior_cue_reader.md`. Frames: `research\evidence\hud2_skin\mock\group_cue_4k.png`, `group_cue_1280x800.png`, `group_cue_states.png` (`tools\uimock\hud2s.py`). Build lane: after P11e, the 12 probes and the most-seen screens.
 
 **The request, a player's, through the owner:** "Would it be possible to show weapon group icons above the crosshair, showing currently-selected group, and lighting said individual icons up once your target is in the center of the screen and reaches the furthest-maximum range of any of the three weapon groups, like MechWarrior 4 and 5 do?" The owner: "a good balance of meeting his request exactly while also fitting in with how HUD 2 should work, with its constraints and standards."
 

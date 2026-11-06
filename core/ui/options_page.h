@@ -1,9 +1,8 @@
-// The FLVIBED OPTIONS page (docs\UI_PLAN.md 3, docs\UI_BUILD.md): five tabs (GENERAL / CONTROLLER / AUTOPILOT /
-// SUBTITLES / MOVIES) of rows from the UI metadata (core\ui_meta.h, generated from docs\UI_SPEC.json) over the settings
-// bus (core\settings_bus.h); instant apply, DEFAULT per tab, CANCEL reverts every change since the page opened, leaving
-// saves. Hosted inside the game's Options screen (the host's page switch, HostApi v18 OptionsPageState == 2) or as a
-// standalone overlay panel (the pause menu's sixth button, debug `ui options`). Driven by mouse, keyboard (OnRawKey) and
-// pad (D-pad rows, left / right values, A, B, LB / RB tabs).
+// The FLVIBED OPTIONS page, simple mode (docs\UI_OPTIONS.md): five tabs by owner (HUD / CONTROLLER / SUBTITLES / AUTOPILOT / MORE) of rows from the UI metadata (core\ui_meta.h,
+// generated from docs\UI_SPEC.json) over the settings bus (core\settings_bus.h); instant apply, DEFAULT per tab, CANCEL reverts every change since the page opened, leaving
+// saves. Hosted inside the game's Options screen (the host's page switch, HostApi v18 OptionsPageState == 2) or as a standalone overlay panel (the pause menu's sixth button,
+// debug `ui options`); the first-start card opens as that panel over the first main menu of a fresh install. Driven by mouse, keyboard (OnRawKey: arrows, Enter, Q / E, D, C, Esc)
+// and pad (D-pad rows, left / right values, A, X, Y, B, LB / RB tabs).
 #pragma once
 #include "common.h"
 #include "settings_bus.h"
@@ -27,7 +26,7 @@ bool WantsInput();
 void OnUiButton(int id);
 // A raw key (ImplApi v3 OnRawKey); true = swallowed (the page's keyboard navigation while it is open).
 bool OnRawKey(int vk, bool down, bool textField);
-// Debug `ui ...` (debug.cpp): options [open|close] | tab <n> | rows | state.
+// Debug `ui ...` (debug.cpp): options [open|close] | tab <n> | rows | card | state.
 std::string Command(std::istream& in);
 // The standalone overlay opened / closed by code (the pause button, the debug command).
 void Open();

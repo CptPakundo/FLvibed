@@ -4,7 +4,7 @@
 // Only macros (no code), so the header also works inside the build's module namespaces and in the resource compiler.
 
 #define FLV_VERSION_MAJOR 0
-#define FLV_VERSION_MINOR 3
-#define FLV_VERSION_PATCH 5
+#define FLV_VERSION_MINOR 4
+#define FLV_VERSION_PATCH 0
 #define FLV_VERSION_BUILD 0
-#define FLV_VERSION "0.3.5rc"
+#define FLV_VERSION "0.4.0"

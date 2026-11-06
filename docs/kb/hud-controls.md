@@ -20,6 +20,7 @@ box at 3377..3776, the weapon group buttons at 3522..3712 (30 px half extents). 
 on positions: HudShift moves them.
 
 ## Commands (keymap.ini `nickname`; `fl.h` USER_*)
+- A command need not be in the key map: the game takes it by id (the slide's handler at 0x4D80A4). `USER_MANEUVER_SLIDE_EVADE_UP` / `_DOWN` are in HDE's map, not vanilla's or a mod's on it; with no map row a hold still needs its key-up, or the slide stays set (0x4D812D re-reads the held commands only on a key-up). Flown on FrontierSpace (`tests\strafe_release.ps1`); vanilla's map read, not flown.
 - `USER_AUTO_TURRET` (0xBF, the H key) = **turret view**, a toggle (keydown only). Leaving it, the game also sends
   `USER_LOOK_ROTATE_CAMERA_RESET` itself. The pad holds it: on at the hold, off at the release.
 - `USER_WEAPON_GROUP1..3` (keydown) make a group the active one; the HUD's group button lights it (group 2 lit
@@ -44,6 +45,7 @@ on positions: HudShift moves them.
 - The flight cursor's name is `cross` over nothing; over an object it names the object's relation (`hostile`, `fire`,
   `neutral`, `fire_neutral`, ...): the pad's "target the object under the reticle" (RS click) clicks only when the name is
   neither `cross` nor `arrow`, through the game's own click selection (as `fire_target` does).
+- The game refuses a dock request past its range (10 km in vanilla and mods on it, 50 km in HDE 0.7.1): the autopilot flies there by the game's Goto first (`tests\dock_far.ps1`).
 - The game's dock range (`space::DockRange`, HDE 50 km) is the world prompt's "dock in range" test; the tractor's
   reach (`ai::Self::tractorRange`) the "loot in reach" test.
 

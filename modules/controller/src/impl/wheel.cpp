@@ -1,6 +1,7 @@
 // The action wheel: LB-held wheel of rare, contextual actions, picked with the right stick; owns its items and drawing.
 #include "wheel.h"
 
+#include "controller.h" // SetAndSave: the HUD mode, the options page's row
 #include "game/events.h"
 #include "ui/flightmodal.h"
 #include "game/room.h" // uiclick: the HUD's own filter buttons, clicked natively
@@ -30,6 +31,7 @@ enum class Slot
     Filter,
     Goals,
     Rear,
+    HudMode,
     EngineKill,
 };
 struct Item
@@ -64,6 +66,8 @@ static void Build()
     if (views::ApPresent())
         g_items.push_back({Slot::Goals, L"AUTOPILOT GOALS", true});
     g_items.push_back({Slot::Rear, L"REAR VIEW", true});
+    if (views::HudActive()) // hud_fade, HUD 2's row: the plate says the setting as the options page does (the owner, 6 Nov 2026)
+        g_items.push_back({Slot::HudMode, uiopt::Get().hudFade == 0 ? L"HUD ALWAYS" : L"HUD FADES", true});
     if (uiopt::Get().weaponGroups == 2) // the triggers fire the groups: the afterburner took L3, engine kill lives here
         g_items.push_back({Slot::EngineKill, L"ENGINE KILL", true});
 }
@@ -162,6 +166,13 @@ presets::Action Commit()
         events::Push("wheel rear view %s", g_rear ? "on" : "off");
         break;
     case Slot::Comms: Tap(fl::USER_RADIO); break; // the game's hail (keymap P): what it does in single player is the game's
+    case Slot::HudMode:
+    {
+        const char* v = uiopt::Get().hudFade == 0 ? "1" : "0";
+        const bool ok = ctl::SetAndSave("hud_fade", v);
+        events::Push("wheel hud_fade %s%s", v, ok ? "" : " (refused)");
+        break;
+    }
     }
     return presets::Action::None;
 }

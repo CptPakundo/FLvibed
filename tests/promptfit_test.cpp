@@ -134,6 +134,15 @@ std::vector<Screen> Screens()
                  {{Bumper, Bumper, L"SIDE", false, false}, {Face, None, L"FILTER", false, false},
                   {Face, None, L"BUY", false, true}, {Face, None, L"MAX", false, false}, {Face, None, L"CLOSE", false, false}},
                  dealer, nn});
+    // the ship dealer's final stage: the same window (its BUY SHIP stands inside the middle panel's keep-out), the longest row with the focus on a row
+    s.push_back({"ship final stage, a row",
+                 {{Bumper, Bumper, L"SIDE / BUY SHIP", false, false}, {Bumper, Bumper, L"QUANTITY", false, false},
+                  {Face, None, L"TRANSFER", true, true}, {Face, None, L"MAX", false, false}, {Face, None, L"CLOSE", false, false}},
+                 dealer, nn});
+    s.push_back({"ship final stage, BUY SHIP",
+                 {{Bumper, Bumper, L"SIDE", false, false}, {Face, None, L"FILTER", false, false},
+                  {Face, None, L"BUY SHIP", true, true}, {Face, None, L"SCROLL", false, false}, {Face, None, L"CLOSE", false, false}},
+                 dealer, nn});
     auto ship = RoomTop();
     for (KeepH k : {K4(567, 465, 1452, 929), K4(1482, 378, 2368, 1465), K4(2398, 378, 3288, 1210), K4(670, 1491, 3025, 2106)})
         ship.push_back(k);
@@ -400,15 +409,10 @@ void FontScale()
     CHECK(ParseFixed("").empty() && ParseRich("").empty());
 }
 
-// Steam Deck mode: who it is on for, the player's own text size, the margins it gives back, the prompt lane using them.
+// The Large size: the player's own text size, the margins it gives back, the prompt lane using them.
 void DeckMode()
 {
     using namespace deckmode;
-    CHECK(Active(0, 1280, 800));
-    CHECK(!Active(0, 1280, 720));
-    CHECK(!Active(0, 1920, 1200));
-    CHECK(!Active(2, 1280, 800));
-    CHECK(Active(1, 3840, 2160));
     CHECK(TextSize(true, 100) == 120);
     CHECK(TextSize(true, 90) == 90);
     CHECK(TextSize(true, 140) == 140);
@@ -606,6 +610,25 @@ void StandardCruiseLane()
 
 void Test_promptfit()
 {
+    { // a pill too wide for the column stacks in two slots, the lane stays at the bottom and nothing drops
+        const float W = 1280, H = 800, ph = 32, pitch = 8;
+        const float wN[5] = {100, 100, 150, 100, 100}, wS[5] = {0, 0, 110, 0, 0};
+        const auto left = [&](float y0, float y1, float right) { return y1 > 500 ? right - 130 : 0.0f; };
+        const auto low = [](float, float, float) { return 0.0f; };
+        promptfit::LanePlaced p;
+        int dropped = 0;
+        promptfit::LaneLayout(W, H, 5, 0, wN, wN, ph, pitch, 0.0f, left, low, p, dropped, wS);
+        CHECK(p.mode == promptfit::LaneMode::Column && dropped == 0);
+        CHECK(p.stack[2] && !p.stack[1] && p.w[2] == 110);
+        CHECK(p.cy[3] - p.cy[2] > ph && p.cy[2] - p.cy[1] > ph); // (clear of both neighbours)
+        promptfit::LanePlaced q;
+        promptfit::LaneLayout(W, H, 5, 0, wN, wN, ph, pitch, 0.0f, left, low, q, dropped);
+        CHECK(q.mode != promptfit::LaneMode::Column || !q.use[2]); // (without it: the old way)
+        promptfit::LanePlaced e; // a column allowed to the screen's edge: every pill whole, none stacked, none lost
+        dropped = 0;
+        promptfit::LaneLayout(W, H, 5, 0, wN, wN, ph, pitch, 0.0f, [&](float y0, float y1, float right) { return y1 > 500 ? right - 130 : 0.0f; }, low, e, dropped, wS, W - 10);
+        CHECK(e.mode == promptfit::LaneMode::Column && dropped == 0 && !e.stack[2] && e.w[2] == 150);
+    }
     // the pure pieces first (no font needed): Hud2Scale's clamps
     CHECK_NEAR(promptfit::Hud2Scale(3840, 2160, 100, 100, false), 1.0, 1e-4);
     CHECK_NEAR(promptfit::Hud2Scale(1600, 1200, 100, 100, false), 0.8, 1e-4); // 4:3: the aspect factor's floor

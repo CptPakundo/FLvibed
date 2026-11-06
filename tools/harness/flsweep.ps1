@@ -463,6 +463,8 @@ Section 'pad-haptics' {
     try {
         # (pause_on_disconnect off: step 1's test pad leaves in flight with the pad in use - it paused the game, the first run)
         $null = Send-FL 'set rumble 60'; $null = Send-FL 'set input_mode 1'; $null = Send-FL 'set pause_on_disconnect 0'
+        $null = Send-FL 'set haptics_ship 0' # (the section reads the events' exact levels: the engine's bed stays out of the stream)
+        $null = Send-FL 'set haptics_device 0' # (the test pads are not real pads: the switch stays off, and they must still get everything)
         # (1) XInput: a device-layer test pad on slot 0, the gate open
         Enable-FLDevPads -Foreground
         Set-FLDevPad -Slot 0 -Vendor xbox
@@ -550,7 +552,7 @@ Section 'pad-haptics' {
         try { Disable-FLDevPads } catch {}
         try { $null = Disconnect-FLSdlPad } catch {}
         $null = Send-FL 'spawn clear'; $null = Send-FL 'spawn clearat off'
-        $null = Send-FL 'set pad_backend 0'; $null = Send-FL 'set input_mode 0'; $null = Send-FL 'set pause_on_disconnect 1'
+        $null = Send-FL 'set pad_backend 0'; $null = Send-FL 'set input_mode 0'; $null = Send-FL 'set pause_on_disconnect 1'; $null = Send-FL 'set haptics_ship 100'; $null = Send-FL 'set haptics_device 1'
         $null = Send-FL 'ap stop'
         if ((Send-FL 'state') -match 'paused=1') { $null = Send-FL 'click PauseButtonBox0' }
     }
@@ -947,8 +949,9 @@ public static class FLDispWin {
             Get-FLGameProcess | Stop-Process -Force -ErrorAction SilentlyContinue
             $null = Set-FLInstanceDisplay -N $inst -Mode $c.mode -Size $c.size
             if ($c.dpiUnaware) { $env:__COMPAT_LAYER = 'DPIUNAWARE' }
+            if ($c.mode -eq 'fullscreen') { $env:FLVIBED_ATTENDED = '1' }   # -Attended's row: deploy's Assert-FLNoFullscreen lets it take the screen
             try { $null = & $deploy -Instance $inst -Background -Restart -NoBuild -Save SaveC702.fl 2>&1 }
-            finally { $env:__COMPAT_LAYER = $null }
+            finally { $env:__COMPAT_LAYER = $null; $env:FLVIBED_ATTENDED = $null }
             $want = [regex]::Match($c.size, '(\d+)\s*,\s*(\d+)')
             $wantW = [int]$want.Groups[1].Value; $wantH = [int]$want.Groups[2].Value
             $st = Send-FLS 'state'
@@ -1037,7 +1040,7 @@ Section 'modules-matrix' {
         @{ name = 'movies alone'; modules = 'controller', 'movies=1'; noSubs = $true; hasHooks = $movie },
         @{ name = 'autopilot off'; modules = $both + 'autopilot=0'; noHooks = $ap; verbs = 'stalls', 'livesplit', 'timer', 'winmode', 'watchdog' },
         @{ name = 'autopilot alone'; modules = 'subtitles', 'autopilot=1'; alone = $true; hasHooks = $ap; noHooks = $display },
-        @{ name = 'hud off'; modules = $both + 'hud=0'; gone = 'hud2', 'uiskin', 'uistrip', 'gametext', 'cue'; verbs = 'stalls', 'livesplit', 'timer', 'winmode' },
+        @{ name = 'hud off'; modules = $both + 'hud=0'; gone = 'hud2', 'uiskin', 'uistrip', 'gametext', 'cue'; verbs = 'stalls', 'livesplit', 'timer', 'winmode'; noHooks = 'HudIndicatorDraw', 'HudVertex', 'UiBatchClose' },
         @{ name = 'hud alone'; modules = 'subtitles', 'hud=1'; alone = $true; hasHooks = 'HandleKey', 'UiControlAdd'; noHooks = $display + 'IsCmdHeld'; verbs = 'hud2', 'uiskin' }
     )
     function Hook-Names([string]$reply) { @($reply -split "`n" | Where-Object { $_ -match '^\S+ ' } | ForEach-Object { $w = $_ -split ' '; if ($w[0] -eq 'import') { "import $($w[1])" } else { $w[0] } } | Sort-Object -Unique) }

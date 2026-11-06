@@ -1,12 +1,13 @@
-// The haptics skeleton's pure pieces (modules\controller\src\impl\haptics_rules.h, IDEAS U30, WORK_QUEUE Q5 slice 3): the
-// effect table, the envelopes, the mixer (max per motor, ducking, rate limit + merge, voices, fatigue, the master
-// percent), the silence rules, the renderer's send policy and the hit detector.
+// The haptics engine's pure pieces (modules\controller\src\impl\haptics_rules.h, modules\controller\docs\HAPTICS.md): the
+// effect table, the envelopes, the mixer (max per cell, ducking, rate limit + merge, voices, fatigue, the master
+// percent), the silence rules, the send policy and the hit detector. The whole engine by scenario: haptics_engine_test.cpp.
 #include "test.h"
 
-#include "../modules/controller/src/impl/haptics_rules.h"
-
 #include <algorithm>
+#include <cmath>
 #include <cstring>
+
+#include "../modules/controller/src/impl/haptics_rules.h"
 
 void Test_haptics()
 {
@@ -20,10 +21,22 @@ void Test_haptics()
         CHECK(d.cue && strlen(d.cue) > 10); // never the only cue: each names its counterpart
         CHECK(d.low >= 0 && d.low <= 1 && d.high >= 0 && d.high <= 1 && (d.low > 0 || d.high > 0));
         CHECK(d.attack >= 0 && d.hold >= 0 && d.release >= 0 && d.attack + d.hold + d.release > 0);
-        CHECK(Duration(d) > 0 && Duration(d) <= 0.5f); // short effects only: nothing buzzes on
+        CHECK(Duration(d) > 0 && Duration(d) <= (d.cat == kSetPiece || d.prio >= 5 ? 1.0f : 0.5f)); // short effects only: nothing buzzes on
         CHECK(d.prio >= 1 && d.prio <= 7 && d.minGap >= Duration(d) * 0.5f);
+        CHECK(d.cls >= 0 && d.cls < kClassCount && d.trig >= 0 && d.trig <= 1 && d.noise >= 0 && d.noise <= 1);
+        CHECK(d.massHz >= 40 && d.massHz <= 130 && d.texHz >= 130 && d.texHz <= 320); // the waveform's bands, HAPTICS.md 5
+        // one signature per meaning: no two rows of a class share a shape (the guns and the jump differ by their readers, not by accident)
+        for (int j = 0; j < i; ++j)
+        {
+            const EffectDef& o = kEffects[j];
+            CHECK(!(d.low == o.low && d.high == o.high && Duration(d) == Duration(o) && d.pulses == o.pulses));
+        }
     }
     CHECK(EffectByName("nope") == -1);
+    // the maximum is kept for the biggest: nothing common reaches the top of the range
+    for (const EffectDef& d : kEffects)
+        if (d.low >= 1.0f)
+            CHECK(d.prio >= 5);
     CHECK(kEffects[kHitShield].high > kEffects[kHitShield].low); // the shield: sharp, the high motor
     CHECK(kEffects[kHitHull].low > kEffects[kHitHull].high);     // the hull: heavy, the low motor
     CHECK(kEffects[kConfirm].cat == kPrompt && kEffects[kHandBack].cat == kAssist && kEffects[kHitHull].cat == kWorld);
@@ -134,10 +147,71 @@ void Test_haptics()
         CHECK(m.Trigger(kHitHull, 1, 0, full) == Mixer::kStarted);    // 4
         CHECK(m.Trigger(kShieldFail, 1, 0, full) == Mixer::kStarted); // 6
         CHECK(m.Trigger(kHandBack, 1, 0, full) == Mixer::kStarted);   // 6
-        CHECK(m.Playing() == 4);
+        CHECK(m.Trigger(kCruiseDisrupt, 1, 0, full) == Mixer::kStarted);  // 6
+        CHECK(m.Trigger(kJumpFlash, 1, 0, full) == Mixer::kStarted);      // 6
+        CHECK(m.Trigger(kCollision, 1, 0, full) == Mixer::kStarted);      // 5
+        CHECK(m.Trigger(kTorpedoLaunch, 1, 0, full) == Mixer::kStarted);  // 5
+        CHECK(m.Playing() == Mixer::kVoices);
         CHECK(m.Trigger(kConfirm, 1, 0.01, full) == Mixer::kStarted); // 5 replaces the shield hit (3)
         CHECK(!m.Plays(kHitShield) && m.Plays(kConfirm));
-        CHECK(m.Trigger(kHitShield, 1, 0.3, full) == Mixer::kFull); // 3 under 4, 5, 6, 6
+        CHECK(m.Trigger(kHitShield, 1, 0.3, full) == Mixer::kFull); // 3 under 4 and up
+    }
+    // sided: a hit from the right reaches the right grip in full, the left one only faintly; the two motors' fold keeps the row's own levels
+    {
+        Mixer m;
+        Gates full = g;
+        CHECK(m.Trigger(kHitHull, 1, 0, full, 1.0f) == Mixer::kStarted);
+        Out o = m.Update(0.01, full);
+        CHECK_NEAR(o.mass[1], kEffects[kHitHull].low, 1e-6);
+        CHECK_NEAR(o.mass[0], kEffects[kHitHull].low * 0.15, 1e-5);
+        CHECK_NEAR(o.low, kEffects[kHitHull].low, 1e-6);
+        CHECK(o.trig[1] > 0 && o.trig[0] == 0); // the trigger on its side
+        CHECK_NEAR(PanGain(0, 0), 1, 1e-6);
+        CHECK_NEAR(PanGain(0, 1), 1, 1e-6);
+    }
+    // a class row turns its effects down, and at zero they do not play
+    {
+        Mixer m;
+        Gates s = g;
+        s.cls[kClassWeapons] = 50;
+        CHECK(m.Trigger(kGunHeavy, 1, 0, s) == Mixer::kStarted);
+        CHECK_NEAR(m.Update(0.01, s).low, kEffects[kGunHeavy].low * 0.5, 1e-5);
+        s.cls[kClassWeapons] = 0;
+        CHECK(m.Trigger(kGunFast, 1, 1, s) == Mixer::kIgnored);
+    }
+    // a set piece plays in flight and through its own sequence, never in another cinematic
+    {
+        Gates s = g;
+        CHECK(!*Silence(s, kSetPiece));
+        s.where = Where::Cutscene;
+        CHECK(!strcmp(Silence(s, kSetPiece), "cutscene"));
+        s.setPiece = true;
+        CHECK(!*Silence(s, kSetPiece) && !strcmp(Silence(s, kWorld), "cutscene"));
+        s.paused = true;
+        CHECK(!strcmp(Silence(s, kSetPiece), "paused"));
+    }
+    // held guns soften rather than stop, and never starve the hits
+    {
+        Mixer m;
+        Gates full = g;
+        double t = 0;
+        float last = 0;
+        int dropped = 0;
+        for (int i = 0; i < 12 * 120; ++i, t += 1.0 / 120)
+        {
+            if (i % 20 == 0) // a shot every 1/6 s for 12 s
+            {
+                const Mixer::Result r = m.Trigger(kGunFast, 1, t, full);
+                dropped += r == Mixer::kFatigued;
+            }
+            const Out o = m.Update(t, full);
+            if (o.high > 0)
+                last = o.high;
+        }
+        CHECK(dropped == 0);
+        CHECK(last > 0 && last <= kEffects[kGunFast].high * Mixer::kSoftLevel + 1e-5f);
+        CHECK(m.Duty() < Mixer::kFatigueOn);                          // they do not count as busy
+        CHECK(m.Trigger(kHitHull, 0.5f, t, full) == Mixer::kStarted); // so a hit still lands under held fire
     }
     // silence: triggers dropped (never replayed), running effects of a silenced category stop at once, merged ones too
     {

@@ -73,6 +73,7 @@ struct Settings
     int font = 0;           // 0 the game's own fonts (DATA\FONTS: names Agency FB, text Arial Unicode MS), 1 Segoe UI
     bool motion = true;     // lines fade in / out and the stack glides (TLOU2 / Star Wars Outlaws style); 0 = instant
     bool nnSeverity = true; // Neural Net lines coded by severity: colour + brightness pulses (danger 2, warning 1)
+    bool nnReason = true;   // the Tractor Failure line carries the game's reason (core\game\tractorfail.h)
     // Letterboxed scenes (room scenes, space cutscenes; the bar is read from the game's own letterbox math, so no bars -
     // a mod, a future HDE option - means no special placement): 0 = inside the lower bar with inline names and no
     // backing (the black bar is the contrast), 1 = resting on the bar's top edge inside the picture with the name row
@@ -136,6 +137,9 @@ int NnSeverity(const std::string& id);
 // line is left out of the Neural Net column - one place per event (shield failed / destroyed, hull breach, incoming
 // missile / torpedo, cruise disrupted). Every other Neural Net line shows as before; HUD 2 absent = all of them.
 bool Hud2ShowsAlert(const std::string& id);
+bool Hud2Cards(); // HUD 2 shows with hud_alerts on
+// The game's text for why it plays this Tractor Failure line (core\game\tractorfail.h); empty for any other line and when no unread, fresh reason exists.
+std::wstring TractorWhy(const std::string& id);
 
 Settings& Get();
 void LoadSettings(const std::string& iniPath);
@@ -157,6 +161,7 @@ void OnSettingApplied(const settings::Def* def);
 void Show(Category cat, const std::wstring& speaker, Relation rel, const std::wstring& text, float seconds,
           int severity = 0, bool portrait = false, const std::vector<float>* wordStarts = nullptr);
 void Clear();
+void EndWithClip(); // the ship docked: a line stands to its clip's end at most
 // Adds characters to the font atlases' set (ASCII is always in), so a line using them never triggers a mid-game GDI
 // rebuild: called at data load with every character of the shipped data and of the runtime's own punctuation. A
 // character still unseen rebuilds on its first line as before.

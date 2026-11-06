@@ -2,6 +2,7 @@
 #include "hud2_kit.h"
 
 #include "game/gamefont.h"
+#include "game/glyphset.h"
 #include "game/marquee.h"
 #include "game/promptfit.h"
 #include "game/render.h"
@@ -73,10 +74,8 @@ static float g_floor = 0;
 static float g_minPx = 0; // the legibility floor every text is clamped to: max(0.024 H, textfit::kMinPx)
 static u32 g_fitMisses = 0;
 
-// The characters the atlas holds: what the game's names use (ASCII, Latin-1 Supplement for Rheinland / Bretonia / Kusari
-// names, General Punctuation's dashes, quotes, bullet and ellipsis - the gates' and lanes' "New York \u2013> California" -,
-// the arrows, the minus) plus every character met since that was missing (g_extra: added on demand, the fonts rebuilt
-// once at the next pass, cached for the session; never a '?' for long).
+// The characters the atlas holds: glyphset::Base plus every character met since that was missing (g_extra: added on
+// demand, the fonts rebuilt once at the next pass, cached for the session).
 static std::wstring g_extra;      // characters added on demand
 static bool g_extraPending = false; // a rebuild is due
 static const std::wstring& Chars()
@@ -85,30 +84,23 @@ static const std::wstring& Chars()
     static size_t extra = static_cast<size_t>(-1);
     if (c.empty() || extra != g_extra.size())
     {
-        c.clear();
-        for (wchar_t ch = 32; ch < 127; ++ch)
-            c += ch;
-        for (wchar_t ch = 0xA0; ch <= 0xFF; ++ch) // Latin-1 Supplement (accented letters, the middle dot, the degree)
-            c += ch;
-        for (wchar_t ch = 0x2010; ch <= 0x2027; ++ch) // dashes, quotes, bullet, ellipsis
-            c += ch;
-        for (wchar_t ch = 0x2190; ch <= 0x2193; ++ch) // arrows
-            c += ch;
-        c += L"\u2212\u0152\u0153\u0160\u0161\u0178\u017D\u017E";
-        c += g_extra;
+        c = glyphset::Base() + g_extra;
         extra = g_extra.size();
     }
     return c;
 }
 
-// A character the atlas lacks: remembered (once) for the next build.
-static void Missing(wchar_t ch)
+// The glyph of `ch` (render::GlyphFor), and what it met for the next build. A character of the set that the face could
+// not show is left out of the atlas on purpose: it has its stand-in, and no rebuild would bring it.
+static const render::Glyph* GlyphOf(const render::Font& f, wchar_t ch)
 {
-    if (ch < 32 || g_extra.size() >= 256 || g_extra.find(ch) != std::wstring::npos)
-        return;
-    g_extra += ch;
-    g_extraPending = true;
-    Log("hud2kit: U+%04X not in the atlas - added (the fonts rebuild once)", static_cast<unsigned>(ch));
+    const render::Glyph* g = render::GlyphFor(f, ch);
+    static size_t seen = 0;
+    const std::wstring& met = render::Unmet();
+    for (; seen < met.size(); ++seen)
+        if (Chars().find(met[seen]) == std::wstring::npos)
+            g_extra += met[seen], g_extraPending = true;
+    return g;
 }
 
 // The last other font set (fix-text): the kit's callers ask for different sizes in one frame when
@@ -452,12 +444,46 @@ void SegBar(float x, float y, float w, float h, float frac, u32 rgb, int n, floa
     }
 }
 
+static float g_keyline = 0;
+void SetArcKeyline(float px) { g_keyline = px; }
+
+// The keyline under an arc's blocks: one dark arc, a little wider than they are.
+static void Keyline(float cx, float cy, float r, float a0, float a1, float width)
+{
+    if (g_keyline > 0)
+        Arc(cx, cy, r, a0, a1, width + 2 * g_keyline, Argb(kNavy, 0.6f));
+}
+
+void SegArcCentred(float cx, float cy, float r, float a0, float a1, float width, float frac, u32 rgb, int n, float gapDeg, u32 emptyRgb,
+                   float emptyWidth)
+{
+    if (n <= 0)
+        return;
+    const float span = (a1 - a0) / n, ew = emptyWidth > 0 ? emptyWidth : width;
+    const RecScope rs;
+    if (rs.top)
+        RecArc(cx, cy, r, a0 + gapDeg * 0.5f, a1 - gapDeg * 0.5f, std::max(width, ew), g_alpha);
+    Keyline(cx, cy, r, a0 + gapDeg * 0.5f, a1 - gapDeg * 0.5f, std::max(width, ew));
+    float lo = 0, hi = 0;
+    promptfit::CentredLit(a0, a1, frac, lo, hi);
+    for (int i = 0; i < n; ++i)
+    {
+        const float b0 = a0 + i * span + gapDeg * 0.5f, b1 = a0 + (i + 1) * span - gapDeg * 0.5f;
+        const float l0 = std::max(b0, lo), l1 = std::min(b1, hi);
+        if (l0 >= b1 || l1 <= b0 || l1 <= l0 || l0 > b0 || l1 < b1)
+            Arc(cx, cy, r, b0, b1, ew, Argb(emptyRgb, 170 / 255.0f));
+        if (l1 > l0)
+            Arc(cx, cy, r, l0, l1, width, Argb(rgb, 1));
+    }
+}
+
 void SegArc(float cx, float cy, float r, float a0, float a1, float width, float frac, u32 rgb, int n, float gapDeg,
             bool reverse, u32 emptyRgb, float emptyWidth)
 {
     const float span = (a1 - a0) / n;
     const float ew = emptyWidth > 0 ? emptyWidth : width;
     const RecScope rs;
+    Keyline(cx, cy, r, a0 + gapDeg * 0.5f, a1 - gapDeg * 0.5f, std::max(width, ew));
     // (the lint's record: the drawn extent - the first block starts half a gap after a0, the last ends half a gap before
     // a1; recording a0..a1 put two ring arcs 6 degrees apart where the drawn ones are 7.7 apart: UI_HUD2_PRESETS.md 6 item 3)
     if (rs.top && n > 0)
@@ -527,11 +553,8 @@ static float RawWidth(const render::Font& f, const std::wstring& s)
     float w = 0;
     for (wchar_t ch : s)
     {
-        auto it = f.glyphs.find(ch);
-        if (it == f.glyphs.end())
-            Missing(ch), it = f.glyphs.find(L'?');
-        if (it != f.glyphs.end())
-            w += static_cast<float>(it->second.advance);
+        if (const render::Glyph* g = GlyphOf(f, ch))
+            w += static_cast<float>(g->advance);
     }
     return w;
 }
@@ -562,10 +585,8 @@ static textfit::Result FitWith(const render::Font& f, const std::wstring& s, flo
     adv.resize(s.size());
     auto advance = [&](wchar_t ch)
     {
-        auto it = f.glyphs.find(ch);
-        if (it == f.glyphs.end())
-            Missing(ch), it = f.glyphs.find(L'?');
-        return it != f.glyphs.end() ? static_cast<float>(it->second.advance) : 0.0f;
+        const render::Glyph* g = GlyphOf(f, ch);
+        return g ? static_cast<float>(g->advance) : 0.0f;
     };
     for (size_t i = 0; i < s.size(); ++i)
         adv[i] = advance(s[i]);
@@ -673,12 +694,10 @@ static void Glyphs(Layer& l, const render::Font& f, float x, float yTop, const s
     float pen = x;
     for (wchar_t ch : s)
     {
-        auto it = f.glyphs.find(ch);
-        if (it == f.glyphs.end())
-            Missing(ch), it = f.glyphs.find(L'?');
-        if (it == f.glyphs.end())
+        const render::Glyph* found = GlyphOf(f, ch);
+        if (!found)
             continue;
-        const render::Glyph& g = it->second;
+        const render::Glyph& g = *found;
         if (g.w > 0)
         {
             float x0 = pen + g.ox * k, x1 = x0 + g.w * k, u0 = g.u0, u1 = g.u1;

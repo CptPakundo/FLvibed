@@ -1,7 +1,7 @@
 # The Autopilot with the controller off, and the controller with the autopilot off (docs\MODULES_PLAN.md P8): background games, frames in
 # research\experience\runs\autopilot_modules. Prints what it read; exit 1 on a failure.
 # Usage (PowerShell tool): tests\autopilot_modules.ps1 [-Row alone|off] [-Instance 1]    build\release
-param([string[]]$Row = @('alone', 'off'), [int]$Instance = 1)
+param([string[]]$Row = @('alone', 'off'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"

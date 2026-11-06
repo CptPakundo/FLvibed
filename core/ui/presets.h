@@ -91,6 +91,16 @@ Table EffectiveAp(int preset, int weaponGroups); // flight_ap with the group but
 // The button an action sits on in a table (the first match; slot 0 tap, 1 hold, 2 dbl); false when unbound.
 bool Find(const Table& t, Action a, glyphs::Id& btn, int& slot);
 
+// The layout card's words (docs\UI_OPTIONS.md 4), read from a table: an action in a player's words, and one line per button, the stick clicks with their stick and the D-pad as
+// one line. A button with nothing on it has no line.
+const char* ActionWord(Action a);
+struct LayoutLine
+{
+    glyphs::Id btn;
+    std::string words;
+};
+std::vector<LayoutLine> LayoutLines(const Table& t);
+
 // Timing (UI_PLAN 6.4): a hold fires at kHoldSec; a second press within kDblSec of a tap's release is a double tap; a
 // tap on a button that has a double-tap action is delivered when the window closes (or dropped for the double).
 // A held-kind tap on a button that also has a hold action (FREELANCER's RB: missile / hold torpedo) waits for the

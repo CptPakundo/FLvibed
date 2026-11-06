@@ -1,6 +1,12 @@
 // Core of space:: - the game API table, object lookup, locations, reputation, attitude, names and the frame stamp.
 #include "game/space_internal.h"
 
+#include "game/ini.h"
+#include "game/namecut.h"
+
+#include <algorithm>
+#include <vector>
+
 #include "fldll.h"
 #include "flexe.h"
 #include "log.h"
@@ -430,6 +436,13 @@ bool AttitudeToPlayer(u32 id, float& att)
 // A reputation's display name (an NPC pilot's "Darcy Kale"): Common.dll Reputation::Vibe::GetName gives the cached
 // text or the name record (FmtStr: template "%s0 %s1" + first / last name string ids, faction_prop.ini pools), which
 // the game's own formatter (exe::FmtStrFormat, as Freelancer.exe 0x41D440 does) turns into text.
+// (its own function: RepNameRaw's __try cannot hold a string)
+static void JoinCached(const wchar_t* cached, wchar_t* out, int max)
+{
+    wcsncpy_s(out, max, namecut::Join(cached, out).c_str(), _TRUNCATE);
+}
+
+static wchar_t g_nameRecord[128], g_nameCached[32]; // the last read's two sources (debug `repnames`)
 static bool RepNameRaw(int rep, wchar_t* out, int max)
 {
     using GetNameFn = int(__cdecl*)(const int&, void*, void*, const u16*&);
@@ -451,10 +464,13 @@ static bool RepNameRaw(int rep, wchar_t* out, int max)
         ctor(shortName, nullptr, 0, nullptr);
         const u16* cached = nullptr;
         getName(rep, name, shortName, cached);
+        // the name record in full: the game formats it into 24 characters and caches that (0x41D516 push 18h), so "Rookie
+        // Robert Washington" came back as "...Washingto", with any prefix the cache carries (namecut.h)
+        hk::Call<int(__fastcall*)(const void*, void*, wchar_t*, int)>(exe::FmtStrFormat, name, nullptr, out, max);
+        wcsncpy_s(g_nameRecord, out, _TRUNCATE);
+        wcsncpy_s(g_nameCached, cached ? reinterpret_cast<const wchar_t*>(cached) : L"", _TRUNCATE);
         if (cached && *cached)
-            wcsncpy_s(out, max, reinterpret_cast<const wchar_t*>(cached), _TRUNCATE);
-        else
-            hk::Call<int(__fastcall*)(const void*, void*, wchar_t*, int)>(exe::FmtStrFormat, name, nullptr, out, max);
+            JoinCached(reinterpret_cast<const wchar_t*>(cached), out, max);
         ok = out[0] != 0;
         // a template the formatter could not fill (a player report, 28 Oct 2026, multiplayer: the chat showed
         // "%s0 %s1 %s2 %d0" as the player's name) is no name: fails closed, the caller falls back
@@ -473,10 +489,49 @@ static bool RepNameRaw(int rep, wchar_t* out, int max)
     return ok;
 }
 
+// The game's surnames, read once at the first name that stands at the cut: faction_prop.ini's `lastname` ranges (a mod's too), sorted, no doubles.
+static const std::vector<std::wstring>& Surnames()
+{
+    static const std::vector<std::wstring> list = []
+    {
+        std::vector<std::wstring> names;
+        std::vector<std::pair<u32, u32>> ranges;
+        for (const ini::Section& s : ini::Read(ini::DataPath("MISSIONS\\faction_prop.ini")))
+            for (const std::string& v : s.All("lastname"))
+            {
+                u32 a = 0, b = 0;
+                if (sscanf_s(v.c_str(), "%u , %u", &a, &b) == 2 && a && b >= a && b - a < 2000 && std::find(ranges.begin(), ranges.end(), std::make_pair(a, b)) == ranges.end())
+                    ranges.push_back({a, b});
+            }
+        for (const auto& r : ranges)
+            for (u32 id = r.first; id <= r.second; ++id)
+            {
+                const std::wstring n = text::Ids(id);
+                if (!n.empty())
+                    names.push_back(n);
+            }
+        std::sort(names.begin(), names.end());
+        names.erase(std::unique(names.begin(), names.end()), names.end());
+        Log("names: %zu surnames in %zu ranges", names.size(), ranges.size());
+        return names;
+    }();
+    return list;
+}
+
 std::wstring RepName(int rep)
 {
     wchar_t buf[128];
-    return RepNameRaw(rep, buf, 128) ? std::wstring(buf) : std::wstring();
+    if (!RepNameRaw(rep, buf, 128))
+        return std::wstring();
+    const std::wstring name = buf;
+    return name.size() == namecut::kCut ? namecut::Complete(name, Surnames()) : name;
+}
+
+std::wstring RepNameSources(int rep)
+{
+    g_nameRecord[0] = g_nameCached[0] = 0;
+    const std::wstring name = RepName(rep);
+    return name + L" | record '" + g_nameRecord + L"' cached '" + g_nameCached + L"'";
 }
 
 // The object with this id among the ships and solars (the class walks, as Contacts): whether it is a ship, its name ids.

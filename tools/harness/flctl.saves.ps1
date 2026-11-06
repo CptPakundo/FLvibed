@@ -195,7 +195,7 @@ function Start-FLScene([string]$Mission, [string]$Step, [string]$Label) {
 # game restart (tools\deploy.ps1 -Save <file> copies it into the save folder before starting).
 # $Save: file name in the save folder ('SaveC702.fl', 'SaveC702') or a path to a save there.
 function Load-FLSave([string]$Save, [int]$TimeoutSec = 60, [switch]$Watch) {
-    $name = Split-Path $Save -Leaf
+    $name = Split-Path (Resolve-FLFixture $Save) -Leaf   # (a mod's own fixture; no map, the name as given)
     Clear-FLPad
     $where = Get-FLMode
     if ((Send-FL 'saves') -match 'no load screen open') {

@@ -2,7 +2,7 @@
 # line with no time in it, so two builds are compared with a plain diff. Rows: the pad's holds while the autopilot flies, the hand-back by
 # a stick, a keyboard start handed back by the pad, the options page's gate and the `enabled` gate.
 # Usage (PowerShell tool): tests\input_owner.ps1 -Label <name> [-Instance 1] [-Against <name>]   build\release; lines in runs\input_owner\<name>.txt
-param([Parameter(Mandatory)][string]$Label, [int]$Instance = 1, [string]$Against = '')
+param([Parameter(Mandatory)][string]$Label, [string]$Instance = 1, [string]$Against = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"

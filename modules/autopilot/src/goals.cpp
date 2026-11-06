@@ -328,10 +328,7 @@ static void Rebuild()
         if (autopilot::ObjectiveOn())
         {
             g_queue.push_back(L"MISSION" + Sep() + ObjectiveText());
-            std::wstring step = L"   STEP ";
-            for (const char* p = autopilot::ObjectiveActionName(); *p; ++p)
-                step += static_cast<wchar_t>(towupper(*p));
-            g_queue.push_back(step);
+            g_queue.push_back(L"   STEP " + Upper(str::Widen(autopilot::ObjectiveActionName())));
         }
         if (const route::Plan* travel = m == autopilot::Mode::Travel ? autopilot::TravelPlan() : nullptr)
         {

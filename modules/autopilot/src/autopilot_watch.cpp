@@ -25,11 +25,12 @@ void DockSkip(float dt, bool cutscene)
     // ...only a dock that leads into a base (its CEqObj dock target): an airlock's transit into another system
     // (M12's Nomad lair) cut short left the ship pinned against the core's wall with the HUD hidden
     bool toBase = false;
+    u32 object = 0;
     if (cutscene && exe::CamDocking.is(fl::CurrentCamera()) && OwnDock())
     {
-        const u32 tid = fl::TargetId();
+        object = OwnDockObject(fl::TargetId());
         for (const space::Contact& c : space::Contacts())
-            if (c.id == tid)
+            if (c.id == object)
                 toBase = c.base != 0;
     }
     if (toBase)
@@ -39,7 +40,7 @@ void DockSkip(float dt, bool cutscene)
         {
             flightio::Tap(fl::USER_CANCEL);
             ++tries;
-            events::Push("autopilot dock-cutscene skipped (try %d)", tries);
+            events::Push("autopilot dock-cutscene skipped (try %d) object=%u", tries, object);
         }
     }
     else

@@ -1,0 +1,11 @@
+{
+  "_about": "0.4.0 (6 Nov 2026), GitHub issue 36: at the two-list dealers the right stick moves the list under the focus or the cursor, never the other one.",
+  "states": {
+    "commodity/default": {
+      "notes": ["RS moves the description while it overflows, then the list under the focus or the left stick's cursor; on a filter or the transfer panel the list last focused. A list that fits moves nothing."]
+    },
+    "equipment/default": {
+      "notes": ["RS moves the description while it overflows, then the list under the focus or the left stick's cursor; on a filter or the transfer panel the list last focused. A list that fits moves nothing."]
+    }
+  }
+}

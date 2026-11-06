@@ -40,4 +40,13 @@ void Test_log_channel()
     Say(a, "after");
     CHECK(g_a == "after;");
     CHECK(g_b.empty());
+
+    // claimed: a later attach keeps its own channel but takes no plain Log() (a game with no startup movie starts both logics in either order)
+    LogClaimPlain(SinkA);
+    CHECK(LogAttach(SinkB, "C:\\dir\\") == b);
+    g_a.clear(), g_b.clear();
+    Log("core %d", 3);
+    Say(b, "own");
+    CHECK(g_a == "core 3;");
+    CHECK(g_b == "own;");
 }

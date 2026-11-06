@@ -11,6 +11,8 @@
 // (which finds only FlControls: the map's buttons) and no D-pad snapping to objects. Reported honestly in the track's
 // report. A FLvibed-drawn destination list (View) beside the map lists this system's bases, gates and holes by distance;
 // A plots the game's best path to the chosen one (the waypoint list, as the map's own "Best path" does).
+//
+// Under HUD 2 the skin's chips reach it through a view, and the map has two zones (padmap_zones.h): the canvas above, and the panels, walked by the D-pad.
 #pragma once
 #include "common.h"
 

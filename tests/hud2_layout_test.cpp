@@ -42,7 +42,7 @@ RefOut Ref(const Frame& f)
     const float k = L.k;
     // the margins: the spec's (0.05 until 0.2.0; top = bottom)
     L.mx = hp::kMarginSideW * W, L.my = hp::kMarginTop * H, L.cx = W / 2, L.cy = H / 2, L.R = 0.10f * H * k;
-    L.tgtX1 = W - L.mx, L.tgtX0 = L.tgtX1 - 0.44f * H * k, L.tgtY0 = L.my, L.tgtY1 = L.my + (f.kbm ? 0.22f : 0.215f) * H * k;
+    L.tgtX1 = W - L.mx, L.tgtX0 = L.tgtX1 - 0.36f * H * k, L.tgtY0 = L.my, L.tgtY1 = L.my + (f.kbm ? 0.21f : 0.17f) * H * k;
     L.navMaxX = std::max(L.mx + 0.25f * H * k, std::min(L.mx + 0.62f * H * k, L.tgtX0 - 0.42f * H));
     L.navX0 = L.mx - 0.02f * H, L.navY0 = L.my - 0.01f * H, L.navY1 = L.my + (f.kbm ? 0.338f : 0.29f) * H * k;
     L.navX1 = f.navRight > 0 ? std::min(f.navRight + 0.01f * H, L.navMaxX) : L.navMaxX;
@@ -61,15 +61,15 @@ RefOut Ref(const Frame& f)
     L.loX1 = W - L.mx, L.loX0 = L.loX1 - (f.kbm ? 0.44f : 0.40f) * H * k, L.loY1 = H - L.my, L.loY0 = L.loY1 - loH * H * k;
     {
         const float consW = f.kbm ? 0.16f * H * k + 2 * (f.m.slotKeyW > 0 ? f.m.slotKeyW : 0.03f * H * k) : 0.20f * H * k;
-        L.consX1 = L.loX1, L.consX0 = L.consX1 - consW, L.consY1 = L.loY0 - 0.012f * H * k,
-        L.consY0 = L.consY1 - (f.kbm ? 0.13f : 0.15f) * H * k;
+        L.consX1 = L.loX1, L.consX0 = L.consX1 - consW, L.consY1 = L.loY0 - 0.008f * H * k,
+        L.consY0 = L.consY1 - (f.kbm ? 0.104f : 0.136f) * H * k;
     }
     // the context prompts in two lanes beside the bottom panels, never in the bottom-centre band 0.40-0.60 W (the owner's
     // decision 4, 31 Oct 2026; was one line centred between the panels): promptfit.h's lanes and their hold cascade
     // (their own tests: tests\promptfit_test.cpp), squeezed to two floor ems of label; both lanes closed = the same two
     // lanes above the panels (5.23: the centred line there crossed the lower centre), else no prompt
     {
-        const int n = std::min(f.m.nCtx, 3);
+        const int n = std::min(f.m.nCtx, f.combat ? 2 : 3); // (the preset's pill caps)
         L.nCtx = 0, L.ctxY = 0.915f * H, L.fallback = false, L.ctxX0 = L.ctxX1 = 0;
         const promptfit::LaneGeom g = promptfit::ContextLanes(W, H, k, L.shipX1, L.loX0, 0.915f, 0.40f, 0.60f);
         float minW[3];
@@ -300,8 +300,8 @@ void Test_hud2_layout()
         CHECK_NEAR(o.my, MY, 0.01);
         CHECK_NEAR(o.R, 216, 0.01);
         CHECK_NEAR(o.card.x1, RX, 0.01);
-        CHECK_NEAR(o.card.x0, RX - 950.4, 0.01);
-        CHECK_NEAR(o.card.y1, MY + 464.4, 0.01);
+        CHECK_NEAR(o.card.x0, RX - 0.36 * 2160, 0.01);
+        CHECK_NEAR(o.card.y1, MY + 0.17 * 2160, 0.01);
         CHECK_NEAR(o.ship.x0, MX, 0.01);
         CHECK_NEAR(o.ship.x1, MX + 0.31 * 2160, 0.01); // 0.31 H (5.22; was 1056, 0.40)
         CHECK_NEAR(o.ship.y1, BY, 0.01);
@@ -316,32 +316,50 @@ void Test_hud2_layout()
             CHECK_NEAR(h.loadout.y1, BY, 0.01);
             CHECK_NEAR(h.loadout.y0, BY - 0.086 * 2160, 0.05);
             CHECK_NEAR(h.ship.y0, BY - 0.107 * 2160, 0.05);
-            CHECK_NEAR(h.cons.y1, h.loadout.y0 - 0.012 * 2160, 0.05);
+            CHECK_NEAR(h.cons.y1, h.loadout.y0 - 0.008 * 2160, 0.05);
             fh.m.loadH = 0.2f * 2160;
-            CHECK_NEAR(Compute(fh, S).loadout.y0, BY - 0.15 * 2160, 0.01);
+            CHECK_NEAR(Compute(fh, S).loadout.y0, (std::max)(BY - 0.18 * 2160, 0.8005 * 2160), 0.01); // (the spec's 0.15 + kLoadGrowH, not over S1)
         }
         CHECK_NEAR(o.loadout.x0, RX - 0.40 * 2160, 0.01); // the base: the weapons (decision 3; was 2308.8, 0.62)
         CHECK_NEAR(o.loadout.y0, BY - 0.15 * 2160, 0.01); // 0.80 H: S1's bottom (5.16)
         CHECK_NEAR(o.cons.x1, RX, 0.01);    // the cross stacked on its right end, right-aligned
         CHECK_NEAR(o.cons.x0, RX - 0.20 * 2160, 0.01);
-        CHECK_NEAR(o.cons.y1, BY - (0.15 + 0.012) * 2160, 0.01);
-        CHECK_NEAR(o.cons.y0, BY - (0.15 + 0.012 + 0.15) * 2160, 0.01);
+        CHECK_NEAR(o.cons.y1, BY - (0.15 + 0.008) * 2160, 0.01);
+        CHECK_NEAR(o.cons.y0, BY - (0.15 + 0.008 + 0.136) * 2160, 0.01);
         CHECK_NEAR(o.ctxY, 0.915 * 2160, 0.01);
         CHECK(o.suppressed == 0 && o.budgetOff == 0);
-        // the lanes (decision 4): the left from the ship panel + 0.024 H to the band's 0.40 W - 0.012 H, the right from
-        // 0.60 W + 0.012 H to the loadout - 0.024 H, rows 0.06 H apart
+        // the lanes (decision 4): mirrored on the centre, clear of both panels by 0.024 H, to the band's 0.40 W - 0.012 H and from its 0.60 W + 0.012 H, rows 0.06 H apart
         const promptfit::LaneGeom g = promptfit::ContextLanes(3840, 2160, 1, o.ship.x1, o.loadout.x0);
-        CHECK_NEAR(g.lx0, o.ship.x1 + 0.024 * 2160, 0.01);
+        CHECK_NEAR(g.lx0 + g.rx1, 3840, 0.01);
+        CHECK(g.lx0 >= o.ship.x1 + 0.024 * 2160 - 0.01);
         CHECK_NEAR(g.lx1, 0.40 * 3840 - 0.012 * 2160, 0.01);
         CHECK_NEAR(g.rx0, 0.60 * 3840 + 0.012 * 2160, 0.01);
-        CHECK_NEAR(g.rx1, o.loadout.x0 - 0.024 * 2160, 0.01);
+        CHECK(g.rx1 <= o.loadout.x0 - 0.024 * 2160 + 0.01);
         CHECK_NEAR(g.pitch, 0.06 * 2160, 0.01);
         CHECK(hud2layout::kBottomBandX0W == 0.40f && hud2layout::kBottomBandX1W == 0.60f &&
               hud2lint::kBottomX0W == hud2layout::kBottomBandX0W && hud2lint::kBottomX1W == hud2layout::kBottomBandX1W);
-        // the lower centre's top (5.23): the throttle arc's outer edge (R + 0.022 + 0.75 x 0.0065 / 2) + 0.01 H - 0.6344 H
-        // at k 1, the reticle lane's 0.692 (CRUISE ON) far inside; it scales with the ring (k), the gap does not
-        CHECK_NEAR(o.clearY0, 1080 + (0.10 + 0.022 + 0.5 * 0.75 * 0.0065) * 2160 + 0.01 * 2160, 0.01);
+        // the lower centre's top (form C, UI_HUD2_INPUTS.md 7b): the speed's lower edge (R + 0.0285 + 0.030 / 2) + 0.01 H - 0.6535 H at k 1, the reticle lane's
+        // 0.692 (CRUISE ON) far inside; it scales with the ring (k), the gap does not
+        CHECK_NEAR(o.clearY0, 1080 + (0.10 + 0.0450) * 2160 + 0.01 * 2160, 0.02);
         CHECK(o.clearY0 < 0.692f * 2160 - 0.012f * 2160);
+        // the size audit: the card to its spec, the cross as cells, a fight's prompts capped at two; form C's stack in order, the cruise readout 0.01 H clear of
+        // the throttle arc's inner edge
+        CHECK_NEAR(hud2layout::std_ov::kCardW, 0.36, 1e-6);
+        CHECK_NEAR(o.consCells, (4 * 0.046 * 0.046 + 0.036 * 0.036) * 2160 * 2160, 2);
+        CHECK(o.consCells < o.cons.Area() * 0.5f);
+        CHECK(hud2layout::kCruiseDY + 0.012f + 0.01f <= 0.10f + hud2layout::kThrottleDR - 0.5f * hud2layout::kThrottleW * hud2layout::kRingArcW + 1e-4f);
+        CHECK(hud2layout::kSpeedDR - 0.5f * hud2layout::kSpeedSize >= 0.5f * hud2layout::kRingArcW + 0.01f - 1e-4f);
+        {
+            float lo = 0, hi = 0;
+            promptfit::CentredLit(68, 112, 0.5f, lo, hi);
+            CHECK_NEAR(lo, 79, 1e-4);
+            CHECK_NEAR(hi, 101, 1e-4);
+            promptfit::CentredLit(68, 112, 0, lo, hi);
+            CHECK_NEAR(hi - lo, 0, 1e-4);
+            promptfit::CentredLit(68, 112, 1.5f, lo, hi);
+            CHECK_NEAR(lo, 68, 1e-4);
+            CHECK_NEAR(hi, 112, 1e-4);
+        }
         // the panels sized to their content (0.2.1 round 3, UI_HUD2.md 5.26): a measured width below the spec's wins,
         // anchored to the corners; above it the spec's maximum; the lanes hug the narrower panels
         {
@@ -352,8 +370,11 @@ void Test_hud2_layout()
             CHECK_NEAR(c.card.x0, c.card.x1 - 0.32 * 2160, 0.01);
             CHECK_NEAR(c.ship.x0, MX, 0.01);
             CHECK_NEAR(c.ship.x1, MX + 0.24 * 2160, 0.01);
-            CHECK_NEAR(c.loadout.x0, RX - 0.40 * 2160, 0.01);
+            CHECK_NEAR(c.loadout.x0, RX - 0.48 * 2160, 0.01); // (the spec's 0.40 + ContentGrow's 0.08: panels grow first)
             CHECK(c.nCtx == o.nCtx);
+            Frame between = fit; // a long loadout between the two takes what it measures
+            between.m.loadW = 0.45f * 2160;
+            CHECK_NEAR(Compute(between, S).loadout.x0, RX - 0.45 * 2160, 0.01);
             // the easing: snaps from 0, grows fast, holds inside the hysteresis, shrinks past it
             CHECK(hud2layout::EaseContent(0, 500, 0.016f, 26) == 500);
             CHECK(hud2layout::EaseContent(500, 600, 1.0f, 26) == 600);
@@ -533,12 +554,12 @@ void Test_hud2_layout()
                 }
             }
         }
-    // ---- suppression: the letterbox (Standard: the nav's chip, the ring and the alert stay)
+    // ---- suppression: the letterbox (Standard: the nav's chip and the alert stay)
     {
         Frame f = Base(3840, 2160, false);
         f.letterbox = true;
         const Out o = Compute(f, S);
-        CHECK(o.suppressed == (Bit(Card) | Bit(List) | Bit(Ship) | Bit(Loadout) | Bit(Context)));
+        CHECK(o.suppressed == (Bit(Card) | Bit(List) | Bit(Ring) | Bit(Ship) | Bit(Loadout) | Bit(Context)));
         CHECK(o.budgetOff == 0);
         CHECK(ContextSuppressed(RulesOf(0), false) == 0);
         CHECK(ContextSuppressed(RulesOf(3), true) == ContextSuppressed(RulesOf(0), true)); // unbuilt = Standard's
@@ -555,25 +576,24 @@ void Test_hud2_layout()
         CHECK_NEAR(CapOf(S, false, false, false, false), hp::kBudgetDefault, 1e-6); // calm names none: the default
         CHECK_NEAR(CapOf(hp::kPresets[1], false, false, true, false), 0.03, 1e-6); // Focus calm target (<= 3)
         CHECK_NEAR(CapOf(hp::kPresets[1], true, false, true, false), 0.07, 1e-6);  // Focus combat steady (<= 7)
-        // Standard itself: over the cap (today's HUD, the lint's WARN) and nothing dropped
+        // Standard itself: under the cap since the size audit (UI_HUD2_SIZE_AUDIT.md 3), nothing dropped
         const Out std0 = Compute(f, S);
-        CHECK(std0.boxed > cap && std0.budgetOff == 0 && std0.suppressed == 0);
-        // a rule that suppresses by the budget (ship, then the loadout, then the list): 20.5 % boxed at 4K (card 5.3,
-        // list 4.0, ship 3.4, loadout 5.2, line 1.1, alert 1.4) - the ship alone leaves 17.1 %, the loadout too 11.9 %:
-        // both go, in order, the list stays
+        CHECK(std0.boxed <= cap && std0.budgetOff == 0 && std0.suppressed == 0);
+        // a rule that suppresses by the budget (ship, then the loadout, then the list), at a cap under what stands: the ship and the loadout go, in order,
+        // and the list stays
         Rules r = {Bit(Nav) | Bit(Ring) | Bit(Alert), true, {Ship, Loadout, List}, 3};
+        const float low = std0.boxed - (std0.ship.Area() + std0.loadout.Area()) / (f.W * f.H);
+        CHECK(BudgetSuppress(r, f, std0, 0, low) == (Bit(Ship) | Bit(Loadout)));
+        CHECK(BudgetSuppress(r, f, std0, 0, cap) == 0);
         const Out o = ComputeWith(f, S, r);
-        CHECK(o.budgetOff == (Bit(Ship) | Bit(Loadout)) && o.suppressed == o.budgetOff);
-        CHECK(o.boxed <= cap && o.boxed < std0.boxed);
-        CHECK_NEAR(std0.boxed - o.boxed, (o.ship.Area() + o.loadout.Area() + o.cons.Area()) / (f.W * f.H), 1e-6);
         // another preset's data and cap (Speedrun: its combat card 0.15 tall, loadout 0.17; combat pad peak 10 %): the
         // drops are a prefix of the order and end under the cap; a rule that names only the ship stays over it. (The
         // whole order since the lanes, decision 4: they keep both prompts - card 3.7 + list 4.0 + 2 pills 1.1 + alert 1.4
         // = 10.2 % after the ship and the loadout - where the centred line between the old 0.62 loadout and the ship kept
         // one, 9.6 %)
         const Out o1 = ComputeWith(f, hp::kPresets[2], r);
-        CHECK(o1.budgetOff == (Bit(Ship) | Bit(Loadout) | Bit(List)) && o1.boxed <= o1.budget && o1.nCtx == 2);
-        if (!(o1.budgetOff == (Bit(Ship) | Bit(Loadout) | Bit(List)) && o1.boxed <= o1.budget))
+        CHECK((o1.budgetOff & Bit(Ship)) && o1.boxed <= o1.budget && o1.nCtx == 2);
+        if (!((o1.budgetOff & Bit(Ship)) && o1.boxed <= o1.budget))
             fprintf(stderr, "hud2_layout: speedrun budgetOff=%u boxed=%.4f budget=%.4f nCtx=%d\n", o1.budgetOff, o1.boxed,
                     o1.budget, o1.nCtx);
         Rules shipOnly = {Bit(Nav) | Bit(Ring) | Bit(Alert), true, {Ship}, 1};

@@ -345,6 +345,16 @@ bool DockRegain(float dt, u32 target)
     return true;
 }
 
+// The game refuses a dock request past its range (Common.dll's float, space::DockRange: 10 km in vanilla and mods built on it, 50 km in HDE 0.7.1), and the autopilot then
+// ended at once with "maneuver ended". Past it the dock starts as the game's Goto and becomes the dock once inside, with a margin for the request's frame at cruise speed.
+bool DockBeyondRange()
+{
+    const float range = space::DockRange();
+    float to[3];
+    fl::Kinematics k = {};
+    return range > 0 && g.target && space::ObjectPos(g.target, to) && fl::PlayerKinematics(k) && geom::Dist(k.pos, to) > range * 0.95f;
+}
+
 bool FastApproach(float dt, Out& out)
 {
     // Never at rest under fire while a dock waits (M12: 440 m short of the Omicron Minor hole the

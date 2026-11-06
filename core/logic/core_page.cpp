@@ -50,9 +50,7 @@ static void OnFrame(double dt)
         return;
     }
     modslots::GiveBack();
-    // the page's text as core's frame sets it: Steam Deck mode and the player's own size
-    deckmode::g_on = deckmode::Active(coreframe::opts.deckMode, static_cast<float>(fl::ScreenWidth()), static_cast<float>(fl::ScreenHeight()));
-    uiopt::Get().textSize = deckmode::TextSize(deckmode::g_on, coreframe::opts.textSize);
+    uiopt::Get().textSize = coreframe::ApplySize(); // (the page's text as core's frame sets it)
     const gamemode::Mode now = gamemode::Detect(nullptr, nullptr);
     const char* mode = gamemode::Name(now);
     if (now == gamemode::Mode::Space || now == gamemode::Mode::SpaceUi)

@@ -93,7 +93,10 @@ System ParseSystem(const std::string& dataDir, const std::string& systemFile, Id
                 out.strict[id(nick.c_str())].why = "damage";
         }
         if ((s.type == "asteroids" || s.type == "nebula") && !fieldFile.empty() && !fieldZone.empty())
+        {
             fields.push_back({fieldFile, fieldZone});
+            out.fieldKinds[id(fieldZone.c_str())] = s.type == "nebula" ? 2 : 1;
+        }
         if (s.type == "object" && !nick.empty())
         {
             if (!dockWith.empty())

@@ -42,6 +42,8 @@ std::wstring FactionName(u32 objId);
 // A ship's class as a word ("FIGHTER", "FREIGHTER", "TRANSPORT", "GUNBOAT", "CRUISER", "BATTLESHIP", ...) or a solar's kind
 // ("STATION", "PLANET", "TRADE LANE", "JUMP GATE", "JUMP HOLE", "LOOT", "WEAPONS PLATFORM", ...); "" unknown.
 std::wstring ClassName(u32 objId);
+// An object's physical radius (CSimple::get_physical_radius_r), 0 unknown: what the game's own label leaves out of a distance.
+float ObjectRadius(u32 id);
 // An NPC ship's level (its loadout / rank as the game shows "LEVEL n"), -1 unknown.
 int Level(u32 objId);
 // An object's name exactly as the game's target panel / contact list shows it now: "Unknown Jump Gate" (Moon, Planet,
@@ -56,6 +58,10 @@ std::wstring LaneName(u32 ringId);
 bool AfterburnerOn();
 bool AfterburnerKnown(); // the reader resolved: AfterburnerOn's false means off
 bool EngineKilled();
+// The afterburner's gauge: CShip::get_thrust_power_ratio, 0..1, -1 unknown (docs\FREELANCER_RE.md "thruster / afterburner energy gauge").
+float ThrustGauge();
+// The mounted engine's archetype id (its nickname's hash), 0 unknown.
+u32 EngineArch();
 // Credits, -1 unknown.
 long long Credits();
 // The tractor beam: active now, and how many loot objects are within its reach.
@@ -103,6 +109,8 @@ bool Docking(Dock& out);
 void SetDockReply(u32 seq, u32 kind, u32 response);
 // The cruise engine was disrupted (a cruise disruptor / a lane disruption) within the last `withinSeconds`.
 bool CruiseDisrupted(float withinSeconds = 3.0f);
+// What is left of a disruption's wait, 1..0: the charge clock on its way up from -CRUISE_DISRUPT_TIME. 0 = the engine can charge.
+float CruiseDisruptLeft();
 
 // ---- combat
 // The player's missile lock on the current target: 0..1 progress, -1 when the game keeps none / no launcher.

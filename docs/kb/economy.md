@@ -33,6 +33,9 @@ server's equipment list). Started 21 Oct 2026 from the sweep's `base-repair` sec
 - Mounted launchers' ammo, nanobots and batteries are what the player refills at stops (`consumables.md` "Restock at
   stops vs loot"); the ship's `nanobots` / `batteries` limits are in `generated\ships.tsv`.
 
+## Buying a ship (ship dealer, then the final stage: native `ContinueButton`, caption BUY SHIP)
+Two stages. The first (`NN_ShipTrader`) refuses by level, reputation, or a price over the credits plus the trade-in with the equipment. The second is `NN_Dealer` in its ship mode: moving items to the dealer's list lowers the cost, and BUY SHIP stands only while the player can pay. Facts and sites: `docs\FREELANCER_RE.md` "The ship dealer's final stage" (the window seen in game; the sums read from decompiled code). The pad's way: `tests\ship_buy_pad_game.md`, not run yet.
+
 ## Net worth
 - The story's level gates (+3500 / 5200 / 7000 / 10000 ...) are net worth = cash + assets (`worth total`); the restock
   budget keeps `-Reserve` cash for the next repair (`Complete-FLBaseStory`).

@@ -43,6 +43,12 @@ inline DeviceView device = {};
 struct SkinView
 {
     bool (*On)();
+    const wchar_t* (*DialogAction)(); // the open dialog's verbs for the prompt lane; null: the game's own YES / NO
+    const wchar_t* (*DialogSafe)();
+    bool (*DialogFocusAction)();      // nothing is at risk: the pad's focus starts on the action
+    bool (*ContinueOffered)();        // the main menu shows CONTINUE (a save to load, a place for it)
+    void (*ContinueFocus)(bool on);   // the pad's focus stands on it
+    void (*ContinueGo)();             // loads the latest save, by the game's load screen
 };
 inline SkinView skin = {};
 
@@ -131,6 +137,14 @@ struct HudRect
     int part = 0; // 0 the strip, 1 the character card, 2 the decision words (each dims under FLUF's windows on its own)
 };
 
+// One chip on the nav map (pixels; the HUD's navskin): `stepper`: the D-pad's left and right step it where they would walk off it.
+struct MapChip
+{
+    float x0, y0, x1, y1;
+    int id;
+    bool enabled, stepper;
+};
+
 // The HUD (modules\hud): its reads, and its places in core's frame and passes (core\game\coreframe.cpp). Null with the module off: the classic HUD.
 struct HudView
 {
@@ -159,6 +173,14 @@ struct HudView
     void (*Overlay)(void* device, bool menuOver, bool noUnderPass);
     void (*Strip)(void* device);
     void (*DeviceLost)();
+    void (*Top)(void* device); // last of the overlay: over the options page and the prompts (the cursor, a tooltip)
+    // the strip of words on the NeuroNet windows: its rectangle this frame, pixels x0 y0 x1 y1; false while it does not stand
+    bool (*NNStrip)(float* rect);
+    // the nav map's chips, for the pad's panel zone: what stands this frame, a press by the chip's own action, a stepper's step, the focus the HUD draws (-1 none)
+    int (*MapChips)(MapChip* out, int max);
+    void (*MapChipPress)(int id);
+    void (*MapChipStep)(int id, int dir);
+    void (*MapChipFocus)(int id);
 };
 inline HudView hud = {};
 
@@ -229,6 +251,29 @@ inline bool DeviceRearView() { return device.RearView && device.RearView(); }
 inline bool DevicePromptVisible() { return device.PromptVisible && device.PromptVisible(); }
 inline const wchar_t* DeviceHoveredOffer() { return device.HoveredOffer ? device.HoveredOffer() : nullptr; }
 inline bool DeviceHoveredIsStory() { return device.HoveredIsStory && device.HoveredIsStory(); }
+// The strip of words stands this frame: the bumpers step the tabs. False with the HUD off or on the classic look: the pad keeps its older bumpers.
+inline bool HudNNStrip()
+{
+    float r[4];
+    return hud.NNStrip && hud.NNStrip(r);
+}
+// The map's chips: none with the HUD off or the old map: the pad's map has one zone, as it always had.
+inline int HudMapChips(MapChip* out, int max) { return hud.MapChips ? hud.MapChips(out, max) : 0; }
+inline void HudMapChipPress(int id)
+{
+    if (hud.MapChipPress)
+        hud.MapChipPress(id);
+}
+inline void HudMapChipStep(int id, int dir)
+{
+    if (hud.MapChipStep)
+        hud.MapChipStep(id, dir);
+}
+inline void HudMapChipFocus(int id)
+{
+    if (hud.MapChipFocus)
+        hud.MapChipFocus(id);
+}
 inline float HudStripRight() { return hud.StripRight ? hud.StripRight() : 0; }
 inline float HudStripBottom() { return hud.StripBottom ? hud.StripBottom() : 0; }
 inline bool LaneWanted() { return device.LaneWanted && device.LaneWanted(); }
@@ -372,6 +417,20 @@ inline int ApMissionObjects(u32* out, int max, const std::vector<space::Contact>
 }
 
 inline bool SkinOn() { return skin.On && skin.On(); }
+inline const wchar_t* SkinDialogAction() { return skin.DialogAction ? skin.DialogAction() : nullptr; }
+inline const wchar_t* SkinDialogSafe() { return skin.DialogSafe ? skin.DialogSafe() : nullptr; }
+inline bool SkinDialogFocusAction() { return skin.DialogFocusAction && skin.DialogFocusAction(); }
+inline bool SkinContinueOffered() { return skin.ContinueOffered && skin.ContinueOffered(); }
+inline void SkinContinueFocus(bool on)
+{
+    if (skin.ContinueFocus)
+        skin.ContinueFocus(on);
+}
+inline void SkinContinueGo()
+{
+    if (skin.ContinueGo)
+        skin.ContinueGo();
+}
 inline void NoteFrame(bool ours)
 {
     if (device.NoteFrame)

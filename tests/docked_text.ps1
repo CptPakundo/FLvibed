@@ -1,5 +1,5 @@
 # GitHub issue 22, "fonts randomly change in size and boldness in the Job Board, Commodity Trader, Equipment Dealer and Ship Dealer".
-# Walks those four windows on a numbered instance (background game, SaveC701 at Manhattan, HUD 2, deck_mode 2) the way a player does:
+# Walks those four windows on a numbered instance (background game, SaveC701 at Manhattan, HUD 2, hud_size 2) the way a player does:
 # the equipment dealer's filters, one of them twice, the lists scrolled, rows selected. After each step it reads every shown text's
 # font (debug `gametext texts`) and the rich size (`gametext window`). Frames and the raw tables: research\experience\runs\issue22\<Label>\.
 # It JUDGES, at each -Sizes size, with text_size and hud_scale 100:
@@ -12,7 +12,7 @@
 #   SLIDER text_size / hud_scale 80 give the same fonts as 100 (no slider reaches the game's own text)
 #   OFF    with window_text 0 ROLE, BACK and RICH all hold (the variation is windowtext's)
 # Usage (PowerShell tool): tests\docked_text.ps1 [-Instance 3] [-Sizes '1280, 800','3840, 2160'] [-Label run] [-NoPad]   uses build\release
-param([int]$Instance = 3, [string[]]$Sizes = @('1280, 800', '3840, 2160'), [string]$Label = 'docked', [switch]$NoPad)
+param([string]$Instance = 3, [string[]]$Sizes = @('1280, 800', '3840, 2160'), [string]$Label = 'docked', [switch]$NoPad)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 . (Join-Path $root 'tools\harness\flctl.ps1')
@@ -54,6 +54,8 @@ function Snap([string]$step, [switch]$Frame) {
                                             ctl = $t.Groups[1].Value; parent = $t.Groups[2].Value; font = $t.Groups[5].Value
                                             w = [double]$t.Groups[6].Value; h = [double]$t.Groups[7].Value })
     }
+    Add-Content -LiteralPath (Join-Path $script:dir 'bar.log') ("== $($script:phase) $($script:win) $step" + "`n" + (Send-FL 'gametext bar')) # (the room bar's steps since the last one)
+    Add-Content -LiteralPath (Join-Path $script:dir 'fit.log') ("== $($script:phase) $($script:win) $step" + "`n" + (Send-FL 'gametext fit')) # (each fitted panel and the air round what it holds)
     if ($Frame -and $script:shots) {
         $name = "$($script:phase)_$($script:win)_$step"
         $f = Save-FLShot -Name $name -Dir $script:dir
@@ -103,6 +105,10 @@ function Walk-Equipment {
     $null = Send-FL 'click Filter_Weapons'; Snap 'weapons' -Frame
     Pick 'ItemButton1' 'weapons_row1' -Frame
     Pick 'ItemButton3' 'weapons_row3'
+    # (the list's end holds what the ship cannot mount or the player cannot buy: the refusal's line)
+    $null = Send-FL 'scroll Inventory_Scroll 1000'
+    Pick 'ItemButton5' 'weapons_last' -Frame
+    Pick 'ItemButton4' 'weapons_last2' -Frame
     $script:at = 0; Scroll-Down 'Inventory_Scroll' 'weapons_scroll'
     foreach ($f in 'Ammo', 'Equipment', 'CargoBay') {
         $null = Send-FL "click Filter_$f"; Snap $f.ToLower()
@@ -149,8 +155,12 @@ function Judge-Role([string]$phase) {
     foreach ($k in $roles.Keys) {
         $r = @($script:rows | Where-Object { $_.phase -eq $phase -and $_.ctl -match $roles[$k] })
         foreach ($g in ($r | Group-Object opening)) {
+            # (a text that would leave its row takes the column down once and it stays down for the opening: only a size that comes back up is the bug)
             $fonts = @($g.Group | Group-Object font | ForEach-Object { "$($_.Name)x$($_.Count)" })
-            if ($fonts.Count -gt 1) { $out += "ROLE $($g.Group[0].win) ${k}: $($fonts -join ', ')" }
+            foreach ($c in ($g.Group | Group-Object ctl, parent)) {
+                $was = [double]::MaxValue
+                foreach ($t in $c.Group) { if ($t.h -gt $was + 0.5) { $out += "ROLE $($g.Group[0].win) ${k}: $($fonts -join ', ')"; break }; $was = $t.h }
+            }
         }
     }
     $out
@@ -161,7 +171,7 @@ function Judge-Back([string]$phase) {
         $a = @($script:rows | Where-Object { $_.phase -eq $phase -and $_.opening -eq $o -and $_.step -eq 'weapons' -and $_.ctl -match '^Item(Name|Price)\d+$' })
         foreach ($x in $a) {
             $y = $script:rows | Where-Object { $_.phase -eq $phase -and $_.opening -eq $o -and $_.step -eq 'weapons_back' -and $_.ctl -eq $x.ctl -and $_.parent -eq $x.parent } | Select-Object -First 1
-            if ($y -and $y.font -ne $x.font) { $out += "BACK $($x.parent) $($x.ctl): $($x.font) $($x.w)x$($x.h) -> $($y.font) $($y.w)x$($y.h)" }
+            if ($y -and $y.h -gt $x.h + 0.5) { $out += "BACK $($x.parent) $($x.ctl): $($x.font) $($x.w)x$($x.h) -> $($y.font) $($y.w)x$($y.h)" }
         }
     }
     $out
@@ -192,13 +202,14 @@ try {
     foreach ($size in $Sizes) {
         $tag = ($size -replace '[ ,]+', 'x')
         $script:dir = Join-Path $top $tag
+        $script:labelsOff = 0   # (per size: a count carried over reads as a fault at the next size)
         New-Item -ItemType Directory -Force $script:dir | Out-Null
         $script:rows.Clear(); $script:rich.Clear(); $script:opening = 0
         Get-FLGameProcess | Stop-Process -Force -ErrorAction SilentlyContinue
         Set-FLInstanceDisplay $Instance 'borderless' $size
         & (Join-Path $root 'tools\deploy.ps1') -Background -NoBuild -Release -Instance $Instance -Modules @('subtitles', 'controller') -Save SaveC701.fl | Out-Null
         $null = Wait-FLFramesPassed 200
-        foreach ($c in 'set deck_mode 2', 'set text_size 100', 'set hud_scale 100', 'set window_text 1') { $null = Send-FL $c }
+        foreach ($c in 'set hud_size 2', 'set text_size 100', 'set hud_scale 100', 'set window_text 1') { $null = Send-FL $c }
         if (-not $NoPad) { Set-FLPad -RY 0.6; $null = Wait-FLFramesPassed 30; Clear-FLPad; $null = Wait-FLFramesPassed 30 }
         Say "== $size, device: $([regex]::Match((Send-FL 'state'), '(?m)^device=\S+').Value)"
         Walk 's100' $true

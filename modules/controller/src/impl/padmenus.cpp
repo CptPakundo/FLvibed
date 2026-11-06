@@ -53,6 +53,7 @@ enum class Screen
     Death,
     Chat,
     Confirm, // NN_Confirm (a child of NN_Pause: the quit question; the front-end delete uses it too)
+    ExitDialog, // NN_Exit under the skin (ExitButtonBox0 / 1): on the classic look it stays as it was
     Options, // the game's Options screen (in game and front end; FLvibed's own page is options_page's)
     Popup,   // the story / tutorial popup (NeuroNetMissionMessage: pub::Player::PopUpDialog's box, in space and docked)
     MpTable, // the multiplayer server list (ServerTable) or character list (CharacterTable): table controls
@@ -110,7 +111,8 @@ static bool g_owns = false;
 static bool g_latch = false; // a consumed press holds the frames until every button is up (no leak into the dispatch)
 static Screen g_screen = Screen::None;
 static ULONGLONG g_since = 0;
-static bool g_focused = false, g_prefilled = false, g_deleteFired = false;
+static bool g_focused = false, g_prefilled = false;
+static bool g_continue = false; // the pad's focus stands on the skin's CONTINUE
 // a native click sequence on the focused list row: the virtual mouse button down, up, then the action
 static std::string g_lastAction;
 static std::map<u32, u32> g_baseNames; // base id -> name string id (universe.ini [Base] strid_name)
@@ -284,6 +286,8 @@ static Screen Detect()
     // the confirmation lies over the pause menu (its parent) or the load screen whose delete asked: before them
     if (uiclick::FindVisible("Confirm_delBtnYes"))
         return Screen::Confirm;
+    if (views::SkinOn() && uiclick::FindVisible("ExitButtonBox0"))
+        return Screen::ExitDialog;
     if (uiclick::FindVisible("LoadSave_SaveGame"))
         return Screen::Save;
     if (uiclick::FindVisible("LoadSave_LoadGame"))
@@ -472,7 +476,7 @@ void Update(float dt, const char* modeName)
             modeName ? modeName : "");
         g_screen = s;
         g_since = resumed && s == Screen::Popup ? now - 1000 : now;
-        g_focused = g_prefilled = g_deleteFired = false;
+        g_focused = g_prefilled = false;
         if (osk::IsOpen() && !(s == Screen::Save && osk::Current() == osk::Purpose::Save))
             osk::Close();
         if (s == Screen::Chat)
@@ -498,17 +502,35 @@ void Update(float dt, const char* modeName)
         }
     }
     const bool settled = now - g_since > 250; // after UpdateUiNav's own auto-focus of the new window
-    const float holdSec = 1.0f;
     switch (s)
     {
     case Screen::MainMenu:
     {
         const u32 newGame = session::MainMenuButton(menu::kNewGame);
         const ui::Item* ng = newGame ? ItemOf(newGame) : nullptr;
+        const bool cont = views::SkinContinueOffered();
         if (!g_focused && settled && ng && ng->x > ng->hw) // once the game's menu animation has slid it on screen
-            SnapTo(newGame), g_focused = true;
+            SnapTo(newGame), g_focused = true, g_continue = cont;
         static const promptbar::Prompt p[] = {{glyphs::A, L"SELECT"}};
         promptbar::Set("mainmenu", p, 1, false, 10);
+        // the skin's CONTINUE stands over NEW GAME and is no control of the game's: the pad's focus steps onto it by hand, the cursor resting on NEW GAME
+        g_continue = g_continue && cont;
+        views::SkinContinueFocus(g_continue);
+        if (g_continue && (in.accept || in.down || in.up))
+        {
+            if (in.accept)
+                views::SkinContinueGo();
+            else if (in.down)
+                g_continue = false;
+            g_owns = true;
+            break;
+        }
+        if (cont && in.up && CtlUnderCursor() == newGame)
+        {
+            g_continue = true;
+            g_owns = true;
+            break;
+        }
         const u32 under = in.accept ? CtlUnderCursor() : 0;
         if (in.accept && newGame && under == newGame)
         {
@@ -575,11 +597,8 @@ void Update(float dt, const char* modeName)
     {
         const bool front = s == Screen::LoadFront;
         const u32 list = ListUnderCursor();
-        promptbar::Prompt p[] = {{glyphs::A, L"LOAD"}, {glyphs::X, L"DELETE", true}, {glyphs::RS, L"SCROLL"},
-                                 {glyphs::B, L"BACK"}};
-        if (x.xDown && list)
-            p[1].progress = x.xHeld / holdSec;
-        promptbar::Set("load", p, 4, x.xDown && list, 10);
+        const promptbar::Prompt p[] = {{glyphs::A, L"LOAD"}, {glyphs::X, L"DELETE"}, {glyphs::RS, L"SCROLL"}, {glyphs::B, L"BACK"}};
+        promptbar::Set("load", p, 4, false, 10);
         if (in.accept && list)
         {
             LoadRow(front, list);
@@ -587,18 +606,11 @@ void Update(float dt, const char* modeName)
         }
         else if (x.x && list)
         {
-            g_deleteFired = false; // the hold starts (its sweep in the prompt bar)
+            DeleteRow(front, list); // a press into the game's own confirm: the dialog is the friction, no hold on a destructive action
             g_owns = true;
         }
         else if (x.xDown)
-        {
             g_owns = true; // (no right click while X is held here)
-            if (x.xHeld >= holdSec && !g_deleteFired && list)
-            {
-                g_deleteFired = true;
-                DeleteRow(front, list);
-            }
-        }
         else if (in.back)
         {
             ClickNamed(front ? "MainMenu" : "LoadSave_Close", "back");
@@ -611,11 +623,8 @@ void Update(float dt, const char* modeName)
         if (!g_prefilled && now - g_since > 100)
             Prefill();
         const u32 list = ListUnderCursor();
-        promptbar::Prompt p[] = {{glyphs::A, L"SAVE"}, {glyphs::Y, L"KEYBOARD"}, {glyphs::X, L"DELETE", true},
-                                 {glyphs::RS, L"SCROLL"}, {glyphs::B, L"CLOSE"}};
-        if (x.xDown && list)
-            p[2].progress = x.xHeld / holdSec;
-        promptbar::Set("save", p, 5, x.xDown && list, 10);
+        const promptbar::Prompt p[] = {{glyphs::A, L"SAVE"}, {glyphs::Y, L"KEYBOARD"}, {glyphs::X, L"DELETE"}, {glyphs::RS, L"SCROLL"}, {glyphs::B, L"CLOSE"}};
+        promptbar::Set("save", p, 5, false, 10);
         if (in.accept && !list)
         {
             ClickNamed("LoadSave_SaveGame", "save");
@@ -628,18 +637,11 @@ void Update(float dt, const char* modeName)
         }
         else if (x.x && list)
         {
-            g_deleteFired = false;
+            DeleteRow(false, list);
             g_owns = true;
         }
         else if (x.xDown)
-        {
             g_owns = true;
-            if (x.xHeld >= holdSec && !g_deleteFired && list)
-            {
-                g_deleteFired = true;
-                DeleteRow(false, list);
-            }
-        }
         else if (in.back)
         {
             ClickNamed("LoadSave_Close", "close");
@@ -673,12 +675,17 @@ void Update(float dt, const char* modeName)
         const u32 yes = uiclick::FindVisible("Confirm_delBtnYes"), no = uiclick::FindVisible("Confirm_delBtnNo");
         if (!g_focused && settled && no && ItemOf(no))
             SnapTo(no), g_focused = true;
-        // prompts (critique 4: "A NO · D-pad YES / NO · B NO" read as two NOs): A = the focused answer's verb, the D-pad
+        // prompts ("A NO, D-pad YES / NO, B NO" read as two NOs): A = the focused answer's verb, the D-pad
         // CHOOSEs, B = NO
         const u32 under = CtlUnderCursor();
-        const promptbar::Prompt p[] = {{glyphs::A, under == yes ? L"YES" : under == no ? L"NO" : L"SELECT"},
+        // (the skin's dialog says verbs: the lane says the same; without it the game's YES and NO)
+        const wchar_t* action = views::SkinDialogAction();
+        const wchar_t* safe = views::SkinDialogSafe();
+        if (!action || !safe)
+            action = L"YES", safe = L"NO";
+        const promptbar::Prompt p[] = {{glyphs::A, under == yes ? action : under == no ? safe : L"SELECT"},
                                        {glyphs::DL, L"CHOOSE", false, glyphs::DR},
-                                       {glyphs::B, L"NO"}};
+                                       {glyphs::B, safe}};
         promptbar::Set("confirm", p, 3, true, 10);
         if (in.accept && under && (under == yes || under == no))
         {
@@ -689,6 +696,36 @@ void Update(float dt, const char* modeName)
         {
             if (!ClickNamed("Confirm_delBtnNo", "confirm no"))
                 fl::TapKey(VK_ESCAPE); // the game's own cancel of the question
+            g_owns = true;
+        }
+        break;
+    }
+    case Screen::ExitDialog:
+    {
+        // the skin's Exit dialog (UI_HUD2_SKIN.md 6.2): the focus on EXIT GAME at the main menu, where nothing is at risk, on the safe answer in a game; A = the
+        // focused answer by the game's own click; B = the safe answer
+        const u32 yes = uiclick::FindVisible("ExitButtonBox0"), no = uiclick::FindVisible("ExitButtonBox1");
+        const u32 first = views::SkinDialogFocusAction() ? yes : no;
+        if (!g_focused && settled && first && ItemOf(first))
+            SnapTo(first), g_focused = true;
+        const u32 under = CtlUnderCursor();
+        const wchar_t* action = views::SkinDialogAction();
+        const wchar_t* safe = views::SkinDialogSafe();
+        if (!action || !safe)
+            action = L"YES", safe = L"NO";
+        const promptbar::Prompt p[] = {{glyphs::A, under == yes ? action : under == no ? safe : L"SELECT"},
+                                       {glyphs::DL, L"CHOOSE", false, glyphs::DR},
+                                       {glyphs::B, safe}};
+        promptbar::Set("exit", p, 3, true, 10);
+        if (in.accept && under && (under == yes || under == no))
+        {
+            ClickNamed(under == yes ? "ExitButtonBox0" : "ExitButtonBox1", under == yes ? "exit yes" : "exit no");
+            g_owns = true;
+        }
+        else if (in.back)
+        {
+            if (!ClickNamed("ExitButtonBox1", "exit no"))
+                fl::TapKey(VK_ESCAPE);
             g_owns = true;
         }
         break;

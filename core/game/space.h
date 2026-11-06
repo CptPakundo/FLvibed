@@ -66,6 +66,7 @@ struct Contact
 
 // A reputation's display name as the game shows it (an NPC pilot's name; Contact::rep): "" when unknown.
 std::wstring RepName(int rep);
+std::wstring RepNameSources(int rep); // debug: the name, the record it read and the cached text
 // A space object's name as the game's comm caption names a speaker (decomp hud_comm.cpp Appearance): a ship's pilot (its
 // reputation's name), else the object's own name (a base, station, planet, a named ship); "" when it has neither or is
 // not in the player's system.
@@ -198,6 +199,15 @@ int GunsCovering(u32 id, const float (*pts)[3], int n, int* counts, float tolera
 // For the survival model beside a static with turrets (M13's Nomad battleship: 15 guns, its volleys of 3.9-5.7k
 // killed us at shield 0.1-0.5 while the model counted ships only, run-judge 30 Oct 2026).
 int VolleyAt(u32 id, const float pt[3], float* volley, float* perSecond, float tolerance = 0);
+// The player's guns and launchers against a world point: each one's hardpoint, reach (GetMunitionRange; a LOCK seeker's seeker range) and the game's FireResult
+// (CEGun::CanFire, FireResultName below). The count read, 0 outside space or with a missing export. For HUD 2's weapon cue, at 10 Hz.
+struct GunFire
+{
+    char hardpoint[32] = {};
+    float reach = 0;
+    int fire = -1;
+};
+int GunFireAt(const float pt[3], GunFire* out, int max);
 // Debug `gunpoint`: each active player gun's own verdict on a world point (CanPointAt, CanFire, reach).
 std::string GunPointReport(const float pt[3]);
 // A ship's motion and agility (any ship in the system, the player's too): velocity (the physics'), nose, the turn rate
@@ -354,6 +364,8 @@ std::vector<Obstacle> LethalZones(const float center[3], float range, const Zone
 // the host-free tests' stand-in, tests\space_stub.cpp, defines the one-argument forms.)
 std::string StrictAt(const float pos[3]);
 std::string StrictAt(const float pos[3], const ZoneRules& rules);
+// Which field the point lies in: 0 none, 1 an [asteroids] field's zone, 2 a [nebula]'s. The system file plus the game's zone test, as above; a field's exclusion corridors count as in it.
+int FieldAt(const float pos[3]);
 // A planet's docking ring (system file: the object whose dock_with names the planet's base), 0 if it has none.
 u32 PlanetDockRing(u32 planet);
 // Is the object a planet's docking ring of the player's system (one PlanetDockRing answers)?

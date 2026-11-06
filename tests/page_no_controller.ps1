@@ -1,7 +1,7 @@
 # The options page with the controller off (docs\MODULES_PLAN.md P4): a background game with the subtitles alone, the page driven
 # through the subtitles' channel (`ui ...`: the controller's channel does not exist then). Prints what it read; exit 1 on a failure.
 # Usage (PowerShell tool): tests\page_no_controller.ps1 [-Instance 1]   uses build\release
-param([int]$Instance = 1)
+param([string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 . (Join-Path $root 'tools\harness\flctl.ps1')
@@ -20,7 +20,7 @@ try {
     $tabs = Send-FLS 'ui tab'
     Check ("$tabs" -match 'tabs:') "tabs: $tabs"
     $seen = @{}
-    foreach ($t in 0, 3, 4) {
+    foreach ($t in 0, 2, 4) {
         $null = Send-FLS "ui tab $t"
         Frames 15
         $rows = @((Send-FLS 'ui rows') -split "`n" | Where-Object { $_.Trim() })
@@ -28,9 +28,10 @@ try {
         "  tab $t`: $($rows.Count) rows; first: $(($rows | Select-Object -First 2) -join ' | ')".Substring(0, [Math]::Min(150, "  tab $t`: $($rows.Count) rows; first: $(($rows | Select-Object -First 2) -join ' | ')".Length))
         $f = Save-FLShot -Name "tab$t" -Dir $dir
     }
-    Check ($seen[0] -gt 0) 'GENERAL has rows (the module switches)'
-    Check ($seen[3] -gt 3) 'SUBTITLES has its rows'
-    $null = Send-FLS 'ui tab 3'; Frames 10
+    Check ($seen[0] -gt 0) 'HUD has rows'
+    Check ($seen[2] -gt 3) 'SUBTITLES has its rows'
+    Check ($seen[4] -gt 0) 'MORE has rows (the small features switches)'
+    $null = Send-FLS 'ui tab 2'; Frames 10
     $before = Send-FLS 'ui state'
     $null = Send-FLS 'ui press down'; Frames 10
     $after = Send-FLS 'ui state'

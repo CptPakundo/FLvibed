@@ -236,6 +236,11 @@ static u32 MainButton(u32 id)
 }
 bool MainMenuVisible() { return g_mainMenu; }
 u32 MainMenuButton(u32 id) { return MainButton(id); }
+u32 MainMenuRoot()
+{
+    const u32 button = MainButton(0);
+    return button ? RdOr<u32>(button + 4, 0u) : 0; // (a control's parent, as CharSelect reads it)
+}
 
 // The front-end load screen (character select): the parent of LoadCharacter when it is that class; its list +0xD8.
 u32 CharSelect()

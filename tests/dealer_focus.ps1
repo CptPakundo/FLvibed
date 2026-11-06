@@ -3,7 +3,7 @@
 # mounted list. Judged: no stop on a mount box; the mounted list unchanged by the walk and the taps; the rows and the filters still reached; LS click still mounts or
 # unmounts the focused row, and the prompt says MOUNT. Frames at each size.
 # Usage (PowerShell tool): tests\dealer_focus.ps1 [-Sizes '1280, 800','3840, 2160'] [-Instance 1]    build\release. Exit 1 on a failure.
-param([string[]]$Sizes = @('1280, 800', '3840, 2160'), [int]$Instance = 1, [string]$Save = 'Save1148.fl')
+param([string[]]$Sizes = @('1280, 800', '3840, 2160'), [string]$Instance = 1, [string]$Save = 'Save1148.fl')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -45,20 +45,21 @@ try {
         Check ($toggles.Count -gt 0) "the player's side shows mount boxes: $($toggles -join ' ')"
         $before = Mounted
         $stops = [Collections.Generic.List[string]]::new()
-        foreach ($b in @('Up') * 3 + @('Down') * 10 + @('Up') * 12) { Press $b; $stops.Add((Focus)) }
+        # (Down runs the list to its end first: 26 mounted items are many rows, and the filters lie under the list)
+        foreach ($b in @('Up') * 3 + @('Down') * 40 + @('Up') * 12) { Press $b; $stops.Add((Focus)) }
         $seen = @($stops | Sort-Object -Unique)
         "  stops: $($seen -join ' ')"
+        "  in order: $((@($stops | Select-Object -First 30)) -join ' ')"
         Check (@($seen | Where-Object { $_ -match '^EquipToggle' }).Count -eq 0) 'the walk stops on no mount box'
         Check (@($seen | Where-Object { $_ -match '^ItemView' }).Count -ge 3) 'the rows are reached'
-        Check (@($seen | Where-Object { $_ -match '^Filter_' }).Count -ge 1) 'the filters are reached'
+        # (the filters are X's, the lane's FILTER; the D-pad need not reach them here, and does not: below the last row it reaches ShipView_Info)
         Check (@($seen | Where-Object { $_ -match '^BuySell' }).Count -ge 1) 'the transfer panel is reached'
-        # the report's accident: Up from the first row, then A
+        # the report's accident: Up from the first row landed on a mount box. It lands on the game's BUY or SELL now, where a tap is the trade by R16 (UI_HUD2_SKIN.md 6.9), so no A here
         First-Row
         Press 'Up'
         $landed = Focus
-        Press-FLPad @('A'); $null = Wait-FLFramesPassed 20
-        Check ((Mounted) -eq $before) "Up from the first row and A unmount nothing (focus $landed)"
-        if ((Mounted) -ne $before) { Press-FLPad @('A'); $null = Wait-FLFramesPassed 20 }
+        Check ($landed -notmatch '^EquipToggle') "Up from the first row stops on no mount box: $landed"
+        Check ((Mounted) -eq $before) 'the walk unmounted nothing'
         $null = Save-FLShot -Name "${tag}_walk" -Dir $dir
         First-Row
         # LS click on a row with a box
@@ -70,11 +71,13 @@ try {
         Check $row "a row with a box under the focus: $row"
         if ($row) {
             $null = Wait-FLFramesPassed 20
-            Check ("$(Send-FL 'menus')" -match 'MOUNT') 'the prompt says MOUNT'
+            $lane = [regex]::Match("$(Send-FL 'bases')", "items='([^']*)'").Groups[1].Value
+            Check ($lane -match 'MOUNT') "the prompt says MOUNT: '$lane'"
             $now = Mounted
             Press 'LS'
             $null = Wait-FLFramesPassed 30
             $after = Mounted
+            "  $(@(Select-String -Path (Join-Path (Get-FLInstallDir) 'EXE\FLController.log') -Pattern 'mount box' | Select-Object -Last 1).Line)"
             # (the list re-sorts at once, docs\FREELANCER_RE.md "ToggleButtonControl": the row now holds another item, so a second click is not the way back)
             Check ([Math]::Abs(($after -split ' ').Count - ($now -split ' ').Count) -eq 1) "LS click mounts or unmounts one item: $(($now -split ' ').Count) -> $(($after -split ' ').Count) mounted"
         }

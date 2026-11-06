@@ -21,6 +21,7 @@ static const char* const kNewerThanWindows7[] = {
     "GetDpiForWindow",
     "GetSystemTimePreciseAsFileTime",
     "GetThreadDpiAwarenessContext",
+    "RtlGetDeviceFamilyInfoEnum",
     "RoGetActivationFactory",
     "RoInitialize",
     "RoUninitialize",

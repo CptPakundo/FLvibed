@@ -37,6 +37,7 @@ void Update(float dt, const Gamepad& pad, Where where);
 bool Owns(u32 mask);
 // A control the D-pad's focus passes over here.
 bool SkipsFocus(const char* name);
+bool EntryFocus(); // the screen's own entry focus stands or is coming: no auto-focus over it
 // The left stick may drive the game's cursor here (pad_cursor: 0 = focus only).
 bool CursorAllowed();
 // Magnetism for the free cursor's motion this frame (pixels): slows over a clickable element, pulls toward the

@@ -199,6 +199,37 @@ static void __cdecl UiRenderHook()
     g_origUiRender();
 }
 
+// ------------------------------------------------------------------ the load's frame (exe::UiBatchClose at exe::LoadBracketCall)
+// A load skips the UI pass, so nothing above runs in it. The game's frame 0x578F70 closes its batch with the scene still open: the one place that sees every
+// load frame, called on every path. The thunk runs for every UI batch too, so only the load's call site counts. The game never waits: the drawing is the
+// logic's, one guarded call, and a fault gives the native screen back for good.
+typedef void(__cdecl* BatchCloseFn)();
+static BatchCloseFn g_origBatchClose = nullptr;
+static void (*g_loadDraw)() = nullptr;
+
+void SetLoadDraw(void (*draw)()) { g_loadDraw = draw; }
+
+static void GuardedLoadDraw()
+{
+    __try
+    {
+        g_loadDraw();
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        g_loadDraw = nullptr;
+        Log("FATAL: exception 0x%08X in the load's frame; the game's own loading screen from now on", GetExceptionCode());
+    }
+}
+
+static void __cdecl BatchCloseHook()
+{
+    const uintptr_t from = reinterpret_cast<uintptr_t>(_ReturnAddress());
+    g_origBatchClose();
+    if (g_loadDraw && exe::LoadBracketCall.ok() && from == exe::LoadBracketCall.get() + 5)
+        GuardedLoadDraw();
+}
+
 bool RawKeysWanted() { return g_clients[kController] && g_clients[kController]->rawKey; }
 bool RawKey(int vk, bool down, bool textField) { return g_clients[kController]->rawKey(vk, down, textField); }
 
@@ -593,9 +624,13 @@ void Start(HINSTANCE self, bool subtitles, bool controller, const char* rows, co
     uibtn::Install(); // FLvibed's native buttons: the Options screen, the pause menu
     // UiRender: mov eax,1008h (5 bytes)
     g_origUiRender = static_cast<UiRenderFn>(hk::Detour(exe::UiRender, UiRenderHook, 5, "drawing under the HUD"));
+    // UiBatchClose: mov eax, [abs] (5 bytes)
+    if (ModuleOn(modules::kHud) && exe::UiBatchClose.ok() && exe::LoadBracketCall.ok())
+        g_origBatchClose = static_cast<BatchCloseFn>(hk::Detour(exe::UiBatchClose, BatchCloseHook, 5, "the loading screen"));
     focus::Start(ModuleOn(modules::kDisplay));
     fixes::Install();
     chatlines::Install(); // the server's word on the autopilot; its tag line stays out of the chat, whichever modules run
+    tractorhook::Install(); // two listeners: HUD 2 and the subtitles both show the reason
     if (!controller)
         pagehost::Start();
     g_mouseHere = !controller && focus::Forced();

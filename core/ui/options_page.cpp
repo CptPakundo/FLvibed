@@ -1,18 +1,16 @@
-// The FLVIBED OPTIONS page - see options_page.h (the PAGE track of the UI build, 25 Oct 2026).
+// The FLVIBED OPTIONS page, simple mode (docs\UI_OPTIONS.md) - see options_page.h.
 //
-// Rows come from core\ui_meta.h (the spec's tabs / sections / rows: kind, words, range, tier, needs, parent, help) and
-// their values from the settings bus (core\settings_bus.h): no copy of any value lives here. A change goes to the bus
-// at once (bus->Set: settings::Apply + the owner's `applied`); DEFAULT resets the tab's rows (bus->Reset); CANCEL puts
-// every value back to the snapshot taken when the page opened; leaving saves every section with a change (bus->Save,
-// the owner's ini writer). The preset rows (autopilot `preset`, controller `pad_preset`) apply their table and read
-// CUSTOM when a member deviates. `show_advanced` lists every bus row the spec does not name, raw (label = key, help
-// from the registry).
+// Rows come from core\ui_meta.h (the spec's tabs by owner: kind, words, range, tier, needs, parent, help) and their values from the settings bus (core\settings_bus.h): no
+// copy of any value lives here. A change goes to the bus at once (bus->Set: settings::Apply + the owner's `applied`); DEFAULT resets the tab's rows; CANCEL puts every value
+// back to the snapshot taken when the page opened; leaving saves every section with a change (bus->Save, the owner's ini writer). A preset row (autopilot `preset`, controller
+// `pad_preset`, the bundles) applies its table and reads CUSTOM when a member deviates. The rules (head states, what a head writes, what lists under YOU CHANGED) are
+// core\ui\options_rules.h. The tier `simple` always shows; `show_advanced` (Show all settings) adds the other rows and every bus row the spec does not name, raw, on the tab of
+// their owner; without it a hidden row away from its default comes back under YOU CHANGED. A key with no module on the bus is written to its file when the page keeps.
 //
-// Hosting: (a) inside the game's Options screen when the host switched to FLvibed's page (HostApi v18
-// OptionsPageState() == 2: the host hid the game's page controls; this draws the page in the panel area with the
-// game's measured geometry, FREELANCER_RE "Options screen"); (b) standalone as an overlay panel (the HUD panel look)
-// from the pause menu's sixth button, the debug command `ui options` or Open(). Geometry = fractions of the screen
-// height, so every resolution, aspect and DPI works as the subtitles' panels do.
+// Hosting: (a) inside the game's Options screen when the host switched to FLvibed's page (HostApi v18 OptionsPageState() == 2: the host hid the game's page controls; this draws
+// the page in the panel area with the game's measured geometry, FREELANCER_RE "Options screen"); (b) standalone as an overlay panel from the pause menu's sixth button, the
+// debug command `ui options` or Open(). The first-start card is the same machinery over the main menu, on four rows. Geometry = fractions of the screen height, times the
+// page's text scale (HUD size and text_size), so every resolution, aspect and DPI works and the page previews HUD size.
 #include "ui/options_page.h"
 
 #include "game/fl.h"
@@ -22,14 +20,19 @@
 #include "game/uidraw.h"
 #include "log.h"
 #include "game/hostcalls.h"
+#include "game/hudsize.h"
 #include "game/modslots.h"
+#include "game/session.h" // MainMenuVisible: when the first-start card opens
 #include "modules_rules.h"
+#include "settings_reset.h" // the first card's stamp
 #include "ui/views.h"
 #include "ui_buttons.h"
 #include "version.h"
 #include "settings_bus.h"
 #include "ui/ui.h" // ControlRect: the Options screen's panel ("big box") while it slides
 #include "ui/hud_rows.h"
+#include "ui/options_rules.h"
+#include "ui/presets.h"  // the layout card's tables
 #include "ui/winplates.h"
 #include "ui/hud2_kit.h" // ui_style HUD 2: the tabs, buttons and focus in HUD 2's kit (modules\hud\docs\UI_HUD2_EXTENDED.md 10)
 #include "ui/uiopt.h"
@@ -45,6 +48,8 @@
 
 namespace options_page
 {
+using optrules::Head;
+using optrules::SameValue;
 using uikit::Widen;
 
 // ------------------------------------------------------------------ state
@@ -55,7 +60,7 @@ enum class Host
     Standalone // the overlay panel
 };
 
-// One line of the current tab: a section header, a spec row, a raw registry row, or a bottom button.
+// One line of the current tab: a section header, a spec row, or a raw registry row.
 struct Entry
 {
     enum Kind
@@ -70,22 +75,56 @@ struct Entry
     std::wstring label;
     const char* help = "";
     bool interactive = false;
-    std::wstring offNote; // its module is off or stopped: the row's note,
-    std::string offHelp;  // and the rollover line that says what to do
+    bool indent = false;       // stands indented under its head (MORE)
+    const char* head = nullptr; // the spec key of the head it stands under; null = none
+    std::wstring offNote; // its module is off or stopped: `ui rows` says so,
+    std::string offHelp;  // and the description says what to do
+};
+
+// What stands over the page, with the keys and the pointer to itself.
+enum class Modal
+{
+    None,
+    DisableController,
+    ResetEverything,
+    Layout
+};
+
+// A chip: DEFAULT, CANCEL, CLOSE and their kin. Each carries its button and is what a mouse clicks, so the page needs no second lane of prompts.
+enum class ChipAct
+{
+    Default,
+    Cancel,
+    Close,
+    LayoutPrev,
+    LayoutNext,
+    Confirm,
+    Refuse
+};
+struct Chip
+{
+    float x = 0, y = 0, w = 0, h = 0;
+    std::wstring word, key;
+    glyphs::Id pad = glyphs::COUNT; // COUNT: a dialog's answer, no button of its own
+    ChipAct act = ChipAct::Close;
+    const char* help = "";
 };
 
 struct Layout
 {
     float sw = 0, sh = 0, cx = 0;
-    float left = 0, right = 0;       // the panel area (the frame the rows live in)
+    float k = 1;                     // the page's text scale
+    float left = 0, right = 0;       // the plate the page stands on
     float panelTop = 0, panelBottom = 0;
-    float titleY = 0, titleX = 0;    // the title's centre
-    float tabsY = 0, tabW = 0, tabPitch = 0, tabH = 0, tabX0 = 0;
-    float rowsTop = 0, rowsBottom = 0, pitch = 0;
+    float titleY = 0, titleX = 0;    // the title's centre (0: no title, the hosted page: the column's lit FLVIBED button names it)
+    float tabsY = 0, tabH = 0, tabsLeft = 0, tabsRight = 0;
+    float tabX[uimeta::kTabCount] = {}, tabW[uimeta::kTabCount] = {};
+    float rowsTop = 0, rowsBottom = 0, rowH = 0, pitch = 0;
     float labelX = 0, controlLeft = 0, controlRight = 0;
-    float buttonY = 0, buttonW = 0, buttonH = 0, defaultX = 0, cancelX = 0, closeX = 0;
-    float previewTop = 0, previewH = 0; // the subtitles preview band (0 = none)
-    float helpRight = 0, helpTop = 0, helpW = 0;
+    float previewTop = 0, previewH = 0; // the subtitles' sample (0 = none)
+    float previewGap = 0;               // the room it takes between the rows
+    int previewAfter = 0;               // the rows above it
+    float descTop = 0, descH = 0;       // the description band
     int visible = 0; // rows that fit
 };
 
@@ -95,12 +134,20 @@ struct Snapshot
 };
 
 static Host g_hostMode = Host::None;
-static float g_previewNeedH = 0; // the SUBTITLES preview band's height its sample needs (DrawPreview -> the next layout)
+static float g_previewNeedH = 0; // the sample's height, as DrawPreview measured it, for the next layout
 static bool g_open = false;
 static int g_tab = 0;
-static int g_focus = 0;  // index into g_entries; >= g_entries.size(): the bottom buttons (DEFAULT, CANCEL, CLOSE)
+static int g_tabFocus[uimeta::kTabCount] = {}; // on return to a tab the focus is where it was
+static int g_focus = 0;  // index into g_entries
 static int g_scroll = 0; // the first visible entry
-static int g_hover = -1; // the entry under the pointer (-1 none), -2 .. the buttons / tabs
+static int g_hover = -1; // the entry under the pointer (-1 none), -2 - i chip i, -10 - i tab i
+static bool g_card = false;  // the first-start card, not the page
+static Modal g_modal = Modal::None;
+static int g_modalFocus = 1; // the dialog's answer: the safe one first
+static int g_layoutShown = 0; // the layout card's layout
+static std::vector<Chip> g_chips;  // what answers the pointer now
+static std::vector<Chip> g_behind; // the page's own, behind what stands over it
+static bool g_cardChecked = false; // this start looked for the first card's stamp
 static std::vector<Entry> g_entries;
 static std::vector<Snapshot> g_snapshot;
 static bool g_capturing = false;   // a key row waits for a key
@@ -158,15 +205,6 @@ static void RefreshIntroFiles()
 
 static bool IsIntroRow(const uimeta::Row* m) { return m && m->key && strcmp(m->key, "movie_intro") == 0; }
 static bool IntroAvailable(int option) { return option >= 0 && option < 4 ? g_introHave[option] : false; }
-
-// button pseudo-focus indices after the entries
-enum
-{
-    kBtnDefault = 0,
-    kBtnCancel = 1,
-    kBtnClose = 2
-};
-static int ButtonCount() { return 3; } // DEFAULT, CANCEL, CLOSE in every host (hotfix 0.2.5)
 
 // ------------------------------------------------------------------ the local bus (a host without one)
 namespace localbus
@@ -287,16 +325,36 @@ static std::string SpecDefault(const std::string& section, const std::string& ke
     return row && row->def ? row->def : "";
 }
 
+// A key no module owns right now, as the page keeps it: written to its file when the page closes and kept, forgotten by CANCEL. `gone`: the key leaves the file (a reset).
+struct FileWrite
+{
+    std::string section, key, value;
+    bool gone = false;
+};
+static std::map<std::string, FileWrite> g_fileWrites;
+
+static std::string IniOf(const std::string& section) { return std::string(DllDir().c_str()) + (section == "Subtitles" ? "FLSubtitles.ini" : "FLController.ini"); }
+
 static std::string FileRow(const std::string& section, const std::string& key)
 {
     const std::string id = section + "." + key;
+    const auto pending = g_fileWrites.find(id);
+    if (pending != g_fileWrites.end())
+        return pending->second.gone ? SpecDefault(section, key) : pending->second.value;
     const auto have = g_fileRows.find(id);
     if (have != g_fileRows.end())
         return have->second;
     char buf[128] = {};
-    const std::string ini = std::string(DllDir().c_str()) + (section == "Subtitles" ? "FLSubtitles.ini" : "FLController.ini");
-    const bool found = section != "Modules" && GetPrivateProfileStringA(section.c_str(), key.c_str(), "", buf, sizeof(buf), ini.c_str()) > 0;
+    const bool found = section != "Modules" && GetPrivateProfileStringA(section.c_str(), key.c_str(), "", buf, sizeof(buf), IniOf(section).c_str()) > 0;
     return g_fileRows[id] = found ? buf : SpecDefault(section, key);
+}
+
+static void FlushFileWrites()
+{
+    for (const auto& w : g_fileWrites)
+        WritePrivateProfileStringA(w.second.section.c_str(), w.second.key.c_str(), w.second.gone ? nullptr : w.second.value.c_str(), IniOf(w.second.section).c_str());
+    g_fileWrites.clear();
+    g_fileRows.clear();
 }
 
 static std::string Get(const std::string& section, const std::string& key)
@@ -319,21 +377,10 @@ static std::string Default(const std::string& section, const std::string& key)
 
 static void Toast(const std::string& s);
 
-// One of these two carries the logs and the debug channels: with both off nothing of FLvibed starts, this page included, and no row could turn them on again.
-static bool LastEntry(const std::string& section, const std::string& key, const std::string& value)
-{
-    if (section != "Modules" || (key != "subtitles" && key != "controller") || atof(value.c_str()) != 0)
-        return false;
-    return atof(Get("Modules", key == "subtitles" ? "controller" : "subtitles").c_str()) == 0;
-}
+static bool Want(int row) { return atof(Get("Modules", modules::kRowNames[row]).c_str()) != 0; }
 
-static bool Set(const std::string& section, const std::string& key, const std::string& value)
+static bool BusSet(const std::string& section, const std::string& key, const std::string& value)
 {
-    if (LastEntry(section, key, value))
-    {
-        Toast("One of the Subtitles and Controller modules stays on: with both off FLvibed does not start, this page included.");
-        return false;
-    }
     const SettingsBus* bus = Bus();
     const bool ok = bus && bus->Set(section.c_str(), key.c_str(), value.c_str());
     if (!ok)
@@ -341,17 +388,42 @@ static bool Set(const std::string& section, const std::string& key, const std::s
     return ok;
 }
 
-// Two registry values the same? Numbers compare as numbers ("1" == "1.0", "0.35" == "0.350000").
-static bool SameValue(const std::string& a, const std::string& b)
+// A value on the bus when a module owns its key, else for the file when the page keeps: a head's live key must reach the next start whichever modules run now.
+static void SetAnywhere(const std::string& section, const std::string& key, const std::string& value)
 {
-    if (a == b)
+    const SettingsBus* bus = Bus();
+    if (bus && bus->Find(section.c_str(), key.c_str()))
+        BusSet(section, key, value);
+    else
+        g_fileWrites[section + "." + key] = {section, key, value, false};
+}
+
+// A row of [Modules] the rule "one of Subtitles and Controller stays on" (options_rules.h PlanHead) has a word on. With both off nothing of FLvibed starts, this page included.
+static void SetModule(const char* name, bool on)
+{
+    const bool subtitles = !strcmp(name, "subtitles"), controller = !strcmp(name, "controller");
+    const optrules::Feature feature = subtitles ? optrules::Feature::Subtitles : controller ? optrules::Feature::Controller : optrules::Feature::Other;
+    const bool other = feature != optrules::Feature::Other && Want(subtitles ? modules::kController : modules::kSubtitles);
+    const optrules::HeadPlan p = optrules::PlanHead(feature, false, on, other, true);
+    if (p.setModule)
+        BusSet("Modules", name, p.module ? "1" : "0");
+    else
+        SetAnywhere("Subtitles", "enabled", "0"); // the Subtitles module stays loaded, showing nothing
+    if (p.subtitlesStayLoaded)
+    {
+        BusSet("Modules", "subtitles", "1");
+        SetAnywhere("Subtitles", "enabled", "0");
+    }
+}
+
+static bool Set(const std::string& section, const std::string& key, const std::string& value)
+{
+    if (section == "Modules")
+    {
+        SetModule(key.c_str(), atof(value.c_str()) != 0);
         return true;
-    char* ea = nullptr;
-    char* eb = nullptr;
-    const double da = strtod(a.c_str(), &ea), db = strtod(b.c_str(), &eb);
-    if (ea == a.c_str() || eb == b.c_str() || *ea || *eb)
-        return false; // not both numbers
-    return std::fabs(da - db) < 1e-6 * std::max(1.0, std::fabs(da));
+    }
+    return BusSet(section, key, value);
 }
 
 static std::string FormatNumber(double v, int decimals)
@@ -376,19 +448,9 @@ static int Decimals(float step)
 }
 
 // ------------------------------------------------------------------ the rows of a tab
-static const char* TabRawSection(int tab)
-{
-    switch (tab)
-    {
-    case 0: return "Modules";
-    case 1: return "Controller";
-    case 2: return "Autopilot";
-    case 3: return "Subtitles";
-    }
-    return nullptr;
-}
-
 static bool ShowAdvanced() { return atof(Get("Controller", "show_advanced").c_str()) != 0; }
+
+static bool TabIs(const char* id) { return g_tab >= 0 && g_tab < uimeta::kTabCount && !strcmp(uimeta::kTabs[g_tab].id, id); }
 
 // The [Modules] row that a row belongs to; -1 = core's: it acts whatever is on. A row of `[Controller]` that a cut module reads has its home with that module
 // (core\ui\shared_rows.h, core\ui\hud_rows.h); the rest of a section is that section's module.
@@ -403,8 +465,8 @@ static int RowOwner(const char* section, const char* key)
                  {"movie_fit", modules::kMovies},          {"movie_skip", modules::kMovies},          {"movie_intro", modules::kMovies},
                  {"npc_stall_log", modules::kNpc},         {"maneuver_button", modules::kAutopilot},  {"autopilot_key", modules::kAutopilot},
                  {"autopilot_cancel", modules::kAutopilot}, {"ap_hints", modules::kAutopilot},        {"maneuver_watchdog", -1},
-                 {"text_size", -1},                        {"deck_mode", -1},                         {"fluf_windows", -1},
-                 {"show_advanced", -1}};
+                 {"text_size", -1},                        {"hud_size", -1},                          {"fluf_windows", -1},
+                 {"show_advanced", -1},                    {"button_hints", modules::kHud},           {"hit_effects", modules::kHud}};
     for (const auto& r : kRows)
         if (!strcmp(key, r.key))
             return r.row;
@@ -419,7 +481,7 @@ static int RowOwner(const char* section, const char* key)
 // The flight's own rows: the pad's, and the autopilot's math reads them too.
 static bool AutopilotReads(const char* key) { return !strcmp(key, "steer_scale") || !strcmp(key, "aim_cone") || !strcmp(key, "invert_y"); }
 
-// The module's words on the row and in the rollover line, when it is off or a fault stopped it.
+// The module's words in `ui rows` and the description, when it is off or a fault stopped it.
 static void NoteModule(Entry& e)
 {
     static const struct
@@ -431,9 +493,12 @@ static void NoteModule(Entry& e)
                                 {L"HUD MODULE OFF", "HUD", modslots::kHud},  {L"AUTOPILOT MODULE OFF", "Autopilot", modslots::kAutopilot},
                                 {L"SPEEDRUN MODULE OFF", "Speedrun", modslots::kSpeedrun}, {L"DISPLAY MODULE OFF", "Display", -1},
                                 {L"NPC MODULE OFF", "NPC", modslots::kNpc},  {L"MOVIES MODULE OFF", "Movies", -1}};
-    if (!hostcalls::g.ModuleOn || e.key.empty())
+    if (!hostcalls::g.ModuleOn || (e.kind == Entry::Row && e.meta->head))
         return;
-    const int row = RowOwner(e.section.c_str(), e.key.c_str());
+    const char* key = !e.key.empty() ? e.key.c_str() : e.kind == Entry::Row ? e.meta->key : "";
+    if (e.key.empty() && !(e.kind == Entry::Row && e.meta->preset)) // (a button of the page's own)
+        return;
+    const int row = RowOwner(e.section.c_str(), key);
     if (row < 0)
         return;
     const auto& w = kWords[row];
@@ -443,14 +508,124 @@ static void NoteModule(Entry& e)
         if (w.slot >= 0 && modslots::g_fault[w.slot])
         {
             e.offNote = L"MODULE STOPPED";
-            e.offHelp = "The " + name + " module stopped after a fault: this row does nothing until the game restarts.";
+            e.offHelp = "It stopped after a fault. Restart the game.";
         }
         return;
     }
-    if (AutopilotReads(e.key.c_str()) && hostcalls::g.ModuleOn(modules::kAutopilot))
+    if (AutopilotReads(key) && hostcalls::g.ModuleOn(modules::kAutopilot))
         return;
     e.offNote = w.note;
-    e.offHelp = "The " + name + " module is off, so this row does nothing: it shows the value in the file. Turn the module on in GENERAL, MODULES; it takes effect at the next start.";
+    e.offHelp = "The " + name + " module is off, so this row does nothing: it shows the value in the file.";
+}
+
+static Entry RowEntry(const uimeta::Row& row, const char* head, bool indent)
+{
+    const SettingsBus* bus = Bus();
+    Entry e;
+    e.kind = Entry::Row;
+    e.meta = &row;
+    e.label = Widen(row.label);
+    e.help = row.help;
+    e.section = row.section;
+    e.key = row.regKey ? row.regKey : "";
+    e.def = (bus && row.regKey) ? bus->Find(row.section, row.regKey) : nullptr;
+    e.head = head;
+    e.indent = indent && !row.head;
+    // a row with a registry key the bus does not have (its module is off): shown dimmed, so the spec's rows are all visible and the gap is honest
+    e.interactive = row.kind == uimeta::Button || !row.regKey || e.def != nullptr;
+    NoteModule(e);
+    return e;
+}
+
+static void HeaderEntry(const std::wstring& label)
+{
+    Entry h;
+    h.kind = Entry::Header;
+    h.label = label;
+    g_entries.push_back(h);
+}
+
+static const uimeta::PresetSet* PresetsOf(const uimeta::Row& row) { return row.preset ? uimeta::FindPresets(row.key) : nullptr; }
+
+static int PresetIndexOf(const uimeta::Row& row);
+
+// A hidden row a preset covers: while the preset reads a word the row's value is that word's, and the row needs no line of its own.
+static bool NamedByPreset(const uimeta::Row& row)
+{
+    if (!row.regKey)
+        return false;
+    for (const uimeta::PresetSet& s : uimeta::kPresetSets)
+    {
+        const uimeta::Row* owner = uimeta::FindRow(s.rowKey);
+        if (!owner || PresetIndexOf(*owner) == owner->optionCount - 1)
+            continue;
+        for (int m = 0; m < s.presets[0].count; ++m)
+            if (!strcmp(s.presets[0].values[m].key, row.regKey))
+                return true;
+    }
+    return false;
+}
+
+// The tab whose head a bus row with no spec row of its own stands under, by its owner: a module with no tab lives on MORE.
+static int TabOfOwner(int row)
+{
+    const char* id = row == modules::kHud ? "hud" : row == modules::kController ? "controller" : row == modules::kSubtitles ? "subtitles" : row == modules::kAutopilot ? "autopilot" : "more";
+    for (int t = 0; t < uimeta::kTabCount; ++t)
+        if (!strcmp(uimeta::kTabs[t].id, id))
+            return t;
+    return 0;
+}
+
+// The spec key of the head of a [Modules] row (-1: none).
+static const char* HeadOfOwner(int row)
+{
+    if (row < 0)
+        return nullptr;
+    for (const uimeta::Tab& t : uimeta::kTabs)
+        for (int s = 0; s < t.count; ++s)
+            for (int r = 0; r < t.sections[s].count; ++r)
+            {
+                const uimeta::Row& x = t.sections[s].rows[r];
+                if (x.head && !strcmp(x.head, modules::kRowNames[row]))
+                    return x.key;
+            }
+    return nullptr;
+}
+
+// A registry row the spec does not name and no row lists: raw under Show all settings, a count on MORE otherwise.
+template <class Fn>
+static void ForEachRawRow(Fn fn)
+{
+    const SettingsBus* bus = Bus();
+    for (int i = 0; bus && i < bus->Count(); ++i)
+    {
+        const SettingsBusSection* sec = bus->Section(i);
+        for (size_t r = 0; sec && r < sec->count; ++r)
+            if (!uimeta::FindRegistryRow(sec->section, sec->defs[r].name))
+                fn(*sec, sec->defs[r]);
+    }
+}
+
+static int OtherChanged()
+{
+    int n = 0;
+    ForEachRawRow([&n](const SettingsBusSection& sec, const settings::Def& d)
+                  { n += !SameValue(Get(sec.section, d.name), Default(sec.section, d.name)); });
+    return n;
+}
+
+static void BuildCardEntries()
+{
+    for (int i = 0; i < uimeta::kCardRowCount; ++i)
+    {
+        const uimeta::CardRow& c = uimeta::kCardRows[i];
+        const uimeta::Row* row = !strcmp(c.key, uimeta::kCardSubtitles.key) ? &uimeta::kCardSubtitles : uimeta::FindRow(c.key);
+        if (!row)
+            continue;
+        Entry e = RowEntry(*row, nullptr, false);
+        e.help = c.help;
+        g_entries.push_back(e);
+    }
 }
 
 static void BuildEntries()
@@ -459,176 +634,239 @@ static void BuildEntries()
     g_fileRows.clear();
     if (g_tab < 0 || g_tab >= uimeta::kTabCount)
         g_tab = 0;
-    const uimeta::Tab& tab = uimeta::kTabs[g_tab];
     const bool advanced = ShowAdvanced();
     g_lastAdvanced = advanced;
-    const SettingsBus* bus = Bus();
+    if (g_card)
+    {
+        BuildCardEntries();
+        return;
+    }
+    const uimeta::Tab& tab = uimeta::kTabs[g_tab];
+    const int otherChanged = OtherChanged();
+    std::vector<Entry> changed; // YOU CHANGED
     for (int s = 0; s < tab.count; ++s)
     {
         const uimeta::Section& sec = tab.sections[s];
-        bool any = false;
-        for (int r = 0; r < sec.count; ++r)
-            if (sec.rows[r].tier == uimeta::Player || advanced)
-                any = true;
-        if (!any)
-            continue;
-        if (sec.label && *sec.label)
-        {
-            Entry h;
-            h.kind = Entry::Header;
-            h.label = Widen(sec.label);
-            g_entries.push_back(h);
-        }
+        bool header = !sec.label || !*sec.label; // (no header wanted)
         for (int r = 0; r < sec.count; ++r)
         {
             const uimeta::Row& row = sec.rows[r];
-            if (row.tier == uimeta::Advanced && !advanced)
+            // (the one row by pad: CONTROLLER is full at Large, and the handheld that sets Large has no such triggers; docs\UI_OPTIONS.md 1)
+            const bool shown = row.tier == uimeta::Simple || advanced || (uiopt::Get().padTriggers && !strcmp(row.key, "trigger_effects"));
+            if (!strcmp(row.key, "other_changed") && otherChanged == 0)
                 continue;
-            Entry e;
-            e.kind = Entry::Row;
-            e.meta = &row;
-            e.label = Widen(row.label);
-            e.help = row.help;
-            e.section = row.section;
-            e.key = row.regKey ? row.regKey : "";
-            e.def = (bus && row.regKey) ? bus->Find(row.section, row.regKey) : nullptr;
-            // a row with a registry key the bus does not have (its module is off, or the row is not built yet): shown
-            // greyed, not interactive, so the spec's rows are all visible and the gap is honest
-            e.interactive = row.kind == uimeta::Button || !row.regKey || e.def != nullptr;
-            if (row.preset && !row.regKey && !strcmp(row.section, "Autopilot") && !views::ApPresent())
+            if (!shown)
             {
-                e.interactive = false; // its member rows have no owner: every step would be refused
-                e.offNote = L"AUTOPILOT MODULE OFF";
-                e.offHelp = "The Autopilot module is off, so this row does nothing. Turn the module on in GENERAL, MODULES; it takes effect at the next start.";
+                const bool alias = row.regKey && uimeta::FindRegistryRow(row.section, row.regKey) != &row; // the same key stands on another row
+                const bool differs = row.regKey && !alias && !SameValue(Get(row.section, row.regKey), Default(row.section, row.regKey));
+                if (differs && optrules::ListChanged(true, differs, NamedByPreset(row)))
+                    changed.push_back(RowEntry(row, sec.head, false));
+                continue;
             }
-            NoteModule(e);
-            g_entries.push_back(e);
+            if (!header)
+            {
+                HeaderEntry(Widen(sec.label));
+                header = true;
+            }
+            g_entries.push_back(RowEntry(row, sec.head, sec.indent));
+            if (!strcmp(row.key, "other_changed"))
+                g_entries.back().label = Widen(("Other changed settings: " + std::to_string(otherChanged)).c_str());
         }
     }
-    // show_advanced: every bus row of the tab's section the spec does not name, raw
-    const char* raw = TabRawSection(g_tab);
-    if (advanced && raw && bus)
+    if (!changed.empty())
     {
-        bool header = false;
-        for (int i = 0; i < bus->Count(); ++i)
-        {
-            const SettingsBusSection* sec = bus->Section(i);
-            if (!sec || strcmp(sec->section, raw) != 0)
-                continue;
-            for (size_t r = 0; r < sec->count; ++r)
-            {
-                const settings::Def& d = sec->defs[r];
-                if (uimeta::FindRegistryRow(sec->section, d.name))
-                    continue;
-                if (!header)
-                {
-                    Entry h;
-                    h.kind = Entry::Header;
-                    h.label = L"ADVANCED (" + Widen(raw) + L")";
-                    g_entries.push_back(h);
-                    header = true;
-                }
-                Entry e;
-                e.kind = Entry::RawRow;
-                e.def = &d;
-                e.section = sec->section;
-                e.key = d.name;
-                e.label = Widen(d.name);
-                e.help = d.help ? d.help : "";
-                e.interactive = true;
-                g_entries.push_back(e);
-            }
-        }
+        HeaderEntry(L"YOU CHANGED");
+        g_entries.insert(g_entries.end(), changed.begin(), changed.end());
     }
+    // Show all settings: every bus row the spec does not name, raw, on the tab of its owner
+    if (!advanced)
+        return;
+    bool header = false;
+    ForEachRawRow([&](const SettingsBusSection& sec, const settings::Def& d)
+                  {
+                      const int owner = RowOwner(sec.section, d.name);
+                      if (TabOfOwner(owner) != g_tab)
+                          return;
+                      if (!header)
+                      {
+                          HeaderEntry(L"ADVANCED");
+                          header = true;
+                      }
+                      Entry e;
+                      e.kind = Entry::RawRow;
+                      e.def = &d;
+                      e.section = sec.section;
+                      e.key = d.name;
+                      e.label = Widen(d.name);
+                      e.help = d.help ? d.help : "";
+                      e.head = HeadOfOwner(owner);
+                      e.interactive = true;
+                      g_entries.push_back(e);
+                  });
 }
 
+// Everything but a section label takes the focus: a row that cannot change says why in the description.
 static bool Interactive(int i)
 {
-    return i >= 0 && i < static_cast<int>(g_entries.size()) && g_entries[i].interactive;
+    return i >= 0 && i < static_cast<int>(g_entries.size()) && g_entries[i].kind != Entry::Header;
 }
 
 // The parent row (the spec's `parent` key) is off: the row is greyed and inert.
 static bool ParentOff(const Entry& e)
 {
-    if (e.kind != Entry::Row || !e.meta->parent)
+    if (e.kind != Entry::Row || !e.meta->parent || e.meta->head)
         return false;
     const uimeta::Row* p = uimeta::FindRow(e.meta->parent);
-    if (!p || !p->regKey)
+    if (!p || !p->regKey || p->head) // (a head has its own word on its rows)
         return false;
     return atof(Get(p->section, p->regKey).c_str()) == 0;
 }
 
+// ------------------------------------------------------------------ the heads
+static int ModuleRow(const uimeta::Row& head)
+{
+    for (int r = 0; head.head && r < modules::kRows; ++r)
+        if (!strcmp(modules::kRowNames[r], head.head))
+            return r;
+    return -1;
+}
+
+static bool TwoKeys(const uimeta::Row& head) { return head.regKey && strcmp(head.section, "Modules") != 0; }
+
+static bool Faulted(int row)
+{
+    const int slot = row == modules::kHud ? modslots::kHud : row == modules::kAutopilot ? modslots::kAutopilot : row == modules::kSpeedrun ? modslots::kSpeedrun
+                     : row == modules::kNpc ? modslots::kNpc : -1;
+    return slot >= 0 && modslots::g_fault[slot] != 0;
+}
+
+static Head HeadStateOf(const uimeta::Row& head)
+{
+    const int row = ModuleRow(head);
+    optrules::HeadKeys k;
+    if (row < 0)
+        return Head::Enabled;
+    k.twoKeys = TwoKeys(head);
+    k.live = k.twoKeys && atof(Get(head.section, head.regKey).c_str()) != 0;
+    k.want = Want(row);
+    k.running = hostcalls::g.ModuleOn ? hostcalls::g.ModuleOn(row) : true;
+    k.fault = Faulted(row);
+    return optrules::HeadState(k);
+}
+
+static const uimeta::Row* HeadRowOf(const Entry& e)
+{
+    if (!e.head || (e.kind == Entry::Row && e.meta->head))
+        return nullptr;
+    return uimeta::FindRow(e.head);
+}
+
+// The row cannot change now: under a head that is not ENABLED, or its owner is not on the bus.
+static bool Dimmed(const Entry& e)
+{
+    if (e.kind == Entry::Header || (e.kind == Entry::Row && e.meta->head))
+        return false;
+    if (const uimeta::Row* head = HeadRowOf(e))
+        if (!optrules::RowsLive(HeadStateOf(*head)))
+            return true;
+    return !e.interactive || !e.offNote.empty();
+}
+
+// What the description says of a dimmed row.
+static std::string DimHelp(const Entry& e)
+{
+    if (const uimeta::Row* head = HeadRowOf(e))
+        switch (HeadStateOf(*head))
+        {
+        case Head::Disabled: return head->offHelp ? head->offHelp : "";
+        case Head::DisabledAtNextStart: return "It keeps working until you restart.";
+        case Head::EnabledAtNextStart: return "It comes on at the next start. Your setting is kept.";
+        case Head::Stopped: return "It stopped after a fault. Restart the game.";
+        default: break;
+        }
+    return e.offHelp;
+}
+
+// Acting on a head: `pick` for the row with three words, the option chosen; else the wanted state. `confirmed`: the Controller's dialog was answered.
+static void ActHead(const uimeta::Row& head, bool on, int pick, bool confirmed)
+{
+    const int row = ModuleRow(head);
+    if (row < 0)
+        return;
+    const bool subtitles = row == modules::kSubtitles, controller = row == modules::kController;
+    const optrules::Feature feature = subtitles ? optrules::Feature::Subtitles : controller ? optrules::Feature::Controller : optrules::Feature::Other;
+    const bool other = feature != optrules::Feature::Other && Want(subtitles ? modules::kController : modules::kSubtitles);
+    const optrules::HeadPlan p = optrules::PlanHead(feature, TwoKeys(head), on, other, confirmed);
+    if (p.ask)
+    {
+        g_modal = Modal::DisableController;
+        g_modalFocus = 1;
+        return;
+    }
+    if (p.setLive)
+    {
+        const int option = pick >= 0 ? pick : p.live ? 0 : head.optionCount - 1; // (a head with words: its first is on, its last off)
+        SetAnywhere(head.section, head.regKey, head.values ? head.values[option] : p.live ? "1" : "0");
+    }
+    SetModule(modules::kRowNames[row], on);
+    Log("options page: head %s -> %s", head.key, on ? "on" : "off");
+}
+
 // ------------------------------------------------------------------ presets
-static const uimeta::Preset* Presets(int tab, int& count)
+// A member a module owns now: the others cannot be set, so they do not decide the word.
+static bool MemberOwned(const uimeta::PresetValue& m)
 {
-    if (tab == 1)
-    {
-        count = uimeta::kControllerPresetCount;
-        return uimeta::kControllerPresets;
-    }
-    if (tab == 2)
-    {
-        count = uimeta::kAutopilotPresetCount;
-        return uimeta::kAutopilotPresets;
-    }
-    count = 0;
-    return nullptr;
+    const SettingsBus* bus = Bus();
+    return bus && bus->Find(m.section, m.key);
 }
 
-static bool PresetMatches(const uimeta::Preset& p)
+// The preset row's option index: the matching preset, else the last option (CUSTOM). A real row (pad_preset) names its preset.
+static int PresetIndexOf(const uimeta::Row& row)
 {
-    for (int i = 0; i < p.count; ++i)
-        if (!SameValue(Get(p.values[i].section, p.values[i].key), p.values[i].value))
-            return false;
-    return true;
-}
-
-static void ApplyPreset(const uimeta::Preset& p)
-{
-    for (int i = 0; i < p.count; ++i)
-        Set(p.values[i].section, p.values[i].key, p.values[i].value);
-}
-
-// The preset row's option index: the matching preset, else the last option (CUSTOM).
-static int PresetIndex(const Entry& e)
-{
-    int n = 0;
-    const uimeta::Preset* ps = Presets(g_tab, n);
-    const int custom = e.meta->optionCount - 1;
-    if (!ps)
+    const int custom = row.optionCount - 1;
+    const uimeta::PresetSet* s = PresetsOf(row);
+    if (!s)
         return custom;
-    // a real row (pad_preset) names its preset; CUSTOM when its members deviate
-    int chosen = -1;
-    if (e.meta->regKey)
-        chosen = atoi(Get(e.section, e.key).c_str());
-    for (int i = 0; i < n && i < custom; ++i)
-    {
-        if (e.meta->regKey && chosen != i)
-            continue;
-        if (PresetMatches(ps[i]))
-            return i;
-    }
-    return custom;
+    const int chosen = row.regKey ? atoi(Get(row.section, row.regKey).c_str()) : -1;
+    return optrules::PresetWord(s->presets, s->count, custom, chosen, [](const uimeta::PresetValue& m) { return Get(m.section, m.key); }, MemberOwned);
 }
+
+static int PresetIndex(const Entry& e) { return PresetIndexOf(*e.meta); }
 
 static void SetPreset(const Entry& e, int index)
 {
-    int n = 0;
-    const uimeta::Preset* ps = Presets(g_tab, n);
-    if (!ps || index < 0 || index >= n)
+    const uimeta::PresetSet* s = PresetsOf(*e.meta);
+    if (!s || index < 0 || index >= s->count)
         return;
     if (e.meta->regKey)
         Set(e.section, e.key, std::to_string(index));
-    ApplyPreset(ps[index]);
-    Log("options page: preset %s", ps[index].name);
+    const uimeta::Preset& p = s->presets[index];
+    for (int i = 0; i < p.count; ++i)
+        if (MemberOwned(p.values[i]))
+            Set(p.values[i].section, p.values[i].key, p.values[i].value);
+    Log("options page: preset %s", p.name);
 }
 
 // ------------------------------------------------------------------ row values
+// The card's Subtitles row: off is the head, a word is the head on and `size`.
+static bool IsCardSubtitles(const Entry& e) { return e.kind == Entry::Row && e.meta == &uimeta::kCardSubtitles; }
+
+static const uimeta::Row* SubtitlesHead()
+{
+    static const uimeta::Row* const head = uimeta::FindRow("enabled");
+    return head;
+}
+
 // The picker's option index of a spec row (-1 = the registry holds a value no option names).
 static int PickerIndex(const Entry& e)
 {
     if (e.meta->preset)
         return PresetIndex(e);
+    if (IsCardSubtitles(e))
+    {
+        const Head h = SubtitlesHead() ? HeadStateOf(*SubtitlesHead()) : Head::Disabled;
+        return h == Head::Enabled || h == Head::EnabledAtNextStart ? 1 + atoi(Get("Subtitles", "size").c_str()) : 0;
+    }
     const std::string v = Get(e.section, e.key);
     if (e.meta->values)
     {
@@ -645,13 +883,23 @@ static void SetPickerIndex(const Entry& e, int i)
 {
     if (e.meta->preset)
     {
-        int n = 0;
-        Presets(g_tab, n);
-        SetPreset(e, ((i % n) + n) % n);
+        // CUSTOM has no table to apply: the row reads it when a member differs, and either step from it lands on a word (docs\UI_OPTIONS.md 6.2)
+        const uimeta::PresetSet* s = PresetsOf(*e.meta);
+        const int n = s ? s->count : 0;
+        if (n > 0)
+            SetPreset(e, i >= n ? 0 : i < 0 ? n - 1 : i);
         return;
     }
     const int n = e.meta->optionCount;
     i = ((i % n) + n) % n;
+    if (IsCardSubtitles(e))
+    {
+        if (SubtitlesHead())
+            ActHead(*SubtitlesHead(), i != 0, -1, true);
+        if (i != 0)
+            SetAnywhere("Subtitles", "size", std::to_string(i - 1));
+        return;
+    }
     Set(e.section, e.key, e.meta->values ? e.meta->values[i] : std::to_string(i));
 }
 
@@ -697,6 +945,8 @@ static double RawStep(const settings::Def& d, double v)
 
 static bool Changed(const Entry& e)
 {
+    if (e.kind == Entry::Row && e.meta->preset && !e.meta->regKey)
+        return PresetIndex(e) != 0; // a bundle's first word is its default
     if (e.key.empty())
         return false;
     return !SameValue(Get(e.section, e.key), Default(e.section, e.key));
@@ -728,6 +978,7 @@ static void TakeSnapshot()
 // Leaving keeps: every section with a value changed since the snapshot is written through its owner.
 static void SaveChanged()
 {
+    FlushFileWrites();
     const SettingsBus* bus = Bus();
     if (!bus)
         return;
@@ -743,6 +994,7 @@ static void SaveChanged()
 static void RevertAll()
 {
     const SettingsBus* bus = Bus(); // (not Set: going back to where the page opened is no player's choice to refuse)
+    g_fileWrites.clear();
     int n = 0;
     for (const Snapshot& s : g_snapshot)
         if (bus && !SameValue(Get(s.section, s.key), s.value))
@@ -750,16 +1002,56 @@ static void RevertAll()
     Log("options page: cancel reverted %d value(s)", n);
 }
 
-static void ResetTab()
+// A row back to its default: on the bus, or for its file when no module owns it now.
+static bool ResetRow(const char* section, const char* key)
 {
     const SettingsBus* bus = Bus();
-    if (!bus)
-        return;
+    if (bus && bus->Find(section, key))
+        return bus->Reset(section, key);
+    if (!strcmp(section, "Modules"))
+        return false;
+    g_fileWrites[std::string(section) + "." + key] = {section, key, "", true};
+    return true;
+}
+
+// DEFAULT: this tab's rows, heads and bundles and YOU CHANGED rows included, back at once. A bundle's members are hidden rows, so its row resets them.
+static void ResetTab()
+{
     int n = 0;
     for (const Entry& e : g_entries)
-        if (!e.key.empty() && e.kind != Entry::Header)
-            n += bus->Reset(e.section.c_str(), e.key.c_str()) ? 1 : 0;
-    Log("options page: default reset %d row(s) of tab %s", n, uimeta::kTabs[g_tab].label);
+    {
+        if (e.kind == Entry::Header)
+            continue;
+        if (e.kind == Entry::Row && e.meta->head)
+            n += ResetRow("Modules", e.meta->head) ? 1 : 0;
+        if (IsCardSubtitles(e))
+        {
+            ResetRow("Modules", "subtitles");
+            ResetRow("Subtitles", "enabled");
+            ResetRow("Subtitles", "size");
+            continue;
+        }
+        if (!e.key.empty())
+            n += ResetRow(e.section.c_str(), e.key.c_str()) ? 1 : 0;
+        if (e.kind == Entry::Row && e.meta->preset)
+            if (const uimeta::PresetSet* s = PresetsOf(*e.meta))
+                for (int m = 0; m < s->presets[0].count; ++m)
+                    n += ResetRow(s->presets[0].values[m].section, s->presets[0].values[m].key) ? 1 : 0;
+    }
+    Log("options page: default reset %d row(s) of tab %s", n, g_card ? "card" : uimeta::kTabs[g_tab].label);
+}
+
+// RESET THEM: the keys no row lists. CANCEL still takes it back.
+static void ResetOthers()
+{
+    const SettingsBus* bus = Bus();
+    int n = 0;
+    ForEachRawRow([&](const SettingsBusSection& sec, const settings::Def& d)
+                  {
+                      if (!SameValue(Get(sec.section, d.name), Default(sec.section, d.name)))
+                          n += bus->Reset(sec.section, d.name) ? 1 : 0;
+                  });
+    Log("options page: reset %d other row(s)", n);
 }
 
 static void ResetEverything()
@@ -776,8 +1068,8 @@ static void ResetEverything()
         for (size_t r = 0; r < sec->count; ++r)
             n += bus->Reset(sec->section, sec->defs[r].name) ? 1 : 0;
     }
-    // A module that is off has no registry on the bus: its rows go from the file, or they would come back with the module, which this reset has just turned on
-    const std::string dir = DllDir().c_str();
+    // A module that is off has no registry on the bus: its rows go from the file, or they would come back with the module, which this reset has just turned on. They go when
+    // the page keeps, so CANCEL reverses this too.
     int gone = 0;
     for (int t = 0; t < uimeta::kTabCount; ++t)
         for (int s = 0; s < uimeta::kTabs[t].count; ++s)
@@ -786,8 +1078,7 @@ static void ResetEverything()
                 const uimeta::Row& row = uimeta::kTabs[t].sections[s].rows[r];
                 if (!row.regKey || !strcmp(row.section, "Modules") || bus->Find(row.section, row.regKey))
                     continue;
-                const std::string ini = dir + (!strcmp(row.section, "Subtitles") ? "FLSubtitles.ini" : "FLController.ini");
-                gone += WritePrivateProfileStringA(row.section, row.regKey, nullptr, ini.c_str()) ? 1 : 0;
+                gone += ResetRow(row.section, row.regKey) ? 1 : 0;
             }
     Log("options page: reset everything (%d rows, %d from the files)", n, gone);
     Toast("Every FLvibed setting is back to its default");
@@ -799,7 +1090,8 @@ static void SuppressPauseMenu(bool on)
         return;
     if (on)
     {
-        const uintptr_t root = menu::PauseMenu();
+        // under the standalone panel the game's own buttons must not take the clicks: the pause menu's, the main menu's under the first-start card
+        const uintptr_t root = g_card ? session::MainMenuRoot() : menu::PauseMenu();
         if (!root)
             return;
         hostcalls::g.SetHudHitSuppression(true, &root, 1);
@@ -812,22 +1104,34 @@ static void SuppressPauseMenu(bool on)
     }
 }
 
+// The focus stands on a row: never past the list's end or on a section label.
+static void SettleFocus()
+{
+    const int n = static_cast<int>(g_entries.size());
+    g_focus = std::clamp(g_focus, 0, std::max(0, n - 1));
+    while (g_focus < n && !Interactive(g_focus))
+        ++g_focus;
+    if (g_focus >= n)
+        g_focus = 0;
+}
+
 static void OpenAs(Host how)
 {
     g_hostMode = how;
     g_open = true;
-    g_focus = 0;
+    g_modal = Modal::None;
+    g_focus = g_card ? 0 : g_tabFocus[std::clamp(g_tab, 0, uimeta::kTabCount - 1)];
     g_scroll = 0;
     g_capturing = false;
     g_dragging = false;
     g_padDrove = false;
     g_lastPx = g_lastPy = -1;
     g_input.Reset();
+    g_fileWrites.clear();
     TakeSnapshot();
     RefreshIntroFiles();
     BuildEntries();
-    while (g_focus < static_cast<int>(g_entries.size()) && !Interactive(g_focus))
-        ++g_focus;
+    SettleFocus();
     if (how == Host::Standalone)
         SuppressPauseMenu(true);
     g_settled = how != Host::Options; // hosted: drawn once the screen's slide has settled (HostedSettled)
@@ -844,7 +1148,11 @@ static void CloseAs(bool keep)
         return;
     if (keep)
         SaveChanged();
+    if (!g_card)
+        g_tabFocus[g_tab] = g_focus;
     g_open = false;
+    g_card = false;
+    g_modal = Modal::None;
     g_capturing = false;
     SuppressPauseMenu(false);
     if (g_hostMode == Host::Options && hostcalls::g.OptionsPageState &&
@@ -882,7 +1190,12 @@ void Close() { CloseAs(true); }
 bool IsOpen() { return g_open; }
 bool WantsInput() { return g_open; }
 
-void Init() { g_input.Init(); }
+void Init()
+{
+    g_input.Init();
+    g_input.SetRepeat(optrules::kRepeatFirst, optrules::kRepeatNext);
+    g_input.SetPageKeys(true);
+}
 
 void Shutdown()
 {
@@ -922,9 +1235,51 @@ static bool HostedSettled()
 // ------------------------------------------------------------------ layout
 static bool InGame() { return fl::PlayerIObj() != nullptr || fl::PlayerBase() != 0; }
 
-// The player's text_size as the page draws it: the same clamp as HUD 2's (80..150 %).
+// The player's text_size as the page draws it: the same clamp as HUD 2's (80..150 %). hud_size's Large is in it already (hudsize::Apply).
 static int TextPercent() { return std::clamp(uiopt::Get().textSize, 80, 150); }
 
+// The page's own text follows HUD size, so the page previews that row; Small's base keeps the handheld's floor (hudsize::BaseK).
+static float PageScale() { return TextPercent() / 100.0f * hudsize::g_baseK; }
+
+// The chips along a plate's foot, equal widths; a chip's word follows its button, the keyboard's key beside it.
+static void FootChips(const Layout& l, float bottom, std::initializer_list<Chip> items)
+{
+    const float H = l.sh, h = 0.048f * H * l.k, gap = 0.014f * H, x0 = l.left + 0.020f * H;
+    const float w = (l.right - l.left - 0.040f * H - gap * (items.size() - 1)) / items.size();
+    float x = x0;
+    for (Chip c : items)
+    {
+        c.x = x, c.y = bottom - h - 0.012f * H, c.w = w, c.h = h;
+        g_chips.push_back(c);
+        x += w + gap;
+    }
+}
+
+static Chip MakeChip(const wchar_t* word, glyphs::Id pad, const wchar_t* key, ChipAct act, const char* help)
+{
+    Chip c;
+    c.word = word, c.pad = pad, c.key = key, c.act = act, c.help = help;
+    return c;
+}
+
+// Tab widths by their words: room for the longest at Large with no measuring pass, since the layout runs before the fonts.
+static void LayTabs(Layout& l)
+{
+    int chars = 0;
+    for (const uimeta::Tab& t : uimeta::kTabs)
+        chars += static_cast<int>(strlen(t.label)) + 2;
+    const float gap = 0.012f * l.sh, room = l.tabsRight - l.tabsLeft - gap * (uimeta::kTabCount - 1);
+    float x = l.tabsLeft;
+    for (int t = 0; t < uimeta::kTabCount; ++t)
+    {
+        l.tabW[t] = room * (strlen(uimeta::kTabs[t].label) + 2) / chars;
+        l.tabX[t] = x;
+        x += l.tabW[t] + gap;
+    }
+}
+
+// The screen's numbers (docs\UI_OPTIONS.md 8 and tools\uimock\options.py): the plate, a tab strip, rows, the description band, the chips. Rows, tabs and chips grow with the
+// text, the widths stay the plate's: a word that no longer fits takes the fit rule, and rows that no longer fit scroll.
 static Layout ComputeLayout()
 {
     Layout l;
@@ -936,78 +1291,106 @@ static Layout ComputeLayout()
     }
     l.sw = static_cast<float>(sw), l.sh = static_cast<float>(sh);
     l.cx = l.sw * 0.5f;
-    const float H = l.sh;
-    if (g_hostMode == Host::Options)
+    const float H = l.sh, k = PageScale();
+    l.k = k;
+    float stripTop = 0;
+    if (g_card)
     {
-        // the game's panel at 16:9 4K: x 1520..3240, the title at (2340, 346 / 432), rows from y ~600, pitch 98, the
-        // buttons at y 1906 (main menu / in game: +86 / +27 px lower in game)
-        const float ig = InGame() ? 1.0f : 0.0f;
-        l.left = l.cx - 0.185f * H;
-        l.right = l.cx + 0.611f * H;
-        l.panelTop = 0.09f * H + ig * 0.04f * H;
-        l.panelBottom = 0.95f * H;
-        l.titleX = l.cx + 0.194f * H;
-        l.titleY = (0.160f + ig * 0.040f) * H;
-        l.tabsY = (0.252f + ig * 0.012f) * H;
-        l.rowsTop = (0.292f + ig * 0.012f) * H;
-        l.rowsBottom = 0.858f * H;
-        l.buttonY = 0.882f * H;
-        l.labelX = l.left + 0.046f * H;
-        l.controlRight = l.right - 0.054f * H;
-        l.helpRight = l.cx + 0.565f * H;
-        l.helpTop = 0.006f * H;
+        // over the main menu, one plate, its title and lead above the sample
+        const float halfW = std::min(0.55f * H, l.sw * 0.49f);
+        l.left = l.cx - halfW, l.right = l.cx + halfW;
+        l.panelTop = 0.12f * H, l.panelBottom = 0.83f * H;
+        l.titleX = l.cx, l.titleY = l.panelTop + 0.036f * H * k;
+        stripTop = l.panelTop + 0.104f * H * k;
+    }
+    else if (g_hostMode == Host::Options)
+    {
+        // the game's panel: 0.825 H wide, 0.125..0.965 H, its left edge 0.215 H left of the screen's centre at 16:10 and 16:9 (measured frames, tools\uimock\options.py).
+        // No title: the lit FLVIBED button in the game's column names the page. In game the panel stands a little lower.
+        const float ig = InGame() ? 0.012f : 0.0f;
+        l.left = l.cx - 0.215f * H;
+        l.right = std::min(l.cx + 0.610f * H, l.sw - 0.01f * H);
+        l.panelTop = (0.125f + ig) * H;
+        l.panelBottom = 0.965f * H;
+        stripTop = l.panelTop + 0.012f * H;
     }
     else
     {
-        const float halfW = std::min(0.45f * H, l.sw * 0.48f);
+        const float halfW = std::min(0.52f * H, l.sw * 0.49f);
         l.left = l.cx - halfW;
         l.right = l.cx + halfW;
-        l.panelTop = 0.08f * H;
-        l.panelBottom = 0.90f * H;
+        l.panelTop = 0.028f * H;
+        l.panelBottom = 0.972f * H;
         l.titleX = l.cx;
-        l.titleY = 0.112f * H;
-        l.tabsY = 0.170f * H;
-        l.rowsTop = 0.215f * H;
-        l.rowsBottom = 0.805f * H;
-        l.buttonY = 0.848f * H;
-        l.labelX = l.left + 0.055f * H;
-        l.controlRight = l.right - 0.06f * H;
-        l.helpRight = l.right; // the rollover line above the panel, top right, as the game's sits at the screen's top
-        l.helpTop = 0.006f * H;
+        l.titleY = l.panelTop + 0.036f * H * k;
+        stripTop = l.panelTop + 0.074f * H * k;
     }
-    l.helpW = 0.78f * H;
-    l.controlLeft = l.controlRight - 0.36f * H;
-    // text_size (FIX-TEXT 3: the page drew at 100 % whatever it said): the fonts follow it (TextPercent) and
-    // the rows, tabs and buttons grow with them so a line keeps its height; the widths stay the Options screen's (the
-    // page never leaves its area) - a word that no longer fits its box takes the fit rule (uikit / Hud2Caption), the
-    // rows that no longer fit scroll. Below 100 % nothing shrinks: the label faces already stand at the legibility floor.
-    const float t = std::max(1.0f, TextPercent() / 100.0f);
-    l.pitch = 0.0454f * H * t;
-    l.tabW = 0.128f * H;
-    l.tabPitch = 0.1405f * H;
-    l.tabH = std::min(0.038f * H * t, (l.rowsTop - l.tabsY) * 2 - 0.006f * H); // (never into the first row)
-    l.tabX0 = l.labelX - 0.02f * H;
-    // the bottom row: DEFAULT, CANCEL, CLOSE in every host (hotfix 0.2.5: hosted, CLOSE was left out - the 4:3 spec
-    // capture showed two), centred on the panel, 0.27 H apart (0.185 H wide) where the panel has the room; a narrower
-    // panel (the Options screen's at 4:3, a portrait window) spaces them at a third of its width and narrows them to fit,
-    // so all three always show inside it (a caption that no longer fits takes the fit rule)
+    l.rowH = (0.046f + 0.035f * std::max(0.0f, k - 1)) * H;
+    l.pitch = l.rowH + 0.004f * H;
+    l.labelX = l.left + 0.034f * H;
+    l.controlRight = l.right - 0.032f * H;
+    l.controlLeft = l.controlRight - 0.32f * H;
+    // the tab strip, LB and RB beside it
+    l.tabH = 0.052f * H * k;
+    l.tabsY = stripTop + l.tabH * 0.5f;
+    const float gl = 0.040f * H * k;
+    l.tabsLeft = l.left + 0.016f * H + gl;
+    l.tabsRight = l.right - 0.016f * H - gl;
+    LayTabs(l);
+    // the chips, bottom up
+    g_chips.clear();
+    if (g_card)
+        FootChips(l, l.panelBottom, {MakeChip(L"DEFAULT", glyphs::X, L"D", ChipAct::Default, "These four rows back to their defaults."),
+                                     MakeChip(L"CLOSE", glyphs::Menu(glyphs::B), L"ESC", ChipAct::Close, "Keeps what is set here, and goes on.")});
+    else
+        FootChips(l, l.panelBottom, {MakeChip(L"DEFAULT", glyphs::X, L"D", ChipAct::Default, "This tab back to its defaults, at once. CANCEL takes it back."),
+                                     MakeChip(L"CANCEL", glyphs::Y, L"C", ChipAct::Cancel, "Every change since the page opened is undone, and it closes."),
+                                     MakeChip(L"CLOSE", glyphs::Menu(glyphs::B), L"ESC", ChipAct::Close, "Keeps the changes and closes the page.")});
+    const float footTop = g_chips[0].y - 0.006f * H;
+    // the description: inside the plate, under the rows, in the same place on every tab
+    l.descH = 0.030f * H * k * 1.28f * 2 + 0.016f * H;
+    l.descTop = footTop - l.descH;
+    l.rowsTop = g_card ? stripTop + 0.010f * H : stripTop + l.tabH + 0.008f * H;
+    l.rowsBottom = l.descTop;
+    if (g_card || TabIs("subtitles"))
     {
-        const float mid = (l.left + l.right) * 0.5f, inner = std::max(1.0f, l.right - l.left);
-        const float step = std::min(0.27f * H, inner / 3.0f);
-        l.defaultX = mid - step, l.cancelX = mid, l.closeX = mid + step;
-        l.buttonW = std::min(0.185f * H, step * 0.88f);
+        // the sample stands under the head, always, and as tall as it needs; the card has no head, so it stands first
+        l.previewAfter = g_card ? 0 : 1;
+        const float rows = l.rowsBottom - l.rowsTop - (g_card ? 4 : 5) * l.pitch;
+        l.previewH = std::clamp(g_previewNeedH, 0.092f * H * k, std::max(0.092f * H * k, rows - 0.008f * H));
+        l.previewTop = l.rowsTop + l.previewAfter * l.pitch;
+        l.previewGap = l.previewH + 0.008f * H;
     }
-    l.buttonH = 0.037f * H * t;
-    l.buttonY -= (l.buttonH - 0.037f * H) * 0.5f; // (taller upward: the bottom edge stays inside the screen's frame)
-    l.rowsBottom = std::min(l.rowsBottom, l.buttonY - l.buttonH * 0.5f - 0.004f * H);
-    if (g_tab == 3) // SUBTITLES: the preview band at the bottom of the rows area (UI_PLAN 1.6), as tall as its sample needs
-    {
-        l.previewH = std::clamp(g_previewNeedH, 0.145f * H, 0.40f * H);
-        l.previewTop = l.rowsBottom - l.previewH;
-        l.rowsBottom = l.previewTop - 0.01f * H;
-    }
-    l.visible = std::max(1, static_cast<int>((l.rowsBottom - l.rowsTop) / l.pitch));
+    l.visible = std::max(1, static_cast<int>((l.rowsBottom - l.rowsTop - l.previewGap) / l.pitch));
     return l;
+}
+
+// Over the page: a dialog's two answers, the layout card's foot. Fills g_chips; the page's own chips do not answer while it stands.
+static void ModalChips(Layout& l)
+{
+    if (g_modal == Modal::None)
+        return;
+    g_behind = g_chips;
+    g_chips.clear();
+    const float H = l.sh, k = l.k;
+    if (g_modal == Modal::Layout)
+    {
+        Layout c = l;
+        const float halfW = std::min(0.68f * H, l.sw * 0.49f);
+        c.left = l.cx - halfW, c.right = l.cx + halfW;
+        FootChips(c, 0.975f * H, {MakeChip(L"PREVIOUS LAYOUT", glyphs::LB, L"Q", ChipAct::LayoutPrev, ""), MakeChip(L"NEXT LAYOUT", glyphs::RB, L"E", ChipAct::LayoutNext, ""),
+                                  MakeChip(L"CLOSE", glyphs::Menu(glyphs::B), L"ESC", ChipAct::Close, "")});
+        return;
+    }
+    const float w = std::min(1.02f * H, l.sw * 0.96f), hh = (0.300f + 0.2f * std::max(0.0f, k - 1)) * H;
+    const float x0 = l.cx - w * 0.5f, y0 = H * 0.5f - hh * 0.5f, bw = w * 0.5f - 0.066f * H, bh = 0.062f * H * k, by = y0 + hh - bh - 0.032f * H;
+    const bool reset = g_modal == Modal::ResetEverything;
+    Chip act = MakeChip(reset ? L"RESET EVERYTHING" : L"DISABLE IT", glyphs::COUNT, L"", ChipAct::Confirm, "");
+    Chip safe = MakeChip(reset ? L"KEEP MY SETTINGS" : L"KEEP IT ON", glyphs::COUNT, L"", ChipAct::Refuse, "");
+    act.x = x0 + 0.050f * H, act.y = by, act.w = bw, act.h = bh;
+    safe.x = x0 + w - 0.050f * H - bw, safe.y = by, safe.w = bw, safe.h = bh;
+    g_chips.push_back(act);
+    g_chips.push_back(safe);
 }
 
 static void KeepFocusVisible()
@@ -1065,8 +1448,8 @@ static void ScrollBy(int rows)
 static uikit::RowGeom GeomOf(int visibleIndex)
 {
     uikit::RowGeom g;
-    g.y = g_layout.rowsTop + visibleIndex * g_layout.pitch;
-    g.h = g_layout.pitch;
+    g.y = g_layout.rowsTop + visibleIndex * g_layout.pitch + (visibleIndex >= g_layout.previewAfter ? g_layout.previewGap : 0);
+    g.h = g_layout.rowH;
     g.labelX = g_layout.labelX;
     g.controlLeft = g_layout.controlLeft;
     g.controlRight = g_layout.controlRight;
@@ -1075,18 +1458,19 @@ static uikit::RowGeom GeomOf(int visibleIndex)
 }
 
 // ------------------------------------------------------------------ actions
+// The list loops within its rows: the chips answer to their own buttons, so nobody walks past a page of rows to reach one.
 static void MoveFocus(int dir)
 {
-    const int n = static_cast<int>(g_entries.size()), total = n + ButtonCount();
+    const int n = static_cast<int>(g_entries.size());
     int f = g_focus;
-    for (int tries = 0; tries < total; ++tries)
+    for (int tries = 0; tries < n; ++tries)
     {
         f += dir;
         if (f < 0)
-            f = total - 1;
-        if (f >= total)
+            f = n - 1;
+        if (f >= n)
             f = 0;
-        if (f >= n || Interactive(f))
+        if (Interactive(f))
             break;
     }
     g_focus = f;
@@ -1097,32 +1481,98 @@ static void MoveFocus(int dir)
 static void SwitchTab(int tab)
 {
     const int n = uimeta::kTabCount;
+    g_tabFocus[g_tab] = g_focus;
     g_tab = ((tab % n) + n) % n;
-    g_focus = 0;
+    g_focus = g_tabFocus[g_tab];
     g_scroll = 0;
     g_capturing = false;
     BuildEntries();
-    while (g_focus < static_cast<int>(g_entries.size()) && !Interactive(g_focus))
-        ++g_focus;
+    SettleFocus();
 }
 
-static void PressButton(int which)
+static void ShowLayout(int step)
 {
-    if (which == kBtnDefault)
-        ResetTab();
-    else if (which == kBtnCancel)
+    g_layoutShown = (g_layoutShown + step + uimeta::kBindingPresetCount) % uimeta::kBindingPresetCount;
+}
+
+static void PressChip(ChipAct act)
+{
+    switch (act)
     {
+    case ChipAct::Default: ResetTab(); break;
+    case ChipAct::Cancel:
         RevertAll();
         CloseAs(false); // hosted: the game's page comes back; standalone: the panel goes
+        break;
+    case ChipAct::Close:
+        if (g_modal == Modal::Layout)
+            g_modal = Modal::None;
+        else
+            CloseAs(true);
+        break;
+    case ChipAct::LayoutPrev: ShowLayout(-1); break;
+    case ChipAct::LayoutNext: ShowLayout(1); break;
+    case ChipAct::Confirm:
+    {
+        const Modal was = g_modal;
+        g_modal = Modal::None;
+        if (was == Modal::ResetEverything)
+            ResetEverything();
+        else if (const uimeta::Row* head = uimeta::FindRow("mod_controller"))
+            ActHead(*head, false, -1, true);
+        break;
     }
-    else if (which == kBtnClose)
-        CloseAs(true);
+    case ChipAct::Refuse: g_modal = Modal::None; break;
+    }
+}
+
+// A head: left / right step its words, A flips it; a stopped one takes nothing.
+static void ActOnHead(const Entry& e, int dir)
+{
+    const uimeta::Row& m = *e.meta;
+    const Head state = HeadStateOf(m);
+    if (!optrules::Takes(state))
+        return;
+    const bool now = state == Head::Enabled || state == Head::EnabledAtNextStart; // what the row reads
+    if (m.kind == uimeta::Picker) // HUD 2: three words, the last is off
+    {
+        const int n = m.optionCount, i = now ? std::max(0, PickerIndex(e)) : n - 1, next = (i + (dir < 0 ? -1 : 1) + n) % n;
+        ActHead(m, next != n - 1, next, false);
+        return;
+    }
+    const bool want = dir == 0 ? !now : dir > 0;
+    if (want != now)
+        ActHead(m, want, -1, false);
+}
+
+static void OpenLayoutCard()
+{
+    g_modal = Modal::Layout;
+    g_layoutShown = std::clamp(atoi(Get("Controller", "pad_preset").c_str()), 0, uimeta::kBindingPresetCount - 1);
 }
 
 // left / right on a row (dir -1 / +1), accept (dir 0)
 static void ActOnRow(Entry& e, int dir)
 {
-    if (!e.interactive || ParentOff(e))
+    if (e.kind == Entry::Row && e.meta->head)
+    {
+        ActOnHead(e, dir);
+        return;
+    }
+    if (Dimmed(e))
+    {
+        // the second signal: nothing to change here, A or Enter goes where it can change
+        if (dir == 0 && e.head)
+            for (size_t i = 0; i < g_entries.size(); ++i)
+                if (g_entries[i].kind == Entry::Row && !strcmp(g_entries[i].meta->key, e.head))
+                {
+                    g_focus = static_cast<int>(i);
+                    KeepFocusVisible();
+                    break;
+                }
+        return;
+    }
+    if (ParentOff(e))
         return;
     if (e.kind == Entry::RawRow)
     {
@@ -1157,6 +1607,11 @@ static void ActOnRow(Entry& e, int dir)
     }
     case uimeta::Picker:
     {
+        if (dir == 0 && !strcmp(m.key, "pad_preset")) // A shows every button of the layout
+        {
+            OpenLayoutCard();
+            break;
+        }
         const int i = PickerIndex(e);
         int next = i < 0 ? 0 : i + (dir == 0 ? 1 : dir);
         if (IsIntroRow(&m)) // Intro: the words of missing files are skipped (the available set, refreshed at open)
@@ -1180,12 +1635,17 @@ static void ActOnRow(Entry& e, int dir)
         if (dir == 0)
         {
             if (strcmp(m.key, "reset_all") == 0)
-                ResetEverything();
+            {
+                g_modal = Modal::ResetEverything;
+                g_modalFocus = 1;
+            }
+            else if (strcmp(m.key, "other_changed") == 0)
+                ResetOthers();
             else if (strcmp(m.key, "about") == 0)
-                Toast("FLvibed " FLV_VERSION " (built " __DATE__ ") - controller, subtitles and movies for Freelancer. "
-                      "Freelancer (c) Microsoft; subtitle data GPL-3.0; credits in the README");
+                Toast("FLvibed " FLV_VERSION " (built " __DATE__ "). Freelancer (c) Microsoft; subtitle data GPL-3.0; credits in the README. "
+                      "Settings: FLController.ini, FLSubtitles.ini and FLvibed.ini in the EXE folder.");
             else if (strcmp(m.key, "edit_bindings") == 0)
-                Toast("A bindings editor is not built yet; the presets apply");
+                OpenLayoutCard();
         }
         break;
     }
@@ -1207,13 +1667,42 @@ static void CaptureKey(int vk)
 }
 
 // ------------------------------------------------------------------ the pointer
-// What is under the pointer: an entry index, or -2 - button, -10 - tab.
-static int g_overRow = -1; // the row under the pointer, greyed ones too: their rollover line says why
+// What is under the pointer: an entry index, -2 - chip, -10 - tab, -20 .. -24 the scroll bar.
+static int HitChip(float px, float py)
+{
+    for (size_t i = 0; i < g_chips.size(); ++i)
+    {
+        const Chip& c = g_chips[i];
+        if (px >= c.x && px <= c.x + c.w && py >= c.y && py <= c.y + c.h)
+            return -2 - static_cast<int>(i);
+    }
+    return -1;
+}
+
+// The visible row at a height, the sample's gap left out; -1 none.
+static int RowAt(float py)
+{
+    const Layout& l = g_layout;
+    float rel = py - l.rowsTop;
+    if (rel < 0)
+        return -1;
+    const float gapAt = l.previewAfter * l.pitch;
+    if (rel >= gapAt)
+    {
+        if (rel < gapAt + l.previewGap)
+            return -1;
+        rel -= l.previewGap;
+    }
+    const int vi = static_cast<int>(rel / l.pitch);
+    return vi < l.visible ? vi : -1;
+}
+
 static int HitTest(float px, float py)
 {
-    g_overRow = -1;
     const Layout& l = g_layout;
     const int n = static_cast<int>(g_entries.size());
+    if (g_modal != Modal::None) // only what stands over the page answers
+        return HitChip(px, py);
     if (g_sb.on && std::fabs(px - g_sb.x) <= g_sb.a * 1.3f) // the scroll bar (before the rows: it may overlap them)
     {
         if (std::fabs(py - g_sb.upY) <= g_sb.a * 1.3f)
@@ -1223,31 +1712,30 @@ static int HitTest(float px, float py)
         if (py >= g_sb.trackTop && py <= g_sb.trackTop + g_sb.trackH)
             return py < g_sb.thumbY ? -22 : py > g_sb.thumbY + g_sb.thumbH ? -23 : -24;
     }
-    if (py >= l.rowsTop && py < l.rowsTop + l.visible * l.pitch && px >= l.left && px <= l.right)
+    if (px >= l.left && px <= l.right && py >= l.rowsTop && py < l.rowsBottom)
     {
-        const int i = g_scroll + static_cast<int>((py - l.rowsTop) / l.pitch);
-        g_overRow = i >= 0 && i < n ? i : -1;
-        if (i >= 0 && i < n && Interactive(i))
-            return i;
-        return -1;
+        const int vi = RowAt(py), i = vi < 0 ? -1 : g_scroll + vi;
+        return i >= 0 && i < n && Interactive(i) ? i : -1;
     }
-    if (std::fabs(py - l.buttonY) <= l.buttonH * 0.5f)
-    {
-        const float xs[3] = {l.defaultX, l.cancelX, l.closeX};
-        for (int b = 0; b < ButtonCount(); ++b)
-            if (std::fabs(px - xs[b]) <= l.buttonW * 0.5f)
-                return -2 - b;
-    }
-    if (std::fabs(py - l.tabsY) <= l.tabH * 0.5f)
+    const int chip = HitChip(px, py);
+    if (chip != -1)
+        return chip;
+    if (!g_card && std::fabs(py - l.tabsY) <= l.tabH * 0.5f)
         for (int t = 0; t < uimeta::kTabCount; ++t)
-            if (px >= l.tabX0 + t * l.tabPitch && px <= l.tabX0 + t * l.tabPitch + l.tabW)
+            if (px >= l.tabX[t] && px <= l.tabX[t] + l.tabW[t])
                 return -10 - t;
     return -1;
 }
 
 static void ClickRow(Entry& e, int visibleIndex, float px, bool firstClick)
 {
-    if (!e.interactive || ParentOff(e))
+    if ((e.kind == Entry::Row && e.meta->head) || Dimmed(e)) // a head flips, a dimmed row goes to its head
+    {
+        if (firstClick)
+            ActOnRow(e, 0);
+        return;
+    }
+    if (ParentOff(e))
         return;
     const uikit::RowGeom g = GeomOf(visibleIndex);
     if (e.kind == Entry::RawRow)
@@ -1278,7 +1766,7 @@ static void ClickRow(Entry& e, int visibleIndex, float px, bool firstClick)
             if (px >= a.x && px <= a.x + a.w)
                 ActOnRow(e, px < a.x + (a.w - a.cell) * 0.5f ? -1 : 1);
             else
-                ActOnRow(e, 1);
+                ActOnRow(e, !strcmp(e.meta->key, "pad_preset") ? 0 : 1); // (the mouse's way to the layout card: the row's label)
         }
         break;
     default:
@@ -1289,6 +1777,29 @@ static void ClickRow(Entry& e, int visibleIndex, float px, bool firstClick)
 }
 
 // ------------------------------------------------------------------ per frame
+// What stands over the page keeps the keys and the pad: a dialog's two answers, the safe one focused and B or Esc its way out; the layout card's chips.
+static void ModalInput(const uikit::UiInput& in)
+{
+    if (g_modal == Modal::Layout)
+    {
+        if (in.tabPrev || in.left)
+            ShowLayout(-1);
+        if (in.tabNext || in.right)
+            ShowLayout(1);
+        if (in.back || in.accept)
+            g_modal = Modal::None;
+        return;
+    }
+    if (in.left)
+        g_modalFocus = 0;
+    if (in.right)
+        g_modalFocus = 1;
+    if (in.back)
+        g_modal = Modal::None;
+    else if (in.accept)
+        PressChip(g_modalFocus == 0 ? ChipAct::Confirm : ChipAct::Refuse);
+}
+
 static void HandleInput(const uikit::UiInput& in, float dt)
 {
     const int n = static_cast<int>(g_entries.size());
@@ -1300,60 +1811,56 @@ static void HandleInput(const uikit::UiInput& in, float dt)
         CaptureKey(in.capturedVk);
         return;
     }
-    if (in.back)
+    const uikit::Input::PadExtra pad = g_input.Extra();
+    const bool wasModal = g_modal != Modal::None;
+    if (wasModal)
+        ModalInput(in);
+    else if (in.back)
     {
         if (g_capturing)
             g_capturing = false;
-        else if (g_hostMode == Host::Standalone)
-            CloseAs(true);
         else
-            CloseAs(true); // the Options screen: back to the game's page (the host keeps the screen open)
+            CloseAs(true); // hosted: back to the game's page (the host keeps the screen open)
         return;
     }
-    if (in.tabPrev)
-        SwitchTab(g_tab - 1);
-    if (in.tabNext)
-        SwitchTab(g_tab + 1);
-    if (in.up)
-        MoveFocus(-1);
-    if (in.down)
-        MoveFocus(+1);
-    if (in.pageUp)
+    else if (!g_capturing && (in.defaultKey || pad.x))
+        PressChip(ChipAct::Default);
+    else if (!g_capturing && (in.cancelKey || pad.y) && !g_card)
     {
-        g_focus = std::max(0, g_focus - g_layout.visible);
-        while (g_focus < n && !Interactive(g_focus))
-            ++g_focus;
-        KeepFocusVisible();
-    }
-    if (in.pageDown)
-    {
-        g_focus = std::min(n - 1, g_focus + g_layout.visible);
-        while (g_focus > 0 && !Interactive(g_focus))
-            --g_focus;
-        KeepFocusVisible();
-    }
-    if (g_focus < n)
-    {
-        if (in.left)
-            ActOnRow(g_entries[g_focus], -1);
-        if (in.right)
-            ActOnRow(g_entries[g_focus], +1);
-        if (in.accept)
-            ActOnRow(g_entries[g_focus], 0);
+        PressChip(ChipAct::Cancel);
+        return;
     }
     else
     {
-        // the bottom buttons: left / right move between them (they sit in one row; up / down keep cycling through
-        // them as through the rows - release acceptance 25 Oct 2026)
-        const int b = g_focus - n, count = ButtonCount();
-        if (in.left && b > 0)
-            g_focus = n + b - 1;
-        if (in.right && b < count - 1)
-            g_focus = n + b + 1;
-        if (in.accept)
+        if (!g_card && in.tabPrev)
+            SwitchTab(g_tab - 1);
+        if (!g_card && in.tabNext)
+            SwitchTab(g_tab + 1);
+        if (in.up)
+            MoveFocus(-1);
+        if (in.down)
+            MoveFocus(+1);
+        if (in.pageUp)
         {
-            PressButton(b);
-            return;
+            g_focus = std::max(0, g_focus - g_layout.visible);
+            SettleFocus();
+            KeepFocusVisible();
+        }
+        if (in.pageDown)
+        {
+            g_focus = std::min(n - 1, g_focus + g_layout.visible);
+            while (g_focus > 0 && !Interactive(g_focus))
+                --g_focus;
+            KeepFocusVisible();
+        }
+        if (g_focus < static_cast<int>(g_entries.size()))
+        {
+            if (in.left)
+                ActOnRow(g_entries[g_focus], -1);
+            if (in.right)
+                ActOnRow(g_entries[g_focus], +1);
+            if (in.accept)
+                ActOnRow(g_entries[g_focus], 0);
         }
     }
     if (!g_open)
@@ -1367,6 +1874,14 @@ static void HandleInput(const uikit::UiInput& in, float dt)
     {
         const int hit = HitTest(in.px, in.py);
         g_hover = hit;
+        if (g_modal != Modal::None)
+        {
+            if (hit <= -2 && (g_modal != Modal::Layout) && moved)
+                g_modalFocus = -2 - hit;
+            if (in.click && hit <= -2 && -2 - hit < static_cast<int>(g_chips.size()))
+                PressChip(g_chips[-2 - hit].act);
+            return;
+        }
         if (hit >= 0 && moved && !g_dragging && !g_sbDrag)
         {
             g_focus = hit;
@@ -1404,7 +1919,7 @@ static void HandleInput(const uikit::UiInput& in, float dt)
             else if (hit <= -10)
                 SwitchTab(-10 - hit);
             else if (hit <= -2)
-                PressButton(-2 - hit);
+                PressChip(g_chips[-2 - hit].act);
             else if (g_capturing)
                 g_capturing = false;
         }
@@ -1425,6 +1940,8 @@ static void ApplyDebugPresses(uikit::UiInput& in)
         else if (p == "rb") in.tabNext = true;
         else if (p == "pgup") in.pageUp = true;
         else if (p == "pgdn") in.pageDown = true;
+        else if (p == "x" || p == "d") in.defaultKey = true;
+        else if (p == "y" || p == "c") in.cancelKey = true;
         in.anyKey = true;
     }
     g_pressQueue.clear();
@@ -1442,6 +1959,18 @@ void Update(double dtd)
     // the page button's state while the Options screen is open: shown, lit (the selected page's yellow) on our page
     if (state != 0 && hostcalls::g.SetUiButton)
         hostcalls::g.SetUiButton(kUiBtnOptionsPage, true, state == 2, true);
+    // the first-start card: once, at the first main menu of a fresh install, after the startup movies; stamped as it opens, so a crash or a quit never shows it twice
+    if (!g_cardChecked && !g_open && session::MainMenuVisible())
+    {
+        g_cardChecked = true;
+        const std::string dir = DllDir().c_str();
+        if (settings_reset::FirstCardFor(settings_reset::CardStamped(dir.c_str()), false) == settings_reset::FirstCard::Show)
+        {
+            settings_reset::StampCard(dir.c_str());
+            g_card = true;
+            OpenAs(Host::Standalone);
+        }
+    }
     if (!g_open)
     {
         g_pressQueue.clear();
@@ -1462,14 +1991,13 @@ void Update(double dtd)
         const bool wasAdvanced = g_lastAdvanced;
         BuildEntries();
         if (g_entries.size() != was)
-            g_focus = std::min(g_focus, static_cast<int>(g_entries.size()) + ButtonCount() - 1);
-        // its rows land on the other tabs, never on GENERAL where the switch is: say so (
-        // "didn't appear to make a difference")
+            SettleFocus();
+        // its rows land on every tab, and few on MORE where the switch is: say so
         if (g_lastAdvanced != wasAdvanced)
-            Toast(g_lastAdvanced ? "Advanced settings shown: more rows on the CONTROLLER, AUTOPILOT and SUBTITLES tabs"
-                                 : "Advanced settings hidden");
+            Toast(g_lastAdvanced ? "All settings shown: more rows on every tab." : "Only the main settings shown.");
     }
     g_layout = ComputeLayout();
+    ModalChips(g_layout);
     KeepFocusVisible();
     uikit::UiInput in = g_input.Poll(dt, g_capturing);
     ApplyDebugPresses(in);
@@ -1491,14 +2019,7 @@ void Update(double dtd)
             static const Prompt p[] = {{glyphs::B, L"CANCEL"}};
             views::SetPrompts("options.flvibed.key", p, 1, true, 10);
         }
-        else
-        {
-            static const Prompt p[] = {{glyphs::A, L"CHANGE"},
-                                       {glyphs::DL, L"ADJUST", false, glyphs::DR},
-                                       {glyphs::LB, L"TAB", false, glyphs::RB},
-                                       {glyphs::B, L"BACK"}};
-            views::SetPrompts("options.flvibed", p, 4, false, 10);
-        }
+        // (else nothing: the chips carry the page's buttons)
     }
 }
 
@@ -1548,21 +2069,16 @@ static void DrawPreview(const uikit::Fonts& f)
     if (l.previewH <= 0)
         return;
     const float sh = l.sh;
-    // the band: a dark space-like backing with a label
+    // the band: a dark space-like backing
     render::Box(l.left + sh * 0.02f, l.previewTop, l.right - l.left - sh * 0.04f, l.previewH, 0xC0050812);
     uidraw::Frame(l.left + sh * 0.02f, l.previewTop, l.right - l.left - sh * 0.04f, l.previewH,
                   std::max(1.0f, sh * 0.001f), uidraw::Fade(uidraw::kFrame, 0.5f));
-    render::SetFont(f.body);
-    render::Text(l.left + sh * 0.03f, l.previewTop + sh * 0.006f, L"PREVIEW", uidraw::Fade(uidraw::kText, 0.7f));
-    const SettingsBus* bus = Bus();
-    if (!bus || !bus->Find("Subtitles", "enabled") || atof(Get("Subtitles", "enabled").c_str()) == 0)
+    if (!SubtitlesHead() || !optrules::RowsLive(HeadStateOf(*SubtitlesHead())))
     {
-        render::SetFont(f.label);
-        const std::wstring off = bus && bus->Find("Subtitles", "enabled")
-                                     ? L"SUBTITLES OFF"
-                                     : L"SUBTITLES MODULE NOT CONNECTED (NO SETTINGS BUS IN THIS HOST)";
-        render::Text(l.cx - render::TextWidth(f.label, off) * 0.5f, l.previewTop + l.previewH * 0.45f, off,
-                     uidraw::kDisabled);
+        render::SetFont(f.body);
+        const std::wstring off = L"No subtitles";
+        render::Text((l.left + l.right - render::TextWidth(f.body, off)) * 0.5f, l.previewTop + (l.previewH - f.body.lineHeight) * 0.5f, off, uidraw::kDisabled);
+        g_previewNeedH = 0;
         return;
     }
     static const float kSizes[] = {0.030f, 0.036f, 0.044f, 0.054f, 0.072f};
@@ -1603,7 +2119,7 @@ static void DrawPreview(const uikit::Fonts& f)
     const int avg = render::TextWidth(g_pvText, L"abcdefghijklmnopqrstuvwxyz ") / 27;
     const float bandW = l.right - l.left - sh * 0.04f;
     const float maxW = std::min(bandW - 2 * padX - sh * 0.04f, static_cast<float>(avg * 42));
-    const std::wstring sample = L"Trent, this is Juni. The LSF needs a pilot it can trust - meet me at the bar.";
+    const std::wstring sample = L"Trent, this is Juni. Meet me at the bar.";
     const std::vector<std::wstring> rows = Wrap(g_pvText, nameMode == 1 ? name + L": " + sample : sample, maxW, 4);
     // the block: the name row (own row), then the text rows; inline: the name leads the first row
     std::vector<std::pair<std::wstring, bool>> lines; // text, isName
@@ -1618,9 +2134,9 @@ static void DrawPreview(const uikit::Fonts& f)
         wmax = std::max(wmax, static_cast<float>(render::TextWidth(fnt, ln.first)));
         h += ln.second ? nameH : lineH;
     }
-    g_previewNeedH = h + 2 * padY + sh * 0.04f; // the next layout sizes the band to it (the label and margins)
+    g_previewNeedH = h + 2 * padY + sh * 0.016f; // the next layout sizes the band to it (its margins)
     // centred on the band (the hosted panel sits right of the screen's centre)
-    const float cx = (l.left + l.right) * 0.5f, y0 = l.previewTop + (l.previewH - h) * 0.5f + sh * 0.008f;
+    const float cx = (l.left + l.right) * 0.5f, y0 = l.previewTop + (l.previewH - h) * 0.5f;
     const float bx = cx - wmax * 0.5f - padX, by = y0 - padY, bw = wmax + 2 * padX, bh = h + 2 * padY;
     if (opacity > 0)
     {
@@ -1747,46 +2263,85 @@ static std::vector<std::wstring> Wrap(const render::Font& font, const std::wstri
     return out;
 }
 
-static void DrawHelp(const uikit::Fonts& f)
+// The spec's words with a button or the version in them, in the live family's names.
+static std::string Expand(const char* text, bool upper)
+{
+    std::string s = optrules::ExpandButtons(text ? text : "", static_cast<int>(glyphs::Current()), views::DevicePad(), upper);
+    const size_t at = s.find("{version}");
+    if (at != std::string::npos)
+        s.replace(at, 9, FLV_VERSION);
+    return s;
+}
+
+static std::string RowHelp(const Entry& e)
+{
+    if (e.kind == Entry::Row && e.meta->head && HeadStateOf(*e.meta) == Head::Stopped)
+        return "It stopped after a fault. Restart the game.";
+    if (Dimmed(e))
+    {
+        const std::string why = DimHelp(e);
+        if (!why.empty())
+            return why;
+    }
+    if (e.kind == Entry::Row && e.meta->kind == uimeta::Picker && e.meta->valueHelp)
+    {
+        const int i = PickerIndex(e);
+        if (i >= 0 && i < e.meta->optionCount && e.meta->valueHelp[i])
+            return Expand(e.meta->valueHelp[i], false);
+    }
+    return Expand(e.help, false);
+}
+
+// The description: inside the plate, under the rows, in the same place on every tab, what the focused row or the chip under the pointer does.
+static void DrawDescription(const uikit::Fonts& f)
 {
     const Layout& l = g_layout;
-    std::wstring text;
-    const auto helpOf = [](const Entry& e) { return Widen(e.offHelp.empty() ? e.help : e.offHelp.c_str()); };
+    const float H = l.sh;
+    std::string text;
     if (g_toastTime > 0)
-        text = Widen(g_toast.c_str());
+        text = g_toast;
+    else if (g_hover <= -2 && g_hover > -10 && -2 - g_hover < static_cast<int>(g_chips.size()))
+        text = g_chips[-2 - g_hover].help;
     else if (g_hover >= 0 && g_hover < static_cast<int>(g_entries.size()))
-        text = helpOf(g_entries[g_hover]);
-    else if (g_overRow >= 0 && g_overRow < static_cast<int>(g_entries.size()) && !g_entries[g_overRow].offHelp.empty())
-        text = helpOf(g_entries[g_overRow]);
+        text = RowHelp(g_entries[g_hover]);
     else if (g_focus < static_cast<int>(g_entries.size()))
-        text = helpOf(g_entries[g_focus]);
-    else
-    {
-        const int b = g_focus - static_cast<int>(g_entries.size());
-        if (b == kBtnDefault)
-            text = L"This tab's rows back to their defaults.";
-        else if (b == kBtnCancel)
-            text = L"Every change since the page opened is undone.";
-        else
-            text = L"Keeps the changes and closes the page.";
-    }
+        text = RowHelp(g_entries[g_focus]);
+    render::Box(l.left + 0.018f * H, l.descTop, l.right - l.left - 0.036f * H, std::max(2.0f, H * 0.0012f), uidraw::Fade(uidraw::kFrame, 0.5f));
     if (text.empty())
         return;
     render::SetFont(f.body);
-    // three lines fit above the panel; a longer text widens the box to the screen's left margin before it is cut
-    // (the rumble help lost its last word at 1600x1200)
-    std::vector<std::wstring> lines = Wrap(f.body, text, l.helpW, 99);
-    if (lines.size() > 3)
-        lines = Wrap(f.body, text, std::max(l.helpW, l.helpRight - 0.02f * l.sw), 3);
-    float w = 0;
-    for (const std::wstring& ln : lines)
-        w = std::max(w, static_cast<float>(render::TextWidth(f.body, ln)));
-    const float pad = l.sh * 0.004f, lh = f.body.lineHeight * 1.05f;
-    const float x = l.helpRight - w - pad, y = l.helpTop;
-    render::Box(x - pad, y, w + 2 * pad, lines.size() * lh + 2 * pad, uidraw::kHelpBack);
+    const float lh = f.body.lineHeight * 1.05f, x = l.left + 0.026f * H;
+    const std::vector<std::wstring> lines = Wrap(f.body, Widen(text.c_str()), l.right - l.left - 0.052f * H, 2);
     for (size_t i = 0; i < lines.size(); ++i)
-        render::Text(l.helpRight - render::TextWidth(f.body, lines[i]) - pad, y + pad + i * lh, lines[i],
-                     uidraw::kText);
+        render::Text(x, l.descTop + 0.008f * H + i * lh, lines[i], uidraw::kText);
+}
+
+// A head's row: its label, and its value in the words of its state; the wait in amber, on the row itself.
+static void DrawHead(const uikit::Fonts& f, const uikit::RowGeom& g, const uikit::RowStyle& s, const Entry& e, bool focused)
+{
+    uikit::RowStyle label = s;
+    label.enabled = true;
+    uikit::RowLabel(f, g, label, e.label);
+    const Head state = HeadStateOf(*e.meta);
+    const u32 amber = hud2kit::Argb(hud2kit::kAmber, 1);
+    const u32 ink = focused ? uidraw::kSelected : uidraw::kText;
+    std::wstring word = L"ENABLED";
+    if (e.meta->kind == uimeta::Picker && state == Head::Enabled)
+    {
+        const int i = PickerIndex(e);
+        if (i >= 0)
+            word = Widen(e.meta->options[i]);
+    }
+    switch (state)
+    {
+    case Head::Enabled: uikit::RowHead(f, g, word, ink, true, true); break;
+    case Head::Disabled: uikit::RowHead(f, g, L"DISABLED", ink, true, false); break;
+    case Head::DisabledAtNextStart: uikit::RowHead(f, g, L"DISABLED AT NEXT START", amber, true, false); break;
+    case Head::EnabledAtNextStart: uikit::RowHead(f, g, L"ENABLED AT NEXT START", amber, true, true); break;
+    case Head::Stopped: uikit::RowHead(f, g, L"STOPPED", amber, false, false); break;
+    }
+    if (!g_card && !TabIs("more")) // the head stands apart from the rows it switches
+        render::Box(g.labelX - g.sh * 0.01f, g.y + g.h + g.sh * 0.001f, g.controlRight - g.labelX + g.sh * 0.02f, std::max(1.0f, g.sh * 0.0008f), uidraw::Fade(uidraw::kFrame, 0.43f));
 }
 
 static void DrawEntry(const uikit::Fonts& f, Entry& e, int visibleIndex, bool focused)
@@ -1795,19 +2350,28 @@ static void DrawEntry(const uikit::Fonts& f, Entry& e, int visibleIndex, bool fo
     if (e.kind == Entry::Header)
     {
         render::SetFont(f.title);
-        uidraw::TextShadow(g.labelX - g.sh * 0.037f, g.y + (g.h - f.title.lineHeight) * 0.5f, e.label, uidraw::kText,
+        uidraw::TextShadow(g.labelX - g.sh * 0.010f, g.y + (g.h - f.title.lineHeight) * 0.5f, e.label, uidraw::kText,
                            std::max(1.0f, g.sh * 0.001f));
         return;
     }
+    const bool skin = views::SkinOn();
+    const bool dim = Dimmed(e);
     uikit::RowStyle s;
-    s.focused = focused && !views::SkinOn(); // HUD 2: the one focus style is drawn by DrawHud2Back
-    s.enabled = e.interactive && !ParentOff(e);
+    s.focused = focused && !skin; // HUD 2: the one focus style is drawn by DrawHud2Back
+    s.lit = focused && skin;
+    s.ownCase = skin; // sentence case on the skin's plate; the game's look keeps the game's capitals
+    s.enabled = !dim && !ParentOff(e);
+    s.bare = dim;
     s.changed = Changed(e);
+    s.indent = e.indent ? g.sh * 0.026f : 0;
+    if (e.kind == Entry::Row && e.meta->head)
+    {
+        DrawHead(f, g, s, e, focused);
+        return;
+    }
     if (e.kind == Entry::Row)
     {
-        if (e.meta->needs == uimeta::Restart)
-            s.note = L"AFTER RESTART";
-        else if (e.meta->needs == uimeta::Load)
+        if (e.meta->needs == uimeta::Load)
             s.note = L"AT THE NEXT LOAD";
         // the FLUF row says whether FLUF is there and whether FLvibed reads its windows (docs\MOD_COMPATIBILITY.md FLUF)
         if (e.meta->key && strcmp(e.meta->key, "fluf_windows") == 0)
@@ -1827,8 +2391,8 @@ static void DrawEntry(const uikit::Fonts& f, Entry& e, int visibleIndex, bool fo
             if (s.changed)
                 s.note = L"AFTER RESTART"; // (the pick acts at the next start: the provider above is this start's)
         }
-        if (!e.offNote.empty())
-            s.note = e.offNote.c_str();
+        if (dim)
+            s.note = nullptr;
     }
     uikit::RowLabel(f, g, s, e.label);
     const std::string v = e.key.empty() ? "" : Get(e.section, e.key);
@@ -1850,7 +2414,7 @@ static void DrawEntry(const uikit::Fonts& f, Entry& e, int visibleIndex, bool fo
         const int i = PickerIndex(e);
         std::wstring word;
         if (i >= 0)
-            word = Widen(m.options[i]);
+            word = Widen(Expand(m.options[i], true).c_str());
         else if (!v.empty())
             word = Widen(v.c_str());
         else
@@ -1883,58 +2447,69 @@ static void DrawEntry(const uikit::Fonts& f, Entry& e, int visibleIndex, bool fo
     }
 }
 
-// ui_style HUD 2 (modules\hud\docs\UI_HUD2_EXTENDED.md 10; the mock tools\uimock\hud2x.py `tab` / `focus`): the page's chrome in
-// HUD 2's kit, under the texts the classic pass draws after it - the tab and button plates (no purple fill; the
-// current tab with the yellow underline), the focused row's fill at 28 % active yellow with the bar outside its left
-// edge, the standalone panel as one glass plate.
-static void DrawHud2Back(const Layout& l, int n, int focusBtn)
+// The chips the page itself shows: under a dialog they stand behind the scrim.
+static const std::vector<Chip>& PageChips() { return g_modal == Modal::None ? g_chips : g_behind; }
+
+// Something on this tab waits for the next start: the amber mark shows it from any tab.
+static bool TabWaits(int tab)
+{
+    const uimeta::Tab& t = uimeta::kTabs[tab];
+    for (int s = 0; s < t.count; ++s)
+        for (int r = 0; r < t.sections[s].count; ++r)
+            if (t.sections[s].rows[r].head && optrules::Waits(HeadStateOf(t.sections[s].rows[r])))
+                return true;
+    return false;
+}
+
+static bool KitBegin(int& w, int& h)
 {
     void* device = hostcalls::g.GetD3DDevice ? hostcalls::g.GetD3DDevice() : nullptr;
-    int w = 0, h = 0;
     if (!device || !render::ScreenSize(w, h) || h < 100)
-        return;
-    const uiopt::UiOptions& o = uiopt::Get();
-    const float k = std::min(1.3f, std::max(0.8f, o.hudScale / 100.0f)) * std::min(1.5f, std::max(0.8f, o.textSize / 100.0f));
-    if (!hud2kit::Begin(device, w, h, std::max(8, static_cast<int>(0.026f * h * k + 0.5f))))
-        return;
+        return false;
+    if (!hud2kit::Begin(device, w, h, std::max(8, static_cast<int>(0.026f * h * g_layout.k + 0.5f))))
+        return false;
     hud2kit::SetAlpha(1), hud2kit::SetOffset(0, 0);
-    const float H = l.sh, c = H * 0.010f;
-    const int tlbr = hud2kit::kTL | hud2kit::kBR;
+    return true;
+}
+
+// A tab or chip plate of the skin; the current tab carries the yellow underline.
+static void Hud2Plate(float x, float y, float tw, float th, bool current, bool lit)
+{
+    const float H = g_layout.sh;
+    hud2kit::Plate(x, y, x + tw, y + th, H * 0.010f, hud2kit::kTL | hud2kit::kBR, 220 / 255.0f, hud2kit::kChrome, (current || lit ? 200 : 120) / 255.0f);
+    if (current)
+        hud2kit::Line(x + H * 0.012f, y + th - H * 0.004f, x + tw - H * 0.012f, y + th - H * 0.004f, H * 0.004f, hud2kit::Argb(hud2kit::kActive, 1));
+}
+
+// ui_style HUD 2 (modules\hud\docs\UI_HUD2_EXTENDED.md 10; the mock tools\uimock\options.py): the page's chrome in HUD 2's kit, under the texts the classic pass draws after it -
+// the tab and chip plates (no purple fill; the current tab with the yellow underline), the focused row's fill at 28 % active yellow with the bar outside its left edge, the
+// standalone panel as one glass plate over a scrim.
+static void DrawHud2Back(const Layout& l, int n)
+{
+    int w = 0, h = 0;
+    if (!KitBegin(w, h))
+        return;
+    const float H = l.sh;
     // the standalone panel fully opaque (fix-text 3: at 0.85 the room behind - a character's name label "Trent" - showed
     // through the rows); hosted, the Options screen's own window is the backing
     if (g_hostMode == Host::Standalone)
-        hud2kit::Plate(l.left - H * 0.02f, l.panelTop, l.right + H * 0.02f, l.panelBottom, H * 0.012f, tlbr, 1.0f,
-                       hud2kit::kChrome, 175 / 255.0f);
-    auto tab = [&](float x, float y, float tw, float th, bool current, bool lit)
     {
-        hud2kit::Plate(x, y, x + tw, y + th, c, tlbr, 220 / 255.0f, hud2kit::kChrome, (current || lit ? 200 : 120) / 255.0f);
-        if (current)
-            hud2kit::Line(x + H * 0.012f, y + th - H * 0.004f, x + tw - H * 0.012f, y + th - H * 0.004f, H * 0.004f,
-                          hud2kit::Argb(hud2kit::kActive, 1));
-    };
-    for (int t = 0; t < uimeta::kTabCount; ++t)
-        tab(l.tabX0 + t * l.tabPitch, l.tabsY - l.tabH * 0.5f, l.tabW, l.tabH, t == g_tab, g_hover == -10 - t);
-    const float by = l.buttonY - l.buttonH * 0.5f;
-    tab(l.defaultX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, false, g_hover == -2 - kBtnDefault);
-    tab(l.cancelX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, false, g_hover == -2 - kBtnCancel);
-    tab(l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, false, g_hover == -2 - kBtnClose);
-    // the focus: a row (its label to the control's right end, as the classic frame) or a bottom button
-    float fx0 = 0, fy0 = 0, fx1 = 0, fy1 = 0;
-    if (g_focus >= 0 && g_focus < n && g_focus >= g_scroll && g_focus - g_scroll < l.visible &&
-        g_entries[g_focus].kind != Entry::Header)
+        hud2kit::Rect(0, 0, static_cast<float>(w), static_cast<float>(h), hud2kit::Argb(0, 0.70f));
+        hud2kit::Plate(l.left, l.panelTop, l.right, l.panelBottom, H * 0.012f, hud2kit::kTL | hud2kit::kBR, 1.0f, hud2kit::kChrome, 175 / 255.0f);
+    }
+    if (!g_card)
+        for (int t = 0; t < uimeta::kTabCount; ++t)
+            Hud2Plate(l.tabX[t], l.tabsY - l.tabH * 0.5f, l.tabW[t], l.tabH, t == g_tab, g_hover == -10 - t);
+    const std::vector<Chip>& chips = PageChips();
+    for (size_t i = 0; i < chips.size(); ++i)
+        Hud2Plate(chips[i].x, chips[i].y, chips[i].w, chips[i].h, false, g_modal == Modal::None && g_hover == -2 - static_cast<int>(i));
+    // the focus: its label to the control's right end, as the classic frame
+    if (g_focus >= 0 && g_focus < n && g_focus >= g_scroll && g_focus - g_scroll < l.visible && g_entries[g_focus].kind != Entry::Header)
     {
         const uikit::RowGeom g = GeomOf(g_focus - g_scroll);
-        fx0 = g.labelX - H * 0.03f, fy0 = g.y, fx1 = g.controlRight + H * 0.015f, fy1 = g.y + g.h;
-    }
-    else if (focusBtn >= 0)
-    {
-        const float cx = focusBtn == kBtnDefault ? l.defaultX : focusBtn == kBtnCancel ? l.cancelX : l.closeX;
-        fx0 = cx - l.buttonW * 0.5f, fy0 = by, fx1 = cx + l.buttonW * 0.5f, fy1 = by + l.buttonH;
-    }
-    if (fx1 > fx0)
-    {
-        hud2kit::Rect(fx0, fy0, fx1 - fx0, fy1 - fy0, hud2kit::Argb(hud2kit::kActive, 0.28f));
-        hud2kit::Rect(fx0 - H * 0.013f, fy0, H * 0.005f, fy1 - fy0, hud2kit::Argb(hud2kit::kActive, 1));
+        const float fx0 = g.labelX - H * 0.012f, fx1 = g.controlRight + H * 0.012f;
+        hud2kit::Rect(fx0, g.y, fx1 - fx0, g.h, hud2kit::Argb(hud2kit::kActive, 0.28f));
+        hud2kit::Rect(fx0 - H * 0.008f, g.y, H * 0.005f, g.h, hud2kit::Argb(hud2kit::kActive, 1));
     }
     hud2kit::End();
 }
@@ -1974,21 +2549,140 @@ static void Hud2Caption(const uikit::Fonts& f, float x, float y, float w, float 
                           selected ? uidraw::kSelected : uidraw::kText, std::max(1.0f, sh * 0.001f));
 }
 
+// A chip's plate in the game's look, and its word in either look: the word moves right of the button that goes with it.
+static void DrawChip(const uikit::Fonts& f, const Chip& c, bool lit, bool hud2)
+{
+    const float sh = g_layout.sh;
+    if (!hud2)
+        uikit::Button(f, c.x, c.y, c.w, c.h, sh, L"", lit, true);
+    const float shift = c.pad != glyphs::COUNT ? 0.012f * sh * g_layout.k : 0;
+    Hud2Caption(f, c.x + shift, c.y, c.w, c.h, sh, c.word, lit);
+}
+
+// The buttons beside the words: the live device's only, drawn in one kit pass over the page's text.
+static void DrawButtons(const uikit::Fonts& f, const std::vector<Chip>& chips, const std::vector<presets::LayoutLine>* lines, float lineX, float lineY, float pitch)
+{
+    int w = 0, h = 0;
+    if (!KitBegin(w, h))
+        return;
+    const Layout& l = g_layout;
+    const float gh = 0.032f * l.sh * l.k;
+    const u32 tint = hud2kit::Argb(hud2kit::kChrome, 1);
+    const bool pad = views::DevicePad();
+    for (const Chip& c : chips)
+    {
+        if (c.pad == glyphs::COUNT)
+            continue;
+        float x = c.x + c.w * 0.5f - render::TextWidth(f.label, c.word) * 0.5f - 0.016f * l.sh * l.k;
+        const float y = c.y + c.h * 0.5f;
+        if (pad)
+            hud2kit::Glyph(c.pad, x, y, gh, tint);
+        else
+        {
+            // (a wide cap stands off the word by its own width: ESC touched CLOSE. The word starts at the caption's shift)
+            const float wordX = c.x + 0.012f * l.sh * l.k + c.w * 0.5f - render::TextWidth(f.label, c.word) * 0.5f;
+            x = std::min(x, wordX - 0.008f * l.sh * l.k - hud2kit::Keycap(c.key, 0, 0, gh, 0, true) * 0.5f);
+            hud2kit::Keycap(c.key, x, y, gh, tint);
+        }
+    }
+    if (!g_card && g_modal == Modal::None)
+    {
+        const float xl = l.tabsLeft - 0.020f * l.sh * l.k, xr = l.tabsRight + 0.020f * l.sh * l.k;
+        if (pad)
+            hud2kit::Glyph(glyphs::LB, xl, l.tabsY, gh * 0.875f, tint), hud2kit::Glyph(glyphs::RB, xr, l.tabsY, gh * 0.875f, tint);
+        else
+            hud2kit::Keycap(L"Q", xl, l.tabsY, gh * 0.875f, tint), hud2kit::Keycap(L"E", xr, l.tabsY, gh * 0.875f, tint);
+    }
+    if (lines)
+        for (size_t i = 0; i < lines->size(); ++i)
+            hud2kit::Glyph((*lines)[i].btn, lineX, lineY + (i + 0.5f) * pitch, 0.034f * l.sh * l.k, tint);
+    hud2kit::End();
+}
+
+// A dialog or the layout card over the page: the scrim, the plate, its words, its answers.
+static void DrawModal(const uikit::Fonts& f, const Layout& l, bool hud2)
+{
+    const float H = l.sh, k = l.k;
+    const bool card = g_modal == Modal::Layout;
+    const float w = card ? std::min(1.36f * H, l.sw * 0.98f) : std::min(1.02f * H, l.sw * 0.96f);
+    const float hh = (0.300f + 0.2f * std::max(0.0f, k - 1)) * H;
+    const float x0 = l.cx - w * 0.5f, y0 = card ? 0.035f * H : H * 0.5f - hh * 0.5f, y1 = card ? 0.975f * H : y0 + hh;
+    if (hud2)
+    {
+        int sw = 0, sh = 0;
+        if (KitBegin(sw, sh))
+        {
+            hud2kit::Rect(0, 0, static_cast<float>(sw), static_cast<float>(sh), hud2kit::Argb(0, 0.70f));
+            hud2kit::Plate(x0, y0, x0 + w, y1, H * 0.012f, hud2kit::kTL | hud2kit::kBR, 1.0f, hud2kit::kChrome, 175 / 255.0f, card ? 0 : 't', hud2kit::kAmber);
+            for (size_t i = 0; i < g_chips.size(); ++i)
+            {
+                const bool focus = !card && static_cast<int>(i) == g_modalFocus;
+                const Chip& c = g_chips[i];
+                Hud2Plate(c.x, c.y, c.w, c.h, false, focus || g_hover == -2 - static_cast<int>(i));
+                if (focus)
+                {
+                    hud2kit::Rect(c.x, c.y, c.w, c.h, hud2kit::Argb(hud2kit::kActive, 0.28f));
+                    hud2kit::Rect(c.x - H * 0.008f, c.y, H * 0.005f, c.h, hud2kit::Argb(hud2kit::kActive, 1));
+                }
+            }
+            hud2kit::End();
+        }
+    }
+    if (!render::Begin(f.label))
+        return;
+    if (!hud2)
+    {
+        render::Box(0, 0, l.sw, l.sh, 0xB3000000);
+        uidraw::HudPanel(x0, y0, w, y1 - y0, 1.0f, H, GetTickCount64() / 1000.0);
+    }
+    const auto centred = [&](const render::Font& font, float y, const std::wstring& s, u32 col)
+    {
+        render::SetFont(font);
+        uidraw::TextShadow(l.cx - render::TextWidth(font, s) * 0.5f, y - font.lineHeight * 0.5f, s, col, std::max(1.0f, H * 0.001f));
+    };
+    std::vector<presets::LayoutLine> lines;
+    float lineY = 0, pitch = 0;
+    if (card)
+    {
+        const presets::Table t = presets::Effective(g_layoutShown, atoi(Get("Controller", "weapon_groups").c_str()), atof(Get("Controller", "y_swap").c_str()) != 0);
+        lines = presets::LayoutLines(t);
+        centred(f.big, y0 + 0.034f * H * k, L"LAYOUT: " + Widen(uimeta::kBindingPresets[g_layoutShown].name), uidraw::kText);
+        render::Box(x0 + 0.018f * H, y0 + 0.072f * H * k, w - 0.036f * H, std::max(2.0f, H * 0.0012f), uidraw::Fade(uidraw::kFrame, 0.5f));
+        lineY = y0 + 0.086f * H * k;
+        pitch = (g_chips[0].y - 0.006f * H - lineY) / std::max<size_t>(1, lines.size());
+        render::SetFont(f.label);
+        for (size_t i = 0; i < lines.size(); ++i)
+            render::Text(x0 + 0.110f * H, lineY + (i + 0.5f) * pitch - f.label.lineHeight * 0.5f, Widen(lines[i].words.c_str()), uidraw::kText);
+    }
+    else
+    {
+        const bool reset = g_modal == Modal::ResetEverything;
+        centred(f.big, y0 + 0.052f * H * k, reset ? L"RESET EVERYTHING?" : L"DISABLE THE CONTROLLER?", uidraw::kText);
+        centred(f.body, y0 + 0.108f * H * k, reset ? L"Every FLvibed setting goes back to its default, hidden ones too." : L"From the next start the game is keyboard and mouse only.", uidraw::kText);
+    }
+    for (size_t i = 0; i < g_chips.size(); ++i)
+        DrawChip(f, g_chips[i], (!card && static_cast<int>(i) == g_modalFocus) || g_hover == -2 - static_cast<int>(i), hud2);
+    render::End(false);
+    DrawButtons(f, g_chips, card ? &lines : nullptr, x0 + 0.060f * H, lineY, pitch);
+}
+
 void Draw()
 {
     DrawCaption(); // the page button's caption whenever the Options screen is open (the page itself only when open)
     if (!g_open || !HostedSettled())
         return;
     if (g_layout.sh <= 0)
+    {
         g_layout = ComputeLayout();
+        ModalChips(g_layout);
+    }
     const Layout& l = g_layout;
     if (hostcalls::g.GetD3DDevice)
         render::SetDevice(hostcalls::g.GetD3DDevice()); // the renderer's device (in menus nothing else sets it)
-    const uikit::Fonts& f = uikit::FontsFor(static_cast<int>(l.sh), TextPercent());
+    const uikit::Fonts& f = uikit::PageFontsFor(static_cast<int>(l.sh), static_cast<int>(l.k * 100 + 0.5f));
     const bool hud2 = views::SkinOn();
-    const int nAll = static_cast<int>(g_entries.size());
     if (hud2 && f.ok)
-        DrawHud2Back(l, nAll, g_focus >= nAll ? g_focus - nAll : -1);
+        DrawHud2Back(l, static_cast<int>(g_entries.size()));
     if (!f.ok || !render::Begin(f.label))
     {
         static u32 warned = 0;
@@ -2000,21 +2694,34 @@ void Draw()
     const float sh = l.sh;
     const double now = GetTickCount64() / 1000.0;
     if (g_hostMode == Host::Standalone && !hud2)
-        uidraw::HudPanel(l.left - sh * 0.02f, l.panelTop, l.right - l.left + sh * 0.04f, l.panelBottom - l.panelTop,
-                         1.0f, sh, now); // opaque: nothing of the room behind shows through (fix-text 3)
-    // the title
-    render::SetFont(f.title);
-    const std::wstring title = L"FLVIBED OPTIONS";
-    uidraw::TextShadow(l.titleX - render::TextWidth(f.title, title) * 0.5f, l.titleY - f.title.lineHeight * 0.5f,
-                       title, uidraw::kText, std::max(1.0f, sh * 0.001f));
-    // the tabs
-    for (int t = 0; t < uimeta::kTabCount; ++t)
+    {
+        render::Box(0, 0, l.sw, l.sh, 0xB3000000);
+        uidraw::HudPanel(l.left, l.panelTop, l.right - l.left, l.panelBottom - l.panelTop, 1.0f, sh, now); // opaque: nothing of the room behind shows through (fix-text 3)
+    }
+    // the title: not on the hosted page, where the lit FLVIBED button in the game's column names it
+    if (l.titleY > 0)
+    {
+        render::SetFont(f.big);
+        const std::wstring title = g_card ? Widen(uimeta::kCardTitle) : L"FLVIBED OPTIONS";
+        uidraw::TextShadow(l.titleX - render::TextWidth(f.big, title) * 0.5f, l.titleY - f.big.lineHeight * 0.5f, title, uidraw::kText, std::max(1.0f, sh * 0.001f));
+    }
+    if (g_card)
+    {
+        render::SetFont(f.body);
+        const std::wstring lead = Widen(uimeta::kCardLead);
+        render::Text(l.titleX - render::TextWidth(f.body, lead) * 0.5f, l.panelTop + 0.076f * sh * l.k - f.body.lineHeight * 0.5f, lead, uidraw::kText);
+    }
+    // the tabs, an amber mark on one that waits for the next start
+    for (int t = 0; t < uimeta::kTabCount && !g_card; ++t)
+    {
+        const float ty = l.tabsY - l.tabH * 0.5f;
         if (hud2)
-            Hud2Caption(f, l.tabX0 + t * l.tabPitch, l.tabsY - l.tabH * 0.5f, l.tabW, l.tabH, sh,
-                        Widen(uimeta::kTabs[t].label), t == g_tab);
+            Hud2Caption(f, l.tabX[t], ty, l.tabW[t], l.tabH, sh, Widen(uimeta::kTabs[t].label), t == g_tab);
         else
-            uikit::TabButton(f, l.tabX0 + t * l.tabPitch, l.tabsY - l.tabH * 0.5f, l.tabW, l.tabH, sh,
-                             Widen(uimeta::kTabs[t].label), t == g_tab, g_hover == -10 - t);
+            uikit::TabButton(f, l.tabX[t], ty, l.tabW[t], l.tabH, sh, Widen(uimeta::kTabs[t].label), t == g_tab, g_hover == -10 - t);
+        if (TabWaits(t))
+            uidraw::Dot(l.tabX[t] + l.tabW[t] - 0.012f * sh, ty + 0.012f * sh, 0.006f * sh * l.k, hud2kit::Argb(hud2kit::kAmber, 1));
+    }
     // the rows
     const int n = static_cast<int>(g_entries.size());
     for (int i = g_scroll, vi = 0; i < n && vi < l.visible; ++i, ++vi)
@@ -2022,40 +2729,29 @@ void Draw()
     g_sb.on = n > l.visible;
     if (n > l.visible) // the scroll arrows at the right, as the Controls page's table has them
     {
-        const float ax = l.controlRight + sh * 0.028f, a = sh * 0.012f;
+        const float ax = l.controlRight + sh * 0.020f, a = sh * 0.012f, listH = l.visible * l.pitch + l.previewGap;
         uidraw::Triangle(ax, l.rowsTop + a, a, 0, g_scroll > 0 ? uidraw::kText : uidraw::kDisabled);
-        uidraw::Triangle(ax, l.rowsTop + l.visible * l.pitch - a, a, 1,
+        uidraw::Triangle(ax, l.rowsTop + listH - a, a, 1,
                          g_scroll + l.visible < n ? uidraw::kText : uidraw::kDisabled);
         // the thumb between them
-        const float trackTop = l.rowsTop + 2.5f * a, trackH = l.visible * l.pitch - 5.0f * a;
+        const float trackTop = l.rowsTop + 2.5f * a, trackH = listH - 5.0f * a;
         const float th = std::max(a, trackH * l.visible / n), ty = trackTop + (trackH - th) * g_scroll / std::max(1, n - l.visible);
-        g_sb.x = ax, g_sb.a = a, g_sb.upY = l.rowsTop + a, g_sb.downY = l.rowsTop + l.visible * l.pitch - a;
+        g_sb.x = ax, g_sb.a = a, g_sb.upY = l.rowsTop + a, g_sb.downY = l.rowsTop + listH - a;
         g_sb.trackTop = trackTop, g_sb.trackH = trackH, g_sb.thumbY = ty, g_sb.thumbH = th;
         render::Box(ax - a * 0.25f, trackTop, a * 0.5f, trackH, uidraw::Fade(uidraw::kTrack, 0.4f));
         render::Box(ax - a * 0.4f, ty, a * 0.8f, th, uidraw::kThumb);
     }
-    if (g_tab == 3)
+    if (l.previewH > 0)
         DrawPreview(f);
-    // the bottom buttons
-    const float by = l.buttonY - l.buttonH * 0.5f;
-    const int focusBtn = g_focus >= n ? g_focus - n : -1;
-    if (hud2)
-    {
-        Hud2Caption(f, l.defaultX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"DEFAULT", false);
-        Hud2Caption(f, l.cancelX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CANCEL", false);
-        Hud2Caption(f, l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CLOSE", false);
-        DrawHelp(f);
-        render::End(false);
-        return;
-    }
-    uikit::Button(f, l.defaultX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"DEFAULT",
-                  focusBtn == kBtnDefault || g_hover == -2 - kBtnDefault, true);
-    uikit::Button(f, l.cancelX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CANCEL",
-                  focusBtn == kBtnCancel || g_hover == -2 - kBtnCancel, true);
-    uikit::Button(f, l.closeX - l.buttonW * 0.5f, by, l.buttonW, l.buttonH, sh, L"CLOSE",
-                      focusBtn == kBtnClose || g_hover == -2 - kBtnClose, true);
-    DrawHelp(f);
+    // the chips, the description
+    const std::vector<Chip>& chips = PageChips();
+    for (size_t i = 0; i < chips.size(); ++i)
+        DrawChip(f, chips[i], g_modal == Modal::None && g_hover == -2 - static_cast<int>(i), hud2);
+    DrawDescription(f);
     render::End(false);
+    DrawButtons(f, chips, nullptr, 0, 0, 0);
+    if (g_modal != Modal::None)
+        DrawModal(f, l, hud2);
 }
 
 // ------------------------------------------------------------------ host events
@@ -2079,9 +2775,7 @@ bool OnRawKey(int vk, bool down, bool textField)
 {
     if (!g_open || textField)
         return false;
-    if (g_hostMode == Host::Options && vk == VK_ESCAPE && !g_capturing)
-        return false; // the game's own close of the Options screen (the host restores its page; Update closes ours)
-    return g_input.PushKey(vk, down, g_capturing);
+    return g_input.PushKey(vk, down, g_capturing); // (Esc too, hosted: CLOSE goes back to the game's Options column, as B does)
 }
 
 // ------------------------------------------------------------------ debug
@@ -2122,15 +2816,17 @@ static std::string RowsReport()
             const int pi = PickerIndex(e);
             o << " = (" << (pi >= 0 ? e.meta->options[pi] : "?") << ")";
         }
-        if (!e.interactive)
-            o << " [unavailable]";
+        if (e.kind == Entry::Row && e.meta->head)
+        {
+            static const char* const kStates[] = {"enabled", "disabled", "disabled at next start", "enabled at next start", "stopped"};
+            o << " [" << kStates[static_cast<int>(HeadStateOf(*e.meta))] << "]";
+        }
+        else if (Dimmed(e))
+            o << " [dimmed]";
         else if (ParentOff(e))
             o << " [parent off]";
         o << "\n";
     }
-    const int n = static_cast<int>(g_entries.size());
-    if (g_focus >= n)
-        o << "> button " << (g_focus - n == 0 ? "DEFAULT" : g_focus - n == 1 ? "CANCEL" : "CLOSE") << "\n";
     return o.str();
 }
 
@@ -2168,13 +2864,21 @@ std::string Command(std::istream& in)
         if (t < 0 && !arg.empty() && isdigit(static_cast<unsigned char>(arg[0])))
             t = atoi(arg.c_str());
         if (t < 0 || t >= uimeta::kTabCount)
-            return "tabs: 0 general, 1 controller, 2 autopilot, 3 subtitles, 4 movies";
+            return "tabs: 0 hud, 1 controller, 2 subtitles, 3 autopilot, 4 more";
         SwitchTab(t);
         return std::string("tab ") + uimeta::kTabs[g_tab].label;
     }
     if (sub == "rows")
         return g_open ? RowsReport() : "closed";
-    if (sub == "press") // ui press up|down|left|right|a|b|lb|rb|pgup|pgdn [...]: the next frame's input
+    if (sub == "card") // ui card: the first-start card, as a fresh install meets it; the stamp stays as it is
+    {
+        if (g_open)
+            return "open";
+        g_card = true;
+        OpenAs(Host::Standalone);
+        return "card";
+    }
+    if (sub == "press") // ui press up|down|left|right|a|b|x|y|lb|rb|pgup|pgdn [...]: the next frame's input
     {
         if (!g_open)
             return "closed";
@@ -2212,12 +2916,13 @@ std::string Command(std::istream& in)
           << (hostcalls::g.OptionsPageState ? hostcalls::g.OptionsPageState() : -1)
           << " pad=" << (g_input.PadConnected() ? 1 : 0) << " screen=" << g_layout.sw << "x" << g_layout.sh
           << " tabs=" << uimeta::kTabCount << " settled=" << (g_settled ? 1 : 0) << " text=" << TextPercent()
-          << " panel=" << g_layout.left << ".." << g_layout.right << " cx=" << g_layout.cx << " tabX0=" << g_layout.tabX0
+          << " panel=" << g_layout.left << ".." << g_layout.right << " cx=" << g_layout.cx << " tabs=" << g_layout.tabsLeft << ".." << g_layout.tabsRight
           << " label=" << g_layout.labelX << " control=" << g_layout.controlLeft << ".." << g_layout.controlRight
-          << " buttons=" << g_layout.defaultX << "," << g_layout.cancelX << "," << g_layout.closeX << " w=" << g_layout.buttonW
-          << " y=" << g_layout.buttonY << " h=" << g_layout.buttonH << " help=" << g_layout.helpRight;
+          << " pitch=" << g_layout.pitch << " k=" << g_layout.k << " desc=" << g_layout.descTop << " card=" << (g_card ? 1 : 0) << " modal=" << static_cast<int>(g_modal);
+        for (const Chip& c : g_chips)
+            o << " chip=" << uikit::Narrow(c.word) << "@" << c.x << "," << c.y;
         return o.str();
     }
-    return "ui: options [open|close|cancel] | tab <n|name> | rows | press <keys...> | focus <key> | default | state";
+    return "ui: options [open|close|cancel] | tab <n|name> | rows | press <keys...> | focus <key> | default | card | state";
 }
 } // namespace options_page

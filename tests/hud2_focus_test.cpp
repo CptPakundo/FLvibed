@@ -91,8 +91,8 @@ void Test_hud2_focus()
     {
         const Rules& r = RulesOf(kFocusIndex);
         CHECK(r.corners == 1 && r.listInCard && r.cardOffForm && r.capPills && r.unplated == Bit(Ship));
-        CHECK(!r.budgetSuppress && r.letterboxKeep == (Bit(Nav) | Bit(Ring) | Bit(Alert)));
-        CHECK(&RulesOf(0) != &r && RulesOf(0).corners == 0 && !RulesOf(0).capPills); // Standard's untouched
+        CHECK(!r.budgetSuppress && r.letterboxKeep == (Bit(Nav) | Bit(Alert)));
+        CHECK(&RulesOf(0) != &r && RulesOf(0).corners == 0 && RulesOf(0).capPills); // Standard's untouched
         CHECK(P.reticleR == 0.12f && P.pickR == 0.12f); // 2.2: arcs at r 0.12, pick radius 0.12 (RingRadius)
         const char* need[][3] = {{"calm", "card", "w"},          {"calm", "card", "h_off_screen"},
                                  {"combat", "card", "h_off_screen"}, {"combat", "loadout", "w"},
@@ -302,7 +302,7 @@ void Test_hud2_focus()
         Frame f = Base(3840, 2160, false, true);
         f.letterbox = true;
         const Out o = Compute(f, P);
-        CHECK(o.suppressed == (Bit(Card) | Bit(List) | Bit(Ship) | Bit(Loadout) | Bit(Context)));
+        CHECK(o.suppressed == (Bit(Card) | Bit(List) | Bit(Ring) | Bit(Ship) | Bit(Loadout) | Bit(Context)));
     }
 
     // ================================================================ the reveal (PRESETS 1.6; 2.2)

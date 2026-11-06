@@ -91,6 +91,17 @@ void Test_universe()
     }
     // the tables are not empty by accident: HDE's Li01 has Planet Manhattan's core, its dock ring and minefields
     CHECK(t.lethal > 50 && t.strict > 50 && t.rings > 20 && t.levels > 100);
+    // the fields by kind (the haptics' grit and static): Li01's own rows
+    {
+        const unidata::System li01 = unidata::ParseSystem(data, unidata::SystemFile(universe, Id("Li01"), Id), Id, 1000, 0);
+        const auto kind = [&li01](const char* zone) {
+            const auto f = li01.fieldKinds.find(Id(zone));
+            return f == li01.fieldKinds.end() ? 0 : f->second;
+        };
+        CHECK(kind("Zone_Li01_Pittsburgh_debris_001") == 1);
+        CHECK(kind("Zone_Li01_Pittsburgh_Pirate_Base_Nebula") == 2);
+        CHECK(kind("no_such_zone") == 0);
+    }
     if (g_test.verbose || differ)
         printf("  universe HDE: %d systems, identical to the text parsers; %d zone levels, %d strict zones, %d lethal "
                "spheres, %d dock rings\n",

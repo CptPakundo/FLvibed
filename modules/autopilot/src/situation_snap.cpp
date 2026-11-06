@@ -99,13 +99,7 @@ static SnapLeash LeashOf(const mission::Leash& l, const std::vector<space::Conta
                 continue;
             bool same = c.nameIds == l.nameIds;
             if (!same && c.rep && !want.empty())
-            {
-                const std::wstring rn = space::RepName(c.rep);
-                std::string n;
-                for (wchar_t ch : rn)
-                    n += ch < 128 ? static_cast<char>(ch) : '?';
-                same = n == want;
-            }
+                same = str::SameText(space::RepName(c.rep), want);
             if (same)
                 o.ship = c.id;
         }

@@ -27,9 +27,9 @@ struct ShmBlock;
 // ServerTag (the server's word kept across logic reloads), v32 FixedDt (TEST ONLY: fixed dt), v33
 // SdlPad + SdlPadRumble (the opt-in SDL3 gamepad backend, WORK_QUEUE Q5 slice 1), v34 GameLoads (what the
 // host and mission.cpp keep per game starts over at a load: the A37 S1 finding), v35 MissionSave (the story's
-// checkpoint saves for the speedrun splits' save:<ids> rows: M01b.end at GAME SAVED, CP-M01b), v37 SetSteerLift, v38 SdlPadFilter. A logic DLL
-// must check `version` before using functions added in later versions.
-constexpr u32 kHostApiVersion = 38;
+// checkpoint saves for the speedrun splits' save:<ids> rows: M01b.end at GAME SAVED, CP-M01b), v37 SetSteerLift, v38 SdlPadFilter, v39 SetTargetMute + TargetMuteReady, v40 SetLoadDraw,
+// v41 SdlPadTriggers + SdlPadTriggerRumble + the grips' stream (modules\controller\docs\HAPTICS.md). A logic DLL must check `version` before using functions added in later versions.
+constexpr u32 kHostApiVersion = 41;
 // Logic DLL API version, checked by the host when loading the logic DLL (exact match): v2 adds OnRenderUnderHud, v3
 // adds OnUiButton and OnRawKey (the UI build), v4 OnKeyCmd (the game's key commands after it handled them: the maneuver
 // lock's answer and hud_prompts' actions for the keyboard, 0.2.1).
@@ -52,6 +52,9 @@ struct SdlPadState
     char name[64];      // SDL's name of the pad (UTF-8), "" none
     char error[96];     // SDL_GetError() of a failed start, else ""
     u32 dropped;        // v38: a mapper's events dropped so far (SdlPadFilter)
+    int link;           // v41: SDL_JoystickConnectionState: 1 wired, 2 wireless, 0 unknown
+    u32 padSerial;      // v41: grows whenever the open pad changes: what was sent to the last one is gone
+    u32 effectFails;    // v41: trigger effects SDL refused
 };
 
 struct HostApi
@@ -287,6 +290,22 @@ struct HostApi
     // v38: a mapper's keys and mouse dropped while the pad SDL reads has input (padbackend::DropInjected). `on`: SDL holds a pad and the game is in front; low-level
     // hooks exist only then, on a thread of their own. The deadzones say what "has input" is, as for the reader.
     void (*SdlPadFilter)(int on, float stickDeadzone, float triggerThreshold);
+    // v39: the game's target label and bars muted (core\host\uihooks.h)
+    void (*SetTargetMute)(bool on);
+    bool (*TargetMuteReady)();
+    // v40: what draws in each load frame, its scene open (core\host\router.h SetLoadDraw); null: the game's own screen
+    void (*SetLoadDraw)(void (*draw)());
+    // v41: a DualSense's trigger effects, 11 bytes each (haptics::StanceBytes), sent by the SDL thread at its next read; it sends Off by itself when the logic stops asking for
+    // a second, and at its stop. On a real pad nothing goes out in a background game.
+    void (*SdlPadTriggers)(const u8* left, const u8* right);
+    // v41: an Xbox pad's trigger motors (0..65535 for `ms` milliseconds; 0, 0 stops), as SdlPadRumble.
+    void (*SdlPadTriggerRumble)(u16 left, u16 right, u32 ms);
+    // v41: the DualSense grips' stream (modules\controller\src\host\hapticwave.*): `open` != 0 starts it for SDL's pad, 0 stops it; returns its state (hapticwave.h). Feed takes
+    // a wavesynth::WaveFrame (the host silences it by itself after 200 ms with none); Why says why it failed. Only ever on a real pad of a foreground game: the logic asks
+    // wavesynth::WaveOpenRefusal first.
+    int (*PadWave)(int open);
+    void (*PadWaveFeed)(const void* frame);
+    void (*PadWaveWhy)(char* out, int len);
 };
 
 struct ImplApi

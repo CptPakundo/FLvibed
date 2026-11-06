@@ -406,6 +406,44 @@ static const char* GunPointRaw(const float pt[3], char* buf, int size)
     }
     return buf;
 }
+int GunFireAt(const float pt[3], GunFire* out, int max)
+{
+    using Ctor = void*(__fastcall*)(void*, void*, int);
+    using Trav = void*(__fastcall*)(void*, void*, void*);
+    using FireFn = int(__thiscall*)(const void*, const float*);
+    static const HMODULE common = GetModuleHandleA("common.dll");
+    static const Ctor ctor = reinterpret_cast<Ctor>(GetProcAddress(common, "??0CEquipTraverser@@QAE@H@Z"));
+    static const Trav trav =
+        reinterpret_cast<Trav>(GetProcAddress(common, "?Traverse@CEquipManager@@QAEPAVCEquip@@AAVCEquipTraverser@@@Z"));
+    static const GunRangeFn range = reinterpret_cast<GunRangeFn>(GetProcAddress(common, "?GetMunitionRange@CEGun@@QBEMXZ"));
+    static const FireFn canFire = reinterpret_cast<FireFn>(GetProcAddress(common, "?CanFire@CEGun@@MBE?AW4FireResult@@ABVVector@@@Z"));
+    void* ship = InSpace() ? PlayerCShip() : nullptr;
+    if (!ctor || !trav || !range || !canFire || !ship || !out)
+        return 0;
+    int n = 0;
+    __try
+    {
+        alignas(8) unsigned char traverser[32] = {};
+        ctor(traverser, nullptr, kEquipClassGun);
+        void* mgr = reinterpret_cast<unsigned char*>(ship) + kEqObjEquipManager;
+        for (void* e = trav(mgr, nullptr, traverser); e && n < max; e = trav(mgr, nullptr, traverser))
+        {
+            if (!IsClass(e, "??_7CEGun@@6B@"))
+                continue;
+            GunFire& g = out[n++];
+            const char* hp = Mem<const char*>(reinterpret_cast<uintptr_t>(e) + kExternalHardpoint);
+            if (hp && !IsBadStringPtrA(hp, 32))
+                strncpy_s(g.hardpoint, hp, _TRUNCATE);
+            g.reach = range(e);
+            g.fire = canFire(e, pt);
+        }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+    }
+    return n;
+}
+
 std::string GunPointReport(const float pt[3])
 {
     char buf[2048];

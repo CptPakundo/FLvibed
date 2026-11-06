@@ -3,7 +3,7 @@
 # then the top speed, the throttle, the game's pilot state and frame timing. Rows: plain, the Windows 7 simulation, each with the controller off, and with a pad
 # in use. Judged: full throttle reaches the ship's top speed (the Starflier's 80 m/s). Lines: runs\win7_speed.
 # Usage (PowerShell tool): tests\win7_speed.ps1 [-Row plain,sim,sim-c0,sim-pad,plain-c0] [-Instance 1]   build\release. Exit 1 = a failure.
-param([string[]]$Row = @('plain', 'sim', 'sim-pad', 'sim-c0', 'plain-c0'), [int]$Instance = 1)
+param([string[]]$Row = @('plain', 'sim', 'sim-pad', 'sim-c0', 'plain-c0'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"

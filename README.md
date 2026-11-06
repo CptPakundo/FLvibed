@@ -5,17 +5,17 @@
   <img src="docs/images/logo/logo-light.svg" width="440" alt="FLvibed">
 </picture>
 
-**Play Freelancer with a controller, read every line that is spoken, and watch the movies the way they were meant.**<br>
-One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller support with a controller-first interface, dialogue subtitles with speaker names, and better movie handling - in a single DLL.
+**A classic space game, easier to play today: pick up a controller, read every spoken line, and see clearly on any screen.**<br>
+A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller support, subtitles for every line of dialogue, a clear modern HUD and tidier movies. One installer, nothing else to set up.
 
 <p>
-<a href="../../releases/download/v0.3.5rc/FLvibed-0.3.5rc-Setup.exe"><img alt="Download FLvibed 0.3.5rc (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.3.5rc-5865f2?style=for-the-badge"></a>
+<a href="../../releases/download/v0.4.0/FLvibed-0.4.0-Setup.exe"><img alt="Download FLvibed 0.4.0 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.4.0-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.3.5rc/FLvibed-0.3.5rc.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.3.5rc">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.4.0/FLvibed-0.4.0.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.4.0">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.3.5rc test build" src="https://img.shields.io/badge/version-0.3.5rc_test_build-5865f2?style=for-the-badge">
+<img alt="Version 0.4.0" src="https://img.shields.io/badge/version-0.4.0-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -26,22 +26,19 @@ One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller
 
 </div>
 
-> **Made with AI ("vibe coded").** The code, the tools and the documentation were written by an AI (Claude, by
-> Anthropic) under the author's direction and tested in game. It comes with no warranty.
+> Made with AI: written by Claude, by Anthropic, under the author's direction and tested in game. Free, with no warranty.
 
-## 🆕 New in 0.3.5rc
+## 🆕 New in 0.4.0
 
-**0.3.5rc is a test build of 0.3.5, not yet through the full regression sweep and gate.** 0.3.5 rebuilds FLvibed as a core with eight modules you can turn on and off, and fixes what an audit of the whole project found. The full list is in
-[CHANGELOG.md](CHANGELOG.md).
+**A new look for the whole game, and a simpler way to set it up.** The full list: [CHANGELOG.md](CHANGELOG.md).
 
-- **Modules:** HUD, Controller, Subtitles, Movies, Autopilot, NPC, Display and Speedrun, each a row on the options page. HUD 2, the autopilot and speedrun mode work on keyboard and mouse with the Controller off.
-- **The autopilot keeps working unless the game is paused:** under the nav map, the inventory, any window or the options page.
-- **A crash in one module stops that module alone,** and gives you the game back.
-- **Safer autopilot:** a stop gives the engine back, a load stops it, and it turns through the rear view.
-- **Pad:** the mouse works again at once after the pad, and the right stick scrolls the lists it says it does.
-- **An update by hand from the zip keeps your settings.**
-
-Earlier releases: [CHANGELOG.md](CHANGELOG.md).
+- **One clear look everywhere:** the star map, dialogs, main menu, loading screen and every shop now match the flight HUD. Prefer the original look? It is one setting away.
+- **Shops that fit:** panels size themselves to what they show, text stays inside its box, and a refused purchase tells you why in plain view.
+- **See what you are fighting:** a small card when you pick a target, then its name, distance and health on the ship itself, and a cue when your guns are in range.
+- **A calmer screen:** the flight HUD covers less, shows your boost and cruise on the reticle, and comes in Small, Normal and Large for your screen.
+- **Buy a ship on the controller:** the whole purchase works without a mouse.
+- **Simple options:** five tabs with the settings most players need, and a short welcome the first time you start. Everything else waits under Show all settings.
+- **More controllers:** PlayStation and Switch pads work directly, and pads can now rumble with what happens on screen.
 
 ## 🌟 See everything in the living spec
 
@@ -53,18 +50,16 @@ Earlier releases: [CHANGELOG.md](CHANGELOG.md).
 
 </div>
 
-The best tour of FLvibed is its **living spec**: one interactive page with every feature, real in-game captures with
-**drag sliders** (the game's HUD vs HUD 2, before vs after), an **Input switch** that shows the page as an Xbox,
-PlayStation, Switch or keyboard-and-mouse player sees it, a **try-it-yourself options page**, the bindings diagram, the
-install steps and an honest **"Not implemented yet"** list. It is kept current with every change.
+The best tour of FLvibed is one interactive page: real in-game pictures with **drag sliders** (before and after), a
+switch that shows every prompt for your own controller, an options page to try, the full button layout, how to install,
+and an honest list of what is not done yet.
 
-📁 Offline copy in this repository: [docs/spec/index.html](docs/spec/index.html) - open it in a browser after cloning (it
-needs no network).
+📁 There is an offline copy too: [docs/spec/index.html](docs/spec/index.html).
 
 ## ✨ What you get
 
-- 🎮 **Controller play everywhere.** Fly, fight, dock, trade and use every menu with an Xbox (XInput) pad: button
-  prompts on each screen, glyphs for Xbox, PlayStation, Nintendo or Steam pads, an on-screen keyboard, three flight layouts
+- 🎮 **Controller play everywhere.** Fly, fight, dock, trade and use every menu with a controller: button prompts on
+  each screen, shown for Xbox, PlayStation, Nintendo or Steam pads, an on-screen keyboard, three flight layouts
   (FREELANCER, ACE, ASSISTED). Touch the pad and the controller interface appears in one frame; move the mouse and the
   game's own interface is back. Keyboard and mouse keep working exactly as before.
 - 🎯 **Gimbal aim.** The right stick steers through the game's own mouse flight; the reticle locks onto your target's
@@ -73,7 +68,7 @@ needs no network).
   actions that apply now - and the same look over the menus, bases, dealers and dialogs (every window, row and button
   stays the game's own). On by default with the pad and with keyboard and mouse, and contextual by default since 0.2.5:
   it fades out in calm flight and wakes per action. The classic HUD stays one setting
-  away (`hud_style = 0`), with glyph badges on its buttons and a short list of what you can do now.
+  away, with button icons on it and a short list of what you can do now.
 - 💬 **Dialogue subtitles.** Story scenes, mission comms, bars and the Neural Net, with the speaker's name in their
   colour and their portrait, timed on the speaker's words. Story lines stay on screen until they are spoken; radio
   chatter and lines from NPCs without a portrait go to the game's chat window.
@@ -87,13 +82,12 @@ needs no network).
 - 🤖 **The Advanced Autopilot** 🧪 *(work in progress).* Hand it the ship and it plays: missions, jobs, travel,
   docking and fights, by one set of rules - [all about it below](#-the-advanced-autopilot).
 - 💥 **Hit effects and rumble.** Screen-edge cues in your own shield's and hull's look when you are hit, reticle pulses
-  for the autopilot and consumables, and pad vibration on hits (on by default; `shield_cue` / `reticle_cue = 0` and
-  `rumble = 0` turn them off).
+  for the autopilot and consumables, and pad vibration on hits. All on by default, and each can be turned off.
 - 🌐 **Multiplayer** 🧪 *(since 0.2.0).* HUD 2, targeting, subtitles and the autopilot on a server, as far as the server
   allows ([Compatibility](#-compatibility)).
-- 🖥️ **Any screen.** Any resolution, aspect ratio and Windows DPI scaling; Borderless Windowed is the main mode.
-- 🪶 **One file, nothing else.** `FLvibed.dll` with a static C runtime: no loader, no launcher, no Visual C++
-  redistributable. Each module can be switched off on its own, and no game file is changed.
+- 🖥️ **Any screen.** Any resolution or shape, with HUD sizes for handhelds and big screens alike.
+- 🪶 **Nothing else to install.** No launcher and no extra runtimes. Each feature can be switched off on its own, and no
+  game file is changed.
 
 ## 📸 A look around
 
@@ -179,7 +173,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | 🧩 **Compatibility** | HD Edition 0.7.1, the original 1.1, FLUF beside it | Newer HD Edition releases, more mods |
 
 > [!IMPORTANT]
-> 🧪 **0.3.5rc is a test build of an early preview - expect rough edges and change.**
+> 🧪 **0.4.0 is an early preview - expect rough edges and change.**
 > - **Some features are incomplete:** the Advanced Autopilot is work in progress, a few screens and controls are not
 >   built yet, and some are proven only by the test harness so far.
 > - **Design choices are still subject to change:** button layouts, HUD 2's look, setting names
@@ -212,7 +206,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 **2. Install FLvibed** - one click
 
-1. ⬇️ Download **[FLvibed-0.3.5rc-Setup.exe](../../releases/download/v0.3.5rc/FLvibed-0.3.5rc-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.4.0-Setup.exe](../../releases/download/v0.4.0/FLvibed-0.4.0-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders - else you pick the folder):
    choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -223,7 +217,7 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.3.5rc.zip](../../releases/download/v0.3.5rc/FLvibed-0.3.5rc.zip)** and unpack it.
+1. Download **[FLvibed-0.4.0.zip](../../releases/download/v0.4.0/FLvibed-0.4.0.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
    `FLvibed.dll`, `FLSubtitles\` and `FLvibed\` land in `EXE\`. An update this way keeps your settings.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins

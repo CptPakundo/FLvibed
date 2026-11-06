@@ -6,7 +6,9 @@
 // channels) the shared table (step 1: docs\UI_SPEC.json "hud2_presets" -> core\ui_meta.h uimeta::hud2p); the value ids
 // are the model's text fields matched against the drawn strings until the parts tag their values.
 #include "hud2_impl.h"
+#include "hud2_data.h"
 #include "hud2_lint.h"
+#include "str.h"
 #include "text.h"
 #include "ui/uiopt.h"
 #include "ui/views.h"
@@ -38,13 +40,7 @@ void LintPassEnd()
     g_lintTick = GetTickCount();
 }
 
-static std::wstring Up(const std::wstring& s)
-{
-    std::wstring u = s;
-    for (wchar_t& c : u)
-        c = static_cast<wchar_t>(towupper(c));
-    return u;
-}
+static std::wstring Up(const std::wstring& s) { return str::Upper(s); }
 
 // The drawn string shows the field: equal (case aside), or cut by the fit rule (its ellipsis) from it.
 static bool Shows(const std::wstring& drawn, const std::wstring& field)
@@ -157,7 +153,9 @@ std::string LintCommand(std::istream& in)
         it.comp = d.tag ? d.tag : "";
         it.centre = it.comp.compare(0, 4, "ring") == 0;
         // the transient event marks over the stack (UI_HUD2_PRESETS.md 1.3: the chevrons and the hit flash draw on top)
-        it.overlay = it.comp == "ring.hit" || it.comp == "ring.missiles";
+        it.overlay = it.comp == "ring.hit" || it.comp == "ring.missiles" || it.comp == "ring.tail" || it.comp == "ring.bloom";
+        // what the contextual fade takes out of calm flight (core\game\hudwake.h): the panels and the prompts; a fight keeps them
+        it.fades = uiopt::Get().hudFade != 0 && !g_combat && it.comp != "alert" && it.comp.compare(0, 4, "ring") != 0;
         it.lane = it.comp == "context" ? hud2lint::Lane::Pill
                   : it.comp == "alert" ? hud2lint::Lane::Answer
                                        : hud2lint::Lane::None;
@@ -208,10 +206,12 @@ std::string LintCommand(std::istream& in)
     const uimeta::hud2p::Preset& preset = hud2preset::Data(m.preset);
     // (the consumables' cross stacked on the loadout cuts the rail at its top: the owner's decision 3; the lower centre's
     // clear zone is every preset's, from the drawn ring's lowest edge + 0.01 H: decision 4, UI_HUD2.md 5.23)
-    li.zones = hud2lint::ZonesOf(preset, L.W, L.H, L.tgtX0, L.tgtX1, m.kbm, L.consY1 > L.consY0 ? L.consX0 : 0,
+    li.dlgX0 = L.dlgX0, li.dlgY0 = L.dlgY0, li.dlgX1 = L.dlgX1, li.dlgY1 = L.dlgY1;
+    // (`m.list`: a contact list the player opened stands in S2 on the pad as it does on the keyboard; the pad's automatic list keeps the 1.3 rule)
+    li.zones = hud2lint::ZonesOf(preset, L.W, L.H, L.tgtX0, L.tgtX1, m.kbm || m.list, L.consY1 > L.consY0 ? L.consX0 : 0,
                                  L.consY1 > L.consY0 ? L.consY0 : 0, L.clearY0);
     const hud2lint::Limits lim = hud2lint::LimitsOf(preset, m.state == State::Combat, m.kbm);
-    li.budget = lim.budget, li.pillCap = lim.pills, li.pairCap = lim.pairs;
+    li.budget = lim.budget, li.pillCap = lim.pills, li.pairCap = lim.pairs, li.air = true;
 
     // ---- the bound actions' reach: not in the HUD 2 state
     li.na.push_back({"action.reach",

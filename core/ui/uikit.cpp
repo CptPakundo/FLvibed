@@ -3,6 +3,7 @@
 
 #include "game/fl.h"
 #include "game/gamefont.h"
+#include "game/glyphset.h"
 #include "game/uidraw.h"
 #include "log.h"
 #include "str.h"
@@ -14,24 +15,27 @@ namespace uikit
 {
 // ------------------------------------------------------------------ fonts
 static Fonts g_fonts;
-static std::wstring g_chars; // the characters the fonts hold (ASCII + what the rows needed so far)
+static std::wstring g_chars; // the characters the fonts hold (glyphset::Base + what a row met since)
 
-static std::wstring BaseChars()
+// The set, with what the drawing met since it was last asked. Called before a pass begins: a rebuild frees the atlases.
+static void GrowChars()
 {
-    std::wstring s;
-    for (wchar_t c = 32; c < 127; ++c)
-        s += c;
-    s += L"\x00B0\x00B7\x2013\x2014\x2026"; // degree, middle dot, dashes, ellipsis
-    return s;
+    static size_t seen = 0;
+    if (g_chars.empty())
+        g_chars = glyphset::Base();
+    const std::wstring& met = render::Unmet();
+    for (; seen < met.size(); ++seen)
+        if (g_chars.find(met[seen]) == std::wstring::npos)
+            g_chars += met[seen];
 }
 
 const Fonts& FontsFor(int sh, int percent)
 {
     percent = std::clamp(percent, 50, 200);
-    if (g_fonts.ok && g_fonts.sh == sh && g_fonts.percent == percent && g_fonts.label.texture)
+    GrowChars();
+    if (g_fonts.ok && g_fonts.sh == sh && g_fonts.percent == percent && g_fonts.floorH == textfit::g_floorH && g_fonts.label.texture &&
+        g_fonts.chars == g_chars.size())
         return g_fonts;
-    if (g_chars.empty())
-        g_chars = BaseChars();
     const float k = percent / 100.0f;
     int titlePx = std::max(8, static_cast<int>(sh * 0.028f * k + 0.5f));
     int labelPx = std::max(8, static_cast<int>(sh * 0.0235f * k + 0.5f));
@@ -52,7 +56,9 @@ const Fonts& FontsFor(int sh, int percent)
     ok = ok && (render::BuildFont(g_fonts.body, gamefont::TextFace(), bodyPx, 400, g_chars) ||
                 render::BuildFont(g_fonts.body, L"Segoe UI", bodyPx, 400, g_chars));
     g_fonts.sh = sh;
+    g_fonts.floorH = textfit::g_floorH;
     g_fonts.percent = percent;
+    g_fonts.chars = g_chars.size();
     g_fonts.ok = ok;
     if (ok)
         Log("uikit: fonts %ls %d / %d px, body %d px (H %d, %d %%)", g_fonts.label.face.c_str(), titlePx, labelPx,
@@ -62,12 +68,49 @@ const Fonts& FontsFor(int sh, int percent)
     return g_fonts;
 }
 
+static Fonts g_pageFonts;
+
+const Fonts& PageFontsFor(int sh, int percent)
+{
+    percent = std::clamp(percent, 50, 200);
+    Fonts& p = g_pageFonts;
+    GrowChars();
+    if (p.ok && p.sh == sh && p.percent == percent && p.floorH == textfit::g_floorH && p.label.texture && p.chars == g_chars.size())
+        return p;
+    const float k = percent / 100.0f;
+    const int minPx = static_cast<int>(textfit::MinSize(static_cast<float>(sh)) + 0.5f);
+    const auto px = [&](float h) { return std::max(minPx, static_cast<int>(sh * h * k + 0.5f)); };
+    const bool game = gamefont::Load();
+    const wchar_t* face = gamefont::LabelFace();
+    const auto build = [&](const wchar_t* name, int weight)
+    {
+        return render::BuildFont(p.title, name, px(0.024f), weight, g_chars) && render::BuildFont(p.label, name, px(0.032f), weight, g_chars) &&
+               render::BuildFont(p.body, name, px(0.030f), weight, g_chars) && render::BuildFont(p.big, name, px(0.040f), weight, g_chars);
+    };
+    bool ok = build(face, game ? 400 : 600);
+    if (!ok && game)
+        ok = build(L"Segoe UI", 600);
+    p.sh = sh;
+    p.percent = percent;
+    p.floorH = textfit::g_floorH;
+    p.chars = g_chars.size();
+    p.ok = ok;
+    if (!ok)
+        Log("uikit: page fonts FAILED (%ls, H %d)", face, sh);
+    return p;
+}
+
 void FreeFonts()
 {
     render::FreeFont(g_fonts.title);
     render::FreeFont(g_fonts.label);
     render::FreeFont(g_fonts.body);
     g_fonts.ok = false;
+    render::FreeFont(g_pageFonts.title);
+    render::FreeFont(g_pageFonts.label);
+    render::FreeFont(g_pageFonts.body);
+    render::FreeFont(g_pageFonts.big);
+    g_pageFonts.ok = false;
 }
 
 std::wstring Widen(const char* utf8) { return str::Widen(utf8); }
@@ -161,7 +204,8 @@ bool Input::PushKey(int vk, bool down, bool capturing)
 {
     if (vk <= 0 || vk >= 256)
         return false;
-    if (!capturing && !NavKey(vk))
+    const bool pageKey = pageKeys_ && (vk == 'Q' || vk == 'E' || vk == 'D' || vk == 'C');
+    if (!capturing && !NavKey(vk) && !pageKey)
         return false;
     keys_.push_back({vk, down});
     return true;
@@ -190,12 +234,12 @@ UiInput Input::Poll(float dt, bool capturing)
         for (int i = 0; i < 4; ++i)
         {
             if (dir[i] && !prevDir[i])
-                *edges[i] = true, repeat_[i] = 0.45f;
+                *edges[i] = true, repeat_[i] = repeatFirst_;
             else if (dir[i])
             {
                 repeat_[i] -= dt;
                 if (repeat_[i] <= 0)
-                    *edges[i] = true, repeat_[i] = 0.09f;
+                    *edges[i] = true, repeat_[i] = repeatNext_;
             }
             prevDir[i] = dir[i];
         }
@@ -215,10 +259,14 @@ UiInput Input::Poll(float dt, bool capturing)
         }
         switch (e.vk)
         {
-        case VK_UP: in.up = true; repeat_[0] = 0.45f; break;
-        case VK_DOWN: in.down = true; repeat_[1] = 0.45f; break;
-        case VK_LEFT: in.left = true; repeat_[2] = 0.45f; break;
-        case VK_RIGHT: in.right = true; repeat_[3] = 0.45f; break;
+        case VK_UP: in.up = true; repeat_[0] = repeatFirst_; break;
+        case VK_DOWN: in.down = true; repeat_[1] = repeatFirst_; break;
+        case VK_LEFT: in.left = true; repeat_[2] = repeatFirst_; break;
+        case VK_RIGHT: in.right = true; repeat_[3] = repeatFirst_; break;
+        case 'Q': in.tabPrev = true; break;
+        case 'E': in.tabNext = true; break;
+        case 'D': in.defaultKey = true; break;
+        case 'C': in.cancelKey = true; break;
         case VK_RETURN: case VK_SPACE: in.accept = true; break;
         case VK_ESCAPE: case VK_BACK: in.back = true; break;
         case VK_PRIOR: in.pageUp = true; break;
@@ -235,7 +283,7 @@ UiInput Input::Poll(float dt, bool capturing)
             {
                 repeat_[i] -= dt;
                 if (repeat_[i] <= 0)
-                    *edges[i] = true, repeat_[i] = 0.09f;
+                    *edges[i] = true, repeat_[i] = repeatNext_;
             }
     }
     // the pointer: the game's cursor (the physical and the virtual mouse alike) and its left button
@@ -263,23 +311,28 @@ static float Floor(const Fonts& f)
     return textfit::MinSize(static_cast<float>(f.sh));
 }
 
+// The value's colour: the focus's yellow, the row's grey, or the label blue.
+static u32 ValueColor(const RowStyle& s) { return s.lit ? uidraw::kSelected : s.enabled ? uidraw::kText : uidraw::kDisabled; }
+
 void RowLabel(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::wstring& label)
 {
-    const u32 col = s.enabled ? uidraw::kText : uidraw::kDisabled;
+    const u32 col = ValueColor(s);
     if (s.focused)
         uidraw::FocusFrame(g.labelX - g.sh * 0.03f, g.y, g.controlRight - g.labelX + g.sh * 0.045f, g.h, g.sh,
                            uidraw::Fade(uidraw::kFrame, 0.9f));
+    const float x = g.labelX + s.indent;
     if (s.changed)
-        uidraw::Dot(g.labelX - g.sh * 0.012f, g.y + g.h * 0.5f, std::max(2.0f, g.sh * 0.0035f), col);
+        uidraw::Dot(x - g.sh * 0.012f, g.y + g.h * 0.5f, std::max(2.0f, g.sh * 0.0035f), col);
     render::SetFont(f.label);
     // the game's row labels are upper case (RESOLUTION, MOUSE SENSITIVITY): the spec's labels drawn the same way
     std::wstring upper = label;
-    for (wchar_t& c : upper)
-        if (c >= L'a' && c <= L'z')
-            c = static_cast<wchar_t>(c - L'a' + L'A');
+    if (!s.ownCase)
+        for (wchar_t& c : upper)
+            if (c >= L'a' && c <= L'z')
+                c = static_cast<wchar_t>(c - L'a' + L'A');
     // fitted to the room left of the control column (the fit rule)
-    const float room = g.controlLeft > g.labelX ? g.controlLeft - g.labelX - g.sh * 0.01f : 1e9f;
-    uidraw::TextShadowFit(g.labelX, TextY(f.label, g), f.label, uidraw::FitText(f.label, upper, room, Floor(f)), col,
+    const float room = g.controlLeft > x ? g.controlLeft - x - g.sh * 0.01f : 1e9f;
+    uidraw::TextShadowFit(x, TextY(f.label, g), f.label, uidraw::FitText(f.label, upper, room, Floor(f)), col,
                           std::max(1.0f, g.sh * 0.001f));
 }
 
@@ -295,16 +348,28 @@ static void Note(const Fonts& f, const RowGeom& g, const RowStyle& s, float righ
 
 void RowToggle(const Fonts& f, const RowGeom& g, const RowStyle& s, bool on)
 {
-    const u32 col = s.enabled ? uidraw::kText : uidraw::kDisabled;
+    const u32 col = ValueColor(s);
     const float box = g.sh * 0.039f; // half 42 at 2160
     const float bx = g.controlRight - box, by = g.y + (g.h - box) * 0.5f;
-    uidraw::Checkbox(bx, by, box, on, s.enabled);
+    if (!s.bare)
+        uidraw::Checkbox(bx, by, box, on, s.enabled);
     render::SetFont(f.label);
     const std::wstring word = on ? L"ENABLED" : L"DISABLED";
     const float w = static_cast<float>(render::TextWidth(f.label, word));
-    const float tx = g.controlRight - g.sh * 0.052f - w; // the game's ENABLED ends at 3010 (4K; measured 25 Oct 2026)
+    const float tx = g.controlRight - (s.bare ? 0 : g.sh * 0.052f) - w; // the game's ENABLED ends at 3010 (4K; measured 25 Oct 2026)
     uidraw::TextShadow(tx, TextY(f.label, g), word, col, std::max(1.0f, g.sh * 0.001f));
     Note(f, g, s, tx - g.sh * 0.02f);
+}
+
+void RowHead(const Fonts& f, const RowGeom& g, const std::wstring& word, u32 argb, bool box, bool on)
+{
+    const float size = g.sh * 0.039f;
+    if (box)
+        uidraw::Checkbox(g.controlRight - size, g.y + (g.h - size) * 0.5f, size, on, true);
+    render::SetFont(f.body);
+    const float right = g.controlRight - (box ? g.sh * 0.052f : 0), room = right - g.controlLeft;
+    const textfit::Result w = uidraw::FitText(f.body, word, room, Floor(f));
+    uidraw::TextShadowFit(right - w.width, TextY(f.body, g), f.body, w, argb, std::max(1.0f, g.sh * 0.001f));
 }
 
 PickerHit PickerArea(const RowGeom& g)
@@ -320,13 +385,12 @@ void RowPicker(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::w
 {
     const PickerHit a = PickerArea(g);
     const float bh = g.h * 0.72f, by = g.y + (g.h - bh) * 0.5f;
-    const float cell = uidraw::PickerBox(a.x, by, a.w, bh, g.sh, s.enabled);
+    const float cell = s.bare ? 0 : uidraw::PickerBox(a.x, by, a.w, bh, g.sh, s.enabled);
     render::SetFont(f.label);
     const float room = a.w - cell - g.sh * 0.02f;
     const textfit::Result w = uidraw::FitText(f.label, word, room, Floor(f)); // a long word: the fit rule
-    const u32 col = s.enabled ? uidraw::kText : uidraw::kDisabled;
-    uidraw::TextShadowFit(a.x + (a.w - cell - w.width) * 0.5f, TextY(f.label, g), f.label, w, col,
-                          std::max(1.0f, g.sh * 0.001f));
+    const float x = s.bare ? g.controlRight - w.width : a.x + (a.w - cell - w.width) * 0.5f;
+    uidraw::TextShadowFit(x, TextY(f.label, g), f.label, w, ValueColor(s), std::max(1.0f, g.sh * 0.001f));
     Note(f, g, s, a.x - g.sh * 0.015f);
 }
 
@@ -342,11 +406,12 @@ void RowSlider(const Fonts& f, const RowGeom& g, const RowStyle& s, float t, con
 {
     const SliderHit a = SliderArea(g);
     const float cy = g.y + g.h * 0.5f;
-    uidraw::SliderTrack(a.x, cy, a.w, g.sh, t, s.enabled);
+    if (!s.bare)
+        uidraw::SliderTrack(a.x, cy, a.w, g.sh, t, s.enabled);
     render::SetFont(f.body);
     const float w = static_cast<float>(render::TextWidth(f.body, caption));
-    const float tx = a.x - g.sh * 0.022f - w;
-    render::Text(tx, TextY(f.body, g), caption, s.enabled ? uidraw::kText : uidraw::kDisabled);
+    const float tx = s.bare ? g.controlRight - w : a.x - g.sh * 0.022f - w;
+    render::Text(tx, TextY(f.body, g), caption, ValueColor(s));
     Note(f, g, s, tx - g.sh * 0.015f);
 }
 
@@ -354,14 +419,16 @@ void RowKey(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::wstr
 {
     const PickerHit a = PickerArea(g);
     const float bh = g.h * 0.72f, by = g.y + (g.h - bh) * 0.5f;
-    render::Box(a.x, by, a.w, bh, 0x40000000);
-    uidraw::Frame(a.x, by, a.w, bh, std::max(1.0f, g.sh * 0.0014f),
-                  capturing ? uidraw::kSelected : (s.enabled ? uidraw::kFrame : uidraw::kDisabled));
+    if (!s.bare)
+    {
+        render::Box(a.x, by, a.w, bh, 0x40000000);
+        uidraw::Frame(a.x, by, a.w, bh, std::max(1.0f, g.sh * 0.0014f),
+                      capturing ? uidraw::kSelected : (s.enabled ? uidraw::kFrame : uidraw::kDisabled));
+    }
     render::SetFont(f.label);
     const textfit::Result w = uidraw::FitText(f.label, capturing ? L"PRESS A KEY" : keyName, a.w - g.sh * 0.02f, Floor(f));
-    uidraw::TextShadowFit(a.x + (a.w - w.width) * 0.5f, TextY(f.label, g), f.label, w,
-                          capturing ? uidraw::kSelected : (s.enabled ? uidraw::kText : uidraw::kDisabled),
-                          std::max(1.0f, g.sh * 0.001f));
+    uidraw::TextShadowFit(s.bare ? g.controlRight - w.width : a.x + (a.w - w.width) * 0.5f, TextY(f.label, g), f.label, w,
+                          capturing ? uidraw::kSelected : ValueColor(s), std::max(1.0f, g.sh * 0.001f));
     Note(f, g, s, a.x - g.sh * 0.015f);
 }
 

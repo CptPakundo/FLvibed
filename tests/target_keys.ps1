@@ -2,7 +2,7 @@
 # game builds in the list's draw, which stops with the hidden root. One background game a row: hud2 with the pad's RS click, kbm (HUD 2, the controller
 # off), classic as the control. Judged: the keys step through distinct objects, the same on each. -Range: a target left past 10 km, the panel's drop rule.
 # Usage (PowerShell tool): tests\target_keys.ps1 [-Row hud2,kbm,classic] [-Range] [-Instance 1]   build\release. Exit 1 = a failure.
-param([string[]]$Row = @('hud2', 'kbm', 'classic'), [switch]$Range, [int]$Instance = 1)
+param([string[]]$Row = @('hud2', 'kbm', 'classic'), [switch]$Range, [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -32,7 +32,7 @@ foreach ($r in $Row) {
     try {
         Pass 400 # (the list's first build: 1.5 s)
         # (the keys walk from the current target: with none they do nothing, on the classic HUD too)
-        "  $(Say 'spawn fc_lr_pi_fighter_d1 player 3 1500')"; Pass 300
+        "  $(Say "spawn $(Resolve-FLNpc 'fc_lr_pi_fighter_d1') player 3 1500")"; Pass 300
         if ($r -eq 'hud2') {
             # the pad's RS click: the smart target, then the next enemy
             Clear-FLPad; Set-FLPad -LX 0.01; Pass 20; Clear-FLPad; Pass 20

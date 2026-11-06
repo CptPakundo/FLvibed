@@ -1,6 +1,7 @@
 // Minimal Direct3D 8 overlay renderer: glyph atlas fonts, text, images, quads and screen region readback.
 #include "render.h"
 
+#include "glyphset.h"
 #include "hook.h"
 #include "log.h"
 
@@ -255,16 +256,30 @@ bool BuildFont(Font& font, const wchar_t* face, int px, int weight, const std::w
     std::vector<Raster> rs;
     std::wstring set = chars;
     set += L'?';
-    for (wchar_t c : set)
+    // The box the face draws for a character neither it nor GDI's fallback holds (U+FFFF: no font's): such a character
+    // stays out of the atlas, so GlyphFor gives its stand-in. A character the face lacks but GDI found elsewhere stays.
+    const size_t cellBytes = static_cast<size_t>(cellW) * cellH * 4;
+    const wchar_t noChar = 0xFFFF;
+    memset(bits, 0, cellBytes);
+    TextOutW(dc, pad, 0, &noChar, 1);
+    GdiFlush();
+    const std::vector<u8> box(static_cast<const u8*>(bits), static_cast<const u8*>(bits) + cellBytes);
+    std::vector<WORD> index(set.size());
+    const bool indexed = GetGlyphIndicesW(dc, set.c_str(), static_cast<int>(set.size()), index.data(),
+                                          GGI_MARK_NONEXISTING_GLYPHS) == set.size();
+    for (size_t i = 0; i < set.size(); ++i)
     {
+        const wchar_t c = set[i];
         bool dup = false;
         for (const Raster& r : rs)
             dup |= r.c == c;
         if (dup)
             continue;
-        memset(bits, 0, static_cast<size_t>(cellW) * cellH * 4);
+        memset(bits, 0, cellBytes);
         TextOutW(dc, pad, 0, &c, 1);
         GdiFlush();
+        if (indexed && index[i] == 0xFFFF && c != L'?' && memcmp(bits, box.data(), cellBytes) == 0)
+            continue;
         SIZE sz = {};
         GetTextExtentPoint32W(dc, &c, 1, &sz);
         int x0 = cellW, y0 = cellH, x1 = -1, y1 = -1;
@@ -374,19 +389,31 @@ bool BuildFont(Font& font, const wchar_t* face, int px, int weight, const std::w
     return true;
 }
 
-static const Glyph* GlyphOf(const Font& f, wchar_t c)
+static std::wstring g_unmet;
+
+const std::wstring& Unmet() { return g_unmet; }
+
+const Glyph* GlyphFor(const Font& f, wchar_t c)
 {
-    auto it = f.glyphs.find(c);
-    if (it == f.glyphs.end())
-        it = f.glyphs.find(L'?');
-    return it == f.glyphs.end() ? nullptr : &it->second;
+    const auto own = f.glyphs.find(c);
+    if (own != f.glyphs.end())
+        return &own->second;
+    if (f.glyphs.empty())
+        return nullptr;
+    if (c >= 32 && g_unmet.size() < 256 && g_unmet.find(c) == std::wstring::npos)
+    {
+        g_unmet += c;
+        Log("render: U+%04X not in the atlas of %ls - added at the next build", static_cast<unsigned>(c), f.face.c_str());
+    }
+    const wchar_t drawn = glyphset::Resolve(c, [&](wchar_t ch) { return f.glyphs.count(ch) != 0; });
+    return drawn ? &f.glyphs.find(drawn)->second : nullptr;
 }
 
 int TextWidth(const Font& font, const std::wstring& s)
 {
     int w = 0;
     for (wchar_t c : s)
-        if (const Glyph* g = GlyphOf(font, c))
+        if (const Glyph* g = GlyphFor(font, c))
             w += g->advance;
     return w;
 }
@@ -607,7 +634,7 @@ void Text(float x, float y, const std::wstring& s, u32 argb)
     y = std::floor(y);
     for (wchar_t c : s)
     {
-        const Glyph* g = GlyphOf(*g_font, c);
+        const Glyph* g = GlyphFor(*g_font, c);
         if (!g)
             continue;
         if (g->w > 0)
@@ -642,7 +669,7 @@ void TextScaled(float x, float y, const std::wstring& s, u32 argb, float scale)
     float pen = x;
     for (wchar_t c : s)
     {
-        const Glyph* g = GlyphOf(*g_font, c);
+        const Glyph* g = GlyphFor(*g_font, c);
         if (!g)
             continue;
         if (g->w > 0)

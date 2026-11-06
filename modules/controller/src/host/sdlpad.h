@@ -11,6 +11,12 @@ namespace sdlpad
 int Pad(int on, SdlPadState* out);
 // HostApi v33 SdlPadRumble: a vibration request the thread sends at its next read.
 void Rumble(u16 low, u16 high, u32 ms);
+// HostApi v41 SdlPadTriggers: both triggers' effects, sent by the thread at its next read.
+void Triggers(const u8* left, const u8* right);
+// HostApi v41 SdlPadTriggerRumble: the trigger motors, as Rumble.
+void TriggerRumble(u16 left, u16 right, u32 ms);
+// The open pad's device path (the waveform's endpoint is found from it). False with none open.
+bool Path(char* out, int len);
 // HostApi v38 SdlPadFilter: a mapper's injected keys and mouse dropped while the pad has input.
 void Filter(int on, float stickDeadzone, float triggerThreshold);
 // The host-side debug command `sdlpad [status] | attach <xbox|ps5|switchpro> [slot] | detach [slot|all] | send ...`

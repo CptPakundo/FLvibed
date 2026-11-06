@@ -177,11 +177,10 @@ void Test_hud2_lint()
         CHECK(Count(Lint(ok), "zone") == 0);
     }
     // ---- the lower centre (the owner, 31 Oct 2026: "The CRUISE ON text still hides the ship ... make sure the lower
-    // center of the screen is devoid of HUD elements"; UI_HUD2.md 5.23). Standard at 16:9, k 1: the ring r 0.10, its
-    // throttle arc at r 0.122 (width 0.75 x 0.0065) - the ring's lowest drawn edge 0.12444 below the centre, the zone from
-    // 0.5 + 0.12444 + 0.01 = 0.63444 H (hud2_layout.h RingBottom / Out::clearY0; tests\hud2_layout_test.cpp computes it)
+    // center of the screen is devoid of HUD elements"; UI_HUD2.md 5.23). Standard at 16:9, k 1: the ring r 0.10, the speed under the meter (form C) - the ring's
+    // lowest drawn edge 0.1435 below the centre, the zone from 0.5 + 0.1435 + 0.01 = 0.6535 H (hud2_layout.h RingBottom / Out::clearY0)
     {
-        const float clearY0 = 0.5f + 0.10f + 0.022f + 0.5f * 0.75f * 0.0065f + 0.01f, c = 0.5f, mid = 0.5f * kW / kH;
+        const float clearY0 = 0.5f + 0.10f + 0.0435f + 0.01f, c = 0.5f, mid = 0.5f * kW / kH;
         auto base = [&]()
         {
             Input in = Passing();
@@ -369,6 +368,25 @@ void Test_hud2_lint()
         k.textH = 0.018f * kH;
         key.items.push_back(k);
         CHECK(Count(Lint(key), "text.floor") == 1);
+    }
+    // ---- FAIL: a prompt on the subtitles' panel
+    {
+        Input on = Passing();
+        on.items.push_back(Box(Kind::Text, "context", 0.30f, 0.80f, 0.40f, 0.84f));
+        on.dlgX0 = 0.05f * kH, on.dlgY0 = 0.70f * kH, on.dlgX1 = 0.35f * kH, on.dlgY1 = 0.82f * kH;
+        CHECK(Has(Lint(on), "prompt.subtitles", "subtitles"));
+    }
+    // ---- FAIL: an alert card over another part, or its words out of its plate (GitHub issue 35
+    {
+        Input over = Passing();
+        over.items.push_back(Box(Kind::Shape, "alert", 0.05f, 0.05f, 0.30f, 0.10f));
+        over.items.push_back(Box(Kind::Text, "alert", 0.06f, 0.06f, 0.20f, 0.09f));
+        over.items.push_back(Box(Kind::Text, "card", 0.15f, 0.07f, 0.40f, 0.09f));
+        CHECK(Has(Lint(over), "alert.overlap", "another part"));
+        Input out = Passing();
+        out.items.push_back(Box(Kind::Shape, "alert", 0.05f, 0.05f, 0.30f, 0.10f));
+        out.items.push_back(Box(Kind::Text, "alert", 0.06f, 0.06f, 0.33f, 0.09f));
+        CHECK(Has(Lint(out), "alert.overlap", "out of the card"));
     }
     // ---- FAIL: centre-stack overlaps (no overlap + 0.01 H gap)
     {

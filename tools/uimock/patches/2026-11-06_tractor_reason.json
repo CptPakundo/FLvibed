@@ -1,0 +1,14 @@
+{
+  "_about": "0.4.0 (6 Nov 2026), GitHub issue 33: a refused loot says why, in the game's own words: HUD 2's card with Alerts on, else the Neural Net line.",
+  "add_rows": {
+    "subtitles/MOTION": {"after": "neural_net_severity", "rows": [
+      {"key": "neural_net_reason", "label": "Tractor Failure says why", "kind": "toggle", "def": true, "parent": "enabled",
+       "help": "The Tractor Failure line adds why the item was refused: cargo hold, nanobots, shield batteries or that ammo full. With HUD 2's Alerts on, the alert card says it whatever this row says."}
+    ]}
+  },
+  "rows": {
+    "hud_alerts": {
+      "help": "A short card when something needs you now (shield failing, missile incoming, cruise disrupted, hold full, loot the tractor refused and why), naming the button that helps; that slot lights up."
+    }
+  }
+}

@@ -76,6 +76,13 @@ void Disc(float cx, float cy, float r, u32 argb);
 void SegBar(float x, float y, float w, float h, float frac, u32 rgb, int n, float gap = -1, bool right = false);
 void SegArc(float cx, float cy, float r, float a0, float a1, float width, float frac, u32 rgb, int n, float gapDeg,
             bool reverse, u32 emptyRgb = 0x283050, float emptyWidth = -1); // emptyWidth: the empty blocks' (-1 = width)
+// A centred meter (GitHub issue 28): the same blocks, the lit part `frac` of the span about its middle, trimmed continuously at both ends, so it drains
+// to the middle and fills from it. A block cut by the trim keeps its empty form under the lit part.
+void SegArcCentred(float cx, float cy, float r, float a0, float a1, float width, float frac, u32 rgb, int n, float gapDeg,
+                   u32 emptyRgb = 0x283050, float emptyWidth = -1);
+// The arcs that follow carry a navy keyline this many pixels wide along both edges, under their blocks, so they read over a bright planet (0 = none). It adds
+// no area: a scope around the ring's arcs.
+void SetArcKeyline(float px);
 // A glass plate: chamfered corners where flagged (tl, tr, br, bl), hairline rim, an accent edge (side 'l' / 't' /
 // 'b', 0 none) in a colour. Alphas 0..1 (the mock's alpha / 255).
 void Plate(float x0, float y0, float x1, float y1, float chamfer, int corners, float fill = 0.6f, u32 rim = kChrome,

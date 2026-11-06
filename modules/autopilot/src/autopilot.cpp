@@ -2,6 +2,7 @@
 // autopilot_impl.h, the module API in autopilot.h.
 #include "autopilot_impl.h"
 #include "autopilot_ashride.h"
+#include "dock_skip.h"
 #include "situation_exec.h"
 
 namespace autopilot
@@ -336,11 +337,33 @@ void StopImpl(StopReason why, bool cancel, const char* text)
 HoldResume g_holdResume;
 
 static ULONGLONG g_ownDockAt = 0; // when the autopilot's own dock went through (Stop "docking")
+static u32 g_ownDockObject = 0;   // ...and with what
+
+bool OurDock(u32& object)
+{
+    object = 0;
+    if (g.mode == Mode::Dock && g.started)
+    {
+        object = g.target;
+        return true;
+    }
+    if (g.mode != Mode::Travel || !g.dock.fastRequested || g.tr.step >= g.tr.plan.steps.size())
+        return false;
+    const route::Step& s = g.tr.plan.steps[g.tr.step];
+    if (s.kind != route::Kind::Dock)
+        return false;
+    object = s.object;
+    return true;
+}
+
 void Stop(StopReason why, const char* text)
 {
     const bool gameSequence = why == StopReason::Docked || why == StopReason::Docking || why == StopReason::LeftSpace;
     if (why == StopReason::Docking && g.mode != Mode::Off)
+    {
         g_ownDockAt = gameclock::NowMs64();
+        OurDock(g_ownDockObject);
+    }
     // (a refused dock is no dock the step still wants: M04's trade lane; was strstr(why, "refused"), which only
     // "travel: dock refused" contains)
     if (gameSequence || why == StopReason::DockRefused)
@@ -356,10 +379,24 @@ void Stop(StopReason why, const char* text)
 // The module API (the controller: "player input", "pad", "docked", "left space"): its text as the reason.
 void Stop(const char* why) { Stop(StopReasonOf(why), why); }
 
-bool OwnDock()
+// A ring locks the ship a frame before the docking camera, so UpdateModes stops "docking" first; a station's bay does not
+// (docs\kb\navigation-and-hazards.md): its run is still on when the camera comes, and stops "docked" after the scene. Both
+// are the autopilot's own dock (was: only the stop counted, so outside the objective mode no station's scene was skipped).
+static dockskip::Facts DockFacts()
 {
-    return g_set.skipDockScene && (ObjectiveOn() || (g_ownDockAt && gameclock::NowMs64() - g_ownDockAt < 5000));
+    dockskip::Facts f;
+    f.setting = g_set.skipDockScene;
+    f.objective = ObjectiveOn();
+    f.stopped = g_ownDockAt && gameclock::NowMs64() - g_ownDockAt < 5000;
+    f.stoppedObject = g_ownDockObject;
+    f.flying = OurDock(f.flyingObject);
+    f.multiplayer = space::Multiplayer();
+    return f;
 }
+
+bool OwnDock() { return dockskip::Own(DockFacts()); }
+
+u32 OwnDockObject(u32 target) { return dockskip::Object(DockFacts(), target); }
 
 // pre_aggro's ships (SetPreHostile; was space::SetPreHostile, applied inside space::Contacts until the core audit of 24
 // Oct 2026, audit_core 1.1 b: core reports what the game says, the policy is the autopilot's).

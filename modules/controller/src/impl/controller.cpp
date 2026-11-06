@@ -144,6 +144,29 @@ static void PadFeel()
     hf.enabled = coreframe::opts.enabled;
     hf.paused = fl::GamePaused();
     hf.autopilot = views::ApActive();
+    hf.window = g_mode == Mode::SpaceUi;
+    // the triggers' roles and the fire and launcher buttons, from the live table: a trigger follows its bind, not its side
+    const auto roleOf = [](presets::Action a) {
+        return a == presets::Action::Fire || a == presets::Action::FireGroup1 || a == presets::Action::FireGroup2 ? haptics::Role::Fire
+               : a == presets::Action::Afterburner                                                                ? haptics::Role::Afterburner
+               : a == presets::Action::Throttle                                                                   ? haptics::Role::Throttle
+                                                                                                                  : haptics::Role::None;
+    };
+    hf.role[0] = roleOf(g_table.b[glyphs::LT].tap), hf.role[1] = roleOf(g_table.b[glyphs::RT].tap);
+    hf.held[0] = g_pad.Down(PAD_LT), hf.held[1] = g_pad.Down(PAD_RT);
+    bool down[glyphs::COUNT];
+    PadInputs(down);
+    static bool fireWas = false, launcherWas = false;
+    bool fire = false, launcher = false;
+    for (int i = 0; i < glyphs::COUNT; ++i)
+    {
+        const presets::Action tap = g_table.b[i].tap, hold = g_table.b[i].hold;
+        fire = fire || (down[i] && roleOf(tap) == haptics::Role::Fire);
+        launcher = launcher || (down[i] && (tap == presets::Action::Missile || tap == presets::Action::Torpedo || tap == presets::Action::CruiseDisruptor ||
+                                            hold == presets::Action::Torpedo || hold == presets::Action::CruiseDisruptor));
+    }
+    hf.fireHeld = fire, hf.firePressed = fire && !fireWas, hf.launcherPressed = launcher && !launcherWas;
+    fireWas = fire, launcherWas = launcher;
     haptics::Update(hf, g_pad);
 }
 
@@ -159,6 +182,10 @@ static void PadOptions()
     u.padPreset = g_opt.padPreset == presets::ASSISTED && !views::ApPresent() ? presets::FREELANCER : g_opt.padPreset;
     u.weaponGroups = g_opt.weaponGroups, u.swapY = g_opt.swapY, u.holdsAsToggles = g_opt.holdsAsToggles;
     u.rumble = g_opt.rumble, u.padCursor = g_opt.padCursor;
+    u.triggerEffects = g_opt.triggerEffects, u.triggerStrength = g_opt.triggerStrength, u.hapticsMode = g_opt.hapticsMode, u.hapticsDevice = g_opt.hapticsDevice;
+    memcpy(u.hapticsClass, g_opt.hapticsClass, sizeof(u.hapticsClass));
+    const haptics::Caps caps = haptics::CapsFor(g_pad.Facts());
+    u.padTriggers = caps.adaptive || caps.triggerMotors;
     u.cursorMagnet = g_opt.cursorMagnet, u.promptBar = g_opt.promptBar, u.worldPrompts = g_opt.worldPrompts;
     u.apHints = g_opt.apHints, u.hudGlyphs = g_opt.hudGlyphs;
     u.buttonLegend = g_opt.buttonLegend, u.apStatusLine = g_opt.apStatusLine;

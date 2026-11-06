@@ -29,9 +29,12 @@ void Update(float dt, const Context& c);
 void RenderUnder(void* device);
 // The skin is on (ui_style 1 and the controller on): the prompt bar / options page take their HUD 2 look.
 bool On();
+bool PadOwns(); // the pad is the device, as this frame's Update said
 // From the overlay pass (promptbar::Draw calls it first): what must sit over the game's own UI - the confirm dialog's
 // focus (its native dimming box covers the under-pass glass). Nothing when the skin is off.
 void DrawOver(void* device);
+// Over the game's UI, under the prompt lane: the dialogs (skindialog.*), their scrim and what fell to native says so. Any mode; nothing when the skin is off.
+void DrawModal(void* device);
 // A modal menu is shown now (pause, save / load, Options - the scrim's families - or the confirm dialog) while the skin
 // is on (false under ui_style 0). From OnRenderUnderHud before the skin's own pass: the registry is brought current
 // first (on the host's UI generation: a compare when nothing changed), then a few cached state reads - no search.
@@ -39,6 +42,6 @@ bool ModalOpen();
 // Everything restored (hot reload, unload).
 void Shutdown();
 void GiveBack(); // a fault's: the windows' art and colours back, the game's own
-// Debug: uiskin state | windows | restore | rescan
+// Debug: uiskin state | windows | restore | rescan | seams | loadplace <0|1>
 std::string Command(std::istream& in);
 } // namespace uiskin

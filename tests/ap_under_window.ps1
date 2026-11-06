@@ -6,7 +6,7 @@
 # Usage (PowerShell tool): tests\ap_under_window.ps1 [-Row page,map,inventory,story,stats,turret,none] [-Fight] [-Instance 1] [-Save SaveC702.fl]
 # build\release. Exit 1 = a check failed.
 param([string[]]$Row = @('page', 'map', 'inventory', 'story', 'stats', 'turret', 'none'), [switch]$Fight, [string[]]$FightRow = @('none', 'map', 'inventory', 'page'),
-      [int]$Instance = 1, [string]$Save = 'SaveC702.fl')
+      [string]$Instance = 1, [string]$Save = 'SaveC702.fl')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -92,7 +92,7 @@ try {
             "--- fight under $r, $dev"
             if ($dev -eq 'pad') { Set-FLPad -LX 0.01; Settle; Clear-FLPad; Settle } else { $null = Send-FL 'post 126'; Settle }
             "  $(Send-FL 'spawn clear')"
-            "  $(Send-FL 'spawn fc_lr_pi_fighter_d1 player 2 900')"
+            "  $(Send-FL "spawn $(Resolve-FLNpc 'fc_lr_pi_fighter_d1') player 2 900")"
             Settle 30
             "open: $(Send-FL $opens[$r])"
             if ($r -notin 'page', 'none') { $null = Wait-FLUntil { (Get-FLMode) -eq 'space-ui' } "$r open" 15 }

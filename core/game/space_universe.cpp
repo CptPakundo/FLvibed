@@ -126,6 +126,22 @@ std::vector<Obstacle> LethalZones(const float center[3], float range)
 
 std::string StrictAt(const float pos[3]) { return StrictAt(pos, ZoneRules{}); }
 
+int FieldAt(const float pos[3])
+{
+    if (!InSpace())
+        return 0;
+    const u32 system = Mem<u32>(exe::PlayerSystem);
+    const auto& fields = Parsed(system, ZoneRules{}).fieldKinds;
+    if (fields.empty())
+        return 0;
+    u32 ids[32];
+    const int n = ZonesAt(system, pos, ids, 32);
+    for (int i = 0; i < n; ++i)
+        if (const auto f = fields.find(ids[i]); f != fields.end())
+            return f->second;
+    return 0;
+}
+
 std::string StrictAt(const float pos[3], const ZoneRules& rules)
 {
     if (!InSpace())

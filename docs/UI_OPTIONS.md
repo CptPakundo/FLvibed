@@ -2,7 +2,7 @@
 
 **The owner's brief, 6 Nov 2026:** "I want to default to HUD 2, and I also want the FLvibed options menu to be overhauled so that it fits the new module structure, and front loads the most important options. I want a default simple mode that shows basic and important options, with an optional advanced mode toggle that will allow the user more control, but frankly? I prefer to leave this advanced mode for later, as I prefer we first ensure the default simple mode covers the important options, makes sense, is readable, legible and intuitive."
 
-**Status:** the owner ruled on section 14 on 6 Nov 2026, and this text carries those rulings. Two or three real players check the mock before the row list freezes (section 12a). Nothing is built and no game ran. Research: `docs\research\options_menus.md`, section "Simple mode round". Evidence and mock frames: `research\evidence\options_menu\`. Open `mock\index.html` there first.
+**Status:** the owner ruled on section 14 on 6 Nov 2026, and this text carries those rulings. Two or three real players check the mock before the row list freezes (section 12a). The code is built and its rules are unit-tested, but nothing has been seen in game (section 15). Research: `docs\research\options_menus.md`, section "Simple mode round". Evidence and mock frames: `research\evidence\options_menu\`. Open `mock\index.html` there first.
 
 **Standing of a claim:** *web* = a page fetched and checked by a verifier; *measured* = read from a real frame or computed from the code's sizes; *code* / *doc* = read here; *owner* = the owner's words; *judgement* = this design's call.
 
@@ -100,10 +100,13 @@ Wording is proposed in full, because the wording is the design. Every descriptio
 | Aim | GIMBAL / RETICLE | `aim_mode` | Gimbal: the stick steers and the reticle locks onto your target. Reticle: the stick moves the reticle, with aim assist. |
 | Steering response | SOFT / LINEAR / SOFTER / SOFTEST | `steer_expo` | Softer is gentler near the centre, for fine aim. If unsure, leave it on Soft. |
 | Stick dead zone | 0-90 %, steps of 2 | `stick_deadzone` | How far a stick moves before the game reacts. Raise it if the ship drifts by itself. |
-| Rumble | 0-100 %, steps of 10 | `rumble` | Vibration strength: hits on your ship and warnings. Zero switches it off. |
+| Rumble | 0-100 %, steps of 10 | `rumble` | Vibration strength for everything: your ship, weapons, hits and warnings. Zero switches it off. |
+| Trigger effects, only with a pad that has triggers to drive | FULL / LIGHT / OFF | `trigger_effects` | Your triggers feel the ship: weight, vibration, a wall when you cannot fire. On Xbox: pulses, by USB or dongle. |
 | Button prompts | AUTOMATIC / XBOX / PLAYSTATION / NINTENDO / STEAM | `glyph_style` | Which button pictures to show. Automatic follows the connected controller. |
 | Weapon groups | CYCLE ON Y / ONE BUTTON / TWO TRIGGERS | `weapon_groups` | One button: one fire button. Cycle: Y steps through your groups. Two triggers: a group on each trigger. |
 | Held buttons | HOLD / TOGGLE | `holds_as_toggles` | Toggle: boost, reverse and rear view go on with one press and off with the next. Nothing needs holding. |
+
+**Trigger effects is the page's one row by pad** (`modules\controller\docs\HAPTICS.md` 10, a driver's call for the owner's eye). The tab stays at 10 rows, full and unscrolled at Large, on the handheld that sets Large: a Deck has no such triggers. A DualSense or an Xbox pad at Large would scroll one row. It stays Player tier in the spec, so the count of Simple rows does not move, and a changed value shows under YOU CHANGED with no such pad.
 
 A on Layout opens the **layout card**, read-only: every button of that layout, LB / RB through the layouts (frame 14). It replaces the row that opens nothing. Button names in any row follow the active family (Y reads as the triangle's name on PlayStation).
 
@@ -398,4 +401,23 @@ Two or three real players look at the mock before the row list freezes. **The pa
 | O9 | Two or three real players check the mock before the row list freezes | 12a |
 
 **Left to confirm:** O8 was asked together with sentence-case labels, and the ruling names only the words. Labels stay in sentence case here (XAG 101); the game's rows are in capitals. ENABLED / DISABLED were applied to every toggle on the same ruling. The Guided row on the card waits for the presets (5a).
+
+## 15. The build (code only; nothing seen in game)
+
+Where it lives: the rows in `docs\UI_SPEC.json` (patch `tools\uimock\patches\2026-11-06_options_simple.json`), the rules in `core\ui\options_rules.h` (tests: `tests\options_rules_test.cpp`), the page in `core\ui\options_page.cpp`, the layout card's lines in `core\ui\presets.*`, the stamp in `core\settings_reset.h`. Every existing row kept its section, key and default, compared row by row against the old header.
+
+**Calls the design left open: each stands as built, decided in the owner's absence (6 Nov 2026, the AFK order), for the owner to overturn. Reasons in brackets:**
+1. **Members of a preset under YOU CHANGED.** Autopilot style SPEEDRUN would list five rows there, Button hints ALWAYS two. A member stays out while its preset reads a word, and lists once it reads CUSTOM. Section 6.5 does not say. (Decided: the preset's word is the visible statement of those values, so nothing is out of sight.)
+2. **SOFTER and SOFTEST.** The design names the words, not the numbers: they took the old slider words' places, exponents 3 and 4 (LINEAR 1, SOFT 1.5). The number stays as a Show all row, Steering curve. (Decided: the old slider's own words kept their numbers.)
+3. **HUD 2 off greys the whole tab,** as O4 says, HUD size and Window text size included, though both still act, and a Classic player with the module on cannot reach Hit effects. A saved value outside the words reads as the raw number. (Decided: O4's words are the owner's, "everything inside is greyed out".)
+4. **Order of the words.** Section 4 lists the default first. Scales stay ascending in the cycle (Text size, Steering response); the other rows follow section 4. (Decided: a scale read in order is the plainer list.)
+5. **The module rows of Subtitles and the HUD** stay as Show all rows, so the mix of section 6.3 can still be made on purpose. (Decided: 6.3 needs that mix to stay valid.)
+6. **The words no section gives:** Ace, Assisted and Custom on Layout, the three other Autopilot styles, the coming-on help (*It comes on at the next start. Your setting is kept.*), the chips' descriptions. (Decided: in the page's voice, to be reworded freely; the player check of 12a covers them.)
+7. **RESET THEM asks nothing** (CANCEL takes it back): section 6.5 gives it no dialog. (Decided: CANCEL reverses it, the page's rule for DEFAULT.)
+8. **Labels in the game's look** stay in capitals as the game's rows are; sentence case on the skin only. (Decided: off means classic.)
+9. **STOPPED** can only read for the HUD, Autopilot, Speedrun and NPC: core has no fault flag for the Controller, Subtitles and Movies entries. (Decided: those three stop as their fail-safe says; a new flag is more host work than the row earns.)
+
+**Changed beside the design:** Esc on the hosted page now closes the page back to the game's column, as B does; it used to leave the Options screen. The prompt bar shows nothing on the page: the chips carry the buttons. Under the first card the main menu's window leaves the hit test (`session::MainMenuRoot`).
+
+**Needs the game to judge:** every size and the fit at 1280x800 Large and 4K, ten rows without scrolling, the tabs' widths, sentence case and the fit rule on the longest labels, the sample's height, chips and glyphs in both looks, the classic look's dialogs and card, 4:3 and 21:9; held repeat at 0.4 s and 8 a second; the first card's timing after the movies and that clicks do not reach the main menu; Esc hosted; Enter and A on dimmed rows; both Subtitles and Controller disabled, and that the game still starts; a head's file write with its module off, and that it survives the restart; `tests\page_modules.ps1`, `page_no_controller.ps1`, `window_modules.ps1` and `pixels.ps1` were updated for the tabs and dialogs and not run.
 

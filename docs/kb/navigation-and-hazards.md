@@ -46,6 +46,26 @@
   still runs; story cutscenes in space are never sent it. Before, only some harness calls skipped it: the objective
   mode's docks played 5-6 s, M03's Willard 14 s. Now 0.4 s cutscene to docked (Manhattan ring). Setting
   `skip_dock_scene`; event `dock-cutscene skipped` `[game]`.
+  **Rings and stations reach the docking camera differently** `[game]` (414 objective-mode docks in the leg logs, 25 Oct -
+  5 Nov 2026): at a ring (0x20, bay type 6) the game locks the maneuvers a frame or two before the camera, so the
+  autopilot stops "docking" first: 132 of 132. At a station (0x100, bays 4 / 5; Osiris too) no lock comes first: 277 of
+  282 show the camera with the run still on, stopped "docked" after the scene (the other 5 locked first; why not traced:
+  Common.dll's dock op locks in its state 9, reached by two routes, FREELANCER_RE "Docking camera"). So nothing may
+  hang on the lock: `OwnDock` counts the stop, **or** the run still flying the dock it asked for
+  (`modules\autopilot\src\dock_skip.h`, `OurDock`). Only the stop counted until 6 Nov 2026, which the objective mode hid
+  (it counts every dock): a plain autopilot trip to a station or base played its full scene (GitHub issue 32, a tester on
+  0.3.5rc; reproduced 6 Nov 2026 on main's build, frames and log: Baltimore Shipyard 13.0 s, Fort Bush 14.3 s, no skip event,
+  the Manhattan ring skipped in 0.4 s; the fixed build 0.4 s at all three). The skip's own tap at stations is proven: all 524 objective-mode docks
+  of those logs, both kinds, skipped, 0.6 s on average from the camera to docked. What it decides on is the dock's own object (`OwnDockObject`), not the
+  current target, which the player may change during the game's dock; its `get_dock_target` must name a base.
+  Not skipped: a dock the player makes by hand, on the keyboard's dock command or the pad's A (both are the game's own
+  USER_MANEUVER_DOCK; 6 Nov 2026, `runs\dock_skip_2026-11-06`: Fort Bush 15.5 s on both; the option says "the autopilot's own
+  dock"). A ring's own scene is short anyway: 1.1 s from the camera to docked on both, against 0.4 s skipped, which is why
+  planets look skipped by hand; only stations show the difference. Also not skipped: gates, holes, lanes (no docking camera:
+  the gate's control exclusion runs on `camera=other`, `[game]`); airlocks (no base). **Multiplayer:** every scene plays. On a local server (6 Nov 2026, `runs\dock_skip_2026-11-06\branch_4103fba9_mp`) the
+  old rule's taps at the Manhattan ring did nothing: the scene ran its natural 1.14 s, and try 2 landed 38 ms before docked, where
+  an Escape would open the pause menu (it did not, by luck of timing). Fort Bush played 14.6 s and docked. One ring, one base; what
+  USER_CANCEL does on the server's side is still not read. So `Own` counts nothing there.
 - During the game's own docking sequence the ship is locked (mission-hold flags) a frame before the docking cutscene:
   after our own dock request that is the dock going through, not a mission takeover `[game]` 19 Oct 2026.
 - Hostile bases refuse docking (attitude <= -0.6) `[game]`.

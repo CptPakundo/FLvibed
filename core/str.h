@@ -59,4 +59,37 @@ inline std::string Narrow(const std::wstring& w)
         WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), &s[0], n, nullptr, nullptr);
     return s;
 }
+
+// A name in capitals, as the game's own all-caps labels read: towupper is ASCII-only under the C runtime's "C" locale
+// (GRAFENWoHR with a small o-umlaut). The invariant locale keeps the result the same on every machine (no Turkish dotted I);
+// the German sharp s has no capital in the fonts, so it spells SS (GROSSGLOCKNER). ASCII never leaves this loop.
+inline std::wstring Upper(std::wstring s)
+{
+    bool ascii = true;
+    for (wchar_t& c : s)
+        if (c >= L'a' && c <= L'z')
+            c = static_cast<wchar_t>(c - L'a' + L'A');
+        else if (c >= 0x80)
+            ascii = false;
+    if (ascii)
+        return s;
+    for (size_t i = s.find(static_cast<wchar_t>(0xDF)); i != std::wstring::npos; i = s.find(static_cast<wchar_t>(0xDF), i))
+        s.replace(i, 1, L"SS");
+    const int n = static_cast<int>(s.size());
+    std::wstring up(s.size(), L'\0');
+    return LCMapStringW(LOCALE_INVARIANT, LCMAP_UPPERCASE, s.data(), n, &up[0], n) == n ? up : s;
+}
+
+// The first letter in capitals (a sentence's start); a letter with no one-character capital stays.
+inline void Capitalize(std::wstring& s)
+{
+    if (s.empty())
+        return;
+    const std::wstring first = Upper(s.substr(0, 1));
+    if (first.size() == 1)
+        s[0] = first[0];
+}
+
+// Wide text against UTF-8 text, exact: every character counts, not only ASCII.
+inline bool SameText(const std::wstring& w, const std::string& utf8) { return Narrow(w) == utf8; }
 } // namespace str

@@ -124,6 +124,7 @@ SaveS234.fl	M04-s12c-padr	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	77384d8	202
 SaveS235.fl	M04-s12d-padr2	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	d457c51	2026-10-24 18:37											
 SaveS238.fl	M04-s13a-padr	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	f5d8d76	2026-10-24 23:11											
 SaveS239.fl	M04-s13b-padr	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	34ba88f	2026-10-24 23:55											
+SaveS467.fl	M04-skipdock	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	5cc80c7d	2026-11-06 08:08											
 SaveS301.fl	M04-stage-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	2097d8f	2026-10-29 03:20											
 SaveS029.fl	M05	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	571d192	2026-10-22 09:05											
 SaveS422.fl	M05	M05.leedshole	M05-look0	leg-checkpoint	22885	space 2945943554 61858,-570,-56443	89F4FC10-EAF82C76	4cc1689	2026-10-30 19:29	46.5	0	1.00	0.49	20	14	22885	fit	loads at 0.0 m/s, objective 22885, hull 1.00 shield 1.00 (saved at 46.5 m/s); first segment 170.3 s vs full runs 163.5..186.5 (last 10) (M05-look0b-a, 30 Oct 2026)	2026-10-30 19:36	
@@ -155,6 +156,7 @@ SaveS458.fl	M05-p8-after	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	06ba8e4b	202
 SaveS457.fl	M05-p8-base	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	06ba8e4b	2026-11-05 13:16											
 SaveS228.fl	M05-s11p5-o	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8aeabd6	2026-10-24 15:12											
 SaveS227.fl	M05-s11p5-p	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8aeabd6	2026-10-24 15:12											
+SaveS468.fl	M05-skipdock	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	5cc80c7d	2026-11-06 08:09											
 SaveS021.fl	M06	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a38d30d	2026-10-22 08:03											
 SaveS012.fl	M06-from-glorious	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	3f06367	2026-10-22 05:41											
 SaveS240.fl	M06-gate-mpb0	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	35f8632	2026-10-28 16:34											
@@ -184,6 +186,7 @@ SaveS209.fl	M07	M07.sinclair	M07-s11n-cl	leg-checkpoint	23270	space 2610157064 1
 SaveS210.fl	M07	M07.tau29	M07-s11n-cl	leg-checkpoint	23280	space 2610157064 21785,-66,-13347	89F4FC10-EAF82C76	88ab419	2026-10-24 11:44	77.3		1.000	1.00	20	17	23280	unfit	saved at 77 m/s, loads at 0 m/s; first segment 120.7 s vs full runs 118.6..130.0 (last 10) (M07-jrs-a, 30 Oct 2026)	2026-10-30 17:16	
 SaveS435.fl	M07	M07.tau31	M07-gate-m13afk1	leg-checkpoint	23250	space 2610157064 -30202,255,34548	89F4FC10-EAF82C76	0795e73	2026-10-31 01:50	0.5	0	0.46	1.00	19	15	23250	unverified			4
 SaveS208.fl	M07	M07.tau31	M07-s11n-cl	leg-checkpoint	23250	space 2610157064 -28491,187,33387	89F4FC10-EAF82C76	88ab419	2026-10-24 11:38	299.1	1	1.000	1.00	20	17	23250	unfit	saved at 299 m/s (cruise), loads at 0 m/s (M07-guardfix-a, 30 Oct 2026)	2026-10-30 03:09	
+SaveS471.fl	m07_040b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e920ec57	2026-11-06 17:29											
 SaveS013.fl	M07-from-ku03	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	d638602	2026-10-22 06:10											
 SaveS242.fl	M07-gate-mpb0	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	35f8632	2026-10-28 16:50											
 SaveS255.fl	M07-gate-mpb2	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a372482	2026-10-28 18:28											
@@ -205,6 +208,7 @@ SaveS346.fl	M07-guardfix2-2	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	52e95c5	2
 SaveS411.fl	M07-jrs-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	849328d	2026-10-30 17:32											
 SaveS412.fl	M07-jrs-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	849328d	2026-10-30 17:32											
 SaveS020.fl	M08	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	8ac4918	2026-10-22 14:03											
+SaveS469.fl	m08_040	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	46c79576	2026-11-06 16:24											
 SaveS245.fl	M08-gate-mpb0	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	35f8632	2026-10-28 17:12											
 SaveS257.fl	M08-gate-mpb2	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a372482	2026-10-28 18:47											
 SaveS275.fl	M08-gate-mpb21	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	29c4d7c	2026-10-28 23:25											
@@ -253,6 +257,7 @@ SaveS212.fl	M09-s11o9-sd	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	7ccb022	
 SaveS215.fl	M09-s11o9b-sd	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	6512a55	2026-10-24 13:08											
 SaveS231.fl	M09-s12a-fix	end	leg-end	leg	23810	docked	89F4FC10-EAF82C76	84310e2	2026-10-24 16:45											
 SaveS026.fl	M10	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	9c00ca7	2026-10-22 08:44											
+SaveS470.fl	m10_040	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	46c79576	2026-11-06 16:31											
 SaveS015.fl	M10-from-holstein	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	80c6fda	2026-10-22 13:51											
 SaveS241.fl	M10-gate-mpb0	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	35f8632	2026-10-28 16:41											
 SaveS252.fl	M10-gate-mpb1	end	leg-end	leg	1	docked	89F4FC10-EAF82C76	2f9822f	2026-10-28 17:48											
@@ -416,6 +421,7 @@ SaveS073.fl	M12-s8-f8-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	a144c01	2026-
 SaveS074.fl	M12-s8-f9-a	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e5268b8	2026-10-23 07:18											
 SaveS075.fl	M12-s8-f9-b	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e5268b8	2026-10-23 07:18											
 SaveS076.fl	M12-s8-f9-c	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	e5268b8	2026-10-23 07:19											
+SaveS466.fl	M12-skipdock	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	4103fba9	2026-11-06 07:56											
 SaveS048.fl	M12-toledo-trace	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	c7f51cf	2026-10-23 00:25											
 SaveS031.fl	M13	end	leg-end	leg	0	docked	89F4FC10-EAF82C76	ce50649	2026-10-22 11:35											
 SaveS415.fl	M13	M13.battleship	M13-look0	leg-checkpoint	24425	space 3086998659 3478,-313,-2060	89F4FC10-EAF82C76	df0f67c	2026-10-30 19:14	23.0	0	1.00	0.47	29	29	24425	fit	loads at 0.0 m/s, objective 24425, hull 1.00 shield 1.00 (saved at 23.0 m/s); first segment 79.0 s vs full runs 72.3..106.9 (last 10) (M13-look0b-a, 30 Oct 2026)	2026-10-30 19:35	

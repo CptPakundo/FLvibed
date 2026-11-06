@@ -5,6 +5,7 @@
 #include "flexe.h"
 #include "log.h"
 #include "settings.h"
+#include "text.h"
 #include "chat.h"
 #include "data.h"
 #include "feed.h"
@@ -13,6 +14,7 @@
 #include "game/render.h"
 #include "game/room.h"
 #include "game/textfit.h"
+#include "game/tractorfail.h"
 #include "game/uidraw.h"
 #include "linebreak.h"
 #include "stack_fit.h"
@@ -87,6 +89,8 @@ static const settings::Def kDefs[] = {
     {"motion", Bool, &g_set.motion, 0, 0, "lines fade in / out and the stack glides; 0 = instant"},
     {"neural_net_severity", Bool, &g_set.nnSeverity, 0, 0,
      "Neural Net lines coded by severity (colour, brightness pulses)"},
+    {"neural_net_reason", Bool, &g_set.nnReason, 0, 0,
+     "the Tractor Failure line says why the item was refused (hold, nanobots, shield batteries or ammo full); with HUD 2's alerts on, the alert card says it"},
     {"bottom_movie", Float, &g_set.bottomMovie, 0, 0.9f,
      "movies: the lowest row's bottom edge, inside the lower letterbox bar"},
     {"linger", Float, &g_set.linger, 0, 5, "seconds a line stays after its audio"},
@@ -517,6 +521,16 @@ void Clear()
 {
     g_blocks.clear();
     g_freshStack = true;
+}
+
+// The ship docked. Whether a space line's voice plays on into the base is unmeasured (a probe of the sound handles read nothing, 6 Nov 2026), and a voice with
+// no caption is worse than a caption in a base: each line stands to its clip's end at most, never for its reading time past that.
+void EndWithClip()
+{
+    const double now = Now();
+    for (Block& b : g_blocks)
+        if (b.leaving < 0)
+            b.end = std::min(b.end, std::max(now, b.audioEnd));
 }
 
 std::string PagesReport()
@@ -2046,6 +2060,23 @@ bool Hud2ShowsAlert(const std::string& raw)
             return true;
     return false;
 }
+bool Hud2Cards() { return g_hud2.on && g_hud2.l.active && g_hud2.l.alerts; }
+std::wstring TractorWhy(const std::string& id)
+{
+    static u32 seen = 0;
+    if (_stricmp(id.c_str(), "nnv_tractor_failure") != 0)
+        return {};
+    const HudBus* bus = Bus();
+    if (!bus || bus->version < 6 || !bus->ReadTractorFail)
+        return {};
+    int reason = 0;
+    u32 age = 0;
+    const u32 serial = bus->ReadTractorFail(&reason, &age);
+    if (serial == seen || !tractorfail::Fresh(age))
+        return {};
+    seen = serial;
+    return text::Ids(tractorfail::TextIds(reason));
+}
 static bool Hud2Recent() { return !g_hud2.on && g_hud2.offAt >= 0 && Now() - g_hud2.offAt < 0.3; }
 static const HudLayout* Hud2Last() { return &g_hud2.l; }
 
@@ -2397,7 +2428,8 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
         (!g_hud2.feedOnly && (exe::CamCutscene.is(cam) || LetterboxBar(sw, sh) > 0)))
         return;
     const HudLayout& l = g_hud2.feedOnly ? g_hud2.feedL : g_hud2.l;
-    const int px = std::max(8, static_cast<int>(sh * kSizes[g_set.size] + 0.5f));
+    // (a line up: its size stands. The feed's own, 10 % over the top panel's, rebuilt all the fonts twice a frame, 40 ms at 4K, for as long as both showed)
+    const int px = !g_blocks.empty() && g_fontsPx > 0 ? g_fontsPx : std::max(8, static_cast<int>(sh * kSizes[g_set.size] + 0.5f));
     // (feedOnly with a line up: DrawImpl keeps its own face; asking for Agency here too rebuilt the fonts twice a frame)
     if (g_font.px < 0 || g_fontsPx != px || (!g_fontsAgency && (g_hud2.on || g_blocks.empty())) || !g_font.texture)
     {
@@ -3114,6 +3146,14 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
     {
         // a line laid out beside the portrait keeps that width after the slot goes (it never re-wraps while read)
         int bw = inCorner(b) ? cornerMaxW : mainW;
+        // the corner's rows are drawn in the name font and wrapped by the text font's measure: the wider face ran past the screen's edge ("DETECTE" at 800)
+        if (inCorner(b))
+        {
+            const float sample = static_cast<float>(render::TextWidth(g_font, L"RADIATION DAMAGE DETECTED"));
+            const float drawn = static_cast<float>(render::TextWidth(nameFont, L"RADIATION DAMAGE DETECTED"));
+            if (drawn > sample && sample > 0)
+                bw = static_cast<int>(bw * sample / drawn);
+        }
         if (!inCorner(b))
         {
             if (slotW > 0)

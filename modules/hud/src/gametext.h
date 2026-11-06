@@ -14,6 +14,8 @@ void Frame(int percent, bool menu);
 void RichNow(int percent);
 // The rich table at `percent` from the file read once: a window's size while it is open (windowtext). Nothing in it opens a file.
 void RichSet(int percent);
+// The size the tables hold: game_text_size takes effect at the main menu, so it can differ from the setting.
+int Applied();
 // fonts.ini as the game holds it: every font the game's list has, with its face from the file. `entry` is what a text object keeps.
 struct Font
 {

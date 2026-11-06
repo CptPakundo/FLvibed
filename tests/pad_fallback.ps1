@@ -4,7 +4,7 @@
 # the physical one (its own input takes over, prompts and rumble with the hands), `pad_sdl_fallback` 0, `none` no such pad in the HID list (SDL never starts).
 # `page` the options page's reader follows the hands, `injected` real injected input through the hooks (F24 and a mouse move of one pixel and back).
 # Usage (PowerShell tool): tests\pad_fallback.ps1 [-Row real,ps5,switchpro,mapper,page,injected,none] [-Instance 5]   build\release. Exit 1 = a failure.
-param([string[]]$Row = @('real', 'ps5', 'switchpro', 'mapper', 'page', 'injected', 'none'), [int]$Instance = 5)
+param([string[]]$Row = @('real', 'ps5', 'switchpro', 'mapper', 'page', 'injected', 'none'), [string]$Instance = 5)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -31,7 +31,11 @@ try {
     }
     if ($Row | Where-Object { $_ -in 'ps5', 'switchpro', 'mapper', 'page', 'injected' }) {
         "$(Send-FL 'padfallback 1')"
-        Wait-Source 'sdl'
+        # (SDL runs, and a real pad stays shut: a background game's SDL opens the virtual pads alone, sdlpad.cpp. A source of sdl here would be a machine's pad opened by a test)
+        $null = Wait-FLUntil { if ((Send-FL 'state') -match 'sdl_status=2') { 1 } } 'SDL running' 8
+        $null = Wait-FLFramesPassed 60
+        Check ((Field 'source') -ne 'sdl') "no real pad opened: source '$(Field 'source')'"
+        Check (@(Select-String -Path (Join-Path (Get-FLInstallDir) 'EXE\FLController.log') -Pattern 'SDL opens no real pad').Count -ge 1) 'the log says so'
     }
     foreach ($kind in 'ps5', 'switchpro') {
         if ($kind -notin $Row) { continue }
@@ -97,7 +101,12 @@ try {
         Check ((Backend) -eq '' -and (Pad) -match 'buttons=0x2000') 'SDL gone, XInput alone is read'
         Set-FLDevPad -Slot 0 -Connected $true
         "  $(Send-FL 'set pad_sdl_fallback 1')"
+        # (SDL's stop took the virtual pad with it, and a background game opens no real one: the test pad again)
+        $null = Wait-FLUntil { if ((Send-FL 'state') -match 'sdl_status=2') { 1 } } 'SDL running again' 10
+        "  $(Connect-FLSdlPad -Type ps5 -Slot 0 -Foreground)"
+        Set-FLSdlPad -Slot 0 -Buttons A # (the hands on it: with the XInput pad still there the pad in use changes by input)
         Wait-Source 'sdl' 10
+        Set-FLSdlPad -Slot 0
         Set-FLDevPad -Slot 0 -Connected $false
         Disable-FLDevPads
         $null = Wait-FLFramesPassed 30
