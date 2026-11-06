@@ -7,13 +7,13 @@
 1 ICON "tools/setup/flvibed.ico"
 
 101 RCDATA "build/release/FLvibed.dll"
-102 RCDATA "subtitles/data/subtitles.tsv"
-103 RCDATA "subtitles/data/movies.tsv"
-104 RCDATA "subtitles/data/movie_frames.tsv"
-105 RCDATA "subtitles/data/speaker_colors.tsv"
-106 RCDATA "subtitles/data/word_times.tsv"
-107 RCDATA "controller/data/autopilot.3db"
-108 RCDATA "subtitles/data/mixes.tsv"
+102 RCDATA "modules/subtitles/data/subtitles.tsv"
+103 RCDATA "modules/subtitles/data/movies.tsv"
+104 RCDATA "modules/subtitles/data/movie_frames.tsv"
+105 RCDATA "modules/subtitles/data/speaker_colors.tsv"
+106 RCDATA "modules/subtitles/data/word_times.tsv"
+107 RCDATA "modules/autopilot/data/autopilot.3db"
+108 RCDATA "modules/subtitles/data/mixes.tsv"
 
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "tools/setup/setup.manifest"
 

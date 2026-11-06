@@ -1,4 +1,4 @@
-// The snapshot's text form (controller\src\impl\situation_io.h, `snap v5`; v1-v4 texts: mission_live_goals_test, v3 / v4
+// The snapshot's text form (modules\autopilot\src\situation_io.h, `snap v5`; v1-v4 texts: mission_live_goals_test, v3 / v4
 // rewrites of the synthetic one and the v1-v4 fixtures): the round trip is exact (text -> snapshot
 // -> text identical, floats bit for bit, NaN / infinity / negative zero, encoded strings), comments and CR are skipped,
 // and every kind of damage fails closed (no header, a cut text, an unknown record or field, a field out of order or

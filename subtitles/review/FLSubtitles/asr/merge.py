@@ -662,7 +662,7 @@ def render_sentence(parts: list) -> str:
     """The subtitle the runtime types out for one assembled message (chatter_grammar.tsv header): parts =
     [(chunk text, ends a sentence)]. Joined with single spaces, "1 dash 2" written "1-2", each sentence
     starting with a capital and ending with "." unless it ends with ? ! or ...; the stored chunks carry no
-    sentence-ending period (user, session 2). The runtime DLL does the same (FLvibed subtitles/src/impl/impl.cpp
+    sentence-ending period (user, session 2). The runtime DLL does the same (FLvibed modules/subtitles/src/impl/impl.cpp
     JoinPieces; its `jointest` fixtures keep the two equal), including the rule of 22 Oct 2026 (user: "the period
     after the speaking NPC doesn't make sense when the next word is to"): a piece followed by one that starts with
     the word "to" continues the sentence - no period before it, "to" stays lower case ("This is Planet Manhattan to

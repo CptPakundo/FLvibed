@@ -1,7 +1,7 @@
-// The maneuver watchdog's rule (controller\src\impl\maneuver_watch.h, 0.2.1 hotfix): stalled = slower than 5 m/s for
+// The maneuver watchdog's rule (core\game\maneuver_watch.h, 0.2.1 hotfix): stalled = slower than 5 m/s for
 // 3 s while the leader / goal is > 150 m away and not getting closer; one snapshot, re-issues at most every 10 s, 3 per
 // stall; a steering player stops the clock; the autopilot, no maneuver, moving or arrived reset it.
-#include "../controller/src/impl/maneuver_watch.h"
+#include "../core/game/maneuver_watch.h"
 
 #include "test.h"
 
@@ -35,6 +35,20 @@ void Test_maneuver_watch()
         CHECK(!w.Step(at(51, 40, 900)).retry && !w.Stalled());
         CHECK(!w.Step(at(52, 0, 900)).retry);
         CHECK(w.Step(at(55, 0, 900)).retry);
+    }
+    // a dock the game answered "wait": it holds the ship itself, so no stall, and the watch starts over when the wait ends
+    {
+        Watch w;
+        Sample s = at(0, 0, 900);
+        s.queued = true;
+        for (float t = 0; t < 30; t += 1)
+        {
+            s.t = t;
+            CHECK(!w.Step(s).snapshot && !w.Step(s).retry);
+        }
+        CHECK(!w.Stalled());
+        CHECK(!w.Step(at(31, 0, 900)).retry);
+        CHECK(w.Step(at(34, 0, 900)).retry);
     }
     // close to the leader (a stopped convoy, the ship in its slot): never a stall
     {

@@ -1,5 +1,5 @@
-// The docked rooms' ring (controller\src\impl\room_ring.h, GitHub issue 9).
-#include "../controller/src/impl/room_ring.h"
+// The docked rooms' ring (modules\controller\src\impl\room_ring.h, GitHub issue 9).
+#include "../modules/controller/src/impl/room_ring.h"
 
 #include "test.h"
 

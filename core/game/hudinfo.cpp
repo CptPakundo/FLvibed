@@ -11,6 +11,7 @@
 #include "game/ai.h"
 #include "game/flhash.h"
 #include "game/geom.h"
+#include "game/hostcalls.h"
 #include "game/ini.h"
 #include "game/space.h"
 #include "log.h"
@@ -61,7 +62,7 @@ struct Fns
     int(__cdecl* jumpTarget)(const u32&, u32&, u32&) = nullptr;                 // pub::SpaceObj::GetJumpTarget
     int(__cdecl* repRank)(const int&, float&) = nullptr;                        // pub::Reputation::GetRank
     // the client's own answers (multiplayer: server.dll is loaded by RemoteClient.dll but holds no world - its pub::
-    // calls return codes != 0; 28 Oct 2026): Common.dll
+    // calls return codes != 0): Common.dll
     int(__thiscall* getVibe)(const void*) = nullptr;                     // CEqObj::get_vibe (the object's rep id)
     int(__cdecl* vibeAffiliation)(const int&, u32&, bool) = nullptr;     // Reputation::Vibe::GetAffiliation
     u32(__cdecl* groupShortName)(u32) = nullptr;                         // Reputation::get_short_name (ids)
@@ -643,7 +644,7 @@ const SystemData& SystemOf(u32 system)
     if (sd.loaded || !f.createId)
         return sd;
     sd.loaded = true;
-    // ini::Read: HD Edition's text inis and vanilla 1.1's BINI alike (29 Oct 2026; the text parser here saw nothing on
+    // ini::Read: HD Edition's text inis and vanilla 1.1's BINI alike (the text parser here saw nothing on
     // vanilla: SWEEP_2026-10-29 #5)
     if (!universeRead)
     {
@@ -1189,7 +1190,7 @@ std::wstring DisplayName(u32 objId)
         return e.name;
     e.at = t;
     // a waypoint (type bit 9): the game's own test answers "unknown" for it from here, but its HUD knows the object
-    // (0x4D4C70's first branch: the targetable entry's flags) and the target panel shows "Waypoint" (25 Oct 2026,
+    // (0x4D4C70's first branch: the targetable entry's flags) and the target panel shows "Waypoint" (
     // SaveC703, the harness's route waypoint read "Unknown Object")
     u32 type = 0, cls = 0;
     const bool waypoint = ObjectType(objId, type, cls) && (type & (1u << 9));
@@ -1212,6 +1213,7 @@ std::wstring DisplayName(u32 objId)
 
 // ================================================================================================ the player's ship
 bool AfterburnerOn() { return Guard(F().anyThrusters, PlayerShip(), false); }
+bool AfterburnerKnown() { return F().anyThrusters != nullptr; }
 
 bool EngineKilled()
 {
@@ -1339,7 +1341,7 @@ bool Lane(LaneRun& out)
     if (it != sd.laneNames.end())
         out.toward = IdsText(it->second);
     // the ship's server position: on a lane the client's copy (Pilot::pos) lags and jumps (the progress read 0.10 ->
-    // 0.05 -> 0.20 -> 0.15 and the ETA half the ride's real length, 25 Oct 2026); the server moves it smoothly
+    // 0.05 -> 0.20 -> 0.15 and the ETA half the ride's real length); the server moves it smoothly
     float me[3];
     if (!space::ObjectPos(space::PlayerShipId(), me))
         memcpy(me, p.pos, sizeof(me));
@@ -1415,7 +1417,7 @@ bool Jumping(Jump& out)
     const bool wasJumping = g_edges.jumping;
     g_edges.jumping = on && (sequence || g_edges.jumping); // an is_jumping alone (no sequence seen): jump-in only
     // after the jump-in the ship still holds the far gate's port in a dock maneuver for a few seconds (read as "dock
-    // granted" at the arrival, 25 Oct 2026): that tail belongs to the jump, until the maneuver lets go
+    // granted" at the arrival): that tail belongs to the jump, until the maneuver lets go
     if (wasJumping && !g_edges.jumping)
         g_edges.jumpTail = true;
     if (!held && p.op != ai::OpDock)
@@ -1794,5 +1796,41 @@ std::string Research(const std::string& what)
         return o.str();
     }
     return "usage: hudinfo [wg|engine|lock|tractor|obj <id>|sys [id]|equip <arch>]";
+}
+
+// The objective line as the game shows it: the host's copy formatted by the game's own formatter (host v24: values in,
+// codes without a handler dropped - vanilla 1.1 writes "Destroy the Hostile Ships%M", 21830); with an older host the
+// raw string with every format code dropped the way the formatter drops an unfilled one ('%', a letter, its digits,
+// an optional 'v' digit), never shown raw.
+std::wstring ObjectiveLine(u32 textId)
+{
+    if (!textId)
+        return L"";
+    wchar_t buf[512];
+    buf[0] = 0;
+    if (hostcalls::g.ObjectiveText && hostcalls::g.ObjectiveText(buf, 512) && buf[0])
+        return buf;
+    const std::wstring raw = text::Ids(textId);
+    std::wstring s;
+    for (size_t i = 0; i < raw.size(); ++i)
+    {
+        if (raw[i] != L'%' || i + 1 >= raw.size())
+        {
+            s += raw[i];
+            continue;
+        }
+        ++i; // the code letter
+        while (i + 1 < raw.size() && iswdigit(raw[i + 1]))
+            ++i;
+        if (i + 2 < raw.size() && raw[i + 1] == L'v' && iswdigit(raw[i + 2]))
+            i += 2;
+    }
+    std::wstring out; // spaces a dropped code left doubled / trailing
+    for (wchar_t c : s)
+        if (c != L' ' || (!out.empty() && out.back() != L' '))
+            out += c;
+    while (!out.empty() && out.back() == L' ')
+        out.pop_back();
+    return out;
 }
 } // namespace hudinfo

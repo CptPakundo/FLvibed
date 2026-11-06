@@ -1,4 +1,4 @@
-// FLvibed - the game's own text, larger (the owner, 4 Nov 2026: "very legible and readable in all windows, all HUD elements,
+// FLvibed - the game's own text, larger ("very legible and readable in all windows, all HUD elements,
 // all modals - EVERYTHING"). The game keeps two font tables, both from DATA\FONTS: fonts.ini (a fraction of the screen's height
 // per nickname, every text control) and rich_fonts.ini (pixels at 768 lines per id, the rich text: infocards, job and news
 // text). docs\FREELANCER_RE.md "The game's text size is its font's". Pure: the files' reading and the sizes; gametext.cpp writes.

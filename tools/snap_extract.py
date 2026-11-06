@@ -1,5 +1,5 @@
 """Pull the situation snapshots that the controller logs at each arbiter / shadow differ ("snap| " lines,
-controller\\src\\impl\\situation_snap.cpp LogDiffer) out of an FLController.log into *.snap fixtures, for the host-free
+modules\\autopilot\\src\\situation_snap.cpp LogDiffer) out of an FLController.log into *.snap fixtures, for the host-free
 replay: build\\test\\fltest.exe -snaps <out dir>.
 
     python -I tools\\snap_extract.py <FLController.log | run folder> <out dir>

@@ -1,9 +1,9 @@
 // FLvibed - the look of the game's panels and controls, drawn through core\game\render.* (inside a Begin / End pass):
-// the space HUD's panel (moved from subtitles\src\impl\display.cpp HudPanel on 25 Oct 2026, the UI build), the
+// the space HUD's panel (moved from modules\subtitles\src\impl\display.cpp HudPanel on 25 Oct 2026, the UI build), the
 // subtitles' soft navy panel, and the Options screen's row controls as replicas - a checkbox, a slider track with its
 // thumb and end arrows, a picker box with arrows, a focus frame, a dot, text with a shadow. Every size is given in pixels
 // by the caller (fractions of the screen height through the UI camera; nothing here assumes a resolution); the colours
-// are measured on the game's Options screen at 4K (research\experience\ui_2026-10-25\options_*.png, 25 Oct 2026).
+// are measured on the game's Options screen at 4K (research\experience\ui_2026-10-25\options_*.png).
 #pragma once
 #include "common.h"
 #include "textfit.h"

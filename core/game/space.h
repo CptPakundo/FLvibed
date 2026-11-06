@@ -1,7 +1,7 @@
 // Space objects around the player and target selection, natively: the client's own object registry (Common.dll
 // CObject::FindFirst/FindNext) instead of the HUD contact list, whose content depends on the filter the player picked,
 // and the game's own target command (0x54BCB0, what a contact list click sends). Facts: docs/FREELANCER_RE.md
-// "Targets and contacts". Shared by every module (core/game), compiled into each.
+// "Targets and contacts". One instance for the whole logic (core/game).
 #pragma once
 #include "common.h"
 
@@ -14,7 +14,7 @@ namespace space
 enum Type : u32
 {
     kMoon = 1 << 0,
-    kPlanet = 1 << 1, // (moons read as this too: Li01's planet_icemoon_800, 29 Oct 2026)
+    kPlanet = 1 << 1, // (moons read as this too: Li01's planet_icemoon_800)
     kSun = 1 << 2,
     kBlackHole = 1 << 3,
     kCelestial = kMoon | kPlanet | kSun | kBlackHole,
@@ -124,7 +124,7 @@ struct Missile
 };
 std::vector<Missile> Missiles();
 
-// Gun rounds in flight toward the player (CObject class CBEAM_OBJECT 0x67; user, 19 Oct 2026: "track enemy
+// Gun rounds in flight toward the player (CObject class CBEAM_OBJECT 0x67; "track enemy
 // projectiles in real time, model the damage deterministically"): each round's straight path relative to the player's
 // motion, its closest approach and when. Only rounds of other ships that come within `radius` m (0: the ship's physical
 // radius) inside `horizon` s; soonest first.
@@ -217,7 +217,7 @@ bool ShipMotionOf(u32 id, ShipMotion& m);
 bool PlayerSpin(float spin[3]);
 bool AddPlayerSpin(const float delta[3]);
 // The fraction of its shield at which a ship's shield fails (its generator's st_equip.ini offline_threshold), -1 unknown.
-// A shield goes offline there, not at 0 (21 Oct 2026: predictions to 0 came true 1.0-1.5 s early, every time).
+// A shield goes offline there, not at 0 (predictions to 0 came true 1.0-1.5 s early, every time).
 float ShipShieldThreshold(u32 id);
 // How long a ship's failed shield stays down (its generator's offline_rebuild_time, s), -1 unknown. Measured 21 Oct 2026:
 // 12.00 s in every case (the file's value), back at the offline threshold.
@@ -337,7 +337,7 @@ std::vector<Obstacle> Obstacles(const float center[3], float range);
 // by the caller; the defaults are the values used so far). A zone with `damage` above `strictDamage` is a costly zone
 // (StrictAt "damage"), unless it is a SPHERE whose damage is at least `lethalDamage` per second: a lethal sphere
 // (Obstacle::zone) - planet and sun cores (2000000 and 10000 per second in Li01; radiation fields deal 40-50 and stay
-// crossable strict zones; a straight leg through Pittsburgh's death zone killed the ship in M01b, 19 Oct 2026).
+// crossable strict zones; a straight leg through Pittsburgh's death zone killed the ship in M01b).
 // Parsed once per system and rules. Obstacles() always uses the defaults.
 struct ZoneRules
 {

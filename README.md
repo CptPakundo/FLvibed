@@ -9,13 +9,13 @@
 One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller support with a controller-first interface, dialogue subtitles with speaker names, and better movie handling - in a single DLL.
 
 <p>
-<a href="../../releases/latest/download/FLvibed-0.3.0-Setup.exe"><img alt="Download FLvibed 0.3.0 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.3.0-5865f2?style=for-the-badge"></a>
+<a href="../../releases/download/v0.3.5rc/FLvibed-0.3.5rc-Setup.exe"><img alt="Download FLvibed 0.3.5rc (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.3.5rc-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/latest/download/FLvibed-0.3.0.zip">the zip, to install by hand</a> · <a href="../../releases/latest">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.3.5rc/FLvibed-0.3.5rc.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.3.5rc">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.3.0 preview" src="https://img.shields.io/badge/version-0.3.0_preview-5865f2?style=for-the-badge">
+<img alt="Version 0.3.5rc test build" src="https://img.shields.io/badge/version-0.3.5rc_test_build-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -29,166 +29,19 @@ One mod for Freelancer (2003) and Freelancer: HD Edition: native Xbox controller
 > **Made with AI ("vibe coded").** The code, the tools and the documentation were written by an AI (Claude, by
 > Anthropic) under the author's direction and tested in game. It comes with no warranty.
 
-## 🆕 New in 0.3.0
+## 🆕 New in 0.3.5rc
 
-**0.3.0 answers eight more reports from players and makes the game's own windows easier to read.** The full list is in
+**0.3.5rc is a test build of 0.3.5, not yet through the full regression sweep and gate.** 0.3.5 rebuilds FLvibed as a core with eight modules you can turn on and off, and fixes what an audit of the whole project found. The full list is in
 [CHANGELOG.md](CHANGELOG.md).
 
-- **Y is swapped in the Freelancer layout:** tap Y for the next weapon group, hold Y for cruise. "Swap Y tap and hold" gives the
-  old order back.
-- **Dealers on the pad:** hold A to buy or sell, as you accept a job, so a tap never spends money. Your own equipment can now be
-  sold, and LS click mounts it.
-- **Danger alerts beside the ring:** Shield Failing by the left meter, Missile Incoming and Hull Critical by the right, level
-  with the reticle. Two dangers show together, and they glow and pulse while the prompts stay steady.
-- **Two weapon groups on the triggers** fire full auto, and each group's row shows its own trigger.
-- **Shield meter:** it drains downward, as the hull meter does.
-- **Steam prompts:** a Button prompts choice for the Steam Deck and Steam Controller, picked automatically on a Deck.
-- **Larger text in the game's windows:** prices and the numbers that decide a deal grow most, in the dealers, the job board, the
-  news, the NeuroNet's windows and more. "Larger window text" turns it off.
-- **Steam Deck mode:** at 1280x800, larger HUD 2 text and no safe margins at the screen's edge.
+- **Modules:** HUD, Controller, Subtitles, Movies, Autopilot, NPC, Display and Speedrun, each a row on the options page. HUD 2, the autopilot and speedrun mode work on keyboard and mouse with the Controller off.
+- **The autopilot keeps working unless the game is paused:** under the nav map, the inventory, any window or the options page.
+- **A crash in one module stops that module alone,** and gives you the game back.
+- **Safer autopilot:** a stop gives the engine back, a load stops it, and it turns through the rear view.
+- **Pad:** the mouse works again at once after the pad, and the right stick scrolls the lists it says it does.
+- **An update by hand from the zip keeps your settings.**
 
-## New in 0.2.7
-
-**0.2.7a is a hotfix:** LB / RB work again in a Bar with no news or job board, and text no longer rebuilds every frame when a
-story line and a chat card show together in a cutscene.
-
-**0.2.7 answers six more reports from players and takes up one suggestion.** The full list is in [CHANGELOG.md](CHANGELOG.md).
-
-- **Turret view follows Invert Y** on the right stick, and so does the ASSISTED preset's aim cursor.
-- **Torpedoes on the pad:** holding the missile button fires them in every preset and while the autopilot flies: RB in
-  FREELANCER and ASSISTED, B in ACE. The same hold fires a cruise disruptor when the ship has one and no torpedo.
-- **Neural Net lines in flight:** with HUD 2 on, Objective Reached, Tractor Failure and the like now play as they happen,
-  voice and subtitle, not only once the NeuroNet opens.
-- **Bases on the pad:** LB / RB reach every room on stations too.
-- **Dealers:** an item you cannot buy keeps its full panel and the infocard's backing, and the comparison with your
-  mounted gun uses the whole panel.
-- **Credits:** the ship panel grows for a long balance, so the number no longer clips.
-- **Chat in cutscenes:** HUD 2's chat cards stay through in-flight cutscenes such as docking and launching.
-- **Smaller fixes:** clearer tractor prompts, and the right stick no longer gets stuck on an enemy the game refuses.
-
-## New in 0.2.6
-
-**0.2.6 answers the first reports from players.** The full list is in [CHANGELOG.md](CHANGELOG.md).
-
-- **NeuroNet on the pad:** the cursor reaches the NeuroNet box's buttons in flight, also in cruise or on autopilot, and the
-  triggers zoom the nav map.
-- **Weapon groups on the pad:** EDIT GROUPS in the action wheel. Holding Y skips groups without guns.
-- **HUD 2:** torpedoes have their own row, the hull meters are red, and a low shield or hull flashes.
-- **Targeting:** the right stick's click takes the nearest enemy first, then the next ones. HUD 2 tells you when enemies
-  are near and nothing is targeted.
-- **Tractor:** A pulls one item, X pulls everything, and the prompts name the item and its range.
-- **Enemies sitting idle:** still being investigated. `EXE\FLvibed_npc_stalls.log` records it if you see one.
-
-## New in 0.2.5
-
-**0.2.5 is a polish release on 0.2.0** (the 0.2.1 hotfix, renamed): a calmer, tidier HUD 2, subtitles that cover less of
-the picture, and an autopilot that no longer stays stuck. Everything below is on by default unless it says otherwise.
-
-**🛰️ HUD 2: calmer and tidier**
-- **Contextual HUD (the new default).** `hud_fade` now has two modes, FULL and CONTEXTUAL. Contextual fades HUD 2 out
-  while you fly calmly and brings each part back for four seconds when it matters: the ring and speed when you steer or
-  boost, the target card when you switch targets, the weapons when you fire, the objectives when they change. Alerts,
-  low shield or hull, incoming missiles and fights always show. The old "calm dims" and "minimal" modes are gone (a
-  saved 2 reads as contextual). Mouse steering and cursor movement wake the reticle and speed, as the stick does.
-- The whole HUD, cursor included, fades when idle and wakes per action: it also fades in turret view, and pressing any
-  fire button (even with nothing able to fire) brings the whole HUD back. The game's cursor hides in flight after 3 s
-  of calm, with the mouse or the controller, and returns at once on any real mouse movement and in the pause menu.
-- Panels are only as big as what they show (up to their old sizes) and ease gently when the content changes: the target
-  card, contact list, ship panel, loadout panel, NeuroNet / objectives readout and target picker. A short loadout no
-  longer leaves an empty area, and the loadout's launcher name no longer scrolls while its row has room.
-- Button prompts never scroll: a label too long for its place wraps onto two lines in a slightly smaller, readable
-  font. Context prompts show when they change or right after you act (dock, cruise, a target, a maneuver), stay four
-  seconds and fade out (`hud_prompts = 0` brings back "always shown"). Ship and weapon names keep their scrolling.
-- HUD 2 uses the room it has before shortening anything: the weapons panel grows to fit a weapon row, a long missile
-  name takes a free line above its row first, and the target picker is always wide enough for its category tabs.
-- **A more compact action wheel:** two-word commands on two lines, a smaller ring whose plates clear the reticle and
-  each other, no repeated name under the reticle. HUD 2 puts each command on a HUD 2 plate over a see-through disc;
-  the classic HUD uses the game's own panel look, lighter than before.
-- **HUD 2's look now also covers the main menu and the mission / tutorial popups** (same layout and controls; the
-  classic look is unchanged).
-
-**💬 Subtitles**
-- When lines stack, the newest stays full size and only the older ones shrink, more gently.
-- The dialogue panel at the top in flight is 10 % smaller; rooms, story scenes and movies keep their size.
-- The side chat is smaller by default (Normal); the old size is Large (`chat_size`).
-
-**🤖 Robustness**
-- **Formation, goto and dock no longer stay stuck:** if your ship stalls during one, FLvibed restarts the maneuver and
-  logs what happened (`maneuver_watchdog`, on by default). Quickly changing targets during them was tested.
-- When a mission locks your maneuvers (for example while you fly in Brandt's formation in the first mission), pressing
-  free flight, formation, dock or goto now shows **LOCKED BY THE MISSION** at the top instead of doing nothing.
-
-**⬆️ Updating:** copy the new `FLvibed.dll` (or run the setup). The new options are on the FLVIBED page.
-
-## In 0.2.0
-
-**🛰️ HUD 2, everywhere**
-- HUD 2 is now the default with the pad **and** with keyboard and mouse, and its look carries over the menus, bases,
-  dealers and dialogs. `hud_style = 0` brings the game's own HUD and screens back.
-- The bottom of the HUD was rearranged: the lower centre stays clear so your ship is never covered, button prompts sit
-  in two lanes (bottom left and right), a name too long for its room scrolls like a public display, and CRUISE ON and
-  the cruise countdown show inside the ring.
-- Nothing overlaps inside a panel or card any more; the ship and loadout panels share one height.
-- Closer to the edges: 3 % margins instead of 5 %, so more of the view is yours.
-- 🧪 **Focus layout** (experimental, among the options page's advanced rows): in calm flight no ring, two thin shield
-  and hull arcs and the instruments at the screen's edges.
-
-**💥 Feel and feedback**
-- Hit effects are on by default: screen-edge cues in your shield's and hull's look when you are hit, and crosshair
-  pulses for the autopilot and consumables. Each can be switched off.
-- 📳 Rumble on the pad: a hit (the hull heavier than the shield), a failing shield, and two ticks when one of the game's
-  boxes waits for you. Strength under **Rumble**, 0 = off; only while you play with the pad and the game is in front.
-  *(Verified by the test harness so far, not on a real pad yet.)*
-- The autopilot's hints for players who have not used it yet are on by default.
-
-**💬 Subtitles and story**
-- Every dialogue line was reviewed by ear against the recordings: names, words and the bracketed sound cues.
-- The 19 room scenes recorded as one track (the landing at Manhattan, Lonnigan on the pad, Tekagi's garden ...) are now
-  subtitled, with speaker names and word-timed pages. *(Still under review: a few lines may differ slightly.)*
-- Stacked speakers shrink smoothly (to 70 % at most) so the stack keeps about one line's height - no big covered
-  parts of the picture at 4:3 or in story scenes.
-- A red marker before a hostile speaker's name (can be turned off).
-- The HD Edition intro now subtitles its opening radio exchange, five lines that were missing.
-- With mods that replace a scene's recording (Crossfire ships some), the original scene's lines no longer show over it.
-
-**🎮 Controller**
-- **Confirm with** works: set it to the right button (Nintendo layout) and every menu, list, picker and popup accepts
-  with it and goes back with the bottom one, prompts included.
-- Holding RB for a torpedo no longer also launches a missile; a tap launches the missiles on release.
-- Hold X to look around from the turret camera while the autopilot keeps flying and fighting.
-- Dealers: B on the BUY / SELL button or the quantity slider steps back to the item instead of closing the dealer.
-- The pad drives the main menu, the multiplayer LAN / INTERNET question and the death dialog directly, plus the
-  multiplayer server and character lists (D-pad to pick, A to connect, Y for a new character).
-- 🧪 **SDL3 backend** (opt-in, `pad_backend = 1`): meant to read PlayStation and Switch pads directly, with their own
-  prompts. Not tested with those pads yet; XInput stays the default.
-- With another window in front, the pad is ignored in menus and flight alike and does not vibrate.
-
-**🤖 Autopilot** *(work in progress)*
-- Fights for time on target: it finishes the enemy it is on, handles head-on passes, learns the best standoff distance
-  per pair of ships and leads its missiles. Every gun fires on stations and generators.
-- It rolls toward more guns and steers true when the ship is banked; follows and escorts without the flicker, and a Hold
-  now defends itself.
-- Smarter in the details: escapes flown as escapes, huge targets (the Dyson city's generators) approached in a coast,
-  fewer missiles bursting on yourself, a fast dock that no longer rams the bay, fight odds that count shield damage.
-- A plain start on a targeted base, gate or hole travels there by the game's best path, lanes included.
-- On the original Freelancer 1.1 it now knows the minefields, dangerous zones and planets' docking rings.
-
-**🌐 Multiplayer and compatibility**
-- 🧪 **Multiplayer** works, tested on a local HD Edition server: HUD 2, targeting, subtitle speaker names, missions and
-  job boards, and the autopilot - as far as the server allows (`[flvibed autopilot=on|travel|off]`, else the setting
-  `mp_autopilot`). Online it leans to survival. Server hosts get an FLHook plugin (`server/flhook/`).
-- **Windows 7 SP1 and up**: no function newer than Windows 7 is imported any more. *(Checked, not yet played there.)*
-- The original game's LAN list connects to local servers; the chat never shows an unfilled name template.
-- The game no longer stops drawing for seconds to minutes.
-
-**🔧 Under the hood**
-- FLvibed's code is now licensed GPL-3.0, like the subtitle data.
-- Reads more of the game's data from its binary files, so the original 1.1 gets the same zone names, prices and pilots.
-- The autopilot no longer writes a flight trace into the game folder (`motion_log = 1` is the debugging aid).
-
-**⬆️ Updating from 0.1.0:** on its first start 0.2.0 puts every FLvibed setting back to its default, so you get the new
-defaults. Your old files are kept beside the new ones as `FLvibed.ini.before-0.2.0` (and the same for
-`FLController.ini` and `FLSubtitles.ini`). Your per-save game modes and speedrun bests stay.
+Earlier releases: [CHANGELOG.md](CHANGELOG.md).
 
 ## 🌟 See everything in the living spec
 
@@ -240,7 +93,7 @@ needs no network).
   allows ([Compatibility](#-compatibility)).
 - 🖥️ **Any screen.** Any resolution, aspect ratio and Windows DPI scaling; Borderless Windowed is the main mode.
 - 🪶 **One file, nothing else.** `FLvibed.dll` with a static C runtime: no loader, no launcher, no Visual C++
-  redistributable. Each part (controller, subtitles) can be switched off on its own, and no game file is changed.
+  redistributable. Each module can be switched off on its own, and no game file is changed.
 
 ## 📸 A look around
 
@@ -270,7 +123,7 @@ ship is yours.
 <table>
 <tr>
 <td width="50%"><img src="docs/spec/img/cap/p_ap_h2.webp" alt="HUD 2 while the autopilot flies: AUTOPILOT HOLD top left and a TAKE CONTROL prompt"><br><sub>🛰️ <b>Flying:</b> what it does on the HUD, one button to take control</sub></td>
-<td width="50%"><img src="docs/spec/img/cap/p_goals.webp" alt="The autopilot's goal panel: dock at, travel to, fly to, the mission objective, hold here"><br><sub>🧭 <b>The goal panel:</b> tell it what to do (X on the pad, Shift+K on the keyboard)</sub></td>
+<td width="50%"><img src="docs/spec/img/cap/p_goals.webp" alt="The autopilot's goal panel: dock at, travel to, fly to, the mission objective, hold here"><br><sub>🧭 <b>The goal panel:</b> tell it what to do (X on the pad while it flies, Shift+K on the keyboard)</sub></td>
 </tr>
 <tr>
 <td width="50%"><img src="docs/spec/img/cap/p_picker.webp" alt="The target picker: categories on the bumpers, rows with distance and the action A starts"><br><sub>🎯 <b>The target picker</b> (LB): threats, mission, navigation, ships, loot</sub></td>
@@ -298,8 +151,8 @@ ship is yours.
 - 🧑‍🚀 **It plays as you** - it starts from your live state (ship, reputation, the choices you made), never from a fixed
   script.
 
-**How good is it?** Its yardstick is the fastest recorded human speedruns. Across all 14 story legs it is about 28 %
-slower than the record pace today (12,867 s against 10,047 s), and within 6 seconds of it in mission 12. It still
+**How good is it?** Its yardstick is the fastest recorded human speedruns. Across all 14 story legs it is about 20 %
+slower than the record pace today (12,034 s against 10,047 s), and within 6 seconds of it in mission 12. It still
 fails some runs: docking at moving ships, the mines in mission 11 (about half its runs), deaths in missions 12 and 13.
 
 **Where it's headed**
@@ -326,7 +179,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | 🧩 **Compatibility** | HD Edition 0.7.1, the original 1.1, FLUF beside it | Newer HD Edition releases, more mods |
 
 > [!IMPORTANT]
-> 🧪 **0.3.0 is an early preview - expect rough edges and change.**
+> 🧪 **0.3.5rc is a test build of an early preview - expect rough edges and change.**
 > - **Some features are incomplete:** the Advanced Autopilot is work in progress, a few screens and controls are not
 >   built yet, and some are proven only by the test harness so far.
 > - **Design choices are still subject to change:** button layouts, HUD 2's look, setting names
@@ -337,14 +190,16 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 ## 📋 Requirements
 
 - 🪟 **Windows 10 or 11** (tested). **Windows 7 SP1, 8 and 8.1** since 0.2.0: every release is checked to use nothing
-  newer than Windows 7, but it has not been played there yet (0.1.0 did not load on Windows 7).
+  newer than Windows 7, but a tester's Windows 7 needed VxKex to run 0.3.0 (0.1.0 did not load there). Since 0.3.5 FLvibed is built
+  with a compiler that still targets Windows 7: expected to work without VxKex, not yet confirmed on a real Windows 7.
 - 🚀 **Freelancer: HD Edition 0.7.1** - the base FLvibed is built and tested on. It brings everything else needed.
 - 💿 Or **the original Freelancer 1.1 with a decrypted `Freelancer.exe`** (the CD's exe is SafeDisc-protected, and
   SafeDisc does not run on Windows 10 / 11). Verified in game through the first mission and a full regression pass.
-- 🎮 **An XInput controller** (any Xbox pad) - or none: keyboard and mouse work too. By default FLvibed reads pads
-  through XInput: a PlayStation, Nintendo or other pad works when a layer such as Steam Input or DS4Windows presents it
-  as an Xbox pad (the button prompts then follow the real pad's family, or pick it in `glyph_style`). An experimental
-  SDL3 backend (`pad_backend = 1`) is meant to read those pads directly; it is not yet tested with them.
+- 🎮 **A controller** - or none: keyboard and mouse work too. Xbox pads are read through XInput. A PlayStation or Switch
+  pad works by itself: FLvibed reads it natively through SDL3, the button prompts following the pad, and ignores Steam
+  Input's or a mapper's output for it, so each press acts once. To hand the pad to them, turn off **Read PlayStation and
+  Switch pads natively** in Options. A Steam Deck or Steam Controller stays on Steam Input, its native route. Other pads
+  need an XInput layer. `pad_backend = 1` always uses SDL3.
 - You supply your own copy of the game. FLvibed ships no game files and no audio.
 
 ## 🚀 Getting started
@@ -357,7 +212,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 **2. Install FLvibed** - one click
 
-1. ⬇️ Download **[FLvibed-0.3.0-Setup.exe](../../releases/latest/download/FLvibed-0.3.0-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.3.5rc-Setup.exe](../../releases/download/v0.3.5rc/FLvibed-0.3.5rc-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders - else you pick the folder):
    choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -368,14 +223,15 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.3.0.zip](../../releases/latest/download/FLvibed-0.3.0.zip)** and unpack it.
+1. Download **[FLvibed-0.3.5rc.zip](../../releases/download/v0.3.5rc/FLvibed-0.3.5rc.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
-   `FLvibed.dll`, `FLvibed.ini`, `FLSubtitles\` and `FLvibed\` land in `EXE\`.
+   `FLvibed.dll`, `FLSubtitles\` and `FLvibed\` land in `EXE\`. An update this way keeps your settings.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins
    already listed (on the original game after `.\flmaterials.dll`).
 
 To remove it by hand: take the `FLvibed.dll` line out of `EXE\dacom.ini`, then delete `EXE\FLvibed.dll`, `FLvibed.ini`,
-`FLController.ini`, `FLSubtitles.ini`, the FLvibed logs and the folders `EXE\FLSubtitles\` and `EXE\FLvibed\`.
+`FLController.ini`, `FLSubtitles.ini`, any `*.before-0.2.0` backups of them, the FLvibed logs and the folders
+`EXE\FLSubtitles\` and `EXE\FLvibed\`.
 
 </details>
 
@@ -405,11 +261,11 @@ The default **FREELANCER** layout in flight:
 | RS (click) | the nearest enemy, clicks within 3 seconds the next ones; with no enemy near, the nearest object inside the reticle ring (double click: clear) | rear view |
 | LS (click) | engine kill | |
 | D-pad | ⬆️ nanobots · ⬇️ shield battery · ⬅️ countermeasures · ➡️ mine | |
-| View | NeuroNet / nav map | half a second: Advanced Autopilot |
+| View | NeuroNet / nav map | hold: Advanced Autopilot |
 | Menu | pause | |
 
-- 🕹️ **Menus and bases:** A accept, B back (hold: back out entirely), LB / RB tabs, LT / RT pages, D-pad or left stick
-  move the focus, a left-stick click switches to a free cursor, right stick scrolls, View the NeuroNet hub, Menu pause.
+- 🕹️ **Menus and bases:** A accept, B back, LB / RB tabs, LT / RT pages, the D-pad moves the focus, the left stick the
+  cursor, the right stick scrolls, View the NeuroNet hub, Menu pause.
 - ⌨️ **Keyboard and mouse:** the game's own keys. **K** (or the maneuver bar's fifth button) starts the autopilot - it
   picks the current mission or job objective, else your nav map waypoints, else your target; **Shift+K** opens its goal
   panel.
@@ -417,7 +273,7 @@ The default **FREELANCER** layout in flight:
   beside a broken-ring outline on the glyph.
 
 The ACE and ASSISTED layouts and the per-screen controls: [docs/UI_PLAN.md](docs/UI_PLAN.md); the research behind the
-layouts: [controller/docs/BINDINGS.md](controller/docs/BINDINGS.md).
+layouts: [modules/controller/docs/BINDINGS.md](modules/controller/docs/BINDINGS.md).
 
 ## ⚙️ Settings
 
@@ -450,6 +306,23 @@ ones most players touch:
 
 📖 Every key with type, range, default and help (generated from the code): [docs/SETTINGS.md](docs/SETTINGS.md).
 
+**Modules:** each feature can be turned off in `EXE\FLvibed.ini` `[Modules]` (`0` off, `1` on). The FLVIBED page switches
+all of them. A row you never set follows the module named beside it, so a new row changes nothing.
+
+| Row | Module | Follows |
+|---|---|---|
+| `subtitles` | dialogue subtitles, chat, speakers | |
+| `controller` | the pad, its screens, prompts, wheel and picker | |
+| `hud` | HUD 2 and its look on the game's windows | `controller` |
+| `autopilot` | the Advanced Autopilot, its goal panel and bar button | `controller` |
+| `display` | borderless window, window fit, running out of focus | `controller` |
+| `speedrun` | clock, splits, LiveSplit | `controller` |
+| `npc` | the stall recorder | `controller` |
+| `movies` | fitted movies, intro choice, skip | `subtitles` |
+
+With `subtitles = 0` and `controller = 0` nothing starts, whatever the other rows say. `safe = 1` turns everything off, for
+troubleshooting.
+
 ## 🧩 Compatibility
 
 | With | State |
@@ -464,15 +337,14 @@ ones most players touch:
 
 ## 🚧 Known limits
 
-What 0.2.0 does not do yet, or does only in part. Anything here - and the design around it - may still change.
+What FLvibed does not do yet, or does only in part. Anything here - and the design around it - may still change.
 
 - 📦 **Unsigned setup:** Windows SmartScreen may warn before the setup runs (*More info > Run anyway*).
-- 🎮 **XInput by default:** no DirectInput support; PlayStation / Nintendo pads need an XInput layer (Steam Input,
-  DS4Windows ...) unless you try the experimental SDL3 backend (`pad_backend = 1`), not yet tested with those pads.
-- ⚙️ **The FLVIBED options page belongs to the controller module:** with `controller = 0` in `FLvibed.ini` the page is
-  gone; the subtitle settings are then changed in `EXE\FLSubtitles.ini`. This is temporary: HUD 2 and the options page
-  will become their own core module in a later version, independent of the controller.
-- 📳 **Rumble** (new in 0.2.0) and **ignoring the pad while the game is in the background** are verified by the test
+- 🎮 **Other pads:** no DirectInput support: a pad that is neither XInput, PlayStation nor Switch needs an XInput layer.
+  PlayStation and Switch pads are read through SDL3, proven with SDL's virtual pads and played on a real DualSense Edge
+  on a cable; not yet on a real Switch pad, over Bluetooth, or with Steam Input's mapping seen being dropped. What a
+  mapper sends while the pad rests (Steam's gyro, macros) still reaches the game.
+- 📳 **Rumble** and **ignoring the pad while the game is in the background** are verified by the test
   harness only so far, not yet on a real pad.
 - 🤖 **The Advanced Autopilot is work in progress:** it still fails some runs, its goal queue (QUEUE / DO NEXT) is
   not built, and how it shares control with a player on the guns is not designed yet ([details](#-the-advanced-autopilot)).
@@ -498,24 +370,26 @@ yet" section.
 
 - 🌟 [The living spec](https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN) (offline copy: [docs/spec/](docs/spec/index.html))
 - ⚙️ [All settings](docs/SETTINGS.md) · 🧩 [Mod compatibility](docs/MOD_COMPATIBILITY.md) ·
-  🤖 [The autopilot](controller/docs/AUTOPILOT.md) · 💬 [Subtitle display](subtitles/docs/DISPLAY_PLAN.md) ·
-  🎨 [UI decisions](docs/UI_PLAN.md), [HUD 2](docs/UI_HUD2.md)
+  🤖 [The autopilot](modules/autopilot/docs/AUTOPILOT.md) · 💬 [Subtitle display](modules/subtitles/docs/DISPLAY_PLAN.md) ·
+  🎨 [UI decisions](docs/UI_PLAN.md), [HUD 2](modules/hud/docs/UI_HUD2.md)
 - 🧠 [Verified game facts](docs/FREELANCER_RE.md) and the [game knowledge base](docs/kb/README.md)
 
 ## 🛠️ Building from source
 
-Needs Visual Studio with the C++ desktop tools (the latest installed one is used); `build.cmd` finds it and builds
-32-bit (x86), C++17, with the static C runtime.
+Needs Visual Studio with the C++ desktop tools and the MSVC v143 14.44 toolset (an individual component; it installs beside
+the default one). Newer toolsets no longer target Windows 7, so `build.cmd` pins 14.44 and refuses to build without it. It finds Visual Studio and builds
+32-bit (x86), C++17, with the static C runtime. On a fresh clone run `tools\sdl3\fetch_sdl3.ps1` once first.
 
 ```bat
 build.cmd release   :: build\release\FLvibed.dll - everything in one DLL (what players get)
-build.cmd           :: dev build: build\dev\FLvibed.dll (hooks) + FLControllerImpl.dll / FLSubtitlesImpl.dll (logic, hot-reloadable)
+build.cmd           :: dev build: build\dev\FLvibed.dll (hooks) + FLvibedLogic.dll (the logic, hot-reloadable)
 build.cmd test      :: build\test\fltest.exe - host-free unit tests, built and run in seconds, no game needed
 build.cmd sigtool   :: build\sigtool\sigtool.exe - the Freelancer.exe signature tool
 build.cmd setup     :: build\setup\FLvibed-Setup.exe - the players' installer / uninstaller (after build.cmd release)
+build.cmd flhook    :: flvibed_server.dll - the optional FLHook server plugin (server/flhook/README.md); not in the release
 ```
 
-`tools/deploy.ps1` builds, installs into a test install and starts or hot-reloads the game. The development tools
+How it is put together, and how to add a module: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). `tools/deploy.ps1` builds, installs into a test install and starts or hot-reloads the game. The development tools
 (PowerShell, Python, Node) and the test rules: [tools/README.md](tools/README.md), [docs/TESTING.md](docs/TESTING.md).
 
 <details>
@@ -524,15 +398,15 @@ build.cmd setup     :: build\setup\FLvibed-Setup.exe - the players' installer / 
 | Path | What |
 |---|---|
 | `core/` | DLL entry and module switches, hooks (signature-verified game addresses in `core/flexe.h`), settings, logging, the shared game layer (`core/game/`: rooms, missions, space, routes, flight, drawing in the game's look) |
-| `controller/` | The controller module: pad input, layouts, HUD 2, the pad UI, the Advanced Autopilot; its test harness in `controller/tools/`; docs in `controller/docs/` |
-| `subtitles/` | The subtitles and movies module: hooks, display, shipped data in `subtitles/data/`; docs in `subtitles/docs/` |
-| `subtitles/review/` | The subtitle text's authoring: speech-to-text pipeline, word aligner, review tool and every review decision; it publishes the data into `subtitles/data/` ([its process](subtitles/review/docs/REVIEW_PROCESS.md)) |
+| `modules/` | One folder per module, each with its `src/` and, where it has them, `docs/`, `data/`, `tools/`: `autopilot`, `controller`, `display`, `hud`, `movies`, `npc`, `speedrun`, `subtitles` |
+| `subtitles/review/` | The subtitle text's authoring: speech-to-text pipeline, word aligner, review tool and every review decision; it publishes the data into `modules/subtitles/data/` |
+| `server/` | The FLHook plugin for multiplayer hosts |
 | `docs/` | Design and reference: the UI, settings, compatibility, testing, verified game facts, speedrun splits, the spec (`docs/spec/`) |
 | `docs/kb/` | The game knowledge base: topic pages, mission set pieces, lore |
 | `docs/missions/` | Mission runbooks for the test harness |
 | `docs/research/` | Outside research (other mods, speedruns, UI references), kept current |
 | `research/` | Local evidence and reference material, git-ignored except the speedrun legs table |
-| `tools/` | Build, deploy, test, evidence and game-data tools; the spec's source in `tools/uimock/` |
+| `tools/` | Build, deploy, evidence and game-data tools; the test harness in `tools/harness/`; the spec's source in `tools/uimock/` |
 | `tests/` | Host-free unit tests of the pure core pieces (`build.cmd test`) |
 
 </details>
@@ -544,7 +418,7 @@ build.cmd setup     :: build\setup\FLvibed-Setup.exe - the players' installer / 
 with Microsoft. Players supply their own game; this repository and FLvibed ship no game files and no audio. The
 pictures in this README and in `docs/spec/` are captures of the game with FLvibed running.
 
-**Subtitle data** (`subtitles/data/`): the spoken lines and speaker names only, in separate data files. It uses the work
+**Subtitle data** (`modules/subtitles/data/`): the spoken lines and speaker names only, in separate data files. It uses the work
 of **FLSubs** by Lorash, **Freelancer Subtitles** by L@Zar0 and the Russian edition's editor (GPL-3.0), and the
 **wedge009.net** mission transcripts (CC BY-SA 4.0) and the other transcript sites they cite. The subtitle data is
 therefore licensed **GPL-3.0** ([LICENSES/GPL-3.0.txt](LICENSES/GPL-3.0.txt)), with thanks to everyone who contributed.

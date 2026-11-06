@@ -1,9 +1,9 @@
-// `strafe_pass`'s pure half (controller\src\impl\strafe.h): the hull measured by rays (an ellipsoid of the Nomad
+// `strafe_pass`'s pure half (modules\autopilot\src\strafe.h): the hull measured by rays (an ellipsoid of the Nomad
 // battleship's size, M13_bsdown_datapass.md: 1,254 m long, 277 x 244 m at its widest), the pass line at the gap, the
 // aim point, the turn stations, the speed schedule, the slide, the side choice and the fail-closed cases; then a crude
 // flight through the state machine (turn rate, the engine's tau, the strafe) that checks the passes keep the gap band,
 // turn at both ends, and that our launch rules' line gaps (torp_reach 100: the line to the centre and the nose) pass.
-#include "../controller/src/impl/strafe.h"
+#include "../modules/autopilot/src/strafe.h"
 
 #include "test.h"
 

@@ -1,12 +1,14 @@
 # BC46/FLSharp: the HDE plugin that moved from 0.8 to 0.9.2
 Status: current
-Checked against: FLvibed 4338909 (31 Oct 2026 ~05:10, short form: 1 watched-path commit: the audit robustness bundle 55d42263 (PatchVtable / PatchImport fail closed on a non-writable slot, the D3D Reset / Present / CreateDevice re-patch keeps the previous pointer on a refusal, room-character hook order, subtitle loaders parse-then-swap); `core/flexe.h` unchanged since 5eb7bcb; no clash; no effect)
-Dirty paths at check: none (working tree clean at 4338909, 31 Oct 2026 ~05:10)
-Watch: docs/HDE_UPSTREAM.md, docs/MOD_COMPATIBILITY.md, controller/src/host, core/game/flight.*, core/game/render.*, subtitles/src/impl/impl.cpp, core/flexe.h
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 22 watched-path commits: the module split P0-P11e (moves, comments, map rows); 11 new symbols, none in FLSharp's source (grep); 228 / 228 on the upstream exe; no clash on paper)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: docs/HDE_UPSTREAM.md, docs/MOD_COMPATIBILITY.md, modules/controller/src/host, core/host, core/game/flight.*, core/game/render.*, modules/subtitles/src/impl/impl.cpp, core/flexe.h
 Evidence: `research\repos\FLSharp\` (clone of https://github.com/BC46/FLSharp, MIT, 21 Oct 2026; `git pull` only when the user asks); the test install's and the upstream clone's `EXE\FLSharp.dll` / `FLSharp.ini`
 Sources: [api] GitHub releases and commits; [file] the two FLSharp.dll / FLSharp.ini pairs in the test install and the upstream clone; [file] FLSharp sources (README, include/Freelancer.h, src/flight_controls.cpp, mouse.cpp, camera.cpp, maneuver_frame.cpp, utils.h, version_check.cpp and others)
 
 ## What it means for FLvibed
+
+*6 Nov 2026 (3c9c1390, short form):* the 9 code addresses added since 4338909 (`GameOption`, `ContactListBuild`, `ContactListDraw`, `NNPump`, `NavMapMouse`, `RichSetSize`, `RichLayout`, `FontFlush`, the `VtMissionMessage` site) appear nowhere in FLSharp's or FLUF's source (grep of `research\repos\`): no new meeting point on paper. 228 / 228 on the upstream exe. The second-install sweep (U4, M7) has still not run; it was skipped for 0.2.6 and 0.2.7 (HANDOFF).
 
 *Check-up 30 Oct 2026 ~01:50 (short form, HEAD 4ca36df; 1 watched-path commit 310be23..4ca36df):* **a new meeting
 point on paper, no clash.** 4ca36df detours the frame timer 0x42D770 (`exe::FrameTimer`, host `main.cpp`) for the
@@ -56,7 +58,7 @@ not NN_ShipTrader's size FLSharp patches. FLUF's layer is inert on HDE (FLUF ref
   the comm caption, Target Status window fixes (IDEAS U4, U5, U9, S6).
   *Check-up 25 Oct 2026 (abf84ac):* the UI build put FLvibed onto the same screens - **a coexistence question for the
   second-install sweep** (U4, M7), three items: (1) FLvibed detours NN_Preferences' `PrefsInitElements` 0x4A9790,
-  `PrefsMessage` 0x4AC0A0 and `PrefsShowPage` 0x4ABDF0 at their entries (dd5bce6; `controller\src\host\uibtn.cpp`) while
+  `PrefsMessage` 0x4AC0A0 and `PrefsShowPage` 0x4ABDF0 at their entries (dd5bce6; `core\host\uibtn.cpp`) while
   FLSharp 0.9.2's `resolutions.cpp` patches call sites inside the same screen's code (0x4A9AAB, 0x4AC264, 0x4ACEE2,
   `NN_Preferences::SetResolution_Active_Hook` at 0x4AC4B0) - different bytes, one screen, never run together; (2) both
   touch the cursor-shown flag 0x6107DC (FLSharp's `SHOW_MOUSE_CURSOR` beside its `ShowCursor_Hook`; FLvibed's
@@ -65,8 +67,8 @@ not NN_ShipTrader's size FLSharp patches. FLUF's layer is inert on HDE (FLUF ref
   fifth bar button (U9: harmless by design, untested on the upstream install). Of FLSharp's 193 addresses, 0x6107DC is a
   new shared one (K5).
   *Check-up 25 Oct 2026 (073a665), HUD 2:* HUD 2 hides the game's flight HUD per root control by the state byte +0x6C
-  (`controller\src\impl\hudvis.*`: roots found once, cached, re-hidden only where the game re-shows them) and adds a
-  host-created top-level hotspot box (`controller\src\host\uibtn.cpp CreateHotspots`: the game's icon-button factory, a
+  (`modules\hud\src\hudvis.*`: roots found once, cached, re-hidden only where the game re-shows them) and adds a
+  host-created top-level hotspot box (`core\host\uibtn.cpp CreateHotspots`: the game's icon-button factory, a
   private copy of the icon button's vtable with FLvibed's message handler). Read against FLSharp 0.9.2's source, **no
   clash on paper; four items for the second-install sweep** (U4, M7): (a) `maneuver_frame_fix` (SetVisibility call
   0x4D8592 + `Maneuvers::Update`) re-shows the maneuver bar after undock - the game re-shows that root every frame anyway

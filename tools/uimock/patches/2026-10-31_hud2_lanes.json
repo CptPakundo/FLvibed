@@ -1,5 +1,5 @@
 {
- "_about": "The HUD 2 rounds of 31 Oct 2026 (docs/UI_HUD2.md 5.20 decision 4, 5.23): the context prompts left the line under the ship for two lanes beside the bottom panels; the row's help said 'Under your ship'. Apply with specpatch.py to part2_data.js, docs/UI_SPEC.json and the artifact's ui/spec; then tools/ui_meta.py.",
+ "_about": "The HUD 2 rounds of 31 Oct 2026 (modules/hud/docs/UI_HUD2.md 5.20 decision 4, 5.23): the context prompts left the line under the ship for two lanes beside the bottom panels; the row's help said 'Under your ship'. Apply with specpatch.py to part2_data.js, docs/UI_SPEC.json and the artifact's ui/spec; then tools/ui_meta.py.",
  "rows": {
   "hud_context": {"help": "Beside the bottom panels, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons: moving the ship on the left, firing and using on the right."}
  }

@@ -157,7 +157,7 @@ float DockRange()
     // Common.dll compares the squared distance of a dock request with a float (HD Edition 0.7.1 patched it to 2.5e9:
     // 50 km, vanilla 10 km): found by the comparison's code, `fcomp dword ptr [range]` after the squared distance (one
     // match in vanilla v1.0, HDE 0.7.1 and the current HDE repository; the float sits at +0x19B518 in vanilla and
-    // +0x19C518 in HDE: was a fixed +0x19C518, 18 Oct 2026). Searched once, when Common.dll is loaded.
+    // +0x19C518 in HDE: was a fixed +0x19C518). Searched once, when Common.dll is loaded.
     static bool searched = false;
     static uintptr_t range = 0;
     if (!searched && GetModuleHandleA("common.dll"))

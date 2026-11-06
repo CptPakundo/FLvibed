@@ -1,4 +1,4 @@
-// FLvibed - the game's flat icon sheets as one texture atlas for FLvibed's own HUD (HUD 2, docs\UI_HUD2.md 1.5):
+// FLvibed - the game's flat icon sheets as one texture atlas for FLvibed's own HUD (HUD 2, modules\hud\docs\UI_HUD2.md 1.5):
 // HDE's DATA\INTERFACE\buttontextures_flaticons.txm (falls back to buttontextures.txm, the file buttontextures.ini
 // names), its texture library entries Montage64 (the maneuver bar's icons, 4 x 4 cells of 256 px), Montage32 (contacts,
 // panels, equipment, 8 x 8 cells of 128 px) and HUD_targetingelement (the brackets / arrow / lead art), each a square

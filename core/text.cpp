@@ -1,3 +1,4 @@
+// Reads Freelancer's string resources by ids through the game's resource DLLs, as wide text or UTF-8.
 #include "text.h"
 
 #include "str.h"

@@ -1,10 +1,10 @@
-// subtitles\src\impl\linebreak.cpp (the subtitles' row and page breaking, moved out of display.cpp 29 Oct 2026; it had no
+// modules\subtitles\src\impl\linebreak.cpp (the subtitles' row and page breaking, moved out of display.cpp 29 Oct 2026; it had no
 // tests: SWEEP_2026-10-29 #10). A monospace width (10 px a character) makes the expectations exact. Then every shipped
-// subtitle line (subtitles\data\subtitles.tsv) is laid out at three widths: the pages cover the line's words in order,
+// subtitle line (modules\subtitles\data\subtitles.tsv) is laid out at three widths: the pages cover the line's words in order,
 // each page fits two rows, no cut falls inside the name prefix.
 #include "test.h"
 
-#include "../subtitles/src/impl/linebreak.h"
+#include "../modules/subtitles/src/impl/linebreak.h"
 
 #include <windows.h>
 
@@ -80,7 +80,7 @@ void Test_linebreak()
     // the row), no cut inside the name prefix
     if (!NeedInstall("the shipped subtitle lines (repository data)"))
         return;
-    const std::vector<std::string> rows = ReadLines(g_test.install + "\\..\\..\\subtitles\\data\\subtitles.tsv");
+    const std::vector<std::string> rows = ReadLines(g_test.install + "\\..\\..\\modules\\subtitles\\data\\subtitles.tsv");
     CHECK(rows.size() > 1000);
     int lines = 0, pages = 0, bad = 0;
     for (size_t r = 1; r < rows.size(); ++r)

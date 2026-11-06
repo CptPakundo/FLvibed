@@ -14,7 +14,7 @@ param([int[]]$Clients = @(21, 22), [int]$Rounds = 3, [int]$RoundSec = 180, [int]
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-. (Join-Path $root 'controller\tools\flctl.ps1')
+. (Join-Path $root 'tools\harness\flctl.ps1')
 . (Join-Path $PSScriptRoot 'mptest.ps1')
 $run = Join-Path $root "research\experience\runs\mp_pvp_$(Get-Date -Format yyyyMMdd_HHmmss)_$Label"
 $null = New-Item -ItemType Directory -Force $run

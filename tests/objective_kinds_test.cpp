@@ -1,10 +1,10 @@
-// The objective-kind coverage table (controller\src\impl\objective_kinds.h, IDEAS A41): the table itself (unique rows,
+// The objective-kind coverage table (modules\autopilot\src\objective_kinds.h, IDEAS A41): the table itself (unique rows,
 // names), then coverage over the install - every Cnd_ a story script's [Trigger] uses has a row whose `uses` equals the
 // install's count, no row claims uses the install does not have, every vignetteparams.ini objective_text kind has a job
 // row; an unknown name has no row (the coverage fails closed).
 #include "test.h"
 
-#include "../controller/src/impl/objective_kinds.h"
+#include "../modules/autopilot/src/objective_kinds.h"
 #include "game/ini.h"
 #include "game/jobs.h"
 #include "str.h"

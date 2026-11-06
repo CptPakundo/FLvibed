@@ -1,9 +1,9 @@
-// The haptics skeleton's pure pieces (controller\src\impl\haptics_rules.h, IDEAS U30, WORK_QUEUE Q5 slice 3): the
+// The haptics skeleton's pure pieces (modules\controller\src\impl\haptics_rules.h, IDEAS U30, WORK_QUEUE Q5 slice 3): the
 // effect table, the envelopes, the mixer (max per motor, ducking, rate limit + merge, voices, fatigue, the master
 // percent), the silence rules, the renderer's send policy and the hit detector.
 #include "test.h"
 
-#include "../controller/src/impl/haptics_rules.h"
+#include "../modules/controller/src/impl/haptics_rules.h"
 
 #include <algorithm>
 #include <cstring>
@@ -88,7 +88,8 @@ void Test_haptics()
         Out o = m.Update(10.0, full);
         CHECK_NEAR(o.low, 0.6, 1e-6);
         CHECK_NEAR(o.high, 0.36, 1e-6);
-        Gates sixty = g; // the default 60 %: the hand-back's 0.36 / 0.216 (slice 2's read-back: 0.36 / 0.22)
+        Gates sixty = g; // 60 %: the hand-back's 0.36 / 0.216 (slice 2's read-back: 0.36 / 0.22)
+        sixty.rumble = 60;
         o = m.Update(10.1, sixty);
         CHECK_NEAR(o.low, 0.36, 1e-6);
         CHECK_NEAR(o.high, 0.216, 1e-6);
@@ -232,7 +233,7 @@ void Test_haptics()
             if (h.Due(m.Update(t, g), t, s))
             {
                 if (++sends == 1)
-                    firstOk = std::fabs(s.low - 0.36f) < 1e-6f && std::fabs(s.high - 0.216f) < 1e-6f;
+                    firstOk = std::fabs(s.low - 0.6f) < 1e-6f && std::fabs(s.high - 0.36f) < 1e-6f; // (the default, 100 %)
             }
         CHECK(sends == 2 && firstOk && !h.On());
     }

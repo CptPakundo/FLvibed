@@ -1,3 +1,4 @@
+// Minimal Direct3D 8 overlay renderer: glyph atlas fonts, text, images, quads and screen region readback.
 #include "render.h"
 
 #include "hook.h"
@@ -41,7 +42,7 @@ static void* g_grabSurface = nullptr; // GrabRegion's staging surface (below)
 static int g_grabW = 0, g_grabH = 0;
 
 // Before every device Reset: the state block, and GrabRegion's staging surface (CreateImageSurface; kept between grabs,
-// recreated on the next one) - nothing of FLvibed's but MANAGED textures outlives a Reset (26 Oct 2026, the Alt+Enter
+// recreated on the next one) - nothing of FLvibed's but MANAGED textures outlives a Reset (the Alt+Enter
 // freeze audit; the surface is system memory, released anyway so no wrapper's pool mapping can make it count).
 void OnDeviceLost()
 {
@@ -58,7 +59,7 @@ void OnDeviceReset() {}
 // Is the back-buffer readback (GrabRegion) safe on this device? Only on the system's own Direct3D 8 (the device's code in
 // the Windows system directory). Under a D3D8 -> D3D9 wrapper in the game folder (HD Edition's DxWrapper / d3d8to9) one
 // CopyRects from the back buffer leaves something of D3D9's default pool behind: every later device Reset fails
-// D3DERR_INVALIDCALL for good, so a mode change or Alt+Enter would hang the game (26 Oct 2026, bisected with the test
+// D3DERR_INVALIDCALL for good, so a mode change or Alt+Enter would hang the game (bisected with the test
 // host's `d3dreset` on HDE 0.7.1: with the subtitles' comm-portrait capture the game's own recovery failed after the
 // first grab, 4 of 4 runs; with only CopyRects skipped it recovered 3 of 3, controller alone 10 of 10). Once per device.
 bool ReadbackSafe()

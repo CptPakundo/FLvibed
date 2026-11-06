@@ -1,4 +1,4 @@
-// FLvibed - press ownership between the pad's consumers (26 Oct 2026, the owner's attended run on vanilla 1.1 + FLUF:
+// FLvibed - press ownership between the pad's consumers (the owner's attended run on vanilla 1.1 + FLUF:
 // the B that closed FLUF's "Move System" window and the B that closed FLUF's palette were each ALSO free flight - `pad B
 // free_flight tap` - because the flight dispatch, idle while FLUF had the pad, saw the still-held B as a new press on the
 // frame the window went and acted on its release). Header only; unit test tests\press_gate_test.cpp.

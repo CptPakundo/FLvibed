@@ -1,6 +1,6 @@
-// Which XInput slot the pad is read from (controller\src\impl\pad_slots.h, T36 slice 1): the first slot that answers,
+// Which XInput slot the pad is read from (modules\controller\src\impl\pad_slots.h, T36 slice 1): the first slot that answers,
 // kept while it answers; an unplug rescans at once, then every kRescan seconds; a replug on another slot.
-#include "../controller/src/impl/pad_slots.h"
+#include "../modules/controller/src/impl/pad_slots.h"
 
 #include "test.h"
 

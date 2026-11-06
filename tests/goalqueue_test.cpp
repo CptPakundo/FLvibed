@@ -1,4 +1,4 @@
-// The goal queue (controller\src\impl\goalqueue.h, A37_PLAN S6): the A38 record's text round trip and every parse
+// The goal queue (modules\autopilot\src\goalqueue.h, A37_PLAN S6): the A38 record's text round trip and every parse
 // refusal; every validator refusal with its reason code; the re-proof states (valid / achieved / failed / blocked);
 // achieve semantics (an achieved head popped before anything acts, its steps with it, repeats bounded); the step key
 // written only by Advance after a decision (4c4fb6f's class); D10's resume cases; the memory classes cover the rules'
@@ -7,7 +7,7 @@
 // fixture below, with why) or a finding (memory the rebuild cannot derive: what A37 removes - recorded, not hidden).
 #include "situation_fixture.h"
 
-#include "../controller/src/impl/goalqueue.h"
+#include "../modules/autopilot/src/goalqueue.h"
 
 #include <map>
 

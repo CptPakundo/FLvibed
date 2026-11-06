@@ -1,12 +1,14 @@
 # Discovery Freelancer 5.3: a patched 1.1 client under FLUF and a closed hook
 Status: current
-Checked against: FLvibed 4338909 (31 Oct 2026 ~05:10, short form: 1 watched-path commit: the audit robustness bundle 55d42263 (PatchVtable / PatchImport fail closed on a non-writable slot, the D3D Reset / Present / CreateDevice re-patch keeps the previous pointer on a refusal, room-character hook order, subtitle loaders parse-then-swap); `core/flexe.h` unchanged since 5eb7bcb; no new hook site; no effect)
-Dirty paths at check: none (working tree clean at 4338909, 31 Oct 2026 ~05:10)
-Watch: core/flexe.h, core/hook.*, build.cmd, docs/MOD_COMPATIBILITY.md, controller/src/host, core/game/menu.*
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 34 watched-path commits: the module split P0-P11e (moves, comments, map rows); flexe.h 217 -> 228; hook.cpp adds only report rows; 228 / 228 on all four exes, 0 padding spans, measured this round; no effect)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: core/flexe.h, core/hook.*, build.cmd, docs/MOD_COMPATIBILITY.md, modules/controller/src/host, core/host, core/game/menu.*
 Evidence: research\evidence\discovery\ (two Freelancer.exe builds for signature regressions, sigcheck.py + sigcheck.txt, patchlist.xml, notes.yml, module strings); the five patch archives (318 MB) and the cloned repos stayed in the session scratchpad (IDEAS X3)
 Sources: [file] official patch server archives, MD5-verified; [file] DiscoveryGC repositories; [page] the-starport FLUF docs, flserver.de; discoverygc.com and ModDB were unreadable (Cloudflare / 403)
 
 ## What it means for FLvibed
+
+*6 Nov 2026 (3c9c1390, short form):* **228 / 228 signatures statically on Discovery's hotfix exe**, HDE 0.7.1, the upstream exe and vanilla 1.1, 0 across padding (`sigcheck.py` / `padspan.py` run this round; the output was not filed in `research\evidence\`, which this round did not write). `core\hook.cpp` gained only the report's owner filter and rows (dc7605e3). The host's hooks moved to `core\host\` with the split, so the Watch line takes it. A server's autopilot rule now reaches the Autopilot without the Controller (401fda42). No effect.
 
 *Check-up 30 Oct 2026 ~01:50 (short form, HEAD 4ca36df; 1 watched-path commit 12e7942..4ca36df):* 4ca36df adds six
 symbols (the frame timer 0x42D770 detour and its data, 217) - **217 / 217 statically on Discovery's hotfix exe**, HDE

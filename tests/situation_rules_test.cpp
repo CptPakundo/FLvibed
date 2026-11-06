@@ -1,4 +1,4 @@
-// The arbiter's S3-S5 rules (controller\src\impl\situation_rules.h, A37_PLAN S3-S5): each rule over synthetic situations -
+// The arbiter's S3-S5 rules (modules\autopilot\src\situation_rules.h, A37_PLAN S3-S5): each rule over synthetic situations -
 // the branch's own conditions both ways (it holds / one condition fails), the same mode / target / action as
 // ObjectiveDecide's branch, and the order between them (DecideS3, Decide); then the recorded fixtures: every one decides
 // without fault, and a
@@ -6,7 +6,7 @@
 // gets exactly that decision from the rules.
 #include "situation_fixture.h"
 
-#include "../controller/src/impl/situation_rules.h"
+#include "../modules/autopilot/src/situation_rules.h"
 
 using namespace situation;
 

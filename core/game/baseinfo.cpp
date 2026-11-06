@@ -299,7 +299,7 @@ float ServerPrice(u32 base, u32 good)
     }
 }
 
-// ---- the client's own copies (both modes; multiplayer has nothing else: server.dll holds no world, 28 Oct 2026)
+// ---- the client's own copies (both modes; multiplayer has nothing else: server.dll holds no world)
 // A base's name: Common.dll's universe data (IBase +4 the id, +0xC strid_name; FLHookSDK Universe::IBase).
 u32 ClientBaseStrid(u32 base)
 {

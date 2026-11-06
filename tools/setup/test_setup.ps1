@@ -79,11 +79,14 @@ foreach ($kind in 'hde', 'vanilla') {
 
     # uninstall, keeping the settings
     'saves' | Set-Content "$exe\FLvibed\saves.ini"
+    'ranges' | Set-Content "$exe\FLvibed\ranges.tsv"
+    'backup' | Set-Content "$exe\FLController.ini.before-0.2.0"
     'log' | Set-Content "$exe\FLController.log"
+    'log' | Set-Content "$exe\FLvibed_npc_stalls.log"
     Check ((Run '/uninstall', "`"$g`"", '/keepsettings', '/quiet', '/log', "`"$Work\$kind-uninstall.log`"") -eq 0) 'uninstall (keep settings) exits 0'
     Check ([Linq.Enumerable]::SequenceEqual([IO.File]::ReadAllBytes("$exe\dacom.ini"), $orig)) 'dacom.ini byte-identical to before'
-    foreach ($f in 'FLvibed.dll', 'FLSubtitles', 'FLvibed\autopilot.3db', 'FLvibed\Uninstall FLvibed.exe', 'FLController.log') { Check (-not (Test-Path "$exe\$f")) "removed $f" }
-    foreach ($f in 'FLvibed.ini', 'FLController.ini', 'FLvibed\saves.ini') { Check (Test-Path "$exe\$f") "kept $f" }
+    foreach ($f in 'FLvibed.dll', 'FLSubtitles', 'FLvibed\autopilot.3db', 'FLvibed\Uninstall FLvibed.exe', 'FLController.log', 'FLvibed_npc_stalls.log') { Check (-not (Test-Path "$exe\$f")) "removed $f" }
+    foreach ($f in 'FLvibed.ini', 'FLController.ini', 'FLvibed\saves.ini', 'FLvibed\ranges.tsv', 'FLController.ini.before-0.2.0') { Check (Test-Path "$exe\$f") "kept $f" }
     Check ((EntryKeys).Count -eq $entriesBefore) 'installed-apps entry removed'
 
     # install again, then uninstall from the installed uninstaller (removes itself), settings removed

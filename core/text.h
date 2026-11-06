@@ -1,4 +1,4 @@
-// Freelancer's string resources (shared by every module, compiled into each).
+// Freelancer's string resources (one instance for the logic, one for the host).
 #pragma once
 #include "common.h"
 

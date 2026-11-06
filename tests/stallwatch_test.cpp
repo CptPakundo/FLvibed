@@ -1,8 +1,8 @@
-// controller\src\impl\stallwatch.h (pure): a ship that stays put for 3 s of game time stalls, once; slow drift inside 2 m
+// modules\controller\src\impl\stallwatch.h (pure): a ship that stays put for 3 s of game time stalls, once; slow drift inside 2 m
 // is a stall too, a steady 1 m/s is not; leaving, or being gone, ends it; a gap (a load, a pause) starts over.
 #include "test.h"
 
-#include "../controller/src/impl/stallwatch.h"
+#include "../modules/npc/src/stallwatch.h"
 
 using namespace stallwatch;
 

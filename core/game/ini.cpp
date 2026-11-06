@@ -1,3 +1,4 @@
+// Reader for Freelancer's .ini files, text and binary: ordered sections, repeated keys, DATA paths and field splitting.
 #include "ini.h"
 
 #include "str.h"
@@ -51,7 +52,7 @@ std::vector<std::string> DataFiles(const char* key)
 // string table's offset; then sections {u16 name, u16 entries}, entries {u16 name, u8 values}, values {u8 type (1
 // int, 2 float, 3 string), 4 bytes}; names and string values are offsets into the NUL-terminated string table. Decoded
 // into the same sections a text file gives (values joined by ", ", floats in their shortest exact form), so every
-// reader works on vanilla data too (29 Oct 2026; until then a BINI file read as empty - code audit; the decoder
+// reader works on vanilla data too (until then a BINI file read as empty - code audit; the decoder
 // generalised from core\game\gamefont.cpp's).
 static std::vector<Section> ReadBini(const std::vector<char>& b)
 {

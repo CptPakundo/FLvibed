@@ -47,7 +47,7 @@ video stream only; frame n of a window = t0 + (n-1) x 0.2 s, alignment re-checke
   tap: vanilla frames show the 300 -> 90 drop too). The probe's escort-wait budget should expect 25-38 s.
 
 Escalation step 2 of `docs\AFK_PLAYBOOK.md` 13a (step 1 = `M02_ashcroft_consensus.md`; its `spawn_charge`, flown as
-probes sc1 / sc3 / sc4, brought 0 chase kills in 6 runs: `controller\docs\AUTOPILOT.md` "Flown 31 Oct 2026 ~15:35",
+probes sc1 / sc3 / sc4, brought 0 chase kills in 6 runs: `modules\autopilot\docs\AUTOPILOT.md` "Flown 31 Oct 2026 ~15:35",
 "Probe sc3"; HANDOFF sc4). Research only, 31 Oct 2026, no game, no build; checked against HEAD 3e5f1385 (dirty paths
 not read). [M] measured, [I] inferred. Times are video seconds (v) of each recording; "+n" = after the FOLLOW
 ASHCROFT banner. Window: the 3rd escort's death -> the pod (R1 v1830-1882, R2 v1796-1852, R3 v1878-1955).
@@ -155,7 +155,7 @@ ASHCROFT banner. Window: the 3rd escort's death -> the pod (R1 v1830-1882, R2 v1
   stop at hull 0.36-0.59 and leave [M].
 
 ## The ONE proposal: `ash_ride` - be at cruise speed when he spawns, ride his ramp, coast only at equal speed
-> **ash_ride built 31 Oct 2026, not flown** (`controller\docs\AUTOPILOT.md` "ash_ride"; `controller\src\impl\ash_ride.h`,
+> **ash_ride built 31 Oct 2026, not flown** (`modules\autopilot\docs\AUTOPILOT.md` "ash_ride"; `modules\autopilot\src\ash_ride.h`,
 > `autopilot_ashride.cpp`, `tests\ash_ride_test.cpp`), adapted to the P0 above and the owner's correction of 31 Oct 2026
 > (an engine kill out of cruise coasts straight on the velocity and loses cruise; finding 6's "taps keep cruise in vanilla"
 > was an inference from OCR'd speeds, not a fact): no taps - a cruise loop near the spawn, a timed cruise intercept, the

@@ -4,7 +4,7 @@
 // Freelancer's linear motion: m dv/dt = F - d v (force F and linear drag d per thrust type and throttle,
 // CShip::collect_force_components; mass PhySys::GetMass): top speed F / d, v(t) = vTop + (v0 - vTop) e^(-t d / m).
 // Verified 18 Oct 2026: top speeds = the measured 80 (engine) / 200 (afterburner) m/s of the Starflier.
-// Shared by every module (core\game), compiled into each.
+// One instance for the whole logic (core\game).
 #pragma once
 #include "common.h"
 

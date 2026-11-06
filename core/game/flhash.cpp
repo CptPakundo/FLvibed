@@ -1,3 +1,4 @@
+// Freelancer's nickname hash (CreateId) in-tree, identical to Common.dll's export, with its lookup table.
 #include "flhash.h"
 
 namespace flhash

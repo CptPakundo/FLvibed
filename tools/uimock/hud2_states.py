@@ -18,7 +18,7 @@ Layout (fractions of H; anchored to the safe frame's corners: 5 % of W at the si
   bottom-centre the context line under the player's ship (at most three, holds as a broken ring)
   bottom-right  LOADOUT panel: the D-pad cross and the weapon groups (">" on the active), the launcher and its lock
 
-Since 31 Oct 2026 it draws the BUILT Standard layout (docs\\UI_HUD2.md 5.19-5.23), not the proposal above where they
+Since 31 Oct 2026 it draws the BUILT Standard layout (modules\\hud\\docs\\UI_HUD2.md 5.19-5.23), not the proposal above where they
 differ: both bottom panels 0.15 H tall (ship 0.31 wide, loadout base 0.40 with the consumables cross on its own 0.20
 plate stacked 0.012 above the base's right end), tight glyphs in the loadout, a too-long name in its cut start form (the
 marquee), the context prompts in two lanes beside the panels (movement / control left, fire / use / target right), the
@@ -40,7 +40,7 @@ PLATE = 'plate_subs.png'      # the subtitles' area from a capture without lines
 PLATE_XY = (0, 900)
 T = 0.024                     # the text floor (XAG 101: 26 px at 1080p); captions never go below it
 G = 0.036                     # glyph height in prompts and on clusters
-# The built Standard layout (31 Oct 2026, docs\UI_HUD2.md 5.19-5.23; fractions of H at 16:9, k 1)
+# The built Standard layout (31 Oct 2026, modules\hud\docs\UI_HUD2.md 5.19-5.23; fractions of H at 16:9, k 1)
 PANEL_H = 0.15                # both bottom panels (A5)
 SHIP_W = 0.31                 # the ship panel (5.22): icon column 0.085, texts from 0.107, values 0.014 before the edge
 BASE_W = 0.40                 # the loadout's base (5.20 decision 3: the weapons only; K&M 0.44)

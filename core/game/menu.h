@@ -1,5 +1,5 @@
 // Main menu and load screen, driven natively (the game's own button and load logic; no cursor, no key presses).
-// Facts: docs/FREELANCER_RE.md "Main menu and load screen". Shared by every module (core/game), compiled into each.
+// Facts: docs/FREELANCER_RE.md "Main menu and load screen". One instance for the whole logic (core/game).
 #pragma once
 #include "common.h"
 

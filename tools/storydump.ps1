@@ -25,7 +25,7 @@ foreach ($l in [IO.File]::ReadLines((Resolve-Path $Strings).Path)) {
     if ($c.Count -eq 3) { $str[[int]$c[0]] = ($c[2] -replace '\\n', ' ') }
 }
 $subs = @{}
-foreach ($l in [IO.File]::ReadLines((Join-Path $root 'subtitles\data\subtitles.tsv'))) {
+foreach ($l in [IO.File]::ReadLines((Join-Path $root 'modules\subtitles\data\subtitles.tsv'))) {
     if ($l.StartsWith('#') -or $l.StartsWith("id`t")) { continue }
     $c = $l -split "`t"
     if ($c.Count -lt 7 -or $c[2] -eq 'chunk') { continue }

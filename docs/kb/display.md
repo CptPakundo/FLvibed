@@ -43,6 +43,9 @@ fits the frame on the screen) while the back buffer stays 3840x2160; a size line
 the desktop size with FL#'s `better_resolutions` on and to 1024x768 with it off; ReShade's "update available" banner
 appears in the first seconds of a windowed start (ReShade's own, not FLvibed's).
 
+Not yet covered: exclusive fullscreen (`tools\harness\flsweep.ps1 -Attended`: it takes the screen), the real pad and the mouse hand-back in those modes, the movie
+overlay in exclusive fullscreen (verified at 4K borderless and 1600x1200 / 1280x960 windowed).
+
 ## Subtitles across modes (`display-subtitles`, 21 Oct 2026) `[game]`
 Real dialogue, judged by the module's own `layout` report (debug command: screen, font and row metrics, the placement
 context and anchor, every block's top / height / widest row) and screenshots (`research\experience\runs\display_subs_*`):
@@ -55,13 +58,13 @@ flight comms; at 1600x1200, 2560x1080, 1280x720 and 3840x2160.
   the top left, one sliding HUD panel at the top centre between it and the NeuroNet box (its room: 0.80 H half at 4K
   16:9 less the gap, wider at 21:9); 4:3 / 5:4 have only ~0.18 H of room there (rows of one or two words): they use the
   name-tab layout (`space_narrow 5`, the user's pick): the name in a tab at the top, the rows in a body below the top
-  HUD row under the bar's lower right (subtitles\docs\DISPLAY_PLAN.md).
+  HUD row under the bar's lower right (modules\subtitles\docs\DISPLAY_PLAN.md).
 - **Flight band (`space_position 1`):** hangs from 0.162 H (0.235 H under the objective banner), ends at 0.26-0.31 H, well above the 0.44 H
   limit; clear of the comm portrait (top left), the maneuver bar and the bottom panels in every aspect ratio.
 - **The docking letterbox** (control-exclusion 4, the player's controls taken for a dock / jump animation) lasts seconds
   when a dock goes through and at most 78 s in a passing leg (M12's scripted entry; 1,109 leg logs, 30 Oct 2026); held
   longer it is a hang (M13 after the SaveS409 load: the sphere entry never finished) - the harness ends it after 120 s
-  (`controller\docs\HARNESS.md`).
+  (`docs\HARNESS.md`).
 - **Letterbox bars are 0.140 H each at every aspect ratio** (the game letterboxes by a fraction of the height, not to
   a cinema ratio; measured in the room-scene captures). Room scenes (base context, letterbox flag) and space cutscenes
   (cutscene camera) both place the stack with its bottom at 0.975 H:
@@ -78,7 +81,7 @@ flight comms; at 1600x1200, 2560x1080, 1280x720 and 3840x2160.
   everywhere; the vanilla exe has 1.85. `letterbox_mode` 0 = inside the bar, inline name, no backing (one 2-row line
   spans 0.881-0.975 H); 1 = resting on the bar's top edge in the picture with the name row and backing (Outlaws);
   `cinematic_single_speaker` = one speaker at a time in letterboxed scenes. **Default: bar mode (user, 21 Oct 2026).**
-  What other games do: `..\..\subtitles\docs\SUBTITLE_PRACTICES.md`.
+  What other games do: `..\..\modules\subtitles\docs\SUBTITLE_PRACTICES.md`.
 
 ## Test instances
 - An instance mirror hard-links `EXE\Freelancer.exe` to the install's; `Set-FLInstanceDisplay` replaces it with a copy
@@ -92,7 +95,7 @@ flight comms; at 1600x1200, 2560x1080, 1280x720 and 3840x2160.
   never comes back: a mode change or Alt+Tab out of fullscreen hangs it). FLvibed reads the back buffer only on the
   system's own Direct3D 8 (`core\game\render.cpp` ReadbackSafe). Vanilla 1.1 does not retry a failed Reset at all (one
   D3DERR_DEVICELOST and the game hangs: the shape of the FLUF Alt+Enter freeze). Test-only host command `d3dreset`
-  (`controller\docs\HARNESS.md`); evidence `research\experience\runs\pad_fluf_popup_2026-10-26\run.log`.
+  (`docs\HARNESS.md`); evidence `research\experience\runs\pad_fluf_popup_2026-10-26\run.log`.
 
 ## Window mode path (26 Oct 2026, read from the code and verified in game) `[game]`
 - The game creates its window at 0x5B32E5 (0x4246E0: `CreateWindowExA`, the style from the display settings' fullscreen
@@ -109,8 +112,8 @@ flight comms; at 1600x1200, 2560x1080, 1280x720 and 3840x2160.
   AdjustWindowRectEx + `SetWindowPos(HWND_NOTOPMOST, size only)`). The applied settings feed the mouse capture (0x41E9EB,
   0x4201BF) and the window procedure's activation (0x5B2671): they must stay the real mode.
 - HDE 0.7.1 writes the applied size into `SAVE\PerfOptions.ini` at the setup (vanilla at its exit).
-- **FLvibed's borderless** (`borderless` 0 / 1 auto / 2 always; `controller\src\host\winmode.cpp`, decisions
-  `core\winmode_rules.h`): auto stays out when the windowed style immediate has no caption (HDE: 0) or the d3d8.dll is
+- **FLvibed's borderless** (`borderless` 0 / 1 auto / 2 always; `modules\display\src\winmode.cpp`, decisions
+  `modules\display\src\winmode_rules.h`): auto stays out when the windowed style immediate has no caption (HDE: 0) or the d3d8.dll is
   not the system's (HDE's d3d8to9 + DxWrapper, dgVoodoo). Otherwise every request becomes windowed at the monitor's
   size and, after WindowStyle, the window becomes WS_POPUP at the monitor's rectangle (centred when smaller). A request
   whose fullscreen byte differs from the applied one is a toggle (FLUF's Alt+Enter): borderless <-> the game's bordered

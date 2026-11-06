@@ -1,16 +1,18 @@
 # HUD 2 overhaul and layout presets: what information shows in what context, at what size, in what flow
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 1 watched-path commit: 32c80fce (PRESETS 6 item 3, the layout lint, built; live baseline `docs\hud2_lint_baseline.txt` FAIL in every context on today's HUD; zones from the doc's rules - step 1's preset data not in UI_SPEC.json yet; no preset built); U39-U41 unchanged)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: docs/UI_HUD2.md, docs/UI_HUD2_PRESETS.md, docs/UI_HUD2_EXTENDED.md, controller/src/impl/hud2*.cpp, controller/src/impl/padhud.*, controller/src/impl/promptbar.*, controller/docs/HUD_CUES.md, docs/UI_SPEC.json, docs/SETTINGS.md#hud|preset|glyph|prompt|fade
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 50 watched-path commits: the module split P0-P11e (moves, comments, map rows), the hud2.cpp split; Q7 steps 1-6 built: U39 built in part (plumbing, Focus; Speedrun and Guided not), lint 0 FAIL in 6 contexts, the layout rounds 5.16-5.23)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: modules/hud/docs/UI_HUD2.md, modules/hud/docs/UI_HUD2_PRESETS.md, modules/hud/docs/UI_HUD2_EXTENDED.md, core/ui/hud2*.cpp, modules/hud/src/hud2*.cpp, modules/controller/src/impl/padhud.*, modules/controller/src/impl/promptbar.*, modules/hud/docs/HUD_CUES.md, docs/UI_SPEC.json, docs/SETTINGS.md#hud|preset|glyph|prompt|fade
 Evidence: `research\evidence\hud_presets\` - `hud_repo.md` (the element inventory with sizes, contexts, settings, data, path:line), `hud_web.md` (the web round, URLs per claim), `hud_proposal.md` (the first proposal), `hud_verify.json` (the sceptic's 13 checks)
 Sources: a research workflow (29 Oct 2026, the owner's request): a repo reader, a web researcher, a synthesis and an adversarial verifier; corrections below are the verifier's, re-checked by the coordinating session where marked [checked]. Tags: [file], [page], [D] design choice without outside evidence
 
 ## What it means for FLvibed
 
-*31 Oct 2026 ~15:20 (32c80fce, short form):* the build order's step 3 exists before steps 1-2: `hud2_lint.h` (FAIL / WARN rules of `UI_HUD2_PRESETS.md` 6 item 3; debug `hud2 lint`) and its live baseline on today's HUD (`docs\hud2_lint_baseline.txt`, 4K K&M, 6 sim contexts): FAIL in every context - the loadout plate inside zone S1, centre-stack gaps 0.004-0.007 H in combat / cruise, the destination twice in dock / lane; WARN boxed 16-19.5 % against the 16 % combat budget. These are the matrix's first measured numbers; the zones are taken from the doc's rules until step 1 puts the preset table in UI_SPEC.json, and contrast is a named n/a (needs frames). No preset is built (U35, T8 marked built in part).
+*6 Nov 2026 (3c9c1390, short form):* **U39 is built in part.** Q7 steps 1-6 landed on 31 Oct: the presets' data in `UI_SPEC.json` (75a56f2c), `hud2 sim` for every context (2740d0f0), the plumbing (2b6062ac), the layout core `hud2_layout.h` (24fab44f) and **Focus** (de5c96c1; run in game, the owner judged its frames). `hud_preset` is 0..1 in `docs\SETTINGS.md`, marked experimental; Speedrun and Guided are not built. The lint's baseline FAILs are fixed: 0 FAIL in all 6 contexts, WARN only (4008c34a), title-safe now 0.94 with the margins at 3 % (b0a2dc8d, the owner). The lower centre is clear (af1e8128). Since 2 Nov the HUD has moved on other lines (contextual `hud_fade` 759014dd, panels sized to content 6af7504e); the 0.4.0 makeover decides how the presets carry over (`modules\hud\docs\UI_HUD2_SKIN.md`).
 
-*30 Oct 2026 (12e7942, short form):* `docs\UI_HUD2_PRESETS.md` revision 2 (39f5b1c) and the owner's answers (e0005d5,
+*31 Oct 2026 ~15:20 (32c80fce, short form):* the build order's step 3 exists before steps 1-2: `hud2_lint.h` (FAIL / WARN rules of `UI_HUD2_PRESETS.md` 6 item 3; debug `hud2 lint`) and its live baseline on today's HUD (`docs\hud2_lint_baseline.txt`, 4K K&M, 6 sim contexts): FAIL in every context - the loadout plate inside zone S1, centre-stack gaps 0.004-0.007 H in combat / cruise, the destination twice in dock / lane; WARN boxed 16-19.5 % against the 16 % combat budget. These are the matrix's first measured numbers; the zones are taken from the doc's rules until step 1 puts the preset table in UI_SPEC.json, and contrast is a named n/a (needs frames). No preset is built *[overtaken 31 Oct 2026: Focus built, de5c96c1, the line of 6 Nov above]* (U35, T8 marked built in part).
+
+*30 Oct 2026 (12e7942, short form):* `modules\hud\docs\UI_HUD2_PRESETS.md` revision 2 (39f5b1c) and the owner's answers (e0005d5,
 a08d727: peek on View double-tap + the SHOW HUD wheel entry, the wheel on ACE's RB hold, the native label option A)
 settle the owner calls of U39; the reveal is wake-on-change of the changed element only (4 s), while the **two-rate fade
 below was not taken**: opacity keeps today's single ease (U41 in part superseded). Not built.
@@ -20,7 +22,7 @@ useful). **No global "combat turns everything back on"** - that reading was a mi
 own complete design, informative AND spacious with clear sightlines in every context including combat, and may have
 its own visual identity (e.g. a centre reticle carrying data, or a bare one); variety, but every preset fully
 functional. The matrix below (drafted before these decisions) is superseded where it forces combat states; **the
-preset design built on these decisions is `docs\UI_HUD2_PRESETS.md`** (U39; four designers, two critics each, one
+preset design built on these decisions is `modules\hud\docs\UI_HUD2_PRESETS.md`** (U39; four designers, two critics each, one
 synthesis; its budgets: Standard combat 14.5 %, Focus and Speedrun ~7 %, Guided 14.6 %, against today's 18.6 %).
 
 *29 Oct 2026 (989d138, new; the owner: HUD 2 could use an overhaul plus layout presets, each with its own balance of
@@ -55,7 +57,7 @@ on-screen information, on-screen button prompts and context-dependent extras; sc
   rows - presets must have K&M parity); aspect ratios other than 16:9 (k = 0.8 at 4:3, the context line's cascade); the
   pad threat count is capped at 2 in code (`hud2.cpp` 592); harness baselines shift with any default change; the
   settings chain (`core\settings.h` -> `SETTINGS.md` -> `UI_SPEC.json` / `ui_meta.h` -> the living spec) per new key;
-  the local `controller\docs\research\ADAPTIVE_UI_RESEARCH.md` (presets as a one-button start then fine tuning; GoW:
+  the local `modules\controller\docs\research\ADAPTIVE_UI_RESEARCH.md` (presets as a one-button start then fine tuning; GoW:
   ~60 % of players changed text size) supports Guided and the first-launch screen (U37).
 
 ## Findings

@@ -141,7 +141,7 @@ int RestoreWaypoints(bool ownList)
         return -1;
     g_waypointsSaved = false;
     // A saved list belongs to the flight it was taken in (was: kept until a restore - a harness goto that failed
-    // before its restore left it armed, and a later flight, another save's too, got its navmarkers, 18 Oct 2026).
+    // before its restore left it armed, and a later flight, another save's too, got its navmarkers).
     if (g_savedFlight != PlayerIObj())
         return -1;
     // Restore only if the list still holds our own waypoint or nothing (reached): anything else is the mission's

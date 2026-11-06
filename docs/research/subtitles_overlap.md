@@ -1,8 +1,8 @@
 # Overlapping speakers: what the subtitles show when two comms talk at once
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 1 watched-path commit (32c80fce: UI_HUD2_PRESETS.md status line + 6 item 3, the HUD 2 layout lint; no subtitle, speaker or overlap rule); no effect)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: subtitles/src/impl/display.cpp, subtitles/src/impl/impl.cpp, subtitles/docs/DISPLAY_PLAN.md, subtitles/docs/SUBTITLE_PRACTICES.md, docs/UI_HUD2_PRESETS.md, docs/SETTINGS.md#subtitle|speaker|portrait|chat
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 8 watched-path commits: the module split P0-P11e (moves, comments, map rows); 72d95a04 `stack_fit` (stacks shrink together), a46bef03 `chat_size`; S10 decided by the owner 30 Oct (WORK_QUEUE D5), not built)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: modules/subtitles/src/impl/display.cpp, modules/subtitles/src/impl/impl.cpp, modules/subtitles/docs/DISPLAY_PLAN.md, modules/subtitles/docs/SUBTITLE_PRACTICES.md, modules/hud/docs/UI_HUD2_PRESETS.md, docs/SETTINGS.md#subtitle|speaker|portrait|chat
 Evidence: research\evidence\subtitles_overlap\ (`sources.txt` every URL with how it was read; `voice_priorities.txt` the game's own comm priority ladder)
 Sources: guidelines and engine docs [page], game reviews [page], search summaries where a page refused the fetch [search], recollection [memory, unverified], the game's data [file]
 
@@ -14,6 +14,8 @@ owner: no stacking of subtitles / portraits by default, one speaker at a time, p
 later one - "but industry standards and accepted behavior is preferred". An "Expanded" preset keeps today's stacking.
 
 ## What it means for FLvibed (30 Oct 2026, at 6c9a872)
+
+*6 Nov 2026 (3c9c1390, short form):* **S10's status was stale:** the owner decided on 30 Oct (the private work queue D5): the default never stacks, an "Expanded" preset keeps today's stacking, industry standards over the owner's own taste. Not built: no such setting in `docs\SETTINGS.md`. Meanwhile the stack was made smaller, not rarer: `stack_fit` (72d95a04, default 0.7, for 4:3 and letterboxed scenes; the commit says not verified in game). It serves "Expanded" and does not replace the default this note recommends.
 
 **There is no written industry rule for simultaneous speakers in games; there is a consistent hierarchy.** Every
 guideline caps the subtitle area at **two lines (three exceptionally)** (XAG 104, BBC, Netflix, Hamilton), and every

@@ -1,8 +1,8 @@
-// The multiplayer server's permission tag in a chat line (controller\src\impl\mprules.*, docs\MULTIPLAYER.md "Server
+// The multiplayer server's permission tag in a chat line (modules\controller\src\impl\mprules.*, docs\MULTIPLAYER.md "Server
 // permission"). Pure: unit-tested in tests\mprules_tag_test.cpp.
 //
 // The tag counts only as the WHOLE line (spaces around it allowed): "[flvibed autopilot=on|full|all|travel|off]",
-// case-insensitive. Why the whole line (28 Oct 2026, two clients on HDE's FLHook server): FLHook relays a player's chat
+// case-insensitive. Why the whole line (two clients on HDE's FLHook server): FLHook relays a player's chat
 // to every client as a SERVER line (sender 0x10000, the server's own id) with the player's name first - "FLvTest22:
 // [flvibed autopilot=off]" switched both clients off while the rule was "the tag anywhere in a server line". A relayed
 // line always carries the "Name: " prefix and a non-empty text, so it can never be the bare tag; the FLHook plugin

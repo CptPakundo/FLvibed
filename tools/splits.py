@@ -23,7 +23,7 @@ mistake or delay fails the run at once (limits below, from the runners' segments
 Commands (OCR venv python, -I):
   build              docs\\splits_reference.tsv (runners + par per checkpoint) and the report of what is missing
   history            our splits of every archived leg -> research\\experience\\legs\\splits.tsv
-  limits             fail limits + pace data for the live check -> controller\\tools\\missions\\leg_checkpoints.tsv
+  limits             fail limits + pace data for the live check -> tools\\harness\\missions\\leg_checkpoints.tsv
   replay             the limits replayed on every archived leg: good runs failed (must be none), bad runs caught
   table              docs\\SPLITS.md (generated: par, runners, our PB / gold / sum of best, per checkpoint)
   run <leg dir|log>  one run's splits against par / PB / gold (-t0 <hh:mm:ss> with a bare log)
@@ -56,7 +56,7 @@ CPF = os.path.join(FL, 'docs', 'checkpoints.tsv')
 REFOUT = os.path.join(FL, 'docs', 'splits_reference.tsv')
 LEGREF = os.path.join(FL, 'docs', 'legs_reference.tsv')
 SPLITSMD = os.path.join(FL, 'docs', 'SPLITS.md')
-LIVE = os.path.join(FL, 'controller', 'tools', 'missions', 'leg_checkpoints.tsv')
+LIVE = os.path.join(FL, 'tools', 'harness', 'missions', 'leg_checkpoints.tsv')
 LSSDIR = os.path.join(FL, 'docs', 'livesplit')
 LEGS = os.path.join(FL, 'research', 'experience', 'legs')
 HIST = os.path.join(LEGS, 'splits.tsv')

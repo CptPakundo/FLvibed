@@ -1,12 +1,12 @@
-// FLvibed - the marquee: how a text that does not fit its room shows all of itself (the owner, 31 Oct 2026, HUD 2
-// decision 1, docs\UI_HUD2.md 5.20: "a marquee, the world-standard public-display pattern, instead of a permanent '...'
+// FLvibed - the marquee: how a text that does not fit its room shows all of itself (HUD 2
+// decision 1, modules\hud\docs\UI_HUD2.md 5.20: "a marquee, the world-standard public-display pattern, instead of a permanent '...'
 // cut"). A text the fit rule (textfit.h) would cut shows its start with the trailing ellipsis (the cut form, exactly), holds
 // a short pause, then scrolls slowly and continuously until its end is visible, holds a short pause, then resets to the
 // start - and repeats. The reset is a fade (out at the end, in at the start), not a jump: HUD 2's motion rule "continuous
 // motion, never stepped" (UI_HUD2_PRESETS.md 1.2). A text that fits does not move.
 // Pure: the offset, the clip and the alphas as a function of the time since the text appeared (frame-rate independent:
 // no per-frame state, any sampling gives the same picture at the same time; sub-pixel: the offset is continuous). The
-// kit (controller\src\impl\hud2_kit.cpp TextMarquee) draws the full text clipped to its room with these values.
+// kit (core\ui\hud2_kit.cpp TextMarquee) draws the full text clipped to its room with these values.
 // Host-free tests: tests\marquee_test.cpp.
 //
 // The values (Timing) and why:
@@ -18,7 +18,7 @@
 //    Android's 30 dp/s is ~0.04 H/s on a ~760 dp tall phone screen [R, memory], the owner's range 0.04-0.06 H/s. The speed
 //    scales with the drawn size (a larger text scrolls as many characters a second);
 //  - the reset fade 0.25 s each way: the panels' ease (PRESETS 1.2 Continuous motion, tau 0.25 s).
-// Reduced motion: HUD 2 has no reduced-motion setting yet (docs\UI_HUD2.md 5.20); Static() below is the cut form a
+// Reduced motion: HUD 2 has no reduced-motion setting yet (modules\hud\docs\UI_HUD2.md 5.20); Static() below is the cut form a
 // future switch would draw (WCAG 2.2.2 "Pause, Stop, Hide" asks for one where motion lasts over 5 s).
 #pragma once
 #include <cmath>

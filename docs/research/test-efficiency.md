@@ -1,8 +1,8 @@
 # Test efficiency: sequential verdicts, tuning under noise, game-time acceleration, offline routes
 Status: current
-Checked against: FLvibed 4338909 (31 Oct 2026 ~05:10, short form: 1 watched-path commit (55d42263, hook / loader robustness and two stage-1 log lines); T1-T6 and the reach rule unchanged; no effect)
-Dirty paths at check: none (working tree clean at 4338909, 31 Oct 2026 ~05:10)
-Watch: tools/splits.py, tools/flset.ps1, tools/flarms.ps1, tools/flgate.ps1, tools/apdiff.py, docs/TESTING.md, controller/src/host/main.cpp, core/game/flight.*
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 22 watched-path commits: the module split P0-P11e (moves, comments, map rows); 2 lines each in splits.py / apdiff.py (paths); T1-T6 and the reach rule unchanged; no effect)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: tools/splits.py, tools/flset.ps1, tools/flarms.ps1, tools/flgate.ps1, tools/apdiff.py, docs/TESTING.md, modules/controller/src/host/main.cpp, core/host/input.cpp, core/game/flight.*
 Evidence: none saved (web pages read 29 Oct 2026; the disassembly reads below cite `research\disasm\` lines)
 Sources: a research agent's report (web + repo greps), the coordinating session's checks against the repo. Tags: [page] a web
 source, [file] the repo or the disassembly, [calc] arithmetic in this note, [assumed] not verified
@@ -118,13 +118,13 @@ unchanged.
   unknown), stores raw dt at 0x667D48, clamped at 0x667D40, accumulates 0x667D38. The main loop passes 0x667D40 to
   `FrameUpdate(double dt)` 0x5B2890 (`FREELANCER_RE.md` line 87, checked), which calls `Timing::UpdateGlobalTime(dt)`,
   0x59E080(dt) and the game state's vtable +0x30 with a float dt: **one variable step per frame from one source.**
-  FLvibed detours FrameUpdate already (`controller\src\host\main.cpp` 506-517, checked).
+  FLvibed detours FrameUpdate already (`modules\controller\src\host\main.cpp` 506-517, checked).
 - Real-time clocks that ignore dt: `timeGetTime` at 0x566544 / 0x566A98 (a 1000 ms timer) and 0x5AC2DD-0x5ACE46;
-  `srand(timeGetTime())` 0x5B1B66; audio and voice lines; ~106 GetTickCount / QPC uses in `controller\src\impl` (e.g.
+  `srand(timeGetTime())` 0x5B1B66; audio and voice lines; ~106 GetTickCount / QPC uses in `modules\controller\src\impl` (e.g.
   `autopilot.cpp` 312 / 327, `autopilot_combat.cpp` 342 / 1274 / 1845 an RNG seed). `livesplit.cpp` 521 sums game dt.
 - The physics is step-dependent: the 60 fps runs are their own group (`AUTOPILOT.md` "60 fps runs", 5234017 `fpscap`).
 - **The probe (T2)** (*built 30 Oct 2026, WORK_QUEUE Q3 slice 1: a detour of the frame timer 0x42D770 itself, not
-  FrameUpdate's argument - `controller\docs\HARNESS.md` "Fixed dt"; probe steps 1 and 3 done, 4 needs slice 2*): read
+  FrameUpdate's argument - `docs\HARNESS.md` "Fixed dt"; probe steps 1 and 3 done, 4 needs slice 2*): read
   0x610A08 / 0x610A0C live; a debug `fixeddt 60` passing 1/60 into the original FrameUpdate and
   writing 0x667D40 / 0x667D48, the cap raised; 3 baseline runs of 2-3 short segments at `fpscap 60`, the same at 2x and
   3x, `apdiff.py` against the baseline; comms and objectives in the same order (audio stays real time: comm-gated

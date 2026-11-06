@@ -1,8 +1,8 @@
-// HUD 2's layout lint (controller\src\impl\hud2_lint.h, UI_HUD2_PRESETS.md 6 step 3): one passing layout at 1920x1080
+// HUD 2's layout lint (modules\hud\src\hud2_lint.h, UI_HUD2_PRESETS.md 6 step 3): one passing layout at 1920x1080
 // (Standard's calm corners, the ring, the speed, a context pill), then one failing case per FAIL rule and per WARN rule,
 // the second-channel exception, the zones' exemptions, the n/a skip, the zones from the doc's rules at 16:9 and 4:3,
 // the boxed area as a union, and the preset data the lint reads (core\ui_meta.h uimeta::hud2p from UI_SPEC.json).
-#include "../controller/src/impl/hud2_lint.h"
+#include "../modules/hud/src/hud2_lint.h"
 
 #include "test.h"
 

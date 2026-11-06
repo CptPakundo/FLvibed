@@ -1,7 +1,7 @@
 # Model, effort and orchestration policy for the Claude Code work (measured from this project's transcripts + Anthropic's guidance)
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 2 watched-path commits: 5dcf6195 (routing: a docs move / split / trim - verbatim, session logs, a size ratchet - routes to bulk-doc-writing, Sonnet medium; the AUTOPILOT.md ratchet brief had been classed cpp-design-debug by its 'autopilot' / 'build' words; 195/195) - a matcher gap found in use, T25 extended; dff3fac2 (guard, not routing); `../.claude/settings.local.json` outside the repository, not checked)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 17 watched-path commits: the module split P0-P11e (moves, comments, map rows); 5251ff09 policy.json takes modules\ (T25); the table unchanged; T23, T26 open; `../.claude/settings.local.json` outside the repository, not checked)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
 Watch: tools/claude/**, ../.claude/settings.local.json
 Evidence: `research\evidence\model_policy\` - `models_repo.md` (the transcript mining: sessions, tokens, costs, subagents), `models_web.md` (official docs, benchmarks, practitioners; URLs), `models_proposal.md`, `models_verify.json` (the sceptic recomputed the numbers from `agg.json`), `mining\` (the streaming scripts `mine.js` etc. and `agg.json`)
 Sources: a research workflow (29 Oct 2026, the owner's request); the numbers are list-price equivalents at Anthropic's per-token prices ("$" below); the verifier's recomputation confirmed them. Tags: [M] measured here, [C] cited, [J] judgement
@@ -66,8 +66,8 @@ ultracode is used, from the project's history and the best-regarded guidance):*
 | AFK keep-alive tick | no model work: check state, end the turn | main | [J] |
 | Environment check-ups / sweep audits | Opus high lead, Sonnet readers | a medium workflow; large on the owner's word | [J] |
 
-Machine-readable form and source of truth: `tools\claude\routing\policy.json` (29 Oct 2026, applied by the route hooks,
-`tools\claude\README.md` "Routing"). It adds [J] classes this table does not list: status question, release, code review,
+Machine-readable form and source of truth: the private routing policy (29 Oct 2026, applied by the route hooks,
+the private Claude Code harness notes "Routing"). It adds [J] classes this table does not list: status question, release, code review,
 subtitle pipeline, HUD design, design critique, in-game test, codebase lookup, synthesis, plus the system classes report
 and general. Its docTable maps each class to its row here.
 
@@ -89,7 +89,7 @@ Session model: `/model` or the session tools (the owner by default; a switch reb
 `/effort` by the owner only - a session never changes its own effort or model [31 Oct 2026: an AFK driver is Opus 5.5 High by the owner's rule, first paragraph above]; Claude tells the owner in one sentence
 which level fits (an effort change keeps the cache, a model change rebuilds it). Fast mode: `/fast`; persists across sessions -
 `fastModePerSessionOptIn: true` or `CLAUDE_CODE_DISABLE_FAST_MODE=1` make "off" stick [C]. Subagents: frontmatter
-`model` / `effort` (versioned in `tools\claude\agents\`), the per-call `model` / `effort`, then
+`model` / `effort` (versioned in the private Claude Code harness), the per-call `model` / `effort`, then
 `CLAUDE_CODE_SUBAGENT_MODEL` (which needs `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` to reach the built-in Explore / Plan; it
 does not override `model: inherit`) [C]. Workflows: per-agent `model` / `effort` in the script, the size guideline.
 Ultracode: a setting, `/effort ultracode`, or the keyword in a typed prompt.
@@ -106,6 +106,6 @@ Ultracode: a setting, `/effort ultracode`, or the keyword in a typed prompt.
 ### Corrections the verifier made to the first proposal
 The AFK tick cost (1-hour main TTL, not 5 minutes: ~$0.10, not $2.50); "a fresh session per leg" in AFK is impossible
 from cron turns; a per-call effort parameter exists; run-judge's penalty ~2x not 2.5x and never incurred; the README
-line references (`tools\claude\README.md` is 86 lines: the game-facts benchmark :69, the 39 h sink :48, run-judge :19);
+line references (the private Claude Code harness notes is 86 lines: the game-facts benchmark :69, the 39 h sink :48, run-judge :19);
 "two failed attempts" is the owner's memory rule, not the cited article; effort changes keep the cache on all four
 current models (not an Opus-only beta); budgets rest on n = 1-4 samples (anecdotes, not baselines).

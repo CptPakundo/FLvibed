@@ -1,7 +1,7 @@
-// FLvibed - the game's own text by role (docs\UI_HUD2.md 5.36; the owner, 5 Nov 2026: flight's principle, text takes the room it
+// FLvibed - the game's own text by role (modules\hud\docs\UI_HUD2.md 5.36; flight's principle, text takes the room it
 // has). A text control can change font live, and the game's fonts of one face already form a ladder of sizes, so a role picks a
 // rung: the numbers that decide a deal climb furthest, labels less, headings and buttons not at all, and only while the text fits.
-// Pure: the rules. controller\src\impl\windowtext.cpp reads the game and applies them.
+// Pure: the rules. modules\hud\src\windowtext.cpp reads the game and applies them.
 #pragma once
 #include <algorithm>
 #include <cstdint>
@@ -96,19 +96,5 @@ inline Pick PickRows(const std::vector<Row>& rows, const Room& room, const std::
             break;
         }
     return out;
-}
-
-// Rich text steps by table percent, largest first. Fits: every box's text within its box, and labels and their values still the
-// same height (a label that wraps puts every number beside the wrong label: the owner's frame at 125 %, 5 Nov 2026).
-struct Box
-{
-    int text = 0, box = 0; // pixels
-};
-inline bool RichFits(const std::vector<Box>& boxes, int labels, int values)
-{
-    for (const Box& b : boxes)
-        if (b.text > b.box)
-            return false;
-    return labels <= 0 || values <= 0 || labels == values;
 }
 } // namespace roletext

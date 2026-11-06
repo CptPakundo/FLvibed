@@ -87,50 +87,57 @@ struct BindSet
 };
 
 // GENERAL / MODULES
-static constexpr Row kRows_general_0[] = {
-    {"mod_subtitles", "Modules", "subtitles", Toggle, "Subtitles module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "The subtitles and movie handling. Takes effect after the game restarts."},
-    {"mod_controller", "Modules", "controller", Toggle, "Controller module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "Native controller support, the controller UI and the Advanced Autopilot. Takes effect after the game restarts."},
+inline constexpr Row kRows_general_0[] = {
+    {"mod_subtitles", "Modules", "subtitles", Toggle, "Subtitles module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "Dialogue subtitles. FLvibed needs this module or the Controller module: with both off it does not start at all, this page included, so one of the two stays on. Takes effect after the game restarts."},
+    {"mod_controller", "Modules", "controller", Toggle, "Controller module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "The whole game on a controller: its prompts, screens and on-screen keyboard. Turning it off leaves the rows below as they are. FLvibed needs this module or the Subtitles module, so one of the two stays on. Takes effect after the game restarts."},
+    {"mod_hud", "Modules", "hud", Toggle, "HUD module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "HUD 2, the Extended HUD 2 look and the shield and reticle cues, with keyboard and mouse or a controller. Off: the game's own HUD. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
+    {"mod_autopilot", "Modules", "autopilot", Toggle, "Autopilot module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "The Advanced Autopilot, its goal panel and the maneuver bar's button, with keyboard and mouse or a controller. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
+    {"mod_speedrun", "Modules", "speedrun", Toggle, "Speedrun module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "Speedrun mode: NEW GAME offers it, then the timer, the splits and LiveSplit, with keyboard and mouse or a controller. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
+    {"mod_display", "Modules", "display", Toggle, "Display module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "Borderless windowed, the window's fit to its monitor, and running out of focus. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
+    {"mod_npc", "Modules", "npc", Toggle, "NPC module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "The recorder of stalled ships, a log for bug reports. It changes nothing in the game. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
+    {"mod_movies", "Modules", "movies", Toggle, "Movies module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "Movies fitted to the screen, the choice of intro and the skip of the startup movies. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
 };
 // GENERAL / SETTINGS
-static constexpr Row kRows_general_1[] = {
+inline constexpr Row kRows_general_1[] = {
     {"show_advanced", "Controller", "show_advanced", Toggle, "Show advanced settings", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Adds the developer and tuning keys to every tab, as they are named in the ini files."},
     {"reset_all", "Controller", nullptr, Button, "Reset all FLvibed settings", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", nullptr, Player, Live, nullptr, false, "RESET EVERYTHING", "Every FLvibed setting back to its default. The game's own options are not touched."},
     {"about", "Controller", nullptr, Button, "About FLvibed", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", nullptr, Player, Live, nullptr, false, "VERSION, CREDITS, LICENCES", "Version, credits and licences."},
 };
-static constexpr Section kSections_general[] = {
-    {"MODULES", kRows_general_0, 2},
+inline constexpr Section kSections_general[] = {
+    {"MODULES", kRows_general_0, 8},
     {"SETTINGS", kRows_general_1, 3},
 };
 
 // CONTROLLER / INPUT
-static constexpr const char* kOpt_input_mode[] = {"AUTOMATIC", "CONTROLLER", "KEYBOARD AND MOUSE"};
-static constexpr const char* kOpt_glyph_style[] = {"AUTOMATIC", "XBOX", "PLAYSTATION", "NINTENDO", "STEAM"};
-static constexpr const char* kOpt_glyph_look[] = {"AUTOMATIC", "COLOURED", "HUD 2 GLYPHS"};
-static constexpr const char* kOpt_confirm_button[] = {"BOTTOM BUTTON (A / CROSS / B)", "RIGHT BUTTON (NINTENDO)"};
-static constexpr const char* kOpt_pad_backend[] = {"XINPUT", "SDL3 (EXPERIMENTAL)"};
-static constexpr Row kRows_controller_0[] = {
+inline constexpr const char* kOpt_input_mode[] = {"AUTOMATIC", "CONTROLLER", "KEYBOARD AND MOUSE"};
+inline constexpr const char* kOpt_glyph_style[] = {"AUTOMATIC", "XBOX", "PLAYSTATION", "NINTENDO", "STEAM"};
+inline constexpr const char* kOpt_glyph_look[] = {"AUTOMATIC", "COLOURED", "HUD 2 GLYPHS"};
+inline constexpr const char* kOpt_confirm_button[] = {"BOTTOM BUTTON (A / CROSS / B)", "RIGHT BUTTON (NINTENDO)"};
+inline constexpr const char* kOpt_pad_backend[] = {"XINPUT", "SDL3 (EXPERIMENTAL)"};
+inline constexpr Row kRows_controller_0[] = {
     {"input_mode", "Controller", "input_mode", Picker, "Input device", kOpt_input_mode, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Automatic: the last device used wins and the whole UI follows it in one frame (a stick past its dead zone, a trigger, any button; a mouse move of a few pixels, a wheel notch, any key). Lock it when a drifting stick or a second device makes it flicker."},
     {"glyph_style", "Controller", "glyph_style", Picker, "Button prompts", kOpt_glyph_style, 5, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which family of button pictures the prompts use. Automatic reads the connected pad (Xbox, DualShock / DualSense, Switch Pro) and the Steam Deck; choose one if yours is detected wrongly. Steam is the Steam Deck and Steam Controller's own naming: Xbox's face buttons and View / Menu, with L1 / L2 / R1 / R2."},
-    {"glyph_look", "Controller", "glyph_look", Picker, "Glyph look", kOpt_glyph_look, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "How the button prompts look: Automatic = HUD 2 in its own colour, the classic HUD and menus in the buttons' colours; Coloured everywhere; HUD 2 style everywhere. Sizes stay as each screen has them."},
+    {"glyph_look", "Controller", "glyph_look", Picker, "Glyph look", kOpt_glyph_look, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "How the button prompts look: Automatic = HUD 2 in its own colour with the face buttons in their platform's colours, the classic HUD and menus in the buttons' colours; Coloured everywhere; HUD 2 style everywhere, the face buttons too. Sizes stay as each screen has them."},
     {"confirm_button", "Controller", "confirm_button", Picker, "Confirm with", kOpt_confirm_button, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which face button accepts in menus. The bottom button is the Xbox and PlayStation habit; Nintendo players may prefer the right one."},
     {"pause_on_disconnect", "Controller", "pause_on_disconnect", Toggle, "Pause when the pad disconnects in flight", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A pad that drops out mid-flight pauses the game; in menus the UI just switches to the keyboard."},
-    {"pad_backend", "Controller", "pad_backend", Picker, "Controller backend", kOpt_pad_backend, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Advanced, Live, nullptr, false, nullptr, "How the controller is read. XInput (default): Xbox pads and pads that act as one. SDL3 (experimental): also PlayStation and Switch Pro pads, with their own button prompts, and the Xbox pad through SDL; if SDL cannot start, XInput keeps reading the pad. Not yet tested with real PlayStation or Switch pads."},
+    {"pad_backend", "Controller", "pad_backend", Picker, "Controller backend", kOpt_pad_backend, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Advanced, Live, nullptr, false, nullptr, "How the controller is read. XInput (default): Xbox pads and pads that act as one, with PlayStation and Switch pads read natively beside them (the row below). SDL3 (experimental): SDL for every pad."},
+    {"pad_sdl_fallback", "Controller", "pad_sdl_fallback", Toggle, "Read PlayStation and Switch pads natively", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "On: FLvibed reads the pad itself, and Steam Input's or another mapper's output for that pad is ignored. Off: the pad is left to Steam Input or your mapper. A Steam Deck or Steam Controller is not affected: Steam Input is how those work."},
 };
 // CONTROLLER / LAYOUT
-static constexpr const char* kOpt_pad_preset[] = {"FREELANCER", "ACE", "ASSISTED", "CUSTOM"};
-static constexpr const char* kOpt_weapon_groups[] = {"SIMPLE (ONE FIRE BUTTON)", "CYCLE ON Y", "TWO GROUPS ON THE TRIGGERS"};
-static constexpr Row kRows_controller_1[] = {
-    {"pad_preset", "Controller", "pad_preset", Picker, "Preset", kOpt_pad_preset, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, true, nullptr, "The whole flight layout. Freelancer: targets and weapons on the fingers, consumables on the D-pad. Ace: arcade flight (left stick steers, triggers are the throttle). Assisted: the autopilot flies, you aim and decide. Custom: edited on the Bindings screen."},
-    {"edit_bindings", "Controller", nullptr, Button, "Bindings", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", nullptr, Player, Live, nullptr, false, "EDIT BINDINGS AND SEE THE LAYOUT", "The controller diagram with every binding per situation (flight, autopilot, menus, bases, dealers, map, text entry)."},
+inline constexpr const char* kOpt_pad_preset[] = {"FREELANCER", "ACE", "ASSISTED", "CUSTOM"};
+inline constexpr const char* kOpt_weapon_groups[] = {"SIMPLE (ONE FIRE BUTTON)", "CYCLE ON Y", "TWO GROUPS ON THE TRIGGERS"};
+inline constexpr Row kRows_controller_1[] = {
+    {"pad_preset", "Controller", "pad_preset", Picker, "Preset", kOpt_pad_preset, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, true, nullptr, "The whole flight layout. Freelancer: targets and weapons on the fingers, consumables on the D-pad. Ace: arcade flight (left stick steers, triggers are the throttle). Assisted: the autopilot flies, you aim and decide. Custom: for now the same as Freelancer; a bindings editor is not built yet."},
+    {"edit_bindings", "Controller", nullptr, Button, "Bindings", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", nullptr, Player, Live, nullptr, false, "BINDINGS EDITOR: NOT BUILT YET", "A bindings editor is not built yet; the presets apply. Every binding is in the project's living spec."},
     {"weapon_groups", "Controller", "weapon_groups", Picker, "Weapon groups", kOpt_weapon_groups, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Simple: RT fires the active group (the game's default group), switching groups is in the action wheel, the HUD's group buttons show the current one; Y is cruise. Cycle: Y tap flips to the next group that has guns, Y held is cruise. Two groups: RT fires group 1 and LT group 2, the Armored Core / MechWarrior way; afterburner then moves to the LS click and engine kill into the wheel; Y is cruise. Launchers fire only on their own buttons in every mode. Groups are set with EDIT GROUPS in the action wheel (the HUD's group buttons with the mouse)."},
     {"y_swap", "Controller", "y_swap", Toggle, "Swap Y tap and hold", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The Freelancer layout with Weapon groups on CYCLE ON Y: Y tap is cruise and Y held flips to the next group, instead of the other way round."},
     {"holds_as_toggles", "Controller", "holds_as_toggles", Toggle, "Holds as toggles", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Afterburner, reverse, drift and rear view become press-once / press-again instead of held buttons."},
 };
 // CONTROLLER / AIM
-static constexpr const char* kOpt_aim_mode[] = {"GIMBAL", "RETICLE"};
-static constexpr const char* kVal_aim_mode[] = {"1", "0"};
-static constexpr const char* kOpt_steer_expo[] = {"LINEAR", "SOFT", "SOFTER", "SOFTEST"};
-static constexpr Row kRows_controller_2[] = {
+inline constexpr const char* kOpt_aim_mode[] = {"GIMBAL", "RETICLE"};
+inline constexpr const char* kVal_aim_mode[] = {"1", "0"};
+inline constexpr const char* kOpt_steer_expo[] = {"LINEAR", "SOFT", "SOFTER", "SOFTEST"};
+inline constexpr Row kRows_controller_2[] = {
     {"aim_mode", "Controller", "aim_mode", Picker, "Aim mode", kOpt_aim_mode, 2, kVal_aim_mode, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Gimbal: the right stick steers and the reticle locks onto the selected hostile's lead cross. Reticle: the stick moves the reticle itself."},
     {"aim_cone", "Controller", "aim_cone", Slider, "Lock-on cone", nullptr, 0, nullptr, 0.0f, 90.0f, 5.0f, 1.0f, "\xC2\xB0", "90", Player, Live, nullptr, false, nullptr, "Gimbal: how far from the screen centre a hostile's lead cross may be for the reticle to lock on. 90 = the whole screen."},
     {"invert_y", "Controller", "invert_y", Toggle, "Invert Y", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Stick up turns the nose down."},
@@ -139,30 +146,30 @@ static constexpr Row kRows_controller_2[] = {
     {"aim_smooth", "Controller", "aim_smooth", Slider, "Reticle smoothing", nullptr, 0, nullptr, 0.0f, 1.0f, 0.01f, 1.0f, " s", "0.06", Advanced, Live, nullptr, false, nullptr, "Reticle smoothing time constant in seconds (0 = off)."},
 };
 // CONTROLLER / STICKS
-static constexpr Row kRows_controller_3[] = {
+inline constexpr Row kRows_controller_3[] = {
     {"stick_deadzone", "Controller", "stick_deadzone", Slider, "Stick deadzone", nullptr, 0, nullptr, 0.0f, 0.9f, 0.01f, 1.0f, "", "0.24", Player, Live, nullptr, false, nullptr, "Radial deadzone of both sticks (0..0.9). The device switch ignores stick motion inside it."},
     {"trigger_threshold", "Controller", "trigger_threshold", Slider, "Trigger deadzone", nullptr, 0, nullptr, 0.0f, 0.9f, 0.01f, 1.0f, "", "0.12", Player, Live, nullptr, false, nullptr, "How far a trigger must be pulled before it counts."},
     {"throttle_rate", "Controller", "throttle_rate", Slider, "Throttle rate", nullptr, 0, nullptr, 0.1f, 5.0f, 0.1f, 1.0f, "", "0.9", Player, Live, nullptr, false, nullptr, "Throttle lever change per second at full left stick."},
-    {"rumble", "Controller", "rumble", Slider, "Rumble", nullptr, 0, nullptr, 0.0f, 100.0f, 10.0f, 1.0f, "%", "60", Player, Live, nullptr, false, nullptr, "Vibration strength: your ship being hit (heavier for hull than shield), your shield failing, the autopilot handing the ship back, and a game box waiting for your answer. 0 = off. Never the only cue. Silent while the game is in the background, paused (except those boxes), in menus and cutscenes, and while you play with keyboard and mouse."},
+    {"rumble", "Controller", "rumble", Slider, "Rumble", nullptr, 0, nullptr, 0.0f, 100.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "Vibration strength: your ship being hit (heavier for hull than shield), your shield failing, the autopilot handing the ship back, and a game box waiting for your answer. 0 = off. Never the only cue. Silent while the game is in the background, paused (except those boxes), in menus and cutscenes, and while you play with keyboard and mouse."},
 };
 // CONTROLLER / TARGETING
-static constexpr const char* kOpt_auto_target[] = {"OFF", "CLOSEST ENEMY", "CLOSEST ENEMY, KEEP MINE"};
-static constexpr Row kRows_controller_4[] = {
+inline constexpr const char* kOpt_auto_target[] = {"OFF", "CLOSEST ENEMY", "CLOSEST ENEMY, KEEP MINE"};
+inline constexpr Row kRows_controller_4[] = {
     {"auto_target", "Controller", "auto_target", Picker, "Auto-target", kOpt_auto_target, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Off: you pick targets and a selected target is never changed. Otherwise the closest enemy is selected for you."},
     {"fire_target", "Controller", "fire_target", Toggle, "Firing selects the target", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "With nothing targeted, firing at a hostile or neutral ship under the reticle selects it."},
 };
 // CONTROLLER / MENUS AND PROMPTS
-static constexpr const char* kOpt_ui_style[] = {"CLASSIC", "HUD 2"};
-static constexpr const char* kOpt_pad_cursor[] = {"OFF", "ROOMS AND MAPS", "EVERYWHERE"};
-static constexpr const char* kOpt_prompt_bar[] = {"CONTEXTUAL", "ALWAYS", "OFF"};
-static constexpr const char* kOpt_world_prompts[] = {"CONTEXTUAL", "OFF"};
-static constexpr const char* kOpt_deck_mode[] = {"AUTOMATIC", "ON", "OFF"};
-static constexpr Row kRows_controller_5[] = {
+inline constexpr const char* kOpt_ui_style[] = {"CLASSIC", "HUD 2"};
+inline constexpr const char* kOpt_pad_cursor[] = {"OFF", "ROOMS AND MAPS", "EVERYWHERE"};
+inline constexpr const char* kOpt_prompt_bar[] = {"CONTEXTUAL", "ALWAYS", "OFF"};
+inline constexpr const char* kOpt_world_prompts[] = {"CONTEXTUAL", "OFF"};
+inline constexpr const char* kOpt_deck_mode[] = {"AUTOMATIC", "ON", "OFF"};
+inline constexpr Row kRows_controller_5[] = {
     {"ui_style", "Controller", "ui_style", Picker, "Menus and rooms look", kOpt_ui_style, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Advanced, Live, nullptr, false, nullptr, "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game's controls stay as they are); Classic = the game's own look in the menus. With the HUD row set to Classic, everything keeps the game's look whatever this says."},
     {"pad_cursor", "Controller", "pad_cursor", Picker, "Pad cursor", kOpt_pad_cursor, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "FLvibed's own cursor on the left stick, on every screen by default: moving the stick shows it and the game reacts as to the mouse (a bar character lights up, a button highlights, a row focuses); it slows over and pulls toward targets; a D-pad or bumper press hides it and focus navigation carries on from there. A = click either way. Off = focus navigation only."},
     {"cursor_speed", "Controller", "cursor_speed", Slider, "Cursor speed", nullptr, 0, nullptr, 0.1f, 5.0f, 0.1f, 1.0f, "", "1.1", Player, Live, nullptr, false, nullptr, "Pad cursor speed, screen heights per second."},
     {"cursor_magnet", "Controller", "cursor_magnet", Slider, "Cursor magnetism", nullptr, 0, nullptr, 0.0f, 100.0f, 10.0f, 1.0f, "%", "60", Player, Live, nullptr, false, nullptr, "How strongly the pad cursor slows over and pulls toward a clickable element."},
-    {"prompt_bar", "Controller", "prompt_bar", Picker, "Prompt bar", kOpt_prompt_bar, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The bottom-right row of button prompts on controller screens. Contextual: only where a decision is pending or the screen is new to you; Always: on every screen."},
+    {"prompt_bar", "Controller", "prompt_bar", Picker, "Prompt bar", kOpt_prompt_bar, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The bottom-right row of button prompts on controller screens. Contextual: on every window, menu and modal for as long as it is open, and in a base room when it is new to you or a decision is pending; Always: in the rooms too."},
     {"world_prompts", "Controller", "world_prompts", Picker, "World prompts", kOpt_world_prompts, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "A prompt by the target when something unusual is possible now (dock in range, loot in reach). Never a permanent label."},
     {"ap_hints", "Controller", "ap_hints", Toggle, "Autopilot hints", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Show the autopilot's prompts and status to players who have not used it yet. Off: nothing about the autopilot shows until you switch it on once."},
     {"text_size", "Controller", "text_size", Slider, "Text size", nullptr, 0, nullptr, 80.0f, 150.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "Size of FLvibed's own UI text (prompts, panels, the status strip). The subtitles have their own size."},
@@ -171,15 +178,15 @@ static constexpr Row kRows_controller_5[] = {
     {"wheel_rate", "Controller", "wheel_rate", Slider, "Scroll speed", nullptr, 0, nullptr, 1.0f, 50.0f, 1.0f, 1.0f, "", "10", Player, Live, nullptr, false, nullptr, "Right stick scrolling, notches per second."},
 };
 // CONTROLLER / HUD
-static constexpr const char* kOpt_hud_style[] = {"CLASSIC", "HUD 2 ON THE PAD", "HUD 2 ALWAYS"};
-static constexpr const char* kOpt_hud_preset[] = {"STANDARD", "FOCUS (EXPERIMENTAL)"};
-static constexpr const char* kOpt_hud_fade[] = {"FULL", "CONTEXTUAL"};
-static constexpr const char* kOpt_hud_numbers[] = {"WHEN LOW", "ALWAYS", "NEVER"};
-static constexpr const char* kOpt_hud_context[] = {"CONTEXTUAL", "OFF"};
-static constexpr const char* kOpt_hud_prompts[] = {"ALWAYS", "ON CHANGE"};
-static constexpr const char* kOpt_button_legend[] = {"ON", "OFF"};
-static constexpr const char* kVal_button_legend[] = {"0", "1"};
-static constexpr Row kRows_controller_6[] = {
+inline constexpr const char* kOpt_hud_style[] = {"CLASSIC", "HUD 2 ON THE PAD", "HUD 2 ALWAYS"};
+inline constexpr const char* kOpt_hud_preset[] = {"STANDARD", "FOCUS (EXPERIMENTAL)"};
+inline constexpr const char* kOpt_hud_fade[] = {"FULL", "CONTEXTUAL"};
+inline constexpr const char* kOpt_hud_numbers[] = {"WHEN LOW", "ALWAYS", "NEVER"};
+inline constexpr const char* kOpt_hud_context[] = {"CONTEXTUAL", "OFF"};
+inline constexpr const char* kOpt_hud_prompts[] = {"ALWAYS", "ON CHANGE"};
+inline constexpr const char* kOpt_button_legend[] = {"ON", "OFF"};
+inline constexpr const char* kVal_button_legend[] = {"0", "1"};
+inline constexpr Row kRows_controller_6[] = {
     {"hud_style", "Controller", "hud_style", Picker, "HUD", kOpt_hud_style, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "Which flight HUD you see. HUD 2 is FLvibed's own: the status around the reticle, the target top right, your ship and loadout in the bottom corners, only what matters now. It is the default for the controller and for keyboard and mouse alike, and it also covers the menus and rooms (the game's screens take its look; the row 'Menus and rooms look' can keep the game's own). On the pad = HUD 2 while you fly with the controller, the game's HUD with keyboard and mouse; Always = HUD 2 for both. Classic = the game's own HUD and screens (with the controller's glyphs and legend)."},
     {"hud_preset", "Controller", "hud_preset", Picker, "HUD 2 layout", kOpt_hud_preset, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Advanced, Live, nullptr, false, nullptr, "Experimental: HUD 2's layout. Standard is today's HUD 2. Focus is calmer: in calm flight no ring, two thin shield and hull arcs and the instruments at the screen's edges. The Speedrun and Guided layouts are planned and cannot be chosen yet."},
     {"hud_fade", "Controller", "hud_fade", Picker, "HUD visibility", kOpt_hud_fade, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Contextual: in flight HUD 2 fades out while you fly calmly; each part comes back when it matters - the ring and speed when you steer or boost, the target card when you switch targets, the weapons when you fire, the objectives when they change - and fades again 4 seconds later. Alerts, low shield or hull, incoming missiles and fights always show. Full: everything always shown."},
@@ -189,7 +196,7 @@ static constexpr Row kRows_controller_6[] = {
     {"hud_threats", "Controller", "hud_threats", Toggle, "Threat list", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "In a fight, the nearest hostiles under the target card, with the buttons that pick them."},
     {"hud_context", "Controller", "hud_context", Picker, "Context prompts", kOpt_hud_context, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Beside the bottom panels, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons: moving the ship on the left, firing and using on the right."},
     {"hud_prompts", "Controller", "hud_prompts", Picker, "Show context prompts", kOpt_hud_prompts, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "When the context prompts show in flight. On change: they appear when they change or right after you act (dock, cruise, a target, a maneuver), stay four seconds, then fade out. Always: they stay on screen."},
-    {"hud_alerts", "Controller", "hud_alerts", Toggle, "Alerts", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A short card at the top when something needs you now (shield failing, missile incoming, cruise disrupted, hold full), naming the button that helps; that slot lights up."},
+    {"hud_alerts", "Controller", "hud_alerts", Toggle, "Alerts", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A short card when something needs you now (shield failing, missile incoming, cruise disrupted, hold full), naming the button that helps; that slot lights up."},
     {"hud_info", "Controller", "hud_info", Toggle, "Situation details", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers."},
     {"hud_wireframes", "Controller", "hud_wireframes", Toggle, "Wireframe views", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "The game's wireframe pictures of your target and your ship in HUD 2's panels (else their icons)."},
     {"hud_transition", "Controller", "hud_transition", Slider, "HUD switch fade", nullptr, 0, nullptr, 0.0f, 400.0f, 20.0f, 1.0f, " ms", "120", Advanced, Live, nullptr, false, nullptr, "How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse."},
@@ -202,17 +209,17 @@ static constexpr Row kRows_controller_6[] = {
     {"reticle_cue", "Controller", "reticle_cue", Toggle, "Reticle cue", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue)."},
 };
 // CONTROLLER / SYSTEM
-static constexpr const char* kOpt_fluf_windows[] = {"IGNORE", "PLAYER WINDOWS", "ALL"};
-static constexpr const char* kOpt_borderless[] = {"OFF", "AUTO", "ALWAYS"};
-static constexpr Row kRows_controller_7[] = {
+inline constexpr const char* kOpt_fluf_windows[] = {"IGNORE", "PLAYER WINDOWS", "ALL"};
+inline constexpr const char* kOpt_borderless[] = {"OFF", "AUTO", "ALWAYS"};
+inline constexpr Row kRows_controller_7[] = {
     {"focus_only", "Controller", "focus_only", Toggle, "Controller only while the game is in focus", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Ignore the controller while the game is in the background, in flight and in menus. A button held when you come back is ignored until you release it."},
     {"maneuver_watchdog", "Controller", "maneuver_watchdog", Toggle, "Restart stalled maneuvers", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed leaves the maneuver and starts it again, up to 3 times, and logs what happened."},
     {"run_in_background", "Controller", "run_in_background", Toggle, "Keep the game running in the background", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "The game keeps running while its window is not in focus (Freelancer pauses otherwise)."},
     {"fluf_windows", "Controller", "fluf_windows", Picker, "FLUF windows", kOpt_fluf_windows, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, nullptr, false, nullptr, "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command's or a module's window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. While FLUF's command palette is open (typing or not) FLvibed's keys all pass to FLUF, like a chat box."},
     {"borderless", "Controller", "borderless", Picker, "Borderless window", kOpt_borderless, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Restart, nullptr, false, nullptr, "A window without frame covering the monitor at its resolution - never exclusive fullscreen. Auto: only when nothing else provides it (HD Edition does); Always: also then; Off: the game's own mode. With FLUF, Alt+Enter switches to a bordered window. Next start."},
 };
-static constexpr Section kSections_controller[] = {
-    {"INPUT", kRows_controller_0, 6},
+inline constexpr Section kSections_controller[] = {
+    {"INPUT", kRows_controller_0, 7},
     {"LAYOUT", kRows_controller_1, 5},
     {"AIM", kRows_controller_2, 6},
     {"STICKS", kRows_controller_3, 4},
@@ -223,16 +230,16 @@ static constexpr Section kSections_controller[] = {
 };
 
 // AUTOPILOT / (no header)
-static constexpr const char* kOpt_preset[] = {"COMPETENT", "SPEEDRUN", "NO CONSUMABLES", "CUSTOM"};
-static constexpr const char* kOpt_knowledge[] = {"WHAT YOU HAVE SEEN", "EVERYTHING"};
-static constexpr const char* kOpt_engage[] = {"THE TARGET ONLY", "TARGET, THEN NEAREST"};
-static constexpr const char* kOpt_countermeasures[] = {"NEVER", "WHEN IT MATTERS", "EVERY MISSILE"};
-static constexpr const char* kOpt_repair[] = {"NEVER", "WHEN NEEDED", "AS THE PILOT WOULD"};
-static constexpr const char* kOpt_caution[] = {"NEVER LEAVE", "WHEN OUTMATCHED", "EARLY"};
-static constexpr const char* kOpt_start_smart[] = {"THE TARGET ONLY", "OBJECTIVE FIRST"};
-static constexpr const char* kOpt_pilot[] = {"MILITARY (HARD)", "MILITARY", "PIRATE ACE", "CIVILIAN"};
-static constexpr const char* kVal_pilot[] = {"pilot_military_hard", "pilot_military_med", "pilot_pirate_ace", "pilot_company_med"};
-static constexpr Row kRows_autopilot_0[] = {
+inline constexpr const char* kOpt_preset[] = {"COMPETENT", "SPEEDRUN", "NO CONSUMABLES", "CUSTOM"};
+inline constexpr const char* kOpt_knowledge[] = {"WHAT YOU HAVE SEEN", "EVERYTHING"};
+inline constexpr const char* kOpt_engage[] = {"THE TARGET ONLY", "TARGET, THEN NEAREST"};
+inline constexpr const char* kOpt_countermeasures[] = {"NEVER", "WHEN IT MATTERS", "EVERY MISSILE"};
+inline constexpr const char* kOpt_repair[] = {"NEVER", "WHEN NEEDED", "AS THE PILOT WOULD"};
+inline constexpr const char* kOpt_caution[] = {"NEVER LEAVE", "WHEN OUTMATCHED", "EARLY"};
+inline constexpr const char* kOpt_start_smart[] = {"THE TARGET ONLY", "OBJECTIVE FIRST"};
+inline constexpr const char* kOpt_pilot[] = {"MILITARY (HARD)", "MILITARY", "PIRATE ACE", "CIVILIAN"};
+inline constexpr const char* kVal_pilot[] = {"pilot_military_hard", "pilot_military_med", "pilot_pirate_ace", "pilot_company_med"};
+inline constexpr Row kRows_autopilot_0[] = {
     {"preset", "Autopilot", nullptr, Picker, "Preset", kOpt_preset, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", nullptr, Player, Live, nullptr, true, nullptr, "A bundle of the rows below. Competent: plays with what you have seen. Speedrun: knows everything the game data tells. Changing a row below makes it Custom."},
     {"knowledge", "Autopilot", "knowledge", Picker, "Knowledge", kOpt_knowledge, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "What the autopilot may know: only what you have seen in this game (bases, routes, enemies), or everything the game data tells."},
     {"engage", "Autopilot", "engage", Picker, "Combat", kOpt_engage, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Fight only the chosen target, or then the closest enemy until none is left."},
@@ -254,23 +261,23 @@ static constexpr Row kRows_autopilot_0[] = {
     {"follow_distance", "Autopilot", "follow_distance", Slider, "Follow distance", nullptr, 0, nullptr, 200.0f, 4000.0f, 50.0f, 1.0f, " m", "1500", Advanced, Live, nullptr, false, nullptr, "Follow / escort: the game's follow max distance (m)."},
 };
 // AUTOPILOT / SPEEDRUN MODE
-static constexpr const char* kOpt_livesplit[] = {"OFF", "LIVESPLIT SERVER (TCP)"};
-static constexpr Row kRows_autopilot_1[] = {
+inline constexpr const char* kOpt_livesplit[] = {"OFF", "LIVESPLIT SERVER (TCP)"};
+inline constexpr Row kRows_autopilot_1[] = {
     {"speedrun_timer", "Controller", "speedrun_timer", Toggle, "Timer on the HUD", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "In a speedrun-mode game: the run time, the current split and the delta against your best; on HUD 2 under the target card, on the classic HUD under the NeuroNet box."},
     {"livesplit", "Controller", "livesplit", Picker, "LiveSplit", kOpt_livesplit, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Send the timer and the splits to LiveSplit on this computer (Control > Start TCP Server in LiveSplit 1.8.29 or newer). Starts on New Game, splits at every story checkpoint and the final cutscene, resets on the main menu."},
     {"livesplit_port", "Controller", "livesplit_port", Slider, "LiveSplit port", nullptr, 0, nullptr, 1024.0f, 65535.0f, 1.0f, 1.0f, "", "16834", Player, Live, nullptr, false, nullptr, "LiveSplit Server's port (default 16834)."},
     {"livesplit_gametime", "Controller", "livesplit_gametime", Toggle, "Loadless game time", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Pause LiveSplit's game time during loads, so a loadless comparison exists without a script. Real time keeps running (speedrun.com Freelancer is timed in real time)."},
 };
-static constexpr Section kSections_autopilot[] = {
+inline constexpr Section kSections_autopilot[] = {
     {"", kRows_autopilot_0, 19},
     {"SPEEDRUN MODE", kRows_autopilot_1, 4},
 };
 
 // SUBTITLES / TEXT
-static constexpr const char* kOpt_size[] = {"SMALL", "MEDIUM", "LARGE", "EXTRA LARGE", "HUGE"};
-static constexpr const char* kOpt_font[] = {"GAME", "SEGOE UI"};
-static constexpr const char* kOpt_text_color[] = {"WHITE", "YELLOW"};
-static constexpr Row kRows_subtitles_0[] = {
+inline constexpr const char* kOpt_size[] = {"SMALL", "MEDIUM", "LARGE", "EXTRA LARGE", "HUGE"};
+inline constexpr const char* kOpt_font[] = {"GAME", "SEGOE UI"};
+inline constexpr const char* kOpt_text_color[] = {"WHITE", "YELLOW"};
+inline constexpr Row kRows_subtitles_0[] = {
     {"enabled", "Subtitles", "enabled", Toggle, "Subtitles", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Subtitles on. Every other row here depends on it."},
     {"size", "Subtitles", "size", Picker, "Text size", kOpt_size, 5, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Text size: 3.0 % to 7.2 % of the screen height."},
     {"font", "Subtitles", "font", Picker, "Font", kOpt_font, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "The game's own fonts, or Segoe UI."},
@@ -278,23 +285,23 @@ static constexpr Row kRows_subtitles_0[] = {
     {"shadow", "Subtitles", "shadow", Toggle, "Shadow", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "A text shadow for readability."},
 };
 // SUBTITLES / BACKGROUND
-static constexpr const char* kOpt_background_style[] = {"HUD PANEL", "PLAIN"};
-static constexpr const char* kVal_background_style[] = {"1", "0"};
-static constexpr Row kRows_subtitles_1[] = {
+inline constexpr const char* kOpt_background_style[] = {"HUD PANEL", "PLAIN"};
+inline constexpr const char* kVal_background_style[] = {"1", "0"};
+inline constexpr Row kRows_subtitles_1[] = {
     {"background_style", "Subtitles", "background_style", Picker, "Background", kOpt_background_style, 2, kVal_background_style, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "In flight: the space HUD's panel look, or the soft navy panel used everywhere else."},
     {"background_opacity", "Subtitles", "background_opacity", Slider, "Background opacity", nullptr, 0, nullptr, 0.0f, 100.0f, 5.0f, 1.0f, "%", "60", Player, Live, "enabled", false, nullptr, "Backing opacity in percent."},
 };
 // SUBTITLES / SPEAKERS
-static constexpr const char* kOpt_speaker_names[] = {"OWN ROW", "INLINE", "OFF"};
-static constexpr Row kRows_subtitles_2[] = {
+inline constexpr const char* kOpt_speaker_names[] = {"OWN ROW", "INLINE", "OFF"};
+inline constexpr Row kRows_subtitles_2[] = {
     {"speaker_names", "Subtitles", "speaker_names", Picker, "Speaker names", kOpt_speaker_names, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "The name on its own row, inline as \"Name: text\", or off."},
-    {"speaker_colors", "Subtitles", "speaker_colors", Toggle, "Speaker colours", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Story speakers' names in their own colours (new key)."},
+    {"speaker_colors", "Subtitles", "speaker_colors", Toggle, "Speaker colours", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Story speakers' names in their own colours."},
     {"hostile_marker", "Subtitles", "hostile_marker", Toggle, "Hostile marker", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "A hostile speaker gets the HUD's red triangle before the name."},
 };
 // SUBTITLES / CHANNELS
-static constexpr const char* kOpt_chatter[] = {"CHAT WINDOW", "SUBTITLES", "OFF"};
-static constexpr const char* kOpt_chat_size[] = {"NORMAL", "LARGE"};
-static constexpr Row kRows_subtitles_3[] = {
+inline constexpr const char* kOpt_chatter[] = {"CHAT WINDOW", "SUBTITLES", "OFF"};
+inline constexpr const char* kOpt_chat_size[] = {"NORMAL", "LARGE"};
+inline constexpr Row kRows_subtitles_3[] = {
     {"story", "Subtitles", "story", Toggle, "Story", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Story cutscene lines."},
     {"comms", "Subtitles", "comms", Toggle, "Comms", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Mission comms."},
     {"bar", "Subtitles", "bar", Toggle, "Bar", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Bar and base conversations."},
@@ -304,10 +311,10 @@ static constexpr Row kRows_subtitles_3[] = {
     {"chat_size", "Subtitles", "chat_size", Picker, "Side chat size", kOpt_chat_size, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "The text size of HUD 2's side chat (the comm feed beside the HUD): Normal is a little larger than the game's own chat text, Large the bigger size of earlier versions."},
 };
 // SUBTITLES / PLACEMENT
-static constexpr const char* kOpt_space_position[] = {"TOP PANEL", "TOP THIRD", "BOTTOM"};
-static constexpr const char* kVal_space_position[] = {"2", "1", "0"};
-static constexpr const char* kOpt_letterbox_mode[] = {"IN THE BLACK BAR", "ON THE PICTURE"};
-static constexpr Row kRows_subtitles_4[] = {
+inline constexpr const char* kOpt_space_position[] = {"TOP PANEL", "TOP THIRD", "BOTTOM"};
+inline constexpr const char* kVal_space_position[] = {"2", "1", "0"};
+inline constexpr const char* kOpt_letterbox_mode[] = {"IN THE BLACK BAR", "ON THE PICTURE"};
+inline constexpr Row kRows_subtitles_4[] = {
     {"space_position", "Subtitles", "space_position", Picker, "In flight", kOpt_space_position, 3, kVal_space_position, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Load, "enabled", false, nullptr, "A HUD panel at the top centre (the maneuver bar moves left), the top third, or between the bottom panels. The bar moves at the next load."},
     {"comm_portrait", "Subtitles", "comm_portrait", Toggle, "Comm portrait in the panel", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "In flight the game's comm window sits in a slot inside the subtitle panel."},
     {"hud_arrows", "Subtitles", "hud_arrows", Toggle, "Keep the HUD arrows clear", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "The off-screen target arrows are kept clear of the HUD panels and the subtitles."},
@@ -315,7 +322,7 @@ static constexpr Row kRows_subtitles_4[] = {
     {"cinematic_single_speaker", "Subtitles", "cinematic_single_speaker", Toggle, "One speaker at a time in cutscenes", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Letterboxed scenes show one speaker at a time."},
 };
 // SUBTITLES / MOTION
-static constexpr Row kRows_subtitles_5[] = {
+inline constexpr Row kRows_subtitles_5[] = {
     {"motion", "Subtitles", "motion", Toggle, "Motion", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Lines fade in and out and the stack glides; off = instant."},
     {"stack_fit", "Subtitles", "stack_fit", Slider, "Stacked lines shrink to", nullptr, 0, nullptr, 0.5f, 1.0f, 0.05f, 1.0f, "", "0.7", Player, Live, "enabled", false, nullptr, "When several speakers' lines are on screen together they shrink together, down to this size, so the stack keeps about one line's height; 1 = off."},
     {"word_pop", "Subtitles", "word_pop", Toggle, "Spoken-word pop", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "The word being spoken grows slightly (lines with word timings)."},
@@ -323,7 +330,7 @@ static constexpr Row kRows_subtitles_5[] = {
     {"linger", "Subtitles", "linger", Slider, "Linger", nullptr, 0, nullptr, 0.0f, 5.0f, 0.25f, 1.0f, " s", "1", Advanced, Live, "enabled", false, nullptr, "Seconds a line stays after its audio."},
     {"retire_delay", "Subtitles", "retire_delay", Slider, "Retire delay", nullptr, 0, nullptr, 0.0f, 5.0f, 0.25f, 1.0f, " s", "1.25", Advanced, Live, "enabled", false, nullptr, "Seconds a line pushed out by a newer speaker stays."},
 };
-static constexpr Section kSections_subtitles[] = {
+inline constexpr Section kSections_subtitles[] = {
     {"TEXT", kRows_subtitles_0, 5},
     {"BACKGROUND", kRows_subtitles_1, 2},
     {"SPEAKERS", kRows_subtitles_2, 3},
@@ -333,15 +340,15 @@ static constexpr Section kSections_subtitles[] = {
 };
 
 // MOVIES / (no header)
-static constexpr const char* kOpt_movie_skip[] = {"PLAY", "SKIP"};
-static constexpr const char* kOpt_movie_intro[] = {"AS INSTALLED", "HD", "ORIGINAL 2003", "FULL (BONUS DVD)"};
-static constexpr Row kRows_movies_0[] = {
-    {"movie_fit", "Subtitles", "movie_fit", Toggle, "Fit movies to the screen", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Movies keep their aspect ratio and the encoded black bars are zoomed out of view (new key)."},
-    {"movie_skip", "Subtitles", "movie_skip", Picker, "Startup movies", kOpt_movie_skip, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Play or skip the startup movies (new key; the native skip exists)."},
-    {"movie_intro", "Subtitles", "movie_intro", Picker, "Intro", kOpt_movie_intro, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which intro plays. Only the files present are offered (new key)."},
-    {"movie_subtitles", "Subtitles", "movie_subtitles", Toggle, "Movie subtitles", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Subtitles over the intros and startup movies (new key)."},
+inline constexpr const char* kOpt_movie_skip[] = {"PLAY", "SKIP"};
+inline constexpr const char* kOpt_movie_intro[] = {"AS INSTALLED", "HD", "ORIGINAL 2003", "FULL (BONUS DVD)"};
+inline constexpr Row kRows_movies_0[] = {
+    {"movie_fit", "Subtitles", "movie_fit", Toggle, "Fit movies to the screen", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Movies keep their aspect ratio and the encoded black bars are zoomed out of view."},
+    {"movie_skip", "Subtitles", "movie_skip", Picker, "Startup movies", kOpt_movie_skip, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Play or skip the startup movies."},
+    {"movie_intro", "Subtitles", "movie_intro", Picker, "Intro", kOpt_movie_intro, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, nullptr, false, nullptr, "Which intro plays. Only the files present are offered."},
+    {"movie_subtitles", "Subtitles", "movie_subtitles", Toggle, "Movie subtitles", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Subtitles over the intros and startup movies."},
 };
-static constexpr Section kSections_movies[] = {
+inline constexpr Section kSections_movies[] = {
     {"", kRows_movies_0, 4},
 };
 
@@ -354,7 +361,7 @@ inline constexpr Tab kTabs[] = {
 };
 inline constexpr int kTabCount = 5;
 
-static constexpr PresetValue kPreset_autopilot_COMPETENT[] = {
+inline constexpr PresetValue kPreset_autopilot_COMPETENT[] = {
     {"Autopilot", "auto_fire", "1"},
     {"Autopilot", "avoid", "1"},
     {"Autopilot", "caution", "1"},
@@ -367,7 +374,7 @@ static constexpr PresetValue kPreset_autopilot_COMPETENT[] = {
     {"Autopilot", "repair", "1"},
     {"Autopilot", "skip_dock_scene", "1"},
 };
-static constexpr PresetValue kPreset_autopilot_SPEEDRUN[] = {
+inline constexpr PresetValue kPreset_autopilot_SPEEDRUN[] = {
     {"Autopilot", "auto_fire", "1"},
     {"Autopilot", "avoid", "1"},
     {"Autopilot", "caution", "0"},
@@ -380,7 +387,7 @@ static constexpr PresetValue kPreset_autopilot_SPEEDRUN[] = {
     {"Autopilot", "repair", "1"},
     {"Autopilot", "skip_dock_scene", "1"},
 };
-static constexpr PresetValue kPreset_autopilot_NO_CONSUMABLES[] = {
+inline constexpr PresetValue kPreset_autopilot_NO_CONSUMABLES[] = {
     {"Autopilot", "auto_fire", "1"},
     {"Autopilot", "avoid", "1"},
     {"Autopilot", "caution", "1"},
@@ -400,13 +407,13 @@ inline constexpr Preset kAutopilotPresets[] = {
 };
 inline constexpr int kAutopilotPresetCount = 3;
 
-static constexpr PresetValue kPreset_controller_FREELANCER[] = {
+inline constexpr PresetValue kPreset_controller_FREELANCER[] = {
     {"Controller", "holds_as_toggles", "0"},
 };
-static constexpr PresetValue kPreset_controller_ACE[] = {
+inline constexpr PresetValue kPreset_controller_ACE[] = {
     {"Controller", "holds_as_toggles", "0"},
 };
-static constexpr PresetValue kPreset_controller_ASSISTED[] = {
+inline constexpr PresetValue kPreset_controller_ASSISTED[] = {
     {"Controller", "holds_as_toggles", "1"},
 };
 inline constexpr Preset kControllerPresets[] = {
@@ -416,7 +423,7 @@ inline constexpr Preset kControllerPresets[] = {
 };
 inline constexpr int kControllerPresetCount = 3;
 
-static constexpr Bind kBind_FREELANCER[] = {
+inline constexpr Bind kBind_FREELANCER[] = {
     {"A", "context", "formation", "none"},
     {"B", "free_flight", "reverse", "none"},
     {"X", "tractor", "turret", "none"},
@@ -436,7 +443,7 @@ static constexpr Bind kBind_FREELANCER[] = {
     {"VIEW", "hub", "autopilot", "none"},
     {"MENU", "pause", "none", "none"},
 };
-static constexpr Bind kBind_ACE[] = {
+inline constexpr Bind kBind_ACE[] = {
     {"A", "fire", "none", "none"},
     {"B", "missile", "torpedo", "none"},
     {"X", "context", "goto", "none"},
@@ -456,7 +463,7 @@ static constexpr Bind kBind_ACE[] = {
     {"VIEW", "hub", "autopilot", "none"},
     {"MENU", "pause", "none", "none"},
 };
-static constexpr Bind kBind_ASSISTED[] = {
+inline constexpr Bind kBind_ASSISTED[] = {
     {"A", "context", "none", "none"},
     {"B", "handback", "none", "none"},
     {"X", "goal_panel", "none", "none"},
@@ -484,11 +491,11 @@ inline constexpr BindSet kBindingPresets[] = {
 inline constexpr int kBindingPresetCount = 3;
 inline constexpr const char* kBindingDefault = "FREELANCER";
 
-static constexpr Bind kBind_common_dealers[] = {
+inline constexpr Bind kBind_common_dealers[] = {
     {"A", "none", "buy_sell", "none"},
     {"B", "back", "none", "none"},
     {"X", "filter", "none", "none"},
-    {"Y", "max", "compare", "none"},
+    {"Y", "max", "none", "none"},
     {"LB", "side", "none", "none"},
     {"RB", "side", "none", "none"},
     {"LT", "qty_dec", "none", "none"},
@@ -504,7 +511,7 @@ static constexpr Bind kBind_common_dealers[] = {
     {"VIEW", "hub", "none", "none"},
     {"MENU", "pause", "none", "none"},
 };
-static constexpr Bind kBind_common_flight_ap[] = {
+inline constexpr Bind kBind_common_flight_ap[] = {
     {"A", "accept", "none", "none"},
     {"B", "handback", "none", "none"},
     {"X", "goal_panel", "turret", "none"},
@@ -524,7 +531,7 @@ static constexpr Bind kBind_common_flight_ap[] = {
     {"VIEW", "hub", "autopilot", "none"},
     {"MENU", "pause", "none", "none"},
 };
-static constexpr Bind kBind_common_map[] = {
+inline constexpr Bind kBind_common_map[] = {
     {"A", "map_select", "none", "none"},
     {"B", "back", "none", "none"},
     {"X", "map_remove", "map_remove", "none"},
@@ -534,7 +541,7 @@ static constexpr Bind kBind_common_map[] = {
     {"LT", "zoom_out", "none", "none"},
     {"RT", "zoom_in", "none", "none"},
     {"L3", "none", "none", "none"},
-    {"R3", "reset_view", "none", "none"},
+    {"R3", "none", "none", "none"},
     {"LS", "map_cursor", "none", "none"},
     {"RS", "scroll", "none", "none"},
     {"DU", "map_snap", "none", "none"},
@@ -544,18 +551,18 @@ static constexpr Bind kBind_common_map[] = {
     {"VIEW", "dest_list", "none", "none"},
     {"MENU", "pause", "none", "none"},
 };
-static constexpr Bind kBind_common_menus[] = {
+inline constexpr Bind kBind_common_menus[] = {
     {"A", "accept", "none", "none"},
-    {"B", "back", "back_all", "none"},
+    {"B", "back", "none", "none"},
     {"X", "ctx_x", "none", "none"},
     {"Y", "sec_y", "none", "none"},
     {"LB", "tab_prev", "none", "none"},
     {"RB", "tab_next", "none", "none"},
     {"LT", "page_prev", "none", "none"},
     {"RT", "page_next", "none", "none"},
-    {"L3", "cursor_toggle", "none", "none"},
-    {"R3", "reset_view", "none", "none"},
-    {"LS", "focus", "none", "none"},
+    {"L3", "none", "none", "none"},
+    {"R3", "none", "none", "none"},
+    {"LS", "cursor", "none", "none"},
     {"RS", "scroll", "none", "none"},
     {"DU", "focus", "none", "none"},
     {"DD", "focus", "none", "none"},
@@ -564,7 +571,7 @@ static constexpr Bind kBind_common_menus[] = {
     {"VIEW", "hub", "none", "none"},
     {"MENU", "pause", "none", "none"},
 };
-static constexpr Bind kBind_common_rooms[] = {
+inline constexpr Bind kBind_common_rooms[] = {
     {"A", "talk", "none", "none"},
     {"B", "back", "none", "none"},
     {"X", "news", "none", "none"},
@@ -573,26 +580,26 @@ static constexpr Bind kBind_common_rooms[] = {
     {"RB", "room_next", "none", "none"},
     {"LT", "none", "none", "none"},
     {"RT", "none", "none", "none"},
-    {"L3", "cursor_toggle", "none", "none"},
+    {"L3", "none", "none", "none"},
     {"R3", "none", "none", "none"},
     {"LS", "cursor", "none", "none"},
     {"RS", "scroll", "none", "none"},
-    {"DU", "repair_all", "none", "none"},
+    {"DU", "none", "none", "none"},
     {"DD", "none", "none", "none"},
     {"DL", "char_prev", "none", "none"},
     {"DR", "char_next", "none", "none"},
     {"VIEW", "hub", "none", "none"},
     {"MENU", "pause", "none", "none"},
 };
-static constexpr Bind kBind_common_text[] = {
+inline constexpr Bind kBind_common_text[] = {
     {"A", "type", "none", "none"},
-    {"B", "backspace", "cancel_text", "none"},
+    {"B", "backspace", "none", "none"},
     {"X", "space", "none", "none"},
-    {"Y", "shift", "none", "none"},
+    {"Y", "none", "none", "none"},
     {"LB", "shift", "none", "none"},
     {"RB", "shift", "none", "none"},
-    {"LT", "caret_l", "none", "none"},
-    {"RT", "caret_r", "none", "none"},
+    {"LT", "none", "none", "none"},
+    {"RT", "none", "none", "none"},
     {"L3", "none", "none", "none"},
     {"R3", "none", "none", "none"},
     {"LS", "focus", "none", "none"},
@@ -642,9 +649,9 @@ inline const Row* FindRegistryRow(const char* section, const char* regKey)
     return nullptr;
 }
 
-// ---- HUD 2 layout presets (docs\UI_HUD2_PRESETS.md, revision 2; UI_SPEC.json "hud2_presets": every number with
+// ---- HUD 2 layout presets (modules\hud\docs\UI_HUD2_PRESETS.md, revision 2; UI_SPEC.json "hud2_presets": every number with
 // its section there). Fractions of H at 16:9 from the top-left unless named _W (of W) or d (from the centre); budgets
-// = fractions of the screen's area (plates only). The lint (controller\src\impl\hud2_lint.h) reads these.
+// = fractions of the screen's area (plates only). The lint (modules\hud\src\hud2_lint.h) reads these.
 namespace hud2p
 {
 inline constexpr float kTextFloor = 0.024f; // PRESETS 1.2 Text
@@ -664,7 +671,7 @@ inline constexpr float kAlertPlateH = 0.05f; // PRESETS 1.5
 inline constexpr float kAspectK4x3 = 0.8f; // PRESETS 1.8
 inline constexpr float kAspectK16x10 = 0.9f; // PRESETS 1.8
 // Components exempt from every zone (PRESETS 1.3 Exemptions by name)
-static constexpr const char* kZoneExempt[] = {"alert", "peek", "subtitles.dialogue", "subtitles.nametab"};
+inline constexpr const char* kZoneExempt[] = {"alert", "peek", "subtitles.dialogue", "subtitles.nametab"};
 inline constexpr int kZoneExemptCount = 4;
 
 enum class Anchor : char
@@ -726,21 +733,21 @@ struct Preset
     int numCount;
 };
 
-static constexpr const char* kZoneExKbm_standard_S2[] = {"list"};
-static constexpr Zone kZones_standard[] = {
+inline constexpr const char* kZoneExKbm_standard_S2[] = {"list"};
+inline constexpr Zone kZones_standard[] = {
     {"S1", Anchor::CentreToCard, false, 0.469f, 0.2f, 1.309f, 0.8f, 0.0f, 0.42f, 0.02f, 0.01f, nullptr, 0, "PRESETS 2.1 Zones; 1.8 (4:3, 21:9)"},
     {"S2", Anchor::Rail, false, 1.309f, 0.4f, 1.689f, 0.78f, 0.0f, 0.0f, 0.0f, 0.0f, kZoneExKbm_standard_S2, 1, "PRESETS 2.1 Zones; 1.3 (the K&M list, S2 only)"},
     {"core", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.045f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 1.3"},
 };
-static constexpr BudgetCap kBudgets_standard[] = {
+inline constexpr BudgetCap kBudgets_standard[] = {
     {"combat", "pad", "peak", 0.16f},
     {"combat", "kbm", "peak", 0.17f},
 };
-static constexpr PromptCap kPrompts_standard[] = {
+inline constexpr PromptCap kPrompts_standard[] = {
     {"calm", 3, 5},
     {"combat", 2, 6},
 };
-static constexpr ElemNum kNums_standard[] = {
+inline constexpr ElemNum kNums_standard[] = {
     {"calm", "nav", "x", 0.089f},
     {"calm", "nav", "y", 0.05f},
     {"calm", "nav", "w_max", 0.38f},
@@ -845,21 +852,21 @@ static constexpr ElemNum kNums_standard[] = {
     {"bundle", "new", "hud_text_scale", 100.0f},
     {"bundle", "new", "speedrun_compare", 0.0f},
 };
-static constexpr Zone kZones_focus[] = {
+inline constexpr Zone kZones_focus[] = {
     {"core", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.045f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 1.3 (every preset)"},
 };
-static constexpr BudgetCap kBudgets_focus[] = {
+inline constexpr BudgetCap kBudgets_focus[] = {
     {"calm", "pad", "target", 0.03f},
     {"combat", "pad", "steady", 0.07f},
     {"combat", "pad", "peak", 0.09f},
     {"combat", "kbm", "steady", 0.085f},
     {"combat", "kbm", "peak", 0.1f},
 };
-static constexpr PromptCap kPrompts_focus[] = {
+inline constexpr PromptCap kPrompts_focus[] = {
     {"calm", 1, 3},
     {"combat", 2, 3},
 };
-static constexpr ElemNum kNums_focus[] = {
+inline constexpr ElemNum kNums_focus[] = {
     {"calm", "nav", "x", 0.089f},
     {"calm", "nav", "y", 0.05f},
     {"calm", "nav", "w_max", 0.48f},
@@ -946,19 +953,19 @@ static constexpr ElemNum kNums_focus[] = {
     {"bundle", "new", "hud_text_scale", 100.0f},
     {"bundle", "new", "speedrun_compare", 0.0f},
 };
-static constexpr Zone kZones_speedrun[] = {
+inline constexpr Zone kZones_speedrun[] = {
     {"core", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.045f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 1.3 (every preset)"},
 };
-static constexpr BudgetCap kBudgets_speedrun[] = {
+inline constexpr BudgetCap kBudgets_speedrun[] = {
     {"calm", "pad", "no_target", 0.03f},
     {"calm", "pad", "target", 0.06f},
     {"combat", "pad", "peak", 0.1f},
 };
-static constexpr PromptCap kPrompts_speedrun[] = {
+inline constexpr PromptCap kPrompts_speedrun[] = {
     {"calm", 1, 2},
     {"combat", 0, 2},
 };
-static constexpr ElemNum kNums_speedrun[] = {
+inline constexpr ElemNum kNums_speedrun[] = {
     {"calm", "nav", "x", 0.089f},
     {"calm", "nav", "y", 0.05f},
     {"calm", "nav", "w_max", 0.45f},
@@ -1031,24 +1038,24 @@ static constexpr ElemNum kNums_speedrun[] = {
     {"bundle", "new", "hud_text_scale", 100.0f},
     {"bundle", "new", "speedrun_compare", 2.0f},
 };
-static constexpr Zone kZones_guided[] = {
+inline constexpr Zone kZones_guided[] = {
     {"core", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.045f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 1.3 (every preset)"},
     {"Z1", Anchor::Centre, true, 0.0f, 0.0f, 0.0f, 0.0f, 0.085f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 2.4 Zones"},
     {"Z2L", Anchor::CentreOffset, false, -0.62f, -0.08f, -0.15f, 0.08f, 0.0f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 2.4 Zones"},
     {"Z2R", Anchor::CentreOffset, false, 0.15f, -0.08f, 0.62f, 0.08f, 0.0f, 0.0f, 0.0f, 0.0f, nullptr, 0, "PRESETS 2.4 Zones"},
 };
-static constexpr BudgetCap kBudgets_guided[] = {
+inline constexpr BudgetCap kBudgets_guided[] = {
     {"calm", "pad", "no_target", 0.06f},
     {"calm", "pad", "target", 0.11f},
     {"combat", "pad", "steady", 0.15f},
     {"combat", "pad", "peak", 0.18f},
     {"combat", "kbm", "steady", 0.165f},
 };
-static constexpr PromptCap kPrompts_guided[] = {
+inline constexpr PromptCap kPrompts_guided[] = {
     {"calm", 4, 8},
     {"combat", 2, 8},
 };
-static constexpr ElemNum kNums_guided[] = {
+inline constexpr ElemNum kNums_guided[] = {
     {"calm", "nav", "x", 0.089f},
     {"calm", "nav", "y", 0.05f},
     {"calm", "nav", "w_max", 0.5f},
@@ -1153,7 +1160,7 @@ struct ValueId
     int secondCount;
     const char* src;
 };
-static constexpr const char* kSecond_alert[] = {"ring.lane", "ring.hull"};
+inline constexpr const char* kSecond_alert[] = {"ring.lane", "ring.hull"};
 inline constexpr ValueId kValueIds[] = {
     {"objective", "objective", {"nav", "nav", "nav", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 1.7 pair 2; 2.1-2.4 Calm"},
     {"maneuver", "manName", {"nav", "nav", "nav", "nav"}, {nullptr, nullptr, nullptr, nullptr}, nullptr, 0, "PRESETS 2.1 Other contexts (chip); 2.2 'chip lines as Standard'; 2.4 Calm (maneuver row)"},
@@ -1215,7 +1222,7 @@ enum Column : int
     kColAssisted = 2,
     kColKbm = 3,
 };
-static constexpr const char* kColumnNames[] = {"FREELANCER / CUSTOM", "ACE", "ASSISTED", "K&M"};
+inline constexpr const char* kColumnNames[] = {"FREELANCER / CUSTOM", "ACE", "ASSISTED", "K&M"};
 inline constexpr int kColumnCount = 4;
 inline constexpr Compat kCompat[4][4] = {
     {{Fit::Fine, true, ""}, {Fit::Fine, true, "the ring's throttle arc is the reading"}, {Fit::Adapts, false, "the AP line pinned in the nav"}, {Fit::Fine, true, ""}}, // standard

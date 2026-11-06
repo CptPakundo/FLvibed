@@ -1,7 +1,7 @@
-// The one focus gate for the physical pad (controller\src\impl\focus_gate.h, U38): flight and menus ignore the real pad
+// The one focus gate for the physical pad (modules\controller\src\impl\focus_gate.h, U38): flight and menus ignore the real pad
 // while the game is in the background unless `focus_only` is off; an input held across the focus return stays ignored
 // until it is released.
-#include "../controller/src/impl/focus_gate.h"
+#include "../modules/controller/src/impl/focus_gate.h"
 
 #include "test.h"
 

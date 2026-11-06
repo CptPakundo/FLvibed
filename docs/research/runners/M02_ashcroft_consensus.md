@@ -109,7 +109,7 @@ PB 268.1.
   runners stay near King.
 
 ## The ONE design: `spawn_charge` (bool, default 0; Source::Hidden; requires chase_kill + spawn_stage)
-**Built 31 Oct 2026, not flown** (`controller\docs\AUTOPILOT.md` "spawn_charge"; pure half `lookahead.h` StagePoint over
+**Built 31 Oct 2026, not flown** (`modules\autopilot\docs\AUTOPILOT.md` "spawn_charge"; pure half `lookahead.h` StagePoint over
 a leash list / StillFleeing / ChargeGap / ChargeKeep / ChaseFacts::fleeing, `tests\spawn_charge_test.cpp`). As built:
 side 70 m; the ship leashes = the supervisor's held one (`g_obj.leashShip`) + the live table's armed script leashes;
 the fight from P keeps station when > 400 m off P; the coast against a fleeing ship starts at 270 m/s (not 150: the

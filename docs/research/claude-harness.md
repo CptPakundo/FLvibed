@@ -1,23 +1,25 @@
 # The Claude Code harness: outside skill / agent repositories and what transfers
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 2 watched-path commits: dff3fac2 (the set-no-progress guard narrowed after 25 overrides in 24 h: part runs and named-save probes exempt, fail closed on a save in a variable; 3 cases, 141/141) - the note's 'a guard that fired wrongly is narrowed' pattern; 5dcf6195 (routing rule + test, 195/195); T16 / T18 / T21 unchanged; no effect)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 22 watched-path commits: the module split P0-P11e (moves, comments, map rows); 5251ff09 guards and routing see modules\; guards fs-root-search, heredoc-script-backslash, the HDE = vanilla edit check (ea92edc3); T16 by hand again, T20 in part)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
 Watch: tools/claude/**, tools/drift_check.ps1, tools/docrefs.py, tools/docindex.py
 Evidence: none saved (the repositories read through the GitHub API only - nothing cloned, installed or run). The round's
 summary for the owner: `..\SKILLS_RESEARCH_2026-10-29.md` (environment folder, not versioned)
 Sources: five research agents (two repositories each) and the coordinating session's checks of their claims against the
-repositories and `tools\claude\`. Tags: [repo] a file in the outside repository, [file] FLvibed, [assumed]
+repositories and the private Claude Code harness. Tags: [repo] a file in the outside repository, [file] FLvibed, [assumed]
 
 ## What it means for FLvibed
 
-*31 Oct 2026 ~04:00 (fc379a3, short form):* the audit's pattern continues: a recommendation that stayed prose is turned into a guard with a fixture, and a guard that fired wrongly is narrowed (ac601f2 the fire log keeps 2,000 characters of the command; eb9e1191 deploy-front ignores a statement that only reads deploy.ps1; fe771ef two leaks of the own-launch rule). The 'prose does not hold, hooks do' conclusion is the one these commits confirm; no repository finding of this note is contradicted. `tools\claude\README.md` is held under its size ratchet (22,355 B) by moving the replay column to the section ff89026 added here.
+*6 Nov 2026 (3c9c1390, short form):* the pattern holds: three more repeats became checks (45344164, faed4bba, ca7fd127 from seven launches lost in P11c), and dead-path checks arrived for scripts and Watch lines (d0e79b14, 64ad2dd5: T20 in part). A refactor can silently blind a guard: `docs-writeback` keyed on the old folders and passed every commit in `modules\` until 5251ff09. The miner (T16), T15, T17 and T22 are still not built.
+
+*31 Oct 2026 ~04:00 (fc379a3, short form):* the audit's pattern continues: a recommendation that stayed prose is turned into a guard with a fixture, and a guard that fired wrongly is narrowed (ac601f2 the fire log keeps 2,000 characters of the command; eb9e1191 deploy-front ignores a statement that only reads deploy.ps1; fe771ef two leaks of the own-launch rule). The 'prose does not hold, hooks do' conclusion is the one these commits confirm; no repository finding of this note is contradicted. the private Claude Code harness notes is held under its size ratchet (22,355 B) by moving the replay column to the section ff89026 added here.
 
 *29 Oct 2026 (04b4c05, new):* ten popular repositories were read - obra/superpowers, mattpocock/skills,
 multica-ai/andrej-karpathy-skills, anthropics/skills, DietrichGebert/ponytail, nextlevelbuilder/ui-ux-pro-max-skill,
 safishamsi/graphify (now Graphify-Labs), JuliusBrussee/caveman, addyosmani/agent-skills, Leonxlnx/taste-skill (105k-308k
 stars each by the API; popularity is no evidence). **None is worth installing**: prose-first, web-first, or a context
 cost on every turn. About fifteen patterns transfer, nearly all as hooks, checks or agent-criteria edits - consistent
-with the harness's own finding that hooks hold and prose rules do not (`tools\claude\README.md`). Verified gaps in the
+with the harness's own finding that hooks hold and prose rules do not (the private Claude Code harness notes). Verified gaps in the
 harness: no destructive-git rule in `guard.js`; no SubagentStart hook (SessionStart context never reaches subagents);
 `edit-check.js` checks only HANDOFF.txt's size, no skill size and no mojibake; `game-facts.md` has no "grep, then read by
 offset" line though `FREELANCER_RE.md` is 237 KB. The ideas: T14 (cheap gates), T15-T22 (below). The 29 Oct verdict on
@@ -110,7 +112,7 @@ T15, T17, T20-T22 unchanged.
 - Superpowers' bootstrap (a "use skills" meta-prompt every session), TDD, worktrees, its brainstorming server;
   agent-skills' web checklists; anthropics' webapp-testing (port polling).
 
-## Harness history (moved from `tools\claude\README.md` on 31 Oct 2026, the doc-size ratchet; verbatim)
+## Harness history (moved from the private Claude Code harness notes on 31 Oct 2026, the doc-size ratchet; verbatim)
 The afternoon replay (29 Oct 2026, 42,306 shell calls, subagents included; fired / failed then): ps-colon-var 5 / 5,
 ps-pipe-statement 16 / 16, cmd-build 1,592 / 175, rm-spaced-path 128 / 84, ps1-from-bash 37 / 0, bare-python 192 / 24,
 shell-patch-code 402 / 0, bash-backtick-dq 1 / 0, git-commit-all 455 / 5 (pattern only), git-push 11 / 0, deploy-front

@@ -1,4 +1,4 @@
-// `ash_ride`'s pure half (controller\src\impl\ash_ride.h; docs\research\runners\M02_ashcroft_datapass.md "The ONE
+// `ash_ride`'s pure half (modules\autopilot\src\ash_ride.h; docs\research\runners\M02_ashcroft_datapass.md "The ONE
 // proposal", adapted to the HDE P0 fact and the owner's correction of 31 Oct 2026: a coast is a straight line, cruise
 // lost): the leave rule and its fallback, the loop's radius (the measured turn rate) and geometry inside the leashes, the
 // carrot, his / our charge profiles, the intercept verdicts, the coast gate - then a closed-loop run of M02's geometry
@@ -6,7 +6,7 @@
 // turn-rate limited like the measured cruise turns - where the gap stands when the gate lets the coast start.
 #include "test.h"
 
-#include "../controller/src/impl/ash_ride.h"
+#include "../modules/autopilot/src/ash_ride.h"
 
 #include <cstring>
 

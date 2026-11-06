@@ -1,13 +1,13 @@
 name	value	unit	max_growth	date	commit	note
 release_dll_bytes	5163520	bytes	0.05	2026-11-01	health check 1 Nov	build\release\FLvibed.dll at 2a6d14d4: +373,760 B (+7.8 %) over 858c27b0's 4,789,760 - about 8,500 net code lines: Q7 steps 1-6 (hud2_lint.h + its live half, hud2_layout.h, the Focus parts, 19 hud2 sims, ui_meta.h's preset tables) and the M02 / M13 autopilot (spawn_charge, ash_ride, strafe.h) (planned growth; open: whether the debug lint / sims belong in the release build, and the parked switches' retirement - AUD-A1-5 phase 2). Previous rows: 4,789,760 (858c27b0), 4,536,832 (Q6 S1-S4), 4,317,184 (Q5 slice 1), 3,104,256 (ee25e00)
-doc_bytes:CLAUDE.md	19307	bytes	0.05	2026-10-31	H4 T13	the always-loaded map (CLAUDE.md Rules: about 10 KB, never growing by status notes; the docs diet itself is the owner's D7): it may not grow past +5 % without a reason
-doc_bytes:controller\CLAUDE.md	16407	bytes	0.05	2026-10-30	H4 T13	the controller module's map (about 10 KB by the same rule; D7)
-doc_bytes:subtitles\CLAUDE.md	8975	bytes	0.05	2026-10-30	H4 T13	the subtitles module's map
-doc_bytes:docs\WORK_QUEUE.md	32907	bytes	0.10	2026-10-30	H4 T13	the queue's own rule: under ~30 KB, a finished package's block moves to HANDOFF_history.txt (done 30 Oct ~09:55Z: 52,110 -> 32,907); past +10 % move the finished blocks again
-doc_bytes:tools\claude\README.md	20323	bytes	0.10	2026-10-30	H4 T13	the harness map (hooks, guard rules, routing): growth with each rule is expected, +10 % asks for a trim
+doc_bytes:CLAUDE.md	9571	bytes	0.05	2026-11-05	P11	the always-loaded map (CLAUDE.md Rules: about 10 KB, never growing by status notes; the docs diet itself is the owner's D7): it may not grow past +5 % without a reason
+doc_bytes:modules\controller\CLAUDE.md	5492	bytes	0.05	2026-11-05	P11	the controller module's map (about 10 KB by the same rule; D7)
+doc_bytes:modules\subtitles\CLAUDE.md	8475	bytes	0.05	2026-11-05	P11	the subtitles module's map
+doc_bytes:docs\WORK_QUEUE.md	36204	bytes	0.10	2026-11-05	P11	the queue's own rule: under ~30 KB, a finished package's block moves to HANDOFF_history.txt (done 30 Oct ~09:55Z: 52,110 -> 32,907); past +10 % move the finished blocks again; raised: P10's longer paths took it 7 bytes past; its finished packages are one line each
+doc_bytes:tools\claude\README.md	22524	bytes	0.10	2026-11-05	P11	the harness map (hooks, guard rules, routing): growth with each rule is expected, +10 % asks for a trim; raised: the guards added since 30 Oct, each with its row
 doc_bytes:docs\FREELANCER_RE.md	256791	bytes	0.10	2026-10-31	AUDIT C3	the verified fact base: growth by facts is expected; past +10 % check that build narrative (module docs' job) did not creep in (audit 31 Oct C7: Multiplayer, Extended HUD 2 notes) before raising the row
-doc_bytes:controller\docs\AUTOPILOT.md	154507	bytes	0.10	2026-10-31	AUDIT C3	settings reference + per-session logs mixed (audit C5: split after AFK stage 1); past +10 % move session logs out
-doc_bytes:controller\docs\A37_PLAN.md	13979	bytes	0.05	2026-10-31	AUDIT C4	the plan alone since its results moved to A37_RESULTS.md (audit C4, 31 Oct 2026); +5 % asks why
-doc_bytes:controller\docs\A37_RESULTS.md	69599	bytes	0.10	2026-10-31	AUDIT C4	the slices' build / test record (S8-S10 add to it); +10 % asks for a trim
+doc_bytes:modules\autopilot\docs\AUTOPILOT.md	154507	bytes	0.10	2026-10-31	AUDIT C3	settings reference + per-session logs mixed (audit C5: split after AFK stage 1); past +10 % move session logs out
+doc_bytes:modules\autopilot\docs\A37_PLAN.md	13979	bytes	0.05	2026-10-31	AUDIT C4	the plan alone since its results moved to A37_RESULTS.md (audit C4, 31 Oct 2026); +5 % asks why
+doc_bytes:modules\autopilot\docs\A37_RESULTS.md	69599	bytes	0.10	2026-10-31	AUDIT C4	the slices' build / test record (S8-S10 add to it); +10 % asks for a trim
 doc_bytes:docs\TESTING.md	56948	bytes	0.10	2026-10-31	AUDIT C3	the testing rules, read before any test: past +10 % trim by reference (the why to docs\research, history to HANDOFF_history)
 doc_bytes:docs\LEG_DOSSIER.md	118820	bytes	0.10	2026-10-31	AUDIT C3	the per-leg dossier: growth with each leg study; past +10 % move superseded training notes to the runner studies / history

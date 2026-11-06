@@ -1,3 +1,4 @@
+// The player ship's flight model from game data: closed-form motion, brake distances, run plans, flight recording.
 #include "game/flight.h"
 
 #include "fldll.h"
@@ -227,7 +228,7 @@ static float SimulateRun(const Model& m, float v0, float distance, float vArrive
             {
                 // At the arrival speed before the point: hold it (engine eases off) for the rest of the way; a stop
                 // (vArrive 0) is there - the braking began one step's travel early (was: the last metre or so at
-                // 1 m/s, ~0.9 s too long on every stopping run, 18 Oct 2026).
+                // 1 m/s, ~0.9 s too long on every stopping run).
                 if (vArrive >= 1)
                     t += (distance - x) / vArrive;
                 break;

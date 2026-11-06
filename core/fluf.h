@@ -1,4 +1,4 @@
-// FLvibed - the FLUF probe (26 Oct 2026; docs\research\fluf.md "FLUF in play" E, docs\MOD_COMPATIBILITY.md FLUF): knows
+// FLvibed - the FLUF probe (docs\research\fluf.md "FLUF in play" E, docs\MOD_COMPATIBILITY.md FLUF): knows
 // whether FLUF (The Starport's framework) is loaded, which build, and - for a known build - its ImGui windows' live state
 // and rectangles, read from the Dear ImGui FLUF.dll exports. One instance in FLvibed.dll (compiled plain beside
 // core\hud_bus.cpp, which serves it as HudBus::ReadFluf); pure parts testable (tests\fluf_probe_test.cpp).
@@ -23,7 +23,7 @@ struct ImGuiLayout
     u32 ioDisplaySize, ioWantCaptureMouse, ioWantTextInput, ioMousePos, ioCtx;
     u32 winCtx, winName, winFlags, winPos, winSize, winActive, winWasActive, winHidden, winLastFrameActive;
     u32 flagNoBackground, flagChild, flagTooltip;
-    // bus v5 (26 Oct 2026, the same headers): the focused window, the close button's place, pass-through windows
+    // bus v5 (the same headers): the focused window, the close button's place, pass-through windows
     u32 ctxNavWindow, ctxStyleFramePadding;          // ImGuiContext::NavWindow, ::Style + ImGuiStyle::FramePadding
     u32 winHasCloseButton, winTitleBarHeight, winCollapsed, winSizeFull, winRootWindow;
     u32 flagNoTitleBar, flagNoMouseInputs;

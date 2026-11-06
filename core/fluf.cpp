@@ -45,7 +45,7 @@ const ImGuiLayout kImGui_1_92_7_WIP = {
 // FLUF.dll's PE TimeDateStamp + SizeOfImage (research\evidence\fluf_nightly\NOTES.txt)
 static const KnownBuild kBuilds[] = {
     {0x6AD1955A, 0x1944D000, "nightly-2026-10-16", &kImGui_1_92_7_WIP}, // tag nightly-2026-10-16-03-03 = 627ea2c
-    {0x69DD76EF, 0x005BB000, "2.0.0", nullptr},                         // stable 2.0.0 (28 Mar 2026): history
+    {0x69DD76EF, 0x005BB000, "2.0.0", nullptr},                         // stable 2.0.0: history
 };
 
 const KnownBuild* FindBuild(u32 stamp, u32 size)
@@ -112,7 +112,7 @@ bool Snapshot(const ImGuiApi& api, const ImGuiLayout& L, int policy, HudFluf& ou
     if (At<int>(ctx, L.ctxFrameCount) != fc)
         return Fail(why, whyLen, "ImGuiContext::FrameCount differs from GetFrameCount");
     const float dw = At<float>(io, L.ioDisplaySize), dh = At<float>(io, L.ioDisplaySize + 4);
-    // the context exists but FLUF's ImGui has not begun a frame yet (A3, 26 Oct 2026: FLvibed's first frame comes
+    // the context exists but FLUF's ImGui has not begun a frame yet (A3: FLvibed's first frame comes
     // before FLUF's first NewFrame, which sets DisplaySize - ImGuiIO starts it at (-1, -1)): nothing open, checked
     // again on the next frame
     if (fc == 0 && (dw == -1.0f || dw == 0.0f) && dh == dw)
@@ -121,7 +121,7 @@ bool Snapshot(const ImGuiApi& api, const ImGuiLayout& L, int policy, HudFluf& ou
         return true;
     }
     // ...and a 0 x 0 display at any frame (the window minimised [I]): nothing drawn, nothing open - not a layout
-    // mismatch (audit A2-3, 31 Oct 2026: one such frame dropped FLUF awareness to co-residency for the session)
+    // mismatch (audit A2-3: one such frame dropped FLUF awareness to co-residency for the session)
     if (dw == 0.0f && dh == 0.0f)
     {
         out.frame = fc;

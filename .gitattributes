@@ -14,3 +14,5 @@ HANDOFF_history.txt export-ignore
 docs/WORK_QUEUE.md export-ignore
 # the Claude Code harness of the development environment (hooks, agents, rules, skills): private like the maps
 tools/claude/ export-ignore
+# the module split's stored fingerprints: development evidence, and their `config` replies hold this machine's folder
+tests/fingerprints/ export-ignore

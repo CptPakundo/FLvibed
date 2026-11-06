@@ -2,7 +2,7 @@
 // pub::SpaceObj::Create, pub::AI::SubmitState with the [Pilot] personality), from the game's NPC templates
 // (DATA\MISSIONS\npcships.ini [NPCShipArch]: ship_archetype, loadout, level, pilot, state_graph). Test aid for
 // controlled combat benchmarks (the same enemies every time, a steady stream) and later for scripted scenarios.
-// Facts: docs\FREELANCER_RE.md "Spawning ships". Shared by every module (core\game), compiled into each.
+// Facts: docs\FREELANCER_RE.md "Spawning ships". One instance for the whole logic (core\game).
 #pragma once
 #include "common.h"
 
@@ -20,7 +20,7 @@ struct Request
     float spread = 300;    // random offset around that point (m)
     // Job block over the template's pilot; "" = keep it. The default is the game's solo job with scene toughness
     // HARDEST: with basic_job_no_formation (HARD) a lone spawn of levels 1-4 judged the scene too tough and never
-    // engaged (18 Oct 2026; encounter NPCs come in groups). Templates' pilots often carry formation jobs (wingmen that
+    // engaged (encounter NPCs come in groups). Templates' pilots often carry formation jobs (wingmen that
     // fight only under an encounter leader).
     std::string job = "basic_job_no_formation_no_flee";
     std::string pilot;    // [Pilot] instead of the template's ("" = the template's)

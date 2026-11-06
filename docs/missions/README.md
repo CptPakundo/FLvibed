@@ -4,7 +4,7 @@ One runbook per story mission: the mission's script (`DATA\MISSIONS\Mxx\*.ini`) 
 For each step: how the harness **knows** the mission is there (events, mode, room), what **blocks** the flow
 (pausing popups, briefings, offers, scenes), what the player **must do** next and with which harness call, and what
 **fails** the mission (timers, nags that escalate, forbidden kills). Tests read the runbook before acting in a mission
-and check the state against it at every step (`..\..\CLAUDE.md`, "Mission flow awareness first"). They also guide
+and check the state against it at every step (the project's rule: mission flow awareness first). They also guide
 building campaign saves per mission.
 
 **Resolved across all runbooks (19 Oct 2026):** `Act_PlayerCanTradelane = false, A, B` closes every lane except the
@@ -31,7 +31,7 @@ are answered by this; live query: debug `laneopen <ring> [toward]`. The autopilo
 
 **Two layers.** The script facts (triggers, line numbers, ids, conditions, timers, outcomes) are complete and never
 change; the harness layer (the **Harness signal** and **harness call** lines, "harness gap" notes, the summary
-table's harness column) follows `controller\tools\flctl.ps1` and the event formats below. **When the harness changes
+table's harness column) follows `tools\harness\flctl.ps1` and the event formats below. **When the harness changes
 (a function renamed or added, an event format changed, a gap closed), update these runbooks in the same commit**:
 search `docs\missions\` for the old name or `harness gap`.
 
@@ -72,11 +72,11 @@ Until then a runbook's harness lines are hints, not instructions.
 - Text of string ids (objectives, popups, failures, NN messages): `research\strings\resources.tsv` (git-ignored game
   content; `tools\dump-resources.ps1` makes it), columns `<ids>\t<kind>\t<text>`. Quote titles only (a few words); do
   not copy long texts (game content).
-- Spoken lines (`DX_Mxx_nnnn_SPEAKER`): `subtitles\data\subtitles.tsv` (id, voice, kind, source, sec, speaker, text);
+- Spoken lines (`DX_Mxx_nnnn_SPEAKER`): `modules\subtitles\data\subtitles.tsv` (id, voice, kind, source, sec, speaker, text);
   `sec` is the line's duration, which turns a `+lines` estimate into seconds.
 - Engine behaviour already verified: `..\FREELANCER_RE.md`; the M01a runbook's verified notes (nags escalate to FAIL).
 
-## What the harness observes (controller\tools\flctl.ps1)
+## What the harness observes (tools\harness\flctl.ps1)
 - Events (`Get-FLEvents`, `Wait-FLEvent <regex>`; Content.dll hooks of the server API):
   - `objective count=<n> title=<ids> "<text>" text=<ids> "<text>" obj=<ids> "<text>"` =
     `pub::Player::SetMissionObjectives` (the NN objective, `Act_SetNNObj`): `title` / `text` are the mission's (the NN
@@ -105,7 +105,7 @@ Until then a runbook's harness lines are hints, not instructions.
   <name|nickname>` (a script's solar nickname such as `Li01_02_dock_ring` works: a solar's space id is the hash of its
   lowercase nickname; base nicknames such as `Li01_01_Base` are not space objects),
   `Wait-FLSpace` (waits out story cutscenes), `targetinfo`, `destroytarget` (test aid), `selfdestruct`.
-- Flight (the game's own maneuvers, `controller\tools\flctl.ps1`; every approach follows a hazard-free route planned by
+- Flight (the game's own maneuvers, `tools\harness\flctl.ps1`; every approach follows a hazard-free route planned by
   `flroute.ps1` from the system's files and the game's zone test: minefields, danger fields, damage zones):
   - `Start-FLGoto <name|nickname> [-Within m]` / `Start-FLGoto -Position x,y,z [-Within m]` / `Start-FLGoto
     -Objective`: the Goto autopilot (a position becomes the player's waypoint, as the nav map sets it, and the
@@ -122,7 +122,7 @@ Until then a runbook's harness lines are hints, not instructions.
     on a mission failure.
   - Test aids, never in a mission-flow test: `Set-FLCruiseSpeed <speed>` (boost far from the goal, normal cruise near
     it), `Move-FLShipNear <object>` (pinpoint tests: relocates the ship beside the object). Free-roam fixture with all
-    gates open: `SaveC703` (`controller\tools\make-testsaves.ps1`).
+    gates open: `SaveC703` (`tools\harness\make-testsaves.ps1`).
 - Base: `Goto-FLRoom <room>`, `talk story|mission|...`, `click OfferDialogAcceptButton`, `Start-FLLaunch`,
   `Wait-FLRoomReady`; skips room entries and room scenes unless `-Watch`.
 - Combat (the Advanced Autopilot, game-driven, real kills): `Start-FLCombat [-Target <id|name|nickname>] [-Kills n]
@@ -149,7 +149,7 @@ Until then a runbook's harness lines are hints, not instructions.
 - Dialogue: `Wait-FLDialogue` waits while the radio plays a mission line (the comm player's own playing flag, debug
   `commplaying`; chatter does not count); only actions that end the space scene call it (docks, jumps, docking
   travels) - never the objective waits: the player acts while the radio talks.
-- Regression sweep: `controller\tools\flsweep.ps1 [-Only <sections>]` (base, navigation, pad, combat, hold, subtitles,
+- Regression sweep: `tools\harness\flsweep.ps1 [-Only <sections>]` (base, navigation, pad, combat, hold, subtitles,
   M01a, M01b, M02 scenes, release; PASS / FAIL into research\experience\runs). Screenshot sampler
   `tools\flshots.ps1`: every `deploy.ps1 -Background` start runs one per game session (a JPEG every 6 s of the whole
   test + a 5 fps video in one-minute segments `video_*.mkv` for the dense evidence around a moment, into
@@ -205,7 +205,7 @@ lines, uncertainties marked **Uncertain**). Plain English, short sentences. Sect
      (`Act_StartCutscene` / camera actions: skippable in a base, not in space), player freezes (`Act_PobjIdle`),
      scripted relocations; say which `Close-FLBlocker` handles and which the test must decide.
    - **Required action** and the **harness call** for it (or "harness gap: <what is missing>"). A "launch" in a
-     runbook is the mission's requirement; the scripts (`controller\tools\missions\M03objective.ps1` / `M04objective` /
+     runbook is the mission's requirement; the scripts (`tools\harness\missions\M03objective.ps1` / `M04objective` /
      `M05objective`, since 20 Oct 2026) make the player's base stop first (`Complete-FLBaseStory`: repair + restock).
    - **Fail paths**: chains with their total times (timers + line durations in seconds), nags (they escalate: check
      whether a nag text equals a FAIL text), forbidden kills / lanes / docks.

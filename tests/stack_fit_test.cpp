@@ -1,9 +1,9 @@
-// subtitles\src\impl\stack_fit.h (pure): the stack fit's per-block targets - the newest block always 1, the older ones one
+// modules\subtitles\src\impl\stack_fit.h (pure): the stack fit's per-block targets - the newest block always 1, the older ones one
 // common scale (tallest - newest) / older, clamped to [floor, 1]; all 1 below two blocks or with the setting at 1 - and its
 // ease (exponential at kTau 0.5 s, instant when fresh, snapped near the target, never past it).
 #include "test.h"
 
-#include "../subtitles/src/impl/stack_fit.h"
+#include "../modules/subtitles/src/impl/stack_fit.h"
 
 void Test_stack_fit()
 {

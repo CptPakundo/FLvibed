@@ -16,6 +16,7 @@ try {
     if ($dirty) { Write-Host "Dirty paths (another session may be mid-change):"; $dirty | ForEach-Object { Write-Host "  $_" } }
     else { Write-Host "Working tree clean." }
 
+    $tracked = @(git ls-files)
     $ideas = Join-Path $notes 'IDEAS.md'
     if (Test-Path $ideas) {
         $m = [regex]::Match((Get-Content $ideas -Raw), 'Last check-up:\s*(?<date>[^,]+),\s*HEAD\s+(?<hash>[0-9a-f]{7,})')
@@ -49,6 +50,11 @@ try {
             $paths = @($paths | Where-Object { $_ -notin $outside })
             if (-not $paths.Count) { return }
         }
+        # An entry that matches no tracked file watches nothing: a move left it behind, and the note never comes due
+        $dead = @($paths | ForEach-Object { ($_ -split '#')[0].TrimEnd('/') } | Where-Object {
+            $entry = $_
+            -not @($tracked | Where-Object { if ($entry -match '\*') { $_ -like $entry } else { $_ -eq $entry -or $_.StartsWith("$entry/") } }).Count })
+        if ($dead.Count) { Write-Host "   WATCH DEAD: $($dead -join ', ') match no tracked file" }
         # A Watch entry `path#regex` counts a commit only when its diff of that path adds or removes a line matching
         # the (extended, case-insensitive) regex: a shared file such as docs/SETTINGS.md or FREELANCER_RE.md flagged
         # notes "due" on every unrelated change, 15 of 20 at once on 31 Oct 2026, nearly all "no effect" check-ups

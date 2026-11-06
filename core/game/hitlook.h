@@ -1,4 +1,4 @@
-// How a hit looks, from the game's own data (user, 19 Oct 2026: the HUD shield cue shows the fitted shield's hit look,
+// How a hit looks, from the game's own data (the HUD shield cue shows the fitted shield's hit look,
 // tinted by the incoming weapon's impact look). The same join as tools\hitfx.js (table: docs\kb\hit_effects.md):
 // st_equip.ini [ShieldGenerator] shield_hit_effects (by damage) / weapon_equip.ini [Munition] munition_hit_effect ->
 // DATA\FX\effects.ini [Effect] vis_effect -> a [VisEffect] under DATA\FX (alchemy .ale + effect_crc + texture

@@ -1,3 +1,4 @@
+// Draws the look of the game's panels and controls through render: HUD panel, checkbox, slider, picker, focus frame, text.
 #include "uidraw.h"
 
 #include "render.h"
@@ -13,7 +14,7 @@ u32 Fade(u32 argb, float a)
            (argb & 0xFFFFFF);
 }
 
-// The space HUD's panel look (user, 21 Oct 2026: "identical to the game's space HUD ... that scanline animated
+// The space HUD's panel look ("identical to the game's space HUD ... that scanline animated
 // background"). Measured on the HUD's empty panel at 4K, every frame for 5.6 s (research\experience\runs\
 // hud_scanline_1021): a translucent violet-navy base (13, 11, 26 over space); an inner edge glow (45, 56, 73) fading over
 // ~12 px, a brighter top line; and the scanline - hud_shipinfo.cmp's ANIM_HUD_scanline material, refreshtest2.tga (pale
@@ -53,7 +54,7 @@ void HudPanel(float x0, float y0, float w, float h, float alpha, float sh, doubl
 }
 
 // The subtitles' backing: one soft panel in the HUD's dark blue (its panels are translucent navy), feathered over a few
-// pixels instead of hard boxes (display.cpp, 19 Oct 2026).
+// pixels instead of hard boxes (display.cpp).
 void SoftPanel(float x0, float y0, float w, float h, float alpha, float feather)
 {
     const u32 navy = 0x00081422, base = static_cast<u32>(std::clamp(alpha, 0.0f, 1.0f) * 255.0f);

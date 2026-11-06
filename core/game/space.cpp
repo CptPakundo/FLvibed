@@ -1,3 +1,4 @@
+// Core of space:: - the game API table, object lookup, locations, reputation, attitude, names and the frame stamp.
 #include "game/space_internal.h"
 
 #include "fldll.h"
@@ -232,7 +233,7 @@ static bool Read(const Api& a, void* obj, bool ship, Contact& c)
         {
             // in its docking sequence: its behaviour holds a dock port (the player's own reads the same way:
             // ai::DockInProgress), or it is jumping / entering a lane - the user's moment for the queue shortcut
-            // ("as the NPC is locked in the docking animation (their docking lights flash red)", 20 Oct 2026)
+            // ("as the NPC is locked in the docking animation (their docking lights flash red)")
             if (a.behavior && a.dockingPort)
                 if (void* m = a.behavior(obj, nullptr))
                 {
@@ -420,7 +421,7 @@ bool AttitudeToPlayer(u32 id, float& att)
     }
     // the client's own value (multiplayer: the server's reputation API has no world here)
     void* o = ClientFind(a, id, true); // CEqObj::attitude_towards: ships and solars only - a pod (CLoot : CSimple) read as
-    // hostile and the objective mode fought nobody instead of shooting a job's marked pod (multiplayer, 28 Oct 2026)
+    // hostile and the objective mode fought nobody instead of shooting a job's marked pod (multiplayer)
     const bool ok = o && ClientAttitude(a, o, PlayerCShip(), att);
     ClientRelease(a, o);
     return ok;
@@ -552,7 +553,7 @@ std::wstring SpeakerName(u32 id)
             return pilot;
     }
     // a player's ship (multiplayer): the character name from the client's player list - the player's own reputation
-    // has no name the client can format ("%s0 %s1 %s2 %d0"), other players' have theirs cached (28 Oct 2026)
+    // has no name the client can format ("%s0 %s1 %s2 %d0"), other players' have theirs cached
     if (ship)
         if (const u32 owner = OwnerPlayer(id))
         {

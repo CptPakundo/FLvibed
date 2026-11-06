@@ -1,7 +1,7 @@
 # 0.3.0: what the next release holds (the owner, 5 Nov 2026)
 
 No 0.2.8 release: everything built under that name goes out in a bigger **0.3.0**, which also solves the issues reported since.
-Nothing is published until the owner says so. `CHANGELOG.md` "Unreleased" is the player's list; `docs\UI_HUD2.md` 5.33-5.40 the detail.
+Nothing is published until the owner says so. `CHANGELOG.md` "Unreleased" is the player's list; `modules\hud\docs\UI_HUD2.md` 5.33-5.40 the detail.
 "0.2.8" in commit messages, run folders and test budgets is this work's old name.
 
 ## Built, in main, not released
@@ -9,7 +9,7 @@ Hover help flash, steady prompt pills, job plate growth (5.33); Steam Deck mode 
 on by default (the owner, 5 Nov 2026) (5.36-5.38); option rows for `deck_mode` and `window_text`; nav map lower; comm window hidden under a pause in space; L1 / R1 readable.
 The owner on the dealer, 5 Nov 2026: "Dealer looks good, keep going." The other windows' frames were sent; no verdict on them recorded.
 
-## Reported since: built 5 Nov 2026, replies on the owner's word (detail: `docs\UI_HUD2.md` 5.39)
+## Reported since: built 5 Nov 2026, replies on the owner's word (detail: `modules\hud\docs\UI_HUD2.md` 5.39)
 | Issue | Kind | What was built |
 |---|---|---|
 | 14 | bug | groups on both triggers fire full auto |
@@ -19,12 +19,12 @@ The owner on the dealer, 5 Nov 2026: "Dealer looks good, keep going." The other 
 | 17 | request | QUANTITY and MAX at the equipment dealer whenever the game offers a slider |
 | 19 | request | `glyph_style` 4 Steam, automatic on a Deck (not run on a Deck or a Steam Controller) |
 | 20 | bug | A held buys or sells at both dealers, LS click mounts (the owner's word, on the reporter's comment) |
-| 21 | request | danger alerts beside the ring in a stack per side, with a burst and a glow (the owner's design: `docs\UI_HUD2.md` 5.40) |
+| 21 | request | danger alerts beside the ring in a stack per side, with a burst and a glow (the owner's design: `modules\hud\docs\UI_HUD2.md` 5.40) |
 
 Also open on GitHub: 10 and 13 (built, replies on the owner's word), 3 (stalled NPCs, not reproduced).
 
 ## Open before a release
-- **The blank UI** (`docs\UI_HUD2.md` 5.38): all game text and icons gone, seen once, cause not read. What to read if it returns is written there.
+- **The blank UI** (`modules\hud\docs\UI_HUD2.md` 5.38): all game text and icons gone, seen once, cause not read. What to read if it returns is written there.
 - Not run: the real pad on any of this; other bases than Buffalo and Manhattan; a three-row comm line over the nav map; the map docked; a real mouse on the map's objects.
 - Living spec captures: retaken after the release (v71, `spec_030_2026-11-05`; flight, alerts, dealers, the settled windows). Still older: the mission offer, player info, pause docked and save windows, the 21:9 and other aspect frames, the classic HUD's combat and dock frames. `docs\spec` with them pushed to the published repository the same day, after the tag.
 - The release path: `tools\package.ps1`, `core\version.h`, the version texts on the spec.

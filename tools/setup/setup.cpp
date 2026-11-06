@@ -46,11 +46,14 @@ static const Payload kPayload[] = {
     {107, L"FLvibed\\autopilot.3db"},
     {108, L"FLSubtitles\\mixes.tsv"},
 };
-// Files FLvibed writes in EXE\ while it runs: its settings and the speedrun timer's bests (kept on request) and its logs
-// and traces (always removed; FLMotion.tsv is the autopilot's motion trace, on by default, also for the player's flight).
+// Files FLvibed writes in EXE\ while it runs: its settings, the backups of a settings reset (core\settings_reset.h), the
+// speedrun timer's bests and the autopilot's learned ranges (all kept on request) and its logs and traces (always
+// removed; FLMotion.tsv is the autopilot's motion trace, off for players).
 static const wchar_t* kSettings[] = {L"FLvibed.ini", L"FLController.ini", L"FLSubtitles.ini", L"FLvibed\\saves.ini",
-                                     L"FLvibed\\splits_best.ini"};
-static const wchar_t* kLogs[] = {L"FLController.log", L"FLSubtitles.log", L"FLMotion.tsv", L"FLController_ui.txt"};
+                                     L"FLvibed\\splits_best.ini", L"FLvibed\\ranges.tsv", L"FLvibed.ini.before-0.2.0",
+                                     L"FLController.ini.before-0.2.0", L"FLSubtitles.ini.before-0.2.0"};
+static const wchar_t* kLogs[] = {L"FLController.log", L"FLSubtitles.log", L"FLMotion.tsv", L"FLController_ui.txt",
+                                 L"FLvibed_npc_stalls.log"};
 
 static bool g_quiet = false;
 static FILE* g_log = nullptr;
@@ -812,8 +815,8 @@ static int DoUninstall(const std::wstring& game, int keep)
     {
         int b = Ask(L"Uninstall FLvibed?", L"From: " + game + L"\n\nFLvibed's line comes out of dacom.ini and its files "
                     L"are deleted. Your saves are not touched.",
-                    {{200, L"Uninstall and remove my FLvibed settings\nFLvibed.ini, FLController.ini, FLSubtitles.ini and "
-                           L"the per-save modes go too"},
+                    {{200, L"Uninstall and remove my FLvibed settings\nFLvibed.ini, FLController.ini, FLSubtitles.ini, "
+                           L"the per-save modes, the speedrun bests and the autopilot's learned ranges go too"},
                      {201, L"Uninstall, keep my settings\nThey are used again if you install FLvibed later"}},
                     TDCBF_CANCEL_BUTTON, TD_WARNING_ICON);
         if (b != 200 && b != 201)

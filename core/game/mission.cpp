@@ -458,7 +458,7 @@ static std::vector<Goal> Advance(u32 textId, u32 system, bool* fromLast, u32 tit
     const Script* sc = nullptr;
     std::set<std::string> current;
     // (a placeholder objective - "null", "nn_blank": "Awaiting Mission Objective" 21660 - is no step: many triggers set it,
-    // M13's own watch_endgame_object among them, and its setters as roots hid the city's destroy condition; 23 Oct 2026)
+    // M13's own watch_endgame_object among them, and its setters as roots hid the city's destroy condition)
     // ...nor is a text more than one mission's script uses (the same 21660 is nn_objsoon, mlog_awaiting_objective, ...
     // elsewhere): it names no step of one mission
     auto find = [&](u32 id)

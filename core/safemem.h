@@ -1,6 +1,6 @@
 // Guarded reads of game memory: a copy under SEH that answers false instead of crashing on an unreadable address (a
-// control freed in the same frame, a pointer of another build). Header only, in core since 29 Oct 2026 (it was
-// controller\src\impl\debug.cpp's SafeRead, which release UI code included debug.h for: SWEEP_2026-10-29 #4).
+// control freed in the same frame, a pointer of another build). Header only, in core (it was
+// core\game\debugverbs.cpp's SafeRead, which release UI code included debug.h for: SWEEP_2026-10-29 #4).
 #pragma once
 #include "common.h"
 

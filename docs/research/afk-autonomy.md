@@ -1,12 +1,14 @@
 # AFK / autonomous runs: failure modes from this project's history and the mechanisms that prevent them
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 2 watched-path commits: dff3fac2 (guard set-no-progress: a flset part run (-StopAt) or a set from a named checkpoint save is no attempt the verdict counts - 25 overrides of the rule in 24 h, drift_check "overrides"; a save in a variable stays counted; 141/141) - the T28 override cause fixed at the guard, the override cap itself still open; 5dcf6195 (routing: a docs move / split / trim -> bulk-doc-writing; handoff RESUME block); no conclusion changed)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: tools/claude/**, tools/drift_check.ps1, tools/flset.ps1, tools/flgate.ps1, tools/splits.py, controller/tools/fllegrun.ps1, docs/TESTING.md
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 29 watched-path commits: the module split P0-P11e (moves, comments, map rows); 64ad2dd5 launch-check counts own launches only; 45344164 fs-root-search, faed4bba heredoc-script-backslash, ca7fd127 test_lint, d0e79b14 path_check; rollover still suspended; T28 rest, T32-T34 open)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: tools/claude/**, tools/drift_check.ps1, tools/flset.ps1, tools/flgate.ps1, tools/splits.py, tools/fllegrun.ps1, docs/TESTING.md
 Evidence: `research\evidence\afk_autonomy\` - `afk_repo.md` (the history: failure modes with dates and evidence paths), `afk_web.md` (Anthropic, METR, practitioners; URLs), `afk_proposal.md` (protocol v2, 12 changes ~17 h), `afk_verify.json` (the sceptic's 13 checks against the files and docs)
 Sources: a research workflow (29 Oct 2026, the owner's request); corrections are the verifier's, the flset default re-checked by the coordinating session [checked]. Tags: [file], [page], [D]
 
 ## What it means for FLvibed
+
+*6 Nov 2026 (3c9c1390, short form):* no conclusion changed. The rollover is still suspended and the successor task paused (HANDOFF). Since 31 Oct the run shape was a driver starting one session per package (the module split, `docs\MODULES_PLAN.md`), which this note did not foresee: 64ad2dd5 made launch-check read only the session's own launches, so a driver is no longer held by the runs of the sessions it started. The enforcement line continues (45344164 fs-root-search after a 70-minute orphaned `find /`; faed4bba; ca7fd127 and d0e79b14 in `drift_check`). `set-no-progress`, T32 and T33 unchanged: no `judge-immutable` guard, no `afk_queue` in the tree.
 
 *31 Oct 2026 ~04:00 (fc379a3, short form):* **the AFK rollover is suspended** (4fb61dc; the owner, non-negotiable: Remote Control must be on for every new driver, and AFK means away from the desktop). Measured: `set_remote_control` in a scheduled run nobody opened is refused ("needs a person's approval") with and without the owner's allow rule, for itself and for another session; at the desktop it worked at once. So `..\.claude\afk.norollover`: `afk_handover -Request` refuses (exit 3), guard `context-launch` passes (the driver compacts in place), successor_prompt 1b creates the file when Remote Control is off. An AFK run is now ONE owner-started Desktop session at Opus 5.5 High with Remote Control (b195314; `docs\AFK_PLAYBOOK.md`, 1da4ed7); the 30 Oct paragraphs below describe the rollover as built and are history until it is re-enabled. Against the context exhaustion it answered: guard `context-launch` (a set launch past 400K tokens is refused unless a handover is pending, ff89026; 4 sessions had run ~1,860 calls over it) and compaction. The audit's enforcement line continues (e7d7c0a handoff-size, ed05c01 reach-short, 39cccda retro-row, e80985e docs-writeback, 4b9eb58 probe-first, e5083f8 / fe771ef judge-gate counts only the session's own launches' rows); 2d92292: a set from a checkpoint save (`-StartCp`) is no NO PROGRESS (T28's rest unchanged). Nothing in the conclusions is contradicted; the failure list gains "a successor that cannot be fully set up unattended".
 
@@ -22,7 +24,7 @@ another task: `run_scheduled_task` is refused there too), and a predecessor hand
 which then overwrote the successor's files. Now: the task every 15 min (`*/15 * * * *` + the app's fixed 210 s, `-AbortMin` 35);
 `-Request` refuses while a subagent transcript of the session was written in the last 5 min (`-Force` names it); the
 predecessor keeps its running work going until HANDED (no new package, no new subagent). Test:
-`tools\claude\test_handover.ps1` (15 cases since). Later the same evening: the task is PAUSED outside AFK (enabled at
+the private handover test (15 cases since). Later the same evening: the task is PAUSED outside AFK (enabled at
 the afk-run Start, disabled at its End - only an owner-present turn can change it), and every run renames itself to
 the TITLE afk_handover prints (`seq=` in the flag); runs stay under the routine (the app refuses to group or pin a routine run:
 "Routine runs show under their routine"; Desktop 2.37337.1 hides the sidebar's Routines section for good -
@@ -38,7 +40,7 @@ got two fail-closed tools: `shadow_digest.py` (0ce1b2b, a gate's shadow agree / 
 fail) and docs-auditor criterion 8 (473ab12: cited evidence must come from a clean build of the commit; twice a
 subagent cited its pre-commit dirty build). Doc size budgets in drift_check (a125547, T13). T32-T34 still open.
 *30 Oct 2026 (aafe41d, short form):* a new mechanism against context exhaustion: **the AFK rollover** (61edf76, the
-owner's standing OK) - `tools\claude\afk_handover.ps1`'s handshake (-Request / -TakeOver / -Status / -Complete, a
+owner's standing OK) - the private handover script's handshake (-Request / -TakeOver / -Status / -Complete, a
 20-min -Abort that keeps the predecessor working) and one fixed scheduled task `flvibed-afk-successor` updated per
 handover (7b0f84e: a task created in a cron / agent turn does not keep the permission mode). Its first use failed
 safe: a session that is itself a scheduled run cannot update the task (it needs a person's approval there), so the
@@ -46,7 +48,7 @@ run carried on by compaction (3646262; an owner item) *(superseded 30 Oct 2026 b
 predecessor only requests - line above)*. Fewer overrides at the source: `build-during-set` now reads
 'every leg booted' itself (0d278f1; overridden 7x in 24 h for that safe case). **T35 extended** (8fbdf5b): the in-game
 testing method's own trend (`docs\test_budget.tsv` -> health.js + drift_check `testing`); drift_check also gained
-`ratchets` (0977002, T13) and `leg-bests` (8278963). T28's rest, T32-T34 still open; `docs\WORK_QUEUE.md` stays
+`ratchets` (0977002, T13) and `leg-bests` (8278963). T28's rest, T32-T34 still open; the private work queue stays
 hand-kept (T33).
 *30 Oct 2026 (12e7942, short form):* the first four gaps below are closed - progress counts 2-run sets, cuts reused
 labels, drops stop-at runs and `set-no-progress` covers `flleg` (1da113b, 8f32140: M09 and M11 became NO PROGRESS);
@@ -67,7 +69,7 @@ show is still open:
 - **afk-guard allows every stop while a cron or background task exists** (`afk-guard.js` 24-25): the measured ~5.4 h of
   idle gaps are by design - the cron, not the Stop hook, carries the run. A shorter cadence (`*/10`, or `*/5`, the one
   schedule without jitter) cuts the idle wait (T30).
-- **No reviews recorded after 24 Oct** (the last REVIEW lines in `HANDOFF_history.txt`); whether skipped or unrecorded is
+- **No reviews recorded after 24 Oct** (the last REVIEW lines in the private handoff history); whether skipped or unrecorded is
   unknown. A `review-due` guard needs one machine-written place for the last review (e.g. `drift_check` writing
   `.claude\drift_last.txt`) (T31).
 - **Agents changing their own judges** (METR's reward-hacking reports; directional evidence): judge files (splits limits,

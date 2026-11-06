@@ -3,7 +3,7 @@
 // the ini load / save, the listing for `config` / `ap settings`, and later the settings UI and the generated docs.
 // Before 24 Oct 2026 the controller had this table (kOptions) while the autopilot and the subtitles each spelt their key
 // list out three to four times (apply, save, describe, docs) - and the autopilot's save had already lost three keys.
-// Header-only: compiled into each module's namespace like the rest of core (build.cmd wraps every source).
+// Header-only: at global scope in the logic, in each host's namespace (build.cmd wraps every source).
 #pragma once
 #include "common.h"
 
@@ -92,13 +92,21 @@ inline bool Apply(const Def& d, const std::string& v)
         x = x < -3.0e38 ? -3.0e38 : (x > 3.0e38 ? 3.0e38 : x);
         *static_cast<float*>(d.ptr) = ClampDef(d, static_cast<float>(x));
         return true;
-    case Hex: *static_cast<u32*>(d.ptr) = static_cast<u32>(strtoul(v.c_str(), nullptr, 0)); return true;
+    case Hex:
+    {
+        char* end = nullptr;
+        const unsigned long h = strtoul(v.c_str(), &end, 0);
+        if (end == v.c_str())
+            return false;
+        *static_cast<u32*>(d.ptr) = static_cast<u32>(h);
+        return true;
+    }
     case String: *static_cast<std::string*>(d.ptr) = v; return true;
     case Vec3:
     {
         float* f = static_cast<float*>(d.ptr);
         float t[3];
-        if (sscanf_s(v.c_str(), "%f , %f , %f", &t[0], &t[1], &t[2]) != 3)
+        if (sscanf_s(v.c_str(), "%f , %f , %f", &t[0], &t[1], &t[2]) != 3 || !std::isfinite(t[0]) || !std::isfinite(t[1]) || !std::isfinite(t[2]))
             return false;
         f[0] = t[0], f[1] = t[1], f[2] = t[2];
         return true;

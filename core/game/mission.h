@@ -1,5 +1,5 @@
 // Story mission scripts (DATA\MISSIONS\Mxx\*.ini, plain text): what the current step's armed triggers really wait for -
-// the game's own conditions read from the install, never a copy (session 5, 22 Oct 2026; the top-3 speedruns: "an
+// the game's own conditions read from the install, never a copy (the top-3 speedruns: "an
 // objective is a trigger, not an order" - M12's "Destroy all of the Nomad Ships" advances the moment the player is within
 // 8 km of Toledo, M08's "Fly to the Waypoint" when Ozu, who follows the player, is within 9 km of the jump hole;
 // docs\research\speedrun.md V3, IDEAS A21). These are script-derived facts; which caller uses them under which setting
@@ -8,7 +8,7 @@
 // The script's runtime state (which triggers are armed) is not read from the game; it is derived from the data: the
 // triggers armed by the current objective's setter, by the trigger that armed the setter, and by the triggers that fire
 // on entering the player's system (with their Cnd_True / Cnd_Timer children), restricted to the player's system.
-// The game's own list of armed triggers is readable since 30 Oct 2026: mission_live.h (single player). GoalsOfLive /
+// The game's own list of armed triggers is readable: mission_live.h (single player). GoalsOfLive /
 // ArmedLeashes / LeadsOfLive below read the goals from it instead (A37 S2: the situation assessor's story source; the
 // autopilot's AdvanceGoals path does not use them yet).
 #pragma once
@@ -47,7 +47,7 @@ struct Goal
     std::string file;         // the script (full path)
     bool byEntry = false;     // armed only through a system-entry trigger, not the step's own objective chain (whether
                               // it is live during the step is unknown: M05 / M13 fights, session 8)
-    // ---- LOOK's extras: filled only by a reader called with `look` (controller\docs\LOOK_PLAN.md, L0)
+    // ---- LOOK's extras: filled only by a reader called with `look` (modules\autopilot\docs\LOOK_PLAN.md, L0)
     std::vector<ShipRef> ships; // kind 4: the ships the label / nickname names (runtime ids: ShipIdsOf)
     // kind 4: the script's health gate - the highest Cnd_HealthDec fraction on one of its ships (or the label) whose
     // immediate chain (Cnd_True hops) destroys it (M02: ashcroft_health_35 -> destroy_him -> Act_Destroy = Ashcroft); 0
@@ -80,7 +80,7 @@ struct Goal
 // `titleId` (optional): the mission's title id - when no objective is known yet (a save loaded mid-mission), the script
 // that sets that title, from its system-entry triggers alone.
 std::vector<Goal> AdvanceGoals(u32 textId, u32 system, bool* fromLast = nullptr, u32 titleId = 0);
-// What AdvanceGoals would answer now, read only (the situation snapshot, controller\src\impl\situation_snap.cpp, A37 S1):
+// What AdvanceGoals would answer now, read only (the situation snapshot, modules\autopilot\src\situation_snap.cpp, A37 S1):
 // mission.cpp's memory (the last script and text found, the objectives shown) is read, never written - the autopilot's
 // next AdvanceGoals call answers exactly as it would have without this one.
 struct AdvanceInfo
@@ -94,7 +94,7 @@ struct AdvanceInfo
 std::vector<Goal> AdvanceGoalsPeek(u32 textId, u32 system, u32 titleId, AdvanceInfo& info, bool look = false);
 // A new game (a save load, New Game, the load after a death; the controller logic calls it when HostApi v34 GameLoads
 // moves): AdvanceGoals' memory - the last script and text found (the placeholder's stand-in, Leashes) and the objectives
-// each script has shown - belongs to the game before and is forgotten (A37 S1, 30 Oct 2026: after SaveS208 -> SaveS182
+// each script has shown - belongs to the game before and is forgotten (A37 S1: after SaveS208 -> SaveS182
 // M07's last objective could stand in for M12's "Awaiting").
 void ForgetGame();
 // Tests only: the scripts of `missionsDir` (a MISSIONS folder; "" none) instead of the install's, memory forgotten.
@@ -111,7 +111,7 @@ std::vector<ObjectiveDef> ObjectiveDefs(u32 textId);
 // talks (M12: "within 2.7 km of the lair" -> ~31 s of dialogue -> "Destroy all the Shield Generators"; the runners wait
 // at generator 1 and fire the second the banner shows).
 std::vector<Goal> GoalsAfter(const std::string& objective, const std::string& file, u32 system, bool look = false);
-// The goals a fired trigger (`trigger`, of `file`) arms - the next level of the chain (session 7, M12 Omicron Minor:
+// The goals a fired trigger (`trigger`, of `file`) arms - the next level of the chain (M12 Omicron Minor:
 // "within 8 km of Toledo" fired, its chain arms "within 3 km of the ring" -> "Dock with Planet Toledo"; the ship stood by
 // Juni with nothing to fly to).
 std::vector<Goal> GoalsArmedBy(const std::string& trigger, const std::string& file, u32 system, bool look = false);
@@ -130,7 +130,7 @@ struct Leash
     u32 nameIds = 0; // a mission ship: its NPC's individual_name (the pilot's name as the game shows it); 0 otherwise
     std::vector<u32> offComms; // comm lines (CreateID) whose Cnd_CommComplete trigger deactivates it (M10 botzler_dies)
 };
-// The leashes of the current mission's script (the one AdvanceGoals last found) in `system` (session 8, 23 Oct 2026, M10:
+// The leashes of the current mission's script (the one AdvanceGoals last found) in `system` (M10:
 // "Awaiting" -> a script goal 17.6 km off, more than 6 km from Von Claussen -> "You fled the battle"). Whether one is armed
 // is not tracked: the caller keeps to all of them.
 std::vector<Leash> Leashes(u32 system);
@@ -190,7 +190,7 @@ EscortPlace EscortByPlace(const LiveTable& t, u32 system, u32 textId);
 // land_on_base (st01_01_base) in the same breath as it unlocks Toledo's ring, ~5 s before "Dock with Planet Toledo"
 // shows - the runners dock on it. `textId`: the step's (its own objectives are no lead).
 std::vector<std::string> ArmedBaseEnters(const LiveTable& t, u32 textId);
-// LOCK-TRAP (`lock_trap`, controller\docs\AUTOPILOT.md; M13 31 Oct 2026): an armed row (state 0) in `system` (its own or
+// LOCK-TRAP (`lock_trap`, modules\autopilot\docs\AUTOPILOT.md; M13 31 Oct 2026): an armed row (state 0) in `system` (its own or
 // its arming trigger's) with a lone Cnd_DistShip = inside, Player, <obj>, R or Cnd_DistVec = inside, Player, x, y, z, R
 // whose actions lock a dock for the player (Act_LockDock = Player, <dock>, lock), while the script still has that dock's
 // unlock to come: an armed row other than the trap (hop 0) or a trigger such a row arms (Act_ActTrig, up to 4 hops, never
@@ -286,7 +286,7 @@ std::vector<u32> PendingHostileShips(u32 textId, u32 system, const std::vector<S
 // ids, `names` (optional) their nicknames, in the spawns' order. Empty for another kind or an unknown script.
 std::vector<u32> ShipIdsOf(const Goal& g, const std::vector<Spawn>& spawns, std::vector<std::string>* names = nullptr);
 
-// SPAWN-STAGE (`spawn_stage`, controller\docs\AUTOPILOT.md; docs\research\runners\M02.md "## Plan" 1): what a kill
+// SPAWN-STAGE (`spawn_stage`, modules\autopilot\docs\AUTOPILOT.md; docs\research\runners\M02.md "## Plan" 1): what a kill
 // trigger's firing spawns for a later step's kill. From the trigger `trigger` of script `file` (full path), its own actions
 // and the triggers it fires at once (Act_ActTrig to Cnd_True / Cnd_Timer, up to 4 hops): the ships it spawns
 // (Act_SpawnShip, Act_SpawnFormation) and, among them, the first one a Cnd_Destroyed trigger armed on that walk (any hop,
@@ -362,7 +362,7 @@ std::vector<Goal> NextStepGoals(u32 textId, u32 system, std::string* next = null
 // `skip`: past up to that many declared objectives without a point (0 = the very next one only).
 bool NextObjectivePlace(u32 textId, u32 system, float pos[3], u32* nextText = nullptr, int skip = 0);
 
-// TIMER-DESTROY (docs\WORK_QUEUE.md; the owner, 30 Oct 2026): how a step with a destruction in it advances, from the
+// TIMER-DESTROY (docs\WORK_QUEUE.md): how a step with a destruction in it advances, from the
 // script alone. Forward from the setters of the objective with text `textId` (the triggers whose Act_SetNNObj names it)
 // and from the triggers armed beside them (AdvanceGoals' view of the step), up to 6 hops of Act_ActTrig whatever the
 // conditions, never past a trigger that sets a new objective or fails the mission: every path that sets the next

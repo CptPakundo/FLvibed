@@ -1,3 +1,4 @@
+// The game's own AI on the player ship: maneuvers, directives, personality fields, pilot definitions, brain, debug command.
 #include "game/ai.h"
 
 #include "fldll.h"
@@ -305,7 +306,7 @@ bool ReadSelf(Self& s)
     return true;
 }
 
-// The game's own use of a consumable with a chosen count (user, 21 Oct 2026: "one battery per press ... scale it based
+// The game's own use of a consumable with a chosen count ("one battery per press ... scale it based
 // on important factors"): the HUD's repair buttons end in the client ship's IObjAffect::use_item(cargo id, count, -1)
 // with the count that fills the bar (exe::UseItem, which sends IServer::SPRequestUseItem). Here the same call with our
 // count: the cargo found by its archetype's class (Archetype::AClassType RepairKit 26 / ShieldBattery 27 - any mod's
@@ -549,7 +550,7 @@ bool MissionHolds()
         return false;
     // A mission's Idle (Act_PobjIdle) is a full stop that leaves the player in free flight, free to fly (FREELANCER_RE
     // "Server directives"): it reads op freeflight / idle at a priority, unlocked. Not the mission flying the ship (was:
-    // M13's launch parks the player under Nomad fire for ~26 s; the autopilot waited and the ship died, 22 Oct 2026).
+    // M13's launch parks the player under Nomad fire for ~26 s; the autopilot waited and the ship died).
     const bool parked = s.op == OpIdle || s.op == OpFreeFlight || s.op == OpNone;
     return s.locked || (s.priority > 0 && !parked);
 }
@@ -964,7 +965,7 @@ static bool Apply(Personality& p, const Field& f, const std::string& value, Appl
         float x = static_cast<float>(atof(v[0].c_str()));
         // The [Pilot] files give angles in degrees; the game's Personality holds radians (a live police NPC:
         // trail_lock_cone_angle 0.5236 for the ini's 30). Unconverted, the AI got 30-radian cones and spawned NPCs
-        // never engaged (18 Oct 2026).
+        // never engaged.
         const std::string n(f.name);
         if (n.size() > 6 && n.compare(n.size() - 6, 6, "_angle") == 0)
             x *= 3.14159265f / 180.0f;
@@ -1435,7 +1436,7 @@ static float ClientTrailDistance()
 static PersonalityBuf g_shipOwn;
 static u8* g_shipOwnManager = nullptr;
 
-// The personality on a behaviour manager, guarded (was: unguarded in `ai layout`, 18 Oct 2026).
+// The personality on a behaviour manager, guarded (was: unguarded in `ai layout`).
 static bool GetManagerPersonality(const Api& a, u8* m, void* out)
 {
     __try

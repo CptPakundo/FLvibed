@@ -32,13 +32,13 @@ jflp (Jason's Freelancer Patch), console, HudShift, HUDless, MP3codec, MPRep, nu
 storyfactions, Territory, TurretZoom, WheelScroll, Zone, Hail, MultiIntro, callsign; plus HDE's own (flplusplus,
 FLSharp, HudFacility / HudWeaponGroups / HudTarget / HudStatus, DelayDisplay, gls_workaround). They hook the same
 Freelancer.exe / Common.dll code FLvibed does: FLvibed's detours follow an existing JMP and its vtable / IAT patches
-call the previous pointer (CLAUDE.md "Hooks chain"), and every address it uses is verified by signature
+call the previous pointer (`docs\ARCHITECTURE.md` "Hooks chain"), and every address it uses is verified by signature
 (core\flexe.h), so a patched spot fails closed instead of crashing. Exception handled since 25 Oct 2026: a hooker that removes and re-writes its own jump on every call (FLUF,
 below) would erase a jump chained after it, so FLvibed hooks that hooker's handler instead (either load order).
 
 ## Mods that replace game recordings (29 Oct 2026)
 The subtitles recognise what plays by the file, not only by its name: the intro movies by duration and size
-(`subtitles\src\impl\movie.cpp`), the scene mixes by the size of the file a `gf_sounds.ini` nickname resolves to
+(`modules\subtitles\src\impl\movie.cpp`), the scene mixes by the size of the file a `gf_sounds.ini` nickname resolves to
 (`mixcues.cpp` CheckFiles: the 21 vanilla `mix_*` recordings, identical in HD Edition 0.7.1). A mod's own recording
 under a vanilla name (Crossfire ships its own mixes) gets no subtitles instead of the wrong ones; the FLSubtitles log
 names it. Note the nickname is not the file name (`mix_s051a` plays `mix_s051xa.wav`). Vanilla 1.1's binary (BINI)
@@ -116,7 +116,9 @@ JFLP is adoxa's finished patch.
 | Common.dll vtables of CShip, CSolar, CLoot, CEGun ... (FLUF `VTableHook`) | FLUF pointers in the slots | **fixed (3582c29):** `hk::VtableSlot` reads the class's entries from common.dll's file when the live ones end at a foreign pointer; calls go through the live slot (FLUF's hook, which chains) - no `not found` in either order |
 | common.dll lane law (`core\game\route.cpp`) | `AllowAdjustableTradelaneSpeed` E9 at the signature's first byte | **fixed (3582c29):** when that jump leads into FLUF the law is read from the original code (`hk::FindInModuleOriginal`): FLUF's speed manipulator's base is 2500, the game's constant, and no shipped FLUF module overrides it - a FLUF module that changed lane speed would make the law's speed wrong (the autopilot still measures each ride) |
 
-**Logs:** each host writes `FLUF loaded before FLvibed ...` or `FLUF not loaded (yet)` at start and, at the first
+**P2 smoke (5 Nov 2026, one host with its router):** both orders on worker copies of the nightly: hooks at FLUF's handlers per module as in A3 (4 + 2, 5 + 3), frames, a subtitle, the pad; the palette, ImGui windows and Alt+Enter not re-tested (`docs\MODULES_PLAN.md` P2).
+
+**Logs:** the host writes `FLUF loaded before FLvibed ...` or `FLUF not loaded (yet)` at start and, at the first
 frame, `no FLUF` or `FLUF present: n hook(s) at its handlers (m moved there now), k inside its detour`, plus one line
 per hook at a handler (`Hook <name>: FLUF owns the function ... hooked at its handler FLUF.dll+0x...`). The awareness
 layer adds `fluf: FLUF nightly-2026-10-16 (dacom_fix), ImGui 1.92.7 WIP: aware ...` (or `... co-residency only (why)`)
@@ -259,14 +261,14 @@ Windows 10 / 11 (blocked since 2015), so the CD's program does not start there a
 Freelancer.exe of this build** - HDE provides it (verified); the community's unprotected 1.1 programs likely qualify (not
 verified). Whether the decrypted vanilla game without HDE's plugins runs every feature (HUD 2's own-ship view = HDE's
 HudStatus.dll; the arrival lines = Territory.dll / Zone.dll): the in-game test below.
-A decrypted vanilla 1.1 program (the owner's cracked exe, 3,005,956 bytes, MD5 033C10EB8648DE7A8F2009091672880A; checked
+A decrypted vanilla 1.1 program (3,005,956 bytes, MD5 033C10EB8648DE7A8F2009091672880A; checked
 25 Oct 2026 with `sigtool check --scan`): first 174 / 187; **since the re-cut of the same day 187 / 187 statically, every
 one at the v1.1 address** (also with `--shift 16 --hooked`; HDE 0.7.1 and the upstream HDE repository's exe stay 187 /
 187). **In game on vanilla 1.1: 187 / 187 at run time too, nothing refused** (25 Oct 2026, below).
 - **What failed, and why:** UiRender, DmgIndContact, ClearWaypoints, LetterboxAmount, CursorName, MouseFlightTimer,
   PlayerThrottle, RoomInfoOwner, PrefsShowPage, TextCtlSetProperty, CursorShown, ToggleButtonActivate and
   NavMapSetPosition had signatures (cut from HDE's exe) that ran into the **alignment padding between functions**. There
-  HDE's exe holds NOPs, the cracked vanilla exe leftover call bytes (`E8 rel32`, once `FF 15 [IAT]`) from its decryption -
+  HDE's exe holds NOPs, the decrypted vanilla exe leftover call bytes (`E8 rel32`, once `FF 15 [IAT]`) from its decryption -
   after a `ret`, never executed. Of the 1,322 byte runs in which the two `.text` sections differ, 1,285 are such padding;
   the other 37 are HDE's real code edits, **none inside a signature span**.
 - **The re-cut:** the 7 code symbols now start at the function entry (ClearWaypoints ends at its `ret`); the 6 data
@@ -307,14 +309,14 @@ byte patch on the instance's exe copy (file 0x1B16CC = 0; the same bytes as HDE'
 | Startup | works | both modules up, symbols 187 / 187 v1.1 (0 by search, 0 unresolved), nothing refused except the maneuver bar shift ("no HudShift relocation": HudShift is HDE's) |
 | The autopilot's universe tables (minefields, damage zones, lethal planet / sun cores, dock rings, encounter levels) | works (since 8c5c9a3, 29 Oct 2026; before: empty on vanilla - the BINI system files read as nothing) | instance vanilla11c, build a08c223, SaveC705 in space: debug `obstacles 60000` lists 4 lethal zones, `area` a zone's level 2; host-free: tests\universe_test.cpp reads 53 vanilla systems (115 lethal spheres). **The M01a leg on vanilla: PASS 484 s** (HDE's best 479; HDE's start save Save7e1c.fl loads on vanilla; the lethal guard steered off Pittsburgh's 1,600 m core as on HDE; `flleg.ps1 -Instance vanilla11c`, 29 Oct 2026) |
 | Startup movies: skip, fit | works | skipped natively; `fl_intro_vanilla` recognised (226.8 s), fitted 1280x528 in 1280x960 |
-| Intro movie subtitles | works (since FIX-VIEWS, 25 Oct 2026) | was: lines active, overlay window present, no text seen - not reproduced in the follow-up (the first run already showed them, with the FIX-TEXT font loader in the build); now drawn in a child window of the game window (window capture and the taskbar thumbnail show them), transitions at the display rate (`subtitles\docs\DISPLAY_PLAN.md` "Movies"; `research\experience\runs\fix_views_2026-10-25\movie_vanilla`) |
+| Intro movie subtitles | works (since FIX-VIEWS, 25 Oct 2026) | was: lines active, overlay window present, no text seen - not reproduced in the follow-up (the first run already showed them, with the FIX-TEXT font loader in the build); now drawn in a child window of the game window (window capture and the taskbar thumbnail show them), transitions at the display rate (`modules\subtitles\docs\DISPLAY_PLAN.md` "Movies"; `research\experience\runs\fix_views_2026-10-25\movie_vanilla`) |
 | Main menu, pad prompts | works | "A SELECT" pill (`01_mainmenu_pad`) |
 | New game, Freeport 7 prologue, Manhattan scenes | works | prologue comms recognised; base scene subtitles drawn (`08_bar_sub0`: "Trent: ...") |
 | Rooms on the pad | works | D-pad walks the 7 bar characters in screen order, the game's name card over the head (`09_bar_dpad`) |
 | ui_style 1 (rooms, dealer, job board) | degraded | glass panels, LB / RB pills, the location strip and cards work (`10`, `11`, `13`); "PLANET MANHAT..." cut; no bottom pills: promptbar "no bottom row or column fits at 1280x960" (last-resort lanes) |
 | ui_style 0 | works | the game's look back live (`14_dealer_ui0`) |
 | Launch, space cutscene + comms | works | Donau intro cutscene with subtitle cards (`15_after_base`); the card overlaps the NeuroNet strip at 4:3 |
-| HUD 2 (hud_style 1) | degraded | ring, nav, threat list, target card, escorts, loadout, context pill work (`16`, `19`, `20`); text cuts / overlaps (below). Fixed by FIX-VIEWS (25 Oct 2026, `docs\UI_HUD2.md` 5.12): the own-ship view (the status panel's own view through the panel base's routines, no HudStatus.dll), the target card's view (its view mode), the flat icons from vanilla's 256 px sheets (`fix_views_2026-10-25\views`) |
+| HUD 2 (hud_style 1) | degraded | ring, nav, threat list, target card, escorts, loadout, context pill work (`16`, `19`, `20`); text cuts / overlaps (below). Fixed by FIX-VIEWS (25 Oct 2026, `modules\hud\docs\UI_HUD2.md` 5.12): the own-ship view (the status panel's own view through the panel base's routines, no HudStatus.dll), the target card's view (its view mode), the flat icons from vanilla's 256 px sheets (`fix_views_2026-10-25\views`) |
 | Classic HUD (hud_style 0) | works | the game's HUD with glyph badges and the autopilot legend (`17_space_classic`); the comm subtitle box covers the top-centre HUD icons |
 | Hits | not judged | only 2-5 % shield hits came (`21_hit0-2`); no hull hit |
 | Comm portrait | works (since FIX-VIEWS, 25 Oct 2026) | was: at the game's comm-window place, under HUD 2's nav, overlapping its rows (`16`, `23_comm1`). Now where the top panel holds no slot for it (4:3) the game's comm window is placed live under HUD 2's nav from the HUD bus every frame - the same code and place on HDE 1600x1200 and vanilla (`fix_views_2026-10-25\comm`). **Since fix-text 5 (25 Oct 2026) with its dialogue on both HUDs** (the owner saw it stuck at the left in the Donau fight): HUD 2 at 4:3 puts it above its line inside the panel; the classic HUD (bar centred: no HudShift) beside its line's box below the bar (`fix_text5_2026-10-25\vanilla_b2_*`, M01a: King, Newark Station) |
@@ -343,7 +345,7 @@ byte patch on the instance's exe copy (file 0x1B16CC = 0; the same bytes as HDE'
 **The official 1.1 patch** (`flpatch.exe`, 1,657,440 bytes, MD5 b2621b2a33c519d8b599cb3579be4c02; its cabinet FILESUSA.CAB
 listed / extracted with 7-Zip, not run) replaces only Common.dll, Server.dll, Content.dll, RemoteClient.dll, DALib.dll,
 FLServer.exe and readmes - **no Freelancer.exe**: the program is the same in 1.0 and 1.1 (one link timestamp, 0x3E401B79),
-so the cracked exe above is a valid 1.1 program. The CD folder `research\Vanilla\Freelancer` is **1.0** (its DLLs differ
+so the decrypted exe above is a valid 1.1 program. The CD folder `research\Vanilla\Freelancer` is **1.0** (its DLLs differ
 from the patch's). HDE 0.7.1 ships the patch's RemoteClient.dll unchanged and its own builds of Common.dll, Server.dll,
 Content.dll and DALib.dll (none matches 1.0 or the 1.1 patch). FLvibed reaches those DLLs by their exports / import
 tables (not by flexe.h signatures); whether every read works on the 1.1 patch's builds is not tested.

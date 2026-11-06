@@ -1,7 +1,7 @@
 # Combat targets
 
 What can be fought, how hard it is, and what decides whether the autopilot should engage it. Code: the autopilot's
-`Assess` (controller\src\impl\autopilot.cpp); tables `generated\ships.tsv`, `solararch.tsv`, `guns.tsv`, `shields.tsv`.
+`Assess` (modules\autopilot\src\autopilot.cpp); tables `generated\ships.tsv`, `solararch.tsv`, `guns.tsv`, `shields.tsv`.
 
 ## What there is
 | Kind | How to tell (game data) | Notes |

@@ -1,4 +1,4 @@
-// FLvibed - what Extended HUD 2's docked overlay (controller\src\impl\uistrip.*, docs\UI_HUD2_EXTENDED.md 10) reads from
+// FLvibed - what Extended HUD 2's docked overlay (modules\hud\src\uistrip.*, modules\hud\docs\UI_HUD2_EXTENDED.md 10) reads from
 // the game: the base, room, system, credits, cargo and ship for the context strip; a pending dealer purchase; the price
 // marks' verdicts; the equipment compare; the ship dealer's selection and refusal; a room character's name card; the
 // job board's type word. Every value is the game's own (its UI objects' fields pinned by signed code sites in

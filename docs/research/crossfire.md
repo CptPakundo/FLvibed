@@ -1,8 +1,8 @@
 # Crossfire 2.0.1: a launcher-run install with a one-script campaign and an anticheat
 Status: current
-Checked against: FLvibed 97e118fb (31 Oct 2026 ~15:25, short form, 97e118fb landed during the round (docs only: AUTOPILOT.md records fx2 - the back-off fires, the stall not fixed; PRESETS / WORK_QUEUE record the lint baseline as run), read and consistent; 3 watched-path commits (autopilot_*.cpp): bd5d7af6 + 44659916 the locked-transit back-off (keyed on the game's own route answer, no mission literal), 4a4bd7b1 strafe_pass (hull geometry by ray tests, default 0, parked BAD); no Crossfire-specific content; no effect)
-Dirty paths at check: another session's uncommitted `controller/src/impl/autopilot_impl.h`, `controller/src/impl/autopilot_objective.cpp`, `controller/src/impl/autopilot_settings.cpp`, `controller/src/impl/lookahead.{cpp,h}`, `core/fluf.cpp`, `tests/fluf_probe_test.cpp`, `tools/setwatch.sh` (not judged) (31 Oct 2026 ~15:25)
-Watch: docs/MOD_COMPATIBILITY.md, tools/install*, subtitles/src/impl, controller/src/impl/autopilot_*.cpp, core/game/route.cpp
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 16 watched-path commits: the module split P0-P11e (moves, comments, map rows); lock_trap, spawn_charge and ash_ride read the live table with no Crossfire-specific content; no effect)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: docs/MOD_COMPATIBILITY.md, tools/install*, modules/subtitles/src/impl, modules/autopilot/src/autopilot_*.cpp, core/game/route.cpp
 Evidence: research\evidence\crossfire\ (installer manifest of 11,167 files with SHA1, dacom.ini, dacomsrv.ini, freelancer.ini, Launcher.ini, storylvl.ini, HudShift.ini, Cameras.ini, keymap.ini, voices_mission12.ini, installer strings); the 2.9 GB installer and the 3.1 GB unpacked payload stayed in the session scratchpad (IDEAS X3)
 Sources: [file] the installer, statically unpacked by a pure-Python Inno Setup reader (nothing executed); [page] ModDB, the-starport, SWAT Portal via Wayback (the site timed out)
 
@@ -48,7 +48,7 @@ nothing) and S7 (intros by duration and size) are unchanged; the FLUF layer and 
 - **Subtitles:** three robot voice banks, four recorded clips and vanilla lines replayed out of context; unknown ids
   show nothing (correct). Foreign voice banks would be new scope, and the EULA forbids shipping their text (IDEAS S5).
   Movies keep the vanilla `[Startup]` mechanism with blank files to skip (IDEAS S7).
-  *Check-up 25 Oct 2026 (abf84ac):* the MOVIES settings (U14; 001d858, `subtitles\src\impl\movie.cpp ApplyIntro`) answer
+  *Check-up 25 Oct 2026 (abf84ac):* the MOVIES settings (U14; 001d858, `modules\subtitles\src\impl\movie.cpp ApplyIntro`) answer
   S7's keying question in effect: the intro is recognised by its duration and size, never by its name (`movie.cpp`
   265-302), and the Intro row offers only the files present - a swapped or blank `[Startup]` file matches nothing and
   gets no subtitles. Read in the code, not tried on a Crossfire install.

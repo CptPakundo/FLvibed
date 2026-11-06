@@ -11,7 +11,7 @@ $root = Split-Path $PSScriptRoot -Parent
 # <target> <time>", where dirty / the hash cover only the build's inputs (core, the modules' src, build.cmd: uncommitted
 # changes and new files). deploy.ps1 copies it next to the DLLs as FLvibed.build.txt; flleg.ps1 records it.
 function Write-FLBuildInfo([string]$Root, [string]$Target) {
-    $paths = 'core', 'controller/src', 'subtitles/src', 'build.cmd'
+    $paths = 'core', 'modules/*/src/*', 'build.cmd'
     $sha = "$(git -C $Root rev-parse --short HEAD)"
     $changes = "$(git -C $Root diff HEAD -- @paths | Out-String)$((git -C $Root ls-files -o --exclude-standard -- @paths) -join "`n")"
     $src = 'clean'

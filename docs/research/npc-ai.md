@@ -1,8 +1,9 @@
 # Hostile NPCs: how they decide, why they can stall, what a difficulty system could pull
 Status: current
-Checked against: FLvibed f2cede02 (4 Nov 2026), HDE 0.7.1 (the test install), upstream HDE main c0c70a1924, FLSharp 0.9.x
-Dirty paths at check: none
-Watch: core/game/ai.cpp, core/game/spawn.cpp, controller/src/host/main.cpp, docs/FREELANCER_RE.md
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 34 watched-path commits: the module split P0-P11e (moves, comments, map rows) (the NPC module, 68dc8f32), 07ac7595 the recorder; no real stall recorded yet, issue 3 open; D2-D4 still the owner's), HDE 0.7.1 (the test install), upstream HDE main c0c70a1924, FLSharp 0.9.x
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: core/game/ai.cpp, core/game/spawn.cpp, modules/npc/src, modules/controller/src/host/main.cpp, docs/FREELANCER_RE.md
+See also: `docs\research\player-ship-ai.md` (can the game's AI fly the player's ship)
 
 Why: GitHub issue 3 (two players) and the owner (4 Nov 2026): enemies sometimes sit at 0 speed, seen at the start of M01's
 Donau fight, not every run. The owner's scope: **declining a fight the NPC judges too tough is expected game behaviour; the
@@ -39,7 +40,7 @@ found: `hooks` are client side or pass-through observers; the Evade guard instal
    kept every NPC busy with the player; the test wants a looting NPC free of targets beside oversize loot.
 3. **Frame rate:** the project's own data shows step-dependent physics (`test-efficiency.md`); untested for stalls.
 
-**The stall recorder is built** (`controller\src\impl\stallrec.*`, rule `stallwatch.h`, setting `npc_stall_log`, on by default,
+**The stall recorder is built** (`modules\controller\src\impl\stallrec.*`, rule `stallwatch.h`, setting `npc_stall_log`, on by default,
 read only): a hostile within 6 km that stays within 2 m for 3 s of game time gets a record in `EXE\FLvibed_npc_stalls.log`: its
 running behaviour, job, target, neighbours with their behaviours, loot within 2.5 km, objective, device, fps, then how it
 ended. It tells the leads apart: `op=loot` is lead 2, a formation wingman with no running behaviour lead 1. Proven on a live
@@ -63,7 +64,7 @@ NPC by `stalls hold` (the sample held, not the ship: a brain overrides `ai` dire
 
 ## Why fights can still feel easy with FLvibed (nothing here is a stall)
 Pad only: `aim_mode` 1 snaps the reticle onto the selected hostile's lead anywhere on screen; a test bot was on target 25-28 s
-of 45 with it, 6 with stick and assists, 1 with neither (`..\..\controller\docs\FLIGHT_AIM.md`; no human data). Both devices:
+of 45 with it, 6 with stick and assists, 1 with neither (`..\..\modules\controller\docs\FLIGHT_AIM.md`; no human data). Both devices:
 HUD 2's cues and alerts. Footage (2020 owner, runner, autopilot runs; M01a, M02): levels, hull and shields read the same,
 damage intake about equal, no NPC holding still in any era, but no pad play is recorded and no run compares mod on and off.
 

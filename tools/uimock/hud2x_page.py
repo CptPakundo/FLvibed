@@ -1,4 +1,4 @@
-"""hud2x_page.py - the owner's before / after page for Extended HUD 2 (docs\\UI_HUD2_EXTENDED.md 11).
+"""hud2x_page.py - the owner's before / after page for Extended HUD 2 (modules\\hud\\docs\\UI_HUD2_EXTENDED.md 11).
 
     research\\tools\\ocr\\.venv\\Scripts\\python.exe -I tools\\uimock\\hud2x_page.py [frames dir]
 
@@ -198,7 +198,7 @@ footer { color: var(--dim); font-size: 13px; display: grid; gap: 6px; }
   <p>How it was made: three research agents (modern and remastered menus, every screen's controls, what can be restyled
   in game), mock-ups on layered 4K captures with two independent critiques and three iterations, six build tracks on
   separate files, then a verification of the release build across the display matrix. The full record:
-  <code>docs\UI_HUD2_EXTENDED.md</code>.</p>
+  <code>modules\hud\docs\UI_HUD2_EXTENDED.md</code>.</p>
   <p>Fixed on the way for every player: the repair window, the docked nav map and the quit confirmation are pad screens
   of their own; the room hover and the arrow come back when you switch to keyboard and mouse; the subtitles step aside
   under the menus; and the pad's menu navigation no longer costs 2.5-7 ms per frame (now under 0.1 ms on every screen).</p>

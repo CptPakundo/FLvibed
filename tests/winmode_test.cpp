@@ -1,6 +1,6 @@
-// Borderless windowed (core\winmode_rules.h): who provides it, what a display setup becomes while FLvibed does, the
+// Borderless windowed (modules\display\src\winmode_rules.h): who provides it, what a display setup becomes while FLvibed does, the
 // Alt+Enter toggle (FLUF flips a copy of the applied settings) and where the window goes.
-#include "winmode_rules.h"
+#include "../modules/display/src/winmode_rules.h"
 
 #include "test.h"
 

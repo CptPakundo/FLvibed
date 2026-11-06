@@ -1,4 +1,4 @@
-// FLvibed - the HUD bus: the runtime layout of FLvibed's own flight HUD (HUD 2, docs\UI_HUD2.md), shared between the
+// FLvibed - the HUD bus: the runtime layout of FLvibed's own flight HUD (HUD 2, modules\hud\docs\UI_HUD2.md), shared between the
 // module logics so they keep clear of each other. The controller logic draws HUD 2 and publishes, once per frame, whether
 // it shows (and how far it has faded in) and the screen rectangles its parts take; the subtitles logic reads them to place
 // its dialogue panel (with the comm portrait), its chat column, the objective banner and the off-screen arrows' keep-outs,
@@ -24,9 +24,9 @@ struct HudLayout
     u8 kbm;        // 1 when HUD 2 is in its keyboard-and-mouse form (keycaps instead of pad glyphs)
     u8 alerts;     // 1 while HUD 2's alert cards are on (hud_alerts): the subtitles' Neural Net column leaves out the lines
                    // HUD 2 shows as alerts (shield failed / destroyed, hull breach, incoming missile / torpedo, cruise
-                   // disrupted) - one place per event (25 Oct 2026; was reserved: older publishers write 0)
+                   // disrupted) - one place per event (was reserved: older publishers write 0)
     u8 feed;       // 1 with active 0: an in-flight cutscene while HUD 2 is the HUD: the comm feed stays, chatFree says where
-                   // (4 Nov 2026; was reserved: older publishers write 0)
+                   // (was reserved: older publishers write 0)
     float alpha;   // 0..1: HUD 2's fade (the transition between the game's HUD and HUD 2 takes a few frames)
     float scale;   // hud_scale / 100
     HudRect nav;      // top-left: objective, maneuver chip, NeuroNet chip
@@ -48,7 +48,7 @@ struct HudSubtitles
     HudRect chat;     // the chat column as placed; empty = none
 };
 
-// The pad's prompt lane on docked screens (bus version 2, 25 Oct 2026; docs\UI_HUD2_EXTENDED.md 13): the controller logic
+// The pad's prompt lane on docked screens (bus version 2, 25 Oct 2026; modules\hud\docs\UI_HUD2_EXTENDED.md 13): the controller logic
 // publishes, every frame its prompt bar has prompts on a docked non-modal screen while the pad is the device, the
 // rectangle its pills take at the bottom (the row's band, or the column right of a window) - whether the pills show or
 // have faded (stable per screen). The subtitles keep their lowest row above `rect.y0`. Stale (no publish within two of the
@@ -63,7 +63,7 @@ struct HudLane
     HudRect rect;  // the pills' area (fractions of the back buffer)
 };
 
-// The open windows' floor on a docked screen (bus version 3, 25 Oct 2026; docs\UI_HUD2_EXTENDED.md 13 rule 5): the
+// The open windows' floor on a docked screen (bus version 3, 25 Oct 2026; modules\hud\docs\UI_HUD2_EXTENDED.md 13 rule 5): the
 // controller logic publishes, every frame its prompt bar runs while the pad is the device, the lowest bottom edge of the
 // keep-outs uiskin's geometry pass collected (every open window's plates - modal ones too -, the room bar, its sub-row, the
 // NeuroNet box, the tabs) per vertical slice of the screen: slice i covers x in [i / count, (i + 1) / count) of W. The
@@ -126,7 +126,7 @@ struct HudFluf
     char status[112]; // one line for the logs (what was detected, what is adapted, why not)
 };
 
-// Bus version 5 (26 Oct 2026, the owner's attended run): what each window of HudFluf::win is, by index - its ImGui name
+// Bus version 5 (the owner's attended run): what each window of HudFluf::win is, by index - its ImGui name
 // (logged: which window a palette command opened), whether it takes the player's input (FLUF's click rule and not
 // ImGuiWindowFlags_NoMouseInputs: a pass-through overlay does not own the pad), whether ImGui's keyboard focus is on it
 // and where its title bar's close button is (fractions of the back buffer; -1 = none: no title bar, no close button,

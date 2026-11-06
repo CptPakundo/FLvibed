@@ -1,6 +1,6 @@
-// The game's own AI on the player ship (shared by every module, compiled into each logic part).
+// The game's own AI on the player ship (one instance for the whole logic).
 // Three layers, all the game's code (docs\FREELANCER_RE.md "AI on the player ship"; research:
-// controller\docs\NPC_AI_RESEARCH.md):
+// docs\research\player-ship-ai.md):
 //  - Maneuvers: the player's maneuver dispatcher (what the maneuver bar and keys use), incl. Trail, Face, Strafe.
 //  - Directives: server.dll pub::AI::SubmitDirective with the game's directive ops (goto, follow, dock, idle, ...),
 //    every parameter settable.
@@ -243,7 +243,7 @@ bool LoadPilot(const std::string& pilot, Personality& out, std::string* err);
 bool CopyNpcPersonality(u32 npc, Personality& out);
 // The [Pilot]'s fields laid over an existing personality (e.g. a live NPC's): members the field table does not know
 // keep the base's values. A personality from the default constructor + fields alone leaves internal members unset
-// and spawned NPCs then never engage (18 Oct 2026); a live NPC's base fixes that.
+// and spawned NPCs then never engage; a live NPC's base fixes that.
 bool LoadPilotOnto(const std::string& pilot, Personality& inout, std::string* err);
 // One block of the pilot files (e.g. the job "basic_job_no_formation") over a personality.
 bool ApplyBlock(const std::string& block, Personality& inout, std::string* err);

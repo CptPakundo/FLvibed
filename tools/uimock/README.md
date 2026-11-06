@@ -67,7 +67,7 @@ folder, regenerate `docs\UI_SPEC.json` and `core\ui_meta.h`, commit the parts an
 through `specpatch.py` or an exact text replacement: a `json.dump` with sorted keys reorders `hud2_presets`, whose order
 `ui_meta.py` reads (5 Nov 2026: 13,000 changed lines and a stale `core\ui_meta.h`). Run `tools\ui_meta.py --check` before committing.
 
-**Spec-only blocks (31 Oct 2026):** `UI_SPEC.json` `hud2_presets` (the HUD 2 layout presets, `docs\UI_HUD2_PRESETS.md` 6
+**Spec-only blocks (31 Oct 2026):** `UI_SPEC.json` `hud2_presets` (the HUD 2 layout presets, `modules\hud\docs\UI_HUD2_PRESETS.md` 6
 step 1) is data the page does not render; it comes from `patches\2026-10-31_hud2_presets.json` through specpatch's `top`
 op (spec half only; the page's `applySpec` keeps unknown top-level keys and saves them back), into the artifact's `ui/spec`
 the same way, and `tools\ui_meta.py` refuses a spec without it (`core\ui_meta.h` `uimeta::hud2p`, read by the HUD 2 lint).
@@ -85,7 +85,7 @@ captures made with the pad layer off (debug `padhud off`); `hudmock_variants.py`
 directions A / B / C in two situations plus a glyph style sheet into `research\evidence\controller_ui\hud_redesign\`
 (the proposal page: `page\`, artifact `Mh1UW7KC8QtSEGFNKa23h6`). Run with the Python venv (`-I`). A proposal the owner
 accepts goes into the living mock-up and the spec as any UI change does.
-`hud2.py` + `hud2_states.py` (HUD 2, `docs\UI_HUD2.md`): the ground-up pad HUD's component kit (segmented bars and
+`hud2.py` + `hud2_states.py` (HUD 2, `modules\hud\docs\UI_HUD2.md`): the ground-up pad HUD's component kit (segmented bars and
 arcs, the game's flat icons / brackets / arrow / lead art from `hud_redesign\fl_assets\`, plates, outlined text) and its
 states (combat, travel, cruise, dock, lane) on frames captured with the whole HUD hidden; renders in
 `hud_redesign\hud2\`, the page in `hud_redesign\hud2_page\` (artifact `D6XnaBvWLKHARfdvTQuj3Y`).

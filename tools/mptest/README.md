@@ -37,7 +37,7 @@ registry. A missing set makes the game create a new key on its first need (the a
   way on 28 Oct 2026; removed, it was new and empty).
 - `flmplaunch.cpp` -> `build\mptest\flmplaunch.exe`: starts FLServer suspended, queues `LoadLibraryA(flmptest.dll)` on
   its main thread (runs once the loader mapped the static imports, before the program's entry point), resumes it hidden.
-- `mptest.ps1` (dot-source after `controller\tools\flctl.ps1`, PowerShell tool only; `$env:FLVIBED_INSTANCE` set):
+- `mptest.ps1` (dot-source after `tools\harness\flctl.ps1`, PowerShell tool only; `$env:FLVIBED_INSTANCE` set):
   `Initialize-FLMpInstance`, `Start-FLMpServer [-Account <set>]` (fills the first-run "Server Configuration" dialog
   through its controls: name, LAN only, new players allowed), `Stop-FLMpServer`, `Get-FLMpServerWindows`,
   `Connect-FLMpServer [-Character <name>]` (the client's way in, natively: MULTIPLAYER -> LAN -> account screen ->
@@ -47,7 +47,7 @@ registry. A missing set makes the game create a new key on its first need (the a
 
 ```powershell
 $env:FLVIBED_INSTANCE = '21'
-. .\controller\tools\flctl.ps1; . .\tools\mptest\mptest.ps1
+. .\tools\harness\flctl.ps1; . .\tools\mptest\mptest.ps1
 Start-FLMpServer
 .\tools\deploy.ps1 -Instance 21 -Background   # the client, muted and in the background as every test
 Connect-FLMpServer
@@ -79,7 +79,7 @@ with its own account set (default `client<n>`: one MP identity per instance - tw
 against instance n.
 
 ```powershell
-. .\controller\tools\flctl.ps1; . .\tools\mptest\mptest.ps1
+. .\tools\harness\flctl.ps1; . .\tools\mptest\mptest.ps1
 Invoke-FLMpAt 21 { Reset-FLMpServerConfig }      # only to change the server's options: its next start asks again
 Start-FLMpSession -Server 21 -Clients 21,22 -PvP # server (+ "Allow Players to Harm Other Players"), clients, connected
 & .\tools\mptest\pvp.ps1 -Clients 21,22 -Rounds 4 # autopilot-led PvP rounds (below)

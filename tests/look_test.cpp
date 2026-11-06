@@ -1,7 +1,7 @@
-// LOOK L0 (controller\docs\LOOK_PLAN.md): the script readers it adds to core\game\mission.cpp - Goal kind 4 (the mission's
+// LOOK L0 (modules\autopilot\docs\LOOK_PLAN.md): the script readers it adds to core\game\mission.cpp - Goal kind 4 (the mission's
 // ships destroyed, by label or nickname, only through a reader's `look` argument), the look extras (health gate,
 // Act_Invulnerable, the chain's lane ride, the lead's order), ChainGoals, ShipIdsOf, the tethers - over a synthetic script;
-// then the pure verdict (controller\src\impl\lookahead.h): kill an armed hostile live ship; none for a friendly /
+// then the pure verdict (modules\autopilot\src\lookahead.h): kill an armed hostile live ship; none for a friendly /
 // unspawned / untargetable / pre-hostile ship or a nag breach; the least-cost fly goal (the ring trigger when cheaper, the
 // lane when faster); the leash and PSN blockers; the log key; then the install's m02.ini ("Follow Ashcroft" -> the kill
 // candidate Ashcroft, his health gate and Act_Invulnerable), m05.ini (player_near_br04_01 and dst_to_br04_tradelane with
@@ -13,7 +13,7 @@
 #include "game/mission.h"
 #include "game/mission_live.h"
 
-#include "../controller/src/impl/lookahead.h"
+#include "../modules/autopilot/src/lookahead.h"
 
 #include <cstring>
 

@@ -239,7 +239,7 @@ def main() -> None:
             "# seconds from the mix's start. Spoken lines only. Built by asr/mix_align.py (shooting script lines matched to\n"
             "# Nemotron-3.5-Transcribe's words and speaker tags), force-aligned by aligner/align_words.py (voice \"mix\");\n"
             "# a note starting [check] needs a listen; reviewed = who reviewed it in the review tool (mix_review.py), and\n"
-            "# when. The game shows them when the mix plays (subtitles/src/impl/mixcues.cpp).\n")
+            "# when. The game shows them when the mix plays (modules/subtitles/src/impl/mixcues.cpp).\n")
     body = "\t".join(HEADER) + "\n" + "".join(
         f"{r[0]}\t{r[1]:.2f}\t{r[2]:.2f}\t{r[3]}\t{r[4]}\t{r[5]}\t\n" for r in rows)
     atomic_write(a.out, head + body)

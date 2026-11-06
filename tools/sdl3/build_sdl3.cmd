@@ -1,10 +1,11 @@
 @echo off
 rem SDL3 for FLvibed's controller host (WORK_QUEUE Q5; the opt-in gamepad backend `pad_backend` 1,
-rem controller\src\host\sdlpad.cpp). Usage: build_sdl3.cmd <version>   - called by build.cmd (dev, release) with the
+rem modules\controller\src\host\sdlpad.cpp). Usage: build_sdl3.cmd <version>   - called by build.cmd (dev, release) with the
 rem Visual Studio x86 environment already set (VSPATH, vcvarsall x86); never needed by hand.
 rem Builds the official release source (pinned: tools\sdl3\fetch_sdl3.ps1 puts it into research\repos\SDL3-<version>\)
 rem ONCE per version and recipe into build\sdl3\<version>\: lib\SDL3-static.lib + include\SDL3\ (the public headers),
-rem stamp.txt = what it was built with; a matching stamp = cached, nothing runs. Nothing is installed anywhere.
+rem stamp.txt = what it was built with, the toolset included (an old compiler's library must not survive a change of
+rem build.cmd's pin); a matching stamp = cached, nothing runs. Nothing is installed anywhere.
 rem The options are the 29 Oct 2026 measurement's (research\evidence\sdl3\build_results.md, build_sdl_size.cmd):
 rem MinSizeRel (/O1), x86, the static C runtime /MT, no SDL DLL, audio / video / gpu / render / camera / power / sensor /
 rem dialog / tray / offscreen off, joystick + HIDAPI on, haptic off. A change of options bumps RECIPE (a rebuild).
@@ -19,7 +20,7 @@ set RECIPE=1
 set "ROOT=%~dp0..\.."
 set "SRC=%ROOT%\research\repos\SDL3-%VER%\SDL3-%VER%"
 set "OUT=%ROOT%\build\sdl3\%VER%"
-set "STAMP=SDL3 %VER% recipe %RECIPE%: MinSizeRel x86 MT static, gamepad only"
+set "STAMP=SDL3 %VER% recipe %RECIPE%: MinSizeRel x86 MT static, gamepad only, MSVC %VCToolsVersion%"
 if exist "%OUT%\lib\SDL3-static.lib" if exist "%OUT%\include\SDL3\SDL_gamepad.h" (
   findstr /x /c:"%STAMP%" "%OUT%\stamp.txt" >nul 2>nul && exit /b 0
 )

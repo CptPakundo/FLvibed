@@ -1,6 +1,6 @@
 # The player-facing UI: the autopilot button and the FLvibed options page (design, 25 Oct 2026)
 
-Status: **design for the owner's decisions (section 5); nothing built.** The brief (user, 25 Oct 2026): (1) a new
+Status: decided and built 25 Oct 2026; how: `UI_BUILD.md`. The brief (user, 25 Oct 2026): (1) a new
 maneuver-bar button that toggles the autopilot, with a default key the game does not bind; (2) options in both the main
 menu and the in-game menu for what the mod adds or changes (subtitles and how they show, autopilot configurations,
 sensible defaults, anything else the mod changes), after a look at the whole project and at how well-regarded games do
@@ -30,7 +30,7 @@ registry (`core\settings.h`, `docs\SETTINGS.md`). Mock-ups over the real 4K scre
 6. **Subtitles are previewed live** on their tab (XAG 104; Forza, Spider-Man): a sample line through the display's own
    code, so what the player sees is what they get.
 7. **Pad-ready from the start**: the same page is walked by the D-pad (rows), LB / RB (tabs), A (toggle / open), B (back),
-   left / right (values); it is the first screen of the controller-first UI (`controller\docs\TASK_GLYPHS_HUD.md`),
+   left / right (values); it is the first screen of the controller-first UI (`modules\controller\docs\TASK_GLYPHS_HUD.md`),
    whose glyph and prompt layer land on it later. Native game logic for the entry (the game's own button), own drawing
    for the page (the proven renderer); resolution, aspect and DPI by the UI camera, as the subtitles do.
 8. **Fails closed** (CLAUDE.md): an unresolved symbol leaves the game's screen as it is; the settings stay reachable
@@ -38,7 +38,7 @@ registry (`core\settings.h`, `docs\SETTINGS.md`). Mock-ups over the real 4K scre
 
 ## 2. The autopilot button on the maneuver bar
 **What the player sees.** A fifth button after Formation (`mock_maneuver_bar_autopilot.png`). A click toggles the
-Advanced Autopilot exactly as the pad's autopilot toggle does (View hold since 28 Oct 2026; LB + L3 before): with a target, the smart start (hostile -> fight, friendly ship -> escort,
+Advanced Autopilot exactly as the pad's autopilot toggle does (View hold since 28 Oct 2026; LB + LS click before): with a target, the smart start (hostile -> fight, friendly ship -> escort,
 dockable -> dock, else fly to); without one, the objective / auto mode; a click while it flies hands the ship back.
 While the autopilot flies the button is lit (the active maneuver's yellow); unlit otherwise; grey when the autopilot
 cannot start (the maneuvers are locked, a cutscene, the ship is docking). The game's "Auto hide maneuver bar" option
@@ -199,7 +199,7 @@ start; changes may come later, easier with the expanded UI in place").
 
 ## 5b. Decisions 11-20 and the standing order (25 Oct 2026, end of the design round)
 All 21 decisions are answered in the mock-up's Decisions view (`docs\UI_SPEC.json` carries them): the owner's
-calls through the session (LB picker / wheel, the R3 scheme, X hold turret view, Y hold weapon-group cycle, no "my
+calls through the session (LB picker / wheel, the RS click scheme, X hold turret view, Y hold weapon-group cycle, no "my
 attacker", the pad cursor everywhere, the HUD kept informative with badges and the button legend, ASSISTED = turret
 mode) and the suggested defaults for the rest (6b `pilot` advanced only; 12 hold View; 13 automatic switching with a
 lock; 14 the glyph families (Steam added 5 Nov 2026), confirm = bottom with a Nintendo swap; 17 the New Game prompt locked per save; 18
@@ -223,7 +223,7 @@ back into `docs\UI_SPEC.json` afterwards.
    the game's UI returns on a mouse move or a key; both devices always work; a sticky Input device setting locks it.
 2. **Everything interactable works on the pad**: every screen in the screen audit has a pad flow that ends in the game's
    own logic (native clicks, the hotspot records, the action dispatchers); nothing is cursor emulation.
-3. **Intuitive and ergonomic first**: the default preset borrows the strongest reflexes (RT fire, LT boost, R3 lock-on,
+3. **Intuitive and ergonomic first**: the default preset borrows the strongest reflexes (RT fire, LT boost, RS click lock-on,
    D-pad consumables, A context, B cancel), the most functions with the fewest presses, chords only for rare actions.
 4. **Glyphs for Xbox, PlayStation and Switch**, chosen by the connected pad (HID ids) and overridable; confirm positional
    with a Nintendo swap.
@@ -244,11 +244,11 @@ when present, Xbox for unknown pads. Settings: Button prompts Automatic / Xbox /
 bottom / right button. Art: Kenney Input Prompts 1.5a (CC0) in one style for all families; Elite paddles drawn by us.
 
 ### 6.4 The presets (decisions 11, 12; the whole table in the mock-up's Bindings view)
-**FREELANCER (default)**: RS steer (gimbal lock on the target), R3 tap = the object under the reticle (the screen
+**FREELANCER (default)**: RS steer (gimbal lock on the target), RS click tap = the object under the reticle (the screen
 centre with the reticle off), else the nearest enemy / tap again = the next of that kind / double tap = clear / hold =
 rear view (the owner's scheme, 25 Oct; the double tap costs the cycle a double-tap window - B when nothing is running is
 the fallback home for "clear");
-LS throttle lever + strafe; L3 engine kill; RT fire; LT afterburner (hold); LB tap the target picker / hold the
+LS throttle lever + strafe; LS click engine kill; RT fire; LT afterburner (hold); LB tap the target picker / hold the
 action wheel (scan cargo, weapon group, cruise disruptor, formation, comms, contact filter, autopilot goals, rear
 view; picked with the right stick, dead-zoned, the D-pad works too, the left stick keeps flying - the owner's calls of
 25 Oct: wheels belong on a bumper, scan cargo is contextual and fits the wheel, and Freelancer needs no "my attacker"
@@ -260,17 +260,17 @@ half a second = Advanced Autopilot on / off; Menu pause. **ACE** (arcade flight,
 steers (gimbal lock on the target), RS strafes, RT throttle up with afterburner at full pull, LT throttle down / brake
 with reverse at full pull (the lever persists, as Ace Combat's accelerate / decelerate), A guns, B missile / hold
 torpedo, Y the smart target (under the reticle else nearest, again next, double clear - Ace Combat's change-target
-button), X context / hold turret view, RB next enemy / hold previous, LB tap picker / hold the action wheel, R3
-cruise / hold rear view, L3 engine kill, D-pad consumables as above, View hub / hold autopilot, Menu pause. Favours one
+button), X context / hold turret view, RB next enemy / hold previous, LB tap picker / hold the action wheel, RS click
+cruise / hold rear view, LS click engine kill, D-pad consumables as above, View hub / hold autopilot, Menu pause. Favours one
 thumb flying and aiming with the other free for the weapons; sets aside the finger throttle lever and the D-pad's
 cheapness (the left thumb steers, so a nanobot mid-fight costs steering). **ASSISTED**: the autopilot flies; RS aims, RT guns, RB missile / hold torpedo,
 A context / accept, B hand back, Y target / hold picker, X goal panel, D-pad consumables. Shared situations: menus
-(D-pad / LS focus, A accept, B back / hold close all, X context, Y secondary, LB / RB tabs, LT / RT pages, RS scroll, R3
-reset view, L3 pad cursor), bases (LB / RB rooms, D-pad left / right characters, A talk, Y launch or job board, X
+(D-pad / LS focus, A accept, B back / hold close all, X context, Y secondary, LB / RB tabs, LT / RT pages, RS scroll, RS click
+reset view, LS click pad cursor), bases (LB / RB rooms, D-pad left / right characters, A talk, Y launch or job board, X
 news, LS cursor), dealers (LB / RB side, D-pad rows, LT / RT quantity, A held buy / sell, LS click mount, Y all, X filter), nav map
 (LS cursor, D-pad snap, A select / again waypoint, X remove / hold clear, Y travel, LT / RT zoom, LB / RB system /
 universe, View destination list), text entry (an own on-screen keyboard; A type, X space, B backspace, Menu done).
-Playtest before freezing: afterburner on LT vs LB vs L3, cruise on Y vs L3, engine kill as a toggle, the D-pad reach
+Playtest before freezing: afterburner on LT vs LB vs LS click, cruise on Y vs LS click, engine kill as a toggle, the D-pad reach
 while steering, the wheel's selection input.
 **Weapon groups** (the owner's question, 25 Oct: some want it simple, some granular): a tiered setting
 `weapon_groups`. **SIMPLE (default)**: RT fires the active group (the game's default group), group switching in the
@@ -299,7 +299,7 @@ HAND BACK, GOALS, AUTOPILOT OFF held), stepping aside while a panel has its own 
 line** under the maneuver bar while the autopilot flies, cruise charges or turret view is on; **world prompts** only
 when something unusual is possible now; the **target picker** on LB tap, the **action wheel** on LB hold, the **goal
 panel** on X while the autopilot flies, the **speedrun timer** top right under the NeuroNet box in speedrun mode. The prompt bar is contextual by default
-(new screens and pending decisions), bottom right, confirm first, at most five glyphs. The **pad cursor is on
+(every window, menu and modal for as long as it is open; a base room when new or a decision is pending), bottom right, confirm first, at most five glyphs. The **pad cursor is on
 everywhere by default** (the owner, 25 Oct: rooms, the bar's characters, menus, dealers, the map), coexisting with
 focus navigation on every screen: the left stick shows it and the game reacts as to the mouse (a character lights up
 with its talk cursor, a button highlights, a row focuses), it slows over and pulls toward targets, a D-pad or bumper

@@ -1,13 +1,15 @@
 # Controller input backends and haptics: SDL3, Windows.Gaming.Input / GameInput, DualSense, rumble design
 Status: current
-Checked against: FLvibed fc379a3 (31 Oct 2026 ~04:00, short form: 1 watched-path commit: a4571892 `controller.cpp` +3 lines (autopilot::Stop on a player death); no gamepad / glyph / haptics change; no effect)
-Dirty paths at check: another session's uncommitted `HANDOFF.txt`, `controller/src/host/main.cpp`, `controller/src/impl/autopilot_{combat,target,travel}.cpp`, `controller/src/impl/livesplit.cpp`, `controller/src/impl/uiskin.cpp`, `core/hook.{cpp,h}`, `subtitles/src/host/main.cpp`, `subtitles/src/impl/{data,impl,movie}.cpp` (not judged) (31 Oct 2026 ~04:00)
-Watch: controller/src/impl/gamepad.*, controller/src/impl/glyphs.*, controller/src/impl/controller.cpp, controller/src/impl/uikit.cpp, controller/docs/BINDINGS.md, core/pre.h
+Checked against: FLvibed 3c9c1390 (6 Nov 2026, short form: 14 watched-path commits: the module split P0-P11e (moves, comments, map rows), the controller.cpp split; c4652165 device-switch fixes; `pad_backend` ships as a player row (README: not tested with real PlayStation or Switch pads); U30-U32 unchanged)
+Dirty paths at check: another session's uncommitted the private work queue, `tools/uimock/options.py` (not judged); 950b25cc, 4a270d9e and 3c9c1390 landed during the round, read
+Watch: modules/controller/src/impl/gamepad.*, core/ui/glyphs.*, modules/controller/src/impl/controller*.cpp, core/ui/uikit.cpp, modules/controller/docs/BINDINGS.md, core/pre.h
 Evidence: none saved (web pages read 29 Oct 2026)
 Sources: a research agent's report (web + repo greps); the coordinating session checked SDL3's Windows support on
 https://wiki.libsdl.org/SDL3/README-windows and the repo facts. Tags: [page], [file], [assumed]
 
 ## What it means for FLvibed
+
+*6 Nov 2026 (3c9c1390, short form):* no backend or haptics rule changed. `pad_backend` left the developer keys with 0.2.0: an options row, `docs\SETTINGS.md` and the README, marked experimental and not tested on real PlayStation or Switch pads (U61, adopted for 0.3.5 by 4cab3e0f: SDL3 falls back when no XInput pad is seen; since 9c2bd746 native first: SDL reads such a pad whether or not XInput answers). 0.3.0 and the fixes since were not run on a real pad (HANDOFF), so J8 stands.
 
 *30 Oct 2026 ~11:50 (16df8bd, short form):* the Q5 slice 3 line below checked against the code (1893428,
 `haptics_rules.h`: kEffects, 4 voices, the maximum per motor, the fatigue limiter over a ~3 s busy share above 0.5 sparing
@@ -20,7 +22,7 @@ or haptics statement.
 the mixer (max per motor, ducking, rate limits, 4 voices, a fatigue limiter at about half the time busy), the silence
 rules (the one focus gate, the pad as the device in use, flight only for the world, the game's own pausing boxes as the
 one exception to "silent while paused"), a renderer of the two motors over both backends; first effects hits by weight,
-shield failure, the hand-back (unchanged), a confirm tick (`controller\docs\HUD_CUES.md` "Haptics"). Section 4's table
+shield failure, the hand-back (unchanged), a confirm tick (`modules\hud\docs\HUD_CUES.md` "Haptics"). Section 4's table
 beyond those, the trigger / DualSense / waveform renderers and the per-category sliders stay open.
 *30 Oct 2026 (aafe41d, short form):* **U29 slice 1 built** (baae629, WORK_QUEUE Q5): SDL3 3.4.18 MinSizeRel static
 in the controller host on its own thread, opt-in `pad_backend` 1 (default 0 = XInput, unchanged), the hints this note
@@ -33,7 +35,7 @@ rumble and effects, the command stream the tests above ask for. U30's engine and
 trigger rumble / effects yet. Open from U29: a real pad on `pad_backend` 1 (J8), Steam Input / DS4Windows detection.
 *29 Oct 2026 (04b4c05, new; the owner: actually support every specified controller, not only XInput, with AAA-grade
 contextual rumble, trigger rumble and DualSense waveform haptics):* today input is **XInput only**
-(`controller\src\impl\gamepad.cpp`, one pad slot - since 30 Oct 2026 its scan in `pad_slots.h` and testable through the device-layer test pads, IDEAS T36 / WORK_QUEUE Q2); RawInput lists devices only to pick glyph families (`glyphs.cpp`
+(`modules\controller\src\impl\gamepad.cpp`, one pad slot - since 30 Oct 2026 its scan in `pad_slots.h` and testable through the device-layer test pads, IDEAS T36 / WORK_QUEUE Q2); RawInput lists devices only to pick glyph families (`glyphs.cpp`
 40-85); a DualSense, DualShock 4 or Switch Pro pad works only through Steam Input / DS4Windows. Rumble is one two-motor
 pulse with **one caller**, the autopilot's hand-back (`controller.cpp` 1348); the `rumble` setting's help promises
 "hits" and "a confirmation request" (`controller.cpp` 2765) that nothing sends - the help overclaims (U30; fixed 30 Oct 2026, WORK_QUEUE Q1: the help names the hand-back pulse only). *Also 30 Oct 2026 (08a99a7):* the pad never vibrates with the

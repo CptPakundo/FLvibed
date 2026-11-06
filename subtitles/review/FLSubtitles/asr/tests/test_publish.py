@@ -1,4 +1,4 @@
-"""The publish copy rule (<root>/CLAUDE.md "Subtitle data"): <root>/subtitles/data/{subtitles,movies,word_times}.tsv
+"""The publish copy rule (<root>/CLAUDE.md "Subtitle data"): <root>/modules/subtitles/data/{subtitles,movies,word_times}.tsv
 are byte-identical copies of the review products in FLSubtitles/data/, written only by tools/publish.ps1 (the
 pre-commit hook). Checked in the last commit (git blob ids) and in the working tree (a hand edit of a copy)."""
 import shutil
@@ -10,7 +10,7 @@ import fixture
 
 PRODUCTS = ("subtitles.tsv", "movies.tsv", "word_times.tsv")
 SRC = "subtitles/review/FLSubtitles/data/"
-DST = "subtitles/data/"
+DST = "modules/subtitles/data/"
 
 
 def git(*args):

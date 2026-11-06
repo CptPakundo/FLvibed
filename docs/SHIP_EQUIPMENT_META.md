@@ -1,7 +1,7 @@
 # Ships and equipment: the meta from the game's own data
 
 What a player should fly and fit at each stage of the story to win fights fast, derived from the installed game data
-(HD Edition 0.7.1) - for the autopilot's future purchase decisions (user, 18 Oct 2026: "know the meta-game of efficient
+(HD Edition 0.7.1) - knowledge for the autopilot's purchase decisions (user, 18 Oct 2026: "know the meta-game of efficient
 success"). The numbers come from `tools\flmeta.js` (reads the data, no game run); the full tables are generated into
 `docs\SHIP_EQUIPMENT_TABLES.md` (`node tools\flmeta.js --md docs\SHIP_EQUIPMENT_TABLES.md --json
 research\meta\meta.json`). The JSON has every ship, gun, shield, thruster, NPC and the computed loadouts for code to use.

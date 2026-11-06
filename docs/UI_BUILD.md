@@ -2,13 +2,13 @@
 
 The build of `UI_PLAN.md` / `UI_SPEC.json` (the decided design; nothing of it existed before this). This document
 fixes what the parallel tracks share, so they cannot drift: the plumbing between the parts, who owns which files, the
-rules that bind every track, how each verifies. Status lives in `..\HANDOFF.txt`; design in `UI_PLAN.md`; the spec in
+rules that bind every track, how each verifies. Status lives in the private handoff; design in `UI_PLAN.md`; the spec in
 `UI_SPEC.json` (mirrored by the mock-up, `..\tools\uimock\README.md`). Everything here obeys `..\CLAUDE.md` (the
 guiding principles, no raw addresses, hooks chain, fails closed, the pre-change checklist) and `TESTING.md`.
 
 ## 1. Architecture in one picture
 ```
- FLvibed.dll (plain, global namespace)                 controller logic (flv_controller_impl)
+ FLvibed.dll (plain, global namespace)                 the logic (core\ui\ and the modules)
  ┌──────────────────────────────────┐                  ┌──────────────────────────────────────────────┐
  │ core\flvibed.cpp  module switches│                  │ device.*   input-device service (pad / K&M)  │
  │ core\settings_bus.cpp  THE BUS   │◄── HostApi ─────►│ glyphs.*   glyph atlas, 4 families (own art) │
@@ -43,7 +43,7 @@ guiding principles, no raw addresses, hooks chain, fails closed, the pre-change 
 - **Drawing**: everything FLvibed draws goes through `core\game\render.*` (D3D8 text / box / sprite, survives Reset),
   placed through the UI camera (`ui::Project`, `render::ScreenSize`) so every resolution, aspect and DPI works as the
   subtitles' panels do; sizes as fractions of the screen height; fonts the game's own (`DATA\FONTS`, loaded FR_PRIVATE
-  as `subtitles\src\impl\display.cpp` does - move that loader into `core\game\` so both modules share it). The HUD panel
+  as `modules\subtitles\src\impl\display.cpp` does - move that loader into `core\game\` so both modules share it). The HUD panel
   look (`display.cpp HudPanel`: base (13, 11, 26), frame line (118, 151, 180), bevel, chamfered corners, the scanline)
   becomes `core\game\uidraw.*` for the kit.
 - **Input in the page and the pad screens**: pad through `Gamepad` (exists), keyboard through `OnRawKey` (host),
@@ -58,9 +58,9 @@ guiding principles, no raw addresses, hooks chain, fails closed, the pre-change 
 ## 2. Tracks and ownership (parallel agents share this checkout: disjoint files, or disjoint blocks)
 | Track | Owns (edits only these) | Delivers |
 |---|---|---|
-| **HOST** | `core\settings_bus.cpp` (new), `core\flvibed.cpp` (register [Modules]), `core\flexe.h` (every new symbol, in one block "UI build"), `controller\src\host\*`, `subtitles\src\host\*` (GetSettingsBus only), `controller\src\impl\barbutton.*` (new: the bar button's icon + state from Active()), `tools\mk3db.py` (new), `docs\FREELANCER_RE.md` (new facts), `research\` evidence | The bus; HostApi v18 / ImplApi v3 implemented in the host; the bar button (chained ManeuverLayout observer, click routed, lit from Active(), key K); the Options-screen page button + page switch; the pause menu's sixth button; `LastRealKeyTick`, `RealMouseDown` |
-| **PAGE** | `tools\ui_meta.py` (new), `core\ui_meta.h` (generated), `core\game\uidraw.*` + `core\game\gamefont.*` (new, moved from display.cpp), `controller\src\impl\uikit.*`, `options_page.*` (new), the registry blocks: `controller.cpp` kOptions + Options struct fields, `autopilot_settings.cpp` kDefs (+ `knowledge` as an Int row), `subtitles\src\impl\display.cpp` kDefs / `display.h` Settings (+ speaker_colors, movie_*), `subtitles\src\impl\movie.*` (the movie keys' effect), `subtitles\src\impl\impl.cpp` (bus registration), `controller\src\impl\impl.cpp` (ImplApi v3 table, bus registration), `debug.cpp` (`ui ...` commands), `tools\settings_table.ps1` + `docs\SETTINGS.md` (new keys), `docs\UI_SPEC.json` only through the mock-up order | The five tabs with every row of the spec, live apply, DEFAULT / CANCEL, Show advanced, the subtitles preview line, mouse + keyboard + pad; opened from the host's page switch and from the pause button, and by debug `ui options` anywhere |
-| **HUD** | `controller\src\impl\device.*`, `glyphs.*`, `padhud.*`, `presets.*` (new), `controller.cpp` outside the kOptions block (UpdateSpace -> the preset dispatcher, OnFrame device service, OnRenderOverlay -> padhud), `gamepad.*` (rumble scale, HID ids), `fl.*` (turret / rear view / weapon-group commands as needed), `controller\docs\BINDINGS.md` (superseded parts), `docs\kb` facts | The input-device service; the glyph atlas; badges on the HUD's controls by name, the contextual legend, the autopilot status line, the world prompt; the FREELANCER / ACE / ASSISTED presets with tap / hold / double-tap semantics, weapon-group modes, turret view, autopilot on hold View, holds-as-toggles, rumble, pause on disconnect |
+| **HOST** | `core\settings_bus.cpp` (new), `core\flvibed.cpp` (register [Modules]), `core\flexe.h` (every new symbol, in one block "UI build"), `modules\controller\src\host\*`, `modules\subtitles\src\host\*` (GetSettingsBus only), `modules\autopilot\src\barbutton.*` (new: the bar button's icon + state from Active()), `tools\mk3db.py` (new), `docs\FREELANCER_RE.md` (new facts), `research\` evidence | The bus; HostApi v18 / ImplApi v3 implemented in the host; the bar button (chained ManeuverLayout observer, click routed, lit from Active(), key K); the Options-screen page button + page switch; the pause menu's sixth button; `LastRealKeyTick`, `RealMouseDown` |
+| **PAGE** | `tools\ui_meta.py` (new), `core\ui_meta.h` (generated), `core\game\uidraw.*` + `core\game\gamefont.*` (new, moved from display.cpp), `core\ui\uikit.*`, `options_page.*` (new), the registry blocks: `controller.cpp` kOptions + Options struct fields, `autopilot_settings.cpp` kDefs (+ `knowledge` as an Int row), `modules\subtitles\src\impl\display.cpp` kDefs / `display.h` Settings (+ speaker_colors, movie_*), `modules\subtitles\src\impl\movie.*` (the movie keys' effect), `modules\subtitles\src\impl\impl.cpp` (bus registration), `modules\controller\src\impl\impl.cpp` (ImplApi v3 table, bus registration), `core\game\debugverbs.cpp` (`ui ...` commands), `tools\settings_table.ps1` + `docs\SETTINGS.md` (new keys), `docs\UI_SPEC.json` only through the mock-up order | The five tabs with every row of the spec, live apply, DEFAULT / CANCEL, Show advanced, the subtitles preview line, mouse + keyboard + pad; opened from the host's page switch and from the pause button, and by debug `ui options` anywhere |
+| **HUD** | `modules\controller\src\impl\device.*`, `padhud.*`, `core\ui\glyphs.*`, `core\ui\presets.*` (new), `controller.cpp` outside the kOptions block (UpdateSpace -> the preset dispatcher, OnFrame device service, OnRenderOverlay -> padhud), `gamepad.*` (rumble scale, HID ids), `core\game\fl.*` (turret / rear view / weapon-group commands as needed), `modules\controller\docs\BINDINGS.md` (superseded parts), `docs\kb` facts | The input-device service; the glyph atlas; badges on the HUD's controls by name, the contextual legend, the autopilot status line, the world prompt; the FREELANCER / ACE / ASSISTED presets with tap / hold / double-tap semantics, weapon-group modes, turret view, autopilot on hold View, holds-as-toggles, rumble, pause on disconnect |
 | **Phase D screens** (after PAGE's kit and HUD's device + glyphs land) | one agent per group: flight modals (picker, wheel, goal panel), bases + dealers + nav map, menus + OSK + New Game + LiveSplit + timer | `UI_SPEC.json` screens, state by state |
 
 Rules for sharing: a file outside your column is read-only for you - ask the orchestrator (your final report) for a
@@ -116,17 +116,17 @@ message in the repository's style, ending with `Co-Authored-By: Claude Fable 5.1
   720p; release build.
 
 ## 5. Status (end of the build session, 25 Oct 2026; from the tracks' commits and the code)
-**Later the same day: HUD 2** (`docs\UI_HUD2.md`) replaces the pad HUD layer below as the default flight HUD in pad
+**Later the same day: HUD 2** (`modules\hud\docs\UI_HUD2.md`) replaces the pad HUD layer below as the default flight HUD in pad
 mode (`hud_style`; the badge layer stays as the Classic HUD) - built by its own tracks (BUS, SPEC, HUD2, READERS, SUBS,
 KBM, POLISH) under the same rules as this document's; its status lives in UI_HUD2.md. **Then Extended HUD 2**
-(`docs\UI_HUD2_EXTENDED.md`, built 25 Oct 2026 while the owner was away, for the owner to keep or discard): HUD 2's skin over
+(`modules\hud\docs\UI_HUD2_EXTENDED.md`, built 25 Oct 2026 while the owner was away, for the owner to keep or discard): HUD 2's skin over
 the non-flight screens behind `ui_style` (default CLASSIC), `uiskin.*` / `uistrip.*` / `core\game\baseinfo.*`, HostApi
 v23; on the way the pad's repair / docked nav map / confirm screens and the pad navigation's per-frame probe cost (all
 pad players: 7 ms -> 0.07 ms per frame on a dealer).
 **Built (dev build, verified on test instances at 4K; 720p where noted):**
 - The settings bus (`core\settings_bus.cpp`; [Modules] / [Controller] / [Autopilot] / [Subtitles] registered), the UI
   metadata (`core\ui_meta.h` from `UI_SPEC.json`), the new registry rows, `docs\SETTINGS.md` regenerated.
-- The native buttons (HOST): the bar's fifth button with FLvibed's shipped mesh (`controller\data\autopilot.3db`), lit
+- The native buttons (HOST): the bar's fifth button with FLvibed's shipped mesh (`modules\autopilot\data\autopilot.3db`), lit
   from `Active()`, key K with the keymap refusal; the Options screen's FLVIBED page button in both menus with the
   host-side page switch; the pause menu's sixth button; the raw keys (`OnRawKey`, `LastRealKeyTick`), the physical
   mouse's buttons and motion.
@@ -175,3 +175,12 @@ pad players: 7 ms -> 0.07 ms per frame on a dealer).
   `patches\2026-10-25_built.json` to the source and to the artifact's `ui/spec` document (version 111; the page
   republished as version 14): a "Built" note per changed screen state and decision, the wheel without a pre-pick,
   `pad_cursor` default EVERYWHERE per decision 15 (registry default 2). Every later UI change goes the same way.)
+
+## 6. Verified, and not yet
+Verified with the virtual pad (harness): menus, bases and dialogs with the D-pad (auto-focus, lists, modal windows; up / down on a list's edge row scrolls
+lists with their own scroll bar natively) and a free cursor; save / load with the pad (double-tap A on a row); all flight bindings; the event log; the
+settings file. Played on a real Elite Series 2: flight and combat with gimbal aim (the default), select-by-firing, manual targeting.
+
+Not verified yet: menus and bases with a real controller (only the virtual pad so far); a pad button for skipping (room scenes, launch and docking cutscenes
+skip with USER_CANCEL; story cutscenes in space cannot be skipped at all); mines as a player weapon (torpedoes and cruise disruptors: the virtual pad's hold,
+4 Nov 2026); steering scale on ships other than the Starflier; exclusive fullscreen with the movie overlay and the real pad in every display mode.

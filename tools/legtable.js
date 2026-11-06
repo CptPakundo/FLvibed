@@ -75,8 +75,8 @@ const subjects = (from, to) => {
   if (!a || !b || a === b) return b && to.endsWith('+dirty') ? ['(uncommitted changes on ' + b + ')'] : [];
   try {
     // (code commits only: the autopilot, the shared game code, the leg tools - docs commits are noise here)
-    const s = execFileSync('git', ['-C', root, 'log', '--format=%h %s', `${a}..${b}`, '--', 'controller/src', 'core',
-                                   'controller/tools'], { encoding: 'utf8' })
+    const s = execFileSync('git', ['-C', root, 'log', '--format=%h %s', `${a}..${b}`, '--', 'modules/controller/src', 'core',
+                                   'tools/harness'], { encoding: 'utf8' })
       .trim()
       .split(/\r?\n/);
     return s.filter(Boolean).map((l) => l.slice(0, 110));

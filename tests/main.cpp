@@ -21,6 +21,7 @@ void Test_promptlabel();
 void Test_promptshow();
 void Test_hudwake();
 void Test_movie_words();
+void Test_input_rules();
 void Test_mix_cues();
 void Test_avoid();
 void Test_route();
@@ -56,6 +57,10 @@ void Test_mission_live();
 void Test_mission_live_goals();
 void Test_mission_lock_trap();
 void Test_gameclock();
+void Test_loader();
+void Test_log_channel();
+void Test_modules_rules();
+void Test_settings_bus();
 void Test_ordnance();
 void Test_haptics();
 void Test_jobs();
@@ -213,6 +218,7 @@ int main(int argc, char** argv)
         {"promptshow", Test_promptshow},
         {"hudwake", Test_hudwake},
         {"movie_words", Test_movie_words},
+    {"input_rules", Test_input_rules},
         {"mix_cues", Test_mix_cues},
         {"avoid", Test_avoid},
         {"route", Test_route},
@@ -248,6 +254,10 @@ int main(int argc, char** argv)
         {"mission_live_goals", Test_mission_live_goals},
         {"mission_lock_trap", Test_mission_lock_trap},
         {"gameclock", Test_gameclock},
+        {"loader", Test_loader},
+        {"log_channel", Test_log_channel},
+        {"modules_rules", Test_modules_rules},
+        {"settings_bus", Test_settings_bus},
         {"ordnance", Test_ordnance},
         {"haptics", Test_haptics},
         {"jobs", Test_jobs},

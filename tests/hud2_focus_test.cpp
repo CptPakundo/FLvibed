@@ -1,4 +1,4 @@
-// HUD 2's Focus layout (controller\src\impl\hud2_layout.h FocusCorners / RulesOf / Reveal; docs\UI_HUD2_PRESETS.md 2.2,
+// HUD 2's Focus layout (modules\hud\src\hud2_layout.h FocusCorners / RulesOf / Reveal; modules\hud\docs\UI_HUD2_PRESETS.md 2.2,
 // UI_HUD2.md 5.18): its rectangles from the spec's data at 4K, 1080p, 4:3, 5:4, 16:10 and 21:9 / 32:9, pad and keyboard
 // and mouse - the compact card 0.34 wide (calm 0.095, the fight form 0.167 with the pad's 2 threat rows inside it, the
 // morph between them; the pad + 0.012 for its lane row, K&M + its 0.040 click row: the owner's B4-B7), the fire strip
@@ -10,8 +10,8 @@
 // 40 %, full hidden, B1; the power arc in a fight or a cruise charge), the speed's (a throttle-state change, a > 20 % change held 0.5 s, the steady
 // contexts), the fight's lingers (opacity 2 s, the form 6 s, eased), the peek (3 s, a second pins, a third ends; the
 // auto-peek at space entry, never in combat), hud_reveal 0 / 2, the letterbox.
-#include "../controller/src/impl/hud2_layout.h"
-#include "../controller/src/impl/hud2_lint.h"
+#include "../modules/hud/src/hud2_layout.h"
+#include "../modules/hud/src/hud2_lint.h"
 
 #include "test.h"
 

@@ -50,8 +50,4 @@ void Test_roletext()
     CHECK(p.price == RungAt(l, 0.04f) && p.name == base.name);
 
     // rich: within the boxes, labels level with their values
-    CHECK(RichFits({{176, 214}, {198, 214}, {198, 214}}, 198, 198));
-    CHECK(!RichFits({{176, 214}, {234, 214}, {234, 214}}, 234, 234)); // a scroll bar would appear
-    CHECK(!RichFits({{176, 214}, {208, 214}, {186, 214}}, 208, 186)); // a label wrapped
-    CHECK(RichFits({{190, 214}}, 0, 0));                              // text alone, no stats
 }

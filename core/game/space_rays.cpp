@@ -10,7 +10,7 @@ namespace space
 // Obstacles: class ids (FLSDK CObject::Class) and the exported accessors that read them.
 constexpr u32 kClassDynamicAsteroid = 0x4001; // (kClassAsteroid: space_internal.h)
 // A solar's moving part (a Rev joint driven by its animation script) answers the ray test as its own object of class 0x1
-// (session 6, 23 Oct 2026, `ap rayraw`: the M12 core's rotating reactor - six spokes at 36 deg/s - hit as class 0x1,
+// (`ap rayraw`: the M12 core's rotating reactor - six spokes at 36 deg/s - hit as class 0x1,
 // id 4284637536; filtered out, the core read as empty where the user's ship struck a spoke)
 constexpr u32 kClassSolarPart = 0x1;
 
@@ -162,7 +162,7 @@ static int RayHitsRawImpl(FindRayCollisionsFn find, const Api& a, const float fr
     }
 }
 
-// Every raw hit of the game's ray test on a segment, unfiltered (debug `ap rayraw`; session 6, 23 Oct 2026: the M12 core's
+// Every raw hit of the game's ray test on a segment, unfiltered (debug `ap rayraw`; session 6: the M12 core's
 // rotating reactor was invisible to RayHitDistance - which kind of hit, if any, does it give?)
 std::string RayHitsRaw(const float from[3], const float to[3])
 {
@@ -259,7 +259,7 @@ float RayHitDistance(const float from[3], const float to[3], const u32* ignore, 
             }
             const float d[3] = {hits[i].pos[0] - from[0], hits[i].pos[1] - from[1], hits[i].pos[2] - from[2]};
             const float dist = sqrtf(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
-            // a "hit" at the segment's very end is the test's own end point, not a surface (22 Oct 2026: every guard
+            // a "hit" at the segment's very end is the test's own end point, not a surface (every guard
             // event read hit = the full look-ahead, clear again 0.1 s later)
             if (dist >= 0.97f * segLen)
                 continue;

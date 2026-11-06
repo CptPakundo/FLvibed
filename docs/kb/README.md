@@ -1,7 +1,7 @@
 # FLvibed game knowledge base
 
 What the game *is* and how it *plays*, for decisions on features and fixes (user-approved, 19 Oct 2026). Consulted
-before every feature or bug fix (the checklist in `..\..\CLAUDE.md`), updated by every fix that teaches something.
+before every feature or bug fix (the project's checklist), updated by every fix that teaches something.
 Look things up here first; read the addresses and structures in `..\FREELANCER_RE.md` (engine facts) and the mission
 runbooks in `..\missions\` (step by step) as before - this base links them by topic.
 

@@ -2,7 +2,7 @@
 // without moving the cursor onto them: what each offers and talking to it, through the class's own
 // virtual methods (vt[10] 0x445A90 hover-enter sets the cursor naming the offer, vt[11] 0x445BE0
 // hover-leave, vt[12] 0x445C10 click). The live list comes from the module's host (its ctor/dtor detours),
-// handed over with SetCharacterSource. Shared by every module (core/game), compiled into each module.
+// handed over with SetCharacterSource. One instance for the whole logic (core/game).
 // Verified in game 17 Oct 2026 (Manhattan bar: 7 characters, Jun'ko Zane = talk_story, her M01 scene).
 #pragma once
 #include "common.h"

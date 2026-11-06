@@ -1,3 +1,4 @@
+// Obstacle avoidance for the autopilot's steering: the path around obstacles ahead, ray scans and wheel aiming.
 #include "game/avoid.h"
 
 #include <algorithm>
@@ -58,7 +59,7 @@ float Keep(const space::Obstacle& o, V aim, float radii, float shipRadius, float
     // A lethal zone (planet / sun core) kills on contact: the game's own berth - its goto (measured 19 Oct 2026,
     // straight at planet Manhattan at cruise) circled the death zone ~600 m outside its surface - or two seconds
     // of travel for faster ships (M01b 19 Oct 2026: the normal ~15 m margin grazed Pittsburgh's zone - "DANGER").
-    // From the ship's own capabilities, not fixed numbers (user, 20 Oct 2026: the swing kept 600 m outside a zone
+    // From the ship's own capabilities, not fixed numbers (the swing kept 600 m outside a zone
     // already larger than the visible planet - "if Trenton is even closer to the atmosphere than the player ship,
     // surely there was no need?" - and "what if a mod increased or decreased" the speeds): the room to correct the
     // course = half a second of travel (the reaction) + half the turning radius at this speed (speed / the flight
@@ -66,7 +67,7 @@ float Keep(const space::Obstacle& o, V aim, float radii, float shipRadius, float
     // stays far off); a modded faster or more sluggish ship gets more, a nimbler one less.
     const float turnRadius = speed / std::max(0.1f, turnRate);
     const float keep = std::max(margin, std::max(2 * shipRadius, 0.5f * speed + 0.5f * turnRadius));
-    // The berth never forbids the destination (19 Oct 2026: California Minor's docking ring sits ~300 m above the
+    // The berth never forbids the destination (California Minor's docking ring sits ~300 m above the
     // planet's zone - the 600 m berth pushed the ship off the bay's approach and it circled the ring for minutes):
     // where the aim point lies inside it, the berth shrinks to what the aim point leaves (the zone itself still
     // stands).
@@ -156,7 +157,7 @@ Result Steer(const Input& in, const std::vector<space::Obstacle>& obstacles, Mem
     const float speed = Len(v);
     const V vdir = speed > 1 ? v * (1 / speed) : u;
     // The window: ~5 s of travel, not beyond the aim; at least what the ship needs to turn round (its turning radius at
-    // this speed x 2) plus 10 ship radii - from the ship's own flight model, not a fixed 600 m (user, 20 Oct 2026:
+    // this speed x 2) plus 10 ship radii - from the ship's own flight model, not a fixed 600 m (
     // adaptive to ships a mod makes faster or slower).
     const float window =
         std::min(goal, std::max(speed * 5, 2 * speed / std::max(0.1f, in.turnRate) + 10 * in.shipRadius));
@@ -171,7 +172,7 @@ Result Steer(const Input& in, const std::vector<space::Obstacle>& obstacles, Mem
     {
         if (o.id && std::find(in.ignore.begin(), in.ignore.end(), o.id) != in.ignore.end())
             continue;
-        // Small breakable debris is not avoided (user, 18-19 Oct 2026): it breaks harmlessly on contact and turns into
+        // Small breakable debris is not avoided: it breaks harmlessly on contact and turns into
         // loot; mines and real rocks still are.
         if (o.breakable && !o.mine && o.radius < 40)
         {
@@ -603,7 +604,7 @@ static bool ClearFor(V p, V q, float halfWidth, const u32* ignore, int nIgnore, 
     return true;
 }
 
-// The 3D way (session 7, 23 Oct 2026, M12 generator 3 -> the airlock's top: the user's try 3 first runs ~180 m along the
+// The 3D way (M12 generator 3 -> the airlock's top: the user's try 3 first runs ~180 m along the
 // trench, then climbs to y ~400 - out of any one plane through both ends; the planes found nothing or the 3.5 km way round):
 // lazy A* over a lattice in the box round both ends (+600 m, 120 m cells - coarser when the box is big), the 26 neighbours
 // of each cell, each edge ray-tested for the ship's width when first used; string-pulled.
@@ -728,7 +729,7 @@ static std::vector<float> RayPathGrid(const float from[3], const float to[3], fl
 std::vector<float> RayPath(const float from[3], const float to[3], float shipRadius, const u32* ignore, int nIgnore,
                            int* raysOut, bool planesFirst, float narrowGain, const Params& prm)
 {
-    // a wide berth first (session 7, M12: a line 11-27 m off the trench walls set off the wall slide and the guard, which
+    // a wide berth first (M12: a line 11-27 m off the trench walls set off the wall slide and the guard, which
     // ended the cruise), the ship's own width only when no wide way exists; the level plane first in each (the berths:
     // Params::berths)
     int rays = 0;
@@ -748,11 +749,11 @@ std::vector<float> RayPath(const float from[3], const float to[3], float shipRad
     };
     // (a channel's middle first: the shortest way hugs a curved trench's inner wall - M12 hop, session 7: zigzag between
     // the walls, a crash at 296 m/s; the user's try 3 holds the middle - an 80 m berth forces a centred line)
-    // Every plane of a berth is tried and the shortest way kept (session 7, M12 generator 3 -> the airlock's top: the level
+    // Every plane of a berth is tried and the shortest way kept (M12 generator 3 -> the airlock's top: the level
     // plane's 3.6 km round the lair was taken first; the user's try 3 climbs straight to y ~400 - 2.1 km, the vertical
     // plane's way); the next berth only when none of its planes found one.
     // (narrowGain > 0: after a wide berth's way, the next berth too - kept when shorter by that fraction; the M12 trench's
-    // hoop frames have windows ~60-120 m across (3D probe, 24 Oct 2026): the 80 m berth never fits one, its way runs
+    // hoop frames have windows ~60-120 m across (3D probe): the 80 m berth never fits one, its way runs
     // round them, 3.9 km for 3.1 km straight; the user's try 3 threads them, ~3.3 km)
     float wideLen = 1e30f;
     bool narrowTried = false;
@@ -857,7 +858,7 @@ static std::vector<float> RayPathAt(const float from[3], const float to[3], floa
     }
     else if (mode == 0)
     {
-        // the level plane through both ends (session 7, M12: the lair's trench lies in the system's plane - the solid-centre
+        // the level plane through both ends (M12: the lair's trench lies in the system's plane - the solid-centre
         // plane pivoted on a shield dome 284 m up, and the hop left the trench by +-250 m): its normal = world up off the line;
         // the grid's centre = the solid's centre dropped into it
         const V d = (b - a) * (1.0f / std::max(1.0f, segLen));
@@ -932,7 +933,7 @@ static std::vector<float> RayPathAt(const float from[3], const float to[3], floa
             node.push_back(c + (e1 * std::cos(ang) + e2 * std::sin(ang)) * r);
         }
     }
-    // ...and a line of nodes through the destination and the solid's centre, out past the centre (session 7, M12 core
+    // ...and a line of nodes through the destination and the solid's centre, out past the centre (M12 core
     // exit: the way out runs along the core's axis through a 90 m hole - no polar node lands on it), every 60 m
     const int gridEnd = static_cast<int>(node.size());
     {

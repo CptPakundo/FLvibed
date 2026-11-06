@@ -1,4 +1,4 @@
-// HUD 2's layout core (controller\src\impl\hud2_layout.h, UI_HUD2_PRESETS.md 6 step 5; UI_HUD2.md 5.17): Standard's
+// HUD 2's layout core (modules\hud\src\hud2_layout.h, UI_HUD2_PRESETS.md 6 step 5; UI_HUD2.md 5.17): Standard's
 // rectangles equal today's HUD (the ComputeLayout of 2b6062ac, frozen below as Ref - with the owner's deliberate moves:
 // A5's 0.15 ship panel, 5.19; decision 3's narrow loadout and its stacked cross and decision 4's context lanes, 5.20;
 // the lanes above the panels instead of the centred fallback line and the lower centre's top Out::clearY0, 5.23 -
@@ -9,8 +9,8 @@
 // 0.10, the margins, the aspect factors); Standard's plates stay out of its zones (the lint's own zone rule,
 // hud2_lint.h ZonesOf / InZone); the letterbox suppresses what it did before; a preset rule with budget suppression drops
 // the next element of its order while the plates are over the cap, and Standard's rules (none) never do.
-#include "../controller/src/impl/hud2_layout.h"
-#include "../controller/src/impl/hud2_lint.h"
+#include "../modules/hud/src/hud2_layout.h"
+#include "../modules/hud/src/hud2_lint.h"
 
 #include "test.h"
 
