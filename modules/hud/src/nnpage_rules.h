@@ -55,12 +55,15 @@ struct List
         Fit();
         return sel != was;
     }
-    // The wheel: the window moves, the focus stays inside it.
+    // The wheel: the window moves, the focus stays inside it - inside Fit's lead too, or the next Fit pulls the window back
+    // (Shockwave, 7 Nov 2026: BEST PRICES scrolled once, then stuck both ways).
     void Scroll(int by)
     {
         first = std::max(0, std::min(first + by, std::max(0, count - rows)));
-        sel = std::max(first, std::min(sel, first + rows - 1));
-        sel = count > 0 ? std::min(sel, count - 1) : 0;
+        const int lead = rows > 2 ? 1 : 0;
+        const int lo = first > 0 ? first + lead : 0, hi = first + rows < count ? first + rows - 1 - lead : count - 1;
+        sel = std::max(lo, std::min(sel, hi));
+        sel = count > 0 ? std::max(0, std::min(sel, count - 1)) : 0;
     }
 };
 

@@ -53,9 +53,25 @@ void Test_nnpage()
     w.count = 48, w.rows = 10;
     w.Fit();
     w.Scroll(5);
-    CHECK(w.first == 5 && w.sel == 5);
+    CHECK(w.first == 5 && w.sel == 6);
+    w.Fit();
+    CHECK(w.first == 5);
     w.Scroll(100);
-    CHECK(w.first == 38 && w.sel == 38);
+    CHECK(w.first == 38 && w.sel == 39);
+    // ...and a Fit after each step leaves the window where the wheel put it, both ways (BEST PRICES stuck after one step)
+    List p;
+    p.count = 20, p.rows = 8;
+    p.Fit();
+    for (int i = 1; i <= 12; ++i)
+    {
+        p.Scroll(1), p.Fit();
+        CHECK(p.first == i);
+    }
+    for (int i = 11; i >= 0; --i)
+    {
+        p.Scroll(-1), p.Fit();
+        CHECK(p.first == i);
+    }
     // numbers and headings
     CHECK(Number(L"$1,250,000") == 1250000 && Number(L"") == 0);
     CHECK(Share(500, 1000) > 0.49f && Share(500, 1000) < 0.51f && Share(5, 0) == 0 && Share(5000, 1000) == 1);

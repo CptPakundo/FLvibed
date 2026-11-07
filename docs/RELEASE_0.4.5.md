@@ -30,6 +30,8 @@ Refreshed an eighth time (the owner's word; Shockwave: the cruise meter flashing
 
 Refreshed a ninth and tenth time (the owner's word): the playtesting credit (Shockwave508: README, CHANGELOG, notes); BEST PRICES in space (`gamemode::SpaceWindowOpen` lists NN_CommodityByBase); the pad docked - X REPAIR (behaviour 12), Y CHANGE VIEW (behaviour 9), View opens / closes the NeuroNet (`padbases::DockedView`) with a badge on the NeuroNet's words (`nnstrip`); the NeuroNet box given back after a destroyed docked map (`uiskin` BoxHides). Seen at 1280x800.
 
+Refreshed an eleventh time (the owner's word; Shockwave: BEST PRICES stuck after one step down): `nnrules::List::Scroll` keeps the focus inside `Fit`'s lead (the page's per-frame Fit pulled the window back), the pad on BEST PRICES steps the focus; the wheel lists of the dealers and NeuroNet pages had the same fault. Unit test (Scroll + Fit both ways); in game only the one-base page (no save knows more bases than rows).
+
 ## Not run
 No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's clicks and wheel on the pages, multiplayer on the pages, 4:3, FLUF beside the new word tabs.
 

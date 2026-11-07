@@ -2004,8 +2004,8 @@ int Prompts(views::PagePrompt* out, int max)
     }
     if (g_kind == Kind::Prices)
     {
-        if (g_list[0].count > g_list[0].rows)
-            add(DU, L"SCROLL", DD);
+        if (g_list[0].count > 1)
+            add(DU, L"BASE", DD);
         return n;
     }
     const Row* r = Focus();
@@ -2079,10 +2079,11 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
     }
     if (g_kind == Kind::Prices)
     {
+        // the D-pad walks the focus row as on every list, the window follows (it scrolled the window: stuck after one step, Shockwave)
         if (pressed & XINPUT_GAMEPAD_DPAD_UP)
-            g_list[0].Scroll(-1);
+            g_list[0].Step(-1);
         if (pressed & XINPUT_GAMEPAD_DPAD_DOWN)
-            g_list[0].Scroll(1);
+            g_list[0].Step(1);
         return page;
     }
     if (g_kind == Kind::Jobs || g_kind == Kind::News)
@@ -2272,7 +2273,7 @@ std::string Command(std::istream& in)
     }
     if (g_kind == Kind::Prices)
     {
-        o << "basepage prices n=" << g_quotes.size();
+        o << "basepage prices n=" << g_quotes.size() << " sel=" << g_list[0].sel << " first=" << g_list[0].first << " rows=" << g_list[0].rows;
         for (const nnrules::Quote& q : g_quotes)
             o << " [" << text::Utf8(q.base) << " $" << q.price << " " << text::Utf8(q.sells) << "]";
         return o.str();
