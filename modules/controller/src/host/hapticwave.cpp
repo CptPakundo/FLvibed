@@ -18,6 +18,7 @@ static char g_why[128] = {};
 static HANDLE g_thread = nullptr;
 static volatile LONG g_state = kOff, g_stop = 0;
 static char g_path[260] = {}; // the pad's device path, read at the open
+static bool g_byName = false;  // debug: find the speaker by name even where a ContainerId would (Wine's path, tested on Windows)
 constexpr DWORD kFrameLeaseMs = 200;
 
 static void Fail(const char* why)
@@ -98,6 +99,58 @@ static IMMDevice* FindEndpoint(const GUID& container)
     return found;
 }
 
+// The render endpoint by its name, where no ContainerId says which it is (Wine's device tree has none: the owner, 7 Nov 2026, feature parity): the one active
+// endpoint whose friendly name holds the pad's name or "DualSense" (wavesynth::EndpointNameMatches). Two such endpoints is no answer: two pads, which is which.
+// `count` says how many matched. The caller releases it.
+static IMMDevice* FindEndpointByName(const char* padName, int& count)
+{
+    static const PROPERTYKEY kFriendlyName = {{0xA45C254E, 0xDF1C, 0x4EFD, {0x80, 0x20, 0x67, 0xD1, 0x46, 0xA8, 0x50, 0xE0}}, 14}; // PKEY_Device_FriendlyName
+    using ClearFn = HRESULT(WINAPI*)(PROPVARIANT*);
+    static const ClearFn clear = reinterpret_cast<ClearFn>(GetProcAddress(GetModuleHandleA("ole32.dll"), "PropVariantClear"));
+    IMMDeviceEnumerator* en = nullptr;
+    IMMDeviceCollection* all = nullptr;
+    IMMDevice* found = nullptr;
+    count = 0;
+    if (SUCCEEDED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), reinterpret_cast<void**>(&en))) &&
+        SUCCEEDED(en->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &all)))
+    {
+        UINT n = 0;
+        all->GetCount(&n);
+        for (UINT i = 0; i < n; ++i)
+        {
+            IMMDevice* dev = nullptr;
+            IPropertyStore* store = nullptr;
+            if (FAILED(all->Item(i, &dev)))
+                continue;
+            if (SUCCEEDED(dev->OpenPropertyStore(STGM_READ, &store)))
+            {
+                PROPVARIANT v;
+                PropVariantInit(&v);
+                if (SUCCEEDED(store->GetValue(kFriendlyName, &v)) && v.vt == VT_LPWSTR && wavesynth::EndpointNameMatches(v.pwszVal, padName))
+                {
+                    char name[160] = {};
+                    WideCharToMultiByte(CP_UTF8, 0, v.pwszVal, -1, name, sizeof(name) - 1, nullptr, nullptr);
+                    Log("haptics stream: the pad's speaker by name: '%s'", name);
+                    if (++count == 1)
+                        found = dev, dev = nullptr;
+                }
+                if (clear)
+                    clear(&v);
+                store->Release();
+            }
+            if (dev)
+                dev->Release();
+        }
+    }
+    if (all)
+        all->Release();
+    if (en)
+        en->Release();
+    if (count != 1 && found)
+        found->Release(), found = nullptr;
+    return found;
+}
+
 // The buffer: the back pair takes the grips, every other channel silence.
 static void Fill(BYTE* data, int frames, int channels, int back, bool isFloat, const float* lr)
 {
@@ -175,10 +228,21 @@ static DWORD WINAPI Thread(void*)
     HANDLE ready = CreateEventA(nullptr, FALSE, FALSE, nullptr);
     // a session of the stream's own: muting the game's session must not reach it, and this one must not reach the game's
     static const GUID kSession = {0x6F4C2A51, 0x8E1D, 0x4B7C, {0x9D, 0x31, 0x5A, 0x0E, 0x72, 0xC4, 0x18, 0xB6}};
-    if (!PadContainer(g_path, container))
-        Fail("no container for the pad");
-    else if (!(dev = FindEndpoint(container)))
-        Fail("the pad has no speaker endpoint: is it enabled in the Sound panel?");
+    // the pad's speaker: by the ContainerId Windows gives it, else by its name (Wine; FLVIBED_WAVE_BYNAME=1 in the game's environment forces this path on Windows to test it)
+    char forced[8] = {};
+    g_byName = GetEnvironmentVariableA("FLVIBED_WAVE_BYNAME", forced, sizeof(forced)) > 0 && forced[0] == '1';
+    if (!g_byName && PadContainer(g_path, container))
+        dev = FindEndpoint(container);
+    int named = 0;
+    if (!dev)
+    {
+        char padName[128] = {};
+        sdlpad::Name(padName, sizeof(padName));
+        dev = FindEndpointByName(padName, named);
+    }
+    if (!dev)
+        Fail(named > 1 ? "two pads' speakers match by name: which is this one's is not known"
+                       : "the pad has no speaker endpoint: is it enabled (Windows: the Sound panel; Linux: the card's profile Surround 4.0)?");
     else if (FAILED(dev->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, reinterpret_cast<void**>(&client))) || FAILED(client->GetMixFormat(&format)))
         Fail("the pad's speaker did not open");
     else

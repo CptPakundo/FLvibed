@@ -9,17 +9,24 @@
 
 namespace navnew
 {
-// Once a draw pass while the map shows: `map` its viewport in pixels.
-void Frame(u32 root, const navlayout::Rect& map);
+// Once a draw pass while the map shows: `map` its viewport in pixels. `pad`: the pad drives the zoom and pan (controller padmap.*); else the mouse's wheel and drag do, here.
+void Frame(u32 root, const navlayout::Rect& map, bool pad);
 // The map is at the solver's size: the panels stand where the solver says.
 bool Grown();
+// The full-screen map is switched on.
+bool On();
 // What the panels hold above their chips: heights in pixels; DrawLeft / DrawRight return the y under what they drew.
 float LeftHeight(const navlayout::Rect& panel, float H);
 float RightHeight(const navlayout::Rect& panel, float H);
-float DrawLeft(const navlayout::Rect& panel, float H);
+float DrawLeft(const navlayout::Rect& panel, float H, bool title = true);
+// The left card has something to say: an objective or a route. The right one: the selection's card.
+bool HasInfo();
+bool HasCard();
 float DrawRight(const navlayout::Rect& panel, float H);
-// HUD 2's labels, marks and route over the map's viewport.
+// HUD 2's labels, marks, sectors and route over the map's viewport.
 void DrawOverMap(const navlayout::Rect& map);
+// The map holds a selection (its Set / Clear Waypoint stand): the record at the game's selected point gets the card.
+void SetSelected(bool on);
 // The map's window went: the game's label flag back. A write inside the window goes with it.
 void Closed();
 // Everything back while it still holds FLvibed's value.

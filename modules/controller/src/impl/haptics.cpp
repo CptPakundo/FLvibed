@@ -435,9 +435,8 @@ void Update(const Frame& f, Gamepad& pad)
     // the grips' stream: asked of the host only for a real DualSense on USB in a foreground game, with the mode for it
     const haptics::PadFacts facts = pad.Facts();
     static const bool background = EnvVar("FLVIBED_BACKGROUND") == "1";
-    static const bool wine = GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version") != nullptr;
     pad.Wave(wavesynth::WantWave(o.hapticsMode) && facts.sdl && facts.type == padbackend::kTypePs5 && pad.OutputIsReal() &&
-             !wavesynth::WaveOpenRefusal(o.hapticsDevice != 0, background, wine, pad.Wired()));
+             !wavesynth::WaveOpenRefusal(o.hapticsDevice != 0, background, pad.Wired()));
     g_waveWhy = pad.WaveWhy();
     g_caps = CapsFor(pad.Facts());
     PadSink sink(pad, false);

@@ -5,7 +5,7 @@ in the source and regenerate.** `set <name> <value>` / `ap set` change a value l
 help lines; `config settings` / `ap settings` / `settings` list them in the game. Behaviour, measurements and the why of
 each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DISPLAY_PLAN.md`, `modules\hud\docs\HUD_CUES.md`.
 
-## [Controller] - EXE\FLController.ini [Controller] (89 keys; source `modules\controller\src\impl\controller_settings.cpp`)
+## [Controller] - EXE\FLController.ini [Controller] (90 keys; source `modules\controller\src\impl\controller_settings.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -62,6 +62,7 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `haptics_device` | int | 0 .. 1 | 1 | 0: nothing beyond a stop reaches a real pad, debug `haptics record` alone sees the output (a background game is always 0) |
 | `pad_cursor` | int | 0 .. 2 | 2 | a cursor on the left stick where pointing is natural: 0 off, 1 rooms and maps, 2 everywhere; it slows over targets, the D-pad hides it |
 | `cursor_magnet` | int | 0 .. 100 | 60 | how strongly the pad cursor slows over and pulls toward a clickable element, percent |
+| `map_touchpad` | bool | 0 \| 1 | true | the touchpad on the nav map: one finger drags the map, two slide to zoom; off leaves RS and the triggers, which do the same |
 | `prompt_bar` | int | 0 .. 2 | 0 | the bottom-right row of button prompts on controller screens: 0 contextual (every window, menu and modal while it is open; a base room when new or a decision is pending), 1 always, 2 off |
 | `fluf_windows` | int | 0 .. 2 | 2 | with FLUF installed: 0 ignore its windows (co-residency only; FLvibed's keys still pass to FLUF while its palette is open or its text box has the keys), 1 its player windows (palette, options, map, toasts) are keep-outs: FLvibed's HUD parts and strip fade under them, prompts and subtitles step away, the pad drives them, 2 (default) also its developer windows (the Debug Window); FLUF's windows stay on top; no effect without FLUF |
 | `borderless` | int | 0 .. 2 | 1 | borderless windowed, read at the game's start: 0 off (the game's own window mode), 1 (default) only when nothing else provides it (not with HDE: its exe and its Direct3D wrapper do), 2 always; while FLvibed provides it the game runs as a window without frame covering its monitor at the monitor's resolution (never exclusive fullscreen; sharp at high DPI scaling only when the exe is DPI-aware), and FLUF's Alt+Enter toggles it with the bordered window |

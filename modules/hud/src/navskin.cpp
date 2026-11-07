@@ -4,8 +4,10 @@
 #include "flexe.h"
 #include "game/deckmode.h"
 #include "game/hudsize.h"
+#include "game/navview.h"
 #include "game/nnwin.h"
 #include "game/room.h"
+#include "game/space.h"
 #include "log.h"
 #include "navmap_layout.h"
 #include "navnew.h"
@@ -15,6 +17,7 @@
 #include "text.h"
 #include "ui/hud2_kit.h"
 #include "ui/hud_rows.h"
+#include "ui/ui.h"
 
 #include <sstream>
 
@@ -82,7 +85,9 @@ const Def kDefs[] = {
 };
 constexpr int kDefCount = static_cast<int>(sizeof(kDefs) / sizeof(kDefs[0]));
 constexpr int kLayerLine = kDefCount; // the pad's one line of layers
-static_assert(kDefCount + 1 <= 32, "every chip fits the click box beside the strip");
+constexpr int kOpenLayers = kDefCount + 1; // the mouse's chip that opens the layers' card
+static bool g_layersOpen = false;
+static_assert(kDefCount + 2 <= 32, "every chip fits the click box beside the strip");
 
 struct Chip
 {
@@ -92,9 +97,10 @@ struct Chip
 };
 static u32 g_root = 0;
 static u32 g_ctl[kDefCount] = {};
-static Chip g_chips[kDefCount + 1];
+static Chip g_chips[kDefCount + 2];
 static int g_nChips = 0;
 static int g_focus = -1;
+static bool g_listOpen = false; // the pad's destination list stands
 static bool g_failed = false, g_restoreOwed = false, g_nativeAsked = false;
 static bool g_pad = false;
 
@@ -141,6 +147,27 @@ bool Bind(u32 root, Hides& out)
     }
     if (const u32 c = Child(root, "NavMapCloseButton")) // (the lane's CLOSE, the pad's B)
         out.art[out.nArt++] = c;
+    // the game's info card on the selection (its framed box, title and words) stood over HUD 2's VIEW panel (the owner's frames, 7 Nov 2026: "This still needs
+    // fixing"): hidden. The map still marks and labels the selection; HUD 2's own card is the map plan's P3 (docs\MAP_PLAN.md: +0x90C is no selection to read)
+    for (const char* name : {"NavMapInfoCard", "NavMapInfoText", "NavMapInfoTitle"})
+        if (const u32 c = Child(root, name))
+            out.art[out.nArt++] = c;
+    if (navnew::On()) // the full-screen map: HUD 2 draws the sectors, and the left panel names the system
+    {
+        for (const char* name : {"NavMapSystemName", "NavMapFilterTitle"}) // (the layer's own word: the panel's chip says it)
+            if (const u32 c = Child(root, name))
+                out.art[out.nArt++] = c;
+        for (int i = 0; i < 8; ++i)
+        {
+            char n[32];
+            sprintf_s(n, "NavMapGridLetter%c", 'A' + i);
+            if (const u32 c = Child(root, n))
+                out.art[out.nArt++] = c;
+            sprintf_s(n, "NavMapGridNumber%d", i + 1);
+            if (const u32 c = Child(root, n))
+                out.art[out.nArt++] = c;
+        }
+    }
     if (!g_ctl[0] && !g_ctl[1]) // (a window with neither view button is not the map this table knows)
     {
         Fail("neither view button is there");
@@ -246,20 +273,259 @@ static const wchar_t* CurrentLayerWord(int layer)
 
 static void DrawChip(int id, const navlayout::Rect& r, const wchar_t* word, float size, bool enabled, bool current, bool stepper, int hover)
 {
-    const int slot = enabled ? skinchip::Hot(r, [](int i) { i == kLayerLine ? StepLayer(+1) : Press(i); }, id) : -1;
+    const int slot = enabled ? skinchip::Hot(r, [](int i) { i == kOpenLayers ? void(g_layersOpen = !g_layersOpen) : i == kLayerLine ? StepLayer(+1) : Press(i); }, id) : -1;
     skinchip::Look look = !enabled && !current ? skinchip::Look::Disabled : current ? skinchip::Look::Current : skinchip::Look::Plain;
     if (slot >= 0 && slot == hover)
         look = skinchip::Look::Hover;
     if (g_focus == id)
         look = skinchip::Look::Focus;
     skinchip::Chip(r, word, size, look);
-    if (g_nChips <= kDefCount)
+    if (g_nChips <= kDefCount + 1)
         g_chips[g_nChips++] = {id, r, enabled, stepper};
+}
+
+// The game's waypoint list on the map, read for HUD 2's own ROUTE section: NavMapMissionObjectiveText1..n (TextControls, "Player Waypoint 1\nNew York
+// System\nSector D3"), the entries the game shows (its own shown bit: a page of three, its scroll bar beside). The game lays its boxes out under its
+// own info card, over HUD 2's VIEW panel, and re-lays them each frame (a move did not hold, 7 Nov 2026): they are hidden (uiskin Reclear) and drawn here.
+static void Waypoints(std::vector<std::vector<std::wstring>>& out)
+{
+    out.clear();
+    for (int i = 1; i <= 8; ++i)
+    {
+        char name[40];
+        sprintf_s(name, "NavMapMissionObjectiveText%d", i);
+        const u32 c = Child(g_root, name);
+        std::wstring s;
+        if (!c || !Shown(c) || !TextOf(c, s) || s.empty())
+            continue;
+        std::vector<std::wstring> lines;
+        size_t at = 0;
+        for (size_t nl; (nl = s.find(L'\n', at)) != std::wstring::npos; at = nl + 1)
+            if (nl > at)
+                lines.push_back(s.substr(at, nl - at));
+        if (at < s.size())
+            lines.push_back(s.substr(at));
+        if (lines.size() > 3)
+            lines.resize(3);
+        if (!lines.empty())
+            out.push_back(std::move(lines));
+    }
+}
+
+
+static bool g_show = false; // the under pass found the map up: the overlay draws
+static Rc g_mapRect;
+
+// A panel's plate eases to what it holds (kMoveSec's rule: a change of height travels): its height of the last frame is this frame's plate, and the content says the next.
+static float g_panelH[3] = {};
+static unsigned long long g_panelTick = 0;
+
+static void EasePanel(float& h, float target)
+{
+    const unsigned long long now = GetTickCount64();
+    const float dt = std::min(0.05f, static_cast<float>(now - g_panelTick) / 1000.0f);
+    h += (target - h) * (1 - std::exp(-dt / 0.05f));
+    if (std::fabs(target - h) < 1)
+        h = target;
+}
+
+// The full-screen map's furniture (docs\MAP_PLAN.md; the owner, 7 Nov 2026: "the two panels at the sides of the navmap ... need to be re-considered"): nothing frames the map. The system's name
+// and one row of chips along the top, how the map moves as one dim line above the strip, and two cards that exist only while they have something to say.
+static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size, int hover, bool pad)
+{
+    const float W = g_W, H = g_H, side = lay.side * W, right = W - side, gap = kChipGap * H, pad2 = kPanelPad * H;
+    const float top = deckmode::EdgeH() * H, chipH = kChipH * H;
+    auto shown = [&](int i) { return g_ctl[i] && Shown(g_ctl[i]); };
+    // the title: the game's own word for the system on show
+    std::wstring name;
+    if (const u32 c = Child(g_root, "NavMapSystemName"))
+        TextOf(c, name);
+    const float titleSize = 0.044f * H;
+    const float titleW = name.empty() ? 0 : TextWidth(name, titleSize);
+    if (!name.empty())
+        Text(side, top + chipH / 2, name, titleSize, Argb(kInk, 1));
+    (void)titleW;
+    // the mouse's way into the layers' card, where the pad has D-pad right
+    if (!pad)
+    {
+        const float w = TextWidth(L"LAYERS", size) + 2 * pad2;
+        DrawChip(kOpenLayers, {right - w, top, right, top + chipH}, L"LAYERS", size, true, g_layersOpen, false, hover);
+    }
+    // the left card: what the mission asks and the route
+    int mission[4], nm = 0;
+    for (int i = 0; i < kDefCount && nm < 4; ++i)
+        if (kDefs[i].group == GMission && shown(i))
+            mission[nm++] = i;
+    const bool info = navnew::HasInfo();
+    const float cardTop = top + chipH + 2 * gap + 0.012f * H;
+    if (info || nm)
+    {
+        if (g_panelH[0] <= 0)
+            g_panelH[0] = 0.15f * H;
+        const Rc p = {side, cardTop, side + lay.panel * H, cardTop + g_panelH[0]};
+        Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.92f, kChrome, 0.69f);
+        float y = info ? navnew::DrawLeft(p, H, false) : p.y0 + pad2 - gap;
+        for (int k = 0; k < nm; ++k)
+        {
+            Rc c[1];
+            y = Grid(p, H, y + gap, 1, 1, c);
+            DrawChip(mission[k], c[0], kDefs[mission[k]].word, size, NativeEnabled(g_ctl[mission[k]]), false, false, hover);
+        }
+        EasePanel(g_panelH[0], y + pad2 - p.y0);
+        g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
+    }
+    else
+        g_panelH[0] = 0;
+    // the right card: the selection, and on the mouse what it offers (the pad's are its prompts)
+    int sel[8], nSel = 0;
+    if (!pad)
+        for (int i = 0; i < kDefCount && nSel < 8; ++i)
+            if (kDefs[i].group == GSelect && shown(i))
+                sel[nSel++] = i;
+    const bool card = navnew::HasCard();
+    if (card || nSel)
+    {
+        if (g_panelH[1] <= 0)
+            g_panelH[1] = 0.15f * H;
+        const float w = lay.panel * H;
+        const Rc p = {right - w, cardTop, right, cardTop + g_panelH[1]};
+        Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.92f, kChrome, 0.69f);
+        float y = navnew::DrawRight(p, H);
+        y = y > p.y0 ? y : p.y0 + pad2 - gap;
+        if (nSel)
+        {
+            Rc c[8];
+            y = Grid(p, H, y + gap, nSel, 2, c);
+            for (int i = 0; i < nSel; ++i)
+                DrawChip(sel[i], c[i], Word(sel[i], v), size, NativeEnabled(g_ctl[sel[i]]), false, false, hover);
+        }
+        EasePanel(g_panelH[1], y + pad2 - p.y0);
+        g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
+    }
+    else
+        g_panelH[1] = 0;
+    // the layers' card, under the selection's: it comes when asked for (the pad's D-pad right, the mouse's LAYERS) and goes with the asking. Its chips always answer the pad's walk
+    {
+        const bool open = pad ? g_focus >= 0 : g_layersOpen;
+        const float w = lay.panel * H, head = kSectionH * H, y0 = cardTop + (card || nSel ? g_panelH[1] + gap : 0);
+        const Rc p = {right - w, y0, right, y0 + std::max(g_panelH[2], 0.1f * H)};
+        if (open)
+            Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.92f, kChrome, 0.69f);
+        auto chip = [&](int id, const wchar_t* word, const Rc& r, bool enabled, bool current)
+        {
+            if (open)
+                DrawChip(id, r, word, size, enabled, current, false, hover);
+            else if (g_nChips <= kDefCount + 1)
+                g_chips[g_nChips++] = {id, r, enabled, false};
+        };
+        float y = p.y0 + pad2;
+        if (open)
+            skinchip::Section(p.x0 + pad2, y + head / 2, L"VIEW");
+        y += head;
+        Rc c[12];
+        y = Grid(p, H, y, 2, 2, c);
+        for (int i = 0; i < 2; ++i)
+            chip(i, kDefs[i].word, c[i], shown(i) && NativeEnabled(g_ctl[i]) && !Current(i, v, layer), Current(i, v, layer));
+        y += gap;
+        if (open)
+            skinchip::Section(p.x0 + pad2, y + head / 2, L"LAYERS");
+        y += head;
+        int ids[12], nt = 0;
+        for (int i = 0; i < kDefCount && nt < 12; ++i)
+            if ((kDefs[i].group == GLayer || kDefs[i].group == GFilter) && shown(i))
+                ids[nt++] = i;
+        const bool odd = nt % 2 != 0;
+        float bottom = Grid(p, H, y, nt - (odd ? 1 : 0), 2, c);
+        if (odd)
+        {
+            Rc last[1];
+            bottom = Grid(p, H, nt > 1 ? bottom + gap : y, 1, 1, last);
+            c[nt - 1] = last[0];
+        }
+        for (int i = 0; i < nt; ++i)
+            chip(ids[i], kDefs[ids[i]].word, c[i], NativeEnabled(g_ctl[ids[i]]), Current(ids[i], v, layer));
+        EasePanel(g_panelH[2], bottom + pad2 - p.y0);
+        if (open)
+            g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
+    }
+    // the bottom's left half, the mirror of the prompts: how to move about the map, in two lines; what does nothing now dims, and a line that does not fit loses its last words first
+    if (pad)
+    {
+        // (only what a press does right now, the rest closes up: with the layers' card or the list open the D-pad is theirs, the list's A too, so the cursor has no use; zoom and pan go on: the owner, 7 Nov 2026)
+        const bool system = v != 0, zoomed = system && !navview::AtWidest(), inSpace = space::PlayerShipId() != 0, map = !g_listOpen, free = map && g_focus < 0;
+        struct Row
+        {
+            glyphs::Id a, b;
+            const wchar_t* word;
+            bool lit;
+        };
+        // (a stick and its click share a glyph, so the words tell them apart, MOVE and CLICK, each stick's two side by side: the owner, 7 Nov 2026)
+        const Row upper[5] = {{glyphs::LS, glyphs::COUNT, L"MOVE CURSOR", map},
+                              {glyphs::L3, glyphs::COUNT, L"CLICK FIND ME", system && inSpace},
+                              {glyphs::RS, glyphs::COUNT, L"MOVE MAP", zoomed},
+                              {glyphs::R3, glyphs::COUNT, system ? L"CLICK SIRIUS MAP" : L"CLICK BACK TO SYSTEM", true},
+                              {glyphs::DU, glyphs::DD, inSpace ? L"NEXT DESTINATION" : L"NEXT OBJECT", system && free}};
+        const Row lower[3] = {{glyphs::LT, glyphs::RT, system ? L"ZOOM" : L"OPEN SYSTEM", true},
+                              {glyphs::DL, glyphs::COUNT, L"DESTINATIONS", inSpace && free},
+                              {glyphs::DR, glyphs::COUNT, L"LAYERS", free}};
+        const float gh = 0.030f * H, limit = W * 0.408f; // (the lower line shares the lane with the prompts; the upper has the screen's width)
+        auto line = [&](const Row* rows, int count, float y, float room)
+        {
+            float hx = side;
+            for (int i = 0; i < count; ++i)
+            {
+                const Row& r = rows[i];
+                if (!r.lit)
+                    continue;
+                const float a = 0.95f, wa = GlyphWidth(r.a, gh), wb = r.b != glyphs::COUNT ? GlyphWidth(r.b, gh) + 0.006f * H : 0;
+                const float tw = TextWidth(r.word, TextFloor());
+                if (hx + wa + wb + 0.010f * H + tw > room)
+                    break;
+                Glyph(r.a, hx + wa / 2, y, gh, Argb(kChrome, a));
+                hx += wa + 0.006f * H;
+                if (wb > 0)
+                    Glyph(r.b, hx + (wb - 0.006f * H) / 2, y, gh, Argb(kChrome, a)), hx += wb;
+                Text(hx + 0.004f * H, y, r.word, TextFloor(), Argb(kInk, a));
+                hx += 0.004f * H + tw + 0.020f * H;
+            }
+        };
+        const float laneMid = (deckmode::LaneTopH() + deckmode::LaneBottomH()) / 2 * H;
+        line(upper, 5, laneMid - 0.042f * H, right);
+        line(lower, 3, laneMid, limit);
+        // (this holds the lane's left, as the tabs did: the prompts stand at the right edge as its mirror, promptbar.cpp CentreLane)
+        g_keep.push_back({side, deckmode::LaneTopH() * H, limit, deckmode::LaneBottomH() * H});
+    }
+    else
+    {
+        // the mouse's line: what the buttons do, and the same dim rule (HUD 2 is the mouse's too, the owner, 7 Nov 2026). What a selection offers stands on its card
+        const bool system = v != 0, zoomed = system && !navview::AtWidest();
+        const struct
+        {
+            const wchar_t *key, *word;
+            bool lit;
+        } rows[4] = {{L"LEFT CLICK", system ? L"SELECT" : L"SELECT SYSTEM", true},
+                     {L"WHEEL", L"ZOOM", system},
+                     {L"HOLD AND DRAG", L"MOVE MAP", zoomed},
+                     {L"HOVER", L"NAME", true}};
+        float hx = side;
+        const float y = (deckmode::LaneTopH() + deckmode::LaneBottomH()) / 2 * H, s = TextFloor();
+        for (const auto& r : rows)
+        {
+            if (!r.lit)
+                continue;
+            const float a = 0.95f;
+            Text(hx, y, r.key, s, Argb(kChrome, a));
+            hx += TextWidth(r.key, s) + 0.010f * H;
+            Text(hx, y, r.word, s, Argb(kInk, a));
+            hx += TextWidth(r.word, s) + 0.030f * H;
+        }
+    }
 }
 
 void Draw(const Win* map, bool pad)
 {
     g_pad = pad;
+    g_show = false;
     if (!map || !g_root || map->root != g_root || !Shown(map->root))
         return;
     const float W = g_W, H = g_H;
@@ -269,14 +535,34 @@ void Draw(const Win* map, bool pad)
         Fail("its viewport does not read");
         return;
     }
-    const Rc mapRect = {view[0], view[1], view[0] + view[2], view[1] + view[3]};
-    navnew::Frame(g_root, mapRect);
+    g_mapRect = {view[0], view[1], view[0] + view[2], view[1] + view[3]};
+    navnew::Frame(g_root, g_mapRect, pad);
+    g_show = true;
+}
+
+// Over the game's UI, because the map's viewport now runs under the panels: the marks, then the panels on them.
+void DrawOver()
+{
+    if (!g_show || !g_root)
+        return;
+    const bool pad = g_pad;
+    const Rc mapRect = g_mapRect;
+    const float W = g_W, H = g_H;
     const navlayout::MapOut lay = navnew::Grown() ? navlayout::Solve(W, H, deckmode::SideW()) : navlayout::Around(W, H, deckmode::SideW(), mapRect);
     if (lay.panel < kColumnMin)
         return; // (no room beside the map in this slide's frame: the words wait for it to settle)
     const int v = View(), layer = Layer();
+    // (the popup stands, by the zoom button every popup shows: Set Waypoint is not in the popup of an object the click hit, the owner's Newark, 7 Nov 2026)
+    navnew::SetSelected((Child(g_root, "NavMapOutZoom") && Shown(Child(g_root, "NavMapOutZoom"))) || (Child(g_root, "NavMapInZoom") && Shown(Child(g_root, "NavMapInZoom"))));
+    navnew::DrawOverMap(mapRect);
     const float size = kWordH * H * hudsize::g_baseK * (deckmode::g_on ? 1.2f : 1.0f);
     const int hover = skinchip::Hovered();
+    if (navnew::Grown())
+    {
+        DrawFull(lay, v, layer, size, hover, pad);
+        g_panelTick = GetTickCount64();
+        return;
+    }
     const float limit = deckmode::LaneTopH() * H - kPanelGap * H;
     auto shown = [&](int i) { return g_ctl[i] && Shown(g_ctl[i]); };
     auto panel = [&](const Rc& p, float height) { return Rc{p.x0, PanelTop(p.y0, height, limit), p.x1, 0}; };
@@ -290,23 +576,47 @@ void Draw(const Win* map, bool pad)
         const int cols = lay.column ? 1 : 2;
         const int viewRows = (2 + cols - 1) / cols;
         const float head = kSectionH * H;
-        const float height = navnew::LeftHeight(lay.left, H) + head + viewRows * (kChipH + kChipGap) * H + n * (kChipH + kChipGap) * H + 2 * kPanelPad * H;
-        Rc p = panel(lay.left, height);
-        p.y1 = p.y0 + height;
-        Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.85f, kChrome, 0.69f);
-        float y = navnew::DrawLeft(p, H) + kPanelPad * H;
+        // the route: the game's waypoint list in HUD 2's words, under VIEW (the owner, 7 Nov 2026: "HUD 2's own list"; the game's boxes, which it lays out
+        // under its own info card over this panel, are hidden: Waypoints())
+        std::vector<std::vector<std::wstring>> route;
+        Waypoints(route);
+        const float wpLine = size * 1.15f, wpGap = kChipGap * H;
+        float routeH = route.empty() ? 0 : head;
+        for (const auto& e : route)
+            routeH += static_cast<float>(e.size()) * wpLine + wpGap;
+        const float height = head + viewRows * (kChipH + kChipGap) * H + n * (kChipH + kChipGap) * H + routeH + 2 * kPanelPad * H;
+        if (g_panelH[0] <= 0)
+            g_panelH[0] = height;
+        Rc p = panel(lay.left, g_panelH[0]);
+        p.y1 = p.y0 + g_panelH[0];
+        Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.92f, kChrome, 0.69f);
+        float y = p.y0 + kPanelPad * H;
         skinchip::Section(p.x0 + kPanelPad * H, y + head / 2, L"VIEW");
         y += head;
         Rc cell[2];
-        y = Grid(p, H, y, 2, cols, cell) + kChipGap * H;
+        y = Grid(p, H, y, 2, cols, cell);
         for (int i = 0; i < 2; ++i)
             DrawChip(i, cell[i], kDefs[i].word, size, shown(i) && NativeEnabled(g_ctl[i]) && !Current(i, v, layer), Current(i, v, layer), false, hover);
         for (int k = 0; k < n; ++k)
         {
             Rc c[1];
-            y = Grid(p, H, y, 1, 1, c) + kChipGap * H;
+            y = Grid(p, H, y + kChipGap * H, 1, 1, c);
             DrawChip(ids[k], c[0], kDefs[ids[k]].word, size, NativeEnabled(g_ctl[ids[k]]), false, false, hover);
         }
+        if (!route.empty())
+        {
+            y += kChipGap * H;
+            const float x = p.x0 + kPanelPad * H, w = (p.x1 - p.x0) - 2 * kPanelPad * H;
+            skinchip::Section(x, y + head / 2, L"ROUTE");
+            y += head;
+            for (const auto& e : route)
+            {
+                for (size_t l = 0; l < e.size(); ++l, y += wpLine)
+                    TextFit(x, y + wpLine / 2, e[l], l == 0 ? size : size * 0.85f, w, Argb(l == 0 ? kInk : kDim, 1));
+                y += wpGap;
+            }
+        }
+        EasePanel(g_panelH[0], y + kPanelPad * H - p.y0);
         g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
     }
 
@@ -325,35 +635,54 @@ void Draw(const Win* map, bool pad)
             }
         const float pitch = (kChipH + kChipGap) * H, head = kSectionH * H;
         const int layerRows = pad ? 1 : (nLay + 1) / 2, filterRows = (nFil + 1) / 2;
-        const float cardH = navnew::RightHeight(lay.right, H);
-        const float height = cardH + (nSel + 1) / 2 * pitch + (layerRows + filterRows) * pitch + head + 2 * kPanelPad * H;
-        Rc p = panel(lay.right, height);
-        p.y1 = p.y0 + height;
-        Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.85f, kChrome, 0.69f);
-        float y = navnew::DrawRight(p, H) + kPanelPad * H;
-        Rc c[8];
-        y = Grid(p, H, y, nSel, 2, c) + (nSel ? kChipGap * H : 0);
+        const float height = (nSel + 1) / 2 * pitch + (layerRows + filterRows) * pitch + head + 2 * kPanelPad * H;
+        if (g_panelH[1] <= 0)
+            g_panelH[1] = height;
+        Rc p = panel(lay.right, g_panelH[1]);
+        p.y1 = p.y0 + g_panelH[1];
+        Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.92f, kChrome, 0.69f);
+        float y = p.y0 + kPanelPad * H;
+        Rc c[12];
+        // (an odd last tile takes the whole row: nothing stands with a hole beside it)
+        auto tiles = [&](float at, int count)
+        {
+            const bool odd = count % 2 != 0;
+            float bottom = Grid(p, H, at, count - (odd ? 1 : 0), 2, c);
+            if (odd)
+            {
+                Rc last[1];
+                bottom = Grid(p, H, count > 1 ? bottom + kChipGap * H : at, 1, 1, last);
+                c[count - 1] = last[0];
+            }
+            return bottom;
+        };
+        y = nSel ? tiles(y, nSel) + kChipGap * H : y;
         for (int i = 0; i < nSel; ++i)
             DrawChip(sel[i], c[i], Word(sel[i], v), size, NativeEnabled(g_ctl[sel[i]]), false, false, hover);
         skinchip::Section(p.x0 + kPanelPad * H, y + head / 2, L"LAYERS");
         y += head;
-        if (pad) // (one line on the pad, tiles on the mouse: 6.1)
+        // the layers and the filters in one block of tiles: nothing stands alone with a hole beside it, and an odd last tile takes the row (one line for the layers on the pad: 6.1)
+        struct Tile
         {
-            y = Grid(p, H, y, 1, 1, c) + kChipGap * H;
-            DrawChip(kLayerLine, c[0], CurrentLayerWord(layer), size, nLay > 0, false, true, hover);
-        }
+            int id;
+            const wchar_t* word;
+            bool enabled, current, stepper;
+        } t[12];
+        int nt = 0;
+        if (pad)
+            t[nt++] = {kLayerLine, CurrentLayerWord(layer), nLay > 0, false, true};
         else
-        {
-            y = Grid(p, H, y, nLay, 2, c) + kChipGap * H;
             for (int i = 0; i < nLay; ++i)
-                DrawChip(lay2[i], c[i], kDefs[lay2[i]].word, size, NativeEnabled(g_ctl[lay2[i]]), Current(lay2[i], v, layer), false, hover);
-        }
-        y = Grid(p, H, y, nFil, 2, c);
+                t[nt++] = {lay2[i], kDefs[lay2[i]].word, NativeEnabled(g_ctl[lay2[i]]), Current(lay2[i], v, layer), false};
         for (int i = 0; i < nFil; ++i)
-            DrawChip(fil[i], c[i], kDefs[fil[i]].word, size, NativeEnabled(g_ctl[fil[i]]), Current(fil[i], v, layer), false, hover);
+            t[nt++] = {fil[i], kDefs[fil[i]].word, NativeEnabled(g_ctl[fil[i]]), Current(fil[i], v, layer), false};
+        y = tiles(y, nt);
+        for (int i = 0; i < nt; ++i)
+            DrawChip(t[i].id, c[i], t[i].word, size, t[i].enabled, t[i].current, t[i].stepper, hover);
+        EasePanel(g_panelH[1], y + kPanelPad * H - p.y0);
         g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
     }
-    navnew::DrawOverMap(mapRect);
+    g_panelTick = GetTickCount64();
 }
 
 int Chips(views::MapChip* out, int max)
@@ -382,6 +711,7 @@ void ChipStep(int id, int dir)
 }
 
 void ChipFocus(int id) { g_focus = id; }
+void ListOpen(bool on) { g_listOpen = on; }
 
 std::string Command(std::istream& in)
 {

@@ -64,7 +64,17 @@ enum class Stop
 // The stop after `from` in direction `dir` (below 0 backwards); `from` when there is no other.
 inline Stop NextStop(Stop from, int dir, bool yours, bool dealers, bool buyShip)
 {
+    // left to right as they stand, no wrap (the owner, 7 Nov 2026: "dpad left will move us over to our side, and dpad right moves us back to dealer side.
+    // Simple and intuitive" - a wrap sent Right from the dealer's list to the player's)
+    // (the ship dealer's final stage keeps the ring: BUY SHIP one press from either list)
     const bool there[3] = {yours, dealers, buyShip};
+    if (!buyShip)
+    {
+        for (int i = static_cast<int>(from) + (dir < 0 ? -1 : 1); i >= 0 && i < 3; i += dir < 0 ? -1 : 1)
+            if (there[i])
+                return static_cast<Stop>(i);
+        return from;
+    }
     int i = static_cast<int>(from);
     for (int step = 0; step < 2; ++step)
     {

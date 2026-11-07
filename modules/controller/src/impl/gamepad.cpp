@@ -574,6 +574,15 @@ haptics::PadFacts Gamepad::Facts() const
     return f;
 }
 
+bool Gamepad::Touch(SdlPadTouch& out) const
+{
+    out = {};
+    if (!HostAtLeast(42) || !g_host->SdlPadTouchRead || !sdlSource_ || (ignoreReal && OutputIsReal()))
+        return false;
+    g_host->SdlPadTouchRead(&out);
+    return out.pads > 0;
+}
+
 bool Gamepad::OutputIsReal() const
 {
     if (DevActive())

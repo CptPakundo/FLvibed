@@ -1004,6 +1004,9 @@ file	hostcalls.h	core/game/hostcalls.h	core	the host services core's logic calls
 file	events_log.cpp	core/game/events_log.cpp	core	the logic's side of the event log
 file	gamemode.h	core/game/gamemode.h	core	where the player is: the modes, their names, detection
 file	gamemode.cpp	core/game/gamemode.cpp	core	mode detection
+file	navview.h	core/game/navview.h	core	the nav map's continuous zoom and pan on the game's own transform
+file	navview.cpp	core/game/navview.cpp	core	the nav map's zoom and pan: the fields and the game's placement calls
+file	navview_rules.h	core/game/navview_rules.h	core	the nav map's zoom, pan and touch gestures, pure
 file	coreframe.h	core/game/coreframe.h	core	core's work in a frame, at its two places in the frame order
 file	coreframe.cpp	core/game/coreframe.cpp	core	the game clock, the server's word, the player ship's AI state
 file	enabled_gate.h	core/enabled_gate.h	core	[Controller] enabled per module, pure
@@ -1028,6 +1031,8 @@ file	moviehooks.h	core/host/moviehooks.h	core	the movie event: Movie.dll's impor
 file	moviehooks.cpp	core/host/moviehooks.cpp	core	the movie event, for the Subtitles and Movies modules
 file	moviescreen.h	core/game/moviescreen.h	core	what both modules share of a movie: its identity, the window over the video
 file	moviescreen.cpp	core/game/moviescreen.cpp	core	identity from the file, the child or layered window, the DIB, the redraw rate
+file	commwin.h	core/game/commwin.h	core	the game's comm window placed by its live fields: what the subtitles and HUD 2 share
+file	commwin.cpp	core/game/commwin.cpp	core	the window, its icon and its caption into a screen square and back
 file	api.h	modules/movies/src/api.h	Movies	the host part's and the logic's tables
 file	main.cpp	modules/movies/src/host/main.cpp	Movies	the host part: movie event client, intro override
 file	movies.cpp	modules/movies/src/impl/movies.cpp	Movies	picture areas, fit, graph log, skip, intro, the Sleep import
@@ -1097,6 +1102,8 @@ file	indicators.h	core/game/indicators.h	core	the game's target indicators as da
 file	indicators.cpp	core/game/indicators.cpp	core	reads the indicators' records
 file	hud2_cue.h	modules/hud/src/hud2_cue.h	HUD	the weapon group cue's rules, pure (UI_HUD2_GROUP_CUE.md)
 file	hud2_cue.cpp	modules/hud/src/hud2_cue.cpp	HUD	the weapon group cue drawn
+file	hud2_comm.h	modules/hud/src/hud2_comm.h	HUD	the comm window under HUD 2 with no subtitles to hold it
+file	hud2_comm.cpp	modules/hud/src/hud2_comm.cpp	HUD	its place below the nav, the speaker's name under it
 file	nntabs.h	core/game/nntabs.h	core	the NeuroNet's tabs, pure: order, step, the press held through a slide (UI_HUD2_SKIN.md 6.1)
 file	nnwin.h	core/game/nnwin.h	core	the NeuroNet's windows as tabs: the HUD's strip and the pad's bumpers ask through it
 file	nnwin.cpp	core/game/nnwin.cpp	core	the manager's reads, the game's commands, the slide's seconds

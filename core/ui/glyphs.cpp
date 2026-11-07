@@ -546,11 +546,10 @@ static void Paint(Painter& p, Family f, Id id, Layer layer, int ox, int oy, bool
             for (int i = -1; i <= 1; ++i)
                 p.Line(kWhite, Px(0.3f), cy + i * S / 6, Px(0.7f), cy + i * S / 6, mark);
         }
-        else if (f == Family::PlayStation) // Create / Share: a small screen with its corner mark
+        else if (f == Family::PlayStation) // the touchpad, whose click is View on a DualSense / DualShock 4 (7 Nov 2026; was Create / Share): wide, its lower edge curved in
         {
-            const POINT q[4] = {{Px(0.3f), Py(0.34f)}, {Px(0.7f), Py(0.34f)}, {Px(0.7f), Py(0.66f)}, {Px(0.3f), Py(0.66f)}};
-            p.Poly(kWhite, q, 4, mark);
-            p.Line(kWhite, Px(0.5f), Py(0.44f), Px(0.5f), Py(0.6f), mark);
+            const POINT q[6] = {{Px(0.2f), Py(0.34f)}, {Px(0.8f), Py(0.34f)}, {Px(0.8f), Py(0.56f)}, {Px(0.62f), Py(0.66f)}, {Px(0.38f), Py(0.66f)}, {Px(0.2f), Py(0.56f)}};
+            p.Poly(kWhite, q, 6, mark);
         }
         else // Xbox View: two overlapping windows
         {

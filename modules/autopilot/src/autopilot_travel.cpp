@@ -1285,6 +1285,27 @@ void UpdateTravel(float dt, Out& out)
     };
     switch (s.kind)
     {
+    case route::Kind::Via:
+    {
+        // a waypoint before the last: flown through at speed (aimed 2 km past it, never braked for), the next step within 400 m of it
+        constexpr float kViaReach = 400.0f;
+        fl::Kinematics k = {};
+        if (!fl::PlayerKinematics(k))
+            return;
+        const float d[3] = {s.pos[0] - k.pos[0], s.pos[1] - k.pos[1], s.pos[2] - k.pos[2]};
+        const float dist = Len3(d);
+        if (dist < kViaReach)
+        {
+            events::Push("autopilot travel waypoint %u passed", static_cast<unsigned>(t.step));
+            stepDone();
+            return;
+        }
+        float aim[3];
+        for (int i = 0; i < 3; ++i)
+            aim[i] = s.pos[i] + d[i] / std::max(1.0f, dist) * 2000.0f;
+        ArriveAt(dt, aim, out);
+        return;
+    }
     case route::Kind::Arrive:
     {
         // a loot destination is taken by the beam from its reach: flown through, never braked for (the user's M12 core:

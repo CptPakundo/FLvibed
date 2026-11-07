@@ -637,16 +637,18 @@ static void ToggleAutopilot(const char* why)
 }
 
 void MarkAutopilotUsed() { g_apUsed = true; }
+static bool g_rsWheel = false; // the right stick is the action wheel's: while it is open, then until the stick is let go (the frame below)
+
 // The pad as the autopilot's flight meets it (core\ui\views.h PadFlightView).
 static void ViewSticks(inputrules::Sticks& s)
 {
     PadState p = g_pad.Cur();
     if (g_gateFlight.Hidden(glyphs::LS)) // a stick still held from FLUF's cursor / a popup is not the player's steering
         p.lx = p.ly = 0;
-    if (g_gateFlight.Hidden(glyphs::RS))
+    if (g_gateFlight.Hidden(glyphs::RS) || g_rsWheel) // (the action wheel's stick, until it is let go: never the autopilot's aim or take-back)
         p.rx = p.ry = 0;
-    // the right stick where it is the aim: turret view, ASSISTED (UI_PLAN 6.4), the open action wheel's pick
-    s = {p.lx, p.ly, p.rx, p.ry, g_turret || uiopt::Get().padPreset == presets::ASSISTED || wheel::IsOpen()};
+    // the right stick where it is the aim: turret view, ASSISTED (UI_PLAN 6.4)
+    s = {p.lx, p.ly, p.rx, p.ry, g_turret || uiopt::Get().padPreset == presets::ASSISTED};
 }
 
 static bool ViewHeld(inputrules::Channel c)
@@ -742,7 +744,7 @@ static void ContextAction()
         events::Push("pad context: nothing applies (no target, no loot in reach)");
 }
 
-// `target_smart` (RS tap): enemies first ("right stick should default to target nearest enemy
+// `target_smart` (RS tap). Since 7 Nov 2026 a cold tap takes what the reticle is on first (RingPick, below); then, 4 Nov 2026: enemies ("right stick should default to target nearest enemy
 // for a first press, and only consecutive presses should be 'next target'") - with a hostile ship within
 // tcycle::kReach, a cold press takes the nearest, presses in a run the next ones (target_cycle.h), set natively
 // (space::SetTarget, filter-independent: the game's NEXT / CLOSEST ENEMY walk the contact list under its filter). With
@@ -753,32 +755,12 @@ static void ContextAction()
 // that almost never held and the fallback found no enemy: "target ahead just doesn't work at all", the owner, 26 Oct
 // 2026; then 26 Oct - 4 Nov the ring first, enemies only when the ring was empty.)
 
-static void SmartTarget()
+// Reticle first (the owner, 7 Nov 2026, over 4 Nov's enemies first: with an enemy near, a tap never took what the player looked at):
+// a cold tap takes the object nearest the screen centre inside the ring; the taps that follow it in a run walk the enemies as above.
+static u32 RingPick(u32 cur, float& dist, float& r)
 {
-    static tcycle::Chain chain;
-    const u32 cur = fl::TargetId();
-    {
-        tcycle::Enemy e[64];
-        int n = 0;
-        for (const space::Contact& c : space::Contacts())
-            if (n < 64 && aim::NearbyEnemy(c))
-                e[n++] = {c.id, c.distance};
-        if (n > 0)
-        {
-            const u32 pick = chain.Press(static_cast<float>(GetTickCount()) * 0.001f, e, n, cur);
-            if (!pick)
-                events::Push("pad target_smart: the only enemy near is the target");
-            else if (space::SetTarget(pick))
-                events::Push("pad target_smart: enemy %u (%d near)", pick, n);
-            else
-            {
-                chain.Refused(cur);
-                events::Push("pad target_smart: enemy %u refused", pick);
-            }
-            return;
-        }
-    }
-    const float cx = fl::ScreenWidth() * 0.5f, cy = fl::ScreenHeight() * 0.5f, r = views::HudRingRadius();
+    const float cx = fl::ScreenWidth() * 0.5f, cy = fl::ScreenHeight() * 0.5f;
+    r = views::HudRingRadius();
     u32 best = 0;
     float bestD = r * r;
     for (const space::Contact& c : space::Contacts())
@@ -792,9 +774,53 @@ static void SmartTarget()
         if (d < bestD)
             bestD = d, best = c.id;
     }
-    if (best && space::SetTarget(best))
+    dist = sqrtf(bestD);
+    return best;
+}
+
+static void SmartTarget()
+{
+    static tcycle::Chain chain;
+    const u32 cur = fl::TargetId();
+    const float now = static_cast<float>(GetTickCount()) * 0.001f;
+    if (chain.Cold(now, cur))
     {
-        events::Push("pad target_smart: ahead %u (%.0f px from the centre, ring %.0f)", best, sqrtf(bestD), r);
+        float d = 0, r = 0;
+        const u32 ahead = RingPick(cur, d, r);
+        if (ahead && space::SetTarget(ahead))
+        {
+            chain.Took(now, ahead);
+            events::Push("pad target_smart: ahead %u (%.0f px from the centre, ring %.0f)", ahead, d, r);
+            return;
+        }
+    }
+    {
+        tcycle::Enemy e[64];
+        int n = 0;
+        for (const space::Contact& c : space::Contacts())
+            if (n < 64 && aim::NearbyEnemy(c))
+                e[n++] = {c.id, c.distance};
+        if (n > 0)
+        {
+            const u32 pick = chain.Press(now, e, n, cur);
+            if (!pick)
+                events::Push("pad target_smart: the only enemy near is the target");
+            else if (space::SetTarget(pick))
+                events::Push("pad target_smart: enemy %u (%d near)", pick, n);
+            else
+            {
+                chain.Refused(cur);
+                events::Push("pad target_smart: enemy %u refused", pick);
+            }
+            return;
+        }
+    }
+    // no enemy near, in a run: the next object ahead (the current one skipped)
+    float d = 0, r = 0;
+    if (const u32 best = RingPick(cur, d, r); best && space::SetTarget(best))
+    {
+        chain.Took(now, best);
+        events::Push("pad target_smart: ahead %u (%.0f px from the centre, ring %.0f)", best, d, r);
         return;
     }
     const bool had = fl::TargetHandle() != 0;
@@ -1087,6 +1113,15 @@ static void ReadPadFrame(float dt, PadFrame& f)
         menu[glyphs::A] = down[glyphs::Menu(glyphs::A)], menu[glyphs::B] = down[glyphs::Menu(glyphs::B)];
         picker::Update(dt, menu);
         wheel::Update(dt, menu, p.rx, p.ry);
+        // the wheel owns the right stick while it is open, and after it closes until the stick is let go (Shockwave, 7 Nov 2026: with the
+        // autopilot flying, the wheel's pick drove the crosshair as the autopilot's aim - left to the left edge, the autopilot's own aim
+        // pulling it back - and a stick still held at the release took the ship back): nothing in flight sees it then
+        if (wheel::IsOpen())
+            g_rsWheel = true;
+        else if (p.rx == 0 && p.ry == 0)
+            g_rsWheel = false;
+        if (g_rsWheel)
+            p.rx = p.ry = 0;
         views::PanelUpdate(dt, menu);
         wgroups::Update(dt, menu);
         for (int i = 0; i < glyphs::COUNT; ++i)

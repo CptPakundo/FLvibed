@@ -262,15 +262,17 @@ void Test_haptics_engine()
         Signals s = Flying();
         s.cruiseEngaged = true, s.chargeTime = 5;
         float rise = 0;
-        bool grew = true;
+        bool grew = true, insideFirst = true; // (from the inside out, 7 Nov 2026: a light texture first, the mass from a third of the charge)
         for (float t = 0.1f; t < 5; t += static_cast<float>(kDt))
         {
             s.chargeElapsed = t;
             r.Step(s);
             grew = grew && r.last.bed.mass >= rise - 1e-4f;
             rise = r.last.bed.mass;
+            if (t < 5.0f / 3.0f)
+                insideFirst = insideFirst && r.last.bed.mass < 1e-4f && r.last.bed.tex > 0;
         }
-        CHECK(grew && rise > 0.4f);
+        CHECK(grew && rise > 0.35f && insideFirst);
         s.chargeElapsed = 0; // charged: the game's clock is over
         r.Step(s);
         CHECK(r.starts[kCruiseRelease] == 1);

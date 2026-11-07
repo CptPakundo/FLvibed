@@ -123,7 +123,7 @@ function renderBindingsDrawer(d) {
   if (curCtx === 'flight' && ro()) h.push(`<label>Preset</label><div class="seg">${Object.keys(spec.bindings.presets).map(p => `<button data-rop="${p}" class="${p === spec.bindings.preset ? 'on' : ''}">${esc(p)}</button>`).join('')}</div>`);
   else if (curCtx === 'flight') h.push(`<label>Preset</label><select id="presetSel">${Object.keys(spec.bindings.presets).map(p => `<option ${p === spec.bindings.preset ? 'selected' : ''}>${p}</option>`).join('')}</select>`);
   h.push(`</div>`);
-  const used = {}; Object.entries(bd).forEach(([k, b]) => ['tap', 'hold', 'dbl'].forEach(v => { if (b[v] && b[v] !== 'none' && !['focus', 'map_snap', 'side', 'shift', 'map_scope', 'handback'].includes(b[v])) (used[b[v]] = used[b[v]] || []).push(k + (v === 'tap' ? '' : ' ' + v)); }));
+  const used = {}; Object.entries(bd).forEach(([k, b]) => ['tap', 'hold', 'dbl'].forEach(v => { if (b[v] && b[v] !== 'none' && !['focus', 'side', 'shift', 'map_scope', 'handback'].includes(b[v])) (used[b[v]] = used[b[v]] || []).push(k + (v === 'tap' ? '' : ' ' + v)); }));
   const conflicts = Object.entries(used).filter(([a, ks]) => ks.length > 1 && ks.filter(x => !x.includes(' ')).length > 1);
   if (conflicts.length) h.push(`<p class="conflict">Same tap action on two inputs: ${conflicts.map(([a, ks]) => `${esc(ACTIONS[a])} (${ks.join(', ')})`).join('; ')}</p>`);
   const sel = bindSel && bd[bindSel] ? bindSel : null;

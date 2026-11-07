@@ -181,6 +181,7 @@ struct HudView
     void (*MapChipPress)(int id);
     void (*MapChipStep)(int id, int dir);
     void (*MapChipFocus)(int id);
+    void (*MapList)(bool open); // the pad's destination list stands
 };
 inline HudView hud = {};
 
@@ -268,6 +269,11 @@ inline void HudMapChipStep(int id, int dir)
 {
     if (hud.MapChipStep)
         hud.MapChipStep(id, dir);
+}
+inline void HudMapList(bool open)
+{
+    if (hud.MapList)
+        hud.MapList(open);
 }
 inline void HudMapChipFocus(int id)
 {

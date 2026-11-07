@@ -18,10 +18,17 @@ void ClearAllHeld() { memset(g_held, 0, sizeof(g_held)); }
 typedef bool(__cdecl* IsCmdHeldFn)(int cmd);
 static IsCmdHeldFn g_origIsCmdHeld = nullptr;
 
+// Asked for each frame, so it ends by itself with the window or a reloaded logic.
+static DWORD g_flightLock = 0;
+void SetFlightLock() { g_flightLock = GetTickCount(); }
+bool FlightLocked() { return g_flightLock && GetTickCount() - g_flightLock < 250; }
+
 static bool __cdecl IsCmdHeldHook(int cmd)
 {
     if (cmd > 0 && cmd < fl::CMD_COUNT && g_held[cmd])
         return true;
+    if (fl::FlightCommand(cmd) && FlightLocked()) // (the game polls the bound keys and mouse buttons here: the left button that clicks the map also fired the guns, the owner, 7 Nov 2026)
+        return false;
     return g_origIsCmdHeld(cmd);
 }
 
@@ -64,7 +71,17 @@ static void __cdecl SteerHook()
 {
     if (!g_steerActive)
     {
+        if (!FlightLocked())
+        {
+            g_origSteer();
+            return;
+        }
+        // under a full-screen window the mouse is the window's: the cursor reads as the screen's centre for this call, so mouse flight steers nowhere (the owner, 7 Nov 2026) and the
+        // game's own rules still run; skipping the call would keep the last direction
+        const int x = Mem<int>(exe::MouseX), y = Mem<int>(exe::MouseY);
+        Mem<int>(exe::MouseX) = static_cast<int>(fl::ScreenWidth() * 0.5f), Mem<int>(exe::MouseY) = static_cast<int>(fl::ScreenHeight() * 0.5f);
         g_origSteer();
+        Mem<int>(exe::MouseX) = x, Mem<int>(exe::MouseY) = y;
         return;
     }
     const int savedX = Mem<int>(exe::MouseX), savedY = Mem<int>(exe::MouseY);

@@ -104,6 +104,8 @@ enum Align
 float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align align = Left, float track = 0,
            bool outline = true);
 float TextWidth(const std::wstring& s, float size, float track = 0);
+// Words that stand beside the game's own captions, in their face and weight (Agency FB Regular; HUD 2's text is its bold) with their shadow, capitals centred on y. `size` 0: the game's caption size. Returns the width.
+float GameCaption(float x, float y, const std::wstring& s, u32 argb, Align align = Left, float size = 0);
 // THE text-fit rule (core\game\textfit.h; every box FLvibed draws text into): unchanged when it fits maxW, else the size
 // steps down - only as far as needed - to the floor (default: TextFloor(), the legibility floor: 0.024 H, never under
 // 14 px; every text the kit draws is clamped up to it as well), and only then the text is cut with an ellipsis. Cached

@@ -323,6 +323,8 @@ u32 SelectFirstWaypoint();
 float DockRange();
 // Clears the player's waypoint list (0x4C46C0, as the nav map's "Clear all waypoints").
 void ClearWaypoints();
+// One more waypoint at the end of the player's list, in the ship's system, on the object when it has one (exe::AddWaypoint: at most 99).
+bool AddWaypoint(const float pos[3], u32 object);
 // Drops one entry of the player's waypoint list (exe::RemoveWaypoint 0x4C46E0, the nav map's "Clear waypoint"; the later
 // entries move down). False when not in space, the index is out of range or the symbol is unresolved.
 bool RemoveWaypoint(int index);

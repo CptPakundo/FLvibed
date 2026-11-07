@@ -50,6 +50,13 @@ int Level(u32 objId);
 // Sun, Trade Lane Ring, Station, Object) for a solar the player has not visited / discovered (the game's own test,
 // exe::ObjectUnknown), else its name (space::SpeakerName). Cached per id, re-checked every second (a visit changes it).
 std::wstring DisplayName(u32 objId);
+// The game calls this solar unknown now: not visited, not discovered (that same test). False when it cannot tell.
+bool Undiscovered(u32 objId);
+// A trade lane ring. The test above never says unknown for one, whatever its lane's ends are: all 78 of New York's in SaveC706, Norfolk Shipyard not found (7 Nov 2026).
+bool IsLaneRing(u32 objId);
+// An object's name in a route's list, seen from anywhere on the map: as DisplayName, but a ring's lane name only when the player has found both its ends (the owner, 7 Nov 2026), else
+// "Trade Lane". An end that names no place of this system counts as not found.
+std::wstring RouteName(u32 objId);
 // A trade lane ring's lane as the game's target panel names it ("Planet Manhattan->Fort Bush": the end on the viewer's
 // side first, Freelancer.exe 0x4E8D30); "" unknown. DisplayName uses it for a known ring.
 std::wstring LaneName(u32 ringId);

@@ -186,9 +186,15 @@ void Test_wave_synth()
     CHECK(WaveFormatRefusal(4, 48000, 0x603) != nullptr); // side speakers, no back pair
     CHECK(WaveFormatRefusal(6, 48000, 0x3F) == nullptr);
     CHECK(BackChannel(0x33) == 2 && BackChannel(0x3F) == 4 && BackChannel(0x3) == -1 && BackChannel(0) == 2);
-    CHECK(WaveOpenRefusal(true, false, false, true) == nullptr);
-    CHECK(WaveOpenRefusal(false, false, false, true) && WaveOpenRefusal(true, true, false, true) && WaveOpenRefusal(true, false, true, true) &&
-          WaveOpenRefusal(true, false, false, false));
+    CHECK(WaveOpenRefusal(true, false, true) == nullptr);
+    CHECK(WaveOpenRefusal(false, false, true) && WaveOpenRefusal(true, true, true) && WaveOpenRefusal(true, false, false));
+    // the speaker by name (Wine, 7 Nov 2026): Windows' and PipeWire's names of a DualSense's endpoint, never another device's
+    CHECK(EndpointNameMatches(L"Speakers (2- DualSense Edge Wireless Controller)", "DualSense Edge Wireless Controller"));
+    CHECK(EndpointNameMatches(L"DualSense Wireless Controller Analog Surround 4.0", "PS5 Controller"));
+    CHECK(EndpointNameMatches(L"dualsense wireless controller", nullptr));
+    CHECK(!EndpointNameMatches(L"Speakers (Realtek(R) Audio)", "DualSense Edge Wireless Controller"));
+    CHECK(!EndpointNameMatches(L"Headphones (Xbox Wireless Controller)", "PS5 Controller"));
+    CHECK(!EndpointNameMatches(nullptr, "DualSense") && !EndpointNameMatches(L"", "DualSense"));
     char id[128];
     CHECK(InstanceFromPath("\\\\?\\HID#VID_054C&PID_0DF2&MI_03#7&abc&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}", id, sizeof(id)));
     CHECK(!strcmp(id, "HID\\VID_054C&PID_0DF2&MI_03\\7&abc&0&0000"));

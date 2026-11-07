@@ -21,7 +21,7 @@ static constexpr int kDeviceResetOrder[] = {kSubtitles, kController};
 static constexpr int kCommOrder[] = {kController, kSubtitles};
 static constexpr int kManeuverOrder[] = {kSubtitles, kController};
 static constexpr int kCharacterOrder[] = {kSubtitles};
-static constexpr int kMovieOrder[] = {kMovies, kSubtitles}; // the picture first, as one module did it: the lines draw over it
+static constexpr int kMovieOrder[] = {kMovies, kSubtitles, kController}; // the picture first, as one module did it: the lines draw over it; the pad's skip
 // The cursor pass (CursorUpdateHook): the controller's overlay, then under the cursor hide the subtitles, then the game: the
 // subtitles draw over the controller's overlay, under the cursor.
 

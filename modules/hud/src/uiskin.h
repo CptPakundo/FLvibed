@@ -35,6 +35,8 @@ bool PadOwns(); // the pad is the device, as this frame's Update said
 void DrawOver(void* device);
 // Over the game's UI, under the prompt lane: the dialogs (skindialog.*), their scrim and what fell to native says so. Any mode; nothing when the skin is off.
 void DrawModal(void* device);
+// Over the game's UI, under the dialogs: the nav map's marks and panels (navskin::DrawOver).
+void DrawMap(void* device);
 // A modal menu is shown now (pause, save / load, Options - the scrim's families - or the confirm dialog) while the skin
 // is on (false under ui_style 0). From OnRenderUnderHud before the skin's own pass: the registry is brought current
 // first (on the host's UI generation: a compare when nothing changed), then a few cached state reads - no search.

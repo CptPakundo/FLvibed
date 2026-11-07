@@ -32,6 +32,7 @@ void Test_winfit();
 void Test_nntabs();
 void Test_navmap_layout();
 void Test_padmap_zones();
+void Test_navview();
 void Test_navmap_labels();
 void Test_movie_words();
 void Test_input_rules();
@@ -248,6 +249,7 @@ int main(int argc, char** argv)
         {"nntabs", Test_nntabs},
         {"navmap_layout", Test_navmap_layout},
         {"padmap_zones", Test_padmap_zones},
+        {"navview", Test_navview},
         {"navmap_labels", Test_navmap_labels},
         {"movie_words", Test_movie_words},
     {"input_rules", Test_input_rules},

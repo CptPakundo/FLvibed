@@ -18,10 +18,23 @@ constexpr float kJump = 0.03f;                          // the wanted place movi
 constexpr float kMoveSec = 0.20f;                       // a jump of the block (seat, side, out of a card's way) travels, never cuts (the owner: steps read choppy)
 constexpr float kYieldSec = 0.15f;                      // the words fading where nothing leaves them room
 constexpr float kAfterHitSec = 3.0f, kAfterHitFade = 0.4f;
+constexpr float kTrailHoldSec = 0.35f, kTrailTau = 0.25f, kTrailFloor = 0.3f; // the white trail: held after the last hit, then drained (a 20 % hit is gone in about 0.6 s)
 constexpr float kEdgeWaitSec = 0.5f;                    // leaving the screen, the words wait by the arrow, then fade
 constexpr float kLockHz = 1.0f, kWaypointHz = 0.5f;     // the lock's breath on the cue, the waypoint diamond's
 constexpr float kDiamondHalf = 0.027f, kDiamondLine = 0.0026f, kDiamondClear = 0.008f; // the waypoint diamond: half across, its line, its point above the object
 constexpr float kGap = 0.012f, kBarW = 0.12f, kBarH = 0.007f, kBarGap = 0.005f, kCardW = 0.20f, kCardH = 0.098f;
+// The target's carets: four, one on each diagonal of its mark, each pointing at the centre (the owner, 7 Nov 2026: "very hard to have eyes on your target when
+// they're inside the reticle. The single marker on top of them is not good enough" - like the game's brackets, but triangles pointing in). A caret's point stands
+// kQuadGap off the mark's corner along the diagonal, its body kQuadLen x its size long, its base 2 x its size across.
+constexpr float kQuadGap = 0.004f, kQuadLen = 1.6f;
+// A caret's size (its base's half): with the object's size, a mark from 0.008 to 0.012 H (a ship's radius reaches the cap at 300 m)
+inline float CaretSize(float mark, float H, float k)
+{
+    const float lo = 0.008f * H * k, hi = 0.012f * H * k, v = mark * 0.14f;
+    return v < lo ? lo : v > hi ? hi : v;
+}
+// How far the carets reach past the mark's half, on each axis: the base's outer corner on the diagonal
+inline float QuadReach(float mark, float H, float k) { return 0.70711f * (kQuadGap * H * k + (kQuadLen + 1.0f) * CaretSize(mark, H, k)); }
 
 struct Box
 {
@@ -103,10 +116,10 @@ public:
         if (!in.id)
             return o;
         // after a hit: the numbers for 3 s, then a fade; another hit starts it again
-        Hit(in.shield, wasS_, hitS_, lostS_, in.dt);
-        Hit(in.hull, wasH_, hitH_, lostH_, in.dt);
+        Hit(in.shield, wasS_, hitS_, lostS_, in.dt, in.motion == MotionNone);
+        Hit(in.hull, wasH_, hitH_, lostH_, in.dt, in.motion == MotionNone);
         o.hitShieldA = HitAlpha(hitS_), o.hitHullA = HitAlpha(hitH_);
-        o.lostShield = o.hitShieldA > 0 ? lostS_ : 0, o.lostHull = o.hitHullA > 0 ? lostH_ : 0;
+        o.lostShield = lostS_, o.lostHull = lostH_; // (its own clock: the trail, not the numbers' 3 s)
         if (!in.onScreen)
         {
             offAge_ += in.dt;
@@ -127,7 +140,7 @@ public:
         o.show = true;
         o.mark = MarkSize(in.r, H, k);
         lastMark_ = o.mark, lastX_ = in.x, lastY_ = in.y;
-        const float hm = o.mark / 2, gap = kGap * H * k;
+        const float hm = o.mark / 2 + QuadReach(o.mark, H, k), gap = kGap * H * k; // (the mark with its carets: what stands round it keeps off them)
         const float d = sqrtf((in.x - cx) * (in.x - cx) + (in.y - cy) * (in.y - cy));
         const float dead = kSideDead * H * k;
         // The seat and side stand as they opened until the change starts: the mini card is beside the ship, and a card that would touch the ring or a panel goes (below).
@@ -244,11 +257,16 @@ private:
             return 0;
         return since <= kAfterHitSec ? 1.0f : 1 - (since - kAfterHitSec) / kAfterHitFade;
     }
-    static void Hit(float v, float& was, float& since, float& lost, float dt)
+    // The white "just lost" part of a bar: a hit adds to it, it holds kTrailHoldSec after the last hit, then drains to the left - towards the value - as a damage
+    // trail does (Shockwave via the owner, 7 Nov 2026: "should smoothly drain to the left, rather than lingering for far longer than it truly should"; it stood the
+    // numbers' 3 s). Exponential with a floor speed, so a sliver goes too; under skin_motion NONE it goes at the hold's end.
+    static void Hit(float v, float& was, float& since, float& lost, float dt, bool still = false)
     {
         since += dt;
         if (was >= 0 && v >= 0 && v < was - 1e-4f)
-            lost = since < kAfterHitSec ? lost + (was - v) : was - v, since = 0;
+            lost += was - v, since = 0;
+        else if (since > kTrailHoldSec && lost > 0)
+            lost = still ? 0.0f : std::max(0.0f, lost - dt * std::max(kTrailFloor, lost / kTrailTau));
         was = v;
     }
     unsigned id_ = 0;

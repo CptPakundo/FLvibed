@@ -207,32 +207,32 @@
     "DD": {
      "dbl": "none",
      "hold": "none",
-     "tap": "map_snap"
+     "tap": "map_dest_next"
     },
     "DL": {
      "dbl": "none",
      "hold": "none",
-     "tap": "map_snap"
+     "tap": "dest_list"
     },
     "DR": {
      "dbl": "none",
      "hold": "none",
-     "tap": "map_snap"
+     "tap": "map_layers"
     },
     "DU": {
      "dbl": "none",
      "hold": "none",
-     "tap": "map_snap"
+     "tap": "map_dest_prev"
     },
     "L3": {
      "dbl": "none",
      "hold": "none",
-     "tap": "none"
+     "tap": "map_findme"
     },
     "LB": {
      "dbl": "none",
      "hold": "none",
-     "tap": "map_scope"
+     "tap": "tab_prev"
     },
     "LS": {
      "dbl": "none",
@@ -252,17 +252,17 @@
     "R3": {
      "dbl": "none",
      "hold": "none",
-     "tap": "none"
+     "tap": "map_scope"
     },
     "RB": {
      "dbl": "none",
      "hold": "none",
-     "tap": "map_scope"
+     "tap": "tab_next"
     },
     "RS": {
      "dbl": "none",
      "hold": "none",
-     "tap": "scroll"
+     "tap": "map_pan"
     },
     "RT": {
      "dbl": "none",
@@ -272,12 +272,12 @@
     "VIEW": {
      "dbl": "none",
      "hold": "none",
-     "tap": "dest_list"
+     "tap": "map_close"
     },
     "X": {
      "dbl": "none",
-     "hold": "map_remove",
-     "tap": "map_remove"
+     "hold": "map_clear",
+     "tap": "map_waypoint"
     },
     "Y": {
      "dbl": "none",
@@ -1594,7 +1594,8 @@
      "id": "default",
      "label": "Dialog",
      "notes": [
-      "Focus starts on LOAD AUTOSAVE; the three buttons are the game's own (native click). B does nothing here on purpose."
+      "Focus starts on LOAD AUTOSAVE; the three buttons are the game's own (native click). B does nothing here on purpose.",
+      "Built 7 Nov 2026 (dev, after 0.4.0): the three buttons sit at the foot of the taller log window, clear of its text."
      ],
      "prompts": [
       {
@@ -1714,7 +1715,7 @@
         ],
         [
          "R3",
-         "TARGET AHEAD"
+         "AHEAD / NEXT ENEMY"
         ],
         [
          "VIEW",
@@ -1743,7 +1744,9 @@
       "Rebuilt 25 Oct 2026 after the owner's review: a badge is 0.45 of its element's height (0.022..0.036 H, times Text size), centred on the element and sitting on its panel's frame line that faces the open screen - the bar's glyphs form a row on the bar's bottom edge (B free flight, A goto / dock whichever applies, A + hold formation, View + hold autopilot), Y on the cruise box's lower edge, View under the NeuroNet box, the D-pad glyphs (the pressed arm highlighted) and Y + hold on the bottom-right header's top line over the consumables and the active weapon group, LB and R3 inside the contact-list header; the HUD's own chrome and font, the HUD base only inside each glyph's silhouette, the game's yellow when the element is lit. The legend's glyphs at the HUD font's height; a long legend shifts up to clear the bottom panels.",
       "HUD 2 (approved 25 Oct 2026, modules\\hud\\docs\\UI_HUD2.md; the HUD row, default HUD 2 ON THE PAD): in pad flight FLvibed's own HUD replaces the game's panels - the reticle ring (shield left, hull right, power below, speed inside), the objective and maneuver top left, the target card top right with the threat list, the ship panel bottom left, the loadout with the D-pad cross bottom right, context prompts under the ship, one alert at a time; the subtitles' panel with the portrait top centre. The badges above remain the Classic HUD. Mock-ups: the HUD 2 proposal page (artifact D6XnaBvWLKHARfdvTQuj3Y).",
       "The story / tutorial popup (NeuroNet message box, e.g. M01's Basics of Combat) on the pad: A OK (or YES), B CLOSE (or NO / LATER when the box has them) - the box's own buttons, natively; the prompt bar says so. The flight buttons stay the flight's while no box is up.",
-      "Built 4 Nov 2026 (0.2.6, the owner's play notes): the tractor has two prompts. A tractors one item: the targeted loot or, with nothing targeted, the nearest loot in reach ([A] TRACTOR <ITEM> · <range>, e.g. TRACTOR DRAIL · 730 m). X tractors everything in reach ([X] TRACTOR ALL n). Before, both pulled everything. Loot the hold cannot take is not offered. HUD 2 and the classic HUD; the keyboard form shows the key of each. Tested on a virtual pad, not a real one."
+      "Built 4 Nov 2026 (0.2.6, the owner's play notes): the tractor has two prompts. A tractors one item: the targeted loot or, with nothing targeted, the nearest loot in reach ([A] TRACTOR <ITEM> · <range>, e.g. TRACTOR DRAIL · 730 m). X tractors everything in reach ([X] TRACTOR ALL n). Before, both pulled everything. Loot the hold cannot take is not offered. HUD 2 and the classic HUD; the keyboard form shows the key of each. Tested on a virtual pad, not a real one.",
+      "Built 7 Nov 2026 (dev, after 0.4.0): the target marker is four carets on the target's diagonals pointing in, replacing the single caret over the ship; the attitude by shape: hostile solid, neutral hollow, friendly open. The RS legend row reads AHEAD / NEXT ENEMY while a target is held (TARGET AHEAD / ENEMY without one).",
+      "Built 7 Nov 2026 (dev, after 0.4.0): the flight cursor (HUD 2) is four arcs on the axes that read as the game's own ring, with a dot; over a ship four darts stand in the diagonal gaps pointing in, solid (hostile), hollow (neutral) or open (friendly) by attitude. Firing pushes the darts in and bolds the ring; a no-fire target shows a bar; free aim is the ring and the dot. Before: hostile corners and firing spokes."
      ],
      "prompts": []
     },
@@ -1834,7 +1837,7 @@
        "items": [
         [
          "R3",
-         "TARGET AHEAD"
+         "TARGET AHEAD / ENEMY"
         ],
         [
          "LB",
@@ -1859,7 +1862,8 @@
       "Without a target the legend offers the ways to get one and the calm actions. The maneuver bar's A badge moves to whichever button applies once a target exists (GOTO for a point, DOCK for a dockable).",
       "Built 26 Oct 2026 (0.1.0): the right-stick click (RS) = the nearest object inside HUD 2's reticle ring (the ring is the cone, the owner), set natively; again = the next one there; nothing in the ring = the nearest / next enemy; double click = clear ([RS] x2 CLEAR on the target card). Without a target the card's corner shows [LB] TARGETS and [LB held] WHEEL, faded outside combat.",
       "Built 4 Nov 2026 (0.2.6, the owner's play notes): the right-stick click (RS) takes the nearest enemy first. A hostile ship within 10 km: a cold press takes the nearest, presses within 3 s take the next ones (every enemy once, then again), after a pause it starts again from the nearest. No enemy near: the nearest object inside the reticle ring, else the game's nearest / next enemy (the label then reads TARGET AHEAD; NEAREST ENEMY while enemies are near). Double click clears.",
-      "Built 4 Nov 2026 (0.2.6): the enemies cue. On the pad, with nothing targeted and enemies near, the card's corner shows, under the LB hints, 'n ENEMIES NEARBY' (hostile red) and '[RS] TARGET NEAREST'. Tested on a virtual pad, not a real one."
+      "Built 4 Nov 2026 (0.2.6): the enemies cue. On the pad, with nothing targeted and enemies near, the card's corner shows, under the LB hints, 'n ENEMIES NEARBY' (hostile red) and '[RS] TARGET NEAREST'. Tested on a virtual pad, not a real one.",
+      "Built 7 Nov 2026 (dev, after 0.4.0, the owner: \"unintuitive that I couldn't one-click select the thing I was looking at with enemies nearby\"): the right-stick tap is reticle first and replaces the 4 Nov order above. A cold tap takes the object nearest the screen centre inside the reticle ring (ships, loot, bases, rings, anything targetable); taps in a run (within 3 s, the target unchanged) walk the enemies, the nearest not yet taken; nothing in the ring: the nearest enemy; no enemy near, in a run: the next object ahead. The legend row reads TARGET AHEAD / ENEMY (with a target: AHEAD / NEXT ENEMY). Verified in a dev game on a virtual pad; not on a real one."
      ],
      "prompts": []
     },
@@ -2226,7 +2230,7 @@
      "label": "Target picker",
      "notes": [
       "Tap LB: a pad-native picker over the same contacts the game lists, in categories on the bumpers (Threats, Mission, Navigation, Ships, Loot), rows sorted by relevance with distance and attitude; moving the focus previews the target (the game's own target box follows); A selects natively, B keeps the previous target. A modal has its own prompt bar, so the legend steps aside.",
-      "The quick targeting is the RS click (the 4 Nov 2026 rule): a first press takes the nearest enemy within 10 km, presses within 3 s take the next ones; with no enemy near it takes what the reticle ring points at (else the game's nearest / next enemy); double tap = clear; hold = rear view.",
+      "The quick targeting is the RS click (since 7 Nov 2026, dev, after 0.4.0: reticle first; the 4 Nov rule took enemies first): a cold tap takes the object nearest the screen centre inside the reticle ring; taps within 3 s walk the enemies, the nearest not yet taken; with nothing in the ring it takes the nearest enemy; double tap = clear; hold = rear view.",
       "Built: the panel sits right-middle (the legend's place) with a header <CATEGORY> <count>, a strip of the five categories with their counts, 7 rows with scroll arrows; attackers are prefixed '!'; D-pad left / right switch categories too; the left stick never walks rows (it keeps flying); every focus change selects natively, so the game's target box follows; the prompt bar lists CATEGORY, ROW, TARGET, KEEP OLD."
      ],
      "prompts": [
@@ -2367,7 +2371,8 @@
       "Rare and contextual actions live in one wheel: hold LB, pick with the right stick (a dead zone keeps steering noise out; the D-pad works too), release to do it. The left stick keeps flying meanwhile. Scan cargo lives here: contextual, still two motions away.",
       "Built: nothing is pre-highlighted - the right stick (past a dead zone) or the D-pad picks, a bare hold and release does nothing; drawn as label boxes on a ring round the reticle, the pick repeated under it; with TWO GROUPS ON THE TRIGGERS an ENGINE KILL slot joins; COMMS = the game's hail (USER_RADIO); the right stick does not steer while the wheel is open.",
       "Built: EDIT GROUPS opens the weapon group editor over the HUD: the ship's guns with a tick each, A switches the focused gun on or off in the group, D-pad up / down the gun, LB / RB the group (which also makes it the active group), B done; the sticks keep flying and RT keeps firing. The game stores the groups. Guns only: launchers fire on their own buttons.",
-      "Built 4 Nov 2026 (0.2.7): the wheel's CRUISE DISRUPTOR stays, and the missile button held (RB in FREELANCER, ASSISTED and under the autopilot, B in ACE) also fires a cruise disruptor when the ship has one and no torpedo; HUD 2's torpedo row then says HOLD for it. Tested on a virtual pad, not a real one."
+      "Built 4 Nov 2026 (0.2.7): the wheel's CRUISE DISRUPTOR stays, and the missile button held (RB in FREELANCER, ASSISTED and under the autopilot, B in ACE) also fires a cruise disruptor when the ship has one and no torpedo; HUD 2's torpedo row then says HOLD for it. Tested on a virtual pad, not a real one.",
+      "Built 7 Nov 2026 (dev, after 0.4.0): the right stick is the wheel's alone while it is open and after it closes until the stick is let go: it never steers, never moves the autopilot's crosshair and never takes the autopilot back."
      ],
      "prompts": [
       {
@@ -2483,7 +2488,8 @@
      "label": "Autopilot goal panel",
      "notes": [
       "The goal panel (AUTOPILOT_UX section 5): actions built from the target and the objective, the queue, a few settings; one column, tabs on the bumpers, every action on a face button. The sticks keep flying while it is open.",
-      "Built: A = DO NOW starts the goal and closes the panel (the autopilot runs one goal at a time); QUEUE and DO NEXT are drawn greyed until the autopilot has a goal queue; SETTINGS = the AUTOPILOT tab's seven player rows (Combat, Fire the guns, Missiles, Countermeasures, Nanobots and batteries, Loot, Caution) through the settings bus; the QUEUE tab shows the running goal, the objective step and a travel plan's steps."
+      "Built: A = DO NOW starts the goal and closes the panel (the autopilot runs one goal at a time); QUEUE and DO NEXT are drawn greyed until the autopilot has a goal queue; SETTINGS = the AUTOPILOT tab's seven player rows (Combat, Fire the guns, Missiles, Countermeasures, Nanobots and batteries, Loot, Caution) through the settings bus; the QUEUE tab shows the running goal, the objective step and a travel plan's steps.",
+      "Built 7 Nov 2026 (dev, after 0.4.0): the panel is sized to its setting names and never covers the reticle ring. With HUD 2 on it has HUD 2's look: a chamfered glass plate, tab plates with the current tab's yellow underline, and the focused row filled 28 % yellow with a bar outside the left edge."
      ],
      "prompts": [
       {
@@ -3096,50 +3102,30 @@
       634,
       "nav map"
      ],
-     "hidden": [
-      [
-       655,
-       176,
-       980,
-       206,
-       "map icon row → bumpers / wheel"
-      ]
-     ],
      "id": "default",
      "label": "Map cursor",
      "notes": [
-      "The left stick drives FLvibed's own map cursor (speed ramps, slows over objects, pulls toward them; the D-pad snaps to the nearest object). A selects the object under it, A again plots it as a waypoint (the game keeps up to 99); X removes the last, hold X clears the route; Y travels the route with the autopilot.",
-      "View toggles the destination list beside the map: systems, then bases / gates / holes known to you, with route length; A sets the route the same way.",
-      "The map's own icon row (filters, zoom, legend) moves to the bumpers and the wheel; R3 resets the view.",
-      "Built: the map's objects are drawn by the map itself (not controls), so the left stick drives the game's own cursor with magnetism over controls and there is no D-pad snap; LT / RT work only while the map shows its zoom buttons; X = the map's remove button when shown, else the last waypoint removed natively, held = clear all; View's destination list covers the current system (bases, planets, stations, gates, holes by distance), A plots the game's best path, Y travels it with the autopilot."
+      "The screen is the map: the whole screen on a dark ground, HUD 2's labels, sector marks and a yellow route line; the system's name top left, the NeuroNet tabs on top. Cards stand only when asked: the ROUTE card on the left (with a route or an objective), the selection's card on the right, the layers card.",
+      "The left stick moves FLvibed's cursor, which slows over objects. The right stick moves the map; LT / RT zoom toward the cursor, continuously (LT held at the widest goes to the Sirius map). A touchpad: one finger drags the map, two fingers sliding zoom it (map_touchpad, on by default); every gesture has its stick route.",
+      "A selects the object at the cursor and shows its card; A again plots the route to it. X adds a waypoint at the cursor; X held removes the waypoint the cursor points at, or clears all with none there. Y flies the route with the autopilot (NO ROUTE YET without one). B closes the map, or the open card.",
+      "Left stick click is FIND ME: the ship's system with the ship in the middle and the cursor on it, from the Sirius map too. Right stick click is the Sirius map, and back to the system. D-pad up / down: the next destination, nearest the ship first, the map centred on each and the cursor on it. D-pad left: the destination list. D-pad right: the layers card. LB / RB step the NeuroNet tabs; View closes the map.",
+      "The hint rows at the bottom left show only what a press does right now: a row that would do nothing is not there.",
+      "The destination list holds only the places the player has found. The ROUTE card names a trade lane only when both of its ends are found, else it says Trade Lane.",
+      "Keyboard and mouse: a left click selects and the selection stays until the next click, the actions stand as chips on the selection's card, the wheel zooms toward the cursor, a drag moves the map. Keys and mouse do not fly or fire the ship under the map; the autopilot still flies. Right-click waypoints are not built."
      ],
      "prompts": [
       {
        "keys": [
         "LS"
        ],
-       "label": "CURSOR",
+       "label": "MOVE CURSOR",
        "v": ""
       },
       {
        "keys": [
-        "A"
+        "RS"
        ],
-       "label": "SELECT · AGAIN = WAYPOINT",
-       "v": ""
-      },
-      {
-       "keys": [
-        "X"
-       ],
-       "label": "REMOVE",
-       "v": ""
-      },
-      {
-       "keys": [
-        "Y"
-       ],
-       "label": "TRAVEL",
+       "label": "MOVE MAP",
        "v": ""
       },
       {
@@ -3152,10 +3138,44 @@
       },
       {
        "keys": [
-        "LB",
-        "RB"
+        "A"
        ],
-       "label": "SYSTEM / UNIVERSE",
+       "label": "SELECT / PLOT ROUTE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "ADD WAYPOINT",
+       "v": ""
+      },
+      {
+       "keys": [
+        "X"
+       ],
+       "label": "CLEAR ALL WAYPOINTS",
+       "v": "hold"
+      },
+      {
+       "keys": [
+        "Y"
+       ],
+       "label": "FLY ROUTE",
+       "v": ""
+      },
+      {
+       "keys": [
+        "DL"
+       ],
+       "label": "DESTINATIONS",
+       "v": ""
+      },
+      {
+       "keys": [
+        "DR"
+       ],
+       "label": "LAYERS",
        "v": ""
       },
       {
@@ -3196,10 +3216,10 @@
      "id": "default",
      "label": "Pad",
      "notes": [
-      "D-pad / stick walks the item rows; the infocard on the right follows the focus and RS scrolls it. Jettison is a hold with a sweep.",
+      "D-pad / stick walks the item rows; the infocard on the right follows the focus and RS scrolls it. Y jettisons (the game's own panel, below).",
       "Weapon groups: on a focused weapon, D-pad left / right ticks its group boxes (the game's own checkboxes), so a granular loadout is set up here and fired by the Weapon groups setting's choice (one fire button, Y-hold cycling, or two groups on the triggers).",
       "View is the hub: from here LB / RB also switch to the other NeuroNet windows (map, log, status, info).",
-      "Built: the window has no CARGO / EQUIPMENT / SHIP tabs (filter buttons only): prompts D-pad ITEM, X FILTER, A USE / MOUNT, RS INFO, B CLOSE; weapon groups are set on the HUD's group buttons (Y cycles), not in this window; JETTISON hold is not built.",
+      "Built: the window has no CARGO / EQUIPMENT / SHIP tabs (filter buttons only): prompts D-pad ITEM, X FILTER, A USE / MOUNT, RS INFO, B CLOSE; weapon groups are set on the HUD's group buttons (Y cycles), not in this window. Y jettisons what the game lets go; its how-many panel: LT / RT set the quantity, D-pad left / right one, Y all, A JETTISON, B CANCEL.",
       "Superseded: the group boxes above were never built; weapon groups are set with the action wheel's EDIT GROUPS (GitHub issue 4, 4 Nov 2026)."
      ],
      "prompts": [
@@ -3220,10 +3240,10 @@
       },
       {
        "keys": [
-        "X"
+        "Y"
        ],
        "label": "JETTISON",
-       "v": "hold"
+       "v": ""
       },
       {
        "keys": [
@@ -3716,17 +3736,17 @@
      "id": "default",
      "label": "Pad",
      "notes": [
-      "The game's two-list window, adapted: bumpers switch the side (your cargo / the dealer), D-pad walks the rows, triggers set the quantity (hold = fast), A buys or sells, Y = all you can afford / all you have. The transfer panel in the middle shows the running total and the profit against known prices.",
+      "The game's two-list window, adapted: the D-pad's left and right switch the side (left your own list, right the dealer's, no wrap), up and down walk the rows, triggers set the quantity (hold = fast), A buys or sells, Y = all you can afford / all you have. The transfer panel in the middle shows the running total and the profit against known prices.",
       "Keyboard and mouse keep the game's own window.",
-      "Built: the prompt bar caps at five, so the D-pad ITEM prompt is left out (LB / RB side, LT / RT QUANTITY, A BUY / SELL, Y MAX, B CLOSE); the middle panel shows QUANTITY n / max under the game's own total (the game's price text is not readable by FLvibed), not a running total of its own.",
+      "Built: the prompt bar caps at five, so the D-pad ITEM prompt is left out (D-pad left / right side, LT / RT QUANTITY, A BUY / SELL, Y MAX, B CLOSE); the middle panel shows QUANTITY n / max under the game's own total (the game's price text is not readable by FLvibed), not a running total of its own.",
       "Built 5 Nov 2026 (GitHub issue 20's comment, the owner's decision): A held 0.6 s buys or sells, one trade a hold, as a job or a ship is taken; a tap never trades. The row is selected again after each trade, so holding again repeats it. QUANTITY and MAX show only while the game offers a slider.",
       "RS moves the description while it overflows, then the list under the focus or the left stick's cursor; on a filter or the transfer panel the list last focused. A list that fits moves nothing."
      ],
      "prompts": [
       {
        "keys": [
-        "LB",
-        "RB"
+        "DL",
+        "DR"
        ],
        "label": "SIDE",
        "v": ""
@@ -3815,8 +3835,8 @@
      "prompts": [
       {
        "keys": [
-        "LB",
-        "RB"
+        "DL",
+        "DR"
        ],
        "label": "SIDE",
        "v": ""
@@ -5003,6 +5023,18 @@
        "unit": "%",
        "value": 60,
        "words": []
+      },
+      {
+       "id": "map_touchpad",
+       "key": "map_touchpad",
+       "label": "Touchpad on the nav map",
+       "kind": "toggle",
+       "help": "On a pad with a touchpad (DualSense, DualShock 4): one finger drags the nav map, two fingers sliding zoom it toward the cursor. Off leaves the right stick and the triggers, which do the same.",
+       "needs": "live",
+       "tier": "advanced",
+       "parent": null,
+       "def": true,
+       "value": true
       },
       {
        "def": "CONTEXTUAL",

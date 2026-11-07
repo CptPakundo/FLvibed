@@ -130,18 +130,40 @@ inline int BackChannel(unsigned mask)
     return (mask & kSpeakerBackLeft) ? n : -1;
 }
 
-// May the stream open at all? No test, no background game, no Wine: the coils can be heard, and a ContainerId match fails there anyway. Null: yes; else why not.
-inline const char* WaveOpenRefusal(bool device, bool background, bool wine, bool wired)
+// May the stream open at all? No test, no background game: the coils can be heard. Null: yes; else why not. Wine opens it too since 7 Nov 2026 (the owner:
+// feature parity): there the pad's speaker is found by its name (EndpointNameMatches), Wine's device tree having no ContainerId.
+inline const char* WaveOpenRefusal(bool device, bool background, bool wired)
 {
     if (!device)
         return "haptics_device 0";
     if (background)
         return "a background game";
-    if (wine)
-        return "Wine";
     if (!wired)
         return "not on USB";
     return nullptr;
+}
+
+// The pad's speaker by its name, where no ContainerId says which it is (Wine; a Windows whose tree lost the link): an endpoint name holding the pad's own
+// name or "DualSense", ASCII case ignored. Windows names it "Speakers (2- DualSense Edge Wireless Controller)", PipeWire / PulseAudio "DualSense Wireless
+// Controller Analog Surround 4.0" (the USB product string). The caller takes it only when exactly one endpoint matches: two pads, or none, is no match.
+inline bool ContainsNoCase(const wchar_t* hay, const char* needle)
+{
+    if (!hay || !needle || !*needle)
+        return false;
+    auto low = [](unsigned c) { return c >= 'A' && c <= 'Z' ? c - 'A' + 'a' : c; };
+    for (; *hay; ++hay)
+    {
+        int i = 0;
+        while (needle[i] && hay[i] && low(static_cast<unsigned>(hay[i])) == low(static_cast<unsigned char>(needle[i])))
+            ++i;
+        if (!needle[i])
+            return true;
+    }
+    return false;
+}
+inline bool EndpointNameMatches(const wchar_t* endpoint, const char* padName)
+{
+    return (padName && *padName && ContainsNoCase(endpoint, padName)) || ContainsNoCase(endpoint, "DualSense");
 }
 
 // A device interface path ("\\?\HID#VID_054C&PID_0DF2&MI_03#7&abc&0&0000#{guid}") into its instance id ("HID\VID_054C&PID_0DF2&MI_03\7&abc&0&0000"). False if it is none.

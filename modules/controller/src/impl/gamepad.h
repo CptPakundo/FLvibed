@@ -73,6 +73,8 @@ class Gamepad
     u32 Vendor() const;
     // The SDL backend reads the pad this frame (pad_backend 1 and SDL running: pad_backend.h ReadFromSdl).
     bool FromSdl() const { return sdlSource_; }
+    // The pad's touchpad, through the same gate as its buttons: nothing from a real pad in a background game, with an older host, or with SDL not reading. False: no fingers to read.
+    bool Touch(SdlPadTouch& out) const;
     // One line for `state` while pad_backend is not 0 or SDL still runs ("" otherwise: the default's output unchanged).
     std::string BackendStatus() const;
     void ForceCandidate(int answer) { candidateForced_ = answer; } // debug: a test on a machine with no such pad, or with one

@@ -29,6 +29,7 @@ struct UiOptions
     bool padTriggers = false;       // the pad in use has triggers to drive: the options page shows the row
     int padCursor = 1;              // pad_cursor: 0 off, 1 rooms and maps, 2 everywhere (phase D)
     int cursorMagnet = 60;          // cursor_magnet % (phase D)
+    bool mapTouchpad = true;        // map_touchpad: the touchpad's gestures on the nav map
     int promptBar = 0;              // prompt_bar: 0 contextual, 1 always, 2 off (phase D)
     int worldPrompts = 0;           // world_prompts: 0 contextual, 1 off
     bool apHints = true;            // ap_hints: show the autopilot's prompts to players who never used it (on since 0.2.0)

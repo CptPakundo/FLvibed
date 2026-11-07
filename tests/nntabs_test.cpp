@@ -9,17 +9,17 @@ using namespace nntabs;
 
 void Test_nntabs()
 {
-    // the owner's words, in the design's order; CHAT and GROUP join only in multiplayer
+    // the owner's words, in the game's own order (its top-right buttons, 7 Nov 2026); CHAT and GROUP join only in multiplayer
     CHECK(Count(false) == 5 && Count(true) == 7);
-    const wchar_t* words[] = {L"LOG", L"INVENTORY", L"MAP", L"STATUS", L"INFO"};
+    const wchar_t* words[] = {L"LOG", L"MAP", L"INVENTORY", L"STATUS", L"INFO"};
     for (int i = 0; i < 5; ++i)
         CHECK(wcscmp(kTabs[i].word, words[i]) == 0);
     CHECK(IndexOf(kCmdChat, false) == -1 && IndexOf(kCmdChat, true) == 5);
     CHECK(IndexOf(0x6B, true) == -1); // (a dealer's room command is no tab)
 
-    // INVENTORY and STATUS one press from the map
+    // the map between LOG and INVENTORY, as the game's buttons
     const int map = IndexOf(kCmdMap, false);
-    CHECK(kTabs[Step(map, -1, 5)].cmd == kCmdInventory && kTabs[Step(map, +1, 5)].cmd == kCmdStatus);
+    CHECK(kTabs[Step(map, -1, 5)].cmd == kCmdLog && kTabs[Step(map, +1, 5)].cmd == kCmdInventory);
     // wrapping both ways
     CHECK(Step(0, -1, 5) == 4 && Step(4, +1, 5) == 0 && Step(6, +1, 7) == 0);
     CHECK(Step(0, 1, 0) == -1);
@@ -39,6 +39,17 @@ void Test_nntabs()
     // pressed away and back during the slide: nothing is sent, the window would close
     CHECK(p.Go(kCmdStatus, kCmdMap, true) == 0 && p.Go(kCmdMap, kCmdMap, true) == 0);
     CHECK(p.Tick(0.016f, kCmdMap, false) == 0);
+
+    // the bumpers pick: held while the steps come, sent once they stop for kSettleSeconds; stepping back to the open tab sends nothing
+    p.Pick(kCmdInventory, kCmdMap);
+    CHECK(p.Held() && p.Tick(0.2f, kCmdMap, false) == 0);
+    p.Pick(kCmdStatus, kCmdMap); // (a second step restarts the wait)
+    CHECK(p.Tick(0.3f, kCmdMap, false) == 0 && p.cmd == kCmdStatus);
+    CHECK(p.Tick(0.2f, kCmdMap, false) == 0);
+    CHECK(p.Tick(0.016f, kCmdMap, false) == kCmdStatus && !p.Held());
+    p.Pick(kCmdLog, kCmdMap);
+    p.Pick(kCmdMap, kCmdMap);
+    CHECK(!p.Held() && p.Tick(1.0f, kCmdMap, false) == 0);
 
     // a hold that outlasts the slide's limit is dropped, never late
     CHECK(p.Go(kCmdLog, kCmdMap, true) == 0);

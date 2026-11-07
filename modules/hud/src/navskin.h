@@ -16,7 +16,7 @@ namespace navskin
 // The controls to hide on this map: the frame's two side windows and every icon a chip replaces. False: leave this window native.
 struct Hides
 {
-    u32 art[48];
+    u32 art[64];
     int nArt = 0;
 };
 bool Bind(u32 root, Hides& out);
@@ -27,11 +27,14 @@ bool TakeFailure();
 
 // The under pass's start, in any mode: no chip stands until Draw says so.
 void BeginPass();
-// In the skin's draw pass: the panels and chips, their keep-outs and hotspots. Nothing while no map is bound.
+// In the skin's draw pass, under the game's UI: the map's writes for this frame. Nothing while no map is bound.
 void Draw(const winplates::Win* map, bool pad);
+// Over the game's UI, its kit begun: the marks, then the panels and chips, their keep-outs and hotspots.
+void DrawOver();
 
 // The view
 int Chips(views::MapChip* out, int max);
+void ListOpen(bool on); // the pad's destination list: the hints show what still answers
 void ChipPress(int id);
 void ChipStep(int id, int dir);
 void ChipFocus(int id);

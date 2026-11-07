@@ -22,6 +22,8 @@ bool W32(u32 a, u32 v);
 // A text control's string (VtTitleText only; its text object +0x334 holds the wide pointer at +0, reallocated at every set, so it is copied, never kept).
 // False on any other class, on an empty text or a read that faults. docs\FREELANCER_RE.md "The game's text size is its font's".
 bool TextOf(u32 ctl, std::wstring& out);
+// The room the pad's bumpers picked, not yet entered ("" = none): the docked bar's underline stands under it (padbases, the owner's 7 Nov 2026 settle rule)
+void PickRoom(const std::string& label);
 
 constexpr u32 kParent = 0x04, kSibling = 0x08, kChild = 0x0C, kName = 0x18, kState = 0x6C, kOwnMesh = 0x84,
               kColour = 0x348, kLit = 0x333;

@@ -36,6 +36,32 @@ void Caret(float x, float y, float s, int attitude, u32 rgb)
         Line(l[0], l[1], r[0], r[1], lw, c);
 }
 
+// The target's four carets (hud2_target.h kQuadGap): on the mark's diagonals, each pointing at the centre, the attitude in the shape as Caret's (hostile solid,
+// neutral hollow, friendly open: the base left out); the navy keyline under each keeps them read on a bright nebula or a station's lights
+void CaretQuad(float x, float y, float half, float s, float gapQ, int attitude, u32 rgb)
+{
+    const u32 c = Argb(rgb, 1), navy = Argb(kNavy, 0.7f);
+    const float lw = std::max(1.5f, s * 0.16f), key = lw + 2;
+    for (const float dx : {-1.0f, 1.0f})
+        for (const float dy : {-1.0f, 1.0f})
+        {
+            const float ux = dx * 0.70711f, uy = dy * 0.70711f;                 // out along the diagonal
+            const float tx = x + dx * half + ux * gapQ, ty = y + dy * half + uy * gapQ; // the point, by the mark's corner
+            const float bx = tx + ux * s * ht::kQuadLen, by = ty + uy * s * ht::kQuadLen; // the base's middle, further out
+            const float l[2] = {bx - uy * s, by + ux * s}, r[2] = {bx + uy * s, by - ux * s};
+            Line(l[0], l[1], tx, ty, key, navy);
+            Line(r[0], r[1], tx, ty, key, navy);
+            if (attitude != ht::Friendly)
+                Line(l[0], l[1], r[0], r[1], key, navy);
+            if (attitude == ht::Hostile)
+                Tri(l[0], l[1], r[0], r[1], tx, ty, c);
+            Line(l[0], l[1], tx, ty, lw, c);
+            Line(r[0], r[1], tx, ty, lw, c);
+            if (attitude != ht::Friendly)
+                Line(l[0], l[1], r[0], r[1], lw, c);
+        }
+}
+
 // The soft bed behind bars and words: low, always on, feathered on every side; a plate would read as a box near the aim point.
 void SoftBed(float x0, float y0, float x1, float y1, float f)
 {
@@ -178,17 +204,17 @@ void DrawTargetForm(const Model& m, const Layout& L, float a, int motion)
     }
     Text(wx, wordsY, words, T, Argb(kInk, 1));
     SetAlpha(a);
-    // the caret stays on the ship, inside the ring too; a waypoint target adds a small diamond round it, no more
+    // the carets stay on the ship, inside the ring too: four, pointing in from its diagonals (7 Nov 2026); a waypoint target adds a small diamond over them, no more
     if (o.caretY >= 0)
     {
-        const float s = std::max(0.008f * H * k, std::min(o.mark * 0.14f, 0.012f * H * k)); // (a ship's radius reaches the marks' cap at 300 m: the caret stays a mark)
+        const float s = ht::CaretSize(o.mark, H, k); // (a ship's radius reaches the marks' cap at 300 m: the carets stay marks)
         float cy = o.caretY;
         if (m.tWaypoint)
         {
-            // a thin chrome outline with a navy edge, the game's waypoint shape made small; its lower point stays clear of the object's box, so a small ship's caret
-            // rises. Only the glow breathes: the line stands whole at the bottom of the breath, and the breath rests at 60 % under FADES and NONE
+            // a thin chrome outline with a navy edge, the game's waypoint shape made small; its lower point stays clear of the object's box and its top carets, so
+            // a small ship's diamond rises. Only the glow breathes: the line stands whole at the bottom of the breath, and the breath rests at 60 % under FADES and NONE
             const float d = ht::kDiamondHalf * H * k, lw = std::max(2.0f, ht::kDiamondLine * H * k);
-            cy = std::min(cy, m.tMark.y - o.mark / 2 - ht::kDiamondClear * H * k - d);
+            cy = std::min(cy, m.tMark.y - o.mark / 2 - ht::QuadReach(o.mark, H, k) - ht::kDiamondClear * H * k - d);
             const float dia[8] = {o.caretX, cy - d, o.caretX + d, cy, o.caretX, cy + d, o.caretX - d, cy};
             const float br = motion == ht::MotionFull ? ht::Breathe(GetTickCount() / 1000.0f, ht::kWaypointHz, motion) : 0.6f;
             for (const float g : {3.0f, 2.0f})
@@ -196,7 +222,7 @@ void DrawTargetForm(const Model& m, const Layout& L, float a, int motion)
             Outline(dia, 4, lw + 2, Argb(kNavy, 0.6f));
             Outline(dia, 4, lw, Argb(kChrome, 1));
         }
-        Caret(o.caretX, cy, s, att, m.tCol);
+        CaretQuad(m.tMark.x, m.tMark.y, o.mark / 2, s, ht::kQuadGap * H * k, att, m.tCol);
     }
     // the other ships: each the richest form that touches nothing
     ht::Box taken[12 + kMaxMarks];

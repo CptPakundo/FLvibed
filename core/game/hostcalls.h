@@ -77,6 +77,7 @@ struct Table
     void (*SetTargetMute)(bool on);
     bool (*TargetMuteReady)();
     void (*SetLoadDraw)(void (*draw)()); // the load's frame (core\host\router.h)
+    void (*SetFlightLock)(); // each frame a full-screen window stands: the player's keys and mouse fly nothing (input.h)
 };
 inline Table g = {};
 

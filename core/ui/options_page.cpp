@@ -22,6 +22,7 @@
 #include "game/hostcalls.h"
 #include "game/hudsize.h"
 #include "game/modslots.h"
+#include "game/navview.h" // the map's wheel
 #include "game/session.h" // MainMenuVisible: when the first-start card opens
 #include "modules_rules.h"
 #include "settings_reset.h" // the first card's stamp
@@ -1280,6 +1281,22 @@ static void LayTabs(Layout& l)
 
 // The screen's numbers (docs\UI_OPTIONS.md 8 and tools\uimock\options.py): the plate, a tab strip, rows, the description band, the chips. Rows, tabs and chips grow with the
 // text, the widths stay the plate's: a word that no longer fits takes the fit rule, and rows that no longer fit scroll.
+// The Options window's frame as it is drawn, pixels (x0 y0 x1 y1): the skin's measured plate on the game's own box (OptionsBox in game, big box from the
+// main menu), the same rectangle RenderUnder fills. False while the box is not up.
+static bool HostedPlate(float out[4])
+{
+    const char* anchor = uiclick::FindVisible("OptionsBox") ? "OptionsBox" : "big box"; // in game / the main menu
+    const u32 box = uiclick::FindVisible(anchor);
+    float off[4];
+    ui::Item it;
+    int w = 0, h = 0;
+    if (!box || !winplates::PlateOffsets("options", anchor, off) || !ui::ControlRect(box, it) || !render::ScreenSize(w, h) || h < 100)
+        return false;
+    const float H = static_cast<float>(h);
+    out[0] = it.x + off[0] * H, out[1] = it.y + off[1] * H, out[2] = it.x + off[2] * H, out[3] = it.y + off[3] * H;
+    return true;
+}
+
 static Layout ComputeLayout()
 {
     Layout l;
@@ -1312,6 +1329,12 @@ static Layout ComputeLayout()
         l.right = std::min(l.cx + 0.610f * H, l.sw - 0.01f * H);
         l.panelTop = (0.125f + ig) * H;
         l.panelBottom = 0.965f * H;
+        // ... but the page stands in the window's frame as it is drawn (Shockwave via the owner, 7 Nov 2026: "In-game FLvibed menu clips pretty roughly" -
+        // the tabs on the frame's top edge, the chips under its foot, the rows on its left line: the measured panel is 0.825 H wide and 0.125..0.965 H,
+        // the frame drawn round it - the skin's plate, the one RenderUnder fills - 0.77 H and 0.150..0.920 H in game). The plate read live, as RenderUnder does
+        float plate[4];
+        if (HostedPlate(plate))
+            l.left = plate[0], l.panelTop = plate[1], l.right = plate[2], l.panelBottom = plate[3];
         stripTop = l.panelTop + 0.012f * H;
     }
     else
@@ -1336,6 +1359,16 @@ static Layout ComputeLayout()
     const float gl = 0.040f * H * k;
     l.tabsLeft = l.left + 0.016f * H + gl;
     l.tabsRight = l.right - 0.016f * H - gl;
+    // hosted, the window's own close X (PreferencesCloseButton) stands in the frame's top-right corner, on the strip's line: RB and the tabs end left of it,
+    // and the first row starts under its foot (at small sizes it reached the head row's box)
+    float closeFoot = 0;
+    if (g_hostMode == Host::Options && !g_card)
+    {
+        ui::Item x;
+        if (const u32 close = uiclick::FindVisible("PreferencesCloseButton"))
+            if (ui::ControlRect(close, x) && x.hh > 0.5f && x.y + x.hh > l.tabsY - l.tabH * 0.5f && x.y - x.hh < l.tabsY + l.tabH * 0.5f)
+                l.tabsRight = std::min(l.tabsRight, x.x - x.hw - 0.008f * H - gl), closeFoot = x.y + x.hh + 0.004f * H;
+    }
     LayTabs(l);
     // the chips, bottom up
     g_chips.clear();
@@ -1350,7 +1383,7 @@ static Layout ComputeLayout()
     // the description: inside the plate, under the rows, in the same place on every tab
     l.descH = 0.030f * H * k * 1.28f * 2 + 0.016f * H;
     l.descTop = footTop - l.descH;
-    l.rowsTop = g_card ? stripTop + 0.010f * H : stripTop + l.tabH + 0.008f * H;
+    l.rowsTop = g_card ? stripTop + 0.010f * H : std::max(stripTop + l.tabH + 0.008f * H, closeFoot);
     l.rowsBottom = l.descTop;
     if (g_card || TabIs("subtitles"))
     {
@@ -1974,7 +2007,7 @@ void Update(double dtd)
     if (!g_open)
     {
         g_pressQueue.clear();
-        if (hostcalls::g.RealMouseWheel)
+        if (hostcalls::g.RealMouseWheel && !navview::Movable()) // (the nav map's wheel is the map's)
             hostcalls::g.RealMouseWheel(); // drained while closed: no old notches on the next open
         g_sb.on = false, g_sbDrag = false, g_sbHeld = 0;
         return;
@@ -2522,20 +2555,15 @@ void RenderUnder(void* device)
 {
     if (!g_open || g_hostMode != Host::Options || !g_settled || !device)
         return;
-    const char* anchor = uiclick::FindVisible("OptionsBox") ? "OptionsBox" : "big box"; // in game / the main menu
-    const u32 box = uiclick::FindVisible(anchor);
-    float off[4];
-    ui::Item it;
+    float r[4];
     int w = 0, h = 0;
-    if (!box || !winplates::PlateOffsets("options", anchor, off) || !ui::ControlRect(box, it) || !render::ScreenSize(w, h) ||
-        h < 100)
+    if (!HostedPlate(r) || !render::ScreenSize(w, h) || h < 100)
         return;
     const float H = static_cast<float>(h);
     if (!hud2kit::Begin(device, w, h, std::max(8, static_cast<int>(0.026f * H + 0.5f))))
         return;
     hud2kit::SetAlpha(1), hud2kit::SetOffset(0, 0);
-    hud2kit::Plate(it.x + off[0] * H, it.y + off[1] * H, it.x + off[2] * H, it.y + off[3] * H, H * 0.012f,
-                   hud2kit::kTL | hud2kit::kBR, 1.0f, hud2kit::kChrome, 0);
+    hud2kit::Plate(r[0], r[1], r[2], r[3], H * 0.012f, hud2kit::kTL | hud2kit::kBR, 1.0f, hud2kit::kChrome, 0);
     hud2kit::End();
 }
 

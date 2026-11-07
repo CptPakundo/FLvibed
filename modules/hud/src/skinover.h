@@ -14,5 +14,7 @@ bool TipRead(u32 tip);
 void Draw(void* device, bool on, bool pad);
 // Everything given back: the game's cursor.
 void Shutdown();
+// Debug: every flight reticle drawn in a row across the middle (`uiskin cursorsheet 1`)
+void Sheet(bool on);
 std::string Status();
 } // namespace skinover

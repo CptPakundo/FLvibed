@@ -4,8 +4,8 @@ Status: research behind the shipped presets. The binds as built are `docs\UI_SPE
 
 **The FREELANCER preset in short** (`pad_preset` 1 = ACE, 2 = ASSISTED) - flight: RS steer, LS throttle / strafe, RT fire, LT afterburner, RB missile / hold torpedo,
 A context (dock / lane / jump, tractor one item, else goto) / hold formation, B free flight (drops cruise too) / hold reverse, X tractor all / hold turret view,
-Y next weapon group / hold cruise, LB target picker / hold action wheel, RS click nearest enemy, in a run the next, else the reticle ring's object, double clear, hold
-rear view, LS click engine kill, D-pad nanobot / battery / countermeasure / mine, View NeuroNet / **hold half a second = autopilot** (in every preset), Menu pause; any
+Y next weapon group / hold cruise, LB target picker / hold action wheel, RS click what the reticle ring is on, else the nearest enemy, in a run the next enemy (reticle first: the owner, 7 Nov 2026), double clear, hold
+rear view, LS click engine kill, (the nav map, docs\MAP_PLAN.md, 7 Nov 2026: A select / A again best path, X waypoint add or remove / hold clear), D-pad nanobot / battery / countermeasure / mine, View NeuroNet / **hold half a second = autopilot** (in every preset), Menu pause; any
 stick past `autopilot_cancel` hands back (the right stick aims in ASSISTED). Menus: D-pad focus, LS cursor, A click, X right click, B back, RS scroll.
 
 The **binding pass** of `TASK_GLYPHS_HUD.md` (principle 9, phase 1b). User brief: research space and air combat games

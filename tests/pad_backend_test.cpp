@@ -160,4 +160,7 @@ void Test_pad_backend()
         for (int i = 0; i < 100; ++i)
             CHECK(k.Want(true, true, true, false, false, false, true, true, dt));
     }
+    // a PlayStation pad's View is its touchpad's click (7 Nov 2026), every other pad's SDL BACK
+    CHECK(TouchpadIsView(kTypePs5) && TouchpadIsView(kTypePs4));
+    CHECK(!TouchpadIsView(kTypeXboxOne) && !TouchpadIsView(kTypeSwitchPro) && !TouchpadIsView(kTypePs3));
 }

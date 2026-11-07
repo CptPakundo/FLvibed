@@ -379,6 +379,8 @@ struct Planner
                 if (r.total < best.total)
                     best = r, via = &L;
             }
+            // a point flown through: then on to the next item from it (speed at it: unknown, taken as 0 - the cheap, safe bound)
+            const auto onward = [&](float cost) { return it.kind == Kind::Via ? cost + Solve(i + 1, it.pos, 0, out) : cost; };
             if (via && best.total < direct)
             {
                 const Step ls = LaneStep(*via, best);
@@ -386,13 +388,13 @@ struct Planner
                 const float jump = it.kind == Kind::Jump ? space::JumpSeconds(it.object) : 0.0f;
                 s.eta = best.total - ls.eta + jump;
                 out.push_back(s);
-                return best.total + jump;
+                return onward(best.total + jump);
             }
             // A jump: the gate's own sequence (jump out, tunnels, jump in) after the approach.
             const float jump = it.kind == Kind::Jump ? space::JumpSeconds(it.object) : 0.0f;
             s.eta = direct + jump;
             out.push_back(s);
-            return direct + jump; // a jump ends the plan for this system; the destination ends it anyway
+            return onward(direct + jump); // a jump ends the plan for this system; the destination ends it anyway; a Via goes on
         }
         // The lane: leave it out ...
         std::vector<Step> skipSteps;
@@ -631,7 +633,13 @@ Plan Make(const flight::Model& m, const float pos[3], float speed, const std::ve
                 StandOff(it.pos, pl.items.empty() ? pos : pl.items.back().pos, it.object, prm);
             pl.items.push_back(it);
         }
-        // other intermediate entries (none seen) are left to the planner's choice of lanes
+        // any other entry before the last - a waypoint the player set (the nav map's X; a best path never has one) - is flown through in order:
+        // left out, TRAVEL flew straight to the list's last point (the owner, 7 Nov 2026)
+        else
+        {
+            it.kind = Kind::Via;
+            pl.items.push_back(it);
+        }
     }
     if (pl.items.empty())
         return plan;
@@ -705,6 +713,7 @@ Plan Make(const flight::Model& m, const float pos[3], float speed, const std::ve
         case Kind::Jump: o << "jump " << s.object; break;
         case Kind::Dock: o << "dock " << s.object; break;
         case Kind::Arrive: o << "arrive " << s.pos[0] << " " << s.pos[1] << " " << s.pos[2]; break;
+        case Kind::Via: o << "via " << s.pos[0] << " " << s.pos[1] << " " << s.pos[2]; break;
         }
         o << " eta=" << s.eta << "\n";
     }

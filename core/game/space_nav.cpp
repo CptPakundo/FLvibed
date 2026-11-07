@@ -110,6 +110,14 @@ void ClearWaypoints()
     }
 }
 
+bool AddWaypoint(const float pos[3], u32 object)
+{
+    if (!InSpace() || !WaypointsOk())
+        return false;
+    InvalidateFrame();
+    return hk::Call<AddWaypointFn>(exe::AddWaypoint, pos, Mem<u32>(exe::PlayerSystem), object);
+}
+
 bool RemoveWaypoint(int index)
 {
     if (!InSpace() || !WaypointsOk() || !exe::RemoveWaypoint.ok() || index < 0 || index >= Mem<int>(exe::WaypointCount))

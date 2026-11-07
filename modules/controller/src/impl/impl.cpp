@@ -42,7 +42,8 @@ static void ImplInit(const HostApi* host)
                     host->version >= 7 ? host->SetKeepRunning : nullptr, host->version >= 20 ? host->SetCursorHidden : nullptr,
                     host->version >= 32 ? host->FixedDt : nullptr, host->version >= 9 ? host->CommPlayer : nullptr, host->SetKeyTrace,
                     nullptr, host->version >= 37 ? host->SetSteerLift : nullptr, host->version >= 39 ? host->SetTargetMute : nullptr,
-                    host->version >= 39 ? host->TargetMuteReady : nullptr, host->version >= 40 ? host->SetLoadDraw : nullptr};
+                    host->version >= 39 ? host->TargetMuteReady : nullptr, host->version >= 40 ? host->SetLoadDraw : nullptr,
+                    host->version >= 43 ? host->SetFlightLock : nullptr};
     device_view::Publish();
     ctl::PublishPadFlight();
     ctl::PublishFrame();

@@ -6,7 +6,10 @@
 
 #include "flexe.h"
 #include "game/deckmode.h"
+#include "game/fl.h"
+#include "game/hostcalls.h"
 #include "game/hudinfo.h"
+#include "game/navview.h"
 #include "game/room.h"
 #include "game/space.h"
 #include "hudhost.h"
@@ -26,15 +29,18 @@ using namespace winplates;
 using Rc = navlayout::Rect;
 
 constexpr u32 kFrameOrigin = 0x40C, kBoxW = 0x418, kBoxH = 0x41C, kScaleX = 0x4A8, kScaleZ = 0x4AC, kObjects = 0x400, kSelected = 0x90C, kZoom = 0x3F8, kCentre = 0x46C, kView = 0x7D0,
-              kMapScale = 0xF48, kAnimating = 0x478;
+              kMapScale = 0xF48, kAnimating = 0x478, kPopupWatch = 0x92C; // (the last: the frame's 0x494920 closes the popup when the cursor leaves it)
 // The record's fields.
 constexpr u32 kRecFlags = 0x04, kRecPos = 0x30, kRecRadius = 0x3C, kRecVisible = 0x48, kRecName = 0x4C, kRecId = 0x70;
 constexpr int kMaxRecords = 400, kMaxLabels = 128;
-// The game's box at its own size: labels follow a grown box by the ratio of the two (12a row 2).
-constexpr float kNativeBox = 0.468f;
+// The map's objects stand this far in from the box's edge at +0x4A8: the game's own labels say so (0x499C20: 0.2 and 0.18 over half its box, 0.2342), and frames agree (planet and ship, 7 Nov 2026).
+constexpr float kFit = 0.2f / 0.2342f; // (= 112000 / 131072: the sectors' 8 x 8 run past +0x4A8 to 131072)
+// The backgrounds' alpha fields: the system's and the sector's mesh, 0 under HUD 2's ground (the universe's keeps its art).
+constexpr u32 kSystemAlpha = 0x374, kSectorAlpha = 0x39C;
 
-// Off until the hit-box sweep and a second install have passed (UI_HUD2_SKIN.md 6.1).
-static bool g_on = false;
+// The full-screen map is the skin's map (the owner, 7 Nov 2026: phase 1, docs\MAP_PLAN.md); `navnew off` gives the game's size back for a comparison.
+static bool g_on = true;
+static bool g_selected = false;
 
 struct Written
 {
@@ -51,6 +57,7 @@ static Written g_w;
 static navlayout::MapOut g_lay;
 static navlabels::View g_view;
 static Rc g_port;
+static float g_frameW = 0, g_frameH = 0;
 static bool g_transform = false;
 static u32 g_records = 0, g_drawn = 0, g_dropped = 0;
 
@@ -123,108 +130,79 @@ static void GiveBack()
         }
     }
     g_w = Written();
+    g_frameW = g_frameH = 0;
+    navview::SetFrame(0, 0);
     g_names.clear();
 }
 
-// +0x4A8 / +0x4AC scale the game's labels to a box of its own size: written every frame the map shows, because it rewrites +0x4A8 on a return from the universe.
-static void HoldScale(u32 root, float boxW, float boxH)
+// +0x4A8 / +0x4AC are the world's half size inside the box. The map's camera keeps its field of view, so a box unit is port W / the game's own box W pixels on BOTH axes, whatever the box
+// (read from frames, 7 Nov 2026: planets 5.9 x from the centre, the same on both axes, at the first try). So the world has to fill more of the box: one scale on both axes, the system in the
+// square. Written every frame, because the game rewrites +0x4A8 on a return from the universe. (Every part of the map reads them: the records, the lanes, the hit test.) True when they changed.
+static bool HoldScale(u32 root, float ratioX, float ratioZ)
 {
     float v = 0;
+    bool changed = false;
     const u32 at[2] = {root + kScaleX, root + kScaleZ};
-    const float box[2] = {boxW, boxH};
+    const float ratio[2] = {ratioX, ratioZ};
     for (int i = 0; i < 2; ++i)
         if (RF(at[i], v) && v > 0)
         {
             if (v != g_w.mineScale[i])
                 g_w.baseScale[i] = v;
-            g_w.mineScale[i] = g_w.baseScale[i] * kNativeBox / box[i];
-            WF(at[i], g_w.mineScale[i]);
+            const float mine = g_w.baseScale[i] * ratio[i];
+            changed |= std::fabs(mine - v) > 1;
+            g_w.mineScale[i] = mine;
+            WF(at[i], mine);
         }
+    return changed;
 }
 
-// The grid's and titles' texts stay where the game built them (12a row 2): moved by the distance the map moved, through the control's own signed setter.
-static void MoveText(u32 ctl, float dx, float dy, float camX, float camY)
-{
-    float pos[3] = {};
-    u32 vt = 0, set = 0;
-    if (!ctl || !safemem::Read(ctl + 0x60, pos, sizeof(pos)) || !R32(ctl, vt) || !R32(vt + 0x14, set) || !exe::ControlSetPosition.is(set) || !(pos[2] < 0))
-        return;
-    pos[0] += dx * -pos[2] / camX, pos[1] += dy * -pos[2] / camY;
-    __try
-    {
-        reinterpret_cast<void(__thiscall*)(u32, const float*)>(set)(ctl, pos);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-    }
-}
-
-static void PlaceTexts(u32 root, const Rc& from, const Rc& to)
-{
-    if (!exe::UiCamera.ok())
-        return;
-    float camX = 0, camY = 0;
-    __try
-    {
-        camX = Mem<float>(exe::UiCamera, 0x78), camY = Mem<float>(exe::UiCamera, 0x7C);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        return;
-    }
-    if (std::fabs(camX) < 1 || std::fabs(camY) < 1)
-        return;
-    const float gx = to.W() / 8, gy = to.H() / 8, ox = from.W() / 8, oy = from.H() / 8;
-    for (int i = 0; i < 8; ++i)
-    {
-        char n[32];
-        sprintf_s(n, "NavMapGridLetter%c", 'A' + i);
-        MoveText(Child(root, n), (to.x0 + gx * (i + 0.5f)) - (from.x0 + ox * (i + 0.5f)), to.y1 - from.y1, camX, camY);
-        sprintf_s(n, "NavMapGridNumber%d", i + 1);
-        MoveText(Child(root, n), to.x0 - from.x0, (to.y0 + gy * (i + 0.5f)) - (from.y0 + oy * (i + 0.5f)), camX, camY);
-    }
-}
-
-// The growth: once the window has stopped sliding, the box at the solver's size. The viewport's pixels per box unit are read, not assumed.
-static void Grow(u32 root, const Rc& port)
+// The growth: once the window has stopped sliding, the box at `want`. The viewport's pixels per box unit are read, not assumed.
+static void Grow(u32 root, const Rc& port, const Rc& want, const Rc& square)
 {
     float boxW = 0, boxH = 0, origin[3] = {};
     if (!RF(root + kBoxW, boxW) || !RF(root + kBoxH, boxH) || !safemem::Read(root + kFrameOrigin, origin, sizeof(origin)) || !(boxW > 0.05f) || !(boxH > 0.05f))
         return;
+    if (room::NNWindowBusy())
+        return;
+    const float kx = port.W() / boxW, ky = port.H() / boxH;
     if (!g_w.grown)
     {
-        if (room::NNWindowBusy())
-            return;
-        const float kx = port.W() / boxW, ky = port.H() / boxH;
-        const Rc& t = g_lay.map;
         g_w.box[0] = boxW, g_w.box[1] = boxH;
         memcpy(g_w.origin, origin, sizeof(origin));
-        g_w.mineBox[0] = t.W() / kx, g_w.mineBox[1] = t.H() / ky;
-        g_w.mineOrigin[0] = origin[0] + (t.x0 - port.x0) / kx;
-        g_w.mineOrigin[1] = origin[1] - (t.y1 - port.y1) / ky; // (the box's y runs up)
-        g_w.mineOrigin[2] = origin[2];
-        WF(root + kFrameOrigin, g_w.mineOrigin[0]);
-        WF(root + kFrameOrigin + 4, g_w.mineOrigin[1]);
+        g_w.grown = true;
+        Log("navnew: the map grown to %.0f x %.0f px at %.0f, %.0f", want.W(), want.H(), want.x0, want.y0);
+    }
+    // to `want` from where the viewport stands, whatever moved it (a change of view, windowtext's drop, a mod); the game's rectangle follows a frame later, so a move waits for it
+    const float ex = want.x0 - port.x0, ey = want.y1 - port.y1, ew = want.W() - port.W(), eh = want.H() - port.H();
+    if (std::fabs(ex) > 1 || std::fabs(ey) > 1 || std::fabs(ew) > 1 || std::fabs(eh) > 1)
+    {
+        origin[0] += ex / kx, origin[1] -= ey / ky; // (the box's y runs up)
+        g_w.mineOrigin[0] = origin[0], g_w.mineOrigin[1] = origin[1], g_w.mineOrigin[2] = origin[2];
+        g_w.mineBox[0] = want.W() / kx, g_w.mineBox[1] = want.H() / ky;
+        WF(root + kFrameOrigin, origin[0]);
+        WF(root + kFrameOrigin + 4, origin[1]);
         WF(root + kBoxW, g_w.mineBox[0]);
         WF(root + kBoxH, g_w.mineBox[1]);
-        g_w.grown = true;
-        PlaceTexts(root, port, t);
-        Log("navnew: the map grown to %.0f x %.0f px at %.0f, %.0f", t.W(), t.H(), t.x0, t.y0);
     }
-    else if (!room::NNWindowBusy())
+    // the camera's own pixels for a box unit (read, not assumed): the sectors' world across the solver's square, at one scale on both axes; the rest of the map works in what the viewport shows
+    const float f = navview::PixelsPerBox(root);
+    if (f > 0)
     {
-        // a window moved after the growth (windowtext's drop, a mod): the map goes back to the solver's place, its texts with it
-        const Rc& t = g_lay.map;
-        const float kx = port.W() / boxW, ky = port.H() / boxH, ex = t.x0 - port.x0, ey = t.y1 - port.y1;
-        if (std::fabs(ex) > 1 || std::fabs(ey) > 1)
-        {
-            g_w.mineOrigin[0] += ex / kx, g_w.mineOrigin[1] -= ey / ky;
-            WF(root + kFrameOrigin, g_w.mineOrigin[0]);
-            WF(root + kFrameOrigin + 4, g_w.mineOrigin[1]);
-            PlaceTexts(root, port, {port.x0 + ex, port.y0 + ey, port.x1 + ex, port.y1 + ey});
-        }
+        const float over = square.W() * kFit;
+        if (HoldScale(root, boxW * f / over, boxH * f / over))
+            navview::Replace(root);
+        g_frameW = want.W() / f, g_frameH = want.H() / f;
+        navview::SetFrame(g_frameW, g_frameH);
     }
-    HoldScale(root, g_w.mineBox[0], g_w.mineBox[1]);
+    navview::Settle(root);
+}
+
+// HUD 2's ground stands where the game's backgrounds did: their alpha, every frame (the game writes it at each zoom). The universe's is the game's.
+static void ArtOff(u32 root)
+{
+    WF(root + kSystemAlpha, 0);
+    WF(root + kSectorAlpha, 0);
 }
 
 static void ReadView(u32 root)
@@ -237,15 +215,27 @@ static void ReadView(u32 root)
     RF(root + kBoxW, boxW), RF(root + kBoxH, boxH);
     v.halfW = boxW / 2, v.halfH = boxH / 2;
     RF(root + kZoom, v.zoom), RF(root + kCentre, v.centreX), RF(root + kCentre + 4, v.centreY), RF(root + kMapScale, v.mapScale);
-    if (g_w.grown)
-        v.scaleX = g_w.baseScale[0], v.scaleZ = g_w.baseScale[1];
-    else
-        RF(root + kScaleX, v.scaleX), RF(root + kScaleZ, v.scaleZ);
+    RF(root + kScaleX, v.scaleX), RF(root + kScaleZ, v.scaleZ);
     g_view = v;
     g_transform = (v.view == 1 || v.view == 2) && v.scaleX > 0 && v.scaleZ > 0;
 }
 
-void Frame(u32 root, const Rc& map)
+static u32 SelectedRecord(u32 root);
+
+// The mouse on the map: the wheel zooms toward the cursor, the game's own drag moves it.
+static void MouseFrame(u32 root)
+{
+    static unsigned long long last = 0;
+    const unsigned long long now = GetTickCount64();
+    const float dt = std::min(0.05f, static_cast<float>(now - last) / 1000.0f);
+    last = now;
+    navview::Drive d;
+    const int wheel = hostcalls::g.RealMouseWheel ? hostcalls::g.RealMouseWheel() : 0;
+    d.zoomStep = static_cast<float>(wheel) * navview::kWheelNotch;
+    navview::Frame(root, d, dt, static_cast<float>(fl::MouseX()), static_cast<float>(fl::MouseY()));
+}
+
+void Frame(u32 root, const Rc& map, bool pad)
 {
     if (!g_on)
     {
@@ -257,13 +247,40 @@ void Frame(u32 root, const Rc& map)
         GiveBack(), g_w.root = root;
     g_port = map;
     g_lay = navlayout::Solve(g_W, g_H, deckmode::SideW());
-    Grow(root, map);
+    u32 view = 1;
+    R32(root + kView, view);
+    u8 animating = 0;
+    R8(root + kAnimating, animating);
+    // (the universe's art and links have no second scale: it keeps the square; the game's zoom in and out of it runs there too)
+    const bool universe = view == 0 || animating;
+    Grow(root, map, universe ? g_lay.map : navlayout::Bleed(g_W, g_H, g_lay.map), g_lay.map);
+    // the screen is the map: what the player presses here is the map's, not the ship's, on keys and mouse as on the pad (the owner, 7 Nov 2026)
+    if (g_w.grown && hostcalls::g.SetFlightLock)
+        hostcalls::g.SetFlightLock();
+    if (!pad && g_w.grown)
+        MouseFrame(root);
+    if (view != 0)
+        ArtOff(root);
     ReadView(root);
+    // the selection stays until another takes its place: the game drops it when the cursor leaves its popup, which stood beside the object; HUD 2's buttons stand elsewhere (the owner, 7 Nov 2026)
+    W8(root + kPopupWatch, 0);
+    // a selection by an object takes the object: the game's own radius is smaller than the mark the player aims at, so Set Waypoint and Best Path get the object, not the point beside it
+    if (const u32 rec = SelectedRecord(root))
+    {
+        float pos[3] = {};
+        if (safemem::Read(rec + kRecPos, pos, sizeof(pos)))
+        {
+            WF(root + kSelected, pos[0]);
+            WF(root + kSelected + 4, pos[1]);
+            WF(root + kSelected + 8, pos[2]);
+        }
+    }
     // the game's labels back wherever HUD 2's have no transform: the universe's view, a value not read
     LabelsOff(g_transform);
 }
 
 bool Grown() { return g_on && g_w.grown; }
+bool On() { return g_on; }
 
 // ---- the panels, from the game's data: the hidden texts have no reader yet (probe 3), so nothing here depends on one
 static std::wstring Km(float metres)
@@ -274,74 +291,102 @@ static std::wstring Km(float metres)
 }
 
 static float PanelFont(float H) { return 0.030f * H; }
+constexpr int kRouteRows = 8;
 
 float LeftHeight(const Rc&, float H)
 {
     if (!Grown())
         return 0;
-    const int rows = std::min<int>(4, static_cast<int>(space::Waypoints().size()));
+    const int rows = std::min<int>(kRouteRows, static_cast<int>(space::Waypoints().size()));
     return (0.060f + 0.040f + 0.08f + (rows ? 0.040f + rows * 0.036f : 0)) * H;
 }
 
-float DrawLeft(const Rc& p, float H)
+bool HasInfo()
+{
+    wchar_t obj[256] = {};
+    return Grown() && (!space::Waypoints().empty() || (HostObjectiveText(obj, 256) && obj[0]));
+}
+
+float DrawLeft(const Rc& p, float H, bool title)
 {
     if (!Grown())
         return p.y0;
-    const float x = p.x0 + 0.018f * H, w = p.W() - 0.036f * H, f = PanelFont(H);
-    float y = p.y0 + 0.034f * H;
-    TextFit(x, y, hudinfo::SystemName(), 0.040f * H, w, Argb(kInk, 1));
-    y += 0.040f * H;
-    Text(x, y, L"OBJECTIVE", TextFloor(), Argb(kChrome, 1));
-    y += 0.030f * H;
-    wchar_t obj[256] = {};
-    if (HostObjectiveText(obj, 256))
+    // (each block only with something to say: the next one takes its place, navskin sizes the plate to where this ends)
+    const float pad = 0.018f * H, x = p.x0 + pad, w = p.W() - 2 * pad, f = PanelFont(H);
+    float y = p.y0 + pad - 0.014f * H; // (the first block's own step brings it to the plate's air)
+    if (title)
     {
+        y = p.y0 + pad + 0.022f * H;
+        TextFit(x, y, hudinfo::SystemName(), 0.040f * H, w, Argb(kInk, 1));
+        y += 0.022f * H;
+    }
+    wchar_t obj[256] = {};
+    if (HostObjectiveText(obj, 256) && obj[0])
+    {
+        y += 0.026f * H;
+        Text(x, y, L"OBJECTIVE", TextFloor(), Argb(kChrome, 1));
+        y += 0.030f * H;
         std::wstring lines[2];
         float size = f;
         const int n = FitLines(obj, f, w, 0, lines, 2, size);
         for (int i = 0; i < n; ++i)
             Text(x, y + i * 0.034f * H, lines[i], size, Argb(kInk, 1));
+        y += (n - 1) * 0.034f * H + 0.017f * H;
     }
-    y += 0.07f * H;
     const std::vector<space::Waypoint> wp = space::Waypoints();
     if (!wp.empty())
     {
+        y += 0.026f * H;
         Text(x, y, L"ROUTE", TextFloor(), Argb(kChrome, 1));
         y += 0.032f * H;
         space::Pilot me;
         const bool have = space::ReadPilot(me);
         float from[3] = {me.pos[0], me.pos[1], me.pos[2]};
-        for (size_t i = 0; i < wp.size() && i < 4; ++i)
+        for (size_t i = 0; i < wp.size() && i < static_cast<size_t>(kRouteRows); ++i)
         {
             const float dx = wp[i].pos[0] - from[0], dy = wp[i].pos[1] - from[1], dz = wp[i].pos[2] - from[2];
-            const std::wstring name = wp[i].object ? hudinfo::DisplayName(wp[i].object) : std::wstring(L"Waypoint");
+            const std::wstring name = wp[i].object ? hudinfo::RouteName(wp[i].object) : std::wstring(L"Waypoint");
             TextFit(x, y, std::to_wstring(i + 1) + L"  " + name, TextFloor(), w * 0.72f, Argb(kInk, 1));
             if (have)
                 Text(x + w, y, Km(std::sqrt(dx * dx + dy * dy + dz * dz)), TextFloor(), Argb(kChrome, 1), Right);
             memcpy(from, wp[i].pos, sizeof(from));
             y += 0.036f * H;
         }
+        y -= 0.018f * H;
     }
     return y;
 }
 
-// The record the map has selected, if +0x90C really holds one of its own records.
+void SetSelected(bool on) { g_selected = on; }
+
+// The record at the map's selected point: +0x90C is a Vector, and the game finds the record by distance the same way (0x496D40): within its radius, the nearest.
 static u32 SelectedRecord(u32 root)
 {
-    u32 want = 0, head = 0, node = 0;
-    if (!R32(root + kSelected, want) || !want || !R32(root + kObjects, head) || !head || !R32(head, node))
+    float at[3] = {};
+    u32 head = 0, node = 0, best = 0;
+    float bestD = 1e30f;
+    if (!g_selected || !safemem::Read(root + kSelected, at, sizeof(at)) || !R32(root + kObjects, head) || !head || !R32(head, node))
         return 0;
     for (int i = 0; node && node != head && i < kMaxRecords; ++i)
     {
         u32 rec = 0;
+        int type = -1;
+        float pos[3] = {}, radius = 0;
         if (!R32(node + 8, rec))
             return 0;
-        if (rec == want)
-            return rec;
+        if (R32(rec, reinterpret_cast<u32&>(type)) && type == 0 && safemem::Read(rec + kRecPos, pos, sizeof(pos)) && RF(rec + kRecRadius, radius))
+        {
+            // (the selected point is where the cursor stood: a small station's radius is less than a mark on the screen, so the reach is the mark's too)
+            const float zoom = g_view.view == 2 ? g_view.zoom : 1, sq = g_lay.map.W(), reach = sq > 0 ? 0.03f * g_H * 2 * (g_w.baseScale[0] / kFit) / (sq * zoom) : 0;
+            const float dx = pos[0] - at[0], dz = pos[2] - at[2], d = dx * dx + dz * dz, r = std::max(radius * 1.05f, reach);
+            u32 ids = 0;
+            if (d <= r * r && d < bestD && R32(rec + kRecName, ids) && ids)
+                bestD = d, best = rec;
+        }
         if (!R32(node, node))
             return 0;
     }
-    return 0;
+    return best;
 }
 
 float RightHeight(const Rc&, float H)
@@ -350,6 +395,8 @@ float RightHeight(const Rc&, float H)
         return 0;
     return 0.130f * H;
 }
+
+bool HasCard() { return Grown() && SelectedRecord(g_w.root) != 0; }
 
 float DrawRight(const Rc& p, float H)
 {
@@ -406,6 +453,10 @@ static void Mark(float x, float y, float r, int rank, u32 colour)
         Ring(x, y, r, std::max(1.5f, r * 0.3f), Argb(colour, 1));
 }
 
+// Where the map shows a point of the records' coordinates: the game's camera, so a mark stands on what it marks at every zoom (the transform's sum missed the camera's scale: the owner's
+// "parallax", 7 Nov 2026). False off the viewport.
+static bool At(const Rc& port, float x, float z, float& sx, float& sy) { return navview::Project(g_w.root, x, z, sx, sy) && port.Holds(sx, sy); }
+
 static void DrawRoute(const Rc& port, float H)
 {
     const std::vector<space::Waypoint> wp = space::Waypoints();
@@ -413,42 +464,53 @@ static void DrawRoute(const Rc& port, float H)
     if (wp.empty() || !space::ReadPilot(me))
         return;
     float px = 0, py = 0;
-    bool have = navlabels::ToScreen(g_view, port, me.pos[0], me.pos[2], px, py);
+    const float ms = g_view.mapScale > 0 ? g_view.mapScale : 1; // (the records stand in the map's units)
+    bool have = At(port, me.pos[0] * ms, me.pos[2] * ms, px, py);
     for (const space::Waypoint& w : wp)
     {
         float x = 0, y = 0;
-        if (w.system != me.system || !navlabels::ToScreen(g_view, port, w.pos[0], w.pos[2], x, y))
+        if (w.system != me.system || !At(port, w.pos[0] * ms, w.pos[2] * ms, x, y))
         {
             have = false;
             continue;
         }
+        // one accent, used for nothing else on the map, the strongest line there (map-screens-rebuild.md 2)
         if (have)
-        {
-            // dashes, as a plotted thing that is not there: the game's own lines stay solid
-            const float dx = x - px, dy = y - py, len = std::sqrt(dx * dx + dy * dy), dash = 0.010f * H;
-            for (float t = 0; t + dash < len; t += 2 * dash)
-                Line(px + dx * t / len, py + dy * t / len, px + dx * (t + dash) / len, py + dy * (t + dash) / len, std::max(2.0f, 0.002f * H), Argb(kActive, 1));
-        }
-        px = x, py = y, have = true;
+            Line(px, py, x, y, std::max(3.0f, 0.0028f * H), Argb(kActive, 1));
+        px = x, py = y, have = true; // (the waypoints' numbered diamonds are the game's own records)
     }
 }
 
-static void DrawYou(const Rc& port, float H)
+// Where the sectors stand, in place of the game's grid: small ticks at the corners, the letters and numbers dim, kept on the screen while their row or column shows.
+static void DrawSectors(const Rc& port, float H)
 {
-    space::Pilot me;
-    float x = 0, y = 0, pos[3] = {}, rot[9] = {};
-    if (!space::ReadPilot(me) || !navlabels::ToScreen(g_view, port, me.pos[0], me.pos[2], x, y))
-        return;
-    const float r = 0.012f * H;
-    Ring(x, y, r, std::max(2.0f, 0.002f * H), Argb(kInk, 1));
-    if (space::ObjectPose(space::PlayerShipId(), pos, rot))
+    const float sx = g_w.baseScale[0] / kFit, sz = g_w.baseScale[1] / kFit;
+    const float tick = 0.007f * H, width = std::max(1.0f, 0.001f * H);
+    const u32 ink = Argb(kChrome, 0.30f), word = Argb(kChrome, 0.55f);
+    float px[9] = {}, py[9] = {};
+    for (int i = 0; i < 9; ++i)
     {
-        // forward = -third column of the rows (space.h); on the map x runs right and z down
-        const float fx = -rot[2], fz = -rot[8], len = std::sqrt(fx * fx + fz * fz);
-        if (len > 0.01f)
-            Line(x, y, x + fx / len * r * 1.8f, y + fz / len * r * 1.8f, std::max(2.0f, 0.002f * H), Argb(kInk, 1));
+        float unused = 0;
+        navview::Project(g_w.root, -sx + i * sx / 4, 0, px[i], unused);
+        navview::Project(g_w.root, 0, -sz + i * sz / 4, unused, py[i]);
     }
-    Text(x + r * 1.6f, y, L"YOU", TextFloor(), Argb(kActive, 1));
+    for (int i = 0; i < 9; ++i)
+        for (int j = 0; j < 9; ++j)
+            if (port.Holds(px[i], py[j]))
+            {
+                Line(px[i] - tick, py[j], px[i] + tick, py[j], width, ink);
+                Line(px[i], py[j] - tick, px[i], py[j] + tick, width, ink);
+            }
+    const float size = TextFloor() * 0.9f;
+    const float foot = std::max(py[0] - size, g_lay.map.y0 - size * 0.2f), side = std::max(px[0] - size, g_lay.map.x0 + size * 0.2f); // (the letters along the top: the foot is the prompts')
+    for (int i = 0; i < 8; ++i)
+    {
+        const float cx = (px[i] + px[i + 1]) / 2, cy = (py[i] + py[i + 1]) / 2;
+        if (cx > g_lay.map.x0 && cx < g_lay.map.x1)
+            Text(cx, foot, std::wstring(1, static_cast<wchar_t>(L'A' + i)), size, word, Center);
+        if (cy > g_lay.map.y0 && cy < g_lay.map.y1)
+            Text(side, cy, std::to_wstring(i + 1), size, word, Center);
+    }
 }
 
 void DrawOverMap(const Rc& port)
@@ -488,7 +550,7 @@ void DrawOverMap(const Rc& port)
         d.visible = visible != 0, d.x = pos[0], d.z = pos[2];
         const int rank = navlabels::Rank(d);
         float x = 0, y = 0;
-        if (rank < 0 || !navlabels::ToScreen(g_view, port, d.x, d.z, x, y))
+        if (rank < 0 || !At(port, d.x, d.z, x, y))
             continue;
         u32 id = 0;
         R32(rec + kRecId, id);
@@ -506,6 +568,7 @@ void DrawOverMap(const Rc& port)
     }
     const int shown = navlabels::Declutter(labels, n, order, port);
     g_drawn = static_cast<u32>(shown), g_dropped = static_cast<u32>(n - shown);
+    DrawSectors(port, H);
     DrawRoute(port, H);
     for (int i = 0; i < n; ++i)
     {
@@ -517,13 +580,13 @@ void DrawOverMap(const Rc& port)
             Text(l.left ? l.box.x1 : l.box.x0, l.y, name.text, size, Argb(kInk, 1), l.left ? Right : Left);
         }
     }
-    DrawYou(port, H);
 }
 
 void Closed()
 {
     if (g_w.root)
         GiveBack();
+    navview::Closed();
 }
 
 void Shutdown()
@@ -539,7 +602,10 @@ std::string Command(std::istream& in)
     if (what == "on" || what == "off")
         g_on = what == "on";
     std::ostringstream o;
-    o << "navnew on=" << g_on << " grown=" << g_w.grown << " transform=" << g_transform << " view=" << g_view.view << " scale=" << g_view.scaleX << "," << g_view.scaleZ
+    float at[3] = {};
+    if (g_w.root)
+        safemem::Read(g_w.root + kSelected, at, sizeof(at));
+    o << "navnew sel=" << g_selected << " at=" << at[0] << "," << at[2] << " rec=" << (g_w.root ? SelectedRecord(g_w.root) : 0) << " on=" << g_on << " grown=" << g_w.grown << " transform=" << g_transform << " view=" << g_view.view << " scale=" << g_view.scaleX << "," << g_view.scaleZ
       << " zoom=" << g_view.zoom << " records=" << g_records << " labels=" << g_drawn << " dropped=" << g_dropped << " gameLabelsOff=" << g_w.labelsOff << " show=" << g_w.showLabels;
     return o.str();
 }

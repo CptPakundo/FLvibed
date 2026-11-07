@@ -71,6 +71,18 @@ inline bool ToScreen(const View& v, const navlayout::Rect& port, float x, float 
     return sx >= port.x0 && sx <= port.x1 && sy >= port.y0 && sy <= port.y1;
 }
 
+// A world coordinate's place on the screen, on or off the viewport (the sectors' lines run past its edges).
+inline float ScreenX(const View& v, const navlayout::Rect& port, float x)
+{
+    const float z = v.view == 2 ? v.zoom : 1, c = v.view == 2 && v.halfW > 0 ? v.centreX / v.halfW : 0;
+    return port.x0 + (z * (x / v.scaleX + c) + 1) * 0.5f * port.W();
+}
+inline float ScreenY(const View& v, const navlayout::Rect& port, float zc)
+{
+    const float z = v.view == 2 ? v.zoom : 1, c = v.view == 2 && v.halfH > 0 ? v.centreY / v.halfH : 0;
+    return port.y0 + (z * (zc / v.scaleZ - c) + 1) * 0.5f * port.H();
+}
+
 // The game's start: at the system's scale a small object loses its label before it collides.
 constexpr float kMinScaledRadius = 550.0f;
 inline bool LabelByRule(const Record& r, const View& v) { return v.view != 1 || r.radius * v.mapScale >= kMinScaledRadius; }

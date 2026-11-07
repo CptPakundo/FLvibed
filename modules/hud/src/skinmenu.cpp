@@ -244,16 +244,19 @@ void Draw(u32 menuRoot)
             if (RectOf(v, b) && TextOf(v, s))
             {
                 const float size = skinkit::Px(0.024f);
-                Text(b.cx - TextWidth(s, size) / 2 - skinkit::Px(0.020f), b.cy, L"FLVIBED " FLV_VERSION, size, Argb(kDim, 1), Right);
+                GameCaption(b.cx - TextWidth(s, size) / 2 - skinkit::Px(0.020f), b.cy, L"FLVIBED " FLV_VERSION, Argb(kDim, 1), Right, size);
             }
         }
     if (!g_chipUp)
         return;
-    skinkit::ChipState st;
-    st.focused = g_hover || g_padFocus;
-    skinkit::Chip(g_chip.x0, g_chip.y0, g_chip.x1, g_chip.y1, L"CONTINUE", st);
-    if (!g_label.empty())
-        Text(g_chip.x1 + skinkit::Px(0.024f), g_chip.cy, g_label, skinkit::Px(kSection), Argb(kChrome, 1));
+    // CONTINUE stands in the game's column: the plate of its neighbours (uiskin TabPlate) and the game's caption, not HUD 2's bold (Shockwave, 7 Nov 2026)
+    const bool focused = g_hover || g_padFocus;
+    skinkit::ChipGlass(g_chip.x0, g_chip.y0 - skinkit::Px(0.004f), g_chip.x1, g_chip.y1 + skinkit::Px(0.004f));
+    if (focused)
+        skinkit::Focus(g_chip.x0, g_chip.y0, g_chip.x1, g_chip.y1);
+    GameCaption((g_chip.x0 + g_chip.x1) / 2, g_chip.cy, L"CONTINUE", Argb(kChrome, 1), Center);
+    if (!g_label.empty() && focused) // (the save's name only while CONTINUE is highlighted: the owner, 7 Nov 2026)
+        GameCaption(g_chip.x1 + skinkit::Px(0.024f), g_chip.cy, g_label, Argb(kChrome, 1), Left, skinkit::Px(kSection));
 }
 
 bool Offered() { return g_chipUp; }

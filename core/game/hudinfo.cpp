@@ -14,6 +14,7 @@
 #include "game/geom.h"
 #include "game/hostcalls.h"
 #include "game/ini.h"
+#include "game/navview_rules.h"
 #include "game/space.h"
 #include "log.h"
 #include "str.h"
@@ -1153,12 +1154,52 @@ static u32 UnknownIdsOf(u32 id)
     return ids;
 }
 
+bool Undiscovered(u32 objId) { return UnknownIdsOf(objId) != 0; }
+
+bool IsLaneRing(u32 objId)
+{
+    u32 type = 0, cls = 0;
+    return ObjectType(objId, type, cls) && (type & (1u << 7));
+}
+
+// A place of this system by a lane end's words, found: any solar the game does not call unknown (rings left out: they all pass). Re-read every 2 s: a visit changes it.
+static bool PlaceFound(const std::wstring& end)
+{
+    struct Entry
+    {
+        bool found = false;
+        double at = -1;
+    };
+    static std::unordered_map<std::wstring, Entry> cache;
+    Entry& e = cache[end];
+    const double t = Now();
+    if (e.at >= 0 && t - e.at < 2.0)
+        return e.found;
+    e.at = t, e.found = false;
+    for (const space::Contact& c : space::Contacts())
+        if (!c.ship && c.nameIds && !(c.type & space::kTradelaneRing) && navview::EndNames(end, IdsText(c.nameIds)) && !Undiscovered(c.id))
+        {
+            e.found = true;
+            break;
+        }
+    return e.found;
+}
+
 // A trade lane ring's name as the game's target panel shows it: "Planet Manhattan->Fort Bush" - the system file's
 // tradelane_space_name of the lane's two end rings, joined by "->" (Freelancer.exe 0x4E8D30, called by the panel's name
 // builder 0x4E884A for an object of type bit 7: it walks the ring's prev / next links (+0x1D8 / +0x1DC) to both ends,
 // takes each end's name (CSolar::get_tradelane_space_name) and orders them by the side of the ring's plane the viewer is
 // on: the end on the viewer's side first, the far end after the arrow - the way a ride from here goes). "" when the
 // lane's ends carry no names (a mod's lane) or the links / positions cannot be read.
+std::wstring RouteName(u32 objId)
+{
+    if (!IsLaneRing(objId))
+        return DisplayName(objId);
+    const std::wstring lane = LaneName(objId);
+    std::wstring from, to;
+    return navview::SplitLane(lane, from, to) && PlaceFound(from) && PlaceFound(to) ? lane : std::wstring(L"Trade Lane");
+}
+
 std::wstring LaneName(u32 ringId)
 {
     u32 next = 0, prev = 0;

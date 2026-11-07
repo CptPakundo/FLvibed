@@ -102,11 +102,11 @@ void Test_dealer_rules()
     CHECK(HoldAct(true, false, false, false) == Act::None);
     CHECK(HoldAct(false, true, false, false) == Act::None);
 
-    // a plain dealer: the two sides, either way, and no stop on an empty one
-    CHECK(NextStop(Stop::Dealers, 1, true, true, false) == Stop::Yours);
+    // a plain dealer: left = the player's list (the left panel), right = the dealer's, no wrap (the owner, 7 Nov 2026), and no stop on an empty one
+    CHECK(NextStop(Stop::Dealers, 1, true, true, false) == Stop::Dealers);
     CHECK(NextStop(Stop::Dealers, -1, true, true, false) == Stop::Yours);
     CHECK(NextStop(Stop::Yours, 1, true, true, false) == Stop::Dealers);
-    CHECK(NextStop(Stop::Yours, -1, true, true, false) == Stop::Dealers);
+    CHECK(NextStop(Stop::Yours, -1, true, true, false) == Stop::Yours);
     CHECK(NextStop(Stop::Yours, 1, true, false, false) == Stop::Yours);
     CHECK(NextStop(Stop::Dealers, 1, false, true, false) == Stop::Dealers);
     // the final stage, the dealer's list empty, as it opens: the player's rows and BUY SHIP
@@ -120,8 +120,9 @@ void Test_dealer_rules()
     CHECK(NextStop(Stop::Yours, 1, true, true, true) == Stop::Dealers);
     CHECK(NextStop(Stop::BuyShip, 1, true, true, true) == Stop::Yours);
     CHECK(NextStop(Stop::BuyShip, -1, true, true, true) == Stop::Dealers);
-    // not enough credits: BUY SHIP is no stop
-    CHECK(NextStop(Stop::Dealers, 1, true, true, false) == Stop::Yours);
+    // not enough credits: BUY SHIP is no stop - the two lists, left / right as they stand
+    CHECK(NextStop(Stop::Dealers, 1, true, true, false) == Stop::Dealers);
+    CHECK(NextStop(Stop::Dealers, -1, true, true, false) == Stop::Yours);
     // nowhere to go
     CHECK(NextStop(Stop::BuyShip, 1, false, false, true) == Stop::BuyShip);
     CHECK(NextStop(Stop::Yours, 1, false, false, false) == Stop::Yours);

@@ -20,6 +20,8 @@ using namespace hud2kit;
 static bool g_pad = false, g_standing = false;
 static navlayout::Rect g_box;
 static int g_tab = -1;
+static float g_in = 0, g_dt = 0; // the slide in: 0 at the top left, 1 in place
+constexpr float kSlideIn = 0.30f;
 
 // The scrim of the five windows (R8, 6.9): the full map's, set by the owner's frames.
 constexpr float kScrim = 0.78f;
@@ -44,6 +46,7 @@ static bool Wanted()
 void Update(float dt, bool pad)
 {
     g_pad = pad;
+    g_dt = dt;
     nnwin::Frame(dt);
     skinchip::Frame(g_standing);
 }
@@ -63,19 +66,32 @@ bool Draw()
 {
     using namespace navlayout;
     if (!Wanted())
+    {
+        g_in = 0;
         return false;
+    }
     const float W = winplates::g_W, H = winplates::g_H;
     const bool mp = nnwin::Multiplayer();
+    // along the top of the screen, centred: the bottom lane is the prompts' (the owner, 7 Nov 2026). It slides in from the flight HUD's NEURAL NET at the top left, its words fading up
     StripIn in;
-    in.W = W, in.H = H, in.side = deckmode::SideW(), in.laneTop = deckmode::LaneTopH(), in.laneBottom = deckmode::LaneBottomH();
+    in.W = W, in.H = H, in.side = deckmode::SideW(), in.laneTop = deckmode::EdgeH(), in.laneBottom = deckmode::EdgeH() + (deckmode::LaneBottomH() - deckmode::LaneTopH());
     in.floorH = textfit::g_floorH, in.tabs = nntabs::Count(mp), in.bumpers = g_pad;
     const float glyphH = 0.032f * H;
     in.bumperW = g_pad ? GlyphWidth(glyphs::LB, glyphH) : 0;
     auto measure = [](int i, float size) { return TextWidth(nntabs::kTabs[i].word, size); };
     const float closeW = TextWidth(L"CLOSE", kWordH * H);
-    const StripOut o = Strip(in, measure, closeW);
+    StripOut o = Strip(in, measure, closeW);
+    const float shift = (W - o.box.W()) / 2 - o.box.x0;
+    o.box.x0 += shift, o.box.x1 += shift, o.lbX += shift, o.rbX += shift;
+    for (int i = 0; i < in.tabs; ++i)
+        o.word[i].x0 += shift, o.word[i].x1 += shift;
+    o.close.y0 = deckmode::LaneTopH() * H, o.close.y1 = deckmode::LaneBottomH() * H;
     g_box = o.box;
     g_tab = nntabs::IndexOf(nnwin::Held() ? nnwin::Held() : nnwin::OpenCommand(), mp);
+    g_in = std::min(1.0f, g_in + g_dt / kSlideIn);
+    const float rest = 1 - g_in, eased = 1 - rest * rest * rest;
+    SetOffset(-shift * (1 - eased), 0);
+    SetAlpha(eased);
     Plate(o.box.x0, o.box.y0, o.box.x1, o.box.y1, 0.008f * H, kTL | kBR, 0.80f, kChrome, 0.45f);
     if (g_pad)
     {
@@ -89,6 +105,8 @@ bool Draw()
         const int slot = skinchip::Hot(o.word[i], Press, i);
         skinchip::Tab(o.word[i], nntabs::kTabs[i].word, o.size, i == g_tab, slot >= 0 && slot == hover);
     }
+    SetOffset(0, 0);
+    SetAlpha(1);
     if (!g_pad) // (the pad has its B pill there)
     {
         const int slot = skinchip::Hot(o.close, CloseChip, 0);

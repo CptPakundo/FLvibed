@@ -16,6 +16,7 @@
 #include "game/mission.h" // ForgetGame at a game load (host v34)
 #include "game/render.h" // OnDeviceLost: the shared renderer's state block before a Reset
 #include "game/room.h"
+#include "game/nnwin.h"
 #include "game/space.h"
 #include "game/spawn.h"
 #include "log.h"
@@ -186,7 +187,7 @@ static void PadOptions()
     memcpy(u.hapticsClass, g_opt.hapticsClass, sizeof(u.hapticsClass));
     const haptics::Caps caps = haptics::CapsFor(g_pad.Facts());
     u.padTriggers = caps.adaptive || caps.triggerMotors;
-    u.cursorMagnet = g_opt.cursorMagnet, u.promptBar = g_opt.promptBar, u.worldPrompts = g_opt.worldPrompts;
+    u.cursorMagnet = g_opt.cursorMagnet, u.mapTouchpad = g_opt.mapTouchpad, u.promptBar = g_opt.promptBar, u.worldPrompts = g_opt.worldPrompts;
     u.apHints = g_opt.apHints, u.hudGlyphs = g_opt.hudGlyphs;
     u.buttonLegend = g_opt.buttonLegend, u.apStatusLine = g_opt.apStatusLine;
 }
@@ -351,7 +352,20 @@ static void PadRest(float dt)
         if (g_mode == Mode::SpaceUi && g_pad.Pressed(XINPUT_GAMEPAD_BACK) && !padbases::Owns(XINPUT_GAMEPAD_BACK))
             fl::TapKey(VK_ESCAPE); // close the window
         break;
-    case Mode::Space: UpdateSpace(dt); break;
+    case Mode::Space:
+        // between two NeuroNet windows (a bumper's tab waits to open, or a window still slides): no ship control - the owner, 7 Nov 2026: RB fired
+        // missiles as the next tab loaded. The bumpers go on stepping the tabs
+        if (nnwin::Held() || room::NNWindowBusy())
+        {
+            ReleaseSteer();
+            if (g_pad.Pressed(XINPUT_GAMEPAD_LEFT_SHOULDER))
+                nnwin::Step(-1);
+            if (g_pad.Pressed(XINPUT_GAMEPAD_RIGHT_SHOULDER))
+                nnwin::Step(+1);
+            break;
+        }
+        UpdateSpace(dt);
+        break;
     case Mode::Cutscene:
         ReleaseSteer();
         if (g_pad.Pressed(XINPUT_GAMEPAD_A) || g_pad.Pressed(XINPUT_GAMEPAD_B))
@@ -368,10 +382,20 @@ static void PadDrawFlight(void* device, bool menuOver)
     wheel::Render(device);
 }
 
+static void* g_basesDevice = nullptr;
 static void PadDrawBases(void* device)
 {
     padbases::Draw(device);
-    padmap::Draw(device);
+    g_basesDevice = device;
+}
+
+// (the map's list stands over HUD 2's map and panels, which draw after the bases' pass, and under the prompts)
+static void PadDrawPrompts()
+{
+    if (g_basesDevice)
+        padmap::Draw(g_basesDevice);
+    g_basesDevice = nullptr;
+    promptbar::Draw();
 }
 
 static void PadFault(int phase)
@@ -384,7 +408,7 @@ void PublishFrame()
 {
     views::padframe = {PadRead, PadFeel, PadOptions, PadDevice, PadWatch, device::Pad, PadDied, PadModeChange, PadFillHud, PadMenuButtonDown, PadPrompts,
                        PadBotOn, UpdateSpace, PadDeviceRow, PadRest, Verb, PadDrawFlight, wgroups::Render, PadDrawBases, padmenus::Draw,
-                       promptbar::Draw, PadFault, padbases::NoHoverHelp};
+                       PadDrawPrompts, PadFault, padbases::NoHoverHelp};
 }
 void WithdrawFrame() { views::padframe = {}; }
 

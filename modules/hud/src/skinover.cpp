@@ -34,6 +34,7 @@ float g_tipX = 0, g_tipY = 0;
 bool g_tipLive = false;
 std::set<std::string> g_unknown;
 const CursorRow* g_row = nullptr;
+bool g_sheet = false; // debug `uiskin cursorsheet 1`: every flight reticle drawn in a row (the owner judges the set from one frame)
 
 u32 Tint(CursorTint t)
 {
@@ -84,38 +85,56 @@ float GameSpin(const char* name)
     const auto it = spin.find(name);
     return it == spin.end() ? 0.0f : it->second;
 }
-// Degrees a second for one unit of it. The game's unit is not traced: 10 gives half a turn a second, and the four arcs repeat at 2 Hz, under HUD 2's 3 Hz.
-constexpr float kSpinDegPerUnit = 18.0f;
+// Degrees a second for one unit of it: the game's unit is radians a second (traced 7 Nov 2026: 0x41DAE0 sets the cursor's angle +0x58 = the frame clock's seconds x
+// spin +0x5C, and 0x41D9C0 feeds it to fsin / fcos), so the fire cursors' spin 10 is 573 degrees a second, 1.6 turns - as vanilla (the owner, 7 Nov 2026: "I want the
+// new cursor to rotate faster. How fast does vanilla cursor rotate?"). Was 18 (a guess: 3.2 times too slow). The four darts repeat at 6.4 Hz, over HUD 2's 3 Hz:
+// the owner's call for the game's own rate
+constexpr float kSpinDegPerUnit = 57.29578f;
 
-void DrawReticle(float x, float y, float s, u32 rgb, unsigned form, float turn)
+// One of the reticle's inward triangles at angle `deg`: its point at rTip from the centre, its base at rBase, `half` across. Its shape says the attitude as the
+// target's carets do (hud2_target.cpp CaretQuad): 0 hostile solid, 1 neutral hollow, 2 friendly open (the base left out); the navy keyline keeps it read on a bright sky
+void InTri(float x, float y, float deg, float rTip, float rBase, float half, int attitude, float w, u32 rgb)
 {
-    const float r = s * 0.38f, w = std::max(2.0f, s * 0.06f);
-    for (int q = 0; q < 4; ++q) // four arcs on the diagonals
-        Arc(x, y, r, turn - 70.0f + 90.0f * static_cast<float>(q), turn - 20.0f + 90.0f * static_cast<float>(q), w, Argb(rgb, 1));
-    if (!(form & (FormSpokes | FormBar)))
-        Disc(x, y, std::max(1.5f, s * 0.05f), Argb(rgb, 1));
-    if (form & FormSpokes) // firing: spokes from the gaps towards the middle
+    const float rad = deg * 3.14159265f / 180.0f, c = cosf(rad), n = sinf(rad);
+    const float t[2] = {x + c * rTip, y + n * rTip}, b[2] = {x + c * rBase, y + n * rBase};
+    const float l[2] = {b[0] - n * half, b[1] + c * half}, r[2] = {b[0] + n * half, b[1] - c * half};
+    const u32 col = Argb(rgb, 1), navy = Argb(kNavy, 0.7f);
+    Line(l[0], l[1], t[0], t[1], w + 2, navy);
+    Line(r[0], r[1], t[0], t[1], w + 2, navy);
+    if (attitude != 2)
+        Line(l[0], l[1], r[0], r[1], w + 2, navy);
+    if (attitude == 0)
+        Tri(l[0], l[1], r[0], r[1], t[0], t[1], col);
+    Line(l[0], l[1], t[0], t[1], w, col);
+    Line(r[0], r[1], t[0], t[1], w, col);
+    if (attitude != 2)
+        Line(l[0], l[1], r[0], r[1], w, col);
+}
+
+// The flight reticle, a bit closer to the game's own (DATA\screens\cursor.TXM: one thin ring, a dot, four darts on the diagonals pointing in; the owner, 7 Nov
+// 2026: "don't just make it spin, change it to include inwards-pointing triangles. Also, make the cursor look just a bit closer to vanilla FL"): four long arcs
+// on the axes that read as the ring, the dot, and over a ship four triangles in the diagonal gaps pointing at the middle, their shape the attitude (hostile
+// solid, neutral hollow, friendly open, as the target's carets); firing pushes them in and draws the ring bolder (the game's hostile_fire); cannot fire = the
+// bar across, no triangles. Free aim (`cross`) is the ring and the dot alone, as the game's. Everything turns with the game's spin.
+void DrawReticle(float x, float y, float s, u32 rgb, CursorTint tint, unsigned form, float turn)
+{
+    const bool firing = (form & FormSpokes) != 0, noFire = (form & FormBar) != 0;
+    const float r = s * 0.38f, w = std::max(2.0f, s * (firing ? 0.075f : 0.06f));
+    for (int q = 0; q < 4; ++q) // four arcs on the axes, the gaps on the diagonals
+        Arc(x, y, r, turn - 30.0f + 90.0f * static_cast<float>(q), turn + 30.0f + 90.0f * static_cast<float>(q), w, Argb(rgb, 1));
+    if (noFire) // cannot fire: one bar across
     {
-        const float a = s * 0.46f, b = s * 0.14f;
-        for (int q = 0; q < 4; ++q)
-        {
-            const float rad = (turn + 90.0f * static_cast<float>(q)) * 3.14159265f / 180.0f, c = cosf(rad), n = sinf(rad);
-            Line(x + c * b, y + n * b, x + c * a, y + n * a, w, Argb(rgb, 1));
-        }
-    }
-    if (form & FormBar) // cannot fire: one bar across
         Line(x - r * 0.72f, y + r * 0.72f, x + r * 0.72f, y - r * 0.72f, w, Argb(rgb, 1));
-    if (form & FormCorners) // hostile: corners round the arcs
-    {
-        const float c = s * 0.52f, l = s * 0.16f;
-        for (int sx = -1; sx <= 1; sx += 2)
-            for (int sy = -1; sy <= 1; sy += 2)
-            {
-                const float cx = x + c * static_cast<float>(sx), cy = y + c * static_cast<float>(sy);
-                Line(cx, cy, cx - l * static_cast<float>(sx), cy, w, Argb(rgb, 1));
-                Line(cx, cy, cx, cy - l * static_cast<float>(sy), w, Argb(rgb, 1));
-            }
+        return;
     }
+    Disc(x, y, std::max(1.5f, s * 0.05f), Argb(rgb, 1));
+    const int attitude = tint == CursorTint::Hostile ? 0 : tint == CursorTint::Neutral ? 1 : tint == CursorTint::Friend ? 2 : -1;
+    if (attitude < 0)
+        return;
+    const float tip = firing ? r * 0.42f : r * 0.68f, base = firing ? r * 1.42f : r * 1.40f, half = s * (firing ? 0.072f : 0.058f); // (darts, as the game's: longer than wide)
+    const float tw = std::max(1.5f, s * 0.04f);
+    for (int q = 0; q < 4; ++q)
+        InTri(x, y, turn + 45.0f + 90.0f * static_cast<float>(q), tip, base, half, attitude, tw, rgb);
 }
 
 void DrawBubble(float x, float y, float s, u32 rgb, const wchar_t* word)
@@ -142,7 +161,7 @@ void DrawCursor(float W)
     case CursorShape::Reticle:
     {
         const float rate = hudrows::g.skinMotion == 2 ? 0.0f : GameSpin(g_row->name) * kSpinDegPerUnit;
-        DrawReticle(x, y, s, rgb, g_row->form, fmodf(static_cast<float>(GetTickCount64() % 3600000) / 1000.0f * rate, 360.0f));
+        DrawReticle(x, y, s, rgb, g_row->tint, g_row->form, fmodf(static_cast<float>(GetTickCount64() % 3600000) / 1000.0f * rate, 360.0f));
         break;
     }
     case CursorShape::Bubble: DrawBubble(x, y, s, rgb, g_row->word); break;
@@ -197,7 +216,7 @@ void Draw(void* device, bool on, bool pad)
     hostcalls::CursorHide(hostcalls::kCursorHideSkin, g_row != nullptr);
     const bool drawCursor = g_row && !hostcalls::CursorHiddenBesides(hostcalls::kCursorHideSkin) && Mem<u8>(exe::CursorShown) != 0;
     const bool drawTip = on && g_tipLive;
-    if (!device || (!drawCursor && !drawTip))
+    if (!device || (!drawCursor && !drawTip && !g_sheet))
         return;
     int sw = 0, sh = 0;
     render::SetDevice(device);
@@ -215,8 +234,28 @@ void Draw(void* device, bool on, bool pad)
     }
     if (drawCursor)
         DrawCursor(W);
+    if (g_sheet) // debug: every flight reticle in a row across the middle, at the cursor's size, turning as the game spins it
+    {
+        const CursorRow* rows = CursorRows();
+        const float s = CursorSize(W) * 1.5f, step = s * 1.6f;
+        int n = 0;
+        for (int i = 0; i < kCursorCount; ++i)
+            n += rows[i].shape == CursorShape::Reticle ? 1 : 0;
+        float x = W / 2 - step * (n - 1) / 2;
+        const float t = static_cast<float>(GetTickCount64() % 3600000) / 1000.0f;
+        for (int i = 0; i < kCursorCount; ++i)
+            if (rows[i].shape == CursorShape::Reticle)
+            {
+                const float rate = hudrows::g.skinMotion == 2 ? 0.0f : GameSpin(rows[i].name) * kSpinDegPerUnit;
+                DrawReticle(x, H * 0.42f, s, Tint(rows[i].tint), rows[i].tint, rows[i].form, fmodf(t * rate, 360.0f));
+                Text(x, H * 0.42f + s * 0.8f, std::wstring(rows[i].name, rows[i].name + strlen(rows[i].name)), std::max(TextFloor(), s * 0.22f), Argb(kInk, 1), Center);
+                x += step;
+            }
+    }
     End();
 }
+
+void Sheet(bool on) { g_sheet = on; }
 
 void Shutdown()
 {

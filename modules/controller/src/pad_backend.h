@@ -81,6 +81,12 @@ constexpr unsigned kXiButtonForSdl[kSdlButtons] = {
     0x0008, // DPAD_RIGHT
 };
 
+// A PlayStation pad's View is the touchpad's click, not Create / Share (the owner, 7 Nov 2026: "on DualSense you don't pick the share button as the View
+// button ... a click on the touchpad is the 'view' button"; the DualShock 4 the same): its SDL_GAMEPAD_BUTTON_TOUCHPAD (20) gives XInput's BACK, and SDL's BACK
+// (Create / Share) gives nothing.
+constexpr int kSdlTouchpad = 20; // SDL_GAMEPAD_BUTTON_TOUCHPAD
+inline bool TouchpadIsView(int sdlType) { return sdlType == kTypePs4 || sdlType == kTypePs5; }
+
 // SDL's stick axis -> XInput's: SDL's +y is down, XInput's up; -32768 (SDL full up) has no positive twin and clamps.
 inline int StickX(int sdl) { return sdl < -32768 ? -32768 : sdl > 32767 ? 32767 : sdl; }
 inline int StickY(int sdl)

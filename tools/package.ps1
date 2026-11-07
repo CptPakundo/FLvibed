@@ -32,6 +32,9 @@ Copy-Item (Join-Path $root 'modules\autopilot\data\autopilot.3db') (Join-Path $s
 # No FLvibed.ini in the zip: merged by hand it would replace the player's, so its [Modules] rows and its settings stamp
 # (core\settings_reset.h) would go, and the next start would reset every setting. The DLL writes the file at its first start.
 Copy-Item (Join-Path $root 'CHANGELOG.md') $stage
+# Linux (Wine / Proton): install, uninstall and the DualSense's Surround 4.0 profile (the owner, 7 Nov 2026: feature parity). LF line ends, whatever the checkout has
+$sh = [IO.File]::ReadAllText((Join-Path $root 'tools\setup\linux\flvibed-linux.sh')) -replace "`r`n", "`n"
+[IO.File]::WriteAllText((Join-Path $stage 'flvibed-linux.sh'), $sh, [Text.UTF8Encoding]::new($false))
 Copy-Item (Join-Path $root 'LICENSES\*') (Join-Path $stage 'LICENSES')
 
 $readme = @"
@@ -51,6 +54,13 @@ uninstalls (Windows Settings > Apps > FLvibed). By hand, with this zip:
    there (on the original game after .\flmaterials.dll):
        FLvibed.dll
 3. Start the game. Settings: Options > FLVIBED (also the pause menu's sixth button).
+
+LINUX (Wine, Proton)
+Unpack this zip and run, in a terminal, from its folder:
+    ./flvibed-linux.sh install "<the game folder in your Wine or Proton prefix>"
+It does what Setup does on Windows (uninstall: ./flvibed-linux.sh uninstall "<game folder>" [--keep-settings]). With a
+DualSense plugged in by USB it also sets the pad's speaker to four channels (Surround 4.0), which the waveform haptics
+need, as the Sound panel step does on Windows; again after a replug: ./flvibed-linux.sh haptics
 
 UNINSTALL
 Remove the FLvibed.dll line from EXE\dacom.ini, then delete EXE\FLvibed.dll, FLvibed.ini, FLController.ini,

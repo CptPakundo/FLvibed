@@ -29,7 +29,8 @@ struct ShmBlock;
 // host and mission.cpp keep per game starts over at a load: the A37 S1 finding), v35 MissionSave (the story's
 // checkpoint saves for the speedrun splits' save:<ids> rows: M01b.end at GAME SAVED, CP-M01b), v37 SetSteerLift, v38 SdlPadFilter, v39 SetTargetMute + TargetMuteReady, v40 SetLoadDraw,
 // v41 SdlPadTriggers + SdlPadTriggerRumble + the grips' stream (modules\controller\docs\HAPTICS.md). A logic DLL must check `version` before using functions added in later versions.
-constexpr u32 kHostApiVersion = 41;
+// v42 SdlPadTouchRead: the pad's touchpad fingers (the nav map's drag and zoom, docs\MAP_PLAN.md). v43 SetFlightLock: keys and mouse fly nothing under the full-screen map.
+constexpr u32 kHostApiVersion = 43;
 // Logic DLL API version, checked by the host when loading the logic DLL (exact match): v2 adds OnRenderUnderHud, v3
 // adds OnUiButton and OnRawKey (the UI build), v4 OnKeyCmd (the game's key commands after it handled them: the maneuver
 // lock's answer and hud_prompts' actions for the keyboard, 0.2.1).
@@ -55,6 +56,15 @@ struct SdlPadState
     int link;           // v41: SDL_JoystickConnectionState: 1 wired, 2 wireless, 0 unknown
     u32 padSerial;      // v41: grows whenever the open pad changes: what was sent to the last one is gone
     u32 effectFails;    // v41: trigger effects SDL refused
+};
+
+// v42: the first touchpad of the pad SDL reads, as of its newest read: SDL's fingers, 0..1 across and down. Its own struct, so an older host is never read past its end.
+struct SdlPadTouch
+{
+    int pads;       // the pad's touchpads (0: none, or no pad)
+    int clicked;    // the touchpad's button is down
+    int down[2];    // the first two fingers
+    float x[2], y[2];
 };
 
 struct HostApi
@@ -306,6 +316,10 @@ struct HostApi
     int (*PadWave)(int open);
     void (*PadWaveFeed)(const void* frame);
     void (*PadWaveWhy)(char* out, int len);
+    // v42: the newest touchpad read (no wait: SdlPad has just woken the thread); all zero with no SDL running.
+    void (*SdlPadTouchRead)(SdlPadTouch* out);
+    // v43: called each frame a full-screen window stands: the player's keys and mouse fly and fire nothing; ends by itself when the calls stop.
+    void (*SetFlightLock)();
 };
 
 struct ImplApi

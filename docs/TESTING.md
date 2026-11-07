@@ -15,7 +15,7 @@ The testing rules the user set, and how the test install, deploy and sweeps work
 - `tools\deploy.ps1` (PowerShell tool, full path): builds, writes `dacom.ini` (FLvibed.dll) and `FLvibed.ini`,
   copies `modules\subtitles\data\*.tsv` to `EXE\FLSubtitles\`, then hot-reloads (game running, DLL unchanged) or starts the
   game, skipping each startup movie natively (`movieskip`: the game's movie loop sees it finished) while its video
-  window exists. Switches: `-Impl` (logic only, hot reload; `reload` or `unload` on either module's channel is one act for all the logic, `core\loader.h`), `-Release` (the player build), `-Restart`, `-NoStart`,
+  window exists. Switches: `-Impl` (logic only, hot reload, about 18 s of which 17 the build - never a restart for the ini files, 7 Nov 2026: iterate a change this way, the release build only for the last check; `reload` or `unload` on either module's channel is one act for all the logic, `core\loader.h`), `-Release` (the player build), `-Restart`, `-NoStart`,
   `-NoBuild`, `-Intro` (let movies play), `-Save <file>` (start, then load that save by name), `-Modules
   subtitles,controller` (which modules run; each alone runs in the background too; both off or `safe = 1` is a game with no
   guard at all, so never started: `tests\modules_nothing.ps1` proves that state with no game), **`-Background`** (start without taking focus, game runs out of focus: use

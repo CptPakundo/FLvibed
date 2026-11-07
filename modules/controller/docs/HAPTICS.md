@@ -14,7 +14,7 @@ One engine, fed by game state, three layers:
 
 | Layer | What | Rule |
 |---|---|---|
-| **Bed** | The ship's body: engine, afterburner, cruise charge, lane, jump, tractor, nebula | Continuous, never above a quarter of range outside a set piece, ducked hard under any event, sinks after a steady stretch |
+| **Bed** | The ship's body: engine, cruise charge (from the inside out since 7 Nov 2026: a light high texture first, the deep mass joining from a third of the charge, as its meter fills from the middle out), lane, jump, tractor, nebula. The afterburner is the left trigger's alone since 7 Nov 2026 (the owner), not the bed's | Continuous, never above a quarter of range outside a set piece, ducked hard under any event, sinks after a steady stretch |
 | **Events** | What happens: hits, guns, launches, set-piece beats, warnings | Short, sharp, sided, mixed by priority |
 | **Stances** | One per trigger: energy and limits | Not mixed. Chosen by order: wall, limp, firing, pull weight, off. Sent on change, Off at every gate |
 
@@ -209,10 +209,10 @@ Open only in flight with the player flying: not paused, no window open (the trig
 - **Where:** `modules\controller\src\host\hapticwave.cpp`, a thread of its own in the host (it outlives a logic reload); the synth is pure, `modules\controller\src\wave_synth.h`.
 - **Feed:** the logic writes a `WaveFrame` a frame into one small block under a slim lock, the stream takes it once a buffer; the synth smooths towards it, so attacks stay near 1.5 ms.
 - **Synth:** per grip a bed sine, a mass sine, a texture sine, a noise band, click bursts. Then a 20 Hz high-pass, no DC, and an energy limiter last (root of the energy over about 1 s capped at 0.18 of full scale, after hsll233's unverified limit: sustained signals are the risk, peaks are not).
-- **Endpoint:** WASAPI shared, event-driven, its own session, by run-time look-up (`ole32`, `cfgmgr32`): the render endpoint whose `PKEY_Device_ContainerId` matches the pad's. The mix format is read at open: four channels, 48 kHz, a back pair (`WaveFormatOk`), else the stream refuses and says why. Back pair = the grips, front pair silent.
+- **Endpoint:** WASAPI shared, event-driven, its own session, by run-time look-up (`ole32`, `cfgmgr32`): the render endpoint whose `PKEY_Device_ContainerId` matches the pad's; where none does (Wine's device tree has no ContainerId), the one endpoint whose friendly name holds SDL's name of the pad or "DualSense" (`EndpointNameMatches`; two such is no match). `FLVIBED_WAVE_BYNAME=1` in the game's environment forces the name path on Windows to test it. The mix format is read at open: four channels, 48 kHz, a back pair (`WaveFormatOk`), else the stream refuses and says why. Back pair = the grips, front pair silent.
 - **Fails closed:** no endpoint, wrong layout, a device error, no frames for 200 ms: silence and then motors, with the reason in the log and in `haptics status`.
 
-The coils can be heard. The stream never opens in a background game, under `haptics_device` 0, or under Wine. Tests render into buffers: `tests\wave_synth_test.cpp`.
+The coils can be heard. The stream never opens in a background game or under `haptics_device` 0. **Wine / Proton (7 Nov 2026, the owner: feature parity):** it opens there too, by the name path above; the pad's speaker must offer four channels, the card profile Surround 4.0 of PipeWire or PulseAudio, which `flvibed-linux.sh haptics` (in the release zip; `tools\setup\linux\`) sets with pactl, as the Sound panel's Quadraphonic does on Windows. Unproven on Linux: no Linux machine here; the name path is proven on Windows only with the owner's pad (the card). Tests render into buffers: `tests\wave_synth_test.cpp`.
 
 ## 9. Fault behaviour and cost
 

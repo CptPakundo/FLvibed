@@ -60,6 +60,7 @@ struct Options : sharedrows::Values
     int hapticsDevice = 1;         // 0: the recording alone
     int padCursor = 2;             // 0 off, 1 rooms and maps, 2 everywhere (the owner's decision 15)
     int cursorMagnet = 60;         // the pad cursor's slow-down / pull over clickable elements, percent
+    bool mapTouchpad = true;       // the touchpad's gestures on the nav map
     int promptBar = 0;             // 0 contextual, 1 always, 2 off
     int worldPrompts = 0;          // 0 contextual, 1 off
     bool hudGlyphs = true;         // glyph badges on the HUD's own elements in pad mode
