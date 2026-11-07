@@ -21,6 +21,8 @@ void DrawMarquees();
 // R8's frame: the NeuroNet windows stand on one top line and left edge. The log, status and info windows always; NN_Inventory only with this, until probe 18
 // has shown its hit boxes follow (debug `gametext frame 0|1`).
 void SetInventoryFrame(bool on);
+// A text control's centre to this height in pixels, through its position property (the mission briefing's title over the full-screen map: navskin).
+void StandText(const char* name, float centreY);
 // Debug `gametext window`: what the open window has now.
 std::string Status();
 // Debug `gametext texts`: every shown text and rich text of any window, with its font, size and box.

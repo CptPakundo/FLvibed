@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.4.5 (7 Nov 2026)
+- **Refreshed again: a station's dealers light their own word:** a station's trader and equipment dealer are rooms inside its deck to the game, so DECK stayed lit in them (Shockwave). The docked bar now lights TRADER or EQUIPMENT there.
+- **Refreshed again: the mission briefing's title on the top line:** MISSION BRIEFING stood on the map's letter row; it now stands on the top line with the system's name and LAYERS (Shockwave).
+- **Refreshed again: no window X on STATUS:** the game's close button of the faction card stood cut at the page's top right; it is gone (the page closes with its own CLOSE).
 
 - **Refreshed the same day: NeuroNet pages fit 16:10 (Shockwave, Steam Deck):** the card of STATUS, INVENTORY, LOG and INFO now ends at the screen's right edge on any aspect ratio, so the list beside it gets the room. At 1280x800 the reputation list was a thin strip, the inventory's numbers ran into each other and INFO's faction names scrolled. STATUS puts what a standing means on its own line under it, and its bars no longer run under the HOSTILE / FRIENDLY words.
 - **Refreshed the same day: a station's deck actions get their plate:** where the game centres a room's actions under the bar rather than under the current room (a station's DECK at the bar's left end), they stood as bare icons; now they are words on their plate like every room's (Shockwave).

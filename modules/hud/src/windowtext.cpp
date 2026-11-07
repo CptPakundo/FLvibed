@@ -1462,6 +1462,21 @@ void Frame(bool on)
 
 void SetInventoryFrame(bool on) { g_inventoryFrame = on; }
 
+void StandText(const char* name, float centreY)
+{
+    const u32 ctl = uiclick::FindVisible(name);
+    ui::Item it;
+    float pos[3] = {};
+    const float H = static_cast<float>(fl::ScreenHeight());
+    if (!ctl || !IsText(ctl) || H < 100 || !ui::ControlRect(ctl, it))
+        return;
+    const float top = centreY - TextHeight(ctl) / 2; // (a text's rectangle stands at its top: the title came out half its height low)
+    if (fabsf(it.y - top) < 1.0f || !safemem::Read(ctl + kPos, pos, sizeof(pos)))
+        return;
+    pos[1] += (it.y - top) / H;
+    SetPos(ctl, pos);
+}
+
 // A text off the screen while HUD 2 says it: the dealer shows its refusal again every frame, so hiding it by its state does nothing. By its position, which the game leaves alone
 static u32 g_parked = 0;
 static float g_parkedPos[3] = {};

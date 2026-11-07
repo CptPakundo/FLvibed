@@ -1265,6 +1265,10 @@ void Under()
 {
     if (g_page == Page::Inventory)
         HideTrade();
+    // STATUS: the card's window brings its X along (PlayerInfoCloseButton), cut at the page's top right (Shockwave's shots, the owner, 7 Nov 2026): off the page,
+    // which closes by its own CLOSE. The STATUS word beside it is no text control (PlayerInfoTitle blanked, PlayerStatsTitle is the faction's name): not hidden yet
+    if (g_page == Page::Status)
+        PlaceAt(uiclick::FindVisible("PlayerInfoCloseButton"), -static_cast<float>(fl::ScreenWidth()), 0);
 }
 
 void DrawAfter()

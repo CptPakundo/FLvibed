@@ -19,6 +19,7 @@
 #include "ui/hud2_kit.h"
 #include "ui/hud_rows.h"
 #include "ui/ui.h"
+#include "windowtext.h"
 
 #include <sstream>
 
@@ -636,6 +637,9 @@ void DrawOver()
     const int hover = skinchip::Hovered();
     if (navnew::Grown())
     {
+        // the mission briefing's MISSION BRIEFING (the game's MissionBriefingText) stood on the map's letter row (Shockwave, 7 Nov 2026): on the top line, with
+        // the system's name and LAYERS
+        windowtext::StandText("MissionBriefingText", 0.041f * H);
         DrawFull(lay, v, layer, size, hover, pad);
         g_panelTick = GetTickCount64();
         return;

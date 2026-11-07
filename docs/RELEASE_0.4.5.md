@@ -26,6 +26,4 @@ No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's
 - BEST PRICES was seen with one known base and docked only.
 - CHAT and GROUP keep the game's windows on the page's ground.
 - The bindings editor.
-- The news list was not checked with more than five headlines (Manhattan has four, no scroll control found).
-- The mission briefing's MISSION BRIEFING title (the game's) stands on the grid's letter row: not `AttentionTitle` (moving it moved nothing); the control is not found yet.
-- At a station, the docked bar's DECK reads lit whatever room you are in (Shockwave): not reproduced on a planet, no station fixture yet.
+- Refreshed again on the owner's word: DECK at a station's dealers, the briefing title, STATUS's X - fixed. The news window has five headline boxes and no scroll control (NN_News's children, 7 Nov 2026): nothing to mark. STATUS still shows the word STATUS cut at the card's top right: no text control (PlayerInfoTitle blanked showed it still; PlayerStatsTitle is the faction's name), likely the window's own art.

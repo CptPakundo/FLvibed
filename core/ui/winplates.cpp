@@ -1076,7 +1076,21 @@ DockedGeo g_docked;
 
 bool SceneSkinned(int fam) { return kFamilies[fam].modal || fam == kFamOffer; }
 
-std::string CurrentRoomKey() { return g_pickedRoom.empty() ? baseinfo::RoomKey() : g_pickedRoom; }
+// A station's trader and equipment dealer are virtual rooms of its Deck: the location stays the Deck, so DECK stood lit in them (Shockwave, 7 Nov 2026). The room is
+// the virtual room of the actions on screen when a room button of the bar carries that name (the deck's own actions say Deck)
+static std::string RoomNow()
+{
+    const std::string key = baseinfo::RoomKey();
+    const std::vector<room::Hotspot> hs = room::Hotspots();
+    for (const room::Hotspot& a : hs)
+        if (!a.virt.empty() && _stricmp(a.virt.c_str(), key.c_str()) != 0 && !strncmp(a.control.c_str(), "RoomControl", 11) && a.ctl && FullyShown(a.ctl))
+            for (const room::Hotspot& b : hs)
+                if (!strncmp(b.control.c_str(), "ButtonControl", 13) && !_stricmp(b.label.c_str(), a.virt.c_str()))
+                    return b.label;
+    return key;
+}
+
+std::string CurrentRoomKey() { return g_pickedRoom.empty() ? RoomNow() : g_pickedRoom; }
 
 static u32 CurrentRoomButton()
 {

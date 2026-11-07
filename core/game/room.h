@@ -42,6 +42,7 @@ struct Hotspot
     u32 behaviour;       // 1 room switch (11 in the rooms sharing its set), 2 news, 3 mission vendor, 6 dealer front desk,
                          // 7 ship dealer, 12 repair
     u32 ctl;             // the FlControl (uiclick::Click)
+    std::string virt;    // its virtual room (hotspot +8): a station's trader and equipment dealer are virtual rooms of its Deck
 };
 std::vector<Hotspot> Hotspots();
 // Whether the NavBar acts on a room button now. Its click handler 0x43EE80 (message 0x26) swallows the click

@@ -3,6 +3,7 @@
 
 #include "flexe.h"
 #include "game/menu.h"
+#include "safemem.h"
 #include "str.h"
 
 #include <cctype>
@@ -413,7 +414,7 @@ bool Talk(void* obj) { return Valid(obj) && CallSlot(obj, 12); }
 // +0x10 label (std::string data, length at +0x14), +0x20 FlControl, +0x24 hotspot (+0 name, +0x10 behaviour).
 struct RawHotspot
 {
-    char label[48], hotspot[48], control[33];
+    char label[48], hotspot[48], control[33], virt[24];
     u32 behaviour, ctl;
 };
 
@@ -452,6 +453,8 @@ static int ReadRaw(RawHotspot* out, int max)
                 if (const char* name = Mem<const char*>(spot))
                     strncpy_s(h.hotspot, name, _TRUNCATE);
                 h.behaviour = Mem<u32>(spot + 0x10);
+                if (const u32 virt = Mem<u32>(spot + 8)) // (its own fault-free read: a bad pointer must not lose the whole list)
+                    safemem::Read(virt, h.virt, sizeof(h.virt) - 1);
             }
             ++n;
         }
@@ -469,7 +472,10 @@ std::vector<Hotspot> Hotspots()
     std::vector<Hotspot> out;
     const int n = ReadRaw(raw, 32);
     for (int i = 0; i < n; ++i)
-        out.push_back({raw[i].label, raw[i].hotspot, raw[i].control, raw[i].behaviour, raw[i].ctl});
+    {
+        raw[i].virt[sizeof(raw[i].virt) - 1] = 0;
+        out.push_back({raw[i].label, raw[i].hotspot, raw[i].control, raw[i].behaviour, raw[i].ctl, raw[i].virt});
+    }
     return out;
 }
 
@@ -725,8 +731,8 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
         for (const Hotspot& h : hs)
         {
             char line[200];
-            sprintf_s(line, "%-14s %-15s %-34s behaviour=%u\n", h.label.c_str(), h.control.c_str(), h.hotspot.c_str(),
-                      h.behaviour);
+            sprintf_s(line, "%-14s %-15s %-34s behaviour=%u virtual=%s\n", h.label.c_str(), h.control.c_str(), h.hotspot.c_str(),
+                      h.behaviour, h.virt.c_str());
             out << line;
         }
         const std::string busy = NavBusy();

@@ -1284,7 +1284,10 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
   the room switch such as `Bar`, `Trader`, `Equipment`, `ShipDealer`, `Cityscape`, else the hotspot name), +0x20
   the FlControl, +0x24 the hotspot. Hotspot (room vector at roomInfo+0x40 → +0x198/+0x19C; roomInfo =
   0x43A460 thiscall(0x668708)): +0 name (`IDS_HOTSPOT_BAR`, `IDS_HOTSPOT_NEWSVENDOR`, ...), +4 room_switch,
-  +8 virtual room (`Deck` / `Planetscape` special-cased), +0x10 behaviour (1 room switch, 2 news, 3 mission vendor,
+  +8 virtual room (`Deck` / `Planetscape` special-cased; a char* - verified 7 Nov 2026 on Br01_02: a station's
+  `VirtualRoom` dealers keep the location Deck while their RoomControls read virtual `Trader` / `Equipment`, the
+  deck's own `Deck`; HUD 2 lights the bar's word by it), the mission briefing's title is `MissionBriefingText` (a
+  text control on NeuroNetNavMap; its rectangle stands at its top), NN_News has five headline boxes and no scroll, +0x10 behaviour (1 room switch, 2 news, 3 mission vendor,
   6 dealer front desk, 7 ship dealer, 12 repair). Clicking the record's control natively (button click, UI
   section) does what the hotspot does. FLController / FLSubtitles debug `hotspots` / `goto <label>` use it.
   **Which room the player is in** (verified in game 29 Oct 2026, Li01 Manhattan: Equipment, Trader, ShipDealer): a
