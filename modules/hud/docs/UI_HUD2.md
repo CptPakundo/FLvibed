@@ -175,7 +175,7 @@ CLASSIC keeps today's rows (`hud_glyphs`, `button_legend`, `ap_status_line`, `wo
 | **READERS** | `core\game\hudinfo.{h,cpp}` (new), `core\flexe.h` (one block "HUD 2"), `docs\FREELANCER_RE.md` / `docs\kb` facts | the missing readers (5.6), each verified in game |
 | **HUD2** | `modules\hud\src\hud2*.{h,cpp}`, `hudvis.{h,cpp}`, `controller.cpp` (integration + the 5.3 rows in kOptions, `uiopt`), `padhud.cpp` (gating only), `runtimer.cpp` (placement only), `core\game\flicons.{h,cpp}` (the flat icon atlas from the game's txm) | HUD 2 itself |
 | **SUBS** | `modules\subtitles\src\impl\*` | the subtitles module on the bus (5.1) with every existing option still working |
-| **SPEC** (orchestrator) | `docs\UI_SPEC.json` through the mock-up, `tools\uimock\*`, `core\ui_meta.h`, `docs\SETTINGS.md`, this file | the options page rows, the living spec, the docs |
+| **SPEC** (orchestrator) | `docs\UI_SPEC.json` through the mock-up, `tools\uimock\*`, `core\ui_meta.h`, `docs\SETTINGS.md`, this file | the options page rows, the Feature Tour, the docs |
 
 ### 5.6 Readers HUD 2 needs (READERS; `core\game\hudinfo.h`, cheap, cached, fail closed)
 The active weapon group and each weapon's group membership; weapon / equipment display names (ids_name); the system's
@@ -610,7 +610,7 @@ The frames `research\experience\runs\focus_frames_2026-10-31\decisions_A_standar
 - **Tests:** `hud2_lint` 804 checks (+ the panel.overlap cases and semantics), `hud2_focus` 922 (the card's new heights,
   per-meter arcs, no hold strip), `hud2_layout` 29142 (ship 0.15); 51 tests, 0 failures.
 - **Not verified:** nothing ran in game; the impl sources (hud2_parts / hud2 / hud2_click / hud2_kit / lint_live) are
-  not in the test build - the driver's `dev` build is their first compile. The living spec still draws the old HUD 2
+  not in the test build - the driver's `dev` build is their first compile. The Feature Tour still draws the old HUD 2
   mock (`tools\uimock\hud2_states.py`: the loadout 0.56 x 0.17, the ship 0.40 x 0.17): it must show the 0.15 ship panel
   beside the 0.15 loadout, the slot counts at the floor beside their icons, the K&M group keys as tight caps at the
   0.039 pitch (not published here).
@@ -683,7 +683,7 @@ The owner's second verdicts on the 5.19 frames (`research\experience\runs\focus_
   with the new zone.
 - **Open for the owner**: no reduced-motion switch; the launcher's full name scrolls (the word drop removed); TARGET
   AHEAD (~0.19 H at 4K) is squeezed in the 4K right lane (~0.17 H) and scrolls - the band, the loadout's 0.40 or the
-  lanes' gaps decide that; the K&M contact list's fewer rows above the cross. The living spec mock
+  lanes' gaps decide that; the K&M contact list's fewer rows above the cross. The Feature Tour mock
   (`tools\uimock\hud2_states.py`, not edited here) must show the narrow loadout with the stacked cross, the lanes beside
   the panels with nothing in the bottom-centre band, a long name in its cut (start) form, and (5.21) Standard's cruise
   prompt in the left lane ([Y] CRUISE calm, [Y] CANCEL CRUISE first while charging) with only the glyph-less state word
@@ -786,7 +786,7 @@ CRUISE ON text still hides the ship. We should really make sure the lower center
   H). Open for the owner: the power arc hidden while cruising; TRACTOR n absent in combat (the X button's TURRET); the
   alert card keeps its 1.3 exemption in every zone and can still fall back below the ring (`hud2_layout.h`: only when it
   would meet the ring, 4:3 with a list or a dialogue) - not moved here; the unbuilt alert-queue design's FLARE mirror "in
-  the reticle lane" (`UI_SPEC.json` value_ids alert `second`) needs a new home. The living spec mock
+  the reticle lane" (`UI_SPEC.json` value_ids alert `second`) needs a new home. The Feature Tour mock
   (`tools\uimock\hud2_states.py`, not edited) must show CRUISE ON inside the ring, TRACTOR n in the right lane, the
   throttle word beside its arc and Focus's band inside the circle.
 

@@ -23,7 +23,7 @@ differ: both bottom panels 0.15 H tall (ship 0.31 wide, loadout base 0.40 with t
 plate stacked 0.012 above the base's right end), tight glyphs in the loadout, a too-long name in its cut start form (the
 marquee), the context prompts in two lanes beside the panels (movement / control left, fire / use / target right), the
 cruise state inside the ring (seconds / CRUISE ON at +0.083), the throttle word beside its arc, and nothing under the
-ring (the lower centre). Renders also feed the living spec page (tools\\uimock\\spec_images.py, img\\cap\\m_*.jpg).
+ring (the lower centre). Renders also feed the Feature Tour page (tools\\uimock\\spec_images.py, img\\cap\\m_*.jpg).
 """
 import glob
 import math

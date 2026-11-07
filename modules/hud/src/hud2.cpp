@@ -482,6 +482,24 @@ void Update(float dt, const Context& c)
     g_slow += dt;
     if (HotRefreshWanted())
         g_slow = 1;
+    // what replaces a muted native element refreshes in its frame, not at the next 10 Hz tick: the target (the game's bracket and
+    // label are muted while the target display is wanted) and the missiles homing on the player (MissileAlert hidden) - the owner:
+    // "frame-perfect", 7 Nov 2026
+    {
+        static u32 s_target = 0; // (on a change of the game's target: the model clears its id for a target not among the contacts)
+        const u32 tid = fl::TargetId();
+        if (tid != s_target)
+            g_slow = 1, s_target = tid;
+    }
+    {
+        static int s_homing = 0; // (on a change of the count itself: the model may read none without the ship's kinematics)
+        int homing = 0;
+        if (c.space)
+            for (const space::Missile& mi : space::Missiles())
+                homing += mi.targetsPlayer && homing < 3;
+        if (homing != s_homing)
+            g_slow = 1, s_homing = homing;
+    }
     bool built = !g_sim.empty(); // (the debug states build the model every frame)
     if (g_slow >= 0.1f)
     {
@@ -786,6 +804,13 @@ void Render(void* device)
     g_perf.drawn = 0;
     if (!g_visible || !device || g_menuOver)
         return;
+    // out of flight by the raw signal: the frame's mode counts a change only after 3 frames, and the flight HUD drew 3 frames over a base, a menu or a
+    // dock's scene (the owner: "frame-perfect", 7 Nov 2026). Drawing only: the state follows the frame's mode as before, the game's HUD stays hidden.
+    {
+        const gamemode::Mode raw = gamemode::Detect(nullptr, nullptr);
+        if (raw != gamemode::Mode::Space && raw != gamemode::Mode::SpaceUi)
+            return;
+    }
     const double t0 = perf::Now();
     render::SetDevice(device);
     int sw = 0, sh = 0;

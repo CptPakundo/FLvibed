@@ -181,12 +181,74 @@ static OfferCreateFn g_origOfferCreate;
 // Job board offers (pub::GF::MissionVendorOfferCreate, from Content.dll, when a base loads). MissionVendorOfferDescription
 // as mapped against the board (Manhattan, 12 offers; the board lists them in key order): +0 base hash, +4
 // index, +8 ?, +0xC job type (1 Kill Ships, 3 portrait icon, 6 cargo icon; others unconfirmed), +0x10.. text
-// arguments, +0x58 reward in credits. Difficulty is not a plain field (it is in the text arguments).
+// arguments, +0x58 reward in credits. Difficulty is not a plain field: the detail's text (+0x40, a mad-lib, IDS 0x50001) holds it as the first
+// integer of its "Difficulty : %d0 / Reward : %d1" piece (IDS 0x50002), the reward the second. The argument nodes: {next, value, type}, type's low
+// byte the kind ('!' a piece, its value the piece's own chain whose first value is the piece's IDS; 'd' an integer). Content.dll computes it once
+// (0x06f9e9b0: from the offer's 0..100 difficulty, rounded, at least 1). Probed 7 Nov 2026: [! ( 50002 [d 1] [d 834] )] for reward 2100.
+static int OfferDifficulty(const void* d)
+{
+    u32 node = Word(d, 0x40);
+    for (int guard = 0; node && guard < 16; ++guard)
+    {
+        const void* n = reinterpret_cast<const void*>(static_cast<uintptr_t>(node));
+        if ((Word(n, 8) & 0xFF) == 0x21)
+        {
+            const void* piece = reinterpret_cast<const void*>(static_cast<uintptr_t>(Word(n, 4)));
+            if (piece && Word(piece, 4) == 0x50002)
+            {
+                const u32 first = Word(piece, 0);
+                const void* f = reinterpret_cast<const void*>(static_cast<uintptr_t>(first));
+                if (first && (Word(f, 8) & 0xFF) == 0x64)
+                {
+                    const u32 second = Word(f, 0);
+                    const void* r = reinterpret_cast<const void*>(static_cast<uintptr_t>(second));
+                    // (the reward beside it must be the offer's own: anything else is another layout, and no number is better than a wrong one)
+                    if (second && (Word(r, 8) & 0xFF) == 0x64 && Word(r, 4) == Word(d, 0x58))
+                        return static_cast<int>(Word(f, 4));
+                }
+                return 0;
+            }
+        }
+        node = Word(n, 0);
+    }
+    return 0;
+}
+
+struct Offer
+{
+    u32 key, base, reward;
+    int difficulty;
+};
+static std::vector<Offer> g_offers; // the live offers in key order
+static SRWLOCK g_offerLock = SRWLOCK_INIT;
+
 static u32 __cdecl OfferCreateHook(const void* d)
 {
     const u32 key = g_origOfferCreate(d);
-    Push("offer key=%u base=%u type=%u reward=%u", key, Word(d, 0), Word(d, 0xC), Word(d, 0x58));
+    const int difficulty = OfferDifficulty(d);
+    Push("offer key=%u base=%u type=%u reward=%u difficulty=%d", key, Word(d, 0), Word(d, 0xC), Word(d, 0x58), difficulty);
+    if (key)
+    {
+        AcquireSRWLockExclusive(&g_offerLock);
+        auto at = std::lower_bound(g_offers.begin(), g_offers.end(), key, [](const Offer& o, u32 k) { return o.key < k; });
+        if (at != g_offers.end() && at->key == key)
+            *at = {key, Word(d, 0), Word(d, 0x58), difficulty};
+        else
+            g_offers.insert(at, {key, Word(d, 0), Word(d, 0x58), difficulty});
+        ReleaseSRWLockExclusive(&g_offerLock);
+    }
     return key;
+}
+
+int OfferDifficulties(u32 base, u32* rewards, int* difficulties, int max)
+{
+    int n = 0;
+    AcquireSRWLockShared(&g_offerLock);
+    for (const Offer& o : g_offers)
+        if (o.base == base && n < max)
+            rewards[n] = o.reward, difficulties[n] = o.difficulty, ++n;
+    ReleaseSRWLockShared(&g_offerLock);
+    return n;
 }
 
 // The story's money target (Content.dll's story object, when a mission ends and free time starts: net worth then +
@@ -205,7 +267,16 @@ static OfferDestroyFn g_origOfferDestroy;
 // An offer leaves the board (accepted, or the base's list renewed).
 static void __cdecl OfferDestroyHook(u32* key)
 {
-    Push("offer-gone key=%u", key ? Word(key, 0) : 0);
+    const u32 k = key ? Word(key, 0) : 0;
+    Push("offer-gone key=%u", k);
+    AcquireSRWLockExclusive(&g_offerLock);
+    for (size_t i = 0; i < g_offers.size(); ++i)
+        if (g_offers[i].key == k)
+        {
+            g_offers.erase(g_offers.begin() + static_cast<std::ptrdiff_t>(i));
+            break;
+        }
+    ReleaseSRWLockExclusive(&g_offerLock);
     g_origOfferDestroy(key);
 }
 

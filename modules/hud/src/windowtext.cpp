@@ -94,6 +94,7 @@ struct Spec
     float footOff = 0;       // ... and ends this far off the window's foot, in whole lines
     float grow = 0;          // the window stands this much taller than the game's, fractions of H: there is the screen for it (the owner, 6 Nov 2026)
     float shift = 0;         // the window stands this far right of the screen's middle, fractions of H: a NeuroNet page has its list or card at the left (nnpage.*)
+    const char* rightEdge = nullptr; // ... or this control of it ends at the page's right edge, on any aspect (shift until it shows): at 16:10 a shift in H left the list beside it 200 px
 };
 
 const TextRole kDealerTexts[] = {
@@ -162,15 +163,15 @@ const Spec kSpecs[] = {
     {"NN_News", nullptr, kNewsTexts, 2, nullptr, 0, {"NewsStoryText", nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
     {"NN_Inventory", nullptr, kInventoryTexts, 1, kInventoryRows, 1, {"InfoCard_Info", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.62f, nullptr, 0, 2, 0, 0, 0, 0.40f, 0.31f},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.62f, nullptr, 0, 2, 0, 0, 0, 0.40f, 0.31f, "InfoCard_Info"},
     {"NeuroNetStoryStar", nullptr, nullptr, 0, nullptr, 0, {"StoryStarHistoryText", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.089f, 0.36f, 0.26f},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.089f, 0.36f, 0.26f, "StoryStarHistoryText"},
     {"NN_Help", nullptr, nullptr, 0, nullptr, 0, {"PlayerInfoText", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.015f, 0.36f, 0.26f},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.015f, 0.36f, 0.26f, "PlayerInfoText"},
     {"ScriptSequence_OfferDialog", nullptr, nullptr, 0, nullptr, 0, {"OfferDialogOfferText", nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
     {"NN_PlayerInfo", nullptr, kPlayerTexts, 1, nullptr, 0, {"FactionInfoCard", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.62f, nullptr, 0, 1, 0, 0, 0, 0.46f, 0.38f},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.62f, nullptr, 0, 1, 0, 0, 0, 0.46f, 0.38f, "FactionInfoCard"},
     {"NN_LoadSave", nullptr, kSaveTexts, 4, nullptr, 0, {nullptr, nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
     // the nav map: its toolbar lay under the top panel of subtitles (UI_HUD2.md 5.34) and there is room under the map
@@ -341,7 +342,6 @@ struct Slot
 
 const Spec* g_spec = nullptr;
 u32 g_window = 0;
-int g_scan = 0;
 std::vector<Rung> g_ladder;
 std::map<u32, float> g_heights; // font -> height, every font of the ladder
 std::map<u32, Base> g_base;
@@ -1174,7 +1174,11 @@ void Place(const Spec& s)
         return;
     const float H = static_cast<float>(fl::ScreenHeight()), W = static_cast<float>(fl::ScreenWidth());
     // centred between what stands around it (the owner, 6 Nov 2026): on the screen's middle, and between the strip's tabs and the prompts' row; a window that grows downwards stands higher by half of it
-    const float dx = (W / 2 + s.shift * H - it.x) / H, dy = (it.y - H * (skinrules::kFrameCentreY - s.grow / 2)) / H;
+    float dx = (W / 2 + s.shift * H - it.x) / H;
+    ui::Item edge;
+    if (s.rightEdge && ui::ControlRect(uiclick::FindVisible(s.rightEdge), edge) && edge.hw > 0.5f)
+        dx = ((1 - deckmode::SideW()) * W - (edge.x + edge.hw)) / H;
+    const float dy = (it.y - H * (skinrules::kFrameCentreY - s.grow / 2)) / H;
     if (fabsf(dx) < 0.002f && fabsf(dy) < 0.002f)
         return;
     pos[0] += dx, pos[1] += dy;
@@ -1385,9 +1389,8 @@ void Frame(bool on)
         return;
     if (!g_spec)
     {
-        if (++g_scan < 12)
-            return;
-        g_scan = 0;
+        // every frame, as an open window's own check above: every 12th left the game's text at its own size and place for 12 frames, then it popped
+        // (the owner: "frame-perfect", 7 Nov 2026)
         u32 window = 0;
         const Spec* spec = Find(window);
         if (!spec)

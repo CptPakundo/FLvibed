@@ -33,7 +33,7 @@ UI rule. No row changes.
 *Check-up 30 Oct 2026 ~07:25 (short form, HEAD aafe41d; 3 watched-path commits 4ca36df..aafe41d):* with the opt-in
 `pad_backend` 1 the glyph family comes from SDL's gamepad type (baae629, `pad_backend.h` VendorForType ->
 `glyphs::Update`), and the SDL test pads show it per type - xbox / playstation / nintendo, a two-pad hand-over switching
-the family (8e19482). No HUD or menu rule here changed; the setting is an advanced developer key, its living-spec line
+the family (8e19482). No HUD or menu rule here changed; the setting is an advanced developer key, its Feature Tour line
 deferred to the slice that ships it to players (WORK_QUEUE Q5).
 *Check-up 30 Oct 2026 ~01:50 (short form, HEAD 4ca36df; 3 watched-path commits 04b4c05..4ca36df):* the device rules
 met new ground, none is contradicted. 08a99a7: one focus gate for the physical pad in flight and menus (U38; the

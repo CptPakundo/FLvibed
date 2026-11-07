@@ -227,8 +227,9 @@ void DrawRoom()
     const winplates::DockedGeo& d = winplates::g_docked;
     if (!winplates::g_on || !d.live || winplates::g_modalOpen || winplates::g_scene)
         return;
-    if (g_read >= 0.1f)
-        ReadRoom();
+    // every frame: at 10 Hz a room change kept the room before's words on the new bar for up to 6 frames (the owner: "frame-perfect", 7 Nov 2026); a few
+    // controls' rectangles, the words cached by label
+    ReadRoom();
     if (g_rooms.empty())
         return;
     const float W = winplates::g_W, H = winplates::g_H, pad = kStripPad * H, glyphH = 0.038f * H;

@@ -1,5 +1,5 @@
 // ================================================================== the spec document: FLvibed as BUILT (25 Oct 2026)
-// The living spec of FLvibed as a whole (the owner, 25 Oct 2026 evening): every feature it adds, how a player installs
+// The Feature Tour of FLvibed as a whole (the owner, 25 Oct 2026 evening): every feature it adds, how a player installs
 // and uses it, and what is not implemented yet. Static, reviewed content for two readers: a player (the lead, the
 // captions) and the developer (the "For developers" blocks: rules, sizes in fractions of the screen height H, settings
 // keys, files, sources). The options rows and the bindings are NOT here: they render live from the spec (DEFAULT_SPEC /

@@ -18,6 +18,9 @@ void SetFlightLock();
 bool FlightLocked();
 // Each frame a NeuroNet window should stop the world (single player, in space): the game's own pause closes the window, so only the world's gates hear it (0x54B000, FrameUpdate); ends by itself when the calls stop.
 void SetWorldPause();
+// A command under that pause (a press or click on a page; a route, by the hook): the server gets a few frames with no time in them to answer it (input.cpp).
+void WorldCommand();
+bool TakeCommandFrame(); // the frame's: FrameUpdate runs with dt 0 when it says yes (router.cpp)
 u32 LastRealKeyTick();
 std::string RawKeyStatus(); // the raw-key counters, for `uibtn`
 } // namespace input

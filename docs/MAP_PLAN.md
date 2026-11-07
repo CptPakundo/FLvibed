@@ -39,7 +39,7 @@ one-off move is undone (the owner's release game: still over VIEW). DONE the own
 (TextControls, "Player Waypoint 1\nNew York System\nSector D3") and `NavMapMissionObjectiveScroll` are hidden; navskin's ROUTE section under VIEW shows the
 shown texts. Open: the game shows a page of three; more waypoints need HUD 2's own paging (the game's scroll bar is hidden). Open: the grid's
 `NavMapGridNumber1..8` and the system name stand lower than the grid once waypoints exist. **P4:** the grown map
-(`navnew`) by default, both scales in one view, keyboard and mouse parity, settings (magnetism, touch pan, hold-to-clear), the living spec.
+(`navnew`) by default, both scales in one view, keyboard and mouse parity, settings (magnetism, touch pan, hold-to-clear), the Feature Tour.
 
 ## P2's design: zoom and pan (7 Nov 2026, before building)
 

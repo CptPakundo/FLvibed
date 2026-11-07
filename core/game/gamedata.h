@@ -14,6 +14,8 @@ namespace gamedata
 const equiprules::Spec* Equip(u32 arch);
 // An item's infocard text id (ids_info), 0 unknown: text::InfoCard.
 u32 EquipInfo(u32 arch);
+// What a launcher fires (a gun's, mine or countermeasure dropper's projectile_archetype: for a missile, mine or flare the ammo sold), 0 none or unknown.
+u32 Fires(u32 launcher);
 // A ship archetype's hardpoints (shiparch.ini hp_type), empty unknown.
 const std::vector<equiprules::Hp>& ShipHardpoints(u32 shipArch);
 
@@ -58,9 +60,18 @@ struct Good
     float factor = 1; // against the good's base price
     bool sold = false; // false: only bought here
 };
+// What a base's dealer asks of the buyer of a good (its market line): the level, and the standing with the base's owners (-1 none).
+struct Need
+{
+    u32 arch = 0;
+    int level = 0;
+    float rep = -1;
+};
 struct BaseFacts
 {
     u32 id = 0, nameIds = 0;
+    std::string owner;       // mbases.ini local_faction: the "base owners" of a reputation refusal
+    std::vector<Need> needs; // by good (its equipment / ship id), only the goods that ask something
     std::vector<Faction> factions; // who keeps an office here, the heaviest first
     bool bar = false, trader = false, equipment = false, ships = false;
     int offersMin = 0, offersMax = 0; // the job board's size

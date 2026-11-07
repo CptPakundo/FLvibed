@@ -305,6 +305,7 @@ void Start()
     g_host.calls.SetLoadDraw = router::SetLoadDraw;
     g_host.calls.SetFlightLock = input::SetFlightLock;
     g_host.calls.SetWorldPause = input::SetWorldPause;
+    g_host.calls.WorldCommand = input::WorldCommand;
     g_hud = router::ModuleOn(modules::kHud);
     g_flies = router::ModuleOn(modules::kAutopilot) || g_hud;
     g_story = g_flies || router::ModuleOn(modules::kSpeedrun);
@@ -330,6 +331,7 @@ void Start()
         g_host.calls.CommHeardAt = events::CommHeardAt;
         g_host.calls.SpawnedShips = events::SpawnedShips;
         g_host.calls.GameLoads = events::GameLoads;
+        g_host.calls.OfferDifficulties = events::OfferDifficulties;
         g_host.calls.PlayerHit = uihooks::PlayerHit;
         g_host.calls.ObjectiveReread = events::ObjectiveReread;
     }

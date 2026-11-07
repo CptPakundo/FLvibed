@@ -113,7 +113,7 @@ static void __cdecl FrameUpdateHook(double dt)
     });
     if (g_mouseHere)
         GuardedMouseUpdate();
-    g_origFrameUpdate(dt);
+    g_origFrameUpdate(input::TakeCommandFrame() ? 0.0 : dt); // (a command under the NeuroNet pause: its answer on a frame with no time, input.cpp)
     Each(kAfterGameOrder, [&](const Client& c) {
         if (c.afterGame)
             c.afterGame(dt);

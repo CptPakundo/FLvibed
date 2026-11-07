@@ -1,4 +1,4 @@
-"""specpatch.py - applies one patch (a JSON file in tools\\uimock\\patches\\) to BOTH halves of the living spec: the
+"""specpatch.py - applies one patch (a JSON file in tools\\uimock\\patches\\) to BOTH halves of the Feature Tour: the
 mock-up's source (part2_data.js: the proposal the page starts from) and a spec document (the owner's `ui/spec` from the
 artifact, or docs\\UI_SPEC.json), so what was built lands in the mock-up and in the spec the same way (the standing order,
 tools\\uimock\\README.md). Patches are additive: notes appended to a screen state or a decision, a row's default / value /

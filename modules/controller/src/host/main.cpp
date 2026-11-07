@@ -675,6 +675,8 @@ void Start(HMODULE)
     g_host.PadWaveWhy = hapticwave::Why;
     g_host.SdlPadTouchRead = sdlpad::Touch;              // v42: the touchpad's fingers
     g_host.SetWorldPause = input::SetWorldPause;         // v44: a NeuroNet window stops the world
+    g_host.OfferDifficulties = events::OfferDifficulties; // v45: the job board's difficulties
+    g_host.WorldCommand = input::WorldCommand;           // v45: a command under the NeuroNet pause
     g_host.SetFlightLock = input::SetFlightLock;         // v43: the keys and mouse fly nothing under the full-screen map
     g_host.SetTargetMute = uihooks::SetTargetMute;       // v39: HUD 2's targeting display
     g_host.TargetMuteReady = uihooks::TargetMuteReady;   // v39

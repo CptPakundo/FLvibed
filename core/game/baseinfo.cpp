@@ -10,6 +10,7 @@
 #include "game/ini.h"
 #include "game/room.h"
 #include "game/shipname.h"
+#include "game/space.h"
 #include "log.h"
 #include "str.h"
 #include "text.h"
@@ -592,6 +593,28 @@ std::wstring ShipName()
 }
 
 long long Credits() { return hudinfo::Credits(); }
+
+// pub::Player::GetRank (Server.dll), single player's client 1, as space::ReadArea reads it; -1 unknown (multiplayer: the client's server is not here)
+static int RankOf(int(__cdecl* getRank)(const u32&, int&))
+{
+    const u32 client = 1;
+    int rank = -1;
+    __try
+    {
+        if (getRank(client, rank) != 0)
+            rank = -1;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        rank = -1;
+    }
+    return rank;
+}
+int PlayerLevel()
+{
+    static auto getRank = reinterpret_cast<int(__cdecl*)(const u32&, int&)>(GetProcAddress(GetModuleHandleA("server.dll"), "?GetRank@Player@pub@@YAHABIAAH@Z"));
+    return getRank && !space::Multiplayer() ? RankOf(getRank) : -1;
+}
 
 bool Cargo(int& used, int& capacity)
 {

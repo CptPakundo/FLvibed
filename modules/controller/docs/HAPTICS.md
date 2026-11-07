@@ -236,7 +236,7 @@ The coils can be heard. The stream never opens in a background game or under `ha
 
 ## 10. Options
 
-By `docs\UI_OPTIONS.md`: a row in the living spec, generated into `core\ui_meta.h`, then the registry.
+By `docs\UI_OPTIONS.md`: a row in the Feature Tour, generated into `core\ui_meta.h`, then the registry.
 
 | Key | Row | Values | Tier | Default |
 |---|---|---|---|---|

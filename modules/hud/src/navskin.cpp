@@ -180,8 +180,59 @@ bool Bind(u32 root, Hides& out)
 
 void BeginPass() { g_nChips = 0; }
 
+// The mission briefing's CONTINUE / ABORT MISSION: hiding the captions as art took their frames but not their words, so the game's CONTINUE stood at the map's foot under
+// the panel's own chip (Shockwave, 7 Nov 2026). Their text goes blank through the text control's setter (message 0x1D) while the chips stand, and comes back after.
+struct Blanked
+{
+    u32 ctl = 0;
+    wchar_t saved[48] = {};
+};
+static Blanked g_blanked[2];
+static bool SetCaption(u32 ctl, const wchar_t* text)
+{
+    __try
+    {
+        const u32 fn = Mem<u32>(Mem<u32>(ctl) + 0xA8);
+        if (!exe::TextCtlSetProperty.is(fn))
+            return false;
+        reinterpret_cast<u32(__thiscall*)(u32, u32, const void*, u32)>(fn)(ctl, 0x1D, text, 0);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+static void BlankCaptions()
+{
+    static const char* const kNames[2] = {"NavMapContinueText", "NavMapAbortMissionText"};
+    for (int i = 0; i < 2; ++i)
+    {
+        const u32 c = Child(g_root, kNames[i]);
+        std::wstring now;
+        if (!c || !TextOf(c, now) || now == L" ")
+            continue;
+        Blanked& b = g_blanked[i];
+        b.ctl = c;
+        wcsncpy_s(b.saved, now.c_str(), _TRUNCATE);
+        SetCaption(c, L" ");
+    }
+}
+static void RestoreCaptions()
+{
+    static const char* const kNames[2] = {"NavMapContinueText", "NavMapAbortMissionText"};
+    for (int i = 0; i < 2; ++i)
+    {
+        Blanked& b = g_blanked[i];
+        if (b.ctl && uiclick::Find(kNames[i]) == b.ctl) // (only the control that is still there)
+            SetCaption(b.ctl, b.saved);
+        b = Blanked();
+    }
+}
+
 void Unbind()
 {
+    RestoreCaptions();
     navnew::Closed();
     g_root = 0, g_nChips = 0, g_focus = -1;
     memset(g_ctl, 0, sizeof(g_ctl));
@@ -562,6 +613,7 @@ void Draw(const Win* map, bool pad)
     }
     g_mapRect = {view[0], view[1], view[0] + view[2], view[1] + view[3]};
     navnew::Frame(g_root, g_mapRect, pad);
+    BlankCaptions();
     g_show = true;
 }
 

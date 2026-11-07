@@ -113,10 +113,10 @@ Targets: `dev` (default), `impl` (the logic alone), `release`, `test` (the host-
    gives back what a stopped module no longer hears (the HUD's state blocks, since `DeviceLost` no longer reaches it).
 3. Add its `[Modules]` row in `core\modules_rules.h` (`Row`, `kRowNames`, `kInherits`, and `tests\modules_rules_test.cpp`), with a default
    that changes nothing for existing players, in `kModuleDefs` and `kModuleDefaults` of `core\flvibed.cpp`, as a `mod_<name>` row of the
-   living spec with its entry in `ALIASES` of `tools\ui_meta.py`, and in `$rows` of `tools\deploy.ps1`.
+   Feature Tour with its entry in `ALIASES` of `tools\ui_meta.py`, and in `$rows` of `tools\deploy.ps1`.
 4. Reach the rest only through the doors above. A hook only it needs goes in its own host part; a hook a second module needs moves to
    `core\host\`. A setting whose row stays in another module's registry is a macro in `core\ui\shared_rows.h`, listed in both tables
-   (`core\logic\alone.cpp` with the module that reads it), with its owner in `RowOwner` (`core\ui\options_page.cpp`) and the living spec.
+   (`core\logic\alone.cpp` with the module that reads it), with its owner in `RowOwner` (`core\ui\options_page.cpp`) and the Feature Tour.
 5. List its files, settings and verbs in `docs\module_map.tsv`, its folder in `FOLDER` of `tools\module_lint.py`, add a test that includes its
    pure headers, and run `tools\module_lint.py --enforce`. A file it writes at run time goes in `tools\setup\setup.cpp` and its test. Note
    that `.gitignore` is a whitelist: check that new files are really tracked.

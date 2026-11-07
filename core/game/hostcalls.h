@@ -79,6 +79,8 @@ struct Table
     void (*SetLoadDraw)(void (*draw)()); // the load's frame (core\host\router.h)
     void (*SetWorldPause)(); // each frame a NeuroNet window stops the world (input.h)
     void (*SetFlightLock)(); // each frame a full-screen window stands: the player's keys and mouse fly nothing (input.h)
+    int (*OfferDifficulties)(u32 base, u32* rewards, int* difficulties, int max); // the job board's offers (events.h)
+    void (*WorldCommand)(); // a command under the NeuroNet pause: the server answers on frames with no time (input.h)
 };
 inline Table g = {};
 
@@ -110,4 +112,10 @@ inline u32 ObjectiveNow(ObjectiveStep* out) { return g.ObjectiveNow ? g.Objectiv
 inline int MissionMarks(u32* out, int max) { return g.MissionMarks ? g.MissionMarks(out, max) : -1; }
 inline u32 MissionResult(u32* type) { return g.MissionResult ? g.MissionResult(type) : 0; }
 inline u32 MissionSave(u32* ids) { return g.MissionSave ? g.MissionSave(ids) : 0; }
+inline int OfferDifficulties(u32 base, u32* rewards, int* difficulties, int max) { return g.OfferDifficulties ? g.OfferDifficulties(base, rewards, difficulties, max) : 0; }
+inline void WorldCommand()
+{
+    if (g.WorldCommand)
+        g.WorldCommand();
+}
 } // namespace hostcalls
