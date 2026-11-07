@@ -42,13 +42,13 @@ struct Root
 };
 
 // The cruise line "Cruise Disrupted - n" (the seconds until the cruise engine can charge again) carries what HUD 2's
-// 3 s alert card does not: it stays native for as long as the engine's charge clock is negative (sampled at 10 Hz).
+// 3 s alert card does not: it stays native for as long as the engine's charge clock is negative (sampled once a tick).
 static bool CruiseDisruptedNow(const Root&)
 {
     static bool cache = false;
     static DWORD at = 0;
     const DWORD now = GetTickCount();
-    if (now - at >= 100)
+    if (now != at) // (once a tick, about a frame: at 10 Hz the line came and went up to 6 frames late - "frame-perfect", the owner, 7 Nov 2026)
         at = now, cache = hudinfo::CruiseDisrupted(1.0e6f);
     return cache;
 }
@@ -108,14 +108,14 @@ static void FindNeuroNetButtons(Root& r)
     }
 }
 
-// The chat window (MsgWin) stays shown while the player types into it (the chat input CTID shown; looked up at 4 Hz:
+// The chat window (MsgWin) stays shown while the player types into it (the chat input CTID shown; looked up once a tick:
 // it exists only while open).
 static bool ChatInputOpen(const Root&)
 {
     static bool cache = false;
     static DWORD at = 0;
     const DWORD now = GetTickCount();
-    if (now - at >= 250)
+    if (now != at) // (once a tick, about a frame: at 4 Hz the chat window came up to 15 frames after the typing started)
     {
         at = now;
         u8 st = 0;

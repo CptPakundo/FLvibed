@@ -11,6 +11,8 @@
 #include "ui/flufaware.h"
 #include "hudhost.h"
 #include "nnstrip.h"
+#include "nnpage.h"
+#include "navnew.h"
 #include "ui/hud2_kit.h"
 #include "ui/views.h"
 #include "safemem.h"
@@ -42,7 +44,6 @@ using namespace hud2kit;
 
 constexpr u32 kGood = 0x60D660, kFair = 0xE8D25C, kHigh = 0xEC6048; // the mock's GOOD / FAIR / HIGH
 constexpr u32 kNumber = 0x68A0C8; // CHROME one step dimmer: a decision number is a label, not a headline (critique 2, 2)
-constexpr float kRefresh = 0.1f;  // the readers at most 10 Hz
 constexpr float kWordNameRoom = 0.185f; // a row's name line less the FAIR / GOOD word, fractions of H
 
 std::vector<DrawnRect> g_drawnRects; // this frame's drawings (pixels): the prompt lane's keep-outs (Drawn)
@@ -434,6 +435,50 @@ void JobLine(float H)
     w.rgb = kInk, w.scale = 1.35f; // (with the reward, what the job is: the owner, 6 Nov 2026)
     g.words.push_back(w);
 }
+// The offer's title this far right of where the game put it (fractions of H), through its position property as windowtext moves a text;
+// the home is read once per dialog, so the step never adds up
+u32 g_titleCtl = 0;
+float g_titleHome = 0, g_titleShift = 0;
+bool SetLocalX(u32 ctl, float x)
+{
+    __try
+    {
+        float pos[3] = {Mem<float>(ctl + 0xA8), Mem<float>(ctl + 0xAC), Mem<float>(ctl + 0xB0)};
+        pos[0] = x;
+        reinterpret_cast<void(__thiscall*)(u32, int, const float*, int)>(Mem<u32>(Mem<u32>(ctl) + 0xA8))(ctl, 6, pos, 0);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+bool LocalX(u32 ctl, float& x)
+{
+    __try
+    {
+        x = Mem<float>(ctl + 0xA8);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+void TitleAt(u32 title, float shift)
+{
+    if (title != g_titleCtl)
+    {
+        if (!LocalX(title, g_titleHome))
+            return;
+        g_titleCtl = title, g_titleShift = 0;
+    }
+    if (fabsf(shift - g_titleShift) < 0.002f)
+        return;
+    if (SetLocalX(title, g_titleHome + shift))
+        g_titleShift = shift;
+}
+
 void OfferLine(float H, const std::vector<void*>& chars)
 {
     // the offer's giver: the conversation partner (+0x36C) - the player's own character talks too but carries no
@@ -445,7 +490,13 @@ void OfferLine(float H, const std::vector<void*>& chars)
     const u32 title = baseinfo::Find("OfferDialogAcceptButton") ? baseinfo::Find("OfferDialogTitle") : 0;
     ui::Item r, close;
     if (!title || !ui::ControlRect(title, r) || !CtlRect(baseinfo::Find("OfferDialogCloseButton"), close))
+    {
+        // a rumour in the same dialog: its title back home (only the control the step was made on, while it is the dialog's)
+        const u32 any = baseinfo::Find("OfferDialogTitle");
+        if (any && any == g_titleCtl)
+            TitleAt(any, 0);
         return;
+    }
     for (void* o : chars)
     {
         baseinfo::Card c;
@@ -459,13 +510,23 @@ void OfferLine(float H, const std::vector<void*>& chars)
         f.y = r.y + H * 0.002f;
         n.y = f.y + H * 0.026f;
         f.align = n.align = Left;
-        f.maxW = n.maxW = H * 0.28f;
+        // the room up to the title, measured on its own word, and the title steps right for a long name, never into the X: 0.28 H cut
+        // "COORDINATOR WILLIAM CAMPBELL" with a third of the header empty (the owner, 7 Nov 2026: "push the word Mission a bit to the right")
+        std::wstring word;
+        const float titleHalf = winplates::TextOf(title, word) && !word.empty() ? TextWidth(word, H * 0.040f) / 2 : H * 0.07f;
+        const float k = std::min(1.3f, std::max(0.8f, uiopt::Get().textSize / 100.0f)), gap = H * 0.024f;
+        const float needW = std::max(TextWidth(f.text, H * 0.024f * k, 0.06f), TextWidth(n.text, H * 0.024f * k, 0.06f));
+        const float centre = winplates::g_W / 2, most = (close.x - close.hw - gap - titleHalf) - centre;
+        const float shift = std::max(0.0f, std::min(most, f.x + needW + gap + titleHalf - centre));
+        TitleAt(title, shift / H);
+        f.maxW = n.maxW = std::max(H * 0.28f, centre + shift - titleHalf - gap - f.x);
         f.rgb = c.attitude == 1 ? kFriend : c.attitude == -1 ? kHostile : kNumber;
         n.rgb = kInk;
         g.words.push_back(f);
         g.words.push_back(n);
         return;
     }
+    TitleAt(title, 0); // (no giver read: the game's place)
 }
 
 void Read()
@@ -493,6 +554,13 @@ void Read()
     if (ModalOpen())
     {
         g.show = false, g.why = "modal menu";
+        return;
+    }
+    // a full-screen NeuroNet page or map has its own title where the strip stands: the game's mission briefing (the map with no tabs) drew both, SIGMA-13 over GAS
+    // MINER NAHA (Shockwave, 7 Nov 2026)
+    if (nnpage::On() || navnew::Grown())
+    {
+        g.show = false, g.why = "a full-screen page";
         return;
     }
     // a room scene (letterboxed): the strip stands down; the offer dialog the scene brings up still gets its line
@@ -843,15 +911,12 @@ void Update(float dt, bool on)
         winplates::ClearSkinItems();
         return;
     }
-    if (!g.on)
-        g.clock = kRefresh; // read at once when switched on
+    (void)dt;
     g.on = true;
-    g.clock += dt;
-    if (g.clock >= kRefresh || winplates::FitOpen()) // (in a dealer every frame: the comparison stayed over the welcome text after a deselect)
-    {
-        g.clock = 0;
-        Read();
-    }
+    // every frame, as a dealer always read: at 10 Hz the game's character tooltip showed before the card, the card stayed after the hover, a
+    // refusal's ErrorHelp flashed and a room's strip lagged its change (the owner: "frame-perfect", 7 Nov 2026)
+    g.clock = 0;
+    Read();
 }
 
 void Draw(void* device)

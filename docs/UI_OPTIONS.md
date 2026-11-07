@@ -345,7 +345,7 @@ What simple mode already gives advanced mode: the tier in the metadata, every ro
 
 No build order is fixed here; it follows the owner's decisions and P11f's `hud_size`.
 
-1. `UI_SPEC.json`: new tabs, a `simple` tier, per-value help, the words above; `tools\ui_meta.py`; the living spec in the same package.
+1. `UI_SPEC.json`: new tabs, a `simple` tier, per-value help, the words above; `tools\ui_meta.py`; the Feature Tour in the same package.
 2. `options_page.cpp`: the band, the chips with X / Y, tabs by owner, head rows and their two-key logic, the amber value and the tab mark, YOU CHANGED, the indented rows of MORE, the layout card (from the spec's binding tables), the two dialogs, the first-start card and its stamp, Q / E and D / C. `tools\deploy.ps1` writes the stamp.
 3. `presets.*`: two bundles. `RowOwner` for the new rows.
 4. Tests: `tests\` for bundles and the changed-row rule (pure); in game at 1280x800 and 4K, pad and K&M, hosted and from the pause menu; each feature off, waiting, coming on, stopped; both Subtitles and Controller disabled, and that the game still starts; that a feature switch still holds after the restart (the common complaint is a value lost there); `hud2 lint`; the display matrix. Fails closed: with the spec's rows missing, the page shows them greyed, as today.

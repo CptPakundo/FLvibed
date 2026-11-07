@@ -501,7 +501,7 @@ void OnFrame(double dtd)
     views::PanelTick(dt);
     // HUD 2 over the menus and rooms: the skin's switch and the docked overlay's - every frame. Classic (hud_style 0) is classic everywhere.
     if (views::hud.Skin)
-        views::hud.Skin(dt, padOwns, opts.enabled, g_mode == Mode::Docked);
+        views::hud.Skin(dt, padOwns, opts.enabled, g_mode == Mode::Docked || detected == Mode::Docked); // (the raw signal too: the docked strip came 3 frames late)
     // The open options page owns the pad and the keys: no flight / menu pad dispatch. Its ownership outlasts its close until every button is up: the
     // press that closed it reached the menu and base code in the same frame and again as a fresh edge of padmenus' own pad reader.
     static bool pageLatch = false;

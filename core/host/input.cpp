@@ -29,12 +29,36 @@ typedef bool(__cdecl* GamePausedFn)();
 static GamePausedFn g_origGamePaused = nullptr;
 static DWORD g_worldPause = 0;
 void SetWorldPause() { g_worldPause = GetTickCount(); }
+// A command under the pause (a route asked for: the pad's destination list, the map's own Best Path button, the autopilot; a press or click on a page: a jettison, a
+// mount) is answered by the in-process server, and the pause stopped it: the request was lost, no route came even after the map closed (Shockwave, 7 Nov 2026). The world
+// stays paused (the owner: an exception "for strictly commands the pause might otherwise break"): for a few frames after a command FrameUpdate runs with no time in it
+// (router.cpp: dt 0), so its gate at 0xB9 may open - the state's update hands the server dt 0, it takes the request and moves nothing - while the clock's gate (0xA) and
+// the space update stay shut.
+static int g_commandFrames = 0;
+static bool g_commandNow = false; // this frame's FrameUpdate is a command's
+void WorldCommand() { g_commandFrames = 5; }
+bool TakeCommandFrame()
+{
+    g_commandNow = g_commandFrames > 0 && g_worldPause && GetTickCount() - g_worldPause < 250;
+    if (g_commandFrames > 0)
+        --g_commandFrames;
+    return g_commandNow;
+}
+typedef void(__cdecl* PlotFn)(const float*, const float*, u32, u32);
+static PlotFn g_origPlot = nullptr;
+static void __cdecl PlotHook(const float* from, const float* to, u32 object, u32 system)
+{
+    WorldCommand();
+    g_origPlot(from, to, object, system);
+}
 static bool __cdecl GamePausedHook()
 {
     const bool paused = g_origGamePaused();
     if (paused || !g_worldPause || GetTickCount() - g_worldPause >= 250)
         return paused;
     const uintptr_t from = reinterpret_cast<uintptr_t>(_ReturnAddress());
+    if (g_commandNow && from - exe::FrameUpdate.get() >= 0x40 && from - exe::FrameUpdate.get() < 0xC0) // (the state's gate, on a frame with no time)
+        return false;
     return from - exe::WorldUpdate.get() < 0x200 || from - exe::FrameUpdate.get() < 0xC0;
 }
 
@@ -305,7 +329,12 @@ void Install()
     // IsCmdHeld: mov ecx, ds:[0067C258] (6 bytes)
     g_origIsCmdHeld = static_cast<IsCmdHeldFn>(hk::Detour(exe::IsCmdHeld, IsCmdHeldHook, 6, "held pad commands"));
     if (exe::WorldUpdate.ok() && exe::FrameUpdate.ok())
+    {
         g_origGamePaused = static_cast<GamePausedFn>(hk::Detour(exe::GamePaused, GamePausedHook, 6, "NeuroNet pause"));
+        // PlotBestPath: sub esp,80h (6 bytes)
+        if (g_origGamePaused && exe::PlotBestPath.ok())
+            g_origPlot = static_cast<PlotFn>(hk::Detour(exe::PlotBestPath, PlotHook, 6, "a route under the NeuroNet pause"));
+    }
     // MouseSteer: sub esp,18h; push ebx; push esi (5 bytes). The override writes the mouse-flight globals.
     if (exe::MouseX.ok() && exe::MouseY.ok() && exe::MouseFlightToggle.ok() && exe::MouseFlightTimer.ok() &&
         exe::MouseFlightEngaged.ok())

@@ -74,7 +74,7 @@ DS4Windows or similar. No other mod, loader or runtime is needed.
 
 THIS IS A PREVIEW
 Some features are incomplete and design choices may still change. What is new: CHANGELOG.md. Known limits, the
-controls and every setting: the README on the project page and the living spec
+controls and every setting: the README on the project page and the Feature Tour
 (https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN).
 
 LICENCES AND CREDITS

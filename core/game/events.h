@@ -63,6 +63,8 @@ u32 GameLoads();
 // v35: the mission checkpoint saves made (pub::Save, the log's `mission-save`): a growing sequence, 0 none yet; `ids`
 // (may be null) = the latest save's description id (M01b's "Criminal Base Destroyed" 32120, at GAME SAVED).
 u32 MissionSave(u32* ids);
+// v45: a base's live job offers in key order (the board's order): reward and the difficulty the detail prints (0 unknown); returns the count.
+int OfferDifficulties(u32 base, u32* rewards, int* difficulties, int max);
 // Text of a Freelancer string resource id (resources.dll + [Resources] DLLs), UTF-8.
 std::string IdsText(u32 ids);
 } // namespace events

@@ -507,7 +507,7 @@ For release 0.4.0, after 0.3.5, on the owner's go. Each step proved at 4K and 12
 9. **Main menu with CONTINUE on floating chips, front load, the loading screen, tooltips, popups, the cursor set** (6.3, 6.4, 6.6).
 10. **The new map: grown, HUD 2's labels, route and marks, Shadow panels; the page rule** (6.1, 3.3), after the hit-box sweep and a second install; a Proton run.
 11. Optional after: the front end's transition.
-12. Close: tests, the living spec, `CHANGELOG.md`, the retro row, `docs-auditor`, `tools\backup.ps1`, the release's own audit and sweep; `UI_HUD2_EXTENDED.md`'s "Left native" marked superseded.
+12. Close: tests, the Feature Tour, `CHANGELOG.md`, the retro row, `docs-auditor`, `tools\backup.ps1`, the release's own audit and sweep; `UI_HUD2_EXTENDED.md`'s "Left native" marked superseded.
 
 ## 16. Still open before the build
 **The owner's:** the go, after 0.3.5.

@@ -89,6 +89,7 @@ static bool UnderBegin(void* device, bool flying)
     // the native HUD switch and the game's 3D views in HUD 2's windows: before the UI pass draws the controls (any mode: restores)
     hud2::RenderUnderHud(device);
     windowtext::ApplyCuts();
+    nnpage::Under(); // (after the game's update, before its UI pass: what the game shows again each frame)
     return menuOver;
 }
 

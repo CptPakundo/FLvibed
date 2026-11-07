@@ -1112,7 +1112,8 @@ std::string BarReport()
 void DockedPlates(const Win& bar, const Win* nn, bool draw)
 {
     float bx0 = 1e9f, by0 = 1e9f, bx1 = -1e9f, by1 = -1e9f, sx0 = 1e9f, sy0 = 1e9f, sx1 = -1e9f, sy1 = -1e9f;
-    float litX = -1, anyRoom = 0;
+    float litX = -1, anyRoom = 0, allRoom = 0;
+    float ax0 = 1e9f, ay0 = 1e9f, ax1 = -1e9f, ay1 = -1e9f; // every shown action, whatever button it stands under
     g_docked = DockedGeo();
     Box cur;
     const u32 curButton = CurrentRoomButton();
@@ -1133,13 +1134,21 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
             {
                 bx0 = std::min(bx0, b.x0), by0 = std::min(by0, b.y0), bx1 = std::max(bx1, b.x1), by1 = std::max(by1, b.y1);
             }
-            else if (!haveCur || fabsf(b.cx - cur.cx) <= Hf(0.13f)) // (one left from the room before stands under another button)
-                sx0 = std::min(sx0, b.x0), sy0 = std::min(sy0, b.y0), sx1 = std::max(sx1, b.x1), sy1 = std::max(sy1, b.y1),
-                ++anyRoom;
+            else
+            {
+                ax0 = std::min(ax0, b.x0), ay0 = std::min(ay0, b.y0), ax1 = std::max(ax1, b.x1), ay1 = std::max(ay1, b.y1), ++allRoom;
+                if (!haveCur || fabsf(b.cx - cur.cx) <= Hf(0.13f)) // (one left from the room before stands under another button)
+                    sx0 = std::min(sx0, b.x0), sy0 = std::min(sy0, b.y0), sx1 = std::max(sx1, b.x1), sy1 = std::max(sy1, b.y1),
+                    ++anyRoom;
+            }
         }
         if (!R32(c + kSibling, c))
             break;
     }
+    // none under the current room's button: the game centres them under the bar instead (a station's DECK at the bar's left
+    // end, its three actions under the middle: they stood bare, without plate or words - Shockwave, 7 Nov 2026)
+    if (!anyRoom && allRoom)
+        sx0 = ax0, sy0 = ay0, sx1 = ax1, sy1 = ay1, anyRoom = allRoom;
     if (!g_paint)
         BarRecord({GetTickCount64(), bx1 > bx0 ? bx0 : -1, bx1 > bx0 ? bx1 : -1, bx1 > bx0 ? by1 : -1, anyRoom ? sx0 : -1, anyRoom ? sx1 : -1, anyRoom ? sy1 : -1, litX, draw ? 1 : 0, static_cast<int>(anyRoom)});
     if (bx1 > bx0)

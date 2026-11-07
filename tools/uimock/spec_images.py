@@ -1,4 +1,4 @@
-"""spec_images.py - the living spec page's real captures (release build) as page-size JPEGs.
+"""spec_images.py - the Feature Tour page's real captures (release build) as page-size JPEGs.
 
     research\\tools\\ocr\\.venv\\Scripts\\python.exe -I tools\\uimock\\spec_images.py
 
@@ -155,11 +155,21 @@ W28_NAMES = {
 }
 
 
-# the rebuilt nav map (7 Nov 2026, release-grade dev build, 4K; the six captures of the living spec's re-release)
+# the rebuilt nav map (7 Nov 2026, release-grade dev build, 4K; the six captures of the Feature Tour's re-release)
 MAP7 = os.path.join(RUNS, 'spec_map_2026-11-07')
 MAP7_NAMES = {
     'map_system': 'map_system-054718', 'map_selected': 'map_selected-054721', 'map_route': 'map_route-054722',
     'map_destinations': 'map_destinations-054723', 'map_layers': 'map_layers-054725', 'map_sirius': 'map_sirius-054728',
+}
+
+# the 0.4.5 pages (7 Nov 2026, release build, 4K, docked at Manhattan from SaveC701): dealers, ship dealer, job board, news,
+# the docked NeuroNet pages, the bar's offer
+P045 = os.path.join(RUNS, 'spec_045_2026-11-07')
+P045_NAMES = {
+    'x_equipment_h2': 'equip_3840-133355', 'x_commodity_h2': 'trade_3840-133411', 'x_shipdealer_h2': 'ship_3840-133336',
+    'x_news_h2': 'news_3840-133429', 'x_jobboard_h2': 'jobs_3840-133437', 'x_nn_inventory_docked_h2': 'nninv_3840-133447',
+    'x_nn_log_docked_h2': 'nnlog_3840-133445', 'x_nn_playerinfo_docked_h2': 'nnstatus_3840-133450',
+    'x_nn_help_docked_h2': 'nninfo_3840-133453', 'x_offer_h2': 'talk2_3840-133721',
 }
 
 
@@ -207,6 +217,8 @@ def main():
         save(os.path.join(S030, f + '.png'), n, 1200 if n.startswith('a_') else 1600)
     for n, f in MAP7_NAMES.items():   # the nav map's rebuild (the old x_navmap_* captures are gone)
         save(os.path.join(MAP7, f + '.png'), n)
+    for n, f in P045_NAMES.items():   # the 0.4.5 pages, last
+        save(os.path.join(P045, f + '.png'), n)
     print(len(os.listdir(OUT)), 'images in', OUT)
 
 

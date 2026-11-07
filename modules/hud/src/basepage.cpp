@@ -352,6 +352,25 @@ static void Nothing(int) {}
 // ---- the page
 static Holes g_holes, g_nextHoles; // this frame's and the last's: the ground goes first, the rows say where
 static float g_wheelSide = -1; // the list the mouse stands on, -1 the card
+// What the dealer asks that the player does not have, at a glance on its row (Shockwave, 7 Nov 2026): the base's market line (gamedata Need) against the player's level
+// and standing with the base's owners - the game's refusal says it only for the selected item. "" when nothing is missing or it cannot be known.
+static std::wstring NeedWord(u32 arch)
+{
+    const gamedata::BaseFacts& b = gamedata::Base(fl::PlayerBase());
+    for (const gamedata::Need& n : b.needs)
+        if (n.arch == arch)
+        {
+            const int level = baseinfo::PlayerLevel();
+            if (n.level > 0 && level >= 0 && level < n.level)
+                return L"NEEDS LEVEL " + std::to_wstring(n.level);
+            float standing = 0;
+            if (n.rep > -1.0f && !b.owner.empty() && baseinfo::Standing(b.owner.c_str(), standing) && standing < n.rep)
+                return L"NEEDS REP " + std::to_wstring(static_cast<int>(n.rep * 100 + (n.rep >= 0 ? 0.5f : -0.5f))) + L"%";
+            return L"";
+        }
+    return L"";
+}
+
 static const wchar_t* DealWord(baseinfo::Deal d, bool selling)
 {
     switch (d)
@@ -411,6 +430,19 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
     const int hover = skinchip::Hovered();
     Icon icons[5];
     const int nativeFirst = static_cast<int>(R32(WindowOf(side) + kFirst));
+    // what the mounted launchers fire: their ammo is tagged on both sides (Shockwave, 7 Nov 2026)
+    u32 fired[16];
+    int nFired = 0;
+    for (const baseinfo::Item& e : baseinfo::Equipment())
+        if (e.mounted && nFired < 16)
+            if (const u32 a = gamedata::Fires(e.arch))
+                fired[nFired++] = a;
+    auto forMounted = [&](u32 arch) {
+        for (int k = 0; k < nFired; ++k)
+            if (fired[k] == arch)
+                return true;
+        return false;
+    };
     if (rows.empty())
         Text(x0, y + pitch / 2, Final() ? (side == Yours ? L"NOTHING OF THIS KIND" : L"ALL OF IT GOES ON THE NEW SHIP") : side == Yours ? L"NOTHING TO SELL HERE" : L"NOTHING ON SALE HERE", 0.028f * H, Argb(kDim, 1));
     for (int i = 0; i < l.rows && l.first + i < l.count; ++i)
@@ -463,6 +495,14 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
             Text(tx, y2, under, 0.024f * H, Argb(on && underRgb == kChrome ? kInk : underRgb, 0.9f));
         if (r.hp < 0 && !r.slot.empty() && side == Yours)
             Text(x1 - pad, y2, r.slot, 0.022f * H, Argb(on ? kInk : kChrome, 0.8f), Right);
+        if (r.hp < 0 && !Final())
+        {
+            const std::wstring need = side == Theirs ? NeedWord(r.arch) : std::wstring();
+            if (!need.empty())
+                Text(x1 - pad, y2, need, 0.022f * H, Argb(kAmber, 1), Right);
+            else if (!r.mounted && forMounted(r.arch) && (side == Theirs || r.slot.empty()))
+                Text(x1 - pad, y2, L"FOR MOUNTED", 0.022f * H, Argb(on ? kInk : kFriend, 1), Right); // (ammo for a launcher you carry)
+        }
         if (r.mounted && r.health > 0 && r.health < 0.995f) // (beside the row's word, clear of the slot's)
         {
             const float px = tx + TextWidth(under, 0.024f * H) + pad, pe = x1 - pad - (side == Yours ? TextWidth(r.slot, 0.022f * H) + pad : 0);
@@ -1395,6 +1435,44 @@ static void DrawBoard(const Frame& f)
     skinkit::Plate(p.x0, p.y0, p.x1, p.y1, kTL | kBR, 0.0f);
     Text(x0, p.y0 + 0.034f * H, Jobs() ? L"JOB BOARD" : L"NEWS", 0.036f * H, Argb(kInk, 1));
     skinkit::Rule(x0, x1, p.y0 + 0.060f * H);
+    // each job's difficulty on its row, the number the game prints only in the chosen job's text ("Difficulty : n"; Shockwave, 7 Nov 2026: "without needing to
+    // scroll"): the base's offers in the board's order from the host (core\host\events.cpp), lined up with the rows by their rewards. Rows that do not line up show
+    // none: no number rather than another job's.
+    int jobDiff[5] = {}, jobTotal = 0, jobFirst = 0, jobRows = 0;
+    if (Jobs())
+    {
+        u32 rewards[64];
+        int diffs[64];
+        const int n = hostcalls::OfferDifficulties(fl::PlayerBase(), rewards, diffs, 64);
+        long long rowReward[5];
+        int rows = 0;
+        for (int i = 0; i < 5; ++i)
+        {
+            char nm[48];
+            sprintf_s(nm, "MissionVendorSummaryReward%d", i);
+            std::wstring t;
+            if (!BoardBox(i) || !winplates::TextOf(uiclick::FindVisible(nm), t))
+                break;
+            long long v = 0;
+            for (const wchar_t ch : t)
+                if (ch >= L'0' && ch <= L'9')
+                    v = v * 10 + (ch - L'0');
+            rowReward[rows++] = v;
+        }
+        for (int s = 0; rows > 0 && s + rows <= n; ++s)
+        {
+            bool match = true;
+            for (int i = 0; i < rows && match; ++i)
+                match = static_cast<long long>(rewards[s + i]) == rowReward[i];
+            if (match)
+            {
+                for (int i = 0; i < rows; ++i)
+                    jobDiff[i] = diffs[s + i];
+                jobTotal = n, jobFirst = s, jobRows = rows;
+                break;
+            }
+        }
+    }
     for (int i = 0; i < 5; ++i)
     {
         const u32 box = BoardBox(i);
@@ -1421,7 +1499,14 @@ static void DrawBoard(const Frame& f)
             winplates::TextOf(uiclick::FindVisible(n), title);
             const float rw = TextWidth(reward, 0.032f * H), pad = 0.012f * H;
             TextMarquee(a + pad, top + pitch * 0.34f, type.empty() ? title : type, 0.032f * H, x1 - a - rw - 3 * pad, Argb(kInk, 1));
-            TextMarquee(a + pad, top + pitch * 0.72f, title + L"   " + dest, 0.024f * H, x1 - a - 2 * pad, Argb(on ? kInk : kChrome, 1));
+            float dw = 0;
+            if (jobDiff[i] > 0)
+            {
+                const std::wstring dword = L"DIFFICULTY " + std::to_wstring(jobDiff[i]);
+                dw = TextWidth(dword, 0.024f * H) + 2 * pad;
+                Text(x1 - pad, top + pitch * 0.72f, dword, 0.024f * H, Argb(kInk, 1), Right); // (white: what the row adds, beside the blue it repeats)
+            }
+            TextMarquee(a + pad, top + pitch * 0.72f, title + L"   " + dest, 0.024f * H, x1 - a - 2 * pad - dw, Argb(on ? kInk : kChrome, 1));
             Text(x1 - pad, top + pitch * 0.34f, reward, 0.032f * H, Argb(on ? kInk : kFriend, 1), Right);
         }
         else
@@ -1433,6 +1518,9 @@ static void DrawBoard(const Frame& f)
         }
     }
     PlaceIcons(Jobs() ? "MissionVendorSummaryIcon%d" : "NewsHeadlineIcon%d", 0, 5, 1, icons);
+    // more jobs than rows: a bar beside them says how many and where the rows stand (Shockwave, 7 Nov 2026: no sign of more)
+    if (jobTotal > jobRows && jobRows > 0)
+        skinkit::ScrollBar(x1 + 0.008f * H, list0, list0 + jobRows * pitch, static_cast<float>(jobFirst) / jobTotal, static_cast<float>(jobRows) / jobTotal);
     // the chosen one's head, over its text
     const float hy = p.ty0 - 0.036f * H;
     if (Jobs())
@@ -1599,7 +1687,14 @@ void Update(float dt, bool pad)
     }
     if (g_tradeWait > 0 && (g_tradeWait -= dt) <= 0)
         g_read = 0;
-    if ((g_read -= dt) <= 0)
+    // the rows wait out the slide, then read at once: a read spent during the slide left the page without rows for up to 0.75 s over the game's window
+    // (the owner: "frame-perfect", 7 Nov 2026)
+    static bool s_busy = false;
+    const bool busy = room::NNWindowBusy();
+    if (s_busy && !busy)
+        g_read = 0;
+    s_busy = busy;
+    if (!busy && (g_read -= dt) <= 0)
     {
         g_read = 0.75f;
         for (int i = 0; i < 5; ++i)
@@ -1734,7 +1829,8 @@ int Prompts(views::PagePrompt* out, int max)
     else
     {
         add(DU, L"ITEM", DD);
-        add(DL, Final() ? (CanBuyFinal() ? L"BUY SHIP" : g_side == Yours ? L"DEALER" : L"NEW SHIP") : g_side == Yours ? L"DEALER" : L"YOUR SHIP", DR);
+        // only the direction that goes over (the owner, 7 Nov 2026): your ship stands left, the dealer right
+        add(g_side == Yours ? DR : DL, Final() ? (CanBuyFinal() ? L"BUY SHIP" : g_side == Yours ? L"DEALER" : L"NEW SHIP") : g_side == Yours ? L"DEALER" : L"YOUR SHIP");
         if (CanTrade())
             add(A, Final() ? (g_side == Yours ? L"SELL TO DEALER" : L"TAKE BACK") : g_side == Yours ? L"SELL" : L"BUY", -1, true, progress);
         if (CanTrade() && Slider())

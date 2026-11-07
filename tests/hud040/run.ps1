@@ -391,7 +391,7 @@ function Section-dock {
     Stop-Game
 }
 
-# the captures for the living spec and the owner's sheets
+# the captures for the Feature Tour and the owner's sheets
 function Section-captures {
     foreach ($size in $Sizes) {
         Start-Game $size 'SaveC702.fl'

@@ -32,6 +32,10 @@ A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller sup
 
 **HUD 2 now covers the whole game.** The full list: [CHANGELOG.md](CHANGELOG.md).
 
+<div align="center">
+<img src="docs/spec/img/cap/x_equipment_h2.webp" width="820" alt="The equipment dealer as a HUD 2 page: your ship and its empty hardpoints on the left, the dealer's stock with item images on the right, the selected gun in the middle with its numbers compared">
+</div>
+
 - **Every shop rebuilt:** the commodity, equipment and ship dealers are full pages with your ship on one side, the dealer's whole stock on the other, and the selected item in the middle with its image, numbers and description.
 - **Compare before you buy:** each item shows what it would replace, better numbers in green and worse in red, and whether your ship can mount it at all. Empty hardpoints are listed.
 - **The NeuroNet as full screens:** log, inventory, status and information each fill the screen, and in single player the world pauses while one is open in space.
@@ -40,14 +44,15 @@ A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller sup
 - **Rooms in plain words:** room and NeuroNet buttons are word tabs, and repair lists each damaged item with its bar and price.
 - **Item images everywhere:** the game's own icons in every list, and a selected item pulses on your ship in the inventory.
 - **Keyboard and mouse:** a right click on the star map sets a waypoint, and pages take clicks and the wheel.
+- **Fits 16:10 too:** on a Steam Deck's 1280x800 the Neural Net pages use the whole width.
 
-## 🌟 See everything in the living spec
+## 🌟 See everything in the Feature Tour
 
 <div align="center">
 
-<a href="https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN"><img src="docs/images/spec_preview.webp" width="820" alt="The living spec's Menus and bases section: drag sliders comparing a base room and a bar in the game's look and in HUD 2"></a>
+<a href="https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN"><img src="docs/images/spec_preview.webp" width="820" alt="The Feature Tour's Menus and bases section: drag sliders comparing a base room and a bar in the game's look and in HUD 2"></a>
 
-<a href="https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN"><img alt="Open the living spec" src="https://img.shields.io/badge/%F0%9F%8C%9F_Open_the_living_spec-f5c518?style=for-the-badge&labelColor=f5c518&color=f5c518"></a>
+<a href="https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN"><img alt="Open the Feature Tour" src="https://img.shields.io/badge/%F0%9F%8C%9F_Open_the_Feature_Tour-f5c518?style=for-the-badge&labelColor=f5c518&color=f5c518"></a>
 
 </div>
 
@@ -98,7 +103,11 @@ and an honest list of what is not done yet.
 <td width="50%"><img src="docs/spec/img/cap/f_combat_cl.webp" alt="The game's classic HUD with controller glyph badges on its buttons and a COMBAT list of what each button does now"><br><sub>🎮 <b>Classic HUD on the pad:</b> glyph badges on the game's own buttons, the actions that apply now</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/spec/img/cap/x_commodity_h2.webp" alt="A commodity dealer in HUD 2's look with controller prompts"><br><sub>🖼️ <b>HUD 2 in bases:</b> a dealer in HUD 2's look, driven by the pad</sub></td>
+<td width="50%"><img src="docs/spec/img/cap/x_shipdealer_h2.webp" alt="The ship dealer as a HUD 2 page: offers with images, the ship in 3D in the middle, its numbers against your ship on the right"><br><sub>🚀 <b>The ship dealer:</b> the ship in 3D, trade-in and its numbers against yours</sub></td>
+<td width="50%"><img src="docs/spec/img/cap/x_jobboard_h2.webp" alt="The job board as a panel in the bar: jobs with their type, reward, faction and system, the chosen job's picture and text"><br><sub>🍸 <b>The job board:</b> a panel in the bar, every job's type and reward</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/spec/img/cap/x_nn_inventory_docked_h2.webp" alt="The Neural Net inventory as a full screen: items with images and empty hardpoints, the ship's numbers in the middle, the item's card on the right"><br><sub>🧠 <b>The Neural Net, full screen:</b> the inventory with empty hardpoints and the ship's numbers</sub></td>
 <td width="50%"><img src="docs/spec/img/cap/o_4k_max.webp" alt="The FLVIBED page in the game's Options screen with five tabs"><br><sub>⚙️ <b>The options page:</b> inside the game's own Options screen</sub></td>
 </tr>
 </table>
@@ -376,12 +385,12 @@ What FLvibed does not do yet, or does only in part. Anything here - and the desi
 - 🧪 **Beside FLUF**, and **FLvibed's borderless window** by a player (Alt+Tab, Alt+Enter, the cursor at the screen
   edges): verified by the test harness only so far.
 
-The full, current list is the [living spec](https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN)'s "Not implemented
+The full, current list is the [Feature Tour](https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN)'s "Not implemented
 yet" section.
 
 ## 📚 More
 
-- 🌟 [The living spec](https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN) (offline copy: [docs/spec/](docs/spec/index.html))
+- 🌟 [The Feature Tour](https://claude.ai/artifact/4v4dXbB5GTVt1URowFtSvN) (offline copy: [docs/spec/](docs/spec/index.html))
 - ⚙️ [All settings](docs/SETTINGS.md) · 🧩 [Mod compatibility](docs/MOD_COMPATIBILITY.md) ·
   🤖 [The autopilot](modules/autopilot/docs/AUTOPILOT.md) · 💬 [Subtitle display](modules/subtitles/docs/DISPLAY_PLAN.md) ·
   🎨 [UI decisions](docs/UI_PLAN.md), [HUD 2](modules/hud/docs/UI_HUD2.md)

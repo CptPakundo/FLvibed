@@ -204,13 +204,13 @@ attacker", the pad cursor everywhere, the HUD kept informative with badges and t
 mode) and the suggested defaults for the rest (6b `pilot` advanced only; 12 hold View; 13 automatic switching with a
 lock; 14 the glyph families (Steam added 5 Nov 2026), confirm = bottom with a Nintendo swap; 17 the New Game prompt locked per save; 18
 the LiveSplit client now; 19 the prompt bar contextual; 20 foundation -> flight HUD -> bases -> dealers -> map).
-**Standing order (the user, 25 Oct 2026): the mock-up is the living spec and stays current through development** -
+**Standing order (the user, 25 Oct 2026): the mock-up is the Feature Tour and stays current through development** -
 every UI change lands in it (`tools\uimock\README.md`: the page's source, build, publish, how the owner's edits in the
 artifact's `ui/spec` document are patched, `docs\UI_SPEC.json` regenerated) in the same commit as the code.
 
 ## 6. The controller UI (round 2, 25 Oct 2026; the owner's brief: "nothing must only work with keyboard and mouse")
 Research: `docs\research\controller_ui.md` (three rounds of sources in `research\evidence\controller_ui\`). The whole
-design is in the interactive mock-up (artifact `4v4dXbB5GTVt1URowFtSvN`, version 3 then - now the living spec, v22 published, v23 in source; its page kept as
+design is in the interactive mock-up (artifact `4v4dXbB5GTVt1URowFtSvN`, version 3 then - now the Feature Tour, v22 published, v23 in source; its page kept as
 `research\evidence\controller_ui\mockup_v2_index.html`): the Input buttons switch the whole page between keyboard
 and mouse and the glyph families, the Screens view shows every game screen (21 screens, 31 states, from the
 captures in `research\experience\ui_2026-10-25\screens\`) with its pad layout, the Bindings view the diagram and

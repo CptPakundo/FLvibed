@@ -31,6 +31,8 @@ u32 ShipArch();
 bool Standing(const char* group, float& out);
 // Credits, -1 unknown.
 long long Credits();
+// The player's level (pub::Player::GetRank), -1 unknown (multiplayer).
+int PlayerLevel();
 // The hold: used and capacity (volume units), false unknown.
 bool Cargo(int& used, int& capacity);
 // Debug `docked`: each reader's client-side source against the in-process server's (base name, ship, hold, prices of the

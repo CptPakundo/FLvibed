@@ -93,4 +93,4 @@ The ring, the alert cards, the loadout, the nav text, the threat rows, the comm 
 2. **Consumables and escorts:** after the comparison (`research\evidence\hud2_skin\mock\sheet_plates_compare.jpg`, `sheet_plates_compare_4k.jpg`, `sheet_plates_bright.jpg`): "Slim plate for escorts, small dark cells for consumables." So 3.3, 3.4. The bottom panels' one-height rule stands for the escorts and the loadout, within the content heights of `UI_HUD2.md` 5.29.
 3. **The wireframe in the target card:** kept, in the 0.36 card.
 
-**Order:** after the probes, before the weapon group cue, so the cue goes into the final layout: it is `hud2_layout.h`, the presets' data, and the lint, in the HUD module; the living spec and the owner's frames follow.
+**Order:** after the probes, before the weapon group cue, so the cue goes into the final layout: it is `hud2_layout.h`, the presets' data, and the lint, in the HUD module; the Feature Tour and the owner's frames follow.

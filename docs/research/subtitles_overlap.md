@@ -56,7 +56,7 @@ two-line subtitle (Netflix dual-speaker hyphens, BBC colours), and the TLOU2 / T
 rule winning over the height limit, `retire_delay` grace; the TLOU2 / Tomb Raider pattern. Letterboxed scenes keep
 `letterbox_mode` / `cinematic_single_speaker` in both presets (already one speaker at a time). The setting is one key
 (e.g. `space_speakers 1 | 2`), generalising `cinematic_single_speaker` (`display.cpp:95`) to flight; the options page and
-the living spec get the row (UI work, not research).
+the Feature Tour get the row (UI work, not research).
 
 ## Findings (30 Oct 2026)
 

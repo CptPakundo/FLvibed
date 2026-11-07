@@ -7,7 +7,7 @@
 #   settings    every `ap set` key the code accepts is documented in modules\autopilot\docs\AUTOPILOT.md
 #   settings-doc docs\SETTINGS.md matches a fresh generation from the registries (tools\settings_table.ps1 -Check)
 #   ui-meta     core\ui_meta.h matches a fresh generation from docs\UI_SPEC.json (tools\ui_meta.py --check)
-#   spec-copy   docs\spec\ (the static read-only living spec) matches a fresh export of tools\uimock (export.ps1 -Check)
+#   spec-copy   docs\spec\ (the static read-only Feature Tour) matches a fresh export of tools\uimock (export.ps1 -Check)
 #   checkpoints modules\speedrun\src\checkpoints_gen.h matches docs\checkpoints.tsv (tools\checkpoints_gen.py --check)
 #   subtitle-review the review tool's unit tests (subtitles\review\FLSubtitles\asr\tests\run_tests.py, ~1 s: fit rules,
 #               sentence joining vs the C++ JoinPieces fixtures, takes, saves, the publish copy rule)

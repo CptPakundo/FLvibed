@@ -38,6 +38,7 @@ struct Blast
 };
 static std::unordered_map<u32, Spec> g_equip;
 static std::unordered_map<u32, u32> g_info;
+static std::unordered_map<u32, u32> g_fires; // a launcher (gun, mine or countermeasure dropper) -> what it fires (projectile_archetype)
 static bool g_equipRead = false;
 
 static void ReadEquip()
@@ -68,6 +69,12 @@ static void ReadEquip()
             continue;
         if (const u32 info = static_cast<u32>(Num(s, "ids_info")))
             g_info[Id(nick)] = info;
+        if (s.type == "gun" || s.type == "minedropper" || s.type == "countermeasuredropper")
+        {
+            const std::string fires = Str(s, "projectile_archetype");
+            if (!fires.empty())
+                g_fires[Id(nick)] = Id(fires);
+        }
         Spec spec;
         if (s.type == "gun")
             spec.type = Lower(Str(s, "hp_gun_type"));
@@ -149,6 +156,13 @@ u32 EquipInfo(u32 arch)
     ReadEquip();
     const auto it = g_info.find(arch);
     return it != g_info.end() ? it->second : 0;
+}
+
+u32 Fires(u32 launcher)
+{
+    ReadEquip();
+    const auto it = g_fires.find(launcher);
+    return it != g_fires.end() ? it->second : 0;
 }
 
 // ---- ships
@@ -371,6 +385,26 @@ static void ReadWorld()
             b->second.goods.push_back(good);
         }
     }
+    // what a dealer asks of the buyer, every market file ([Data] markets): MarketGood = good, level, reputation (-1 .. 1, the owners'), ...
+    for (const std::string& file : ini::DataFiles("markets"))
+        for (const ini::Section& s : ini::Read(file))
+        {
+            if (s.type != "basegood")
+                continue;
+            const auto b = g_bases.find(Id(Str(s, "base")));
+            if (b == g_bases.end())
+                continue;
+            for (const std::string& line : s.All("marketgood"))
+            {
+                const std::vector<std::string> f = ini::Fields(line);
+                if (f.size() < 3)
+                    continue;
+                const int level = atoi(f[1].c_str());
+                const float rep = static_cast<float>(atof(f[2].c_str()));
+                if (level > 0 || rep > -1.0f)
+                    b->second.needs.push_back({Id(f[0]), level, rep});
+            }
+        }
     BaseFacts* at = nullptr;
     for (const ini::Section& s : ini::Read(ini::DataPath("MISSIONS\\mbases.ini")))
     {
@@ -378,6 +412,8 @@ static void ReadWorld()
         {
             const auto b = g_bases.find(Id(Str(s, "nickname")));
             at = b != g_bases.end() ? &b->second : nullptr;
+            if (at)
+                at->owner = Str(s, "local_faction"); // (the "base owners" a dealer's reputation refusal names)
         }
         else if (at && s.type == "mvendor")
         {

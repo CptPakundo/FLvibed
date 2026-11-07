@@ -16,6 +16,8 @@ void Update(float dt, bool pad);
 void Draw();
 // After the pass's last draw: the 3D view a page shows.
 void DrawAfter();
+// Before the game's UI pass (hud_module UnderBegin): hides what the game shows again every frame (the TRADE ROUTES button under the inventory's card).
+void Under();
 // A page stands this frame: the window's plates stand down, the pad asks the page.
 bool On();
 // What the lane shows; the presses (XINPUT masks); returns the buttons taken.

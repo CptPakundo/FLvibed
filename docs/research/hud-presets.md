@@ -56,7 +56,7 @@ on-screen information, on-screen button prompts and context-dependent extras; sc
 - Gaps the first proposal missed (the verifier): the **K&M form** (nav 0.338 H, loadout 0.66 W, a threat list of up to 10
   rows - presets must have K&M parity); aspect ratios other than 16:9 (k = 0.8 at 4:3, the context line's cascade); the
   pad threat count is capped at 2 in code (`hud2.cpp` 592); harness baselines shift with any default change; the
-  settings chain (`core\settings.h` -> `SETTINGS.md` -> `UI_SPEC.json` / `ui_meta.h` -> the living spec) per new key;
+  settings chain (`core\settings.h` -> `SETTINGS.md` -> `UI_SPEC.json` / `ui_meta.h` -> the Feature Tour) per new key;
   the local `modules\controller\docs\research\ADAPTIVE_UI_RESEARCH.md` (presets as a one-button start then fine tuning; GoW:
   ~60 % of players changed text size) supports Guided and the first-launch screen (U37).
 

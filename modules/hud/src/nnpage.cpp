@@ -253,7 +253,9 @@ static void DrawStatus(const Frame& f)
     const float pitch = g_repShown.empty() ? 0.05f * H : std::min(0.066f * H, std::max(0.05f * H, (foot - ry) / g_repShown.size()));
     g_repList.rows = std::max(1, static_cast<int>((foot - ry) / pitch));
     g_repList.Fit();
-    const float cx = rx0 + (rx1 - rx0) * 0.62f, half = (rx1 - rx0) * 0.16f, nameW = cx - half - rx0 - 0.02f * H;
+    // from the right: the band's word, then the bar, the name in what is left (at 16:10 the bar ran under the word, 7 Nov 2026)
+    const float wordW = TextWidth(L"UNFRIENDLY", 0.026f * H), half = std::min(0.09f * H, (rx1 - rx0) * 0.14f);
+    const float cx = rx1 - 0.012f * H - wordW - 0.024f * H - half, nameW = cx - half - rx0 - 0.036f * H;
     if (g_repShown.empty())
         Text(rx0, ry + pitch / 2, g_reps.empty() ? L"READING THE NEURAL NET" : L"NOBODY IN THIS GROUP", 0.030f * H, Argb(kDim, 1));
     const int hover = skinchip::Hovered();
@@ -286,14 +288,15 @@ static void DrawStatus(const Frame& f)
         const Rep& r = g_repShown[g_repList.sel];
         wchar_t line[96];
         swprintf_s(line, L"STANDING %+.2f", r.v);
-        const float ly = foot + 0.018f * H;
+        // two lines, the standing over what it means: on one line the meaning ran left over the pilot's rows at 1280x800 (Shockwave, 7 Nov 2026)
+        const float ly = foot + 0.017f * H;
         skinkit::Rule(rx0, rx1, foot + 0.002f * H);
-        Text(rx0, ly, line, 0.028f * H, Argb(BandRgb(nnrules::BandOf(r.v)), 1));
+        Text(rx0, ly, line, 0.026f * H, Argb(BandRgb(nnrules::BandOf(r.v)), 1));
         if (r.v > -0.6f)
             swprintf_s(line, L"HOSTILE AT -0.60: %.2f AWAY", r.v + 0.6f);
         else
             swprintf_s(line, L"ITS SHIPS ATTACK, ITS BASES REFUSE YOU: %.2f TO GO", -0.6f - r.v);
-        Text(rx1, ly, line, 0.026f * H, Argb(kChrome, 1), Right);
+        TextMarquee(rx0, ly + 0.030f * H, line, 0.024f * H, rx1 - rx0, Argb(kChrome, 1));
     }
     if (!g_pad)
     {
@@ -492,11 +495,41 @@ static bool Jettison()
     g_jettisonArmed = 0;
     return uiclick::Click(c);
 }
-// The game's commodity list by base: where the selected good sells (it opens over the window; only a commodity's row has it).
+// The game's commodity list by base: where the selected good sells (it opens over the window; only a commodity's row has it). The game's button stays hidden: its
+// TRADE ROUTES label stood in the card's text, and neither moving it nor its local position took (the game lays it out again; 7 Nov 2026). The page offers the list on
+// a commodity's row (filter 4, as the game shows the button) and clicks the hidden button: the click runs its action, not a hit test.
+constexpr int kFilterCommodities = 4;
+static bool TradeOffered() { return g_root && Filter(g_root) == kFilterCommodities && g_itemList.count > 0 && !OnEmpty() && uiclick::Find("TradeRouteButton"); }
+// The label is not the button's own (a text button, vt 0x5E614C, which PlaceAt moves off the page: its TRADE ROUTES stayed, 7 Nov 2026) but a title text of its own:
+// its text goes blank through the text control's own setter (message 0x1D, as skinload blanks the loading word), right before the UI pass (Under).
+static bool BlankText(u32 ctl)
+{
+    __try
+    {
+        const u32 fn = Mem<u32>(Mem<u32>(ctl) + 0xA8);
+        if (!exe::TextCtlSetProperty.is(fn))
+            return false;
+        reinterpret_cast<u32(__thiscall*)(u32, u32, const void*, u32)>(fn)(ctl, 0x1D, L" ", 0);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+static int g_tradeBlanked = 0; // (debug: times the label was blanked, `nnpage`)
+static void HideTrade()
+{
+    // the label is its own control, TradeRouteText (a title text, vt 0x5E4F24; `uinames Trade`, 7 Nov 2026), not the button: blank, so it never stands over the card
+    const u32 t = uiclick::Find("TradeRouteText");
+    std::wstring now;
+    if (t && winplates::TextOf(t, now) && now != L" " && BlankText(t))
+        ++g_tradeBlanked;
+}
 static bool Trade()
 {
-    const u32 c = uiclick::FindVisible("TradeRouteButton");
-    return c && !OnEmpty() && uiclick::Click(c);
+    const u32 c = uiclick::Find("TradeRouteButton");
+    return c && TradeOffered() && uiclick::Click(c);
 }
 static bool JettisonOpen() { return uiclick::FindVisible("JettisonAcceptButton") != 0; }
 static Holes g_iconCells;
@@ -597,7 +630,8 @@ static void DrawInventory(const Frame& f, u32 root)
         return;
     }
     JettisonControlsBack();
-    PlaceAt(uiclick::FindVisible("TradeRouteButton"), -W, 0); // (it stood in the card's hole: the page has its own word for it, the name goes on answering)
+    PlaceAt(uiclick::FindVisible("TradeRouteButton"), -W, 0); // (it stood in the card's hole: the page has its own word for it, Trade; its label is HideTrade's)
+    HideTrade();
     Box hole;
     hole.Add(uiclick::FindVisible("InfoCard_Info"), 0.012f * H);
     // (an empty hardpoint has no card of the game's: what stood there was the last row's)
@@ -754,7 +788,7 @@ static void DrawInventory(const Frame& f, u32 root)
             cx = ChipAt(cx, y2, ch, g_items[g_itemList.sel].mounted ? L"UNMOUNT" : L"MOUNT", kChipPrimary);
         if (uiclick::FindVisible("JettisonButton") && !empty)
             cx = ChipAt(cx, y2, ch, g_jettisonArmed ? L"CLICK AGAIN TO JETTISON" : L"JETTISON", kChipJettison);
-        if (uiclick::FindVisible("TradeRouteButton") && !empty)
+        if (TradeOffered())
             ChipAt(cx, y2, ch, L"BEST PRICES", kChipTrade);
         Mouse(f, L"CLICK AN ITEM, WHEEL SCROLLS");
     }
@@ -822,8 +856,16 @@ static void DrawList(const Frame& f, float y, float x0, float x1, const wchar_t*
     skinkit::Rule(x0, x1, y);
     y += 0.024f * H;
     Text(x0, y, title, 0.024f * H, Argb(kChrome, 1));
-    y += 0.024f * H;
     const float rowH = 0.058f * H;
+    // a list cut at the page's foot says so, nearest first: "8 OF 20" beside its title (the owner, 7 Nov 2026: no sign there were more)
+    const size_t fit = static_cast<size_t>(std::max(0.0f, (f.bottom - y - 0.024f * H) / rowH));
+    if (fit < list.size())
+    {
+        wchar_t of[32];
+        swprintf_s(of, L"%u OF %u", static_cast<unsigned>(fit), static_cast<unsigned>(list.size()));
+        Text(x1, y, of, 0.024f * H, Argb(kInk, 1), Right);
+    }
+    y += 0.024f * H;
     for (size_t i = 0; i < list.size() && y + rowH <= f.bottom; ++i, y += rowH)
     {
         const Place& p = list[i];
@@ -952,6 +994,19 @@ static float DrawFactions(float x0, float x1, float y, float foot, float H, cons
     if (list.empty())
         return y;
     Text(x0, y, title, 0.024f * H, Argb(kChrome, 1));
+    {
+        // cut at its foot: "7 OF 11" beside the title, the weightiest first (as DrawList)
+        size_t named = 0;
+        for (const gamedata::Faction& g : list)
+            named += !text::Ids(g.nameIds).empty();
+        const size_t fit = static_cast<size_t>(std::max(0.0f, (foot - y - 0.05f * H - 0.03f * H) / (0.034f * H) + 1));
+        if (fit < named)
+        {
+            wchar_t of[32];
+            swprintf_s(of, L"%u OF %u", static_cast<unsigned>(fit), static_cast<unsigned>(named));
+            Text(x1, y, of, 0.024f * H, Argb(kInk, 1), Right);
+        }
+    }
     y += 0.026f * H;
     skinkit::Rule(x0, x1, y);
     y += 0.024f * H;
@@ -1095,11 +1150,22 @@ void Update(float dt, bool pad)
     // the world stops in single player, in space, the map too; an autopilot under the window goes on flying (the owner, 5 Nov, issue 25)
     // (the status window's numbers and factions come from the in-process server, which the pause stops: the world goes on the moment until they are in)
     const bool waiting = page == Page::Status && (g_reps.empty() || g_stat[0].empty());
+    // A press or click on a page may ask the game something (a jettison, a mount, a route) that the in-process server answers, and the pause stopped the server: the
+    // request was lost (the map's route, Shockwave, 7 Nov 2026). The world stays paused; the host lets the server take the request on a frame with no time in it (input.cpp).
+    {
+        static bool s_down = false;
+        const bool down = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0 && GetForegroundWindow() == fl::MainWindow();
+        if (down && !s_down && nnstrip::Wanted())
+            hostcalls::WorldCommand();
+        s_down = down;
+    }
     g_paused = nnstrip::Wanted() && hudrows::g.nnPause && !nnwin::Multiplayer() && !fl::PlayerBase() && !views::ApActive() && hostcalls::g.SetWorldPause && !waiting;
     if (g_paused)
         hostcalls::g.SetWorldPause();
     if (page == Page::None)
         return;
+    if (page == Page::Inventory)
+        HideTrade(); // (before the game's UI pass too: its label never shows a frame)
     // (the ship view pulses its selected part by the UI's blink clock, which the pause stops: the page runs it)
     if (g_paused && page == Page::Inventory && exe::UiBlinkPhase.ok())
     {
@@ -1195,6 +1261,12 @@ void Draw()
     }
 }
 
+void Under()
+{
+    if (g_page == Page::Inventory)
+        HideTrade();
+}
+
 void DrawAfter()
 {
     basepage::DrawAfter();
@@ -1237,7 +1309,7 @@ int Prompts(views::PagePrompt* out, int max)
             add(A, g_items[g_itemList.sel].mounted ? L"UNMOUNT" : L"MOUNT");
         if (uiclick::FindVisible("JettisonButton") && !OnEmpty())
             add(Y, g_jettisonArmed ? L"AGAIN TO JETTISON" : L"JETTISON");
-        if (uiclick::FindVisible("TradeRouteButton") && !OnEmpty())
+        if (TradeOffered())
             add(X, L"BEST PRICES");
         add(RS, L"SCROLL CARD");
         break;
@@ -1261,6 +1333,8 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
 {
     if (basepage::On())
         return basepage::Pad(pressed, held, dt);
+    if (pressed & (XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_B | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y))
+        hostcalls::WorldCommand(); // (what the press asks of the game gets its frame: Update's note on the pause)
     // a held D-pad walks a list: 0.4 s, then about 12 rows a second
     static float repeat = 0;
     const unsigned walk = XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
@@ -1320,7 +1394,7 @@ std::string Command(std::istream& in)
     o << "nnpage page=" << static_cast<int>(g_page) << " root=0x" << std::hex << g_root << std::dec << " pad=" << g_pad << " reps=" << g_reps.size() << " shown=" << g_repList.count << " sel=" << g_repList.sel
       << " paused=" << g_paused << " card=" << g_card << " places=" << g_places.size() << " guns=" << g_load.guns << " hullps=" << g_load.hull << " items=" << g_items.size() << " itemSel=" << g_itemList.sel;
     if (g_page == Page::Inventory && g_root)
-        o << " filter=" << Filter(g_root) << " gameRow=" << static_cast<int>(R32(g_root + kInvRow));
+        o << " filter=" << Filter(g_root) << " gameRow=" << static_cast<int>(R32(g_root + kInvRow)) << " tradeBlanked=" << g_tradeBlanked;
     for (int i = 0; i < 13; ++i)
         if (!g_stat[i].empty())
             o << " s" << i << "=" << g_stat[i].size();
