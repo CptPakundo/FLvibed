@@ -75,6 +75,7 @@ enum Chip
     kChipFilter,
     kChipMap,
     kChipTrade,
+    kChipTag,
     kChipJetLess,
     kChipJetMore,
     kChipJetMax,
@@ -618,6 +619,8 @@ static void DrawJettison(const Frame& f, u32 root)
     }
 }
 
+static bool CanTagInv(); // (the compare tag: below, by PadInventory)
+static bool TaggedInv();
 static void DrawInventory(const Frame& f, u32 root)
 {
     const float H = f.H, W = f.W;
@@ -701,11 +704,12 @@ static void DrawInventory(const Frame& f, u32 root)
             skinkit::Focus(x0 + cell, top + 0.002f * H, x1, top + pitch - 0.002f * H);
         else if (slot >= 0 && slot == hover)
             Rect(x0 + cell, top, x1 - x0 - cell, pitch, Argb(kChrome, 0.10f));
-        const std::wstring right = it.hp >= 0 ? equiprules::SlotWord(equiprules::BestOf(g_free[it.hp])) : it.mounted ? L"MOUNTED" : (it.count > 1 ? L"x" + std::to_wstring(it.count) : L"IN HOLD");
+        const bool tagged = it.hp < 0 && it.mounted && it.arch == gamedata::TaggedCompare();
+        const std::wstring right = it.hp >= 0 ? equiprules::SlotWord(equiprules::BestOf(g_free[it.hp])) : tagged ? L"MOUNTED, TAGGED" : it.mounted ? L"MOUNTED" : (it.count > 1 ? L"x" + std::to_wstring(it.count) : L"IN HOLD");
         const float rw = TextWidth(right, 0.026f * H);
         const float tx = x0 + cell + 0.012f * H;
         TextMarquee(tx, cy, it.name, 0.032f * H, x1 - tx - rw - 0.05f * H, Argb(it.hp >= 0 ? kDim : kInk, 1));
-        Text(x1 - 0.012f * H, cy, right, 0.026f * H, Argb(row == g_itemList.sel ? kInk : it.mounted ? kFriend : kChrome, 1), Right);
+        Text(x1 - 0.012f * H, cy, right, 0.026f * H, Argb(row == g_itemList.sel ? kInk : tagged ? kActive : it.mounted ? kFriend : kChrome, 1), Right);
         const std::wstring& line = GunLine(it.arch);
         if (!line.empty())
             TextMarquee(tx, top + pitch * 0.76f, line, 0.024f * H, x1 - tx - 0.012f * H, Argb(row == g_itemList.sel ? kInk : kChrome, 0.9f));
@@ -770,6 +774,13 @@ static void DrawInventory(const Frame& f, u32 root)
     {
         skinkit::Rule(mx0, mx1, my);
         my = Compare(mx0, mx1, my + 0.008f * H, g_items[g_itemList.sel].arch, g_items[g_itemList.sel].mounted, H);
+        if (g_pad && CanTagInv()) // the click in words under the numbers (the lane holds FILTER, ITEM, MOUNT, JETTISON, CARD already)
+        {
+            const float gh = 0.028f * H, gw = GlyphWidth(glyphs::R3, gh);
+            Glyph(glyphs::R3, mx0 + gw / 2, my + 0.020f * H, gh, Argb(kInk, 1));
+            Text(mx0 + gw + 0.010f * H, my + 0.020f * H, TaggedInv() ? L"CLICK: UNTAG" : L"CLICK: COMPARE THE OTHERS WITH THIS", 0.024f * H, Argb(TaggedInv() ? kActive : kChrome, 1));
+            my += 0.044f * H;
+        }
     }
     // the hold and the purse stand at the foot
     my = std::max(my, f.bottom - 2 * rowH - 0.02f * H);
@@ -790,9 +801,28 @@ static void DrawInventory(const Frame& f, u32 root)
         if (uiclick::FindVisible("JettisonButton") && !empty)
             cx = ChipAt(cx, y2, ch, g_jettisonArmed ? L"CLICK AGAIN TO JETTISON" : L"JETTISON", kChipJettison);
         if (TradeOffered())
-            ChipAt(cx, y2, ch, L"BEST PRICES", kChipTrade);
+            cx = ChipAt(cx, y2, ch, L"BEST PRICES", kChipTrade);
+        if (CanTagInv()) // (the mouse's way to RS's click, issue 44)
+            ChipAt(cx, y2, ch, TaggedInv() ? L"UNTAG" : L"COMPARE THE OTHERS WITH THIS", kChipTag);
         Mouse(f, L"CLICK AN ITEM, WHEEL SCROLLS");
     }
+}
+
+// The compare tag (issue 44, as the equipment dealer's: Shockwave, the inventory tab too): RS's click or the card's chip on a mounted item makes it what the
+// items in the hold compare with (gamedata::TagCompare: one tag for both pages)
+static bool CanTagInv()
+{
+    if (g_page != Page::Inventory || g_itemList.count <= 0 || g_itemList.sel >= static_cast<int>(g_items.size()) || OnEmpty())
+        return false;
+    const auto& it = g_items[g_itemList.sel];
+    const equiprules::Spec* s = gamedata::Equip(it.arch);
+    return it.mounted && it.hp < 0 && s && !s->stats.empty();
+}
+static bool TaggedInv() { return CanTagInv() && g_items[g_itemList.sel].arch == gamedata::TaggedCompare(); }
+static void ToggleTagInv()
+{
+    if (CanTagInv())
+        gamedata::TagCompare(TaggedInv() ? 0 : g_items[g_itemList.sel].arch);
 }
 
 static unsigned PadInventory(u32 root, unsigned pressed)
@@ -816,7 +846,10 @@ static unsigned PadInventory(u32 root, unsigned pressed)
         Jettison();
     if (pressed & XINPUT_GAMEPAD_X)
         Trade();
-    return XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_LEFT | XINPUT_GAMEPAD_DPAD_RIGHT | XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y;
+    if (pressed & XINPUT_GAMEPAD_RIGHT_THUMB)
+        ToggleTagInv();
+    return XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_LEFT | XINPUT_GAMEPAD_DPAD_RIGHT | XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y |
+           XINPUT_GAMEPAD_RIGHT_THUMB;
 }
 
 // ---- LOG and INFO: the game's text in a column, HUD 2 round it
@@ -1103,6 +1136,7 @@ static void ChipClick(int chip)
     case kChipFilter: PadStatus(XINPUT_GAMEPAD_X); break;
     case kChipMap: nnwin::Go(nntabs::kCmdMap); break;
     case kChipTrade: Trade(); break;
+    case kChipTag: ToggleTagInv(); break;
     case kChipJetLess: uiclick::Scroll(uiclick::Find("JettisonQuantitySlider"), -1, false, nullptr, nullptr); break;
     case kChipJetMore: uiclick::Scroll(uiclick::Find("JettisonQuantitySlider"), 1, false, nullptr, nullptr); break;
     case kChipJetMax: uiclick::Scroll(uiclick::Find("JettisonQuantitySlider"), 100000, false, nullptr, nullptr); break;
@@ -1317,6 +1351,8 @@ int Prompts(views::PagePrompt* out, int max)
         if (TradeOffered())
             add(X, L"BEST PRICES");
         add(RS, L"SCROLL CARD");
+        if (CanTagInv()) // (last: a full lane drops it, the card says it too)
+            add(R3, TaggedInv() ? L"CLICK UNTAG" : L"CLICK COMPARE WITH");
         break;
     }
     case Page::Log:
