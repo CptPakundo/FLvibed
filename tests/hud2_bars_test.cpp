@@ -102,6 +102,10 @@ void Test_hud2_bars()
     CHECK(!BloomAt(0.1f, 2).on);
     // the same bar at most once a second; a target's waits behind the player's; two at once
     {
+        Bloom fresh; // a bar that never broke blooms not, and takes no place among the two (it did for its first 1.6 s, 7 Nov 2026)
+        CHECK(!fresh.Active());
+        fresh.Step(1.2f);
+        CHECK(!fresh.Now(0).on);
         Bloom b;
         CHECK(b.Start());
         b.Step(0.5f);

@@ -15,7 +15,10 @@ constexpr float kEscortDepth = 0.5f;
 constexpr float kRollOff = 0.10f;                    // the glow's short roll-off at both ends of what is left, of the bar's length
 constexpr float kBloomSec = 0.6f;
 constexpr float kBloomCatch = 0.05f, kBloomBurst = 0.13f, kBloomSpread = 0.45f; // its stages end here (seconds)
-constexpr float kBloomReachH = 0.05f, kBloomInwardH = 0.02f, kBloomCreep = 0.20f;
+// (larger and brighter than first drawn: Shockwave saw no bloom on a Steam Deck's 1280x800, the owner asked for more scale, 7 Nov 2026)
+constexpr float kBloomReachH = 0.08f, kBloomInwardH = 0.03f, kBloomCreep = 0.20f;
+constexpr float kBloomHaloA = 0.10f;                 // each of the halo's four layers: 0.40 at the bar (0.22 before)
+constexpr float kGlowLayerA = 0.40f;                 // the breath's two wide layers under the arc (0.28 before)
 constexpr float kTargetDelay = 0.06f;                // a target's bloom waits behind the player's
 constexpr int kMaxBlooms = 2;
 constexpr float kBloomEvery = 1.0f;                  // the same bar at most once a second
@@ -123,7 +126,7 @@ inline BloomOut BloomAt(float t, int motion)
 // One bar's bloom: started from the break's edge, limited to once a second.
 struct Bloom
 {
-    float age = -1, since = 1e9f, wait = 0;
+    float age = -1e9f, since = 1e9f, wait = 0; // (age -1 read as a bloom waiting: every bar "bloomed" in the first 1.6 s and blocked the real ones)
 
     // A break: `delay` holds a target's behind the player's. False: refused by the once-a-second limit.
     bool Start(float delay = 0)

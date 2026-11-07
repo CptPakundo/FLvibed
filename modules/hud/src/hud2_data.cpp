@@ -1650,6 +1650,9 @@ void Simulate(Model& m)
     m.hull = combat ? 0.88f : 1, m.shield = combat ? 0.22f : 1, m.power = combat ? 0.64f : 1, m.boost = combat ? 0.45f : 1;
     if (g_sim == "critical") // (the ring's low states: the flashes, the hull's bloom)
         m.hull = 0.18f, m.shield = 0.10f;
+    m.shieldUp = g_sim != "shielddown";
+    if (!m.shieldUp) // (the shield failed and rebuilds: its arc's pulse and DOWN)
+        m.hull = 0.55f, m.shield = 0.08f;
     if (g_sim == "lowenergy") // (the energy meter near empty: both ends drained towards the middle, GitHub issue 28)
         m.power = 0.12f;
     m.speed = combat ? 84.0f : g_sim == "dock" ? 300.0f : g_sim == "lane" ? 2600.0f : 80.0f;

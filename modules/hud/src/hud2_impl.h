@@ -59,6 +59,8 @@ struct BarFx
     hud2bars::BloomOut bloomShield, bloomHull, bloomBoost, bloomCruise, bloomTShield, bloomTHull;
     float cruiseFill = 0; // the cruise arc as drawn, 0..1
     float beat = 0; // the alert cards' glow, on the worst bar's beat
+    float shieldDown = 0; // the shield failed and rebuilds (the hull takes every hit): its arc's pulse 0.3..1, 0 while up
+    float downMix = 0;    // SHIELDS DOWN's colour then: 0 the shield's blue .. 1 red, at 2.9 Hz (the flash limit's edge)
 };
 
 struct Model

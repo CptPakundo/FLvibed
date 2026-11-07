@@ -18,6 +18,8 @@ Refreshed again (the owner's word, Shockwave's reports): `hud_module` runs `wind
 
 Refreshed a third time (the owner's word; issues 41-46 and the owner's pad check): the ship dealer's pad sides (ShipViewControl turned by the stick, flplusplus's zoom +0x3EC by the triggers; the owner checked it on a DualSense), the rooms' D-pad walk (snaps, the hidden cursor parked on the focus) and CONTEXTUAL room prompts (4 s after the last input), the objective banner held back between NeuroNet tabs (`exe::ObjectiveBannerPump` detour; A/B: released build 6 of 6 steps, this none), INFO / LOG text over the prompts' lane, the dealer's compare tag (RS click, a mouse chip), the boards' list / text sides, the inventory ship view's square box. Not seen: a real mouse's chip click, an Anubis, the rooms on the owner's pad.
 
+Refreshed a fourth time (the owner's word; Shockwave, issue 47): the bars' glow and bloom bigger (`hud2bars` kBloomReachH 0.08 etc., all in H) and a fresh Bloom inactive (it blocked the first 1.6 s); the shield-down state (the arc's pulse, SHIELDS / DOWN at 1.12 R left of the reticle, blue-red at 2.9 Hz; `hud2 sim shielddown`); the equipment dealer's own rows (the tag change had split an if/else: the class twice; MOUNTED green, TAGGED TO COMPARE in the class's place). Seen at 1280x800; not seen: a bloom in real combat.
+
 ## Not run
 No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's clicks and wheel on the pages, multiplayer on the pages, 4:3, FLUF beside the new word tabs.
 

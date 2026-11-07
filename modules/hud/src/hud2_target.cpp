@@ -85,14 +85,14 @@ void FormBar(float x, float y, float w, float h, float v, u32 rgb, float glow, c
     SegBar(x, y, w, h, v, rgb, 20, 2);
     if (lost > 0)
         Rect(x + w * v, y, w * std::min(lost, 1 - v), h, Argb(0xFFFFFF, 0.85f));
-    if (glow > 0.003f)
-        Rect(x, y - h * 0.25f, w * v, h * 1.5f, Argb(rgb, 0.35f * glow));
+    if (glow > 0.003f) // (more scale, the owner: 1.5 x the row at 0.35 before)
+        Rect(x, y - h * 0.5f, w * v, h * 2.0f, Argb(rgb, 0.50f * glow));
     if (bloom.on)
     {
         Rect(x, y, w, h, Argb(rgb, bloom.light));
-        const float reach = 0.01f * H * k * bloom.reach; // (near its row: 6.11)
+        const float reach = 0.018f * H * k * bloom.reach; // (near its row: 6.11; 0.01 H at 0.25 before)
         if (reach > 0)
-            Rect(x - reach, y - reach * 0.5f, w + 2 * reach, h + reach, Argb(rgb, 0.25f * (1 - bloom.pips)));
+            Rect(x - reach, y - reach * 0.5f, w + 2 * reach, h + reach, Argb(rgb, 0.40f * (1 - bloom.pips)));
     }
     if (numberA > 0)
     {

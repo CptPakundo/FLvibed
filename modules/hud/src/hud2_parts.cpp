@@ -89,6 +89,23 @@ void StepBars(Model& m, float dt, int motion)
     for (Bloom* b : {&g_blShield, &g_blHull, &g_blBoost, &g_blCruise, &g_blTShield, &g_blTHull})
         b->Step(dt);
     x.bloomShield = g_blShield.Now(motion), x.bloomHull = g_blHull.Now(motion), x.bloomBoost = g_blBoost.Now(motion), x.bloomCruise = g_blCruise.Now(motion), x.bloomTShield = g_blTShield.Now(motion), x.bloomTHull = g_blTHull.Now(motion);
+    // the shield down (Shockwave: the hull stands bare until it is back, and the meter only looked low): from the game's own fail flag to its return, a slow
+    // pulse over the whole arc in its own colour, 1 Hz (well under 3); FADES and NONE hold it steady
+    {
+        static float downPhase = 0, wordPhase = 0;
+        if (m.shieldUp || m.shield < -1)
+            x.shieldDown = 0, x.downMix = 0, downPhase = wordPhase = 0;
+        else
+        {
+            downPhase += dt;
+            downPhase -= floorf(downPhase);
+            x.shieldDown = motion == 0 ? 0.3f + 0.7f * (0.5f - 0.5f * cosf(2 * kPi * downPhase)) : 0.7f;
+            // SHIELDS DOWN between blue and red as fast as the flash rule allows (the owner: "max frequency"; kRateMax 2.9 Hz, under 3); red under FADES / NONE
+            wordPhase += kRateMax * dt;
+            wordPhase -= floorf(wordPhase);
+            x.downMix = motion == 0 ? 0.5f - 0.5f * cosf(2 * kPi * wordPhase) : 1.0f;
+        }
+    }
     // the alert cards' glow follows the worst bar's beat, else the slowest rate's
     static Breath own;
     const float g = std::max(g_brShield.on ? x.glowShield : 0.0f, g_brHull.on ? x.glowHull : 0.0f);
@@ -101,13 +118,13 @@ static void ArcGlow(float cx, float cy, float r, float a0, float a1, float lo, f
     if (glow <= 0.003f || hi <= lo)
         return;
     const float was = Alpha(), roll = hud2bars::kRollOff * (a1 - a0);
-    for (const float layer : {2.6f, 1.7f})
+    for (const float layer : {3.6f, 2.3f}) // (2.6 / 1.7 before: more scale, the owner)
     {
-        SetAlpha(was * glow * 0.28f);
+        SetAlpha(was * glow * hud2bars::kGlowLayerA);
         Arc(cx, cy, r, lo, hi, w * layer, Argb(rgb, 1));
         for (int i = 1; i <= 3; ++i)
         {
-            SetAlpha(was * glow * 0.28f * (1 - i / 4.0f));
+            SetAlpha(was * glow * hud2bars::kGlowLayerA * (1 - i / 4.0f));
             const float s0 = roll * (i - 1) / 3, s1 = roll * i / 3;
             if (hi + s0 < a1)
                 Arc(cx, cy, r, hi + s0, std::min(a1, hi + s1), w * layer, Argb(rgb, 1));
@@ -115,6 +132,29 @@ static void ArcGlow(float cx, float cy, float r, float a0, float a1, float lo, f
                 Arc(cx, cy, r, std::max(a0, lo - s1), lo - s0, w * layer, Argb(rgb, 1));
         }
     }
+    SetAlpha(was);
+}
+
+// SHIELDS / DOWN, one word a row at the reticle's lower left (the owner, 7 Nov 2026), between the shield's blue and red by `mix`.
+static void ShieldsDownWords(float cx, float cy, float R, float T, float mix)
+{
+    const auto ch = [mix](u32 a, u32 b, int s) { return static_cast<u32>(((a >> s) & 0xFF) + (static_cast<int>((b >> s) & 0xFF) - static_cast<int>((a >> s) & 0xFF)) * mix) << s; };
+    const u32 rgb = ch(kShield, kHostile, 16) | ch(kShield, kHostile, 8) | ch(kShield, kHostile, 0);
+    const float x = cx - R * 1.12f, y = cy + R * 0.62f; // (clear of the shield arc's lower end: the owner, 7 Nov)
+    Text(x, y, L"SHIELDS", T, Argb(rgb, 1), Right);
+    Text(x, y + T * 1.15f, L"DOWN", T, Argb(rgb, 1), Right);
+}
+
+// The shield down: its whole arc's track lit by the pulse, in its own colour (a bar never changes colour), two layers as the glow's.
+static void ArcDown(float cx, float cy, float r, float a0, float a1, float w, float pulse)
+{
+    if (pulse <= 0)
+        return;
+    const float was = Alpha();
+    SetAlpha(was * 0.22f * pulse);
+    Arc(cx, cy, r, a0, a1, w * 3.0f, Argb(kShield, 1));
+    SetAlpha(was * 0.55f * pulse);
+    Arc(cx, cy, r, a0, a1, w * 1.1f, Argb(kShield, 1));
     SetAlpha(was);
 }
 
@@ -133,10 +173,10 @@ static void ArcBloom(float cx, float cy, float r, float a0, float a1, float w, u
     {
         const float out = hud2bars::kBloomReachH * H * k * b.reach, in = hud2bars::kBloomInwardH * H * k * std::min(1.0f, b.reach);
         RecordTag("ring.bloom"); // (600 ms: an overlay as the hit flash is, UI_HUD2_SKIN.md 12; the lint's bounding box read its corners against the cue row)
-        // a halo, not a slab: four widths on one centre, the sum 0.22 at the bar and less each step out
+        // a halo, not a slab: four widths on one centre, the sum 0.40 at the bar and less each step out
         for (const float part : {1.0f, 0.75f, 0.5f, 0.25f})
         {
-            SetAlpha(was * 0.055f * (1 - b.pips));
+            SetAlpha(was * hud2bars::kBloomHaloA * (1 - b.pips));
             Arc(cx, cy, r + (out - in) / 2 * part, a0, a1, w + (out + in) * part, Argb(rgb, 1));
         }
     }
@@ -163,6 +203,7 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
     RecordTag("ring.shield");
     if (m.shield > -2) // shield left (red at <= 25 %), filling from the bottom as the hull: it drains down (GitHub issue 18)
     {
+        ArcDown(cx, cy, R, 138, 222, w, m.fx.shieldDown);
         ArcGlow(cx, cy, R, 138, 222, 138, 138 + 84 * shield, w, kShield, m.fx.glowShield);
         SegArc(cx, cy, R, 138, 222, w, shield, kShield, 14, 1.6f, false);
         ArcBloom(cx, cy, R, 138, 222, w, kShield, m.fx.bloomShield, H, k);
@@ -183,6 +224,8 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
     auto show = [&](float v) { return v >= 0 && (numbers == 1 || (numbers == 0 && v < 0.4f)); };
     wchar_t buf[32];
     RecordTag("ring.shield");
+    if (m.fx.shieldDown > 0) // (whatever hud_numbers says: the state matters more than the value)
+        ShieldsDownWords(cx, cy, R, T, m.fx.downMix);
     if (show(shield) && m.shield > -2)
     {
         swprintf_s(buf, L"%d", static_cast<int>(shield * 100 + 0.5f));
@@ -1537,9 +1580,12 @@ void DrawSplitArcs(const Model& m, const Layout& L, float a, const FocusVis& v)
     if (v.shield > 0.004f)
     {
         SetAlpha(a * v.shield);
+        ArcDown(cx, cy, R, 180 - half, 180 + half, w, m.fx.shieldDown);
         ArcGlow(cx, cy, R, 180 - half, 180 + half, 180 - half, 180 - half + 2 * half * shield, w, kShield, m.fx.glowShield);
         SegArc(cx, cy, R, 180 - half, 180 + half, w, shield, kShield, 8, 1.6f, false);
         ArcBloom(cx, cy, R, 180 - half, 180 + half, w, kShield, m.fx.bloomShield, H, k);
+        if (m.fx.shieldDown > 0)
+            ShieldsDownWords(cx, cy, R, T, m.fx.downMix);
         if (show(shield) && m.shield >= 0)
         {
             swprintf_s(buf, L"%d", static_cast<int>(shield * 100 + 0.5f));

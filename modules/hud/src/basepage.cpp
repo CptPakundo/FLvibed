@@ -484,6 +484,8 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
         const float pad = 0.012f * H;
         std::wstring right, under;
         u32 underRgb = kChrome;
+        const bool tagged = side == Yours && r.hp < 0 && r.mounted && r.arch == gamedata::TaggedCompare();
+        const std::wstring slotWord = tagged ? std::wstring(L"TAGGED TO COMPARE") : r.slot; // (Shockwave, 7 Nov: in the class's place, clear of the row's word)
         if (r.hp >= 0)
             right = r.slot;
         else if (mesh >= 0 && mesh < 5) // (the game's own number: a launcher's price, a damaged item's, a sale's)
@@ -495,9 +497,11 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
         if (r.hp < 0)
         {
             if (side == Yours)
-                under = r.mounted ? (r.arch == gamedata::TaggedCompare() ? L"MOUNTED, TAGGED TO COMPARE" : L"MOUNTED") : r.count > 1 ? L"x" + std::to_wstring(r.count) : L"IN HOLD";
-            if (side == Yours && r.mounted && r.arch == gamedata::TaggedCompare())
-                underRgb = kActive;
+            {
+                under = r.mounted ? L"MOUNTED" : r.count > 1 ? L"x" + std::to_wstring(r.count) : L"IN HOLD";
+                if (r.mounted)
+                    underRgb = kFriend; // (green, as the inventory's)
+            }
             else
                 under = r.slot;
             if (r.noSlot)
@@ -510,8 +514,8 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
         Text(x1 - pad, y1, right, r.hp >= 0 ? 0.024f * H : 0.028f * H, Argb(r.hp >= 0 ? kChrome : on ? kInk : kActive, 1), Right);
         if (!under.empty())
             Text(tx, y2, under, 0.024f * H, Argb(on && underRgb == kChrome ? kInk : underRgb, 0.9f));
-        if (r.hp < 0 && !r.slot.empty() && side == Yours)
-            Text(x1 - pad, y2, r.slot, 0.022f * H, Argb(on ? kInk : kChrome, 0.8f), Right);
+        if (r.hp < 0 && !slotWord.empty() && side == Yours)
+            Text(x1 - pad, y2, slotWord, 0.022f * H, Argb(on ? kInk : tagged ? kActive : kChrome, tagged ? 1.0f : 0.8f), Right);
         if (r.hp < 0 && !Final())
         {
             const std::wstring need = side == Theirs ? NeedWord(r.arch) : std::wstring();
@@ -522,7 +526,7 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
         }
         if (r.mounted && r.health > 0 && r.health < 0.995f) // (beside the row's word, clear of the slot's)
         {
-            const float px = tx + TextWidth(under, 0.024f * H) + pad, pe = x1 - pad - (side == Yours ? TextWidth(r.slot, 0.022f * H) + pad : 0);
+            const float px = tx + TextWidth(under, 0.024f * H) + pad, pe = x1 - pad - (side == Yours ? TextWidth(slotWord, 0.022f * H) + pad : 0);
             if (pe - px > 0.03f * H)
                 skinkit::Pips(px, y2 - 0.003f * H, std::min(0.13f * H, pe - px), 0.006f * H, r.health, 10, r.health < 0.35f ? kHostile : kAmber);
         }
