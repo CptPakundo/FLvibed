@@ -69,21 +69,19 @@ void StepBars(Model& m, float dt, int motion)
     if (tgt && tHullWas > 0 && m.tHull <= 0 && cueH && BloomFree(all, 5))
         g_blTHull.Start(kTargetDelay);
     upWas = m.shieldUp, hullWas = m.hull >= 0 ? m.hull : hullWas, tShieldWas = tgt ? m.tShield : -1, tHullWas = tgt ? m.tHull : -1;
-    // the cruise arc: full while it works. A disruption runs it down on the game's own clock, reaching nothing the moment the engine can charge again; any other end leaves the
-    // engine free at once (EngageCruise: the clock to 0), so it blooms out gently (the owner, 6 Nov 2026)
+    // the cruise arc: full while it works. A disruption blooms out as a breaking bar does and runs it down on the game's own clock, reaching nothing the moment the engine
+    // can charge again; any other end leaves the engine free at once (EngageCruise: the clock to 0), so it just fades (Shockwave, 7 Nov 2026: only a disruption blows out)
     {
         static int cruiseWas = 0;
         static float fill = 0;
+        if (cruiseWas != 0 && m.cruise == 0 && m.cruiseWait > 0)
+            g_blCruise.Start();
         if (m.cruise != 0)
             fill = m.cruise == 1 ? std::max(0.0f, m.charge) : 1.0f;
         else if (m.cruiseWait > 0)
             fill = m.cruiseWait;
         else
-        {
-            if (cruiseWas != 0)
-                g_blCruise.Start();
             fill = motion == 2 ? 0.0f : std::max(0.0f, fill - dt / 0.2f);
-        }
         cruiseWas = m.cruise, x.cruiseFill = fill;
     }
     for (Bloom* b : {&g_blShield, &g_blHull, &g_blBoost, &g_blCruise, &g_blTShield, &g_blTHull})
@@ -206,14 +204,14 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
         ArcDown(cx, cy, R, 138, 222, w, m.fx.shieldDown);
         ArcGlow(cx, cy, R, 138, 222, 138, 138 + 84 * shield, w, kShield, m.fx.glowShield);
         SegArc(cx, cy, R, 138, 222, w, shield, kShield, 14, 1.6f, false);
-        ArcBloom(cx, cy, R, 138, 222, w, kShield, m.fx.bloomShield, H, k);
+        ArcBloom(cx, cy, R, 138, 222, w, kHostile, m.fx.bloomShield, H, k); // (a meter zeroed blooms in one red: shield, hull, cruise - the owner, 7 Nov 2026)
     }
     RecordTag("ring.hull");
     if (m.hull >= 0) // hull right
     {
         ArcGlow(cx, cy, R, -42, 42, 42 - 84 * m.hull, 42, w, kHull, m.fx.glowHull);
         SegArc(cx, cy, R, -42, 42, w, m.hull, kHull, 14, 1.6f, true);
-        ArcBloom(cx, cy, R, -42, 42, w, kHull, m.fx.bloomHull, H, k);
+        ArcBloom(cx, cy, R, -42, 42, w, kHostile, m.fx.bloomHull, H, k);
     }
     RecordTag("ring.power");
     // power below - not while cruise charges or runs: the cruise readout (the charge seconds, CRUISE ON) holds the ring's
@@ -254,19 +252,15 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
     RecordTag("ring.charge");
     if (m.cruise != 0 || m.fx.cruiseFill > 0 || m.fx.bloomCruise.on)
     {
-        // disrupted: red, breathing fast (2.5 Hz, under HUD 2's 3 Hz), running down on the game's clock
+        // working (charging, cruising): a quiet steady glow, no halo - since the bars' bigger bloom the halo that breathed with it flashed through normal cruise
+        // (Shockwave, 7 Nov 2026). Disrupted: red, the glow breathing (2.5 Hz, under HUD 2's 3 Hz) while it runs down on the game's clock, after the bloom out
         const bool broke = m.cruise == 0 && m.cruiseWait > 0;
         const u32 col = broke ? kHostile : kCyan;
         const float fill = m.fx.cruiseFill;
-        const float glow = m.cruise == 1 ? m.charge : m.cruise == 2 ? 0.55f + 0.45f * Pulse(6.2832f) : broke ? 0.55f + 0.45f * Pulse(15.708f) : fill;
-        hud2bars::BloomOut halo;
-        halo.on = true, halo.reach = 0.7f * glow, halo.pips = 0;
+        const float glow = m.cruise == 1 ? 0.35f * m.charge : m.cruise == 2 ? 0.35f : broke ? 0.45f + 0.35f * Pulse(15.708f) : 0.35f * fill;
         ArcGlow(cx, cy, R, 240, 300, 270 - 30 * fill, 270 + 30 * fill, w, col, glow);
-        ArcBloom(cx, cy, R, 240, 300, w, col, halo, H, k);
         SegArcCentred(cx, cy, R, 240, 300, w, fill, col, 14, 1.8f, 0x283050, w * 0.35f); // (from the middle out, as the boost: both are level meters)
-        hud2bars::BloomOut gentle = m.fx.bloomCruise; // (turned off: a soft bloom out, no alarm)
-        gentle.reach *= 0.6f, gentle.light *= 0.5f;
-        ArcBloom(cx, cy, R, 240, 300, w, kCyan, gentle, H, k);
+        ArcBloom(cx, cy, R, 240, 300, w, kHostile, m.fx.bloomCruise, H, k);
     }
     if (m.cruise == 1) // the seconds left
     {
@@ -1583,7 +1577,7 @@ void DrawSplitArcs(const Model& m, const Layout& L, float a, const FocusVis& v)
         ArcDown(cx, cy, R, 180 - half, 180 + half, w, m.fx.shieldDown);
         ArcGlow(cx, cy, R, 180 - half, 180 + half, 180 - half, 180 - half + 2 * half * shield, w, kShield, m.fx.glowShield);
         SegArc(cx, cy, R, 180 - half, 180 + half, w, shield, kShield, 8, 1.6f, false);
-        ArcBloom(cx, cy, R, 180 - half, 180 + half, w, kShield, m.fx.bloomShield, H, k);
+        ArcBloom(cx, cy, R, 180 - half, 180 + half, w, kHostile, m.fx.bloomShield, H, k);
         if (m.fx.shieldDown > 0)
             ShieldsDownWords(cx, cy, R, T, m.fx.downMix);
         if (show(shield) && m.shield >= 0)
@@ -1598,7 +1592,7 @@ void DrawSplitArcs(const Model& m, const Layout& L, float a, const FocusVis& v)
         SetAlpha(a * v.hull);
         ArcGlow(cx, cy, R, -half, half, half - 2 * half * m.hull, half, w, kHull, m.fx.glowHull);
         SegArc(cx, cy, R, -half, half, w, m.hull, kHull, 8, 1.6f, true);
-        ArcBloom(cx, cy, R, -half, half, w, kHull, m.fx.bloomHull, H, k);
+        ArcBloom(cx, cy, R, -half, half, w, kHostile, m.fx.bloomHull, H, k);
         if (show(m.hull))
         {
             swprintf_s(buf, L"%d", static_cast<int>(m.hull * 100 + 0.5f));

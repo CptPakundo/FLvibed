@@ -13,7 +13,7 @@ namespace hud2sim
 inline constexpr const char* kNames[] = {"combat",    "travel", "cruise",    "dock",    "lane",     "ap",
                                          "apwait",    "turret", "formation", "jump",    "letterbox", "loot",
                                          "capital",   "alertlist", "alertlistpad", "notarget", "offscreen", "comm",   "torpedo",  "critical",
-                                         "hazard",    "groups",    "lowenergy", "shielddown"};
+                                         "hazard",    "groups",    "lowenergy", "shielddown", "disrupt"};
 
 struct Parsed
 {

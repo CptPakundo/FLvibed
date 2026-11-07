@@ -26,6 +26,8 @@ Refreshed a sixth time (the owner's word; Shockwave: AMMU.): the dealer's filter
 
 Refreshed a seventh time (the owner's word; Shockwave: the game's name card flickering over HUD 2's on the D-pad in rooms): `uiskin::TipUnder` hides the ToolTip again after the game's update while `uistrip::HoverTipNow` sees a hovered character; padbases re-hovers only a hover the game dropped and keeps the parked cursor still inside the box. Seen in a background game (the card on every sample); the flicker itself not reproduced there (no picking in a background window): the owner's or Shockwave's foreground game is the check.
 
+Refreshed an eighth time (the owner's word; Shockwave: the cruise meter flashing while it works): the cruise arc's halo gone while charging / cruising (a steady 0.35 glow), a bloom only on a disruption (`hud2 sim disrupt`); every zeroed meter's bloom in one red (kHostile: shield, hull, cruise, the target's bars). Seen at 1280x800; the owner got a GIF of the ring's states.
+
 ## Not run
 No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's clicks and wheel on the pages, multiplayer on the pages, 4:3, FLUF beside the new word tabs.
 

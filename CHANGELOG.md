@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.4.5 (7 Nov 2026)
+- **Refreshed again: the cruise meter flashes only when cruise breaks:** with the bigger bloom, the halo that breathed with the cruise arc flashed hard all through a normal cruise (Shockwave). Charging and cruising now glow quietly and steadily, a normal end just fades, and only a disruption blooms out, red and as big as a breaking shield or hull, before the arc runs down.
+- **Refreshed again: one red for a meter that hits zero:** the shield bloomed out in its own blue when it failed. Now a shield, hull or cruise that is knocked to nothing flares out in the same red, on the ring and on the target's bars alike (the owner).
 - **Refreshed again: one name card in rooms:** highlighting yourself or someone in a room with the D-pad, the game's own name card kept flickering back over HUD 2's (Shockwave). The game's card is hidden again just before each frame draws, so a card the game shows or moves during the frame never appears. The pad also stops re-entering a highlight the game still holds and keeps its hidden cursor still on the character.
 - **Refreshed again: AMMO, not AMMU., at the equipment dealer:** the game's AMMUNITION was cut to its first four letters for the tab, which read as a word sheared off (Shockwave). The tab says AMMO now.
 - **Refreshed again: the compare tag works with an empty hold:** on the inventory tab only the items in your hold compared with the tagged one, so with nothing in the hold tagging did nothing (Shockwave). Your other mounted items of the same kind compare with it too now, the card saying VS ITS NAME (TAGGED), on the inventory tab and at the equipment dealer.

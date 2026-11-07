@@ -1657,6 +1657,7 @@ void Simulate(Model& m)
         m.power = 0.12f;
     m.speed = combat ? 84.0f : g_sim == "dock" ? 300.0f : g_sim == "lane" ? 2600.0f : 80.0f;
     m.cruise = g_sim == "cruise" ? 1 : g_sim == "dock" ? 2 : 0;
+    m.cruiseWait = g_sim == "disrupt" ? 0.6f : 0; // (from "dock" to "disrupt": cruise broken, its bloom out and the red run-down)
     m.charge = 0.58f, m.chargeLeft = 2.1f;
     m.nano = 3, m.batt = 3, m.cm = 12, m.mines = 8, m.ammo = 36, m.launcher = L"JAVELIN";
     m.groups[0] = L"Azrael  \u00B7  Lavablade Mk II", m.groups[1] = L"Azrael", m.groups[2] = L"Lavablade Mk II";
