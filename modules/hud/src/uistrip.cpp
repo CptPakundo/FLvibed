@@ -557,10 +557,10 @@ void Read()
         return;
     }
     // a full-screen NeuroNet page or map has its own title where the strip stands: the game's mission briefing (the map with no tabs) drew both, SIGMA-13 over GAS
-    // MINER NAHA (Shockwave, 7 Nov 2026)
-    if (nnpage::On() || navnew::Grown())
+    // MINER NAHA (Shockwave, 7 Nov 2026). The map only: with every page it took the dealers' and traders' credits (Shockwave, the same day)
+    if (navnew::Grown())
     {
-        g.show = false, g.why = "a full-screen page";
+        g.show = false, g.why = "the full-screen map";
         return;
     }
     // a room scene (letterboxed): the strip stands down; the offer dialog the scene brings up still gets its line

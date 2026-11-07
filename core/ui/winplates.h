@@ -57,6 +57,7 @@ bool FitOpen(); // a window with fitted panels is open: what stands in it is rea
 // What the skin draws in a window itself, pixels: the fit counts it as content. Each frame's list, cleared first
 void ClearSkinItems();
 void AddSkinItem(float x0, float y0, float x1, float y1);
+void SetMapOver(bool on); // the full-screen map stands: no docked frame (its plates stood over the map, the room bar's icons hidden under it: uiskin)
 void SetRootGrow(float grow); // the log and the info window stand this much taller than their root, fractions of H (windowtext's boxes fill it)
 bool IsTitle(const char* control); // a window's heading, by the table
 // Each fitted panel of the open windows: its rectangle and the air round what it holds, fractions of H: what the walk reads

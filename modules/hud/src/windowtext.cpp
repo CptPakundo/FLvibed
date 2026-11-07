@@ -95,6 +95,7 @@ struct Spec
     float grow = 0;          // the window stands this much taller than the game's, fractions of H: there is the screen for it (the owner, 6 Nov 2026)
     float shift = 0;         // the window stands this far right of the screen's middle, fractions of H: a NeuroNet page has its list or card at the left (nnpage.*)
     const char* rightEdge = nullptr; // ... or this control of it ends at the page's right edge, on any aspect (shift until it shows): at 16:10 a shift in H left the list beside it 200 px
+    bool fit = false;                // the window's foot and its OK button follow its box, which grows to its text (boxFoot): FitFoot
 };
 
 const TextRole kDealerTexts[] = {
@@ -177,6 +178,10 @@ const Spec kSpecs[] = {
     // the nav map: its toolbar lay under the top panel of subtitles (UI_HUD2.md 5.34) and there is room under the map
     {"NeuroNetNavMap", nullptr, nullptr, 0, nullptr, 0, {nullptr, nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0.05f},
+    // the story / tutorial popup (pub::Player::PopUpDialog, M01's boxes): at 1280x800's larger text its box took a scroll bar (the owner, 7 Nov 2026).
+    // Last, so a NeuroNet window open under it keeps its own
+    {"NeuroNetMissionMessage", nullptr, nullptr, 0, nullptr, 0, {"MissionMessageText", nullptr, nullptr, nullptr},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 0, 0.80f, 0, 0, 0, 0, nullptr, true},
 };
 constexpr int kSpecCount = static_cast<int>(sizeof(kSpecs) / sizeof(kSpecs[0]));
 
@@ -1287,6 +1292,34 @@ void StretchFoot(const Spec& s, float H)
     }
 }
 
+// A `fit` window (the story popup): its box grows or shrinks to its text (PlaceBoxes, boxFoot); the plate's foot, the OK button and its caption go as much.
+// From what stood at the opening, so a box the game keeps between two popups is measured once
+float g_fitBox0 = -1, g_fitButton = 0, g_fitCaption = 0;
+float FitFoot(float H)
+{
+    const u32 box = g_boxes.empty() ? 0 : g_boxes.front();
+    const u32 button = uiclick::FindVisible("MMOkButton"), caption = uiclick::FindVisible("MMOkText");
+    ui::Item b, c;
+    if (!box || !IsRich(box) || !Shown(box) || !button || !ui::ControlRect(button, b))
+        return 0;
+    const float now = static_cast<float>(R32(box + kBoxH));
+    if (g_fitBox0 < 0)
+    {
+        if (now <= 0)
+            return 0;
+        g_fitBox0 = now, g_fitButton = b.y, g_fitCaption = caption && ui::ControlRect(caption, c) ? c.y : 0;
+    }
+    const float grow = now - g_fitBox0;
+    MoveButton(button, g_fitButton + grow, H);
+    float pos[3] = {};
+    if (g_fitCaption > 0 && ui::ControlRect(caption, c) && fabsf(c.y - (g_fitCaption + grow)) >= 1.0f && safemem::Read(caption + kPos, pos, sizeof(pos)))
+    {
+        pos[1] += (c.y - (g_fitCaption + grow)) / H;
+        SetPos(caption, pos);
+    }
+    return grow / H;
+}
+
 void Lift(float want)
 {
     if (want == g_liftNow)
@@ -1319,6 +1352,7 @@ void Closed()
     g_rich = base;
     g_richKey = 0;
     winplates::SetRootGrow(0);
+    g_fitBox0 = -1;
     g_spec = nullptr; // (the window's controls are gone: the game builds new ones at each opening, often at the same addresses)
     g_base.clear();
     g_boxes.clear();
@@ -1417,7 +1451,7 @@ void Frame(bool on)
     StretchFoot(*g_spec, screenH);
     if (g_shipClose)
         StandShipHead(screenH);
-    winplates::SetRootGrow(g_spec->grow);
+    winplates::SetRootGrow(g_spec->fit ? FitFoot(screenH) : g_spec->grow);
     if (!g_lifted.empty())
         Lift(uiclick::FindVisible("QuantitySlider") ? kStackNudge : winplates::kStackLift);
     if (PlaceBoxes(*g_spec, screenH))

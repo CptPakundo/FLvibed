@@ -79,7 +79,10 @@ static void Skin(float dt, bool padOwns, bool enabled, bool docked)
     nnpage::Update(dt, padOwns);
     basepage::Update(dt, padOwns);
     uistrip::Update(dt, enabled && uiStyle == 1 && docked);
-    windowtext::Frame(h.windowText && enabled && uiStyle == 1);
+    winplates::SetMapOver(enabled && uiStyle == 1 && navnew::Grown());
+    // a NeuroNet page places the game's card through it whatever window_text says: with it off the card stood at the game's place, its title and X over the
+    // page and the faction names gone (Shockwave's Steam Deck, 7 Nov 2026)
+    windowtext::Frame((h.windowText || nnpage::On()) && enabled && uiStyle == 1);
 }
 
 static bool UnderBegin(void* device, bool flying)
@@ -191,6 +194,7 @@ static void Fault(int phase)
         navnew::Shutdown();
         uiskin::GiveBack();
         hud2::OnDeviceLost();
+        winplates::SetMapOver(false);
         windowtext::Frame(false); // every text's own font and box; game_text_size's table stays until the game reads it again
     }
 }

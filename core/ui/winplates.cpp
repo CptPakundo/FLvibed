@@ -630,6 +630,8 @@ static float g_wordsRoom = 0;
 void SetWordsRoom(float room) { g_wordsRoom = room; }
 static float g_rootGrow = 0;
 void SetRootGrow(float grow) { g_rootGrow = grow; }
+static bool g_mapOver = false;
+void SetMapOver(bool on) { g_mapOver = on; }
 
 // The panels fitted to what they hold (winfit.h; the owner, 6 Nov 2026). Per family, per plate: how it takes part. Families not here stand as the table says: their content is
 // not all controls to read (Options' pages, the menus, the repair list's rows, the news ticker that scrolls, the root-framed NeuroNet windows).
@@ -918,7 +920,7 @@ void WindowPlates(const Win& w, WindowPass& out)
         {
             if (!haveRoot)
                 continue;
-            x0 = root.x0 + Hf(p.x0), y0 = root.y0 + Hf(p.y0), x1 = root.x1 + Hf(p.x1), y1 = root.y1 + Hf(p.y1 + (w.fam == kFamLog || w.fam == kFamHelp ? g_rootGrow : 0));
+            x0 = root.x0 + Hf(p.x0), y0 = root.y0 + Hf(p.y0), x1 = root.x1 + Hf(p.x1), y1 = root.y1 + Hf(p.y1 + (w.fam == kFamLog || w.fam == kFamHelp || w.fam == kFamPopup ? g_rootGrow : 0));
         }
         else
         {
@@ -1243,7 +1245,7 @@ void Geometry(void* device)
     }
     // (not in a NeuroNet window's close: the game hides the bar's and the box's art that frame while their controls
     // still read shown - the empty plates stood one frame, 26 Oct 2026, research\experience\runs\dealer_close_2026-10-26)
-    if (bar && !g_modalOpen && !g_scene && FullyShown(bar->root) && !room::NNWindowClosing())
+    if (bar && !g_modalOpen && !g_scene && !g_mapOver && FullyShown(bar->root) && !room::NNWindowClosing())
     {
         g_dockedFrame = !conversation;
         g_dockedLane = true;

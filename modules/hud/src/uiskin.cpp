@@ -265,6 +265,25 @@ void WriteWindow(Win& w)
             for (int i = 0; i < hides.nArt; ++i)
                 HideArt(w, hides.art[i]);
             HideMapFrame(w);
+            // docked, the full-screen map stood over the room bar's icons, the room's actions and the NeuroNet box's icons (Shockwave and the owner,
+            // 7 Nov 2026): hidden with the map's own art, given back with it. The box's switch buttons stay: the map hangs under one
+            if (navnew::On())
+                for (const Win& o : g_wins)
+                    if (o.fam == kFamNavBar || o.fam == kFamNNBox)
+                    {
+                        u32 c = 0;
+                        R32(o.root + kChild, c);
+                        for (int guard = 0; c && guard < 64; ++guard)
+                        {
+                            char n[40] = {};
+                            RBytes(c + kName, n, 32);
+                            const size_t len = strlen(n);
+                            if (!strncmp(n, "ButtonControl", 13) || !strncmp(n, "RoomControl", 11) || !strcmp(n, "NNBackground") || (len > 10 && !strcmp(n + len - 10, "ButtonRoot")))
+                                HideArt(w, c);
+                            if (!R32(c + kSibling, c))
+                                break;
+                        }
+                    }
         }
     }
     for (const char* n : f.titles)

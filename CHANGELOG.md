@@ -13,6 +13,10 @@
 - **Refreshed the same day: the mission briefing:** the game's CONTINUE no longer stands a second time at the map's foot, and the docked strip no longer runs under the map's title (Shockwave).
 - **The living spec is now the Feature Tour:** the same page, its new name throughout the README and docs.
 - **Refreshed the same day: a mission offer names its giver whole:** the name takes the header's room up to the title, and MISSION steps right for a long one, never into the X ("COORDINATOR WILLIAM CAM..." before).
+- **Refreshed again: the NeuroNet pages with Larger window text off:** STATUS, INVENTORY and INFO showed the game's card at its own place, its title and X over the page, and STATUS lost its faction names (Shockwave, Steam Deck). The pages now place the card whatever that setting says.
+- **Refreshed again: credits on dealers and traders:** the character card (credits, cargo) was gone on every dealer, trader and job page since the briefing fix; it shows again (Shockwave).
+- **Refreshed again: the docked map without the game's icons:** the full-screen map, docked, showed the room bar's icons, the room's actions and the NeuroNet box's icons over it (Shockwave, the owner); they are hidden while it stands.
+- **Refreshed again: the tutorial box fits its text:** at 1280x800's larger text, M01's tutorial boxes took a scroll bar; the box now grows to its text, its OK button and frame with it.
 
 - **Dealer switches:** `base_pages` and `ui_style` now apply at a dealer's next opening, so switching them with a window open strands nothing, and `ui_style` 0 gives the game's dealer windows back.
 - **LOG as a full screen:** title, MISSION and JOURNAL as tabs, a RIGHT NOW card with the live objective (only with one), the game's text in a reading column. Y shows the map.
