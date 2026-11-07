@@ -2542,3 +2542,22 @@ Trent's bar replies are `$BGCS_Trent_<code>P0N_<variant>` (voice trent_voice).
   WM_KEYUP VK_RETURN); FL's own key handler path does not submit the chat line.
 - HudShift.dll moves HUD elements (`repos\HudShift`).
 - Tutorial popups reference keyboard keys ("N key", "F5 key", "press F1").
+
+## The NeuroNet windows by their own calls (7 Nov 2026)
+Read in Ghidra, used in game (instance 7, background); the research is `docs\research\neuronet-windows-facts.md`, the use `docs\NEURONET_PLAN.md`.
+- **InvSelected 0x47E790** answers the EquipDesc of the row at +0x3A4 under the filter at +0x32C: asking row by row lists a whole filter (verified in game). **InvSelectRow 0x47E0E0**, **InvSetFilter 0x47F240**, **InvMount 0x47F720** (thiscall(EquipDesc*, mounted)). Filters: 0 weapons, 1 ammo, 2 external, 3 internal, 4 commodities (the hint words verified).
+- **The map's marks without a size of their own** (records of type 2 ship, 3, 4; 0x496600, read and driven 7 Nov 2026): their size is record +0x3C, divided by max(1, Z / 2) in view 2 and then scaled like the world, so a grown map grows them; other records take +0xF48 instead. **The status window's data** is the in-process server's answer to the draw's once-a-second vt+0x124: with `FrameUpdate`'s gates shut it never comes (seen in game: numbers blank, the pairs at +0x410 empty).
+- **StatusFactionCard 0x4A8E80** thiscall(index) opens a faction's card; the status pairs sit at +0x410. The game's five standings come from 0x45A6E0 (thresholds -0.6, -0.2, 0.2, 0.6).
+- **GamePaused**, by return address: 13 callers. Answering true to the world's update and the frame update only stops the world while the window stays open (the game's own pause closes it); verified in game, contacts freeze and resume.
+
+## The docked pages (7 Nov 2026; docs\BASE_ROOMS_PLAN.md keeps the list, read in game unless marked)
+- The save lists: visible rows = list +0x8A8 (20, written by setup 0x56B330 and read each frame; decompiled, and a write of 16 took in game). The pitch is no field: the list font's line height, so game_text_size 125 runs the 20 rows past the frame. Each screen has two column lists. Front: screen +0xD8 and +0xDC (VtFrontList; 16 written to both, read back). NN_LoadSave: +0x5E4 (VtGameList) is the date column, its scroll bar +0xEA0 (min +0x3C0, max +0x3C4 = rows - 20, position +0x3C8, page +0x3CC); the names column is not among the screen's fields up to +0xF00: not found.
+- NN_Repair: `RepairCheckBoxN` toggle +0x3A0 is 0 ticked, 1 not; `RepairSmallIconsN` are image controls (PlaceAt moves them); `RepairPlayerCash`, `RepairTotalCost`; `RepairItemDamageN` holds no readable share. The client's equipment list node holds the health at +0x18.
+- The final stage: `InvSelected` works on both windows (each its own +0x34C list; 0x47E790 with +0x35C and +0x978 == 2). ShipDealerShipPrice is net of the dealer's side; the charge is that less NN_Dealer +0x9FC. Same-named controls of the two lists stand in no fixed order: tell them by the +4 parent chain.
+- NN_CommodityByBase vt 0x5D027C; rows `CommodityByBasePriceN`, `CommodityByBuySellPriceN`, `CommodityByBaseBaseN`, `CommodityByBaseSystemN`. It replaces the inventory while it stands.
+- ShipView_Control (Inventory +0x330, vt 0x5E4BCC as ShipTrader3DShip): hidden by the builder 0x478100 (+0x6C bits 0 and 1 cleared), companions ShipView_Toggle / _DamageBar / _Name, Shipview_Frame fetched in 0x47B410 (decompiled; what sets its ship unread).
+- The dealer's whole stock: write +0x3A4 = k, `exe::DealerSelectedGood`, restore; `exe::InvSelectRow` selects on either window, row counted from +0x3C4, and clears the other window's +0x3A4.
+- A window moved off the screen goes on working: clicks by name, the slider, filters, buying and selling. An image control (vt 0x5E4D7C, a row's mesh) moves by position property 6 through vt[0xA8]; its parent's bar: +0x3D0.
+- ItemPrice0N holds a visible row's own number. NN_ShipTrader +0x414 holds indices, not ships. ShipTrader3DShip has no rectangle and follows its window by its own vt[0x14].
+- The ship view's selected part (decompiled, 0x4E6EC0, 0x4E6CB0): `ViewPrepare` colours the watched ship's equipment and armour groups; the one whose id equals the short at owner +0x3B4 pulses (0x561F20). `FUN_00405a00(list, root, flag, argb)` sets a part's vertex colour.
+- HD Edition's base infocards list ships and commodities.

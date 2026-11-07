@@ -16,6 +16,8 @@ void SetHudHitSuppression(bool on, const uintptr_t* roots, int count); // those 
 // Each frame a full-screen window stands: fl::FlightCommand's commands answer no key or mouse button. What FLvibed holds or fires itself goes on (the autopilot flies under the window).
 void SetFlightLock();
 bool FlightLocked();
+// Each frame a NeuroNet window should stop the world (single player, in space): the game's own pause closes the window, so only the world's gates hear it (0x54B000, FrameUpdate); ends by itself when the calls stop.
+void SetWorldPause();
 u32 LastRealKeyTick();
 std::string RawKeyStatus(); // the raw-key counters, for `uibtn`
 } // namespace input

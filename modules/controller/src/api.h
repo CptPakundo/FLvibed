@@ -29,8 +29,8 @@ struct ShmBlock;
 // host and mission.cpp keep per game starts over at a load: the A37 S1 finding), v35 MissionSave (the story's
 // checkpoint saves for the speedrun splits' save:<ids> rows: M01b.end at GAME SAVED, CP-M01b), v37 SetSteerLift, v38 SdlPadFilter, v39 SetTargetMute + TargetMuteReady, v40 SetLoadDraw,
 // v41 SdlPadTriggers + SdlPadTriggerRumble + the grips' stream (modules\controller\docs\HAPTICS.md). A logic DLL must check `version` before using functions added in later versions.
-// v42 SdlPadTouchRead: the pad's touchpad fingers (the nav map's drag and zoom, docs\MAP_PLAN.md). v43 SetFlightLock: keys and mouse fly nothing under the full-screen map.
-constexpr u32 kHostApiVersion = 43;
+// v42 SdlPadTouchRead: the pad's touchpad fingers (the nav map's drag and zoom, docs\MAP_PLAN.md). v43 SetFlightLock: keys and mouse fly nothing under the full-screen map. v44 SetWorldPause: a NeuroNet window stops the world.
+constexpr u32 kHostApiVersion = 44;
 // Logic DLL API version, checked by the host when loading the logic DLL (exact match): v2 adds OnRenderUnderHud, v3
 // adds OnUiButton and OnRawKey (the UI build), v4 OnKeyCmd (the game's key commands after it handled them: the maneuver
 // lock's answer and hud_prompts' actions for the keyboard, 0.2.1).
@@ -320,6 +320,8 @@ struct HostApi
     void (*SdlPadTouchRead)(SdlPadTouch* out);
     // v43: called each frame a full-screen window stands: the player's keys and mouse fly and fire nothing; ends by itself when the calls stop.
     void (*SetFlightLock)();
+    // v44: called each frame a NeuroNet window stops the world; ends by itself when the calls stop.
+    void (*SetWorldPause)();
 };
 
 struct ImplApi

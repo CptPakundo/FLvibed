@@ -23,6 +23,21 @@ static DWORD g_flightLock = 0;
 void SetFlightLock() { g_flightLock = GetTickCount(); }
 bool FlightLocked() { return g_flightLock && GetTickCount() - g_flightLock < 250; }
 
+// The NeuroNet pause (docs\NEURONET_PLAN.md): the game's pause count makes its window manager refuse every command, which closes the window, so the count stays and GamePaused
+// answers yes only to the two functions that stop the world: the space update (gates 0x19 and 0x163 in) and FrameUpdate (0xA and 0xB9 in: the clock, the in-process server).
+typedef bool(__cdecl* GamePausedFn)();
+static GamePausedFn g_origGamePaused = nullptr;
+static DWORD g_worldPause = 0;
+void SetWorldPause() { g_worldPause = GetTickCount(); }
+static bool __cdecl GamePausedHook()
+{
+    const bool paused = g_origGamePaused();
+    if (paused || !g_worldPause || GetTickCount() - g_worldPause >= 250)
+        return paused;
+    const uintptr_t from = reinterpret_cast<uintptr_t>(_ReturnAddress());
+    return from - exe::WorldUpdate.get() < 0x200 || from - exe::FrameUpdate.get() < 0xC0;
+}
+
 static bool __cdecl IsCmdHeldHook(int cmd)
 {
     if (cmd > 0 && cmd < fl::CMD_COUNT && g_held[cmd])
@@ -289,6 +304,8 @@ void Install()
 {
     // IsCmdHeld: mov ecx, ds:[0067C258] (6 bytes)
     g_origIsCmdHeld = static_cast<IsCmdHeldFn>(hk::Detour(exe::IsCmdHeld, IsCmdHeldHook, 6, "held pad commands"));
+    if (exe::WorldUpdate.ok() && exe::FrameUpdate.ok())
+        g_origGamePaused = static_cast<GamePausedFn>(hk::Detour(exe::GamePaused, GamePausedHook, 6, "NeuroNet pause"));
     // MouseSteer: sub esp,18h; push ebx; push esi (5 bytes). The override writes the mouse-flight globals.
     if (exe::MouseX.ok() && exe::MouseY.ok() && exe::MouseFlightToggle.ok() && exe::MouseFlightTimer.ok() &&
         exe::MouseFlightEngaged.ok())

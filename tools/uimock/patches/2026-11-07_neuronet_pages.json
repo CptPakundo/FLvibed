@@ -1,0 +1,9 @@
+{
+  "_about": "7 Nov 2026 (unreleased): the NeuroNet windows as full screens and the pause (docs NEURONET_PLAN.md). The nn_pause row.",
+  "add_rows": {
+    "hud/HUD": {"after": "window_text", "rows": [
+      {"key": "nn_pause", "label": "NeuroNet pauses the game", "kind": "toggle", "def": true,
+       "help": "In single player, in space, the world stops while a NeuroNet window (log, map, inventory, status, info) is open, and PAUSED shows. Off keeps the game going behind the windows. The autopilot flying keeps it going either way."}
+    ]}
+  }
+}

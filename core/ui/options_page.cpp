@@ -2007,7 +2007,7 @@ void Update(double dtd)
     if (!g_open)
     {
         g_pressQueue.clear();
-        if (hostcalls::g.RealMouseWheel && !navview::Movable()) // (the nav map's wheel is the map's)
+        if (hostcalls::g.RealMouseWheel && !navview::Movable() && !views::HudPageOn()) // (the nav map's wheel is the map's, a NeuroNet page's the page's)
             hostcalls::g.RealMouseWheel(); // drained while closed: no old notches on the next open
         g_sb.on = false, g_sbDrag = false, g_sbHeld = 0;
         return;

@@ -33,7 +33,9 @@ const TABS = [
       T('hud_wireframes', 'Wireframe views', true, { help: 'The game\'s wireframe pictures of your target and your ship in HUD 2\'s panels (else their icons).' }),
       S('hud_transition', 'HUD switch fade', 0, 400, 20, 120, { help: 'How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse.', tier: 'advanced', unit: ' ms' }),
       S('text_size', 'Text size', 80, 150, 10, 100, { help: 'Size of FLvibed\'s own UI text (prompts, panels, the status strip). The subtitles have their own size.', unit: '%' }),
-      T('window_text', 'Larger window text', true, { help: 'HUD 2: the text in the game\'s windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all.' }) ] },
+      T('window_text', 'Larger window text', true, { help: 'HUD 2: the text in the game\'s windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all.' }),
+      T('nn_pause', 'NeuroNet pauses the game', true, { help: 'In single player, in space, the world stops while a NeuroNet window (log, map, inventory, status, info) is open, and PAUSED shows. Off keeps the game going behind the windows. The autopilot flying keeps it going either way.' }),
+      T('base_pages', 'Dealers and job board as pages', true, { help: 'The commodity, equipment and ship dealers, the job board and the news are HUD 2 pages in the room, with the game\'s windows doing the work underneath. Off gives the game\'s own windows with HUD 2\'s skin.' }) ] },
     { label: 'CUES', rows: [
       T('shield_cue', 'Shield hit cue', true, { help: 'A screen-edge cue made of your shield\'s own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2\'s danger alerts.' }),
       S('shield_cue_intensity', 'Shield cue intensity', 0, 2, 0.05, 1.0, { help: 'Strength of the shield cue.', parent: 'shield_cue' }),

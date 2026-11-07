@@ -117,6 +117,8 @@ private:
 // docked (0 = none), `lowest(x0, x1, below)` = the lowest keep-out edge in that x range. `dropped` counts the pills
 // dropped. The order (modules\hud\docs\UI_HUD2_EXTENDED.md 13; fix-text 25 Oct 2026): the row; the row with the labels at the floor;
 // the column; two rows at the bottom (labels at the floor); the column at the floor; only then the last resorts.
+// Under the NeuroNet's tabs the prompts stay at the bottom: two rows sooner than a column (the owner, 7 Nov 2026: "fill out the bottom of the screen first, and add a second row at the edges").
+inline bool g_rowsFirst = false;
 template <class LeftFn, class LowFn>
 inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, const float* wF, float ph, float pitch,
                        float nnBottom, LeftFn left, LowFn lowest, LanePlaced& out, int& dropped, const float* wS = nullptr, float columnEdge = 0)
@@ -233,7 +235,7 @@ inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, co
         return true;
     };
     w = wN, out.atFloor = false;
-    if (column())
+    if (!g_rowsFirst && column())
         return;
     useFloor();
     // the fit rule's two rows at the bottom (labels at the floor): the band's row takes the bar's end (BACK and the pills

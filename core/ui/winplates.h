@@ -214,6 +214,18 @@ struct WindowPass
 void WindowPlates(const Win& w, WindowPass& out);
 // The docked frame: the room bar, its sub-row, the NeuroNet box. draw = false: the geometry only (the game does not draw them in a conversation).
 void DockedPlates(const Win& bar, const Win* nn, bool draw);
+// The docked frame this frame, pixels, as DockedPlates measured it from the game's buttons: the room bar's icons, the row of the room's actions under them, the NeuroNet box.
+// `live` only while the game draws the bar. HUD 2's words stand on this (nnstrip::DrawRoom) and write nothing to the game.
+struct DockedGeo
+{
+    bool live = false, sub = false, nn = false, glyphs = false; // glyphs: LB / RB step the rooms now
+    float bx0 = 0, bx1 = 0, by1 = 0, sx0 = 0, sx1 = 0, sy1 = 0, nx0 = 0, nx1 = 0, ny1 = 0;
+};
+extern DockedGeo g_docked;
+// Takes the skin under a scene's letterbox: the modal windows, and the offer a room's scene brings up (the game's ornate frame stood there, the owner's order 7 Nov 2026).
+bool SceneSkinned(int fam);
+// The room the bar's underline stands under: the pad's pick while the bumpers step, else the room itself (a hotspot's label).
+std::string CurrentRoomKey();
 
 // The under-HUD pass without the skin: `classic` = ui_style 0, where the game's name card is placed too. Also how the skin runs while it is off.
 void ClassicPass(void* device, bool enabled, bool pad, bool classic);

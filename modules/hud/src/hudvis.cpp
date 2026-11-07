@@ -357,6 +357,7 @@ static Root* RootByLabel(const char* label)
 }
 
 constexpr u32 kOwner = 0x38, kViewDraw = 0x38, kViewRect = 0x4B4; // owner = root - 0x38; vt slot; centre + halves
+static u16 g_shipPart = 0;
 constexpr u32 kHolder = 0x398, kViewMode = 0x648, kSubTarget = 0x534;
 struct View
 {
@@ -459,6 +460,8 @@ static void DrawShipView(View& v, uintptr_t owner, float cx, float cy, float kx,
         {
             WriteFloats(owner + kViewRect, want, 5);
             reinterpret_cast<void(__thiscall*)(uintptr_t, int, float)>(exe::ViewSetViewport.get())(owner, 1, -0.0125f);
+            // the part the game pulses in this view (0x4E6EC0: the equipment whose id is the short at +0x3B4, its own subsystem highlight)
+            *reinterpret_cast<u16*>(owner + 0x3B4) = g_shipPart;
             reinterpret_cast<void(__thiscall*)(uintptr_t)>(exe::ViewPrepare.get())(owner);
             const uintptr_t w = holder - 8;
             const u32 vt = *reinterpret_cast<const u32*>(w);
@@ -578,6 +581,20 @@ void SetViewRect(int which, float cx, float cy, float halfW, float halfH, bool s
     View& v = g_views[which];
     v.want = show && halfW > 0 && halfH > 0;
     v.px[0] = cx, v.px[1] = cy, v.px[2] = halfW, v.px[3] = halfH;
+}
+
+// The ship's own view at any size, right now, over what is drawn (a NeuroNet page: the pass under the UI lies beneath its ground). False: no panel to draw from.
+bool DrawShipAt(float cx, float cy, float halfW, float halfH, u16 part)
+{
+    g_shipPart = part;
+    View& v = g_views[0];
+    Root* r = RootByLabel(v.root);
+    float ucx, ucy, kx, ky;
+    if (!r || !r->ctl || !ShipViewSymbols() || !UiCam(ucx, ucy, kx, ky))
+        return false;
+    v.px[0] = cx, v.px[1] = cy, v.px[2] = halfW, v.px[3] = halfH;
+    DrawShipView(v, r->ctl - kOwner, ucx, ucy, kx, ky);
+    return true;
 }
 
 bool ViewShown(int which) { return which >= 0 && which <= 1 && g_views[which].shown; }

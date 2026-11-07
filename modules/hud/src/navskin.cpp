@@ -3,6 +3,7 @@
 
 #include "flexe.h"
 #include "game/deckmode.h"
+#include "game/fl.h"
 #include "game/hudsize.h"
 #include "game/navview.h"
 #include "game/nnwin.h"
@@ -318,6 +319,8 @@ static Rc g_mapRect;
 
 // A panel's plate eases to what it holds (kMoveSec's rule: a change of height travels): its height of the last frame is this frame's plate, and the content says the next.
 static float g_panelH[3] = {};
+static float g_cardAt[2] = {};
+static bool g_cardUp = false, g_clickWas = false; // the mouse's card: where it opened
 static unsigned long long g_panelTick = 0;
 
 static void EasePanel(float& h, float target)
@@ -388,7 +391,24 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
         if (g_panelH[1] <= 0)
             g_panelH[1] = 0.15f * H;
         const float w = lay.panel * H;
-        const Rc p = {right - w, cardTop, right, cardTop + g_panelH[1]};
+        Rc p = {right - w, cardTop, right, cardTop + g_panelH[1]};
+        // on the mouse the card opens where the click was, as the game's popup did: what it offers stands a short move away
+        if (!pad)
+        {
+            const float mx = static_cast<float>(fl::MouseX()), my = static_cast<float>(fl::MouseY());
+            const bool inside = mx >= g_cardAt[0] - 1 && mx <= g_cardAt[0] + w + 1 && my >= g_cardAt[1] - 1 && my <= g_cardAt[1] + g_panelH[1] + 1;
+            const bool clicked = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+            if (!g_cardUp || (clicked && !g_clickWas && !inside))
+            {
+                const float gapX = 0.03f * H;
+                g_cardAt[0] = mx + gapX + w <= right ? mx + gapX : std::max(side, mx - gapX - w);
+                g_cardAt[1] = my;
+            }
+            g_clickWas = clicked;
+            const float top = std::max(cardTop, std::min(g_cardAt[1] - 0.02f * H, deckmode::LaneTopH() * H - 0.08f * H - g_panelH[1]));
+            p = {g_cardAt[0], top, g_cardAt[0] + w, top + g_panelH[1]};
+        }
+        g_cardUp = true;
         Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.92f, kChrome, 0.69f);
         float y = navnew::DrawRight(p, H);
         y = y > p.y0 ? y : p.y0 + pad2 - gap;
@@ -403,11 +423,11 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
         g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
     }
     else
-        g_panelH[1] = 0;
+        g_panelH[1] = 0, g_cardUp = false;
     // the layers' card, under the selection's: it comes when asked for (the pad's D-pad right, the mouse's LAYERS) and goes with the asking. Its chips always answer the pad's walk
     {
         const bool open = pad ? g_focus >= 0 : g_layersOpen;
-        const float w = lay.panel * H, head = kSectionH * H, y0 = cardTop + (card || nSel ? g_panelH[1] + gap : 0);
+        const float w = lay.panel * H, head = kSectionH * H, y0 = cardTop + (pad && (card || nSel) ? g_panelH[1] + gap : 0);
         const Rc p = {right - w, y0, right, y0 + std::max(g_panelH[2], 0.1f * H)};
         if (open)
             Plate(p.x0, p.y0, p.x1, p.y1, 0.012f * H, kTL | kBR, 0.92f, kChrome, 0.69f);
@@ -469,6 +489,7 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
                               {glyphs::DL, glyphs::COUNT, L"DESTINATIONS", inSpace && free},
                               {glyphs::DR, glyphs::COUNT, L"LAYERS", free}};
         const float gh = 0.030f * H, limit = W * 0.408f; // (the lower line shares the lane with the prompts; the upper has the screen's width)
+        float upperEnd = side;
         auto line = [&](const Row* rows, int count, float y, float room)
         {
             float hx = side;
@@ -488,9 +509,12 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
                 Text(hx + 0.004f * H, y, r.word, TextFloor(), Argb(kInk, a));
                 hx += 0.004f * H + tw + 0.020f * H;
             }
+            upperEnd = std::max(upperEnd, hx);
         };
         const float laneMid = (deckmode::LaneTopH() + deckmode::LaneBottomH()) / 2 * H;
         line(upper, 5, laneMid - 0.042f * H, right);
+        // (the prompts' second row, when they need one, stands beside what this line leaves)
+        g_keep.push_back({side, deckmode::LaneTopH() * H - 0.06f * H, upperEnd, deckmode::LaneTopH() * H - 0.001f * H});
         line(lower, 3, laneMid, limit);
         // (this holds the lane's left, as the tabs did: the prompts stand at the right edge as its mirror, promptbar.cpp CentreLane)
         g_keep.push_back({side, deckmode::LaneTopH() * H, limit, deckmode::LaneBottomH() * H});
@@ -503,7 +527,8 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
         {
             const wchar_t *key, *word;
             bool lit;
-        } rows[4] = {{L"LEFT CLICK", system ? L"SELECT" : L"SELECT SYSTEM", true},
+        } rows[5] = {{L"LEFT CLICK", system ? L"SELECT" : L"SELECT SYSTEM", true},
+                     {L"RIGHT CLICK", L"WAYPOINT", system},
                      {L"WHEEL", L"ZOOM", system},
                      {L"HOLD AND DRAG", L"MOVE MAP", zoomed},
                      {L"HOVER", L"NAME", true}};
@@ -717,6 +742,8 @@ std::string Command(std::istream& in)
 {
     std::string what;
     in >> what;
+    if (what == "click") // the map's own click at the cursor (`mouse x y` first): a test's left button, no real mouse needed
+        return g_root && uiclick::MapClick(g_root) ? "navskin: clicked" : "navskin: no map";
     if (what == "native") // native on|off: the row `skin_native = navmap` will set; it takes effect at the map's next open
     {
         std::string v;

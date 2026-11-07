@@ -19,6 +19,8 @@ int OpenTab();
 bool Go(int cmd);
 bool Step(int dir);
 bool Close();
+// The tab's command with no window open: what a click on the box's button sends (HUD 2's words in a room).
+void Press(int cmd);
 // Once a frame while a window may be open: sends a held press when the slide is over.
 void Frame(float dt);
 // The command a held press will send, 0 none: the strip shows where the player is going.

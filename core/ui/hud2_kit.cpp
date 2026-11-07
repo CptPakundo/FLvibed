@@ -817,6 +817,14 @@ float GameCaption(float x, float y, const std::wstring& s, u32 argb, Align align
 // draws in full, clipped to its room [bx, bx + maxW], moved by the marquee's offset at this moment (its clock: since the
 // text first showed, MarqueeClockOf), the ellipsis at the clip's edge with its alpha. Recorded for the lint as ONE text
 // whose box is the room (never the full text: nothing is drawn outside it) - the lint sees the same box at every moment.
+void TextClipped(float x, float y, const std::wstring& s, float size, float clipX0, float clipX1, u32 argb)
+{
+    const float cx0 = g_clipX0, cx1 = g_clipX1;
+    g_clipX0 = clipX0, g_clipX1 = clipX1;
+    TextDraw(x, y, s, std::max(size, g_minPx), argb, Left, 0, false, false, false);
+    g_clipX0 = cx0, g_clipX1 = cx1;
+}
+
 static const marquee::Timing kMarquee{};
 float TextMarquee(float x, float y, const std::wstring& s, float size, float maxW, u32 argb, Align align, float track,
                   bool outline, float floor)
@@ -828,6 +836,8 @@ float TextMarquee(float x, float y, const std::wstring& s, float size, float max
     const float bx = align == Center ? x - maxW * 0.5f : align == Right ? x - maxW : x;
     static const std::wstring kEll(1, textfit::kEllipsis);
     const float textW = TextWidth(s, z, track), ellW = TextWidth(kEll, z, track);
+    if (marquee::JustOver(textW, maxW, ellW))
+        return Text(x, y, s, z, argb, align, track, outline);
     // the cut form's prefix (its whole characters before the ellipsis): its width without the ellipsis and the track
     // gap before it
     const float prefixW = r.text.size() > 1 ? std::max(0.0f, r.width - ellW - track * z) : 0.0f;

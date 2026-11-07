@@ -1,13 +1,17 @@
 // The strip of words: nnstrip.h. Its place: navmap_layout.h; its tabs: core\game\nntabs.h.
 #include "nnstrip.h"
 
+#include "game/baseinfo.h"
 #include "game/deckmode.h"
 #include "game/nntabs.h"
 #include "game/nnwin.h"
+#include "game/room.h"
 #include "game/textfit.h"
 #include "skinchip.h"
+#include "str.h"
 #include "ui/glyphs.h"
 #include "ui/hud2_kit.h"
+#include "ui/ui.h"
 #include "ui/views.h"
 #include "ui/winplates.h"
 
@@ -21,6 +25,8 @@ static bool g_pad = false, g_standing = false;
 static navlayout::Rect g_box;
 static int g_tab = -1;
 static float g_in = 0, g_dt = 0; // the slide in: 0 at the top left, 1 in place
+static bool g_roomUp = false;    // the room's words stand this frame: the click box is theirs too, and the pages' chips ride on it
+static float g_left = 0, g_foot = 0, g_leftNext = 0, g_footNext = 0, g_read = 1;
 constexpr float kSlideIn = 0.30f;
 
 // The scrim of the five windows (R8, 6.9): the full map's, set by the owner's frames.
@@ -38,7 +44,7 @@ static bool OwnFrameShown()
     return false;
 }
 
-static bool Wanted()
+bool Wanted()
 {
     return winplates::g_on && !winplates::g_scene && !winplates::g_modalOpen && !views::PanelOwnsHotspots() && nnwin::OpenTab() >= 0 && !OwnFrameShown();
 }
@@ -47,13 +53,15 @@ void Update(float dt, bool pad)
 {
     g_pad = pad;
     g_dt = dt;
+    g_read += dt;
     nnwin::Frame(dt);
-    skinchip::Frame(g_standing);
+    skinchip::Frame(g_standing || g_roomUp);
 }
 
 void BeginPass()
 {
-    g_standing = false;
+    g_standing = g_roomUp = false;
+    g_left = g_leftNext, g_foot = g_footNext, g_leftNext = g_footNext = 0;
     skinchip::HotBegin();
 }
 
@@ -118,6 +126,177 @@ bool Draw()
     return true;
 }
 
+// ---- the room's words
+struct RoomWord
+{
+    std::wstring word;
+    std::string label;
+    float x = 0; // the game's button's centre: the words stand in the buttons' order
+};
+static std::vector<RoomWord> g_rooms, g_acts;
+static std::vector<std::pair<std::string, std::wstring>> g_said; // a label's word, read once
+static std::string g_here;
+
+// A room's word is its hotspot's label ("ShipDealer": SHIP DEALER; the game's hint names the room's character more than the room), an action's the game's own hint, else the label
+static const std::wstring& Said(const room::Hotspot& h, bool action)
+{
+    for (const auto& s : g_said)
+        if (s.first == h.label)
+            return s.second;
+    std::wstring w = action ? baseinfo::HintText(h.ctl) : L"";
+    if (w.empty())
+    {
+        std::string s = h.label;
+        for (const char* cut : {"IDS_HOTSPOT_", "IDS_NN_"})
+            if (s.rfind(cut, 0) == 0)
+                s = s.substr(strlen(cut));
+        for (size_t i = 0; i < s.size(); ++i)
+        {
+            if (s[i] == '_' || (i && isupper(static_cast<unsigned char>(s[i])) && islower(static_cast<unsigned char>(s[i - 1]))))
+                w += L' ';
+            if (s[i] != '_')
+                w += static_cast<wchar_t>(static_cast<unsigned char>(s[i]));
+        }
+    }
+    g_said.push_back({h.label, str::Upper(w)});
+    return g_said.back().second;
+}
+
+// At most 10 Hz, from the game's list as it stands now (the buttons are made anew per room).
+static void ReadRoom()
+{
+    g_read = 0;
+    g_rooms.clear(), g_acts.clear();
+    g_here = winplates::CurrentRoomKey();
+    for (const room::Hotspot& h : room::Hotspots())
+    {
+        winplates::Box b;
+        if (!h.ctl || !winplates::FullyShown(h.ctl) || !winplates::RectOf(h.ctl, b) || !b.box)
+            continue;
+        const bool action = h.control.rfind("ButtonControl", 0) != 0;
+        RoomWord r;
+        r.word = Said(h, action), r.label = h.label, r.x = b.cx;
+        (action ? g_acts : g_rooms).push_back(r);
+    }
+    auto byX = [](const RoomWord& a, const RoomWord& b) { return a.x < b.x; };
+    std::sort(g_rooms.begin(), g_rooms.end(), byX);
+    std::sort(g_acts.begin(), g_acts.end(), byX);
+}
+
+static float RowWidth(const std::vector<RoomWord>& v, float size, float gap)
+{
+    float w = gap * (static_cast<float>(v.size()) - 1);
+    for (const RoomWord& r : v)
+        w += TextWidth(r.word, size);
+    return w;
+}
+
+static void Pick(const std::vector<RoomWord>& v, int i)
+{
+    std::string what;
+    if (i >= 0 && i < static_cast<int>(v.size()))
+        room::Goto(v[i].label, &what); // (busy: the game would have swallowed the click too)
+}
+static void RoomClick(int i) { Pick(g_rooms, i); }
+static void ActClick(int i) { Pick(g_acts, i); }
+static void TabClick(int i)
+{
+    if (!nnwin::Go(nntabs::kTabs[i].cmd))
+        nnwin::Press(nntabs::kTabs[i].cmd);
+}
+
+// A row of words over [x0, x1] x [y0, y1]: the air shared out, each word's click reaching half way to the next and the row's whole height.
+static void Row(const std::vector<RoomWord>& v, float x0, float x1, float y0, float y1, float size, skinchip::Action act, bool here)
+{
+    const float air = (x1 - x0 - RowWidth(v, size, 0)) / static_cast<float>(v.size());
+    const float cy = (std::max(y0, 0.0f) + y1) / 2, h = size * 1.7f;
+    const int hover = skinchip::Hovered();
+    float x = x0;
+    for (size_t i = 0; i < v.size(); ++i)
+    {
+        const float w = TextWidth(v[i].word, size);
+        const int slot = skinchip::Hot({x, std::max(y0, 0.0f), x + w + air, y1}, act, static_cast<int>(i));
+        skinchip::Tab({x + air / 2, cy - h / 2, x + air / 2 + w, cy + h / 2}, v[i].word, size, here && !_stricmp(v[i].label.c_str(), g_here.c_str()), slot >= 0 && slot == hover);
+        x += w + air;
+    }
+}
+
+void DrawRoom()
+{
+    using namespace navlayout;
+    const winplates::DockedGeo& d = winplates::g_docked;
+    if (!winplates::g_on || !d.live || winplates::g_modalOpen || winplates::g_scene)
+        return;
+    if (g_read >= 0.1f)
+        ReadRoom();
+    if (g_rooms.empty())
+        return;
+    const float W = winplates::g_W, H = winplates::g_H, pad = kStripPad * H, glyphH = 0.038f * H;
+    const float side = g_pad ? GlyphWidth(glyphs::LB, glyphH) + pad : 0;
+    std::vector<RoomWord> tabs;
+    for (int i = 0; d.nn && i < nntabs::Count(nnwin::Multiplayer()); ++i)
+    {
+        RoomWord r;
+        r.word = nntabs::kTabs[i].word;
+        tabs.push_back(r);
+    }
+    // the plates cover the game's icons and their old glass; the largest words that leave the strip its room and the NeuroNet's plate clear; else the old look stands
+    const float cx = (d.bx0 + d.bx1) / 2, nativeW = d.bx1 - d.bx0 + 2 * 0.029f * H, nnRight = d.nx1 + 0.020f * H, nnNative = d.nx1 - d.nx0 + 0.046f * H;
+    const float least = W * deckmode::SideW() + 0.30f * H, floorPx = textfit::g_floorH * H;
+    float size = kWordH * H, barW = 0, nnW = 0;
+    for (bool fits = false; !fits; size -= 0.001f * H)
+    {
+        const float s = std::max(size, floorPx);
+        for (float gap : {kWordGap * H, kWordGapMin * H})
+        {
+            barW = std::max(RowWidth(g_rooms, s, gap) + 2 * (pad + side), nativeW);
+            nnW = d.nn ? std::max(RowWidth(tabs, s, gap) + 2 * pad, nnNative) : 0;
+            if (cx - barW / 2 >= least && (!d.nn || cx + barW / 2 + 0.012f * H <= nnRight - nnW))
+            {
+                fits = true;
+                break;
+            }
+        }
+        if (fits)
+        {
+            size = s + 0.001f * H;
+            break;
+        }
+        if (size <= floorPx)
+            return;
+    }
+    size -= 0.001f * H;
+    const float x0 = cx - barW / 2, x1 = cx + barW / 2, y0 = -0.02f * H, y1 = std::max(d.by1 + 0.020f * H, d.nn ? d.ny1 + 0.023f * H : 0); // (one foot: the two rows of words on one line)
+    float foot = y1;
+    if (d.sub && !g_acts.empty())
+    {
+        const float scx = (d.sx0 + d.sx1) / 2, sw = std::max(RowWidth(g_acts, size, kWordGap * H) + 2 * pad, d.sx1 - d.sx0 + 2 * 0.039f * H);
+        const float sx0 = scx - sw / 2, sx1 = scx + sw / 2;
+        foot = std::max(d.sy1 + 0.012f * H, y1 + size * 1.7f);
+        Plate(sx0, y1 - 0.01f * H, sx1, foot, 0.008f * H, kBL | kBR, 1.0f, kChrome, 0.45f);
+        Row(g_acts, sx0 + pad, sx1 - pad, y1, foot, size, ActClick, false);
+        winplates::g_keep.push_back({sx0, y1, sx1, foot});
+    }
+    Plate(x0, y0, x1, y1, 0.008f * H, kBL | kBR, 1.0f, kChrome, 0.45f);
+    if (d.glyphs)
+    {
+        Glyph(glyphs::LB, x0 + pad + side / 2 - pad / 2, y1 / 2, glyphH, Argb(kInk, 1));
+        Glyph(glyphs::RB, x1 - pad - side / 2 + pad / 2, y1 / 2, glyphH, Argb(kInk, 1));
+    }
+    Row(g_rooms, x0 + pad + side, x1 - pad - side, y0, y1, size, RoomClick, true);
+    winplates::g_keep.push_back({x0, 0, x1, y1});
+    if (d.nn)
+    {
+        Plate(nnRight - nnW, y0, nnRight, y1, 0.008f * H, kBL, 1.0f, kChrome, 0.45f);
+        Row(tabs, nnRight - nnW + pad, nnRight - pad, y0, y1, size, TabClick, false);
+        winplates::g_keep.push_back({nnRight - nnW, 0, nnRight, y1});
+    }
+    g_leftNext = x0, g_footNext = foot, g_roomUp = true;
+}
+
+float RoomLeft() { return g_left; }
+float RoomFoot() { return g_foot; }
+
 bool Rect(float out[4])
 {
     if (!g_standing)
@@ -159,6 +338,36 @@ std::string Command(std::istream& in)
         in >> s;
         const bool ok = nnwin::SetSlideSeconds(s);
         return std::string(ok ? "nnstrip slide " : "nnstrip slide refused, reads ") + std::to_string(nnwin::SlideSeconds());
+    }
+    if (what == "rooms")
+    {
+        std::ostringstream o;
+        o << "rooms up=" << g_roomUp << " left=" << g_left << " foot=" << g_foot << " here=" << g_here << "\n";
+        for (const RoomWord& r : g_rooms)
+            o << "room " << r.label << " \"" << str::Narrow(r.word) << "\"\n";
+        for (const RoomWord& r : g_acts)
+            o << "act " << r.label << " \"" << str::Narrow(r.word) << "\"\n";
+        o << skinchip::Status();
+        return o.str();
+    }
+    if (what == "hit") // hit <x> <y>: the control the game's own hit test finds there (which of two stands on top)
+    {
+        float x = 0, y = 0;
+        in >> x >> y;
+        const u32 c = static_cast<u32>(ui::HitTest(x, y));
+        return std::string("hit ") + (c ? ui::ControlName(c) : "-");
+    }
+    if (what == "room" || what == "act" || what == "tab") // a click on that word
+    {
+        int i = -1;
+        in >> i;
+        if (what == "room")
+            RoomClick(i);
+        else if (what == "act")
+            ActClick(i);
+        else if (i >= 0 && i < nntabs::Count(nnwin::Multiplayer()))
+            TabClick(i);
+        return "nnstrip: clicked";
     }
     std::ostringstream o;
     float r[4] = {};

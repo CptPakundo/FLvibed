@@ -119,6 +119,8 @@ float TextFit(float x, float y, const std::wstring& s, float size, float maxW, u
 // room, held 1.5 s, a fade back to the start, repeated. Drawn clipped to its room (x .. x + maxW for Left; Center /
 // Right about x), recorded for the lint as one text with the room as its box. A text that fits is TextFit's, still.
 // Returns the drawn width (maxW for a marquee).
+// A line drawn at x, cut to [clipX0, clipX1]: a ticker's.
+void TextClipped(float x, float y, const std::wstring& s, float size, float clipX0, float clipX1, u32 argb);
 float TextMarquee(float x, float y, const std::wstring& s, float size, float maxW, u32 argb, Align align = Left,
                   float track = 0, bool outline = true, float floor = -1);
 float TextFloor();

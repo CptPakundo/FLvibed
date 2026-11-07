@@ -9,13 +9,13 @@
 A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller support, subtitles for every line of dialogue, a clear modern HUD and tidier movies. One installer, nothing else to set up.
 
 <p>
-<a href="../../releases/download/v0.4.0/FLvibed-0.4.0-Setup.exe"><img alt="Download FLvibed 0.4.0 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.4.0-5865f2?style=for-the-badge"></a>
+<a href="../../releases/download/v0.4.5/FLvibed-0.4.5-Setup.exe"><img alt="Download FLvibed 0.4.5 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.4.5-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.4.0/FLvibed-0.4.0.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.4.0">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.4.5/FLvibed-0.4.5.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.4.5">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.4.0" src="https://img.shields.io/badge/version-0.4.0-5865f2?style=for-the-badge">
+<img alt="Version 0.4.5" src="https://img.shields.io/badge/version-0.4.5-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -28,19 +28,18 @@ A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller sup
 
 > Made with AI: written by Claude, by Anthropic, under the author's direction and tested in game. Free, with no warranty.
 
-## 🆕 New in 0.4.0
+## 🆕 New in 0.4.5
 
-**A new look for the whole game, and a simpler way to set it up.** The full list: [CHANGELOG.md](CHANGELOG.md).
+**HUD 2 now covers the whole game.** The full list: [CHANGELOG.md](CHANGELOG.md).
 
-- **A new star map:** it fills the screen and zooms smoothly toward the cursor, and every button has a job. Pick a place, plot a route, chain waypoints and fly it, on a pad or with the mouse. It lists only what you have found.
-- **One clear look everywhere:** dialogs, main menu, loading screen and every shop now match the flight HUD. Prefer the original look? It is one setting away.
-- **Shops that fit:** panels size themselves to what they show, text stays inside its box, and a refused purchase tells you why in plain view.
-- **See what you are fighting:** a small card when you pick a target, then its name, distance and health on the ship itself, and a cue when your guns are in range.
-- **A calmer screen:** the flight HUD covers less, shows your boost and cruise on the reticle, and comes in Small, Normal and Large for your screen.
-- **Buy a ship on the controller:** the whole purchase works without a mouse.
-- **Simple options:** five tabs with the settings most players need, and a short welcome the first time you start. Everything else waits under Show all settings.
-- **More controllers:** PlayStation and Switch pads work directly, and pads can now rumble with what happens on screen.
-- **Linux:** a script in the zip installs FLvibed into a Wine or Proton prefix. New, and waiting for its first report from a real Linux machine.
+- **Every shop rebuilt:** the commodity, equipment and ship dealers are full pages with your ship on one side, the dealer's whole stock on the other, and the selected item in the middle with its image, numbers and description.
+- **Compare before you buy:** each item shows what it would replace, better numbers in green and worse in red, and whether your ship can mount it at all. Empty hardpoints are listed.
+- **The NeuroNet as full screens:** log, inventory, status and information each fill the screen, and in single player the world pauses while one is open in space.
+- **More to read:** the information screen tells you who flies in a system, how they feel about you, where the gates you found lead and what each base offers.
+- **Job board and news in the room:** clean panels with the job's type on every row and a market ticker across the bottom, the room still in view.
+- **Rooms in plain words:** room and NeuroNet buttons are word tabs, and repair lists each damaged item with its bar and price.
+- **Item images everywhere:** the game's own icons in every list, and a selected item pulses on your ship in the inventory.
+- **Keyboard and mouse:** a right click on the star map sets a waypoint, and pages take clicks and the wheel.
 
 ## 🌟 See everything in the living spec
 
@@ -175,7 +174,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | 🧩 **Compatibility** | HD Edition 0.7.1, the original 1.1, FLUF beside it | Newer HD Edition releases, more mods |
 
 > [!IMPORTANT]
-> 🧪 **0.4.0 is an early preview - expect rough edges and change.**
+> 🧪 **0.4.5 is an early preview - expect rough edges and change.**
 > - **Some features are incomplete:** the Advanced Autopilot is work in progress, a few screens and controls are not
 >   built yet, and some are proven only by the test harness so far.
 > - **Design choices are still subject to change:** button layouts, HUD 2's look, setting names
@@ -209,7 +208,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 **2. Install FLvibed** - one click
 
-1. ⬇️ Download **[FLvibed-0.4.0-Setup.exe](../../releases/download/v0.4.0/FLvibed-0.4.0-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.4.5-Setup.exe](../../releases/download/v0.4.5/FLvibed-0.4.5-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders - else you pick the folder):
    choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -220,7 +219,7 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.4.0.zip](../../releases/download/v0.4.0/FLvibed-0.4.0.zip)** and unpack it.
+1. Download **[FLvibed-0.4.5.zip](../../releases/download/v0.4.5/FLvibed-0.4.5.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
    `FLvibed.dll`, `FLSubtitles\` and `FLvibed\` land in `EXE\`. An update this way keeps your settings.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins
@@ -238,7 +237,7 @@ To remove it by hand: take the `FLvibed.dll` line out of `EXE\dacom.ini`, then d
 The game runs under Wine or Proton, so FLvibed goes into the game's folder inside your prefix. This route is new and has
 not been tried on a real Linux machine yet: reports are welcome.
 
-1. Download **[FLvibed-0.4.0.zip](../../releases/download/v0.4.0/FLvibed-0.4.0.zip)** and unpack it.
+1. Download **[FLvibed-0.4.5.zip](../../releases/download/v0.4.5/FLvibed-0.4.5.zip)** and unpack it.
 2. In the unpacked folder: `./flvibed-linux.sh install "<game folder>"`, the folder that holds `EXE/Freelancer.exe`.
 3. For a USB DualSense's full haptics: `./flvibed-linux.sh haptics` sets its speaker to Surround 4.0 with `pactl`. Run it
    again after a replug.
@@ -362,15 +361,14 @@ What FLvibed does not do yet, or does only in part. Anything here - and the desi
   not built, and how it shares control with a player on the guns is not designed yet ([details](#-the-advanced-autopilot)).
 - 🗺️ **On the star map:** the left stick moves the cursor (click: find your ship), the right stick the map (click: Sirius),
   the triggers zoom. A selects, A again plots the route, X adds a waypoint, hold X removes one, Y flies the route, the
-  D-pad walks your destinations (left: the list, right: the layers), B closes.
+  D-pad walks your destinations (left: the list, right: the layers), B closes. With the mouse a click selects and opens the card beside it, and a right click sets a waypoint.
 - 🎮 **Real pads:** flight and combat are verified on a real Xbox Elite pad; the star map, menus, bases and dealers on a
   DualSense Edge; the on-screen keyboard so far on a virtual pad only.
 - 🎯 **HUD 2 and the game's target label:** when a target sits behind HUD 2's target card on screen, the game's own
   name and health label for it can draw over the card.
 - 🖱️ **Pad-only pieces:** the target picker and the action wheel have no mouse version yet (keyboard and mouse target
   through the game's contact list).
-- 🧱 **Not built yet:** a bindings editor (the three layouts apply; CUSTOM = FREELANCER), the star map's full-screen
-  treatment for the other NeuroNet windows, right-click waypoints with the mouse and the equipment compare line.
+- 🧱 **Not built yet:** a bindings editor (the three layouts apply; CUSTOM = FREELANCER) and the equipment compare line.
 - 🖥️ **Exclusive fullscreen** is not verified, nor the movie subtitle overlay in it. OBS Game Capture cannot see the
   movies or their subtitles (use Window or Display Capture).
 - 💬 **Subtitle text:** the dialogue lines are reviewed line by line; the room scenes recorded as one track (the 19

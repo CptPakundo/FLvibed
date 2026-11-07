@@ -473,6 +473,8 @@
        whose status slot is the empty stub 0x401E90. Signatures from the entry, identical in HDE 0.7.1 and vanilla 1.1. */ \
     X(ViewSetViewport, Code, 0x4E70E0, 0, 0, \
       "81 EC A0 00 00 00 53 55 8B E9 8D 85 B4 04 00 00 8B C8 8B 11 89 54 24 0C D9 44 24 0C D8 A5 C0 04") /* void thiscall(owner, bool, float shift): the view's viewport from the owner's rectangle (+0x4B4 centre, +0x4C0 / +0x4C4 half extents) on its camera +0x3B8; shift -0.0125 (x the screen width) */ \
+    X(UiBlinkPhase, Code, 0x59D570, 0, 0, \
+      "D9 05 E8 DC 67 00 D8 35 C4 5D 5E 00 C3") /* float(): the UI's blink clock over its period (operands: the clock's address at +2, the period's at +8), what 0x561F20 pulses a selected part by; the clock stands while the world is paused */ \
     X(ViewPrepare, Code, 0x4E7070, 0, 0, \
       "56 8B F1 8D 8E A0 03 00 00 E8 ?? ?? ?? ?? 8B CE E8 ?? ?? ?? ?? 8B CE 5E E9") /* void thiscall(owner): readies the view's scene (+0x3A0) and colours the watched object's parts by their health (0x4E6CB0) */ \
     X(ViewDrawObject, Code, 0x406510, 0, 0, \
@@ -488,6 +490,13 @@
        SetupScreen; the window's style and size through WindowStyle. Signatures identical in HDE 0.7.1 and vanilla 1.1
        (the windowed style immediate differs - HDE's installer patches it - so it is a wildcard read as data). */ \
     X(VtTextEdit, Data, 0x5E501C, 0x58C271, 1, "06 ?? ?? ?? ?? C7 46 7C ?? ?? ?? ?? 89 9E A0 03 00 00 88 9E") /* the text field, a TextControl with a cursor (QuantityEdit): the same text object at +0x334 */ \
+    /* The NeuroNet pages (modules\hud\src\nnpage.*, docs\NEURONET_PLAN.md), read in Ghidra 7 Nov 2026: NN_Inventory thiscall(row counted from +0x3C4, 1) selects a row, thiscall(filter 0..4, 1) sets the filter, thiscall(EquipDesc*, mounted) toggles the mount, fastcall() answers the selected EquipDesc (+0x3A4 its row, +0x4F4 its cache); NN_PlayerInfo thiscall(index into +0x410) shows a faction's card */ \
+    X(WorldUpdate, Code, 0x54B000, 0, 0, "51 56 8B F1 8B 86 A0 0B 00 00 85 C0 75 0A B8 06 00 00 00 5E") /* the space world's update: its GamePaused gates round the objects, PhySys, collisions (read in Ghidra 7 Nov 2026; input.cpp's NeuroNet pause) */ \
+    X(InvSelectRow, Code, 0x47E0E0, 0, 0, "53 56 57 33 DB 53 8B F9 E8 ?? ?? ?? ?? 8B 74 24 10 83 FE FF 75 1C 8B 8F") \
+    X(InvSetFilter, Code, 0x47F240, 0, 0, "8B 44 24 04 53 56 8B F1 8B 8E 60 03 00 00 33 DB 3B CB 89 86") \
+    X(InvMount, Code, 0x47F720, 0, 6, "C4 08 C2 04 00 ?? 83 EC 08 53 55 56 8B 74 24 18 85 F6 57 8B E9") \
+    X(InvSelected, Code, 0x47E790, 0, 0, "83 EC 10 53 55 56 8B F1 83 BE A4 03 00 00 FF 57 75 14 5F C7") \
+    X(StatusFactionCard, Code, 0x4A8E80, 0, 0, "64 A1 00 00 00 00 6A FF 68 ?? ?? ?? ?? 50 64 89 25 00 00 00 00 83 EC 18 53 55 56 8B F1") \
     X(RichSetSize, Code, 0x579CC0, 0, 0, "8B 44 24 04 81 EC 90 00 00 00 53 8B D9 8B 8C 24 9C 00 00 00") /* RichTextWin: void thiscall(float width, float height), the game's own resize: the box re-wraps at once (verified in game 5 Nov 2026, FREELANCER_RE "The game's text size is its font's") */ \
     X(RichLayout, Code, 0x57B320, 0, 0, "33 C0 8A 81 94 04 00 00 8D 91 80 03 00 00 50 52 8B 91 58 03") /* RichTextWin vt[0xB4]: u32 thiscall(): LayoutRichText at the box's width, the new height at +0x380; the picture changes only through the dirty bytes +0x400 / +0x401 (verified in game 5 Nov 2026) */ \
     X(FontFlush, Code, 0x4180C0, 0, 14, "0D 00 00 00 00 83 C4 2C C3 ?? ?? ?? ?? ?? 51 FF 05 ?? ?? ?? ?? 75 0A C7 05") /* void cdecl: bumps the fonts' epoch and flushes their caches, SetupScreen's call on a resolution change; every text re-rasterises (verified in game 4 Nov 2026, FREELANCER_RE "The game's text size is its font's") */ \

@@ -17,6 +17,8 @@ void Test_utf();
 void Test_textfit();
 void Test_roletext();
 void Test_skin_rules();
+void Test_nnpage();
+void Test_equip_rules();
 void Test_marquee();
 void Test_glyphset();
 void Test_promptlabel();
@@ -234,6 +236,8 @@ int main(int argc, char** argv)
         {"textfit", Test_textfit},
         {"roletext", Test_roletext},
         {"skin_rules", Test_skin_rules},
+        {"nnpage", Test_nnpage},
+        {"equip_rules", Test_equip_rules},
         {"marquee", Test_marquee},
         {"glyphset", Test_glyphset},
         {"promptlabel", Test_promptlabel},

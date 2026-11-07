@@ -79,6 +79,8 @@ void SetViewRect(int which, float cx, float cy, float halfW, float halfH, bool s
 // The view was drawn by the last Apply (its draw known, the panel hidden, no fault): HUD 2 opens its plate's window
 // for it then, else draws the flat icon.
 bool ViewShown(int which);
+// `part`: an equipment id (EquipDesc +2) the view pulses, the game's own subsystem highlight; 0 none.
+bool DrawShipAt(float cx, float cy, float halfW, float halfH, u16 part = 0);
 // The space id of the object the target panel's view is built for (0 none): a view for another object is stale.
 u32 TargetViewObject();
 // The target panel shown again (its state bits as the game wants them) until the next Apply, which hides it before the

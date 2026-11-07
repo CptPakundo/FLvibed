@@ -8,6 +8,8 @@
 #include "hud2.h"
 #include "navnew.h"
 #include "navskin.h"
+#include "basepage.h"
+#include "nnpage.h"
 #include "nnstrip.h"
 #include "reticlecue.h"
 #include "shieldcue.h"
@@ -74,6 +76,8 @@ static void Skin(float dt, bool padOwns, bool enabled, bool docked)
     uiskin::Update(dt, sc);
     skinmenu::Frame(dt, !padOwns);
     nnstrip::Update(dt, padOwns);
+    nnpage::Update(dt, padOwns);
+    basepage::Update(dt, padOwns);
     uistrip::Update(dt, enabled && uiStyle == 1 && docked);
     windowtext::Frame(h.windowText && enabled && uiStyle == 1);
 }
@@ -134,7 +138,8 @@ static void Attach()
     views::hud = {G(hud2::TargetCardAnchor), G(hud2::BottomPanelsTop), G(uistrip::StripRight), G(uistrip::StripBottom), G(hud2::Active), G(hud2::RingRadius),
                   G(hud2::CycleListFilter), G(hud2::LockNotice), G(hud2::NoteAction), G(Hotspot), G(uistrip::Active), G(StripDrawn), G(uiskin::DrawOver), G(Cues), G(GameText), G(hud2::Update),
                   G(Cursor), G(Skin), G(UnderBegin), G(UnderEnd), G(Overlay), G(Strip), G(hud2::OnDeviceLost), G(Top), G(nnstrip::Rect),
-                  G(navskin::Chips), G(navskin::ChipPress), G(navskin::ChipStep), G(navskin::ChipFocus), G(navskin::ListOpen)};
+                  G(navskin::Chips), G(navskin::ChipPress), G(navskin::ChipStep), G(navskin::ChipFocus), G(navskin::ListOpen),
+                  G(nnpage::On), G(nnpage::Prompts), G(nnpage::Pad)};
     if (hostcalls::g.SetLoadDraw)
         hostcalls::g.SetLoadDraw(G(skinload::Draw));
 #undef G
@@ -158,6 +163,8 @@ static void Shutdown()
     uiskin::Shutdown(); // the windows' art and colours back
     uistrip::Shutdown();
     nnstrip::Shutdown();
+    nnpage::Shutdown();
+    basepage::Shutdown();
     navnew::Shutdown();
 }
 
@@ -178,6 +185,8 @@ static void Fault(int phase)
     else
     {
         nnstrip::Shutdown();
+        nnpage::Shutdown();
+    basepage::Shutdown();
         navnew::Shutdown();
         uiskin::GiveBack();
         hud2::OnDeviceLost();
@@ -230,6 +239,10 @@ static std::string Verb(const std::string& op, std::istream& in)
         return uistrip::Command(in);
     if (op == "nnstrip") // the strip of words on the NeuroNet windows: nnstrip [state] | go <tab> | step <dir> | close | slide <seconds>
         return nnstrip::Command(in);
+    if (op == "nnpage") // the NeuroNet's full-screen pages: nnpage [state] | press <button>
+        return nnpage::Command(in);
+    if (op == "basepage") // the docked windows' pages: basepage [state] | press <button> | probe
+        return basepage::Command(in);
     if (op == "navskin") // the map's frame and words: navskin [state] | native on|off | press <id>
         return navskin::Command(in);
     if (op == "navnew") // the new map, off until its checks pass: navnew [state] | on | off
@@ -261,7 +274,7 @@ static std::string Verb(const std::string& op, std::istream& in)
 
 static bool Command(const std::string& op, std::istream& in, std::string& reply)
 {
-    if (op != "hud2" && op != "uiskin" && op != "uistrip" && op != "nnstrip" && op != "navskin" && op != "navnew" && op != "gametext" && op != "cue")
+    if (op != "hud2" && op != "uiskin" && op != "uistrip" && op != "nnstrip" && op != "nnpage" && op != "basepage" && op != "navskin" && op != "navnew" && op != "gametext" && op != "cue")
         return false;
     reply = Verb(op, in);
     return true;

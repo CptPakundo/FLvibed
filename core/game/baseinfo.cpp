@@ -219,6 +219,24 @@ int FeelingFor(const char* nick)
     }
 }
 
+static bool StandingOf(const char* nick, float& out)
+{
+    const Fns& f = F();
+    if (!f.repGroup || !f.feeling || !f.playerRep)
+        return false;
+    __try
+    {
+        u32 group = 0;
+        int rep = 0;
+        const u32 c = kClient;
+        return f.playerRep(c, rep) == 0 && rep && f.repGroup(group, nick) == 0 && group && f.feeling(rep, group, out) == 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
 int Attitude(const std::wstring& faction)
 {
     LoadFactions();
@@ -444,6 +462,35 @@ std::string CompareSources() { return CompareSourcesImpl(); }
 
 // ================= the context strip
 bool Docked() { return exe::PlayerBase.ok() && Mem<u32>(exe::PlayerBase) != 0; }
+u32 ShipArch() { return ClientShipArch(); }
+float PriceHere(u32 good) { return Docked() ? MarketPrice(Mem<u32>(exe::PlayerBase), good) : -1; }
+static const u8* GoodOf(u32 arch)
+{
+    static auto find = [] { HMODULE c = GetModuleHandleA("common.dll"); return c ? reinterpret_cast<const void*(__cdecl*)(u32)>(GetProcAddress(c, "?find_by_archetype@GoodList@@YAPBUGoodInfo@@I@Z")) : nullptr; }();
+    return find ? static_cast<const u8*>(find(arch)) : nullptr;
+}
+Deal DealFor(u32 arch, bool playerSide)
+{
+    const u8* g = GoodOf(arch);
+    const float price = PriceHere(arch);
+    if (!g || price < 0)
+        return DealUnknown;
+    const uintptr_t a = reinterpret_cast<uintptr_t>(g);
+    if (playerSide)
+        return price >= F32(a + 0x64) ? DealGood : price <= F32(a + 0x68) ? DealLow : DealFair;
+    return price <= F32(a + 0x5C) ? DealGood : price < F32(a + 0x60) ? DealFair : DealHigh;
+}
+float VolumeOf(u32 arch)
+{
+    const uintptr_t e = Arch(F().getEquip, arch);
+    return e ? F32(e + 0x5C) : -1;
+}
+float BasePrice(u32 arch)
+{
+    const u8* g = GoodOf(arch);
+    return g ? F32(reinterpret_cast<uintptr_t>(g) + 0x58) : -1;
+}
+bool Standing(const char* group, float& out) { return StandingOf(group, out); }
 
 std::wstring BaseName()
 {
@@ -763,6 +810,7 @@ static void WalkEquipment(u32 head, std::vector<Item>& out)
         u8 m = 0;
         Read(node + 0x14, &m, 1);
         it.mounted = m != 0;
+        Read(node + 0x18, &it.health, 4);
         char hp[33] = {};
         if (const u32 p = U32(node + 0x10))
             if (Read(p, hp, 32))

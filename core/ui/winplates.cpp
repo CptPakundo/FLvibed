@@ -430,7 +430,7 @@ bool Valid(u32 ctl, u32 vt)
 void Resolve(Win& w)
 {
     const FamilyDef& f = kFamilies[w.fam];
-    if (g_scene && !f.modal && g_on)
+    if (g_scene && !SceneSkinned(w.fam) && g_on)
         return; // native under the letterbox (written again by the rescan after it)
     w.art.clear();
     w.tabs.clear();
@@ -1070,11 +1070,17 @@ static std::string g_pickedRoom; // the pad's ring pick while the bumpers step (
 
 void PickRoom(const std::string& label) { g_pickedRoom = label; }
 
+DockedGeo g_docked;
+
+bool SceneSkinned(int fam) { return kFamilies[fam].modal || fam == kFamOffer; }
+
+std::string CurrentRoomKey() { return g_pickedRoom.empty() ? baseinfo::RoomKey() : g_pickedRoom; }
+
 static u32 CurrentRoomButton()
 {
     static std::string key;
     static u32 gen = 0xFFFFFFFFu, ctl = 0;
-    const std::string now = g_pickedRoom.empty() ? baseinfo::RoomKey() : g_pickedRoom;
+    const std::string now = CurrentRoomKey();
     if (now != key || gen != g_gen)
     {
         key = now, gen = g_gen, ctl = 0;
@@ -1107,6 +1113,7 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
 {
     float bx0 = 1e9f, by0 = 1e9f, bx1 = -1e9f, by1 = -1e9f, sx0 = 1e9f, sy0 = 1e9f, sx1 = -1e9f, sy1 = -1e9f;
     float litX = -1, anyRoom = 0;
+    g_docked = DockedGeo();
     Box cur;
     const u32 curButton = CurrentRoomButton();
     const bool haveCur = curButton && FullyShown(curButton) && RectOf(curButton, cur) && cur.box;
@@ -1160,6 +1167,9 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
                 bumpers = true;
         if (g_padDevice && draw && !bumpers && g_paint)
             g_ops->Bumpers(x0, x1, (y0 + y1) / 2);
+        g_docked.live = draw, g_docked.glyphs = g_padDevice && !bumpers;
+        g_docked.bx0 = bx0, g_docked.bx1 = bx1, g_docked.by1 = by1;
+        g_docked.sub = anyRoom > 0, g_docked.sx0 = sx0, g_docked.sx1 = sx1, g_docked.sy1 = sy1;
     }
     if (!nn)
         return;
@@ -1187,6 +1197,7 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
         if (draw)
             Keep(nx0 - Hf(0.026f), -Hf(0.02f), nx1 + Hf(0.020f), ny1 + Hf(0.023f));
         g_nnRight = nx1 + Hf(0.020f), g_nnBottom = ny1 + Hf(0.023f);
+        g_docked.nn = bx1 > bx0, g_docked.nx0 = nx0, g_docked.nx1 = nx1, g_docked.ny1 = ny1;
     }
 }
 
@@ -1197,6 +1208,7 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
 void Geometry(void* device)
 {
     g_lowestModalY1 = 0, g_modalOpen = false, g_dockedFrame = false, g_dockedLane = false, g_nnRight = 0, g_nnBottom = 0;
+    g_docked = DockedGeo();
     g_keep.clear();
     g_paint = false;
     if (g_wins.empty() || !device)
@@ -1229,7 +1241,7 @@ void Geometry(void* device)
         DockedPlates(*bar, nn && Shown(nn->root) ? nn : nullptr, !conversation);
     }
     for (const Win& w : g_wins)
-        if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || kFamilies[w.fam].modal) &&
+        if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || SceneSkinned(w.fam)) &&
             !(w.fam == kFamMainMenu && g_modalOpen)) // (the main menu's plates never over a modal screen's scrim)
         {
             WindowPass pass;

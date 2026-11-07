@@ -327,6 +327,7 @@ static void LayoutHold(float W, float H, const float* bN, const float* bF, const
             confirm = i;
             break;
         }
+    promptfit::g_rowsFirst = views::HudNNStrip();
     auto left = [&](float y0, float y1, float right) { return Left(W, H, y0, y1, right); };
     auto lowest = [](float x0, float x1, float below) { return winplates::LowestKeepOut(x0, x1, below); };
     // the key: the lane without any word
