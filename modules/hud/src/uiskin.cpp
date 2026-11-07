@@ -38,6 +38,8 @@
 #include "ui/ui.h"
 #include "ui/uiopt.h"
 #include "ui/winplates.h"
+#include "nnpage.h"
+#include "basepage.h"
 #include "uistrip.h"
 #include "windowtext.h"
 #include "game/deckmode.h"
@@ -194,7 +196,7 @@ void Unlight(Win& w, u32 cap)
 void HideOwnAll(Win& w)
 {
     const FamilyDef& f = kFamilies[w.fam];
-    if (!g_on || (g_scene && !f.modal))
+    if (!g_on || (g_scene && !SceneSkinned(w.fam)))
         return;
     Box rb;
     // (the mission box: its art goes only while its plate can stand in - the root's own rect known; else native)
@@ -842,6 +844,11 @@ bool DrawWindow(const Win& w, u32 hov) // true: it drew the focus
 {
     if (Native(w))
         return false;
+    if (nnpage::On() && (w.fam == kFamInventory || w.fam == kFamLog || w.fam == kFamPlayerInfo || w.fam == kFamHelp)) // (the page is the window: no plate, no focus)
+        return false;
+    static const int kFamNews = winplates::FamilyIndex("news");
+    if (basepage::Hides() && (w.fam == kFamInventory || w.fam == kFamDealer || w.fam == kFamShipDealer || w.fam == kFamJobBoard || w.fam == kFamNews))
+        return false;
     if (skindialog::IsDialog(w.fam)) // (their own pass; a dialog that stays the game's keeps today's mark on the confirm alone)
     {
         if (skindialog::Skinned(w.root) || w.fam != kFamConfirm)
@@ -1000,7 +1007,9 @@ void Draw(void* device)
     neural |= nnstrip::ScrimAlpha() > 0; // (the strip knows the map)
     g_frameScrim = skinrules::EaseStep(g_frameScrim, neural && !g_scene, g_dt, hudrows::g.skinMotion);
     if (!g_modalOpen)
-        skinkit::Scrim(navnew::Grown() ? skinrules::kScrimFullMap : skinrules::kScrimMap, g_frameScrim); // (one scrim from MAP to INVENTORY: R8; the map's number, the owner's)
+        skinkit::Scrim(nnpage::On() ? 1.0f : navnew::Grown() || nnstrip::ScrimAlpha() > 0 ? skinrules::kScrimFullMap : skinrules::kScrimMap, g_frameScrim); // (one scrim from MAP to INVENTORY: R8; the map's number, the owner's)
+    if (basepage::Hides())
+        basepage::DrawUnder();
     // the docked frame while the game draws it (not under a modal menu: the NavBar is not drawn while paused)
     // (not in a NeuroNet window's close: the game hides the bar's and the box's art that frame while their controls
     // still read shown - the empty plates stood one frame, 26 Oct 2026, research\experience\runs\dealer_close_2026-10-26)
@@ -1017,14 +1026,14 @@ void Draw(void* device)
     g_focusCtl = 0;
     bool focused = false, window = false;
     for (Win& w : g_wins)
-        if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || kFamilies[w.fam].modal) &&
+        if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || SceneSkinned(w.fam)) &&
             !(w.fam == kFamMainMenu && g_modalOpen)) // (the main menu's plates never over a modal screen's scrim)
         {
             g_platesPainted = 0;
             const int drew = DrawGuarded(w, hov);
             if (drew < 0)
                 Fall(w, "a fault in its pass");
-            else if (!Native(w) && PlateMissing(w))
+            else if (!Native(w) && !nnpage::On() && PlateMissing(w))
                 Fall(w, "no plate could stand");
             focused |= drew > 0, window = true;
         }
@@ -1105,7 +1114,7 @@ void RenderUnder(void* device)
         {
             ++g_scenes;
             for (Win& w : g_wins)
-                if (!kFamilies[w.fam].modal && Valid(w.root, w.vt))
+                if (!SceneSkinned(w.fam) && Valid(w.root, w.vt))
                     Restore(w);
         }
         g_genSeen = 0xFFFFFFFFu; // (out of the scene: the rescan writes the windows again)
@@ -1163,8 +1172,11 @@ void DrawMap(void* device)
     SetAlpha(1), SetOffset(0, 0);
     skinkit::SetScreen(static_cast<float>(sw), static_cast<float>(sh));
     navskin::DrawOver();
-    nnstrip::Draw(); // (over the game's UI: the map's viewport runs under it)
+    nnpage::Draw();
+    if (!nnstrip::Draw()) // (over the game's UI: the map's viewport runs under it)
+        nnstrip::DrawRoom();
     End();
+    nnpage::DrawAfter();
 }
 
 void DrawModal(void* device)

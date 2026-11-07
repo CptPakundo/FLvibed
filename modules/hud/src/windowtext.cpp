@@ -4,6 +4,7 @@
 // whole game, so the window's size goes in while the window is open and comes out when it closes; open text is laid out again by the
 // game once its two dirty bytes are set. Fails closed: a font or class not as expected leaves that text as the game drew it.
 #include "windowtext.h"
+#include "basepage.h"
 
 #include "flexe.h"
 #include "game/deckmode.h"
@@ -92,6 +93,7 @@ struct Spec
     float ruleTop = 0;       // the box starts this far under the window's top, fractions of H: under the title's rule, which ran through its first line
     float footOff = 0;       // ... and ends this far off the window's foot, in whole lines
     float grow = 0;          // the window stands this much taller than the game's, fractions of H: there is the screen for it (the owner, 6 Nov 2026)
+    float shift = 0;         // the window stands this far right of the screen's middle, fractions of H: a NeuroNet page has its list or card at the left (nnpage.*)
 };
 
 const TextRole kDealerTexts[] = {
@@ -160,15 +162,15 @@ const Spec kSpecs[] = {
     {"NN_News", nullptr, kNewsTexts, 2, nullptr, 0, {"NewsStoryText", nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
     {"NN_Inventory", nullptr, kInventoryTexts, 1, kInventoryRows, 1, {"InfoCard_Info", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.40f, nullptr, 0, 2},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.62f, nullptr, 0, 2, 0, 0, 0, 0.40f, 0.31f},
     {"NeuroNetStoryStar", nullptr, nullptr, 0, nullptr, 0, {"StoryStarHistoryText", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.089f, kTextWindowGrow},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.089f, 0.36f, 0.26f},
     {"NN_Help", nullptr, nullptr, 0, nullptr, 0, {"PlayerInfoText", nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.015f, kTextWindowGrow},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1, 0, kTextWindowTop, -0.015f, 0.36f, 0.26f},
     {"ScriptSequence_OfferDialog", nullptr, nullptr, 0, nullptr, 0, {"OfferDialogOfferText", nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
-    {"NN_PlayerInfo", nullptr, kPlayerTexts, 1, nullptr, 0, {nullptr, nullptr, nullptr, nullptr},
-     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr, 0, 1},
+    {"NN_PlayerInfo", nullptr, kPlayerTexts, 1, nullptr, 0, {"FactionInfoCard", nullptr, nullptr, nullptr},
+     nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0.62f, nullptr, 0, 1, 0, 0, 0, 0.46f, 0.38f},
     {"NN_LoadSave", nullptr, kSaveTexts, 4, nullptr, 0, {nullptr, nullptr, nullptr, nullptr},
      nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, nullptr},
     // the nav map: its toolbar lay under the top panel of subtitles (UI_HUD2.md 5.34) and there is room under the map
@@ -1172,7 +1174,7 @@ void Place(const Spec& s)
         return;
     const float H = static_cast<float>(fl::ScreenHeight()), W = static_cast<float>(fl::ScreenWidth());
     // centred between what stands around it (the owner, 6 Nov 2026): on the screen's middle, and between the strip's tabs and the prompts' row; a window that grows downwards stands higher by half of it
-    const float dx = (W / 2 - it.x) / H, dy = (it.y - H * (skinrules::kFrameCentreY - s.grow / 2)) / H;
+    const float dx = (W / 2 + s.shift * H - it.x) / H, dy = (it.y - H * (skinrules::kFrameCentreY - s.grow / 2)) / H;
     if (fabsf(dx) < 0.002f && fabsf(dy) < 0.002f)
         return;
     pos[0] += dx, pos[1] += dy;
@@ -1379,6 +1381,8 @@ void Frame(bool on)
         if (now != g_spec || window != g_window)
             Closed();
     }
+    if (basepage::Hides()) // (a page is the window, its controls stand off the screen: nothing here to place)
+        return;
     if (!g_spec)
     {
         if (++g_scan < 12)

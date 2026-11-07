@@ -21,6 +21,7 @@
 #include "ui/winplates.h"
 
 #include <sstream>
+#include <unordered_map>
 
 namespace navnew
 {
@@ -223,6 +224,69 @@ static void ReadView(u32 root)
 static u32 SelectedRecord(u32 root);
 
 // The mouse on the map: the wheel zooms toward the cursor, the game's own drag moves it.
+// The game's marks that have no size of their own (the ship, waypoints, the mission's: record types 2, 3, 4; +0x3C the size, read by 0x496600) grow with the map's scale and with Z up
+// to 2 (Shockwave via the owner, 7 Nov 2026: "big McLargeHuge"). Held at about the game's own size on the screen, whatever the zoom: the square stands 1.6 x the game's map, Z / max(1, Z / 2) is the rest.
+struct Mark
+{
+    float base, mine;
+};
+static std::unordered_map<u32, Mark> g_marks;
+static void HoldMarks(u32 root)
+{
+    float z = 1;
+    RF(root + kZoom, z);
+    const float k = 0.7f * std::max(1.0f, z * 0.5f) / std::max(1.0f, z);
+    u32 head = 0;
+    if (!safemem::Read(root + kObjects, &head, 4) || !head)
+        return;
+    u32 node = 0;
+    safemem::Read(head, &node, 4);
+    for (int guard = 0; node && node != head && guard < 4096; ++guard)
+    {
+        u32 rec = 0, type = 0, next = 0;
+        safemem::Read(node + 8, &rec, 4);
+        safemem::Read(node, &next, 4);
+        if (rec && safemem::Read(rec, &type, 4) && type >= 2 && type <= 4)
+        {
+            float r = 0;
+            if (RF(rec + 0x3C, r) && r > 0)
+            {
+                Mark& m = g_marks[rec];
+                if (r != m.mine)
+                    m.base = r;
+                m.mine = m.base * k;
+                WF(rec + 0x3C, m.mine);
+            }
+        }
+        node = next;
+    }
+}
+
+// The right button: a waypoint at the cursor in one click (the game's took a click and its popup's button). On an object the list's own call; on open space the game's click, then its Set Waypoint.
+static float g_setWaypoint = 0;
+static void RightClick(u32 root, float dt)
+{
+    static bool was = false;
+    const bool down = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0 && GetForegroundWindow() == fl::MainWindow();
+    const bool pressed = down && !was;
+    was = down;
+    if (g_setWaypoint > 0)
+    {
+        g_setWaypoint -= dt;
+        if (const u32 set = uiclick::FindVisible("NavMapSetWaypointButton"))
+            uiclick::Click(set), g_setWaypoint = 0;
+    }
+    const float mx = static_cast<float>(fl::MouseX()), my = static_cast<float>(fl::MouseY());
+    if (!pressed || !navview::OnMap(root, mx, my))
+        return;
+    float at[3] = {};
+    u32 object = 0;
+    if (!uiclick::FindVisible("NavMapShipButton") && navview::ObjectAt(root, mx, my, 0.02f * g_H, at, object))
+        space::AddWaypoint(at, object);
+    else if (uiclick::MapClick(root))
+        g_setWaypoint = 0.6f;
+}
+
 static void MouseFrame(u32 root)
 {
     static unsigned long long last = 0;
@@ -233,6 +297,7 @@ static void MouseFrame(u32 root)
     const int wheel = hostcalls::g.RealMouseWheel ? hostcalls::g.RealMouseWheel() : 0;
     d.zoomStep = static_cast<float>(wheel) * navview::kWheelNotch;
     navview::Frame(root, d, dt, static_cast<float>(fl::MouseX()), static_cast<float>(fl::MouseY()));
+    RightClick(root, dt);
 }
 
 void Frame(u32 root, const Rc& map, bool pad)
@@ -257,6 +322,8 @@ void Frame(u32 root, const Rc& map, bool pad)
     // the screen is the map: what the player presses here is the map's, not the ship's, on keys and mouse as on the pad (the owner, 7 Nov 2026)
     if (g_w.grown && hostcalls::g.SetFlightLock)
         hostcalls::g.SetFlightLock();
+    if (g_w.grown && !universe)
+        HoldMarks(root);
     if (!pad && g_w.grown)
         MouseFrame(root);
     if (view != 0)
@@ -584,6 +651,7 @@ void DrawOverMap(const Rc& port)
 
 void Closed()
 {
+    g_marks.clear();
     if (g_w.root)
         GiveBack();
     navview::Closed();

@@ -175,6 +175,9 @@ pad players: 7 ms -> 0.07 ms per frame on a dealer).
   `patches\2026-10-25_built.json` to the source and to the artifact's `ui/spec` document (version 111; the page
   republished as version 14): a "Built" note per changed screen state and decision, the wheel without a pre-pick,
   `pad_cursor` default EVERYWHERE per decision 15 (registry default 2). Every later UI change goes the same way.)
+- (7 Nov 2026, the NeuroNet windows as full screens, `docs\NEURONET_PLAN.md`) Not tried: a real pad, a real mouse wheel, CHAT and GROUP (only the ground and title are built, never seen), 1280x800.
+
+**The docked windows as pages (7 Nov 2026):** the dealers, the ship dealer, the job board and the news, the inventory's empty hardpoints and compare, and INFO's base and system reads are built as HUD 2 pages. Their facts, input and what is not tried (real mouse, real pad, multiplayer, 4:3, the ship purchase past its first stage): `docs\BASE_ROOMS_PLAN.md`. `base_pages` 0 returns the game's windows with the skin.
 
 ## 6. Verified, and not yet
 Verified with the virtual pad (harness): menus, bases and dialogs with the D-pad (auto-focus, lists, modal windows; up / down on a list's edge row scrolls

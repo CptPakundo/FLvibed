@@ -70,6 +70,7 @@ struct Fns
     int(__thiscall* getVibe)(const void*) = nullptr;                     // CEqObj::get_vibe (the object's rep id)
     int(__cdecl* vibeAffiliation)(const int&, u32&, bool) = nullptr;     // Reputation::Vibe::GetAffiliation
     u32(__cdecl* groupShortName)(u32) = nullptr;                         // Reputation::get_short_name (ids)
+    u32(__cdecl* groupName)(u32) = nullptr;                              // Reputation::get_name (ids)
     u32(__thiscall* destSystem)(const void*) = nullptr;                  // CSolar::get_dest_system (a gate's / hole's)
 };
 
@@ -87,6 +88,7 @@ const Fns& F()
     Get(f.getVibe, c, "?get_vibe@CEqObj@@QBEHXZ");
     Get(f.vibeAffiliation, c, "?GetAffiliation@Vibe@Reputation@@YAHABHAAI_N@Z");
     Get(f.groupShortName, c, "?get_short_name@Reputation@@YAII@Z");
+    Get(f.groupName, c, "?get_name@Reputation@@YAII@Z");
     Get(f.destSystem, c, "?get_dest_system@CSolar@@QBEIXZ");
     Get(f.getEquipment, c, "?GetEquipment@Archetype@@YAPAUEquipment@1@I@Z");
     Get(f.getSystem, c, "?get_system@Universe@@YAPBUISystem@1@I@Z");
@@ -1095,6 +1097,13 @@ std::wstring FactionName(u32 objId)
         return it->second;
     AffiliationIds(RepOf(objId), group, ids, true);
     return groups[group] = ids ? IdsText(ids) : std::wstring();
+}
+
+std::wstring RepName(u32 repId)
+{
+    const Fns& f = F();
+    const u32 ids = f.groupName && repId ? f.groupName(repId) : 0;
+    return ids ? IdsText(ids) : std::wstring();
 }
 
 float ObjectRadius(u32 id) { return RadiusOf(id); }

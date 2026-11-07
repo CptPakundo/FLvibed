@@ -77,6 +77,7 @@ independent of `hud_style` (flight). Both devices. Off = every write restored (t
 5. **The room bar**: its frame and tab art hidden; one slim glass bar under the icons (0.088 H), the current room's
    icon on a yellow underline and its NAME under the bar (Agency FB 0.026 H, yellow, e.g. TRADER) - labels beside
    icons (research 10); in pad mode LB / RB glyphs at the bar's ends. The NeuroNet box the same (its background hidden).
+   Since 7 Nov 2026 this look stands only as the fall-back: `nnstrip::DrawRoom` covers it with word tabs (`docs\BASE_ROOMS_PLAN.md`).
 6. **The context strip** (docked, any room, hidden under modal menus): top-left at the safe margin on HUD 2's soft
    scrim (no box): the base as the headline (0.034 H) with the system dim; under it CREDITS, CARGO used / capacity,
    the ship's name - one value, one place (research 7). While a transfer is pending in a dealer and the readers allow,
@@ -349,3 +350,7 @@ Commits 619dd22, c0e89fe, 33ffa96, e3fcb5d, 85fb446.
   existing `loadfront` family), `m_popup_hud2` (M01 "Enter formation" box; `uiclick MMOkButton` closed it),
   `m_mainmenu_classic` (hud_style 0: the native frames). Gaps: the front load screen's LOAD GAME / DELETE / MAIN MENU
   front text buttons keep their native frames (no +0x84 path checked); the popup's title keeps its colour.
+
+## 17. The docked windows as pages (7 Nov 2026)
+
+The dealers, the ship dealer, the job board and the news are HUD 2 pages (`src\basepage.*`, shared parts in `src\nnpage_kit.h`), and the inventory and INFO gain empty hardpoints, compare and base and system reads (`src\nnpage.*`). What stands, the game facts, input and what is not tried: `..\..\docs\BASE_ROOMS_PLAN.md`. Setting `base_pages` (default 1): 0 keeps the game's windows with the skin of the sections above.

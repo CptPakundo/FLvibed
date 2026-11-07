@@ -14,6 +14,9 @@ void Test_marquee()
     // the chosen values (UI_HUD2.md 5.20: Android's 1.2 s, the owner's ~1.5 s; 0.05 H/s at the floor; the panels' 0.25 s)
     CHECK(tm.startHoldS == 1.5f && tm.endHoldS == 1.5f && tm.fadeS == 0.25f);
     CHECK(tm.speedH == 0.05f);
+    // only just over: it stands whole ("Anubis" at 1280x800); a real overflow still moves, and a text that fits is none of this
+    CHECK(JustOver(108, 100, 6) && JustOver(109, 100, 6) && !JustOver(120, 100, 6) && !JustOver(100, 100, 6));
+    CHECK(JustOver(45, 40, 4) && !JustOver(47, 40, 4));
     // the speed: 0.05 H/s at the floor (4K: 108 px/s for the 51.84 px floor), as many characters a second when larger
     CHECK_NEAR(Speed(tm, 2160, 51.84f, 51.84f), 108.0, 1e-3);
     CHECK_NEAR(Speed(tm, 2160, 2 * 51.84f, 51.84f), 216.0, 1e-3);

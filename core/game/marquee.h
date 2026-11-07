@@ -59,6 +59,14 @@ inline float Period(const Timing& t, float overflow, float pxPerS)
 
 inline float Clamp01(float v) { return v < 0 ? 0.0f : (v > 1 ? 1.0f : v); }
 
+// A text only just over its room is no marquee: it stands whole, a little past the room's edge (Shockwave's video, 1280x800, the owner 7 Nov 2026: "Anubis" looped between "Anub" and
+// "Anubis", a scroll of two letters that says nothing). The overflow may be an ellipsis and a half, or 8 % of the room: what the cut form gives up for its own ellipsis.
+inline bool JustOver(float textW, float room, float ellW)
+{
+    const float a = 1.5f * ellW, b = 0.08f * room;
+    return textW > room && textW - room <= (a > b ? a : b);
+}
+
 // The marquee's picture `offset` px into the scroll: the clip opens from the cut form's prefix (prefixW: the whole
 // characters the fit rule kept before its ellipsis) towards the room - at least as fast as the text moves, so it reaches
 // the room by the end - and keeps room for the ellipsis while more than an ellipsis' width is still hidden; the ellipsis

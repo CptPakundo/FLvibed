@@ -83,6 +83,8 @@ bool Go(int cmd)
     return true;
 }
 
+void Press(int cmd) { Tap(cmd); }
+
 bool Step(int dir)
 {
     const int open = OpenCommand();

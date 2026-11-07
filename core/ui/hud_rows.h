@@ -25,7 +25,7 @@ struct Values
     int gameTextSize = 0;   // the game's own text, percent (100..150; gametext.h), 0 automatic: it follows hud_size
     bool windowText = true; // the game's windows' text by role, HUD 2 only (windowtext.h)
     // HUD 2 (modules\hud\docs\UI_HUD2.md 5.3; the codings: the rows' help)
-    int hudStyle = 2, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0, hudPrompts = 1;
+    int nnPause = 1, basePages = 1, hudStyle = 2, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0, hudPrompts = 1;
     bool hudThreats = true, hudAlerts = true, hudInfo = true, hudWireframes = true, groupCue = true;
     int hudTransition = 120;
     int hudPreset = 0; // hud_preset: HUD 2's layout preset (UI_HUD2_PRESETS.md 6 step 4)
@@ -69,6 +69,10 @@ inline Values g;
      "the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 1 HUD 2 on the " \
      "pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always (default); HUD 2 includes its look over the menus " \
      "and rooms (ui_style)"}, \
+    {"nn_pause", settings::Int, &hudrows::g.nnPause, 0, 1, \
+     "the NeuroNet windows in single player, in space: 1 the world stops while one is open (default; the autopilot flying keeps it going), 0 the game goes on behind them"}, \
+    {"base_pages", settings::Int, &hudrows::g.basePages, 0, 1, \
+     "the dealers, the ship dealer, the job board and the news: 1 HUD 2's pages (default), 0 the game's windows with HUD 2's skin"}, \
     {"hud_fade", settings::Int, &hudrows::g.hudFade, 0, 1, \
      "HUD 2 in flight: 0 full (always shown), 1 contextual (fades out in calm flying; each part comes back for 4 s when " \
      "it matters: steering, boost, a target, firing, a maneuver, a new objective; alerts, low shield / hull, missiles " \

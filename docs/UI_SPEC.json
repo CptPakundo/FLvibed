@@ -4313,6 +4313,30 @@
        "parent": null,
        "tier": "player",
        "value": true
+      },
+      {
+       "id": "nn_pause",
+       "key": "nn_pause",
+       "label": "NeuroNet pauses the game",
+       "kind": "toggle",
+       "help": "In single player, in space, the world stops while a NeuroNet window (log, map, inventory, status, info) is open, and PAUSED shows. Off keeps the game going behind the windows. The autopilot flying keeps it going either way.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "def": true,
+       "value": true
+      },
+      {
+       "id": "base_pages",
+       "key": "base_pages",
+       "label": "Dealers and job board as pages",
+       "kind": "toggle",
+       "help": "The commodity, equipment and ship dealers, the job board and the news are HUD 2 pages in the room, with the game's windows doing the work underneath. Off gives the game's own windows with HUD 2's skin.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "def": true,
+       "value": true
       }
      ]
     },

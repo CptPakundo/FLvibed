@@ -6,6 +6,7 @@
 // fails closed); positions from the native controls' rectangles (ui::ControlRect) and fractions of H. The readers run at
 // most 10 Hz (Update); Draw only draws the cached lines - a handful of text quads in one hud2kit pass.
 #include "uistrip.h"
+#include "basepage.h"
 
 #include "ui/flufaware.h"
 #include "hudhost.h"
@@ -413,6 +414,8 @@ void ShipLines(float H)
 
 void JobLine(float H)
 {
+    if (basepage::Hides())
+        return; // (the page says it)
     // the selected job's type: the detail icon's own hint (MissionVendorIcon, IDS 13050.. "Kill Ships", the word the game
     // shows on the rows' hover); under the detail's reward, right-aligned with the ACCEPT JOB button (the reward text
     // control has no extent: its anchor point gives the line). The difficulty the game writes into the detail itself.
@@ -451,11 +454,12 @@ void OfferLine(float H, const std::vector<void*>& chars)
         Word f, n;
         f.text = Upper(c.faction);
         n.text = Upper(c.name);
-        f.x = n.x = close.x + close.hw - H * 0.012f;
-        f.y = r.y + H * 0.088f;
-        n.y = f.y + H * 0.032f;
-        f.align = n.align = Right;
-        f.maxW = n.maxW = H * 0.40f;
+        // in the header, left of the title: over the body it ran through a bribe's text, which starts at the top (the owner's order, 7 Nov 2026)
+        f.x = n.x = winplates::g_W - (close.x + close.hw - H * 0.012f);
+        f.y = r.y + H * 0.002f;
+        n.y = f.y + H * 0.026f;
+        f.align = n.align = Left;
+        f.maxW = n.maxW = H * 0.28f;
         f.rgb = c.attitude == 1 ? kFriend : c.attitude == -1 ? kHostile : kNumber;
         n.rgb = kInk;
         g.words.push_back(f);
@@ -630,7 +634,8 @@ float DrawSegs(const std::vector<Seg>& v, float x, float y)
 void DrawStrip(float W, float H, float k)
 {
     const float x = W * deckmode::SideW(), y = H * deckmode::EdgeH();
-    const float budget = g.barLeft > 0 ? g.barLeft - x - H * 0.03f : W * 0.5f - H * 0.224f - x - H * 0.03f;
+    const float barLeft = nnstrip::RoomLeft() > 0 ? nnstrip::RoomLeft() : g.barLeft; // (the words' bar is wider than the icons')
+    const float budget = barLeft > 0 ? barLeft - x - H * 0.03f : W * 0.5f - H * 0.224f - x - H * 0.03f;
     if (budget < H * 0.15f)
         return;
     const float sBase = H * 0.036f * k, sRoom = H * 0.026f * k, sSys = H * 0.024f * k, sLab = H * 0.024f * k,

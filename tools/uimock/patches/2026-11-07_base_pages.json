@@ -1,0 +1,9 @@
+{
+  "_about": "7 Nov 2026 (unreleased): the docked windows as HUD 2 pages (docs BASE_ROOMS_PLAN.md). The base_pages row.",
+  "add_rows": {
+    "hud/HUD": {"after": "nn_pause", "rows": [
+      {"key": "base_pages", "label": "Dealers and job board as pages", "kind": "toggle", "def": true,
+       "help": "The commodity, equipment and ship dealers, the job board and the news are HUD 2 pages in the room, with the game's windows doing the work underneath. Off gives the game's own windows with HUD 2's skin."}
+    ]}
+  }
+}

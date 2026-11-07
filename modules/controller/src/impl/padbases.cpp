@@ -61,6 +61,7 @@ enum class Screen
     NnInventory, // NN_Inventory alone (in space): Inventory_Close
     Repair,      // NN_Repair (IDS_NN_REPAIR_YOUR_SHIP): RepairCheckBox0..8, RepairToggleChecks, RepairOkButton (only
                  // with something damaged), RepairCancelButton (research\evidence\controller_ui\hud2x_inventory.md 1.13)
+    BestPrices,  // NN_CommodityByBase: the inventory's TradeRouteButton; a page, CommodityByBaseCloseButton alone answers
     NavMap       // NeuroNetNavMap while docked: padmap owns it as in space (the room's NavBar stays visible under it)
 };
 static const char* ScreenName(Screen s)
@@ -79,6 +80,7 @@ static const char* ScreenName(Screen s)
     case Screen::NnHelp: return "help";
     case Screen::NnInventory: return "inventory";
     case Screen::Repair: return "repair";
+    case Screen::BestPrices: return "bestprices";
     case Screen::NavMap: return "navmap";
     default: return "none";
     }
@@ -300,6 +302,8 @@ static Screen Detect(Where where)
     // (the repair window and the docked nav map lie over the room with its NavBar still visible: before the room)
     if (Vis("NN_Repair"))
         return Screen::Repair;
+    if (Vis("NN_CommodityByBase"))
+        return Screen::BestPrices;
     if (Vis("NN_MissionVendor"))
         return Screen::Jobs;
     if (Vis("NN_News"))
@@ -602,15 +606,30 @@ static bool PanelFocus(const char* focusName)
 static void Prompts(const Gamepad& pad)
 {
     using promptbar::Prompt;
-    Prompt p[6];
+    Prompt p[8];
     int n = 0;
     auto add = [&](Id b, const wchar_t* label, bool hold = false, Id b2 = Id::COUNT, float progress = 0)
     {
-        if (n < 5)
+        if (n < 8)
             p[n++] = {b, label, hold, b2, progress};
     };
     bool decision = false;
     const float aProgress = dealerrules::Progress(g_aHeld, g_aFired);
+    if (views::HudPageOn() && !(g_screen == Screen::NnInventory && JettisonOpen())) // (the page says what a press does now)
+    {
+        views::PagePrompt page[8];
+        const int m = views::HudPagePrompts(page, 7);
+        bool back = false;
+        for (int i = 0; i < m; ++i)
+        {
+            add(static_cast<Id>(page[i].id), page[i].word, page[i].hold, page[i].id2 < 0 ? Id::COUNT : static_cast<Id>(page[i].id2), page[i].progress);
+            back |= page[i].id == Id::B;
+        }
+        if (!back)
+            add(Id::B, L"CLOSE");
+        promptbar::Set(ScreenName(g_screen), p, n, false);
+        return;
+    }
     switch (g_screen)
     {
     case Screen::Room:
@@ -798,7 +817,11 @@ static const char* CloseName()
     case Screen::News: return "NewsCloseButton";
     case Screen::Commodity:
     case Screen::Equipment:
+        if (ShipFinal() && Vis("BackToShipDealer") && views::HudPageOn()) // (the page's B steps back to the offers; a second B there closes)
+            return "BackToShipDealer";
+        return "Inventory_Close";
     case Screen::NnInventory: return "Inventory_Close";
+    case Screen::BestPrices: return "CommodityByBaseCloseButton";
     case Screen::ShipDealer: return "ShipTraderCancelButton";
     case Screen::NnLog: return "StoryStarCloseButton";
     case Screen::NnPlayer:
@@ -1275,8 +1298,66 @@ static void StickScroll(const PadState& s)
     }
 }
 
+// A NeuroNet page HUD 2 draws (modules\hud\src\nnpage.*, docs\NEURONET_PLAN.md): the presses are the page's, the stick and the D-pad scroll the game's text in it, B closes what the page left open.
+static bool PageStands() { return views::HudPageOn() && !(g_screen == Screen::NnInventory && JettisonOpen()); }
+static void UpdatePage(const Gamepad& pad)
+{
+    StickScroll(pad.Cur());
+    u32 pressed = 0, held = 0;
+    for (const u32 b : {XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y, XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT})
+    {
+        pressed |= pad.Pressed(b) ? b : 0;
+        held |= pad.Cur().buttons & b;
+    }
+    if (device::Pad())
+        g_cursorShown = false; // (the page goes by its rows: the pad's arrow has nothing to point at)
+    g_lastHovered = Focused(); // (the jettison panel hands the frame back to UpdateWindow: a row "newly focused" there would be clicked, and a row's click closes the panel)
+    for (const u32 b : {XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER, XINPUT_GAMEPAD_LEFT_THUMB})
+    {
+        pressed |= pad.Pressed(b) ? b : 0;
+        held |= pad.Cur().buttons & b;
+    }
+    if (pad.Cur().ry > 0.3f)
+        held |= views::kPagePadRsUp;
+    else if (pad.Cur().ry < -0.3f)
+        held |= views::kPagePadRsDown;
+    if (g_screen == Screen::Commodity || g_screen == Screen::Equipment)
+        TriggerQuantity(pad, "QuantitySlider");
+    const u32 took = views::HudPagePad(pressed, held, g_dt);
+    g_owned |= took | XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
+    if (!(took & XINPUT_GAMEPAD_DPAD_UP) && (pressed & (XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN))) // (the digital way through a text: a few lines a press)
+        if (const u32 bar = StickBar())
+            uiclick::Scroll(bar, static_cast<float>(fl::ScreenHeight()) * ((pressed & XINPUT_GAMEPAD_DPAD_UP) ? -0.11f : 0.11f), false, nullptr, nullptr);
+    if (took & XINPUT_GAMEPAD_B)
+        return;
+    const char* close = CloseName();
+    const bool haveClose = *close && Vis(close);
+    if (haveClose)
+        g_owned |= XINPUT_GAMEPAD_B;
+    if (pad.Pressed(XINPUT_GAMEPAD_B) && haveClose)
+    {
+        if (room::NNWindowBusy())
+            g_closeHeld = kCloseHoldSec;
+        else
+            ClickName(close, "close");
+    }
+    else if (g_closeHeld > 0)
+    {
+        g_closeHeld -= g_dt;
+        if (!haveClose)
+            g_closeHeld = 0;
+        else if (!room::NNWindowBusy())
+            g_closeHeld = 0, ClickName(close, "close (held)");
+    }
+}
+
 static void UpdateWindow(const Gamepad& pad)
 {
+    if (PageStands())
+    {
+        UpdatePage(pad);
+        return;
+    }
     StickScroll(pad.Cur());
     LeaveChars();
     const u32 hovered = Focused();

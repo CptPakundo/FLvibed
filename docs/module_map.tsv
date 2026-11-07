@@ -1098,6 +1098,9 @@ file	hudsize.h	core/game/hudsize.h	core	hud_size, pure: the size presets' scale,
 file	handheld.h	core/game/handheld.h	core	is this machine a handheld, pure chain and SMBIOS reader
 file	handheld.cpp	core/game/handheld.cpp	core	reads the machine for handheld.h
 file	handhelds.inc	core/game/handhelds.inc	core	the handheld model table (data)
+file	gamedata.h	core/game/gamedata.h	core	what the game's data files say about equipment, ships, systems and bases, read once and cached; the HUD pages read it
+file	gamedata.cpp	core/game/gamedata.cpp	core	reads the data files for gamedata.h
+file	equip_rules.h	core/game/equip_rules.h	core	hardpoint and compare rules, pure (tests/equip_rules_test.cpp)
 file	indicators.h	core/game/indicators.h	core	the game's target indicators as data, pure decode
 file	indicators.cpp	core/game/indicators.cpp	core	reads the indicators' records
 file	hud2_cue.h	modules/hud/src/hud2_cue.h	HUD	the weapon group cue's rules, pure (UI_HUD2_GROUP_CUE.md)
@@ -1113,6 +1116,13 @@ file	skinchip.cpp	modules/hud/src/skinchip.cpp	HUD	the chips drawn, the click bo
 file	nnstrip.h	modules/hud/src/nnstrip.h	HUD	the strip of words on the NeuroNet windows
 file	nnstrip.cpp	modules/hud/src/nnstrip.cpp	HUD	the strip drawn, its keep-out, its clicks, its verb
 command	nnstrip	modules/hud/src/hud_module.cpp	HUD	
+file	nnpage.h	modules/hud/src/nnpage.h	HUD	the NeuroNet windows as full screens
+file	nnpage.cpp	modules/hud/src/nnpage.cpp	HUD	the pages, their reads, clicks and pad
+file	nnpage_rules.h	modules/hud/src/nnpage_rules.h	HUD	the pages' pure rules
+file	nnpage_kit.h	modules/hud/src/nnpage_kit.h	HUD	what the pages share: holes, the game's icons in rows, compare
+file	basepage.h	modules/hud/src/basepage.h	HUD	the docked windows as pages
+file	basepage.cpp	modules/hud/src/basepage.cpp	HUD	the dealers, the ship dealer, the job board and the news
+command	nnpage	modules/hud/src/hud_module.cpp	HUD	
 file	navskin.h	modules/hud/src/navskin.h	HUD	the nav map's frame and words (UI_HUD2_SKIN.md 6.1, the first step)
 file	navskin.cpp	modules/hud/src/navskin.cpp	HUD	the chips' table, the panels, the view for the pad's panel zone
 file	navnew.h	modules/hud/src/navnew.h	HUD	the new map's seam, off (UI_HUD2_SKIN.md 6.1, step 10)

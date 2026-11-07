@@ -145,6 +145,17 @@ struct MapChip
     bool enabled, stepper;
 };
 
+// One prompt of a NeuroNet page (modules\hud\src\nnpage.*): glyphs::Id, a second one or -1, the word, a hold.
+struct PagePrompt
+{
+    int id, id2;
+    const wchar_t* word;
+    bool hold;
+    float progress; // a hold's fill 0..1
+};
+// The pad's right stick in a page's `held` (over XInput's own bits).
+constexpr unsigned kPagePadRsUp = 0x10000, kPagePadRsDown = 0x20000;
+
 // The HUD (modules\hud): its reads, and its places in core's frame and passes (core\game\coreframe.cpp). Null with the module off: the classic HUD.
 struct HudView
 {
@@ -182,6 +193,10 @@ struct HudView
     void (*MapChipStep)(int id, int dir);
     void (*MapChipFocus)(int id);
     void (*MapList)(bool open); // the pad's destination list stands
+    // a NeuroNet page stands (LOG, INVENTORY, STATUS, INFO as full screens): the pad's lane and presses are the page's; Pad gets XINPUT masks and answers the buttons it took
+    bool (*PageOn)();
+    int (*PagePrompts)(PagePrompt* out, int max);
+    unsigned (*PagePad)(unsigned pressed, unsigned held, float dt);
 };
 inline HudView hud = {};
 
@@ -270,6 +285,9 @@ inline void HudMapChipStep(int id, int dir)
     if (hud.MapChipStep)
         hud.MapChipStep(id, dir);
 }
+inline bool HudPageOn() { return hud.PageOn && hud.PageOn(); }
+inline int HudPagePrompts(PagePrompt* out, int max) { return hud.PagePrompts ? hud.PagePrompts(out, max) : 0; }
+inline unsigned HudPagePad(unsigned pressed, unsigned held, float dt) { return hud.PagePad ? hud.PagePad(pressed, held, dt) : 0; }
 inline void HudMapList(bool open)
 {
     if (hud.MapList)

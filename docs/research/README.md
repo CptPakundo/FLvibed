@@ -64,6 +64,8 @@ with a status and the project state it was last checked against. Timestamps stay
 | `target-info-display.md` | Target information in the scene: how games show a target, labels on moving things, plates against outlines, what the game's indicator code lets go; forms A to D, the owner's decisions; the concept sheets `research\evidence\hud2_gate\decisions\Target_*.jpg` (U64-U68) | 34474db9 (6 Nov 2026, new) | current |
 | `pad-face-colours.md` | The face buttons' shades: each family's latest coloured generation, measured from named photos, what was raised for the plate | 989e6174 (6 Nov 2026, new) | current |
 | `subtitles_overlap.md` | Two or more comm speakers at once: guidelines (XAG 104, Netflix, BBC, GAG, Hamilton, Hattner), Unreal's subtitle priority, games, Freelancer's own comm priorities; the default "Focused" (one speaker, priority classes) vs the "Expanded" stack (S10) | 3c9c1390 (6 Nov 2026, short form: 8 watched-path commits: the module split P0-P11e (moves, comments, map rows); 72d95a04 `stack_fit` (stacks shrink together), a46bef03 `chat_size`; S10 decided by the owner 30 Oct (WORK_QUEUE D5), not built) | current |
+| `neuronet-screens.md` | NeuroNet screens: how modern games build log, inventory, status, info, chat / group and the tab hub (37 pages, online) | 7 Nov 2026 | done; used by `docs\NEURONET_PLAN.md` |
+| `neuronet-windows-facts.md` | NeuroNet windows: what each really is in the game (trees, calls, addresses; read-only research) | 7 Nov 2026 | done; used by `docs\NEURONET_PLAN.md` |
 
 ## Runner studies (`runners\`, no template header: working studies written by the speedrun-autopilot sessions)
 

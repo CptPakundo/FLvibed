@@ -7,7 +7,7 @@
 
 namespace text
 {
-std::wstring Ids(u32 ids)
+static const std::vector<HMODULE>& Dlls()
 {
     // Resource DLL index = ids >> 16: 0 = resources.dll, then freelancer.ini [Resources] order.
     static std::vector<HMODULE> dlls;
@@ -37,6 +37,12 @@ std::wstring Ids(u32 ids)
         for (const std::string& n : files)
             dlls.push_back(LoadLibraryExA((dir + n).c_str(), nullptr, LOAD_LIBRARY_AS_DATAFILE));
     }
+    return dlls;
+}
+
+std::wstring Ids(u32 ids)
+{
+    const std::vector<HMODULE>& dlls = Dlls();
     const u32 index = ids >> 16;
     if (!ids || index >= dlls.size() || !dlls[index])
         return L"";
@@ -48,4 +54,22 @@ std::wstring Ids(u32 ids)
 std::string Utf8(const std::wstring& w) { return str::Narrow(w); }
 
 std::string IdsUtf8(u32 ids) { return Utf8(Ids(ids)); }
+
+std::wstring InfoCard(u32 ids)
+{
+    const std::vector<HMODULE>& dlls = Dlls();
+    const u32 index = ids >> 16;
+    if (!ids || index >= dlls.size() || !dlls[index])
+        return L"";
+    HRSRC r = FindResourceW(dlls[index], MAKEINTRESOURCEW(ids & 0xFFFF), MAKEINTRESOURCEW(23));
+    HGLOBAL g = r ? LoadResource(dlls[index], r) : nullptr;
+    const wchar_t* p = g ? static_cast<const wchar_t*>(LockResource(g)) : nullptr;
+    if (!p)
+        return Ids(ids); // (some cards are plain strings)
+    const size_t n = SizeofResource(dlls[index], r) / sizeof(wchar_t);
+    std::wstring xml(p, n);
+    if (!xml.empty() && xml[0] == 0xFEFF)
+        xml.erase(0, 1);
+    return InfoCardText(xml);
+}
 } // namespace text

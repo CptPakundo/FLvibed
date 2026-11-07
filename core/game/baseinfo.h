@@ -25,6 +25,10 @@ std::string RoomKey(); // the room's nickname less the base's (Bar, Trader, Ship
 std::wstring SystemName();
 // The player ship's archetype name ("Starflier"), "" unknown.
 std::wstring ShipName();
+// The player ship's archetype id (the client's copy), 0 unknown.
+u32 ShipArch();
+// The player's standing with a reputation group by nickname, false unknown.
+bool Standing(const char* group, float& out);
 // Credits, -1 unknown.
 long long Credits();
 // The hold: used and capacity (volume units), false unknown.
@@ -66,6 +70,12 @@ enum Deal
     DealLow,   // selling: a low offer (red circle)
 };
 Deal DealOf(u32 markCtl);
+// A good's price at this base (pub::Market::GetPrice), -1 unknown; the verdict the game's marks would give, on the dealer's list or the player's (GoodInfo +0x5C..+0x68, 0x47CEFF).
+float PriceHere(u32 good);
+Deal DealFor(u32 arch, bool playerSide);
+// A good's volume per unit, -1 unknown; its base price (GoodInfo), -1 unknown.
+float VolumeOf(u32 arch);
+float BasePrice(u32 arch);
 // A gun's numbers from its archetype: damage per shot (hull, munition + explosion), shots per second, range (m).
 struct Gun
 {
@@ -90,6 +100,7 @@ struct Item
     u32 arch = 0;
     int count = 0;
     bool mounted = false;
+    float health = -1; // 0 .. 1, -1 unknown (the client's list has it, the server's reader not)
     std::string hardpoint;
 };
 std::vector<Item> Equipment();

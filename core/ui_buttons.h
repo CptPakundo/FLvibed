@@ -10,7 +10,7 @@ enum UiButton : int
     kUiBtnPauseFlvibed = 3, // the sixth button of the F1 pause menu (NN_Pause), FLVIBED
     // HUD 2's hotspots, kUiBtnHud2 + slot (slot 0 .. kUiBtnHud2Count - 1, the logic's numbering: SetHudHotspots)
     kUiBtnHud2 = 100,
-    kUiBtnHud2Count = 32
+    kUiBtnHud2Count = 64
 };
 
 // One HUD 2 hotspot as the logic wants it this frame: a rectangle in back-buffer pixels (x0 < x1, y0 < y1) and whether it is shown

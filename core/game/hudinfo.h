@@ -39,6 +39,8 @@ std::wstring SystemName();
 std::wstring ZoneName();
 // A ship's affiliation (the reputation group's short name: "Rogues", "Liberty Police"), "" unknown.
 std::wstring FactionName(u32 objId);
+// A reputation group's full name by its id (Reputation::get_name), "" unknown.
+std::wstring RepName(u32 repId);
 // A ship's class as a word ("FIGHTER", "FREIGHTER", "TRANSPORT", "GUNBOAT", "CRUISER", "BATTLESHIP", ...) or a solar's kind
 // ("STATION", "PLANET", "TRADE LANE", "JUMP GATE", "JUMP HOLE", "LOOT", "WEAPONS PLATFORM", ...); "" unknown.
 std::wstring ClassName(u32 objId);

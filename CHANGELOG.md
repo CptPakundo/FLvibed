@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.4.5 (7 Nov 2026)
+
+- **Dealer switches:** `base_pages` and `ui_style` now apply at a dealer's next opening, so switching them with a window open strands nothing, and `ui_style` 0 gives the game's dealer windows back.
+- **LOG as a full screen:** title, MISSION and JOURNAL as tabs, a RIGHT NOW card with the live objective (only with one), the game's text in a reading column. Y shows the map.
+- **Dealers as pages:** the commodity and equipment dealers are HUD 2 pages below the strip and room buttons: your ship left, the dealer's whole stock right, in the middle the selected item's 3D mesh, name, trade line, compare and description. The game's icons stand in the rows (five rows a list) and its own prices show; empty hardpoints are listed, FIREPOWER stands at the foot. Pad: D-pad item and side, hold A trades, Y max, LT / RT quantity, X filter, LS mount. Mouse: rows, BUY / - / + / MAX / MOUNT chips, a CLOSE chip, the wheel.
+- **Ship dealer as a page:** offers with icons, deal rows (trade-in, costs you, credits after), the game's 3D ship in the middle, numbers against your ship and the description. Hold A or the chip buys; the final stage stays the game's.
+- **Job board and news as pages:** a panel in the room with the room showing beside it. Rows carry the job's type (ASSASSINATE, KILL SHIPS ...), reward, faction and system, with the game's icon, picture and text. D-pad, hold A accepts, RS scrolls; mouse rows, ACCEPT JOB and CLOSE chips, the wheel.
+- **Repair as a page:** every damaged item with its tick, icon, health bar and price, the total and the credits after it, and what the item in focus does. A ticks, X ticks all or none, a held Y repairs; the mouse ticks by a click on a row.
+- **The ship dealer's final stage as a page:** what goes on the new ship, what goes to the dealer, and the deal in the middle: new ship, trade-in, sold, what you pay. BUY SHIP stands between the two lists on the D-pad, a held A buys, B goes back to the offers.
+- **Best prices as a page:** the bases you know by highest price, with where to sell, where to buy and the profit on a full hold named beside them.
+- **Jettison panel:** a real quantity bar. The triggers stay; the mouse has the wheel, a click on the bar and chips.
+- **Docked inventory:** the middle column opens with the ship's numbers, where it stood blank.
+- **Room bar and NeuroNet buttons as words:** docked, the rooms, the room's actions and LOG, MAP, INVENTORY, STATUS, INFO are word tabs in HUD 2's language, the current room underlined. LB / RB and every prompt stay. `ui_style` 0 keeps the game's icons.
+- **Offers under a scene:** the mission offer, rumour and bribe take HUD 2's plate in a letterboxed scene too, and the giver's name no longer runs over a bribe's text.
+- **Base pages by mouse:** rows and chips of the docked pages get their click area; a page's top now follows the strip, so a third line no longer loses CREDITS.
+- **`base_pages`** (default 1): 0 brings back the game's windows with the skin. The bar and the launch pad are unchanged.
+- **Inventory shows what is missing and what changes:** empty hardpoints are listed (A mounts the first hold item that fits), and the selected item is compared with what it would replace (guns, shields, thrusters, mines, countermeasures; green better, red worse). In space the selected mounted item pulses on the ship view.
+- **INFO says more:** docked, the system, the base, what it offers, who keeps an office (factions in standing colours, with weight) and the job board's size. In space, who flies in the system with standing and share, found places with where gates lead and what bases offer, and the ships near.
+- **A text only just too wide stands whole:** it no longer scrolls (Shockwave's "Anubis" at 1280x800).
+- **INVENTORY as a full screen:** one list of every row of a filter (five rows show at a time, the list scrolls), the filters in the game's own names, the game's card on the right, cargo and credits under the list. A mounts, Y jettisons. In space the ship's own 3D view stands in the middle with the loadout totals (guns, hull and shield damage a second, energy draw, cargo, credits), every gun's row says what it does, and X on a commodity shows its best prices.
+- **STATUS as a full screen:** rank, worth and the next level large, the other numbers as rows; every faction on one list with a bar and its standing in words. X filters, Y sorts, The focused faction's card stays up beside the list, with no press to open it, and shows its standing and how far hostile it is.
+- **INFO as a full screen:** the target's or the system's card in a reading column.
+- **LOG and INFO say where you are:** the system, zone or base, and what is near; INFO adds the ships near, by faction in the colour of their standing.
+- **The map on keyboard and mouse:** the selection's card opens beside the click, and a right click sets a waypoint. The ship, waypoint and mission marks stay near the game's size at every zoom.
+- **Prompts stay at the bottom:** under the NeuroNet tabs they take two rows before they ever become a column.
+- **One more ask for a single item:** jettisoning a single item asks once more, by a press and never a hold.
+- **The NeuroNet pauses the world:** in single player, in space, the world stops while a NeuroNet window is open and PAUSED shows. `nn_pause` 0 keeps the game going behind the windows. The autopilot keeps flying.
+- **Nothing flies under a NeuroNet window:** keys and mouse fly and fire nothing while any NeuroNet window is open.
+
 ## 0.4.0 (7 Nov 2026)
 
 First released 6 Nov, released again 7 Nov under the same number with everything from the star map down to the Linux line below it.

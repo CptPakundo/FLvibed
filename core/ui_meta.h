@@ -134,6 +134,8 @@ inline constexpr Row kRows_hud_1[] = {
     {"hud_transition", "Controller", "hud_transition", Slider, "HUD switch fade", nullptr, 0, nullptr, 0.0f, 400.0f, 20.0f, 1.0f, " ms", "120", Advanced, Live, nullptr, false, nullptr, "How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse.", nullptr, nullptr, nullptr},
     {"text_size", "Controller", "text_size", Slider, "Text size", nullptr, 0, nullptr, 80.0f, 150.0f, 10.0f, 1.0f, "%", "100", Player, Live, nullptr, false, nullptr, "Size of FLvibed's own UI text (prompts, panels, the status strip). The subtitles have their own size.", nullptr, nullptr, nullptr},
     {"window_text", "Controller", "window_text", Toggle, "Larger window text", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "HUD 2: the text in the game's windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all.", nullptr, nullptr, nullptr},
+    {"nn_pause", "Controller", "nn_pause", Toggle, "NeuroNet pauses the game", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "In single player, in space, the world stops while a NeuroNet window (log, map, inventory, status, info) is open, and PAUSED shows. Off keeps the game going behind the windows. The autopilot flying keeps it going either way.", nullptr, nullptr, nullptr},
+    {"base_pages", "Controller", "base_pages", Toggle, "Dealers and job board as pages", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "The commodity, equipment and ship dealers, the job board and the news are HUD 2 pages in the room, with the game's windows doing the work underneath. Off gives the game's own windows with HUD 2's skin.", nullptr, nullptr, nullptr},
 };
 // HUD / CUES
 inline constexpr Row kRows_hud_2[] = {
@@ -144,7 +146,7 @@ inline constexpr Row kRows_hud_2[] = {
 };
 inline constexpr Section kSections_hud[] = {
     {"", kRows_hud_0, 7, "hud_style", false},
-    {"HUD", kRows_hud_1, 15, "hud_style", false},
+    {"HUD", kRows_hud_1, 17, "hud_style", false},
     {"CUES", kRows_hud_2, 4, "hud_style", false},
 };
 

@@ -5,7 +5,7 @@ in the source and regenerate.** `set <name> <value>` / `ap set` change a value l
 help lines; `config settings` / `ap settings` / `settings` list them in the game. Behaviour, measurements and the why of
 each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DISPLAY_PLAN.md`, `modules\hud\docs\HUD_CUES.md`.
 
-## [Controller] - EXE\FLController.ini [Controller] (90 keys; source `modules\controller\src\impl\controller_settings.cpp`)
+## [Controller] - EXE\FLController.ini [Controller] (92 keys; source `modules\controller\src\impl\controller_settings.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -82,6 +82,8 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `livesplit_gametime` | bool | 0 \| 1 | true | pause LiveSplit's game time during loads (a loadless comparison); real time keeps running |
 | `autopilot_key` | string | - | K | the keyboard key that toggles the autopilot (a key name: K, F10, Insert); a key the game binds is refused |
 | `hud_style` | int | 0 .. 2 | 2 | the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 1 HUD 2 on the pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always (default); HUD 2 includes its look over the menus and rooms (ui_style) |
+| `nn_pause` | int | 0 .. 1 | 1 | the NeuroNet windows in single player, in space: 1 the world stops while one is open (default; the autopilot flying keeps it going), 0 the game goes on behind them |
+| `base_pages` | int | 0 .. 1 | 1 | the dealers, the ship dealer, the job board and the news: 1 HUD 2's pages (default), 0 the game's windows with HUD 2's skin |
 | `hud_fade` | int | 0 .. 1 | 1 | HUD 2 in flight: 0 full (always shown), 1 contextual (fades out in calm flying; each part comes back for 4 s when it matters: steering, boost, a target, firing, a maneuver, a new objective; alerts, low shield / hull, missiles and fights always show) |
 | `hud_opacity` | int | 40 .. 100 | 100 | HUD 2's overall opacity in percent |
 | `hud_scale` | int | 80 .. 130 | 100 | HUD 2's size in percent |
