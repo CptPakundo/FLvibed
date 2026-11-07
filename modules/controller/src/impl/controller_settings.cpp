@@ -166,6 +166,8 @@ static const settings::Def kOptions[] = {
      "targets, the D-pad hides it"},
     {"cursor_magnet", settings::Int, &g_opt.cursorMagnet, 0, 100,
      "how strongly the pad cursor slows over and pulls toward a clickable element, percent"},
+    {"map_touchpad", settings::Bool, &g_opt.mapTouchpad, 0, 1,
+     "the touchpad on the nav map: one finger drags the map, two slide to zoom; off leaves RS and the triggers, which do the same"},
     {"prompt_bar", settings::Int, &g_opt.promptBar, 0, 2,
      "the bottom-right row of button prompts on controller screens: 0 contextual (every window, menu and modal while it is open; a base room when new or a decision is pending), "
      "1 always, 2 off"},

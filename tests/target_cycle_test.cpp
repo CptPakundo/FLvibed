@@ -88,4 +88,23 @@ void Test_target_cycle()
         CHECK(c.Press(1, one, 1, 10) == 0); // the only enemy is the target
         CHECK(c.Press(2, one, 1, 0) == 10);
     }
+    // reticle first (7 Nov 2026): a fresh chain is cold; a ring pick starts the run, the presses after it walk the enemies
+    {
+        Chain c;
+        CHECK(c.Cold(0, 0));
+        c.Took(0, 99); // a station under the reticle
+        CHECK(!c.Cold(1, 99));
+        CHECK(c.Press(1, three, 3, 99) == 10);
+        CHECK(!c.Cold(2, 10));
+        CHECK(c.Press(2, three, 3, 10) == 20);
+        CHECK(c.Cold(2 + kChainSecs + 0.1f, 20)); // a pause: the reticle again
+        CHECK(c.Cold(3, 77));                     // the target changed by something else: the reticle again
+    }
+    // an enemy under the reticle taken first is not taken again by the run
+    {
+        Chain c;
+        c.Took(0, 20);
+        CHECK(c.Press(1, three, 3, 20) == 10);
+        CHECK(c.Press(2, three, 3, 10) == 30);
+    }
 }

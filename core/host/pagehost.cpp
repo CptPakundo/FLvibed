@@ -303,6 +303,7 @@ void Start()
     g_host.calls.SetKeepRunning = focus::SetKeepRunning;
     g_host.calls.SetCursorHidden = router::SetCursorHidden;
     g_host.calls.SetLoadDraw = router::SetLoadDraw;
+    g_host.calls.SetFlightLock = input::SetFlightLock;
     g_hud = router::ModuleOn(modules::kHud);
     g_flies = router::ModuleOn(modules::kAutopilot) || g_hud;
     g_story = g_flies || router::ModuleOn(modules::kSpeedrun);

@@ -221,6 +221,13 @@ enum Cmd : int
 };
 static_assert(USER_SCREEN_SHOT == 0xCB, "command enum must match Freelancer's table");
 
+// The commands that fly or arm the ship: what the player's keys and mouse may not reach under a full-screen window (input::SetFlightLock).
+constexpr bool FlightCommand(int cmd)
+{
+    return (cmd >= USER_AFTERBURN && cmd <= USER_THROTTLE_100) || cmd == USER_COLLECT_LOOT || (cmd >= USER_MANEUVER && cmd <= USER_REPAIR_SHIELD) ||
+           (cmd >= USER_WEAPON_GROUP1 && cmd <= USER_LAUNCH_CRUISE_DISRUPTORS) || cmd == USER_TURN || cmd == USER_MANEUVER_FREE_FLIGHT || cmd == USER_FIRE_WEAPONS || cmd == USER_TURN_SHIP;
+}
+
 inline const char* CmdNameRaw(int cmd)
 {
     if (cmd < 0 || cmd >= CMD_COUNT)

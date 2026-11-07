@@ -298,7 +298,7 @@ void Update(float, const Context& c)
             }
             AddRow(l, presets::Action::Afterburner, L"AFTERBURNER");
             AddRow(l, presets::Action::Missile, L"MISSILE", g_s.missiles);
-            AddRow(l, presets::Action::TargetSmart, g_s.targetValid ? L"NEAREST / NEXT ENEMY" : L"NEAREST ENEMY");
+            AddRow(l, presets::Action::TargetSmart, g_s.targetValid ? L"AHEAD / NEXT ENEMY" : L"TARGET AHEAD / ENEMY"); // reticle first (7 Nov 2026)
             AddRow(l, presets::Action::NextEnemy, L"NEXT ENEMY");
             AddRow(l, presets::Action::TargetNearest, L"NEAREST ENEMY");
             AddRow(l, presets::Action::Nanobot, L"NANOBOT", g_s.nanobots);

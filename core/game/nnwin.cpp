@@ -90,7 +90,8 @@ bool Step(int dir)
     const int at = nntabs::IndexOf(g_press.Target(open), mp);
     if (at < 0)
         return false;
-    return Go(nntabs::kTabs[nntabs::Step(at, dir, nntabs::Count(mp))].cmd);
+    g_press.Pick(nntabs::kTabs[nntabs::Step(at, dir, nntabs::Count(mp))].cmd, open); // (sent by Frame once the steps stop)
+    return true;
 }
 
 bool Close()

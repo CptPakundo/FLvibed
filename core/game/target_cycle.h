@@ -1,8 +1,9 @@
 // FLvibed - the targeting press's enemy rule. Header only; unit test tests\target_cycle_test.cpp;
 // the live part is controller.cpp SmartTarget.
 //
-// The owner: "right stick should default to target nearest enemy for a first press, and only consecutive presses should
-// be 'next target'". A cold press takes the nearest enemy; a press within kChainSecs of the last one, with the target it
+// The owner, 7 Nov 2026, over 4 Nov's rule: reticle first - a cold press takes what the reticle is on (the caller's ring
+// pick; Cold / Took below), and only with nothing there the enemies. The owner, 4 Nov 2026: "right stick should default
+// to target nearest enemy for a first press, and only consecutive presses should be 'next target'". A cold press takes the nearest enemy; a press within kChainSecs of the last one, with the target it
 // left still selected, takes the nearest enemy this run of presses has not visited, so a run walks every enemy once even
 // while they move, then starts over. A cold press on the nearest enemy goes on to the next one: a press always does
 // something when there is anything else to take. The double tap (clear) is the preset's, not this rule's.
@@ -54,6 +55,19 @@ class Chain
 
     // The game refused the pick: the run goes on from `cur` with the pick still visited, so the next press takes another.
     void Refused(unsigned cur) { last_ = cur; }
+
+    // Reticle first (the owner, 7 Nov 2026: "unintuitive that I couldn't one-click select the thing I was looking at with
+    // enemies nearby"): a cold press takes what the reticle is on before any enemy, so this says whether a press at `t`
+    // with `cur` targeted is cold. Took() records that pick as the run's first, so the presses after it walk the enemies.
+    bool Cold(float t, unsigned cur) const { return !(run_ && cur == last_ && t - at_ <= kChainSecs); }
+    void Took(float t, unsigned id)
+    {
+        seen_n_ = 0;
+        Mark(id);
+        last_ = id;
+        at_ = t;
+        run_ = true;
+    }
 
   private:
     bool Seen(unsigned id) const

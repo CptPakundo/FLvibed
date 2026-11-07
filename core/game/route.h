@@ -58,6 +58,7 @@ enum class Kind
     Jump,   // fast approach and dock with the gate / hole `object` (then plan again in the new system)
     Dock,   // fast dock with `object` (the destination)
     Arrive, // fly to `pos` and stop
+    Via,    // fly through `pos` without stopping: a player's waypoint before the last (the owner, 7 Nov 2026: TRAVEL went to the last nav point)
 };
 struct Step
 {

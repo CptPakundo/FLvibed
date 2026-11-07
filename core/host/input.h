@@ -13,6 +13,9 @@ void SetSteerLift(bool underWindow, bool autopilot); // what that steering may l
 // sent them is gone.
 void SteerStop();
 void SetHudHitSuppression(bool on, const uintptr_t* roots, int count); // those roots out of the game's UI hit test
+// Each frame a full-screen window stands: fl::FlightCommand's commands answer no key or mouse button. What FLvibed holds or fires itself goes on (the autopilot flies under the window).
+void SetFlightLock();
+bool FlightLocked();
 u32 LastRealKeyTick();
 std::string RawKeyStatus(); // the raw-key counters, for `uibtn`
 } // namespace input

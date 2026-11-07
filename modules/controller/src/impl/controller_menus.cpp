@@ -293,7 +293,7 @@ void UpdateFreeCursor(float dt)
     if (mag > 0 && padbases::CursorAllowed()) // (D-BASES: pad_cursor 0 = focus only)
     {
         // Quadratic response: precise near the center, fast at full deflection.
-        const float speed = g_opt.cursorSpeed * fl::ScreenHeight() * mag * mag;
+        const float speed = g_opt.cursorSpeed * fl::ScreenHeight() * mag * mag * (padmap::IsOpen() ? padmap::kCursorScale : 1.0f); // (the full-screen map is a longer way across than a menu)
         float dx = p.lx / mag * speed * dt, dy = -p.ly / mag * speed * dt;
         padbases::ShapeCursor(dx, dy); // cursor_magnet: slows over and pulls toward the nearest clickable element
         dimouse::MoveBy(dx, dy);
@@ -304,8 +304,8 @@ void UpdateFreeCursor(float dt)
     dimouse::SetButton(0, in[glyphs::A] && !padbases::Owns(XINPUT_GAMEPAD_A));
     dimouse::SetButton(1, in[glyphs::X] && !padbases::Owns(XINPUT_GAMEPAD_X));
 
-    // Right stick vertical scrolls lists.
-    if (fabsf(p.ry) > 0 && in[glyphs::RS])
+    // Right stick vertical scrolls lists (on the map it pans).
+    if (fabsf(p.ry) > 0 && in[glyphs::RS] && !padmap::OwnsRightStick())
     {
         g_wheelAccum += p.ry * g_opt.wheelRate * dt;
         const int notches = static_cast<int>(g_wheelAccum);

@@ -21,6 +21,7 @@
 #include "game/hudwake.h"
 #include "game/indicators.h"
 #include "hudhost.h"
+#include "hud2_comm.h"
 #include "hud2_impl.h"
 #include "hud2_layout.h"
 #include "hud2_sim.h"
@@ -311,6 +312,7 @@ static void ComputeLayout(float W, float H)
 
 static void Publish(bool active, bool feed = false)
 {
+    hud2comm::Frame(active, g_L.mx + 0.032f * g_L.H * g_L.k, g_L.navY1, g_L.H); // (the nav's text column, DrawNav's tx)
     const HudBus* bus = HostAtLeast(21) && g_host->GetHudBus ? g_host->GetHudBus() : nullptr;
     if (!bus || !bus->PublishLayout)
         return;
@@ -949,6 +951,7 @@ void Render(void* device)
         RecordTag("alert");
         DrawAlert(g_m, L, base * g_f.alert * fAlert, false);
     }
+    hud2comm::Draw(L.H, g_m.comm);
     LintPassEnd();
     modslots::FaultPoint(modslots::kHud, 2); // (the pass's batch open: what a real fault in the drawing leaves)
     hud2kit::End();

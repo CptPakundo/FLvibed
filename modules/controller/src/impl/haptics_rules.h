@@ -822,11 +822,9 @@ class Bed
             o.bed = (rest + swell_ * 0.18f) * atten * (0.4f + 0.6f * Clamp01(s.throttle));
             o.bedHz = 30.0f * (1.0f + Lerp(e.pitchLow, e.pitchHigh, Clamp01(s.throttle)) / 100.0f);
         }
-        // the afterburner: mass and a noise band, on in a fifth of a second
+        // the afterburner: on the left trigger alone (the owner, 7 Nov 2026: "make boost only vibrate the left trigger") - its stance's vibration on a
+        // DualSense, its trigger motor on an Xbox pad (the stances, section 7). Was: mass and a noise band in the grips as well
         Ramp(burn_, world && s.burner && !s.cruiseEngaged, dt, 0.2f);
-        Up(o.mass, 0.20f * burn_), Up(o.tex, 0.10f * burn_);
-        if (burn_ > 0.01f)
-            o.noise = 0.6f, o.massHz = 70, o.texHz = 170;
         // the tractor's pull, a nebula's slow pressure and static
         Ramp(pull_, world && s.tractor, dt, 1.0f);
         Up(o.mass, 0.04f * pull_), Up(o.tex, 0.10f * pull_);
@@ -841,13 +839,18 @@ class Bed
             o.bed = kBedCap;
         if (o.mass > kBedCap)
             o.mass = kBedCap;
-        // the cruise charge: the build that earns the release
+        // the cruise charge: the build that earns the release, from the inside out as its meter fills from the middle out (the owner, 7 Nov 2026: "make
+        // cruise charging not rumble the whole controller, but rather 'build up' the rumble from inside outwards, just like how it shows on screen"): a
+        // light, high texture first, small and close; the deep mass that fills both hands joins from a third of the charge and grows to the release.
+        // Was: the mass at once from the start (the whole pad), the texture late
         if (world && s.Charging())
         {
             const float f = Clamp01(s.chargeElapsed / s.chargeTime);
-            Up(o.mass, (0.10f + 0.35f * f * sqrtf(f)) * bedScale);
-            Up(o.tex, 0.25f * f * f * bedScale);
-            o.massHz = Lerp(40, 90, f);
+            const float outer = Clamp01((f - 0.33f) / 0.67f);
+            Up(o.tex, (0.04f + 0.21f * f) * bedScale);
+            Up(o.mass, 0.40f * outer * outer * bedScale);
+            o.texHz = Lerp(220, 160, f);
+            o.massHz = Lerp(45, 90, outer);
         }
         // the set pieces: a lane's steady push; a jump builds to its flash, a hole's breaks up as it does
         const float pieceScale = Clamp01(g.cls[kClassSetPieces] / 100.0f);

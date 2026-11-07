@@ -11,6 +11,7 @@
 #include "settings_bus.h"
 #include "game/hostcalls.h"
 #include "ui/views.h"
+#include "ui/hud2_kit.h" // HUD 2's chrome under the panel's texts (7 Nov 2026)
 #include "ui/ui.h" // Collect: the HUD's bottom-right panel by its controls' names
 #include "ui_meta.h"
 
@@ -342,6 +343,7 @@ static void Rebuild()
                 case route::Kind::Lane: line += L"LANE " + NameOf(st.object) + L" -> " + NameOf(st.endRing); break;
                 case route::Kind::Jump: line += L"JUMP " + NameOf(st.object); break;
                 case route::Kind::Dock: line += L"DOCK " + NameOf(st.object); break;
+                case route::Kind::Via: line += L"WAYPOINT"; break;
                 case route::Kind::Arrive:
                 {
                     fl::Kinematics k;
@@ -722,7 +724,26 @@ void Render(void* device)
     // ~0.70 H at every aspect, release acceptance 25 Oct 2026: the panel's bottom at ~0.73 H covered it) and above the
     // prompt bar; the action rows shrink when the room between the top margin and that edge is short.
     const float pad = H * 0.012f;
-    const float w = std::min(H * 0.6f * ts, W * 0.48f);
+    // the width from what it holds (Shockwave, 7 Nov 2026: at 1280x800 the settings' names were cut to two letters beside the kit's 0.36 H control
+    // column): the widest name in the row kit's capitals and the control column, the panel growing to the left as far as the reticle's ring
+    // leaves room; only past that does the kit's fit rule shrink a name (the owner: panels grow first, abbreviation last)
+    float names = 0;
+    for (const char* key : kSettingKeys)
+    {
+        const uimeta::Row* m = uimeta::FindRegistryRow("Autopilot", key);
+        std::wstring upper = m ? uikit::Widen(m->label) : uikit::Widen(key);
+        for (wchar_t& c : upper)
+            if (c >= L'a' && c <= L'z')
+                c = static_cast<wchar_t>(c - L'a' + L'A');
+        names = std::max(names, static_cast<float>(render::TextWidth(f.label, upper)));
+    }
+    const float x1Edge = W - W * 0.02f;
+    const float need = pad * 3.2f + H * (0.03f + 0.01f + 0.36f) + names + H * 0.012f;
+    // (at least the ring's default size, 0.10 H, when the HUD has none to say. The panel that reached over the ring at 1280x800 was the
+    // base width below at Large, where the text scale reads 1.2: not this bound - corrected 7 Nov 2026, fff604af said otherwise)
+    const float roomLeft = x1Edge - (W * 0.5f + std::max(views::HudRingRadius(), H * 0.10f) + pad * 2);
+    // ... and never over the ring (HUD 2's standards, the owner 7 Nov 2026: at Large the base width alone reached over it); a floor of 0.45 H at the narrowest aspect
+    const float w = std::max(std::min(std::max(std::min(H * 0.6f * ts, W * 0.48f), need), roomLeft), H * 0.45f);
     const float headH = H * 0.05f * ts, tabH = H * 0.038f;
     const float actionPitch = (f.label.lineHeight + f.body.lineHeight) * 1.15f;
     const float settingPitch = H * 0.0454f, linePitch = f.label.lineHeight * 1.35f;
@@ -738,14 +759,56 @@ void Render(void* device)
     if (y0 + h > limit)
         y0 = limit - h;
     y0 = std::max(y0, top);
-    const double now = GetTickCount64() / 1000.0;
-    uidraw::HudPanel(x0, y0, w, h, 0.92f, H, now);
+    // the tabs' places, for both passes: across the width on the keyboard, between the bumpers' glyphs on the pad
+    const float tabY = y0 + pad + headH, gh = tabH * 0.6f, gw = kbm ? 0.0f : glyphs::Width(glyphs::LB, gh);
+    const float tabX0 = kbm ? x0 + pad : x0 + pad + gw + pad;
+    const float tabW = (kbm ? w - 2 * pad : w - 2 * (pad + gw + pad)) / TabCount - pad * 0.5f;
+    auto tabX = [&](int t) { return tabX0 + static_cast<float>(t) * (tabW + pad * 0.5f); };
+    const float contentY = tabY + tabH + pad;
+    // HUD 2 (the owner, 7 Nov 2026: "bring it up to HUD 2 style and standards"; the Options page's HUD 2 pass is the model, UI_HUD2_EXTENDED.md 10): the
+    // chrome in HUD 2's kit under the texts - one chamfered glass plate, the rule under the title, tab plates with the current one's yellow underline, the
+    // one focus style (28 % active yellow over the row, the bar outside its left edge); the texts after it in HUD 2's colours. Without HUD 2 the classic panel
+    const bool hud2 = views::HudActive();
+    if (hud2)
+    {
+        render::End(false);
+        if (hud2kit::Begin(device, static_cast<int>(W), static_cast<int>(H), std::max(8, static_cast<int>(0.026f * H + 0.5f))))
+        {
+            namespace hk = hud2kit;
+            hk::SetAlpha(1), hk::SetOffset(0, 0);
+            hk::Plate(x0, y0, x1, y0 + h, H * 0.012f, hk::kTL | hk::kBR, 0.92f, hk::kChrome, 175 / 255.0f);
+            hk::Line(x0 + pad, tabY - pad * 0.35f, x1 - pad, tabY - pad * 0.35f, std::max(1.0f, H * 0.0012f), hk::Argb(hk::kChrome, 0.3f));
+            for (int t = 0; t < TabCount; ++t)
+            {
+                const bool cur = t == g_tab, lit = kbm && g_hotHover == kHotTab + t;
+                hk::Plate(tabX(t), tabY, tabX(t) + tabW, tabY + tabH, H * 0.010f, hk::kTL | hk::kBR, 220 / 255.0f, hk::kChrome, (cur || lit ? 200 : 120) / 255.0f);
+                if (cur)
+                    hk::Line(tabX(t) + H * 0.012f, tabY + tabH - H * 0.004f, tabX(t) + tabW - H * 0.012f, tabY + tabH - H * 0.004f, H * 0.004f, hk::Argb(hk::kActive, 1));
+            }
+            float fy = -1, fh = 0;
+            if (g_tab == Actions && g_focus >= g_scroll && g_focus - g_scroll < g_visibleActions && g_focus < static_cast<int>(g_actions.size()))
+                fy = contentY + static_cast<float>(g_focus - g_scroll) * actionPitch, fh = actionPitch;
+            else if (g_tab == Settings && g_focus >= 0 && g_focus < kSettingCount)
+                fy = contentY + static_cast<float>(g_focus) * settingPitch, fh = settingPitch;
+            if (fy >= 0)
+            {
+                const float fx0 = x0 + pad * 0.9f, fx1 = x1 - pad * 0.9f;
+                hk::Rect(fx0, fy, fx1 - fx0, fh, hk::Argb(hk::kActive, 0.28f));
+                hk::Rect(fx0 - H * 0.008f, fy, H * 0.005f, fh, hk::Argb(hk::kActive, 1));
+            }
+            hk::End();
+        }
+        render::Begin(f.label);
+    }
+    else
+        uidraw::HudPanel(x0, y0, w, h, 0.92f, H, GetTickCount64() / 1000.0);
+    const u32 ink = hud2 ? hud2kit::kInk : kHud, dim = hud2 ? hud2kit::kDim : kGrey, active = hud2 ? hud2kit::kActive : kHud;
     // the title
     float y = y0 + pad;
     render::SetFont(f.title);
     const std::wstring title = L"AUTOPILOT GOALS";
     uidraw::TextShadow(x0 + (w - render::TextWidth(f.title, title)) * 0.5f, y + (headH - f.title.lineHeight) * 0.5f, title,
-                       Argb(kHud, 0.95f), std::max(1.0f, H * 0.001f));
+                       Argb(ink, 0.95f), std::max(1.0f, H * 0.001f));
     if (kbm) // the close mark: its key, clickable
     {
         const float kh = f.body.lineHeight * 1.2f;
@@ -755,26 +818,25 @@ void Render(void* device)
         HotRect(kHotClose, kx - pad * 0.3f, cy - kh * 0.7f, kx + kw + pad * 0.3f, cy + kh * 0.7f);
     }
     y += headH;
-    if (kbm) // the tabs across the width, each clickable (Tab / Shift+Tab step them)
+    if (!kbm) // the bumpers at the tabs' sides
     {
-        const float tabW = (w - 2 * pad) / TabCount - pad * 0.5f;
-        for (int t = 0; t < TabCount; ++t)
-        {
-            const float tx = x0 + pad + t * (tabW + pad * 0.5f);
-            uikit::TabButton(f, tx, y, tabW, tabH, H, kTabNames[t], t == g_tab, g_hotHover == kHotTab + t);
-            HotRect(kHotTab + t, tx, y, tx + tabW, y + tabH);
-        }
-    }
-    else // the tabs with the bumpers at their sides
-    {
-        const float gh = tabH * 0.6f;
-        glyphs::Draw(glyphs::LB, x0 + pad + glyphs::Width(glyphs::LB, gh) * 0.5f, y + tabH * 0.5f, gh, 0.9f);
+        glyphs::Draw(glyphs::LB, x0 + pad + gw * 0.5f, y + tabH * 0.5f, gh, 0.9f);
         glyphs::Draw(glyphs::RB, x1 - pad - glyphs::Width(glyphs::RB, gh) * 0.5f, y + tabH * 0.5f, gh, 0.9f);
-        const float inner = w - 2 * (pad + glyphs::Width(glyphs::LB, gh) + pad);
-        const float tabW = inner / TabCount - pad * 0.5f;
-        for (int t = 0; t < TabCount; ++t)
-            uikit::TabButton(f, x0 + pad + glyphs::Width(glyphs::LB, gh) + pad + t * (tabW + pad * 0.5f), y, tabW, tabH, H,
-                             kTabNames[t], t == g_tab, false);
+    }
+    for (int t = 0; t < TabCount; ++t) // each clickable on the keyboard (Tab / Shift+Tab step them)
+    {
+        const bool lit = kbm && g_hotHover == kHotTab + t;
+        if (hud2) // the plate is the HUD 2 pass's: the caption alone, the current one yellow
+        {
+            render::SetFont(f.label);
+            const std::wstring cap = Fit(f.label, kTabNames[t], tabW - H * 0.01f);
+            uidraw::TextShadow(tabX(t) + (tabW - render::TextWidth(f.label, cap)) * 0.5f, y + (tabH - f.label.lineHeight) * 0.5f, cap,
+                               Argb(t == g_tab ? active : lit ? hud2kit::kInk : hud2kit::kChrome, 0.95f), std::max(1.0f, H * 0.001f));
+        }
+        else
+            uikit::TabButton(f, tabX(t), y, tabW, tabH, H, kTabNames[t], t == g_tab, lit);
+        if (kbm)
+            HotRect(kHotTab + t, tabX(t), y, tabX(t) + tabW, y + tabH);
     }
     y += tabH + pad;
     const float left = x0 + pad * 1.6f, right = x1 - pad * 1.6f;
@@ -785,14 +847,14 @@ void Render(void* device)
         {
             const ActionRow& r = g_actions[i];
             const float ry = y + vi * actionPitch;
-            if (i == g_focus)
+            if (i == g_focus && !hud2) // (HUD 2: the focus is the pass's fill and bar)
                 uidraw::FocusFrame(x0 + pad * 0.7f, ry, w - pad * 1.4f, actionPitch, H, Argb(uidraw::kFrame & 0xFFFFFF, 0.9f));
             render::SetFont(f.label);
             uidraw::TextShadow(left, ry + actionPitch * 0.08f, Fit(f.label, r.label, right - left),
-                               Argb(r.enabled ? kHud : kGrey, 0.95f), std::max(1.0f, H * 0.001f));
+                               Argb(!r.enabled ? dim : hud2 && i == g_focus ? active : ink, 0.95f), std::max(1.0f, H * 0.001f));
             render::SetFont(f.body);
             render::Text(left + H * 0.01f, ry + actionPitch * 0.08f + f.label.lineHeight, Fit(f.body, r.detail, right - left - H * 0.01f),
-                         Argb(r.enabled ? kWhite : kGrey, 0.85f));
+                         Argb(!r.enabled ? dim : hud2 ? hud2kit::kInk : kWhite, 0.85f));
             if (vi < kHotRows) // a click = DO NOW (the keyboard form; the mouse over a row focuses it)
                 HotRect(kHotRow + vi, x0 + pad * 0.7f, ry, x1 - pad * 1.6f, ry + actionPitch);
         }
@@ -813,7 +875,7 @@ void Render(void* device)
         for (size_t i = 0; i < g_queue.size() && i < 10; ++i)
         {
             const bool note = i + 2 >= g_queue.size();
-            render::Text(left, y + i * linePitch, Fit(f.label, g_queue[i], right - left), Argb(note ? kDim : kHud, 0.95f));
+            render::Text(left, y + i * linePitch, Fit(f.label, g_queue[i], right - left), Argb(note ? (hud2 ? hud2kit::kDim : kDim) : ink, 0.95f));
         }
     }
     else
@@ -830,7 +892,8 @@ void Render(void* device)
             g.controlLeft = right - 0.36f * H;
             g.sh = H;
             uikit::RowStyle st;
-            st.focused = i == g_focus;
+            st.focused = i == g_focus && !hud2; // (HUD 2: the pass's fill and bar, the row lit yellow as the Options page's)
+            st.lit = hud2 && i == g_focus;
             const std::string v = Get(kSettingKeys[i]);
             st.enabled = bus && m && !v.empty();
             std::wstring label = m ? uikit::Widen(m->label) : uikit::Widen(kSettingKeys[i]);

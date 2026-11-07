@@ -25,6 +25,7 @@ constexpr float kChipLow = 0.046f, kChipHigh = 0.066f, kChipWord = 0.030f;
 constexpr float kFocusFill = 0.32f, kFocusBar = 0.005f, kFocusGap = 0.008f, kFocusEdge = 0.002f;
 constexpr float kScrollTrack = 0.005f;
 constexpr float kScrimModal = 0.70f, kScrimMap = 0.78f;
+constexpr float kScrimFullMap = 0.97f; // the full-screen map's ground: the flight scene is gone, a trace of it stays alive behind (map-screens-rebuild.md 7)
 constexpr float kTooltipBody = 0.026f;
 constexpr float kMaxFlashHz = 3.0f; // the owner's limit for every flash cue
 
@@ -273,8 +274,8 @@ enum class CursorTint
 enum CursorForm : unsigned
 {
     FormPlain = 0,
-    FormCorners = 1, // hostile
-    FormSpokes = 2,  // firing
+    FormCorners = 1, // hostile (drawn since 7 Nov 2026 as the solid darts its tint gives: skinover DrawReticle)
+    FormSpokes = 2,  // firing (the darts pushed in, the ring bolder)
     FormBar = 4      // cannot fire
 };
 struct CursorRow

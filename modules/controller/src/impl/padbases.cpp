@@ -30,6 +30,8 @@
 #include "ui/uikit.h"
 #include "ui/uiopt.h"
 #include "ui/views.h"
+#include "game/nntabs.h"
+#include "ui/winplates.h"
 
 #include <algorithm>
 #include <sstream>
@@ -127,6 +129,7 @@ static std::string g_busy;
 static float g_roomRefresh = 0;
 static std::string g_pendingRoom; // a ring step while the NavBar is busy
 static float g_pendingFor = 0;
+static float g_pendingSettle = 0; // the bumpers' pick waits this long for the next step (nntabs::kSettleSeconds)
 
 // the room's characters, in screen order (left to right by the game's own pick box, baseinfo::CharacterScreenRect)
 struct Char
@@ -155,6 +158,7 @@ static float g_tradeWait = 0;
 static bool g_tradeBack = false; // the trade was a tap on the button itself: the focus returns to the row
 static float g_trigRepeat[2] = {}; // LT, RT repeat timers
 static float g_trigHeld[2] = {};
+static bool JettisonOpen();
 static int g_filter = -1;
 static int g_nnTab = -1;
 static int g_qtyPos = -1, g_qtyMax = -1; // the quantity slider as last read (the quantity line)
@@ -409,17 +413,17 @@ static void StepRoom(int dir)
     if (from < 0)
         return;
     const Ring& to = g_ring[(from + dir + static_cast<int>(g_ring.size())) % g_ring.size()];
-    if (!g_busy.empty())
+    // the bumpers pick, the pause goes (the owner, 7 Nov 2026: spam to highlight, open when the presses stop): the step is queued, its underline shown at
+    // once (winplates::PickRoom), and sent once no step came for nntabs::kSettleSeconds and the NavBar is ready (it swallows clicks while busy)
+    if (g_busy.empty() && g_current >= 0 && _stricmp(g_ring[g_current].label.c_str(), to.label.c_str()) == 0)
     {
-        g_pendingRoom = to.label; // the NavBar swallows clicks while busy: step when it is ready
-        g_pendingFor = 0;
-        events::Push("pad room: %s queued (busy: %s)", to.label.c_str(), g_busy.c_str());
+        g_pendingRoom.clear(), winplates::PickRoom(""); // (stepped back to the room it is in: nothing to open)
         return;
     }
-    std::string what;
-    if (room::Goto(to.label, &what))
-        g_lastGoto = to.label, g_current = -1;
-    events::Push("pad room: %s -> %s", to.label.c_str(), what.c_str());
+    g_pendingRoom = to.label;
+    g_pendingFor = 0, g_pendingSettle = nntabs::kSettleSeconds;
+    winplates::PickRoom(to.label);
+    events::Push("pad room: %s picked%s%s", to.label.c_str(), g_busy.empty() ? "" : " (busy: ", g_busy.empty() ? "" : (g_busy + ")").c_str());
 }
 
 // The host's live room characters (the ctor / dtor detours; HostApi v5) - the cheap read, no hover.
@@ -683,7 +687,7 @@ static void Prompts(const Gamepad& pad)
         // QUANTITY and MAX with a slider (GitHub issue 17: the equipment dealer never named the triggers), MOUNT on an
         // item of the player's with a box, FILTER when nothing needs its place.
         // (the list side: short, so HUD 2's pills fit the column right of the description at 16:9 - promptbar rule 4; off the final stage's BUY SHIP it says the way back)
-        add(Id::LB, buyShip && !onBuyShip ? L"SIDE / BUY SHIP" : L"SIDE", false, Id::RB);
+        add(Id::DL, buyShip && !onBuyShip ? L"SIDE / BUY SHIP" : L"SIDE", false, Id::DR); // (the D-pad: left = your list, right = the dealer's; LB / RB too)
         if (qty)
             add(Id::LT, L"QUANTITY", false, Id::RT);
         else if (eq)
@@ -739,7 +743,17 @@ static void Prompts(const Gamepad& pad)
         add(Id::B, L"CLOSE");
         break;
     case Screen::NnInventory:
+        if (JettisonOpen())
+        {
+            add(Id::LT, L"HOW MANY", false, Id::RT);
+            add(Id::Y, L"ALL");
+            add(Id::A, L"JETTISON");
+            add(Id::B, L"CANCEL");
+            break;
+        }
         add(Id::DU, L"ITEM", false, Id::DD);
+        if (Vis("JettisonButton"))
+            add(Id::Y, L"JETTISON");
         if (Vis("Filter_Weapons"))
             add(Id::X, L"FILTER");
         add(Id::A, L"USE / MOUNT");
@@ -808,15 +822,42 @@ static void ReadQuantity()
     g_qtyMax = static_cast<int>(hi - 1 + 0.5f); // the range's top = n + 1 page (1); its top position = what fits
 }
 
-static void Quantity(int delta, const char* why)
+static void Quantity(int delta, const char* why, const char* name = "QuantitySlider")
 {
-    const u32 slider = Vis("QuantitySlider");
+    const u32 slider = Vis(name);
     if (!slider)
         return;
     const float pos = uiclick::Scroll(slider, static_cast<float>(delta), false, nullptr, nullptr);
     if (why)
-        events::Push("pad dealer: %s quantity -> %.0f", why, pos);
+        events::Push("pad %s: %s quantity -> %.0f", name, why, pos);
 }
+
+// The triggers on a quantity slider: one step per press, repeating while held (faster after 1.5 s)
+static void TriggerQuantity(const Gamepad& pad, const char* name)
+{
+    const u32 trig[2] = {PAD_LT, PAD_RT};
+    for (int i = 0; i < 2; ++i)
+    {
+        if (!pad.Down(trig[i]))
+        {
+            g_trigHeld[i] = 0;
+            continue;
+        }
+        const bool first = g_trigHeld[i] == 0;
+        g_trigHeld[i] += g_dt;
+        g_trigRepeat[i] -= g_dt;
+        if (first || g_trigRepeat[i] <= 0)
+        {
+            Quantity(i == 0 ? -1 : 1, first ? (i == 0 ? "LT" : "RT") : nullptr, name);
+            g_trigRepeat[i] = first ? 0.4f : (g_trigHeld[i] > 1.5f ? 0.04f : 0.1f);
+        }
+    }
+}
+
+// The NeuroNet inventory's jettison (in space; Shockwave via the owner, 7 Nov 2026: "no way to jettison cargo ... with a controller, nor ... the triggers to set
+// a quantity"): the game's own JettisonButton (the bin by the credits, shown while the selected item can go) opens its "Jettison How Many?" panel:
+// JettisonQuantitySlider (a scroll bar, as the dealers' QuantitySlider), JettisonAcceptButton / JettisonCancelButton
+static bool JettisonOpen() { return g_screen == Screen::NnInventory && Vis("JettisonAcceptButton") != 0; }
 
 // The visible control of that name on a side of a dealer: both windows use the same names, so a name alone finds whichever comes first.
 static u32 OnSide(const char* name, int side)
@@ -1020,16 +1061,21 @@ static void UpdateRoom(const Gamepad& pad)
     if (!g_pendingRoom.empty())
     {
         g_pendingFor += g_dt;
-        if (g_busy.empty())
+        g_pendingSettle -= g_dt;
+        if (g_pendingSettle > 0)
+        {
+            // (the bumpers may still be stepping)
+        }
+        else if (g_busy.empty())
         {
             std::string what;
             if (room::Goto(g_pendingRoom, &what))
                 g_lastGoto = g_pendingRoom, g_current = -1;
             events::Push("pad room: queued %s -> %s", g_pendingRoom.c_str(), what.c_str());
-            g_pendingRoom.clear();
+            g_pendingRoom.clear(), winplates::PickRoom("");
         }
         else if (g_pendingFor > 15)
-            g_pendingRoom.clear();
+            g_pendingRoom.clear(), winplates::PickRoom("");
     }
     const bool strip = !g_chars.empty();
     g_owned |= XINPUT_GAMEPAD_LEFT_SHOULDER | XINPUT_GAMEPAD_RIGHT_SHOULDER;
@@ -1105,7 +1151,7 @@ static void UpdateRoom(const Gamepad& pad)
 // The right stick moves the screen's text, else its list. The wheel the stick sends elsewhere reaches nothing here: the game hands it to the control under the
 // cursor and stops, and rows, rich text and scroll bars all ignore it (0x53F330, read in game on the dealer's list). So the bar itself moves, natively. A rich
 // text has a bar (kRichBar) only while it overflows; a name in `lists` is a bar. The two dealers have one per list: the list under the focus (ListBar).
-static u32 StickBar(bool listOnly = false)
+static u32 StickBar(bool listOnly = false, bool* byFocus = nullptr)
 {
     constexpr u32 kRichBar = 0x3F0;
     static const struct
@@ -1127,6 +1173,24 @@ static u32 StickBar(bool listOnly = false)
     {
         if (s.screen != g_screen)
             continue;
+        // the focus decides first (Shockwave via the owner, 7 Nov 2026: "the right-stick winds up scrolling all of them, instead of whatever the left-stick
+        // cursor and/or D-Pad are focused on"): the list whose row the D-pad or the cursor is on, or the text it is on; the order below only with neither
+        if (!listOnly)
+            if (const u32 f = Focused())
+            {
+                u32 bar = 0;
+                if (IsRow(ui::ControlName(f)))
+                    bar = s.screen == Screen::Commodity || s.screen == Screen::Equipment ? ListBar(f) : s.lists[0] ? Vis(s.lists[0]) : 0;
+                for (const char* name : s.texts)
+                    if (!bar && name && Vis(name) == f)
+                        bar = Mem<u32>(f + kRichBar);
+                if (bar)
+                {
+                    if (byFocus)
+                        *byFocus = true;
+                    return bar;
+                }
+            }
         for (const char* name : s.texts)
             if (const u32 ctl = name && !listOnly ? Vis(name) : 0)
                 if (const u32 bar = Mem<u32>(ctl + kRichBar))
@@ -1153,6 +1217,28 @@ static std::string StickBarText()
     return b;
 }
 
+// The focused list row's neighbour by name (ItemView03 -> ItemView04, the same digits, the same side of a dealer), focused: false at the list's first / last row
+static bool StickStepRow(int dir)
+{
+    const u32 f = Focused();
+    const std::string n = ui::ControlName(f);
+    if (!f || !IsRow(n.c_str()))
+        return false;
+    size_t d = n.size();
+    while (d > 0 && isdigit(static_cast<u8>(n[d - 1])))
+        --d;
+    if (d == n.size())
+        return false;
+    const int next = atoi(n.c_str() + d) + dir;
+    if (next < 0)
+        return false;
+    char name[48];
+    sprintf_s(name, "%s%0*d", n.substr(0, d).c_str(), static_cast<int>(n.size() - d), next);
+    const int side = SideOf(f, true);
+    const u32 to = side ? OnSide(name, side) : Vis(name);
+    return to && Snap(to);
+}
+
 static void StickScroll(const PadState& s)
 {
     constexpr float kRowsPerSec = 10.0f;
@@ -1167,7 +1253,8 @@ static void StickScroll(const PadState& s)
     if (!rows)
         return;
     accum -= static_cast<float>(rows);
-    if (const u32 bar = StickBar())
+    bool byFocus = false;
+    if (const u32 bar = StickBar(false, &byFocus))
     {
         // (a list's bar counts rows, a text's pixels: a step of about a line there)
         float lo = 0, hi = 0;
@@ -1176,9 +1263,15 @@ static void StickScroll(const PadState& s)
     const float lineH = static_cast<float>(fl::ScreenHeight()) * (g_screen == Screen::NnLog || g_screen == Screen::NnHelp || g_screen == Screen::Jobs ? 0.03625f : 0.0325f);
     const float step = hi - lo > 100.0f ? lineH : 1.0f;
         // (the stick up: back towards the top; a text at its end, or one whose bar does not move, leaves the stick to the list)
-        if (uiclick::Scroll(bar, static_cast<float>(-rows) * step, false, nullptr, nullptr) == before)
+        // (... but never past what the focus is on: that is the one the stick moves)
+        const bool moved = uiclick::Scroll(bar, static_cast<float>(-rows) * step, false, nullptr, nullptr) != before;
+        if (!moved && !byFocus)
             if (const u32 list = StickBar(true); list && list != bar)
                 uiclick::Scroll(list, static_cast<float>(-rows), false, nullptr, nullptr);
+        // the list at its end with a row in focus: the stick goes on through the items, one row at a time, as the D-pad does (the owner, 7 Nov 2026: "scrolling
+        // through the ITEMS" - the view stopped at the end with the focus on its 2nd row, so the last items were never reached)
+        if (!moved && byFocus)
+            StickStepRow(rows > 0 ? -1 : +1);
     }
 }
 
@@ -1266,13 +1359,16 @@ static void UpdateWindow(const Gamepad& pad)
     const char* close = CloseName();
     const bool haveClose = *close && Vis(close);
     const bool panelBack = hovered && PanelFocus(hname);
-    if (haveClose || panelBack)
+    const bool jettison = JettisonOpen(); // (B cancels the jettison panel, the window stays)
+    if (haveClose || panelBack || jettison)
         g_owned |= XINPUT_GAMEPAD_B;
     if (g_screen == Screen::Offer)
         g_owned |= XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_B;
     if (pad.Pressed(XINPUT_GAMEPAD_B))
     {
-        if (panelBack && Snap(g_lastRow))
+        if (jettison)
+            ClickName("JettisonCancelButton", "jettison cancel");
+        else if (panelBack && Snap(g_lastRow))
             events::Push("pad %s: back from the transfer panel to %s", ScreenName(g_screen), ui::ControlName(g_lastRow));
         else if (g_screen == Screen::Offer)
             ClickName(Vis("OfferDialogAcceptButton") ? "OfferDialogDeclineButton" : "OfferDialogClose2Button", "offer");
@@ -1376,24 +1472,7 @@ static void UpdateWindow(const Gamepad& pad)
             SwitchSide(+1);
         if (g_screen == Screen::Equipment && pad.Pressed(XINPUT_GAMEPAD_X))
             CycleFilter();
-        // the triggers: one step per press, repeating while held (faster after 1.5 s)
-        const u32 trig[2] = {PAD_LT, PAD_RT};
-        for (int i = 0; i < 2; ++i)
-        {
-            if (!pad.Down(trig[i]))
-            {
-                g_trigHeld[i] = 0;
-                continue;
-            }
-            const bool first = g_trigHeld[i] == 0;
-            g_trigHeld[i] += g_dt;
-            g_trigRepeat[i] -= g_dt;
-            if (first || g_trigRepeat[i] <= 0)
-            {
-                Quantity(i == 0 ? -1 : 1, first ? (i == 0 ? "LT" : "RT") : nullptr);
-                g_trigRepeat[i] = first ? 0.4f : (g_trigHeld[i] > 1.5f ? 0.04f : 0.1f);
-            }
-        }
+        TriggerQuantity(pad, "QuantitySlider");
         break;
     }
     case Screen::Repair:
@@ -1423,6 +1502,25 @@ static void UpdateWindow(const Gamepad& pad)
         }
         break;
     case Screen::NnInventory: // the dealer's filters, the dealer's way
+        if (JettisonOpen()) // the panel: the triggers / D-pad set how many, Y all of them, A jettisons (B cancels: above)
+        {
+            g_owned |= XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y | XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_LEFT |
+                       XINPUT_GAMEPAD_DPAD_RIGHT;
+            TriggerQuantity(pad, "JettisonQuantitySlider");
+            if (pad.Pressed(XINPUT_GAMEPAD_DPAD_LEFT) || pad.Pressed(XINPUT_GAMEPAD_DPAD_RIGHT))
+                Quantity(pad.Pressed(XINPUT_GAMEPAD_DPAD_LEFT) ? -1 : 1, "d-pad", "JettisonQuantitySlider");
+            if (pad.Pressed(XINPUT_GAMEPAD_Y))
+                Quantity(100000, "all", "JettisonQuantitySlider");
+            if (pad.Pressed(XINPUT_GAMEPAD_A))
+                ClickName("JettisonAcceptButton", "jettison");
+            break;
+        }
+        if (Vis("JettisonButton"))
+        {
+            g_owned |= XINPUT_GAMEPAD_Y;
+            if (pad.Pressed(XINPUT_GAMEPAD_Y))
+                ClickName("JettisonButton", "jettison");
+        }
         if (Vis("Filter_Weapons"))
         {
             g_owned |= XINPUT_GAMEPAD_X;
@@ -1481,6 +1579,8 @@ void Update(float dt, const Gamepad& pad, Where where)
         pad.Pressed(XINPUT_GAMEPAD_DPAD_LEFT) || pad.Pressed(XINPUT_GAMEPAD_DPAD_RIGHT) ||
         pad.Pressed(XINPUT_GAMEPAD_LEFT_SHOULDER) || pad.Pressed(XINPUT_GAMEPAD_RIGHT_SHOULDER))
         g_cursorShown = false;
+    if (padmap::IsOpen()) // (the map's cursor is the map's own, and the D-pad's walk moves it: hidden, the walk looked dead on the owner's pad, 7 Nov 2026)
+        g_cursorShown = true;
     if (where == Where::Menu || !device::Pad())
     {
         if (wasActive)

@@ -967,6 +967,10 @@ void WindowPlates(const Win& w, WindowPass& out)
                 if (FullyShown(title) && RectOf(title, b) && TextHeightPx(title) > 0)
                     q.rule = (b.cy + TextHeightPx(title) + Hf(0.008f) - y0) / g_H;
             }
+            // FLvibed's own page in the Options window has its own strip: the game's header rule under it ran through the page's first row at small
+            // sizes (Shockwave via the owner, 7 Nov 2026, "HUD 2" crossed out at 80 %)
+            if (w.fam == kFamOptions && hostcalls::g.OptionsPageState && hostcalls::g.OptionsPageState() == 2)
+                q.rule = 0;
             g_ops->Plate(x0, y0, x1, y1, q);
         }
         else if (g_paint)
@@ -1062,11 +1066,15 @@ bool WindowOpen()
 
 // The button of the room the player is in, as the game finds it: its builder compares each hotspot's room switch with the room's nickname (0x43F2E0). The bar's own marks say nothing: +0x333 reads
 // no button lit, and the sub-row's middle, which stood in for it, slides, and for 0.6 s after a room change stands under another room's button (the owner's video, 6 Nov 2026)
+static std::string g_pickedRoom; // the pad's ring pick while the bumpers step (PickRoom): the underline stands under it until it opens
+
+void PickRoom(const std::string& label) { g_pickedRoom = label; }
+
 static u32 CurrentRoomButton()
 {
     static std::string key;
     static u32 gen = 0xFFFFFFFFu, ctl = 0;
-    const std::string now = baseinfo::RoomKey();
+    const std::string now = g_pickedRoom.empty() ? baseinfo::RoomKey() : g_pickedRoom;
     if (now != key || gen != g_gen)
     {
         key = now, gen = g_gen, ctl = 0;

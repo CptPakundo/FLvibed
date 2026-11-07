@@ -3,6 +3,7 @@
 
 #include "uihooks.h"
 
+#include "input.h"
 #include "safemem.h"
 
 namespace uihooks
@@ -56,6 +57,9 @@ static bool g_traceKeys = false;
 
 static bool __cdecl HandleKeyHook(int cmd, int category)
 {
+    // a physical key's press under a full-screen window flies nothing (its release goes on; fl::FireCommand, FLvibed's own, has no key)
+    if (fl::FlightCommand(cmd) && input::FlightLocked() && exe::KeyIsDown.ok() && exe::KeyCurVk.ok() && Mem<u8>(exe::KeyIsDown) && Mem<u32>(exe::KeyCurVk))
+        return false;
     const bool handled = g_origHandleKey(cmd, category);
     // the logic sees the key command after the game handled it (the maneuver lock's answer)
     if (g_onKeyCmd && cmd != fl::USER_MOVE)

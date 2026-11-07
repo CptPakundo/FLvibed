@@ -37,6 +37,7 @@ enum LayerId
     LIconSmall,
     LTextSmall,
     LTextBig,
+    LTextCaption,
     LCount
 };
 struct Layer
@@ -764,6 +765,54 @@ float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align 
     return TextDraw(x, y, s, size, argb, align, track, outline, true, true);
 }
 
+// The game's captions, measured on the Options screen's siblings at 4K (the page button's caption, options_page.cpp): Agency FB Regular, 72 px em = 0.0333 H, its capitals centred on the
+// button, a dark shadow down-right. Their own atlas, built the first time one is drawn: only the main menu asks.
+static render::Font g_caption;
+static void* g_captionDev = nullptr;
+static size_t g_captionChars = 0;
+static bool CaptionFont()
+{
+    const int px = std::max(8, static_cast<int>(g_sh * 0.0333f + 1.5f)); // (+1.5: the game's rasteriser rounds up at small sizes)
+    if (g_caption.px == px && g_caption.texture && g_captionDev == g_dev && g_captionChars == Chars().size())
+        return true;
+    const bool game = gamefont::Load();
+    if (!render::BuildFont(g_caption, game ? gamefont::LabelFace() : L"Segoe UI", px, game ? 400 : 600, Chars()))
+        return false;
+    g_captionDev = g_dev, g_captionChars = Chars().size();
+    return true;
+}
+
+float GameCaption(float x, float y, const std::wstring& s, u32 argb, Align align, float size)
+{
+    if (!g_fontsOk || s.empty())
+        return 0;
+    if (!CaptionFont())
+        return Text(x, y, s, size > 0 ? size : g_sh * 0.0333f, argb, align); // (fails closed: the HUD's face)
+    const render::Font& f = g_caption;
+    const float k = size > 0 ? size / f.px : 1.0f;
+    const float w = RawWidth(f, s) * k;
+    const u32 c = Mul(argb);
+    if (!(c >> 24))
+        return w;
+    g_layers[LTextCaption].tex = f.texture;
+    if (align == Center)
+        x -= w * 0.5f;
+    else if (align == Right)
+        x -= w;
+    float capTop = f.ascent * 0.25f, capH = f.ascent * 0.75f;
+    const auto it = f.glyphs.find(L'F');
+    if (it != f.glyphs.end() && it->second.h > 0)
+        capTop = static_cast<float>(it->second.oy), capH = static_cast<float>(it->second.h);
+    const float yTop = y - (capTop + capH * 0.5f) * k;
+    if (g_rec && g_recDepth == 0)
+        if (Drawn* d = Rec('T', x, y - capH * k * 0.5f, x + w, y + capH * k * 0.5f, f.px * k, (c >> 24) / 255.0f))
+            d->text = s;
+    const float o = std::max(1.0f, g_sh * 0.0012f);
+    Glyphs(g_layers[LTextCaption], f, x + o, yTop + o, s, k, 0, (static_cast<u32>((c >> 24) * 0.75f) << 24));
+    Glyphs(g_layers[LTextCaption], f, x, yTop, s, k, 0, c);
+    return w;
+}
+
 // The marquee (core\game\marquee.h; the owner, 31 Oct 2026, HUD 2 decision 1): the fit rule first; a text it would cut
 // draws in full, clipped to its room [bx, bx + maxW], moved by the marquee's offset at this moment (its clock: since the
 // text first showed, MarqueeClockOf), the ellipsis at the clip's edge with its alpha. Recorded for the lint as ONE text
@@ -1076,6 +1125,7 @@ void Shutdown()
     OnDeviceLost();
     render::FreeFont(g_small);
     render::FreeFont(g_big);
+    render::FreeFont(g_caption);
     render::FreeFont(g_spare.smallFont);
     render::FreeFont(g_spare.bigFont);
     g_fontsOk = false;

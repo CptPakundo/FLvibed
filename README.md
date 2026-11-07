@@ -32,13 +32,15 @@ A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller sup
 
 **A new look for the whole game, and a simpler way to set it up.** The full list: [CHANGELOG.md](CHANGELOG.md).
 
-- **One clear look everywhere:** the star map, dialogs, main menu, loading screen and every shop now match the flight HUD. Prefer the original look? It is one setting away.
+- **A new star map:** it fills the screen and zooms smoothly toward the cursor, and every button has a job. Pick a place, plot a route, chain waypoints and fly it, on a pad or with the mouse. It lists only what you have found.
+- **One clear look everywhere:** dialogs, main menu, loading screen and every shop now match the flight HUD. Prefer the original look? It is one setting away.
 - **Shops that fit:** panels size themselves to what they show, text stays inside its box, and a refused purchase tells you why in plain view.
 - **See what you are fighting:** a small card when you pick a target, then its name, distance and health on the ship itself, and a cue when your guns are in range.
 - **A calmer screen:** the flight HUD covers less, shows your boost and cruise on the reticle, and comes in Small, Normal and Large for your screen.
 - **Buy a ship on the controller:** the whole purchase works without a mouse.
 - **Simple options:** five tabs with the settings most players need, and a short welcome the first time you start. Everything else waits under Show all settings.
 - **More controllers:** PlayStation and Switch pads work directly, and pads can now rumble with what happens on screen.
+- **Linux:** a script in the zip installs FLvibed into a Wine or Proton prefix. New, and waiting for its first report from a real Linux machine.
 
 ## 🌟 See everything in the living spec
 
@@ -164,7 +166,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 | | Today | Headed for |
 |---|---|---|
-| 🎮 **Controller** | Every screen on the pad, three layouts, glyphs for four pad families; flight and combat proven on a real Elite pad | A bindings editor for your own layout, nav map objects as pad controls, every screen proven on real pads |
+| 🎮 **Controller** | Every screen on the pad, three layouts, glyphs for four pad families; flight and combat proven on a real Elite pad, the star map, menus and dealers on a DualSense Edge | A bindings editor for your own layout, every screen proven on real pads |
 | 🛰️ **HUD 2** | FLvibed's own HUD, in flight and over menus and bases (the default) | Refined from real play; more layouts (Focus experimental, Speedrun and Guided planned) |
 | 💬 **Subtitles** | Every spoken line, timed on the words, with names, colours and portraits | Every line reviewed by ear against the audio |
 | 🤖 **Autopilot** | Plays missions, jobs, travel, docking and fights | Speedrun-grade, zero-input, alongside you (above) |
@@ -186,6 +188,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 - 🪟 **Windows 10 or 11** (tested). **Windows 7 SP1, 8 and 8.1** since 0.2.0: every release is checked to use nothing
   newer than Windows 7, but a tester's Windows 7 needed VxKex to run 0.3.0 (0.1.0 did not load there). Since 0.3.5 FLvibed is built
   with a compiler that still targets Windows 7: expected to work without VxKex, not yet confirmed on a real Windows 7.
+- 🐧 **Linux:** Wine or Proton, through `flvibed-linux.sh` in the zip ([how](#-getting-started)). New, not yet tried on a real Linux machine.
 - 🚀 **Freelancer: HD Edition 0.7.1** - the base FLvibed is built and tested on. It brings everything else needed.
 - 💿 Or **the original Freelancer 1.1 with a decrypted `Freelancer.exe`** (the CD's exe is SafeDisc-protected, and
   SafeDisc does not run on Windows 10 / 11). Verified in game through the first mission and a full regression pass.
@@ -226,6 +229,21 @@ on an update. No game file is changed.
 To remove it by hand: take the `FLvibed.dll` line out of `EXE\dacom.ini`, then delete `EXE\FLvibed.dll`, `FLvibed.ini`,
 `FLController.ini`, `FLSubtitles.ini`, any `*.before-0.2.0` backups of them, the FLvibed logs and the folders
 `EXE\FLSubtitles\` and `EXE\FLvibed\`.
+
+</details>
+
+<details>
+<summary>🐧 Linux (Wine or Proton)</summary>
+
+The game runs under Wine or Proton, so FLvibed goes into the game's folder inside your prefix. This route is new and has
+not been tried on a real Linux machine yet: reports are welcome.
+
+1. Download **[FLvibed-0.4.0.zip](../../releases/download/v0.4.0/FLvibed-0.4.0.zip)** and unpack it.
+2. In the unpacked folder: `./flvibed-linux.sh install "<game folder>"`, the folder that holds `EXE/Freelancer.exe`.
+3. For a USB DualSense's full haptics: `./flvibed-linux.sh haptics` sets its speaker to Surround 4.0 with `pactl`. Run it
+   again after a replug.
+
+To remove it: `./flvibed-linux.sh uninstall "<game folder>"`, with `--keep-settings` to keep your settings.
 
 </details>
 
@@ -342,14 +360,17 @@ What FLvibed does not do yet, or does only in part. Anything here - and the desi
   harness only so far, not yet on a real pad.
 - 🤖 **The Advanced Autopilot is work in progress:** it still fails some runs, its goal queue (QUEUE / DO NEXT) is
   not built, and how it shares control with a player on the guns is not designed yet ([details](#-the-advanced-autopilot)).
-- 🎮 **Real pads:** flight and combat are verified on a real Xbox Elite pad; the menus, bases, dealers and on-screen
-  keyboard so far on a virtual pad only.
+- 🗺️ **On the star map:** the left stick moves the cursor (click: find your ship), the right stick the map (click: Sirius),
+  the triggers zoom. A selects, A again plots the route, X adds a waypoint, hold X removes one, Y flies the route, the
+  D-pad walks your destinations (left: the list, right: the layers), B closes.
+- 🎮 **Real pads:** flight and combat are verified on a real Xbox Elite pad; the star map, menus, bases and dealers on a
+  DualSense Edge; the on-screen keyboard so far on a virtual pad only.
 - 🎯 **HUD 2 and the game's target label:** when a target sits behind HUD 2's target card on screen, the game's own
   name and health label for it can draw over the card.
 - 🖱️ **Pad-only pieces:** the target picker and the action wheel have no mouse version yet (keyboard and mouse target
   through the game's contact list).
-- 🧱 **Not built yet:** a bindings editor (the three layouts apply; CUSTOM = FREELANCER), nav map objects as pad
-  controls, the inventory's jettison hold and the equipment compare line.
+- 🧱 **Not built yet:** a bindings editor (the three layouts apply; CUSTOM = FREELANCER), the star map's full-screen
+  treatment for the other NeuroNet windows, right-click waypoints with the mouse and the equipment compare line.
 - 🖥️ **Exclusive fullscreen** is not verified, nor the movie subtitle overlay in it. OBS Game Capture cannot see the
   movies or their subtitles (use Window or Display Capture).
 - 💬 **Subtitle text:** the dialogue lines are reviewed line by line; the room scenes recorded as one track (the 19

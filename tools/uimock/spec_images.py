@@ -130,7 +130,7 @@ FIXES = {
 SCREENS = ['room_trader', 'room_bar', 'room_launchpad', 'jobboard', 'news', 'offer', 'commodity', 'equipment', 'shipdealer',
            'repair', 'nn_inventory_docked', 'nn_playerinfo_docked', 'nn_log_docked', 'nn_help_docked', 'pause_docked',
            'pause_space', 'save_dialog', 'osk_save', 'load_ingame', 'confirm_docked', 'options_ingame_video',
-           'options_front_video', 'mainmenu', 'load_front', 'newgame_prompt', 'navmap_docked', 'navmap_space', 'death',
+           'options_front_video', 'mainmenu', 'load_front', 'newgame_prompt', 'death',
            'chat_space']
 ASPECT = ['final43_commodity', 'final43_shipdealer', 'final43_options_front_video', 'final1610_commodity',
           'final1610_shipdealer', 'final1610_options_front_video', 'final21x9_commodity', 'final21x9_jobboard',
@@ -151,7 +151,15 @@ W28 = os.path.join(RUNS, 'hud28_windows_2026-11-05')
 W28_NAMES = {
     'x_jobboard_h2': 'k3_job-012310', 'x_news_h2': 'k3_news-012334', 'x_shipdealer_h2': 'k3_ship-012428',
     'x_nn_inventory_docked_h2': 'k3_nn_inventory-012432', 'x_nn_log_docked_h2': 'k3_nn_log-012435',
-    'x_nn_help_docked_h2': 'k3_nn_help-012441', 'x_navmap_space_h2': 'm4_navmap-014214', 'x_pause_space_h2': 'm4_pause-014220',
+    'x_nn_help_docked_h2': 'k3_nn_help-012441', 'x_pause_space_h2': 'm4_pause-014220',
+}
+
+
+# the rebuilt nav map (7 Nov 2026, release-grade dev build, 4K; the six captures of the living spec's re-release)
+MAP7 = os.path.join(RUNS, 'spec_map_2026-11-07')
+MAP7_NAMES = {
+    'map_system': 'map_system-054718', 'map_selected': 'map_selected-054721', 'map_route': 'map_route-054722',
+    'map_destinations': 'map_destinations-054723', 'map_layers': 'map_layers-054725', 'map_sirius': 'map_sirius-054728',
 }
 
 
@@ -197,6 +205,8 @@ def main():
         save(os.path.join(W28, f + '.png'), n)
     for n, f in S030_NAMES.items():
         save(os.path.join(S030, f + '.png'), n, 1200 if n.startswith('a_') else 1600)
+    for n, f in MAP7_NAMES.items():   # the nav map's rebuild (the old x_navmap_* captures are gone)
+        save(os.path.join(MAP7, f + '.png'), n)
     print(len(os.listdir(OUT)), 'images in', OUT)
 
 

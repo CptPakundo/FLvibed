@@ -46,6 +46,7 @@ static_assert(SDL_GAMEPAD_TYPE_UNKNOWN == padbackend::kTypeUnknown && SDL_GAMEPA
                   SDL_GAMEPAD_TYPE_GAMECUBE == padbackend::kTypeGameCube && SDL_GAMEPAD_TYPE_STEAM == padbackend::kTypeSteam &&
                   SDL_GAMEPAD_TYPE_COUNT == padbackend::kTypeCount,
               "pad_backend.h SdlType mirrors SDL_GamepadType");
+static_assert(SDL_GAMEPAD_BUTTON_TOUCHPAD == padbackend::kSdlTouchpad, "pad_backend.h kSdlTouchpad is SDL's touchpad click");
 static_assert(SDL_GAMEPAD_BUTTON_SOUTH == 0 && SDL_GAMEPAD_BUTTON_BACK == 4 && SDL_GAMEPAD_BUTTON_START == 6 &&
                   SDL_GAMEPAD_BUTTON_LEFT_SHOULDER == 9 && SDL_GAMEPAD_BUTTON_DPAD_RIGHT == 14 &&
                   padbackend::kSdlButtons == SDL_GAMEPAD_BUTTON_DPAD_RIGHT + 1,
@@ -59,6 +60,7 @@ namespace sdlpad
 static SRWLOCK g_lock = SRWLOCK_INIT; // guards g_state, g_path and the output blocks
 static SdlPadState g_state = {};
 static char g_path[260] = {}; // the open pad's device path
+static char g_name[128] = {}; // ... and SDL's name of it (the grips' speaker found by name where no ContainerId says it: Wine)
 static struct
 {
     u16 low, high;
@@ -105,6 +107,7 @@ static volatile LONG g_outputOnly = 0; // started for an Xbox pad's four motors:
 static HANDLE g_hookThread = nullptr;
 static DWORD g_hookThreadId = 0;
 static volatile LONG g_filterOn = 0, g_lastInput = 0, g_dropped = 0, g_said = 0;
+static volatile LONG g_pressedLatch = 0; // every button seen held since the last TakePressed
 static float g_stickDeadzone = 0.24f, g_triggerThreshold = 0.12f;
 
 static bool DropNow(bool injected)
@@ -220,6 +223,30 @@ static void Publish(const SdlPadState& s)
     ReleaseSRWLockExclusive(&g_lock);
 }
 
+static SdlPadTouch g_touch = {}; // under g_lock
+
+static void ReadTouch(SDL_Gamepad* pad)
+{
+    SdlPadTouch t = {};
+    if (pad)
+        t.pads = SDL_GetNumGamepadTouchpads(pad);
+    if (t.pads > 0)
+    {
+        t.clicked = SDL_GetGamepadButton(pad, static_cast<SDL_GamepadButton>(padbackend::kSdlTouchpad));
+        const int fingers = SDL_GetNumGamepadTouchpadFingers(pad, 0);
+        for (int i = 0; i < 2 && i < fingers; ++i)
+        {
+            bool down = false;
+            float pressure = 0;
+            if (SDL_GetGamepadTouchpadFinger(pad, 0, i, &down, &t.x[i], &t.y[i], &pressure))
+                t.down[i] = down;
+        }
+    }
+    AcquireSRWLockExclusive(&g_lock);
+    g_touch = t;
+    ReleaseSRWLockExclusive(&g_lock);
+}
+
 // The first gamepad SDL lists (the pad in use stays while it is connected: the pad_slots.h rule).
 static SDL_Gamepad* OpenFirst(int& count)
 {
@@ -260,12 +287,13 @@ enum ReqOp
     kReqDetach,
     kReqRumble,
     kReqTriggers,
-    kReqEffect
+    kReqEffect,
+    kReqTouch
 };
 struct Request
 {
-    int op, slot, kind; // kind: attach's kTestPads index
-    u32 a, b, ms;       // send: the motor / trigger speeds and the duration, or the effect's bytes
+    int op, slot, kind; // kind: attach's kTestPads index; touch: the finger
+    u32 a, b, ms;       // send: the motor / trigger speeds and the duration, or the effect's bytes; touch: x, y in thousandths, ms 1 = down
 };
 static Request g_req = {};
 static u32 g_reqSeq = 0, g_reqDone = 0; // under g_lock
@@ -405,6 +433,16 @@ static void Serve(SDL_Gamepad*& pad)
             if ((r.slot < 0 || r.slot == i) && g_tp[i].id)
                 Detach(i, pad), ++n;
         snprintf(reply, sizeof(reply), "detached %d test pad(s)", n);
+        break;
+    }
+    case kReqTouch:
+    {
+        // the finger on the first attached test pad with a touchpad, applied by the next SDL_UpdateGamepads
+        bool ok = false;
+        for (int i = 0; i < kSlots && !ok; ++i)
+            if (g_tp[i].id)
+                ok = SDL_SetJoystickVirtualTouchpad(g_tp[i].joy, 0, r.kind, r.ms != 0, r.a / 1000.0f, r.b / 1000.0f, r.ms ? 1.0f : 0.0f);
+        snprintf(reply, sizeof(reply), "touch: %s", ok ? "ok" : SDL_GetError());
         break;
     }
     default:
@@ -622,6 +660,7 @@ static DWORD WINAPI Thread(void*)
             const char* path = pad ? SDL_GetGamepadPath(pad) : nullptr;
             AcquireSRWLockExclusive(&g_lock);
             Copy(g_path, sizeof(g_path), test >= 0 ? nullptr : path); // (a test pad has no endpoint, and must never reach for one)
+            Copy(g_name, sizeof(g_name), test >= 0 || !pad ? nullptr : SDL_GetGamepadName(pad));
             ReleaseSRWLockExclusive(&g_lock);
         }
         AcquireSRWLockShared(&g_lock);
@@ -659,9 +698,12 @@ static DWORD WINAPI Thread(void*)
         r.connected = pad != nullptr;
         if (pad)
         {
+            const bool touchView = padbackend::TouchpadIsView(SDL_GetGamepadType(pad)); // (a PlayStation pad's View is its touchpad's click)
             for (int b = 0; b < padbackend::kSdlButtons; ++b)
-                if (SDL_GetGamepadButton(pad, static_cast<SDL_GamepadButton>(b)))
+                if ((!touchView || b != SDL_GAMEPAD_BUTTON_BACK) && SDL_GetGamepadButton(pad, static_cast<SDL_GamepadButton>(b)))
                     r.buttons |= padbackend::kXiButtonForSdl[b];
+            if (touchView && SDL_GetGamepadButton(pad, static_cast<SDL_GamepadButton>(padbackend::kSdlTouchpad)))
+                r.buttons |= padbackend::kXiButtonForSdl[SDL_GAMEPAD_BUTTON_BACK];
             r.lx = padbackend::StickX(SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFTX));
             r.ly = padbackend::StickY(SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFTY));
             r.rx = padbackend::StickX(SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_RIGHTX));
@@ -673,12 +715,14 @@ static DWORD WINAPI Thread(void*)
             r.product = SDL_GetGamepadProduct(pad);
             r.link = SDL_GetGamepadConnectionState(pad);
             Copy(r.name, sizeof(r.name), SDL_GetGamepadName(pad));
+            InterlockedOr(&g_pressedLatch, static_cast<LONG>(r.buttons)); // (TakePressed: no tap lost between the movie loop's passes)
             if (padbackend::HasInput(r.buttons, r.lx, r.ly, r.rx, r.ry, r.lt, r.rt, g_stickDeadzone, g_triggerThreshold))
                 InterlockedExchange(&g_lastInput, static_cast<LONG>(GetTickCount()));
         }
         r.dropped = static_cast<u32>(g_dropped);
         r.padSerial = padSerial, r.effectFails = effectFails;
         r.seq = static_cast<u32>(InterlockedIncrement(&g_seq));
+        ReadTouch(pad);
         Publish(r);
         InterlockedExchange(&g_busy, 0);
     }
@@ -725,6 +769,17 @@ static void Stop()
 }
 
 static bool g_stuck = false; // a stop timed out: never a second SDL in the process
+
+u32 TakePressed() { return static_cast<u32>(InterlockedExchange(&g_pressedLatch, 0)); }
+
+void Touch(SdlPadTouch* out)
+{
+    if (!out)
+        return;
+    AcquireSRWLockShared(&g_lock);
+    *out = g_touch;
+    ReleaseSRWLockShared(&g_lock);
+}
 
 int Pad(int on, SdlPadState* out)
 {
@@ -801,6 +856,14 @@ bool Path(char* out, int len)
 {
     AcquireSRWLockShared(&g_lock);
     Copy(out, static_cast<size_t>(len), g_path);
+    ReleaseSRWLockShared(&g_lock);
+    return out[0] != 0;
+}
+
+bool Name(char* out, int len)
+{
+    AcquireSRWLockShared(&g_lock);
+    Copy(out, static_cast<size_t>(len), g_name);
     ReleaseSRWLockShared(&g_lock);
     return out[0] != 0;
 }
@@ -915,6 +978,14 @@ void Command(const char* args, bool multiplayer, char* reply, int len)
             return;
         }
     }
+    else if (strcmp(op, "touch") == 0 && got >= 5) // touch <finger> <x 0-1000> <y 0-1000> <1 down | 0 up>
+    {
+        r.op = kReqTouch;
+        r.kind = w1[0] == '1' ? 1 : 0;
+        r.a = static_cast<u32>(n[0] < 0 ? 0 : n[0] > 1000 ? 1000 : n[0]);
+        r.b = static_cast<u32>(n[1] < 0 ? 0 : n[1] > 1000 ? 1000 : n[1]);
+        r.ms = n[2] != 0;
+    }
     else if (strcmp(op, "send") == 0 && got >= 3)
     {
         r.op = strcmp(w1, "rumble") == 0 ? kReqRumble : strcmp(w1, "triggers") == 0 ? kReqTriggers
@@ -932,7 +1003,7 @@ void Command(const char* args, bool multiplayer, char* reply, int len)
     else
     {
         snprintf(reply, len, "usage: sdlpad [status] | attach <xbox|ps5|switchpro> [slot] | detach [slot|all] | send "
-                             "rumble|triggers <low> <high> <ms> | send effect <bytes> (TEST ONLY, pad_backend 1)");
+                             "rumble|triggers <low> <high> <ms> | send effect <bytes> | touch <finger> <x> <y> <1|0> (TEST ONLY, pad_backend 1)");
         return;
     }
     Ask(r, reply, len);

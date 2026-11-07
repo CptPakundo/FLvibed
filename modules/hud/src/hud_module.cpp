@@ -50,7 +50,8 @@ static void Cursor(float dt, bool padOwns, bool flyingFree, bool (*onlyHudOpen)(
     const u32 b = known ? (fl::MouseButtons() & 7u) : 0;
     // the pad in control: its own aim moves the game's cursor and its steering engages mouse flight, so neither counts - a real mouse hands the device back to
     // the keyboard and mouse (padOwns false: the K&M rule at once)
-    const bool activity = padOwns ? !known
+    // ... and with the pad the cursor is its aim: never idle-hidden (the owner, 7 Nov 2026: it vanished with the target centred, the stick at rest 3 s)
+    const bool activity = padOwns ? true
                                   : !known || mx != mxWas || my != myWas || b != 0 || b != bWas || Mem<u8>(exe::MouseFlightEngaged) != 0;
     mxWas = mx, myWas = my, bWas = b;
     // (the fail-safe: every non-flight state shows it the same frame - the pause menu by the game's own paused flag too, a mode change at once, before the
@@ -83,6 +84,7 @@ static bool UnderBegin(void* device, bool flying)
     hud2::SetMenuOver(menuOver);
     // the native HUD switch and the game's 3D views in HUD 2's windows: before the UI pass draws the controls (any mode: restores)
     hud2::RenderUnderHud(device);
+    windowtext::ApplyCuts();
     return menuOver;
 }
 
@@ -108,6 +110,7 @@ static const std::vector<views::HudRect>* StripDrawn() { return &uistrip::Drawn(
 static void Strip(void* device)
 {
     uistrip::Draw(device);
+    uiskin::DrawMap(device);
     uiskin::DrawModal(device);
 }
 
@@ -131,7 +134,7 @@ static void Attach()
     views::hud = {G(hud2::TargetCardAnchor), G(hud2::BottomPanelsTop), G(uistrip::StripRight), G(uistrip::StripBottom), G(hud2::Active), G(hud2::RingRadius),
                   G(hud2::CycleListFilter), G(hud2::LockNotice), G(hud2::NoteAction), G(Hotspot), G(uistrip::Active), G(StripDrawn), G(uiskin::DrawOver), G(Cues), G(GameText), G(hud2::Update),
                   G(Cursor), G(Skin), G(UnderBegin), G(UnderEnd), G(Overlay), G(Strip), G(hud2::OnDeviceLost), G(Top), G(nnstrip::Rect),
-                  G(navskin::Chips), G(navskin::ChipPress), G(navskin::ChipStep), G(navskin::ChipFocus)};
+                  G(navskin::Chips), G(navskin::ChipPress), G(navskin::ChipStep), G(navskin::ChipFocus), G(navskin::ListOpen)};
     if (hostcalls::g.SetLoadDraw)
         hostcalls::g.SetLoadDraw(G(skinload::Draw));
 #undef G

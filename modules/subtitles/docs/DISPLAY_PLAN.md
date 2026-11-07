@@ -68,6 +68,8 @@ also copies the story lines into the chat (`chat_all_dialogue`, default off: the
   (stack anchored at 0.16 H) King + Newark reach 0.513 H, at 3840x2160 0.373 H (limit 0.328 H). FLUF sizes the game to
   the screen at every start, so 4:3 with FLUF cannot be set on this monitor.
 
+**The comm window with no panel holding it (Shockwave, 7 Nov 2026):** `enabled 0`, the module off, `comms 0` or `comm_portrait 0` left the window at the game's place, under HUD 2's nav, because only this module placed it, and only with a line in its slot. `core\game\commwin.*` now holds the mover and the natives (`Put` each frame, `Let`, `HeldBy`), and `modules\hud\src\hud2_comm.*` keeps it below the nav whenever the panel does not hold it this frame: the same square as the fallback here (0.11 H at most), the caption hidden and its two lines, name over faction, drawn under it in HUD 2's text unless the panel names the speaker. Tests: `set hud_fade 0` first, or the nav has faded before the comm opens.
+
 ## Do it "the right way" from the start
 
 Look up current game-subtitle standards and guidance online first (accessibility guidelines for game

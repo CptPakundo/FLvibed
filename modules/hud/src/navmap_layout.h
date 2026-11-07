@@ -140,6 +140,15 @@ inline MapOut Solve(float W, float H, float side)
     return o;
 }
 
+// The viewport of the full-screen map (docs\MAP_PLAN.md phase 1): the largest rectangle on the screen centred on the solver's square, so the system stands in that square, clear of
+// the panels at the widest zoom, and the map runs under them when zoomed.
+inline Rect Bleed(float W, float H, const Rect& square)
+{
+    const float cx = (square.x0 + square.x1) / 2, cy = (square.y0 + square.y1) / 2;
+    const float hw = std::min(cx, W - cx), hh = std::min(cy, H - cy);
+    return {cx - hw, cy - hh, cx + hw, cy + hh};
+}
+
 // The panels beside a map of the game's own size: the frame and the words around the native map (6.1, the first step). `map` is its viewport.
 inline MapOut Around(float W, float H, float side, const Rect& map)
 {

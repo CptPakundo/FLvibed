@@ -241,8 +241,10 @@ void Update(float dt, const bool down[glyphs::COUNT], float rx, float ry)
     g_edges.Update(dt, down);
     g_rx = rx;
     g_ry = ry;
-    // the right stick past the dead zone: the slot in its direction (slot 0 at the top, clockwise); inside it the last
-    // highlight stays, so the release still does what was picked
+    // the right stick past the dead zone: the slot in its direction (slot 0 at the top, clockwise). The stick let go back inside it: no slot (the owner, 7 Nov
+    // 2026: "When release the right stick, I want action wheel choices to reset, so it allows for a safe retreat from the menu") - LB released then does
+    // nothing. Was: the last highlight stayed. A slot the D-pad stepped to stays (the stick never left the middle)
+    static bool stickPicked = false;
     const float mag = sqrtf(rx * rx + ry * ry);
     const int n = static_cast<int>(g_items.size());
     if (mag >= kDeadZone && n)
@@ -251,7 +253,10 @@ void Update(float dt, const bool down[glyphs::COUNT], float rx, float ry)
         if (a < 0)
             a += 6.2831853f;
         g_sel = static_cast<int>(a / (6.2831853f / n) + 0.5f) % n;
+        stickPicked = true;
     }
+    else if (stickPicked)
+        g_sel = -1, stickPicked = false;
     const bool* p = g_edges.pressed;
     if (p[glyphs::DR] || p[glyphs::DD])
         Step(+1);

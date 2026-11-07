@@ -51,6 +51,10 @@ void Test_hud2_target()
         CHECK_NEAR(o.settle, 1, 1e-5);
         CHECK(o.plateA == 0);
         CHECK(o.caretY < in.y && o.blockY > in.y);
+        // the four carets (7 Nov 2026): the block and the card clear the lower and the side ones
+        CHECK(o.blockY >= in.y + o.mark / 2 + QuadReach(o.mark, H, 1) - 0.5f);
+        CHECK(o.cardX0 >= in.x + o.mark / 2 + QuadReach(o.mark, H, 1) - 0.5f);
+        CHECK(QuadReach(o.mark, H, 1) > 0 && CaretSize(o.mark, H, 1) >= 0.008f * H - 1e-3f);
         // a new target starts it again
         In next = in;
         next.id = 8;
@@ -227,7 +231,14 @@ void Test_hud2_target()
         Out o = s.Step(in);
         CHECK(o.hitHullA == 1 && o.hitShieldA == 0);
         CHECK_NEAR(o.lostHull, 0.2, 1e-4);
-        o = Run(s, in, 3.2f);
+        // the white trail (7 Nov 2026): held a moment, then drained, long before the numbers go
+        o = Run(s, in, 0.3f);
+        CHECK_NEAR(o.lostHull, 0.2, 1e-4);
+        o = Run(s, in, 0.2f);
+        CHECK(o.lostHull > 0 && o.lostHull < 0.2f);
+        o = Run(s, in, 0.6f);
+        CHECK(o.lostHull == 0 && o.hitHullA == 1);
+        o = Run(s, in, 2.1f);
         CHECK(o.hitHullA > 0 && o.hitHullA < 1);
         o = Run(s, in, 0.3f);
         CHECK(o.hitHullA == 0 && o.lostHull == 0);

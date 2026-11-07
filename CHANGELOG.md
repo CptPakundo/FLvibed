@@ -1,6 +1,30 @@
 # Changelog
 
-## 0.4.0 (6 Nov 2026)
+## 0.4.0 (7 Nov 2026)
+
+First released 6 Nov, released again 7 Nov under the same number with everything from the star map down to the Linux line below it.
+
+- **The star map, rebuilt:** it fills the whole screen on a dark ground, with HUD 2's labels, sector marks and a yellow route line. It zooms smoothly toward the cursor (triggers, mouse wheel, two fingers on a touchpad) from the whole system down to the sector, and past the widest zoom goes to Sirius. The right stick, a mouse drag or one finger on a touchpad moves it, also beside the destination list (`map_touchpad` turns the touchpad off), and the cursor pushed against the screen's edge carries the map on. Cards appear only with something to say: the route, the selection's name, faction and distance, and the layers on D-pad right.
+- **Every button has a job on the map:** A selects, A again plots the route, replacing an old one. X adds a waypoint at the cursor, on the object if it points at one; hold X removes the one you point at, or clears them all. Y flies the route. D-pad left opens the destinations; D-pad up and down walk them with or without the list, the map centred on each. A click of the left stick finds your ship, from anywhere, Sirius too; a click of the right goes to Sirius and back. The prompts say what each press does at that moment, and only what does something is listed.
+- **Selecting on the map:** every object selects, big bases included. With the mouse a selection stays while you travel to its card, and the hints on the map cover keyboard and mouse too.
+- **The map keeps your discoveries:** the destinations list only places you have found, by the same test as the target menu's "Unknown Jump Gate". The route card names a trade lane only when you have found both its ends, otherwise it reads Trade Lane.
+- **The ship waits while you read the map:** keys and mouse no longer fly or fire it under the map. The autopilot flies on.
+- **NeuroNet tabs:** they stand at the top of the screen on every NeuroNet window, sliding in from the flight HUD's NEURAL NET. LB and RB pick a tab and open it once the presses stop, and the ship takes no pad input between windows.
+- **Comm portrait clear of HUD 2:** with no subtitle panel holding it (subtitles or their module off, comms lines off, the portrait row off) it stood at the game's own place, under the nav. It now stands below the nav's text and follows it, with the speaker over the faction under it in HUD 2's text, unless the panel already names the speaker.
+- **Main menu CONTINUE** wears the game's own caption: the same face, weight and shadow as NEW GAME and the rest, on a plate of the same height. The FLvibed version line and the save's name follow, and the name shows only while CONTINUE is highlighted.
+- **The right-stick tap is reticle first:** a tap takes the object nearest the screen centre inside the reticle ring; taps within 3 s walk the enemies (nearest not yet taken); with nothing in the ring, the nearest enemy. The legend reads TARGET AHEAD / ENEMY (with a target: AHEAD / NEXT ENEMY).
+- **The target marker** is four carets on the target's diagonals pointing in, in place of the single caret over the ship: solid for hostile, hollow for neutral, open for friendly.
+- **The flight cursor** is four arcs that read as the game's ring, and a dot; over a ship four darts point in from the diagonals (solid, hollow or open by attitude). Firing pushes them in and bolds the ring, a target you cannot fire at shows a bar.
+- **Autopilot goals panel:** sized to its setting names and never over the reticle ring; with HUD 2 on it wears HUD 2's look (glass plate, tab plates with the current one underlined in yellow, a yellow focus fill with a bar at its left edge).
+- **Action wheel:** the right stick belongs to the wheel while it is open and until you let go after it closes: it no longer steers, moves the autopilot's crosshair or takes the autopilot back. Let go, it clears the pick, a safe retreat.
+- **TRAVEL flies your waypoints in order.**
+- **Dealers on a pad:** D-pad left is your side, right the dealer's, without a wrap. A name too wide at the smallest size scrolls in its row. The right stick goes through every item of a list, not only the view, and scrolls what the focus is on.
+- **NeuroNet inventory on a pad:** Y jettisons, the triggers set how many.
+- **DualSense and DualShock 4:** View is the touchpad's click, not Share. A, B or Menu skip the startup movies on any pad.
+- **Haptics:** the boost sits on the left trigger alone, and the cruise charge builds from the inside out.
+- **Death / mission-failed screen:** its three buttons sit at the foot of the taller log window, clear of the text.
+- **Smaller fixes:** the game's LOADING no longer stands over HUD 2's and its bar reads again; the options page hosted in the game's Options window stays inside its frame; a target's white damage trail drains to the left; the flight cursor turns at the game's own rate.
+- **Linux / Wine:** the release zip carries `flvibed-linux.sh` (install and uninstall into a Wine or Proton prefix; `haptics` sets the DualSense's card to Surround 4.0 with pactl), and the waveform haptics now start under Wine / Proton, finding the pad's speaker by name. Not yet tried on Linux itself.
 
 - **Haptics, on every pad** (built, not yet felt on a pad): one engine fed by the game. A near-quiet bed from your engine's own numbers; hits, blasts and collisions
   from the side they came; guns by their rate and damage; missiles felt before they are seen; the cruise charge and its release, lanes ring by ring, jump gates
@@ -34,13 +58,13 @@
 - **Failing bars:** a bar running low breathes in its own colour, faster as it falls, always under 3 Hz; a bar that breaks blooms. The HUD's motion has a row:
   `skin_motion`, full, fades or none.
 - The flight HUD's label reads NEURAL NET, the game's own name for it.
-- **One strip of words on every NeuroNet window:** LOG, INVENTORY, MAP, STATUS, INFO, with CHAT and GROUP in multiplayer, in place of the box's icons. The open
+- **One strip of words on every NeuroNet window:** LOG, MAP, INVENTORY, STATUS, INFO, with CHAT and GROUP in multiplayer, in place of the box's icons. The open
   one is yellow and underlined, and a click switches straight to a window, also during a slide. A CLOSE chip stands at the lane's right end on keyboard and
   mouse. The five windows share one scrim.
 - **The nav map's frame comes off, and words replace its icons:** PHYSICAL, POLITICAL, PATROLS, MINING, BASES, LEGEND, MISSION, LABELS, SYSTEM, SIRIUS and what a
-  selection offers, in panels beside the map, each calling the game's own button. A button the game disables shows disabled. The map keeps its size for now: the grown map (a test switch, `navnew`) is built but off, and the frame and words stand around the game's own map.
-- **The pad on the map has two zones:** the map itself (left stick, triggers, A, X, Y) and its panels (the D-pad walks every word, A presses, the left stick or B
-  returns), so a press never means two things. RS click is SYSTEM / SIRIUS, LS click back to the ship's system.
+  selection offers, on the map's cards, each calling the game's own button. A button the game disables shows disabled.
+- **The pad on the map has two zones:** the map itself and its layers' card (the D-pad walks every word, A presses, the left stick or B returns), so a press never means
+  two things.
 - **The pad reaches every NeuroNet window:** under HUD 2, LB and RB step the strip from any of them, wrapping. Only the map had a pad route until now. The log's
   MISSION and LOG move to the D-pad's left and right.
 - Loot the tractor refuses says why, in the game's own words (GitHub issue 33): HUD 2's card, or the Neural Net line.

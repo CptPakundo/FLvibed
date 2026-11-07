@@ -13,8 +13,9 @@ struct Tab
     int cmd;
     const wchar_t* word;
 };
-// With the map in the middle, INVENTORY and STATUS are one press from it: the order is the player's question answered, not the box's.
-constexpr Tab kTabs[] = {{kCmdLog, L"LOG"},   {kCmdInventory, L"INVENTORY"}, {kCmdMap, L"MAP"},    {kCmdStatus, L"STATUS"},
+// The game's own order, its top-right buttons left to right (Log 3310, Map 3417, Inventory 3527, Status 3632, Info 3736 at 4K): Shockwave via the owner,
+// 7 Nov 2026, "Position of Map and Inventory should be swapped ... to match vanilla UI button positions in the upper-right corner" (was: the map in the middle).
+constexpr Tab kTabs[] = {{kCmdLog, L"LOG"},   {kCmdMap, L"MAP"}, {kCmdInventory, L"INVENTORY"},    {kCmdStatus, L"STATUS"},
                          {kCmdInfo, L"INFO"}, {kCmdChat, L"CHAT"},           {kCmdGroup, L"GROUP"}};
 constexpr int kSinglePlayerTabs = 5, kAllTabs = 7;
 
@@ -43,15 +44,29 @@ inline int Step(int index, int dir, int count)
 // The game loses a press during a slide (0x45CCF0 returns at once), so a press then is held and sent the first frame after. The last
 // press wins, so two bumper presses land on the second tab, one slide later. A hold that outlasts kHoldSeconds is dropped: never late.
 constexpr float kHoldSeconds = 2.0f;
+// The bumpers pick, the pause opens (the owner, 7 Nov 2026: "the player 'spams' the shoulder buttons to highlight the tab they want, and when the player stops
+// spamming THEN you open the highlighted tab"): a step only moves the held press; it goes once no step came for this long.
+constexpr float kSettleSeconds = 0.45f; // (the owner on the pad, 7 Nov 2026: 0.5 tried, "0.45 s feels better")
 
 struct Press
 {
     int cmd = 0;       // the command held, 0 none
     bool close = false; // the held press closes the window: it is sent even though it is the open one
     float left = 0;
+    float settle = 0; // a picked tab waits this long for the next step
 
     bool Held() const { return cmd != 0; }
-    void Clear() { cmd = 0, close = false, left = 0; }
+    void Clear() { cmd = 0, close = false, left = 0, settle = 0; }
+    // A bumper's step to `want`: held (and shown) until the steps stop for kSettleSeconds; back on the open window's own tab: nothing to send.
+    void Pick(int want, int open)
+    {
+        if (want == open)
+        {
+            Clear();
+            return;
+        }
+        cmd = want, close = false, settle = kSettleSeconds, left = kHoldSeconds + kSettleSeconds;
+    }
     // Where a step starts from: the press already held, else the open window.
     int Target(int open) const { return cmd ? cmd : open; }
 
@@ -84,6 +99,11 @@ struct Press
     {
         if (!cmd)
             return 0;
+        if (settle > 0)
+        {
+            settle -= dt;
+            return 0;
+        }
         if (busy)
         {
             left -= dt;

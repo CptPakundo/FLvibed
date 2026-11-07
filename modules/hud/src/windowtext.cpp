@@ -17,6 +17,7 @@
 #include "safemem.h"
 #include "ui/ui.h"
 #include "ui/winplates.h"
+#include "ui/hud2_kit.h"
 
 #include <map>
 #include <sstream>
@@ -585,6 +586,105 @@ void Collect(const Spec& s)
     }
 }
 
+// A row name the game set (a TextControl) shortened through its own setter (flexe TextCtlSetProperty, message 0x1D: a written buffer does not redraw - the
+// load screen's lesson, 7 Nov 2026). Kept: the trailing "(...)", the class a buyer reads; cut: the middle, marked "...". The game sets a row's text anew when
+// the list scrolls: that text is cut again. A cut is re-judged only 3 frames later, once the game has laid the new text out.
+bool SetRowText(u32 ctl, const wchar_t* text)
+{
+    __try
+    {
+        const u32 fn = Mem<u32>(Mem<u32>(ctl) + 0xA8);
+        if (!exe::TextCtlSetProperty.is(fn))
+            return false;
+        reinterpret_cast<u32(__thiscall*)(u32, u32, const void*, u32)>(fn)(ctl, 0x1D, text, 0);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+struct Cut
+{
+    std::wstring set, from; // what was set, and the game's text it stands for: the game sets its rows' texts anew every frame
+    int wait = 0;
+    float room = 0, size = 0; // the marquee's width and text height, pixels
+};
+std::map<u32, Cut> g_cuts;
+int g_cutCount = 0, g_cutCalls = 0;
+void CutName(u32 ctl, float width, float room, float size)
+{
+    std::wstring now;
+    ++g_cutCalls;
+    if (!winplates::TextOf(ctl, now) || now.size() < 6 || !(width > 0))
+        return;
+    Cut& k = g_cuts[ctl];
+    if ((now == k.set || now == k.from) && k.wait > 0)
+    {
+        --k.wait;
+        return;
+    }
+    if (now != k.set)
+        k.from = now;
+    // the owner, 7 Nov 2026: "Instead of clipping, I hope it marquees": the game's text is blanked (its layout kept) and HUD 2 draws the whole name over
+    // the row as its marquee (DrawMarquees: hud2kit::TextMarquee - the cut form held, a smooth scroll to the end, held, back)
+    if (now == L" ")
+        return;
+    k.from = now, k.set = L" ", k.room = room, k.size = size;
+    k.wait = 3;
+    if (SetRowText(ctl, k.set.c_str()))
+        ++g_cutCount;
+}
+
+} // namespace
+
+// Before the UI pass draws (hud_module UnderBegin): every cut row whose text the game set back to the full name gets its cut again, so the cut is what draws
+void ApplyCuts()
+{
+    for (auto it = g_cuts.begin(); it != g_cuts.end();)
+    {
+        std::wstring now;
+        if (!winplates::TextOf(it->first, now))
+        {
+            it = g_cuts.erase(it);
+            continue;
+        }
+        if (!it->second.set.empty() && now == it->second.from)
+            SetRowText(it->first, it->second.set.c_str());
+        ++it;
+    }
+}
+
+// In HUD 2's draw pass (uiskin): each blanked row name drawn whole as a marquee where the game's text stands (its anchor: the line's top left), in the
+// caption's own colour (TextControl +0x348, flexe TextCtlSetProperty's note), at the line's height
+void DrawMarquees()
+{
+    for (const auto& kv : g_cuts)
+    {
+        const Cut& k = kv.second;
+        std::wstring now;
+        ui::Item it;
+        if (k.set != L" " || k.from.empty() || !(k.size > 0) || !Shown(kv.first) || !winplates::TextOf(kv.first, now) || now != L" " ||
+            !ui::ControlRect(kv.first, it))
+            continue;
+        u8 c[4] = {};
+        safemem::Read(kv.first + 0x348, c, 4); // (bytes R, G, B, A: 87 C3 E0 a row's blue, E2 F0 FC the selected row's)
+        const u32 argb = (c[0] | c[1] | c[2]) ? (0xFF000000u | (u32(c[0]) << 16) | (u32(c[1]) << 8) | c[2]) : hud2kit::Argb(hud2kit::kChrome, 1);
+        // the line's middle: under its row frame's top as Place puts the game's names (kFramePad, the ink from kInkTop of the line), else the anchor
+        float y = it.y + k.size * 0.5f;
+        for (const Framed& f : g_framed)
+        {
+            ui::Item fr;
+            if (f.top == kv.first && ui::ControlRect(f.frame, fr) && fr.hh > 0.5f)
+                y = fr.y - fr.hh + kFramePad * static_cast<float>(fl::ScreenHeight()) + k.size * (0.5f - kInkTop);
+        }
+        // (the kit's size is its glyphs', the game's height its line's: the ink's share of it, kInkTop..kInkFoot)
+        hud2kit::TextMarquee(it.x, y, k.from, k.size * (kInkFoot - kInkTop), k.room, argb, hud2kit::Left, 0, false);
+    }
+}
+
+namespace
+{
 // One column: measured at its base fonts, one size for all its rows; down at once when a text needs it, up only at the next opening
 void Rows(Column& c, float screenH)
 {
@@ -667,10 +767,21 @@ void Rows(Column& c, float screenH)
             over += r.name * g_ladder[static_cast<size_t>(rung)].height * H1 * roletext::kWidthMargin > nameRoom ? 1 : 0;
         return over;
     };
+    // (tried 7 Nov 2026 on the owner's word, "smaller is pointless with a marquee": without this step the game's own rows broke at full size - long names
+    // over their prices, the transfer panel's too - so the column still steps down to the floor, and the marquee takes what is still too wide there)
     while (p.name > floorRung && nameOver(p.name) > 0)
         --p.name;
     c.nameRungs = p.name - c.base.name;
     c.overflow = nameOver(p.name);
+    // at the floor and still wider than the row (Shockwave at 1280x800, 7 Nov 2026: "Adv. Rampart H. F. Shield (Class 2)" ran into the scroll bar): the
+    // text-fit rule's last step, the name cut - its "(Class N)" kept (CutName)
+    if (c.overflow > 0 && p.name <= floorRung)
+        for (const auto& kv : c.rows)
+        {
+            const Now n = Read(kv.second.name);
+            if (n.shown && n.valid && n.width * roletext::kWidthMargin > nameRoom) // (the margin the column's own test uses)
+                CutName(kv.second.name, n.width * roletext::kWidthMargin, nameRoom, HeightOf(n.font) * screenH); // (a font's height: a share of H)
+        }
     if (c.secondBase > 0)
     {
         if (c.secondRung < 0)
@@ -1148,6 +1259,26 @@ void StretchFoot(const Spec& s, float H)
             SetPos(text, pos);
         }
     }
+    // the death / mission-failed screen's buttons stand where the log's two would (the owner, 7 Nov 2026: they stood at the game's height, over the
+    // taller window's text). The game adds them to the log for that screen only, each with its caption, a text of its own named after it
+    // (LoadAutosaveButton / LoadAutosaveText, read 7 Nov 2026; the multiplayer respawn's caption by the same rule, not read): the caption keeps its place on the button
+    static const char* const kDeath[][2] = {{"LoadAutosaveButton", "LoadAutosaveText"}, {"MainMenuButton", "MainMenuText"},
+                                            {"LoadSavegameButton", "LoadSavegameText"}, {"RespawnButtonButton", "RespawnButtonText"}};
+    for (const auto& pair : kDeath)
+    {
+        const u32 button = uiclick::FindVisible(pair[0]), text = uiclick::FindVisible(pair[1]);
+        ui::Item b, it;
+        float pos[3] = {};
+        if (!button || !ui::ControlRect(button, b))
+            continue;
+        const float on = text && ui::ControlRect(text, it) ? it.y - b.y : 0; // the caption's place on its button, before the move
+        MoveButton(button, want, H);
+        if (text && ui::ControlRect(text, it) && fabsf(it.y - (want + on)) >= 1.0f && safemem::Read(text + kPos, pos, sizeof(pos)))
+        {
+            pos[1] += (it.y - (want + on)) / H;
+            SetPos(text, pos);
+        }
+    }
 }
 
 void Lift(float want)
@@ -1403,7 +1534,21 @@ std::string Status()
     o << "windowtext window=" << (g_spec ? g_spec->window : "none") << " ladder=" << g_ladder.size() << " fonts=" << g_heights.size() << " columns";
     for (const Column& c : g_columns)
         o << " " << c.pick.name << "/" << c.pick.price << " over=" << c.overflow;
-    o << " inventoryFrame=" << g_inventoryFrame;
+    o << " inventoryFrame=" << g_inventoryFrame << " cuts=" << g_cutCount << "/" << g_cutCalls;
+    // (debug: each row name's font, to tell a face the row ladder does not know)
+    o << " rowfonts:";
+    const std::vector<gametext::Font> fonts = gametext::Fonts();
+    for (const Framed& f : g_framed)
+    {
+        const Now n = Read(f.top);
+        if (!n.shown)
+            continue;
+        std::string face = "?";
+        for (const gametext::Font& g : fonts)
+            if (g.entry == n.font)
+                face = g.nickname + "/" + g.face;
+        o << " " << ui::ControlName(f.top) << "=" << face;
+    }
     o << " loose=" << g_loose.size() << "/" << g_looseSteps << " singles=" << g_singles.size() << " rich=" << g_rich << " tries=" << g_richFits << " ms=" << g_richMs << " labelsOff=" << (LabelsApart() ? 1 : 0);
     for (u32 box : g_boxes)
         if (IsRich(box))

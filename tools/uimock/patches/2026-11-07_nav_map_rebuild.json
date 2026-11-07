@@ -1,0 +1,29 @@
+{
+  "_about": "7 Nov 2026 (0.4.0 re-release): the nav map rebuilt (docs MAP_PLAN.md Phase 1, P2, the owner's notes). The map's pad bindings as built (the D-pad walks destinations and opens the cards, RS moves the map, LS / RS click find me / Sirius), the prompts of the map's pad state, and the map_touchpad row.",
+  "add_rows": {
+    "controller/MENUS AND PROMPTS": {"after": "cursor_magnet", "rows": [
+      {"key": "map_touchpad", "label": "Touchpad on the nav map", "kind": "toggle", "def": true, "tier": "advanced",
+       "help": "On a pad with a touchpad (DualSense, DualShock 4): one finger drags the nav map, two fingers sliding zoom it toward the cursor. Off leaves the right stick and the triggers, which do the same."}
+    ]}
+  },
+  "bindings": {
+    "common/map/RS": {"tap": "map_pan"},
+    "common/map/L3": {"tap": "map_findme"},
+    "common/map/R3": {"tap": "map_scope"},
+    "common/map/LB": {"tap": "tab_prev"},
+    "common/map/RB": {"tap": "tab_next"},
+    "common/map/X": {"tap": "map_waypoint", "hold": "map_clear"},
+    "common/map/DU": {"tap": "map_dest_prev"},
+    "common/map/DD": {"tap": "map_dest_next"},
+    "common/map/DL": {"tap": "dest_list"},
+    "common/map/DR": {"tap": "map_layers"},
+    "common/map/VIEW": {"tap": "map_close"}
+  },
+  "states": {
+    "navmap/default": {"prompts": [
+      [["LS"], "MOVE CURSOR"], [["RS"], "MOVE MAP"], [["LT", "RT"], "ZOOM"], [["A"], "SELECT / PLOT ROUTE"],
+      [["X"], "ADD WAYPOINT"], [["X"], "CLEAR ALL WAYPOINTS", "hold"], [["Y"], "FLY ROUTE"], [["DL"], "DESTINATIONS"],
+      [["DR"], "LAYERS"], [["B"], "CLOSE"]
+    ]}
+  }
+}

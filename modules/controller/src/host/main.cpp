@@ -15,6 +15,7 @@
 #include "../shm.h"
 #include "hapticwave.h"
 #include "sdlpad.h"
+#include "host/moviehooks.h"
 
 // The settings bus: one instance in FLvibed.dll (core\settings_bus.cpp, compiled plain), reached by this C symbol.
 extern "C" const SettingsBus* flv_settings_bus();
@@ -27,6 +28,30 @@ static int g_implGeneration = 0; // the logic asked for: 0 = not yet (the first 
 static bool g_faulted = false;
 static bool g_giveBack = false; // a fault's give-back is due at the next frame
 static bool g_reloadRequested = false;
+static bool g_movieSdl = false; // the startup movies started the SDL thread (OnMoviePoll): the logic starts it its own way
+// The SDL thread reads only when asked (sdlpad::Pad kicks one read): during the movies no frame asks, so this thread does, every 30 ms, until the logic starts
+static volatile LONG g_movieAsk = 0;
+static HANDLE g_movieAsker = nullptr;
+static DWORD WINAPI MovieAsker(void*)
+{
+    while (g_movieAsk)
+    {
+        SdlPadState st = {};
+        sdlpad::Pad(2, &st);
+        ::Sleep(30);
+    }
+    return 0;
+}
+static void StopMovieSdl()
+{
+    if (!g_movieSdl)
+        return;
+    InterlockedExchange(&g_movieAsk, 0);
+    if (g_movieAsker)
+        WaitForSingleObject(g_movieAsker, 1000), CloseHandle(g_movieAsker), g_movieAsker = nullptr;
+    sdlpad::Pad(0, nullptr);
+    g_movieSdl = false;
+}
 
 
 
@@ -51,6 +76,49 @@ static void HostSetKeyTrace(bool on) { uihooks::TraceKeys(on); }
 static void HostMouseStats(char* out, int len) { strncpy_s(out, len, dimouse::Stats().c_str(), _TRUNCATE); }
 static void HostPushEvent(const char* text) { events::Push("%s", text); }
 static void HostIdsText(u32 ids, char* out, int len) { strncpy_s(out, len, events::IdsText(ids).c_str(), _TRUNCATE); }
+
+// ------------------------------------------------------------------ the startup movies: a pad skips them as a key does
+// (the owner, 7 Nov 2026: "Allow controller to skip opening movies, not just keyboard"). Each pass of the movie loop (about 3 a second; the logic does not run
+// yet): A, B or Menu pressed since the last pass - XInput's keystroke queue (xinput1_4 / 1_3, loaded as the logic loads XInput) and the SDL thread's latch,
+// if it runs - ends the movie the way the game ends a finished one (moviehooks::Skip, as movie_skip). A background game ignores the pad (U38).
+static void OnMoviePoll()
+{
+    using KeystrokeFn = DWORD(WINAPI*)(DWORD, DWORD, XINPUT_KEYSTROKE*);
+    static KeystrokeFn keystroke = nullptr;
+    static bool looked = false;
+    if (!looked)
+    {
+        looked = true;
+        HMODULE x = LoadLibraryW(L"xinput1_4.dll");
+        if (!x)
+            x = LoadLibraryW(L"xinput1_3.dll");
+        if (x)
+            keystroke = reinterpret_cast<KeystrokeFn>(GetProcAddress(x, "XInputGetKeystroke"));
+    }
+    DWORD pid = 0;
+    GetWindowThreadProcessId(GetForegroundWindow(), &pid);
+    const bool front = pid == GetCurrentProcessId();
+    // the logic starts after the movies, and with it the SDL thread a PlayStation or Switch pad needs (the owner's DualSense Edge skipped nothing,
+    // 7 Nov 2026): started here in the native-only mode (2: those pads alone, as the logic's fallback), stopped when the logic starts (StartLogic)
+    if (front && !g_movieSdl && !g_impl)
+    {
+        SdlPadState st = {};
+        sdlpad::Pad(2, &st);
+        g_movieSdl = true;
+        InterlockedExchange(&g_movieAsk, 1);
+        g_movieAsker = CreateThread(nullptr, 0, MovieAsker, nullptr, 0, nullptr);
+        Log("movie: the SDL pad thread started for the movies' skip%s", g_movieAsker ? "" : " (no asker thread)");
+    }
+    const u32 sdlPressed = sdlpad::TakePressed();
+    if (sdlPressed)
+        Log("movie: pad buttons 0x%X seen", sdlPressed);
+    bool skip = (sdlPressed & (XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_B | XINPUT_GAMEPAD_START)) != 0;
+    XINPUT_KEYSTROKE ks = {};
+    while (keystroke && keystroke(XUSER_INDEX_ANY, 0, &ks) == ERROR_SUCCESS)
+        skip |= (ks.Flags & XINPUT_KEYSTROKE_KEYDOWN) && (ks.VirtualKey == VK_PAD_A || ks.VirtualKey == VK_PAD_B || ks.VirtualKey == VK_PAD_START);
+    if (skip && front && moviehooks::Skip())
+        Log("movie: skipped by the pad");
+}
 
 // ------------------------------------------------------------------ v18: FLvibed's native buttons (uibtn.cpp) -> the logic
 static void OnUiButton(int id)
@@ -138,6 +206,7 @@ static void StopLogic()
 
 static bool StartLogic(const void* table)
 {
+    StopMovieSdl();
     const ImplApi* api = static_cast<const ImplApi*>(table);
     if (!api || api->version != kImplApiVersion)
     {
@@ -519,7 +588,7 @@ void Start(HMODULE)
     static const router::Client events = {BeforeGame,  AfterGame,   OnModalFrame, LogicOnStack,
                                           GuardedOverlay, DeviceLost, DeviceReset,  nullptr,
                                           OnComm,      uibtn::AfterManeuverLayout, nullptr,
-                                          GuardedUnderHud, OnRawKey,  OnUiButton};
+                                          GuardedUnderHud, OnRawKey,  OnUiButton, nullptr, OnMoviePoll};
     router::Register(router::kController, &events);
 
     shm::Init();
@@ -604,6 +673,8 @@ void Start(HMODULE)
     g_host.PadWave = hapticwave::Open;                   // v41: the DualSense grips' stream
     g_host.PadWaveFeed = hapticwave::Feed;
     g_host.PadWaveWhy = hapticwave::Why;
+    g_host.SdlPadTouchRead = sdlpad::Touch;              // v42: the touchpad's fingers
+    g_host.SetFlightLock = input::SetFlightLock;         // v43: the keys and mouse fly nothing under the full-screen map
     g_host.SetTargetMute = uihooks::SetTargetMute;       // v39: HUD 2's targeting display
     g_host.TargetMuteReady = uihooks::TargetMuteReady;   // v39
     g_host.ModuleOn = router::ModuleOn;                  // v36: the cut modules' switches

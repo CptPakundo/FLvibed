@@ -131,7 +131,10 @@ if (-not $Impl) {
     $deployed = Join-Path $exeDir 'FLvibed.dll'
     $hostChanged = -not (Test-Path $deployed) -or ((Get-FileHash $deployed).Hash -ne (Get-FileHash (Join-Path $build 'FLvibed.dll')).Hash)
 }
-if ($Restart -or (($hostChanged -or $iniChanged -or $iniSynced) -and $running)) {
+# (-Impl never restarts for the ini files: the hot reload is the point, and the running game keeps its settings in memory. On 7 Nov 2026 every
+# -Impl restarted: the game itself adds `settings_moved=2` to FLvibed.ini, so the file never matched, and a written FLController.ini was put
+# back. A change of [Modules] needs a start: -Restart)
+if ($Restart -or (($hostChanged -or (($iniChanged -or $iniSynced) -and -not $Impl)) -and $running)) {
     if ($running) {
         $running | Stop-Process -Force
         $running | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue

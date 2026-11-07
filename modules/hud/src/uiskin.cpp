@@ -32,12 +32,14 @@
 #include "ui/hud_rows.h"
 #include "ui/hud2_kit.h"
 #include "log.h"
+#include "navnew.h"
 #include "navskin.h"
 #include "nnstrip.h"
 #include "ui/ui.h"
 #include "ui/uiopt.h"
 #include "ui/winplates.h"
 #include "uistrip.h"
+#include "windowtext.h"
 #include "game/deckmode.h"
 #include "game/render.h"
 
@@ -541,7 +543,24 @@ void ReclearList(const std::vector<Art>& art)
 void Reclear()
 {
     for (Win& w : g_wins)
+    {
+        // the map's info card is made on the first selection, after Bind: picked up here when it appears (the owner, 7 Nov 2026: still over VIEW with a waypoint)
+        if (w.fam == kFamNavMap && Shown(w.root) && !Native(w) && !navskin::NativeAsked())
+        {
+            for (const char* name : {"NavMapInfoCard", "NavMapInfoText", "NavMapInfoTitle", "NavMapMissionObjectiveScroll"})
+                HideArt(w, Child(w.root, name));
+            // the game's waypoint list: HUD 2's ROUTE section shows it (navskin Waypoints; the owner, 7 Nov 2026)
+            for (int i = 1; i <= 8; ++i)
+            {
+                char box[40], text[40];
+                sprintf_s(box, "NavMapMissionObjective%d", i);
+                sprintf_s(text, "NavMapMissionObjectiveText%d", i);
+                HideArt(w, Child(w.root, box));
+                HideArt(w, Child(w.root, text));
+            }
+        }
         ReclearList(w.art);
+    }
     ReclearList(g_page.art);
 }
 
@@ -981,7 +1000,7 @@ void Draw(void* device)
     neural |= nnstrip::ScrimAlpha() > 0; // (the strip knows the map)
     g_frameScrim = skinrules::EaseStep(g_frameScrim, neural && !g_scene, g_dt, hudrows::g.skinMotion);
     if (!g_modalOpen)
-        skinkit::Scrim(skinrules::kScrimMap, g_frameScrim); // (one scrim from MAP to INVENTORY: R8; the map's number, the owner's)
+        skinkit::Scrim(navnew::Grown() ? skinrules::kScrimFullMap : skinrules::kScrimMap, g_frameScrim); // (one scrim from MAP to INVENTORY: R8; the map's number, the owner's)
     // the docked frame while the game draws it (not under a modal menu: the NavBar is not drawn while paused)
     // (not in a NeuroNet window's close: the game hides the bar's and the box's art that frame while their controls
     // still read shown - the empty plates stood one frame, 26 Oct 2026, research\experience\runs\dealer_close_2026-10-26)
@@ -1038,7 +1057,8 @@ void Draw(void* device)
         if (w.fam == kFamNavMap)
             map = &w;
     navskin::Draw(g_scene || g_modalOpen ? nullptr : map, g_c.pad);
-    nnstrip::Draw();
+    if (!g_scene)
+        windowtext::DrawMarquees(); // (the dealers' long row names)
     SetKeepDestAlpha();
     End();
 }
@@ -1130,6 +1150,21 @@ bool ModalOpen()
         if ((kFamilies[w.fam].modal || skindialog::IsDialog(w.fam)) && Valid(w.root, w.vt) && Shown(w.root))
             return true;
     return false;
+}
+
+void DrawMap(void* device)
+{
+    if (!g_on || !device)
+        return;
+    int sw = 0, sh = 0;
+    render::SetDevice(device);
+    if (!render::ScreenSize(sw, sh) || sh < 100 || !Begin(device, sw, sh, std::max(8, static_cast<int>(0.026f * sh + 0.5f))))
+        return;
+    SetAlpha(1), SetOffset(0, 0);
+    skinkit::SetScreen(static_cast<float>(sw), static_cast<float>(sh));
+    navskin::DrawOver();
+    nnstrip::Draw(); // (over the game's UI: the map's viewport runs under it)
+    End();
 }
 
 void DrawModal(void* device)
@@ -1226,6 +1261,13 @@ std::string Command(std::istream& in)
     }
     if (what == "seams") // what is still drawn in the game's art: empty is the claim "complete" makes
         return Seams();
+    if (what == "cursorsheet") // cursorsheet <0|1>: every flight reticle drawn in a row across the middle (debug, 7 Nov 2026)
+    {
+        int on = 0;
+        in >> on;
+        skinover::Sheet(on != 0);
+        return std::string("uiskin cursorsheet ") + (on ? "1" : "0");
+    }
     if (what == "loadplace") // loadplace <0|1>: the loading screen tries the player's base and system (the probe of UI_HUD2_SKIN.md 6.4)
     {
         int on = 0;

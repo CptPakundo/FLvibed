@@ -262,6 +262,10 @@ function Set-FLSdlForeground([bool]$On = $true) {
 # The host's view: "sdlpad status=<backend: -1 failed, 0 off, 1 starting, 2 running> in_use=<slot|-1> attached=0x<mask>
 # out_seq=<n> slot<n>=<kind>/id<id> ..."
 function Get-FLSdlPad { Send-FL 'sdlpad status' }
+# A finger on the attached test pad's touchpad (0..1 across and down; -Up lifts it). `Connect-FLSdlPad ps5` gives a pad with a touchpad.
+function Set-FLSdlTouch([ValidateRange(0, 1)][int]$Finger = 0, [double]$X = 0.5, [double]$Y = 0.5, [switch]$Up) {
+    Send-FL ("sdlpad touch {0} {1} {2} {3}" -f $Finger, [int]($X * 1000), [int]($Y * 1000), $(if ($Up) { 0 } else { 1 }))
+}
 # A press on a test pad by game state (as Press-FLPad): held until read down in -HoldFrames frames, then released.
 function Press-FLSdlPad([string[]]$Buttons, [int]$Slot = 0, [int]$HoldFrames = 2) {
     Set-FLSdlPad -Slot $Slot -Buttons $Buttons

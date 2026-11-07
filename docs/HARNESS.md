@@ -55,7 +55,7 @@ part of their topic; `deploy.ps1` parse-checks every `*.ps1` in the tool folders
   pad's USB ids (045E:0B12 Xbox Series, 054C:0CE6 DualSense, 057E:2009 Switch Pro: `modules\controller\src\pad_backend.h` kTestPads), so
   SDL names its type as for the real pad and it takes the whole SDL path - the type -> `state`'s `sdl_type` / `sdl_vendor`
   and the glyph family, buttons, sticks, triggers, hot-plug; `Set-FLSdlPad -Slot n [-Buttons ..] [-LX ..] [-LT ..]` (the
-  XInput form, as Set-FLPad), `Press-FLSdlPad`, `Disconnect-FLSdlPad [-Slot n]` (none = all), `Get-FLSdlPad` (the host's
+  XInput form, as Set-FLPad), `Press-FLSdlPad`, `Set-FLSdlTouch [-Finger 0|1] [-X] [-Y] [-Up]` (a finger on a `ps5` test pad's touchpad, 0..1; the host's `sdlpad touch`), `Disconnect-FLSdlPad [-Slot n]` (none = all), `Get-FLSdlPad` (the host's
   `sdlpad status`: backend status, the slot in use, the attached mask, the read-back count), `Get-FLSdlPadOut [-Since
   <seq>]`: what SDL sent to the device - Kind rumble (A / B = low / high motor 0..1), triggers (left / right), effect (A =
   its bytes), with the game's heartbeat; SDL resends a running rumble every 2 s and sends the stop at its duration's end.
@@ -242,7 +242,7 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   only: the job text's height as the plate reads it, 0 = the game's), `nnstrip [state]` (the strip of words: standing, its tab, the manager's open and
   held commands, its rectangle, the click box), `nnstrip go <tab>` / `step <dir>` / `close` (what a click and the bumpers press), `nnstrip slide <seconds>` (each NeuroNet
   slide, 0 the game's), `navskin [state]` (the map's frame and words: bound, failed, every chip with its rectangle, the layer, the view), `navskin native on|off` (the
-  old map from its next open: what `skin_native = navmap` will set), `navskin press <id>` (a chip's action), `navnew [state]|on|off` (the new map, off by default: grown, transform, records, labels shown and dropped), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
+  old map from its next open: what `skin_native = navmap` will set), `navskin press <id>` (a chip's action), `navnew [state]|on|off` (the full-screen map, on by default; off gives the game's size back for a comparison: grown, transform, records, labels shown and dropped), `map view [state]|zoom <z>|pan <du> <dt>|records|rings` (the map's transform; every record with its `vis`; every lane ring with the game's name and the route card's), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
   `mines=` (the mines counted by ammo, as the countermeasures).
 - **The controller's host part** (`modules\controller\src\host\main.cpp`; `uigen` in `core\host\uihooks.cpp`): `uigen` - the UI generation counter of HostApi v23 ("uigen N adds A removes
   R": the game's control list adds / removes; Extended HUD 2 finds windows by it; still in a calm room or calm flight);

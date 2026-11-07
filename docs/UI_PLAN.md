@@ -250,7 +250,9 @@ rear view (the owner's scheme, 25 Oct; the double tap costs the cycle a double-t
 the fallback home for "clear");
 LS throttle lever + strafe; LS click engine kill; RT fire; LT afterburner (hold); LB tap the target picker / hold the
 action wheel (scan cargo, weapon group, cruise disruptor, formation, comms, contact filter, autopilot goals, rear
-view; picked with the right stick, dead-zoned, the D-pad works too, the left stick keeps flying - the owner's calls of
+view; picked with the right stick, dead-zoned, the stick let go back to the middle picks nothing again (a safe retreat: the owner, 7 Nov 2026), the D-pad works too, the left stick keeps flying; the right stick is the
+wheel's alone while it is open and after it closes until let go - never steering, the autopilot's aim or its take-back
+(Shockwave's report, 7 Nov 2026: with the autopilot flying, the pick drove the crosshair to the screen's edge) - the owner's calls of
 25 Oct: wheels belong on a bumper, scan cargo is contextual and fits the wheel, and Freelancer needs no "my attacker"
 bind, nearest enemy plus firing-selects-the-target cover it); RB missile / hold torpedo or cruise disruptor; A context
 (dock, lane, jump, fly to; loot in reach) / hold formation; B cancel (free flight, drop cruise, cancel dock) / hold
@@ -265,7 +267,7 @@ cruise / hold rear view, LS click engine kill, D-pad consumables as above, View 
 thumb flying and aiming with the other free for the weapons; sets aside the finger throttle lever and the D-pad's
 cheapness (the left thumb steers, so a nanobot mid-fight costs steering). **ASSISTED**: the autopilot flies; RS aims, RT guns, RB missile / hold torpedo,
 A context / accept, B hand back, Y target / hold picker, X goal panel, D-pad consumables. Shared situations: menus
-(D-pad / LS focus, A accept, B back / hold close all, X context, Y secondary, LB / RB tabs, LT / RT pages, RS scroll, RS click
+(D-pad / LS focus, A accept, B back / hold close all, X context, Y secondary, LB / RB tabs, LT / RT pages, RS scroll (what the focus is on: the list whose row the D-pad or cursor is on, or that text; Shockwave, 7 Nov 2026), RS click
 reset view, LS click pad cursor), bases (LB / RB rooms, D-pad left / right characters, A talk, Y launch or job board, X
 news, LS cursor), dealers (LB / RB side, D-pad rows, LT / RT quantity, A held buy / sell, LS click mount, Y all, X filter), nav map
 (LS cursor, D-pad snap, A select / again waypoint, X remove / hold clear, Y travel, LT / RT zoom, LB / RB system /
