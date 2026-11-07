@@ -20,6 +20,8 @@ Refreshed a third time (the owner's word; issues 41-46 and the owner's pad check
 
 Refreshed a fourth time (the owner's word; Shockwave, issue 47): the bars' glow and bloom bigger (`hud2bars` kBloomReachH 0.08 etc., all in H) and a fresh Bloom inactive (it blocked the first 1.6 s); the shield-down state (the arc's pulse, SHIELDS / DOWN at 1.12 R left of the reticle, blue-red at 2.9 Hz; `hud2 sim shielddown`); the equipment dealer's own rows (the tag change had split an if/else: the class twice; MOUNTED green, TAGGED TO COMPARE in the class's place). Seen at 1280x800; not seen: a bloom in real combat.
 
+Refreshed a fifth time (the owner's word; Shockwave: comparing in the inventory did nothing, an empty hold): `nnkit::Compare` gives a mounted item `gamedata::Against` too, kept only when it is the tag and not itself (VS ITS NAME (TAGGED)); inventory and the dealer's own rows alike. Seen at 1280x800 (SaveC701, a bought Lavablade against the tagged Justice).
+
 ## Not run
 No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's clicks and wheel on the pages, multiplayer on the pages, 4:3, FLUF beside the new word tabs.
 

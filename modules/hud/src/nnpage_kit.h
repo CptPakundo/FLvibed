@@ -253,12 +253,15 @@ inline float Compare(float x0, float x1, float y, u32 arch, bool mounted, float 
     if (!me || me->stats.empty())
         return y;
     using namespace equiprules;
-    const gamedata::Versus v = mounted ? gamedata::Versus() : gamedata::Against(arch);
+    // a mounted item compares only with the tagged one, where that sits on a hardpoint this one could go on (Shockwave, 7 Nov: with an empty hold the tag showed nothing)
+    gamedata::Versus v = gamedata::Against(arch);
+    if (mounted && (!v.tagged || v.arch == arch))
+        v = gamedata::Versus();
     const Spec* other = v.arch ? gamedata::Equip(v.arch) : nullptr;
     std::wstring head;
     u32 rgb = kChrome;
-    if (mounted)
-        head = L"MOUNTED";
+    if (mounted && !(v.tagged && other))
+        head = L"MOUNTED"; // (else VS ITS NAME (TAGGED) below: the row says MOUNTED, and the middle column is narrow at 1280x800)
     else if (v.hasSlot && !v.fits)
         head = L"NO HARDPOINT ON THIS SHIP TAKES IT", rgb = kAmber;
     else if (v.tagged && other) // (the player's choice first, a free hardpoint or not)
