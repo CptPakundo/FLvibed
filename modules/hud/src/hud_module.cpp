@@ -93,6 +93,7 @@ static bool UnderBegin(void* device, bool flying)
     hud2::RenderUnderHud(device);
     windowtext::ApplyCuts();
     nnpage::Under(); // (after the game's update, before its UI pass: what the game shows again each frame)
+    uiskin::TipUnder(); // (the same for the room character's name card)
     return menuOver;
 }
 

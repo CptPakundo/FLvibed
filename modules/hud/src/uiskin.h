@@ -25,6 +25,9 @@ struct Context
 };
 // Once per frame (OnFrame).
 void Update(float dt, const Context& c);
+// After the game's update, before its UI pass: the game's name card hidden again while a room character is hovered (uistrip::HoverTipNow), so the
+// card the game shows or re-places during the frame never draws over HUD 2's
+void TipUnder();
 // From OnRenderUnderHud, any mode: the registry refresh, the art hides / re-clears / restores, the glass.
 void RenderUnder(void* device);
 // The skin is on (ui_style 1 and the controller on): the prompt bar / options page take their HUD 2 look.

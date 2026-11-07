@@ -466,6 +466,23 @@ void RestoreTip()
 }
 
 // every frame: the ToolTip under the card hidden (the game re-shows it while the hover lasts), else given back
+void ApplyTip();
+} // namespace
+
+void TipUnder()
+{
+    const u32 want = uistrip::HoverTipNow();
+    u8 st = 0;
+    if (!want || !NameIs(want, "ToolTip") || !R8(want + kState, st))
+        return;
+    if (g_tip != want)
+        RestoreTip(), ++g_tipHides, g_tip = want; // (ApplyTip gives it back when the card goes)
+    if (st & 2)
+        W8(want + kState, static_cast<u8>(st & ~2));
+}
+
+namespace
+{
 void ApplyTip()
 {
     u32 want = uistrip::CardTooltip();

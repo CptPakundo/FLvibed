@@ -559,7 +559,8 @@ static void HoverFocus()
     void* want = g_charFocus >= 0 && g_charFocus < static_cast<int>(g_chars.size()) && !g_cursorShown
                      ? g_chars[g_charFocus].obj
                      : nullptr;
-    if (want == g_hovered && g_rehover > 0)
+    // (a hover the game still holds is left alone: entering it again restarted the game's name card, which then fought HUD 2's - Shockwave, 7 Nov 2026)
+    if (want == g_hovered && (g_rehover > 0 || (want && baseinfo::CharacterHovered(want))))
         return;
     if (g_hovered && g_hovered != want)
         room::Unhover(g_hovered);
@@ -574,18 +575,24 @@ static void HoverFocus()
 // to the room's participants"). While the pad leads, the hidden cursor stands on the focused character's pick box; the stick's cursor or the mouse take it back.
 static bool g_parked = false, g_roomFrame = false, g_wasRoomFrame = false;
 static float g_parkX = -1, g_parkY = -1;
+static void* g_parkObj = nullptr;
 static void Unpark()
 {
     if (g_parked)
         dimouse::ReleaseTarget(), g_parked = false;
+    g_parkObj = nullptr;
 }
+// (the cursor stays put while it is still inside the focused character's box: following the idle animation's box moved it every frame)
 static void ParkOnFocus()
 {
     void* o = FocusObj();
     float x, y, w, h;
     if (!device::Pad() || g_cursorShown || !o || !baseinfo::CharacterScreenRect(o, x, y, w, h))
         return Unpark();
-    g_parkX = x + w * 0.5f, g_parkY = y + h * 0.45f;
+    const bool inside = g_parkX >= x + w * 0.2f && g_parkX <= x + w * 0.8f && g_parkY >= y + h * 0.2f && g_parkY <= y + h * 0.7f;
+    if (g_parked && o == g_parkObj && inside)
+        return;
+    g_parkX = x + w * 0.5f, g_parkY = y + h * 0.45f, g_parkObj = o;
     dimouse::MoveTo(g_parkX, g_parkY);
     g_parked = true;
 }

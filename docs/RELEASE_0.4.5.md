@@ -24,6 +24,8 @@ Refreshed a fifth time (the owner's word; Shockwave: comparing in the inventory 
 
 Refreshed a sixth time (the owner's word; Shockwave: AMMU.): the dealer's filter tab takes the English short word where the game's long word starts as it does (AMMUNITION -> AMMO), other languages cut as before. Seen at 1280x800.
 
+Refreshed a seventh time (the owner's word; Shockwave: the game's name card flickering over HUD 2's on the D-pad in rooms): `uiskin::TipUnder` hides the ToolTip again after the game's update while `uistrip::HoverTipNow` sees a hovered character; padbases re-hovers only a hover the game dropped and keeps the parked cursor still inside the box. Seen in a background game (the card on every sample); the flicker itself not reproduced there (no picking in a background window): the owner's or Shockwave's foreground game is the check.
+
 ## Not run
 No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's clicks and wheel on the pages, multiplayer on the pages, 4:3, FLUF beside the new word tabs.
 

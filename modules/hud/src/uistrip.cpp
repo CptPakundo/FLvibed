@@ -975,6 +975,15 @@ float StripBottom() { return g.on && g.show ? g.bottom : 0; }
 float StripRight() { return g.on && g.show && g.bottom > 0 ? g.stripRight : 0; }
 
 u32 CardTooltip() { return g.on && g.show && g.card ? g.tipCtl : 0; }
+u32 HoverTipNow()
+{
+    if (!g.on || !g.show || g.scene || g.window || g.talk)
+        return 0;
+    for (void* o : Characters())
+        if (baseinfo::CharacterHovered(o))
+            return g.tipCtl ? g.tipCtl : baseinfo::Find("ToolTip");
+    return 0;
+}
 
 bool Active() { return g.on; }
 

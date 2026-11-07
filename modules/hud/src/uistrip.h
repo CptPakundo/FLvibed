@@ -28,6 +28,9 @@ float StripRight();
 // The game's `ToolTip` control while the character card replaces it (0 otherwise): uiskin hides the native box under
 // the card then and only then (the pause menu's button help is the same ToolTip and stays).
 u32 CardTooltip();
+// The same ToolTip while a room character is hovered at this moment, read after the game's update (the frame's Read runs before it, so a hover
+// the game started or re-placed this frame showed the game's own card for that frame: Shockwave, 7 Nov 2026). 0 otherwise.
+u32 HoverTipNow();
 // The overlay runs (ui_style HUD 2, docked): its card carries the room character's offer word.
 bool Active();
 // Debug: uistrip state | data

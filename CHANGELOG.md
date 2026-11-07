@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.4.5 (7 Nov 2026)
+- **Refreshed again: one name card in rooms:** highlighting yourself or someone in a room with the D-pad, the game's own name card kept flickering back over HUD 2's (Shockwave). The game's card is hidden again just before each frame draws, so a card the game shows or moves during the frame never appears. The pad also stops re-entering a highlight the game still holds and keeps its hidden cursor still on the character.
 - **Refreshed again: AMMO, not AMMU., at the equipment dealer:** the game's AMMUNITION was cut to its first four letters for the tab, which read as a word sheared off (Shockwave). The tab says AMMO now.
 - **Refreshed again: the compare tag works with an empty hold:** on the inventory tab only the items in your hold compared with the tagged one, so with nothing in the hold tagging did nothing (Shockwave). Your other mounted items of the same kind compare with it too now, the card saying VS ITS NAME (TAGGED), on the inventory tab and at the equipment dealer.
 - **Refreshed again: bars flash and bloom bigger:** the glow of a bar running low and the bloom of a bar that breaks (the ring's arcs, the target's bars) are wider and brighter; on a Steam Deck's screen the bloom went unseen (Shockwave, the owner). A bloom no longer waits out the first 1.6 seconds of flight.
