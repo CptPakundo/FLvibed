@@ -120,6 +120,37 @@ void HideArt(Win& w, u32 ctl)
     w.art.push_back(a);
 }
 
+// The docked map's hides in OTHER windows (the room bar's icons, the NeuroNet box's art): kept with their owner, not the map, whose drop when the game
+// destroys it (a NeuroNet tab switch) writes nothing back - the box stayed hidden in the next room (7 Nov 2026). Given back once no map stands.
+struct BoxHide
+{
+    u32 owner, ownerVt;
+    Art a;
+};
+std::vector<BoxHide> g_boxHides;
+void HideBoxArt(const Win& owner, u32 ctl)
+{
+    for (const BoxHide& b : g_boxHides)
+        if (b.a.ctl == ctl)
+            return;
+    BoxHide b = {owner.root, owner.vt, {ctl, {}}};
+    RBytes(ctl + kName, b.a.name, sizeof(b.a.name) - 1);
+    u8 st = 0;
+    if (R8(ctl + kState, st) && (st & 2))
+        W8(ctl + kState, static_cast<u8>(st & ~2));
+    g_boxHides.push_back(b);
+}
+void GiveBoxBack()
+{
+    for (const BoxHide& b : g_boxHides)
+    {
+        u8 st = 0;
+        if (Valid(b.owner, b.ownerVt) && StartsWithName(b.a.ctl, b.a.name) && R8(b.a.ctl + kState, st) && (st & 1) && !(st & 2))
+            W8(b.a.ctl + kState, static_cast<u8>(st | 2));
+    }
+    g_boxHides.clear();
+}
+
 void HideOwn(Win& w, u32 ctl)
 {
     u32 h = 0;
@@ -279,7 +310,7 @@ void WriteWindow(Win& w)
                             RBytes(c + kName, n, 32);
                             const size_t len = strlen(n);
                             if (!strncmp(n, "ButtonControl", 13) || !strncmp(n, "RoomControl", 11) || !strcmp(n, "NNBackground") || (len > 10 && !strcmp(n + len - 10, "ButtonRoot")))
-                                HideArt(w, c);
+                                HideBoxArt(o, c);
                             if (!R32(c + kSibling, c))
                                 break;
                         }
@@ -535,6 +566,7 @@ void RestoreAll()
     skinmenu::GiveBack();
     RestoreWord();
     navskin::Unbind();
+    GiveBoxBack();
     RestoreTip();
     Restore(g_page);
     g_pageGen = 0xFFFFFFFFu;
@@ -1164,11 +1196,24 @@ void RenderUnder(void* device)
         for (Win& w : g_wins)
             if (w.fam == kFamNavMap && Valid(w.root, w.vt))
                 Restore(w);
-    bool mapUp = false;
+    bool mapUp = false, mapSkinned = false;
     for (const Win& w : g_wins)
-        mapUp |= w.fam == kFamNavMap;
+        if (w.fam == kFamNavMap)
+            mapUp = true, mapSkinned |= Valid(w.root, w.vt) && !Native(w);
     if (!mapUp)
         navskin::Unbind();
+    if (!mapSkinned)
+        GiveBoxBack();
+    else
+    {
+        // (the game shows the box's art again each frame it refreshes it, as the map's own: cleared again while the map stands)
+        for (const BoxHide& b : g_boxHides)
+        {
+            u8 st = 0;
+            if (Valid(b.owner, b.ownerVt) && R8(b.a.ctl + kState, st) && (st & 2) && StartsWithName(b.a.ctl, b.a.name))
+                W8(b.a.ctl + kState, static_cast<u8>(st & ~2));
+        }
+    }
     Reclear();
     ApplyTip();
     {

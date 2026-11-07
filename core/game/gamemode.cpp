@@ -28,7 +28,9 @@ bool SpaceWindowOpen()
     {
         at = now;
         open = false;
-        for (const char* n : {"NeuroNetNavMap", "NN_Inventory", "NeuroNetStoryStar", "NN_PlayerInfo", "NN_Help"})
+        // (NN_CommodityByBase: INVENTORY's BEST PRICES hides NN_Inventory; without it the mode read flight under the paused world and every button but View
+        // was dead there - Shockwave, 7 Nov 2026)
+        for (const char* n : {"NeuroNetNavMap", "NN_Inventory", "NeuroNetStoryStar", "NN_PlayerInfo", "NN_Help", "NN_CommodityByBase"})
             if (uiclick::FindVisible(n))
             {
                 open = true;

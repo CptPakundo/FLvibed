@@ -127,7 +127,16 @@ static bool ArrowRule();
 static std::vector<Ring> g_ring;
 static int g_current = -1; // index into g_ring
 static std::string g_lastGoto;
-static room::Hotspot g_launch, g_news, g_jobs; // ctl 0 = absent
+static room::Hotspot g_launch, g_news, g_jobs, g_repair, g_view; // ctl 0 = absent
+// Y in a room: its own action - the launch, else the job board, else the equipment room's CHANGE VIEW (IDS_EQUIPMENT_ROOM_RIGHT, the room's camera button;
+// Shockwave, 7 Nov 2026)
+static const room::Hotspot& YSpot() { return g_launch.ctl ? g_launch : g_jobs.ctl ? g_jobs : g_view; }
+static const wchar_t* YWord() { return g_launch.ctl ? L"LAUNCH" : g_jobs.ctl ? L"JOB BOARD" : L"CHANGE VIEW"; }
+static const char* YName() { return g_launch.ctl ? "launch" : g_jobs.ctl ? "job board" : "change view"; }
+// X in a room: the news where the room has it (a bar), else the repair (the equipment room, a station's Deck and dealers: Shockwave, 7 Nov 2026 - the left
+// stick's cursor was the only way in, and Y launches on the Deck)
+static const room::Hotspot& XSpot() { return g_news.ctl ? g_news : g_repair; }
+static const wchar_t* XWord() { return g_news.ctl ? L"NEWS" : L"REPAIR"; }
 static std::string g_busy;
 static float g_roomRefresh = 0;
 static std::string g_pendingRoom; // a ring step while the NavBar is busy
@@ -358,7 +367,7 @@ static void RefreshRoom()
     const std::vector<room::Hotspot> hs = room::Hotspots();
     g_busy = room::NavBusy();
     g_ring.clear();
-    g_launch = g_news = g_jobs = room::Hotspot();
+    g_launch = g_news = g_jobs = g_repair = g_view = room::Hotspot();
     std::string derived;
     for (const room::Hotspot& h : hs)
     {
@@ -370,6 +379,10 @@ static void RefreshRoom()
             g_news = h, derived = "Bar";
         else if (h.behaviour == 3 && h.ctl)
             g_jobs = h, derived = "Bar";
+        else if (h.behaviour == 12 && h.ctl) // IDS_NN_REPAIR_YOUR_SHIP (it names no room: the Deck and the equipment room both have it)
+            g_repair = h;
+        else if (h.behaviour == 9 && h.ctl) // IDS_EQUIPMENT_ROOM_RIGHT: the equipment room's CHANGE VIEW
+            g_view = h;
         else if (h.behaviour == 5)
             derived = "Trader";
         else if (h.behaviour == 8)
@@ -694,23 +707,19 @@ static void Prompts(const Gamepad& pad)
                 add(Id::A, g_cursorShown ? L"SELECT" : L"TALK");
             // Y as the press below acts: the room's launch hotspot first (Trent on the launch pad is a character, so
             // the launch area has a strip too - Y LAUNCH was missing there), else the job board
-            if (g_launch.ctl)
-                add(Id::Y, L"LAUNCH");
-            else if (g_jobs.ctl)
-                add(Id::Y, L"JOB BOARD");
-            if (g_news.ctl)
-                add(Id::X, L"NEWS");
+            if (YSpot().ctl)
+                add(Id::Y, YWord());
+            if (XSpot().ctl)
+                add(Id::X, XWord());
             add(Id::LB, L"ROOM", false, Id::RB);
         }
         else
         {
             add(Id::LB, L"ROOM", false, Id::RB);
-            if (g_launch.ctl)
-                add(Id::Y, L"LAUNCH");
-            else if (g_jobs.ctl)
-                add(Id::Y, L"JOB BOARD");
-            if (g_news.ctl)
-                add(Id::X, L"NEWS");
+            if (YSpot().ctl)
+                add(Id::Y, YWord());
+            if (XSpot().ctl)
+                add(Id::X, XWord());
             add(Id::A, L"SELECT");
             if (CursorAllowed())
                 add(Id::LS, L"CURSOR");
@@ -1154,9 +1163,9 @@ static void UpdateRoom(const Gamepad& pad)
     }
     const bool strip = !g_chars.empty();
     g_owned |= XINPUT_GAMEPAD_LEFT_SHOULDER | XINPUT_GAMEPAD_RIGHT_SHOULDER;
-    if (g_launch.ctl || g_jobs.ctl)
+    if (YSpot().ctl)
         g_owned |= XINPUT_GAMEPAD_Y;
-    if (g_news.ctl)
+    if (XSpot().ctl)
         g_owned |= XINPUT_GAMEPAD_X;
     if (strip && !g_conversation) // (in a conversation the game's own windows - the rumour's CLOSE - take the pad's focus)
     {
@@ -1170,25 +1179,26 @@ static void UpdateRoom(const Gamepad& pad)
         StepRoom(+1);
     if (pad.Pressed(XINPUT_GAMEPAD_Y))
     {
-        const room::Hotspot& h = g_launch.ctl ? g_launch : g_jobs;
+        const room::Hotspot& h = YSpot();
         if (h.ctl)
         {
             if (!g_busy.empty())
-                events::Push("pad room: %s refused (busy: %s)", g_launch.ctl ? "launch" : "job board", g_busy.c_str());
+                events::Push("pad room: %s refused (busy: %s)", YName(), g_busy.c_str());
             else
             {
                 const bool ok = uiclick::Click(h.ctl);
-                events::Push("pad room: %s %s (%s)", g_launch.ctl ? "launch" : "job board", ok ? "clicked" : "no click",
-                             h.control.c_str());
+                events::Push("pad room: %s %s (%s)", YName(), ok ? "clicked" : "no click", h.control.c_str());
             }
         }
     }
-    if (pad.Pressed(XINPUT_GAMEPAD_X) && g_news.ctl)
+    if (pad.Pressed(XINPUT_GAMEPAD_X) && XSpot().ctl)
     {
+        const room::Hotspot& h = XSpot();
+        const char* what = g_news.ctl ? "news" : "repair";
         if (!g_busy.empty())
-            events::Push("pad room: news refused (busy: %s)", g_busy.c_str());
+            events::Push("pad room: %s refused (busy: %s)", what, g_busy.c_str());
         else
-            events::Push("pad room: news %s (%s)", uiclick::Click(g_news.ctl) ? "clicked" : "no click", g_news.control.c_str());
+            events::Push("pad room: %s %s (%s)", what, uiclick::Click(h.ctl) ? "clicked" : "no click", h.control.c_str());
     }
     if (strip && g_conversation)
         LeaveChars(); // (no talk, no focus walk mid-conversation: the buttons are left to the game's windows)
@@ -1855,6 +1865,26 @@ void Update(float dt, const Gamepad& pad, Where where)
 }
 
 bool Owns(u32 mask) { return ((g_owned | padmap::Owned()) & mask) != 0; }
+
+void DockedView()
+{
+    if (g_modal || OwnModalOpen() || g_screen == Screen::Offer || g_conversation)
+        return;
+    switch (g_screen)
+    {
+    case Screen::NnInventory:
+    case Screen::NnLog:
+    case Screen::NnPlayer:
+    case Screen::NnHelp:
+    case Screen::BestPrices:
+        events::Push("pad view: close the NeuroNet %s", nnwin::Close() ? "ok" : "refused");
+        break;
+    default: // the room, a dealer, a board: the map, the NeuroNet's first window (the box's button, as a click on MAP)
+        nnwin::Press(nntabs::kCmdMap);
+        events::Push("pad view: the NeuroNet's map");
+        break;
+    }
+}
 bool PageOwnsStick() { return g_pageStick; }
 
 bool CursorAllowed() { return uiopt::Get().padCursor != 0; }
@@ -2109,7 +2139,7 @@ std::string Command(std::istream& in)
         for (size_t i = 0; i < g_ring.size(); ++i)
             o << (static_cast<int>(i) == g_current ? "* " : "  ") << g_ring[i].label << " " << g_ring[i].control << "\n";
         o << "launch=" << (g_launch.ctl ? g_launch.control : "-") << " news=" << (g_news.ctl ? g_news.control : "-")
-          << " jobs=" << (g_jobs.ctl ? g_jobs.control : "-") << " busy='" << g_busy << "' pending='" << g_pendingRoom
+          << " jobs=" << (g_jobs.ctl ? g_jobs.control : "-") << " repair=" << (g_repair.ctl ? g_repair.control : "-") << " busy='" << g_busy << "' pending='" << g_pendingRoom
           << "' lastGoto='" << g_lastGoto << "'";
         return o.str();
     }

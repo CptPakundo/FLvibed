@@ -106,6 +106,8 @@ bool Draw()
         const float cy = (o.box.y0 + o.box.y1) / 2;
         Glyph(glyphs::LB, o.lbX, cy, glyphH, Argb(kChrome, 1));
         Glyph(glyphs::RB, o.rbX, cy, glyphH, Argb(kChrome, 1));
+        if (baseinfo::Docked()) // View closes the NeuroNet docked as in flight: its badge just left of the strip (the owner's yes to Shockwave, 7 Nov 2026)
+            Glyph(glyphs::VIEW, o.box.x0 - 0.010f * H - GlyphWidth(glyphs::VIEW, glyphH) / 2, cy, glyphH, Argb(kChrome, 1));
     }
     const int hover = skinchip::Hovered();
     for (int i = 0; i < in.tabs; ++i)
@@ -234,6 +236,9 @@ void DrawRoom()
         return;
     const float W = winplates::g_W, H = winplates::g_H, pad = kStripPad * H, glyphH = 0.038f * H;
     const float side = g_pad ? GlyphWidth(glyphs::LB, glyphH) + pad : 0;
+    // View opens the NeuroNet docked (padbases DockedView): its badge on the NeuroNet's own words, as LB / RB on the rooms' (the owner's yes to Shockwave,
+    // 7 Nov 2026; the lanes are full, so not a pill)
+    const float viewW = g_pad && d.nn ? GlyphWidth(glyphs::VIEW, glyphH) + pad : 0; // (at a dealer too, where the bumpers are the page's and LB / RB go)
     std::vector<RoomWord> tabs;
     for (int i = 0; d.nn && i < nntabs::Count(nnwin::Multiplayer()); ++i)
     {
@@ -251,7 +256,7 @@ void DrawRoom()
         for (float gap : {kWordGap * H, kWordGapMin * H})
         {
             barW = std::max(RowWidth(g_rooms, s, gap) + 2 * (pad + side), nativeW);
-            nnW = d.nn ? std::max(RowWidth(tabs, s, gap) + 2 * pad, nnNative) : 0;
+            nnW = d.nn ? std::max(RowWidth(tabs, s, gap) + 2 * pad + viewW, nnNative) : 0;
             if (cx - barW / 2 >= least && (!d.nn || cx + barW / 2 + 0.012f * H <= nnRight - nnW))
             {
                 fits = true;
@@ -289,7 +294,9 @@ void DrawRoom()
     if (d.nn)
     {
         Plate(nnRight - nnW, y0, nnRight, y1, 0.008f * H, kBL, 1.0f, kChrome, 0.45f);
-        Row(tabs, nnRight - nnW + pad, nnRight - pad, y0, y1, size, TabClick, false);
+        if (viewW > 0)
+            Glyph(glyphs::VIEW, nnRight - nnW + pad + (viewW - pad) / 2, y1 / 2, glyphH, Argb(kInk, 1));
+        Row(tabs, nnRight - nnW + pad + viewW, nnRight - pad, y0, y1, size, TabClick, false);
         winplates::g_keep.push_back({nnRight - nnW, 0, nnRight, y1});
     }
     g_leftNext = x0, g_footNext = foot, g_roomUp = true;

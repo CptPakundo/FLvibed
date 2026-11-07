@@ -351,6 +351,8 @@ static void PadRest(float dt)
         UpdateFreeCursor(dt);
         if (g_mode == Mode::SpaceUi && g_pad.Pressed(XINPUT_GAMEPAD_BACK) && !padbases::Owns(XINPUT_GAMEPAD_BACK))
             fl::TapKey(VK_ESCAPE); // close the window
+        else if (g_mode == Mode::Docked && g_pad.Pressed(XINPUT_GAMEPAD_BACK) && !padbases::Owns(XINPUT_GAMEPAD_BACK))
+            padbases::DockedView(); // the NeuroNet, as in flight
         break;
     case Mode::Space:
         // between two NeuroNet windows (a bumper's tab waits to open, or a window still slides): no ship control - the owner, 7 Nov 2026: RB fired

@@ -28,6 +28,8 @@ Refreshed a seventh time (the owner's word; Shockwave: the game's name card flic
 
 Refreshed an eighth time (the owner's word; Shockwave: the cruise meter flashing while it works): the cruise arc's halo gone while charging / cruising (a steady 0.35 glow), a bloom only on a disruption (`hud2 sim disrupt`); every zeroed meter's bloom in one red (kHostile: shield, hull, cruise, the target's bars). Seen at 1280x800; the owner got a GIF of the ring's states.
 
+Refreshed a ninth and tenth time (the owner's word): the playtesting credit (Shockwave508: README, CHANGELOG, notes); BEST PRICES in space (`gamemode::SpaceWindowOpen` lists NN_CommodityByBase); the pad docked - X REPAIR (behaviour 12), Y CHANGE VIEW (behaviour 9), View opens / closes the NeuroNet (`padbases::DockedView`) with a badge on the NeuroNet's words (`nnstrip`); the NeuroNet box given back after a destroyed docked map (`uiskin` BoxHides). Seen at 1280x800.
+
 ## Not run
 No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's clicks and wheel on the pages, multiplayer on the pages, 4:3, FLUF beside the new word tabs.
 
