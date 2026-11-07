@@ -22,6 +22,8 @@ Refreshed a fourth time (the owner's word; Shockwave, issue 47): the bars' glow 
 
 Refreshed a fifth time (the owner's word; Shockwave: comparing in the inventory did nothing, an empty hold): `nnkit::Compare` gives a mounted item `gamedata::Against` too, kept only when it is the tag and not itself (VS ITS NAME (TAGGED)); inventory and the dealer's own rows alike. Seen at 1280x800 (SaveC701, a bought Lavablade against the tagged Justice).
 
+Refreshed a sixth time (the owner's word; Shockwave: AMMU.): the dealer's filter tab takes the English short word where the game's long word starts as it does (AMMUNITION -> AMMO), other languages cut as before. Seen at 1280x800.
+
 ## Not run
 No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's clicks and wheel on the pages, multiplayer on the pages, 4:3, FLUF beside the new word tabs.
 

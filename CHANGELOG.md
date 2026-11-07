@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.4.5 (7 Nov 2026)
+- **Refreshed again: AMMO, not AMMU., at the equipment dealer:** the game's AMMUNITION was cut to its first four letters for the tab, which read as a word sheared off (Shockwave). The tab says AMMO now.
 - **Refreshed again: the compare tag works with an empty hold:** on the inventory tab only the items in your hold compared with the tagged one, so with nothing in the hold tagging did nothing (Shockwave). Your other mounted items of the same kind compare with it too now, the card saying VS ITS NAME (TAGGED), on the inventory tab and at the equipment dealer.
 - **Refreshed again: bars flash and bloom bigger:** the glow of a bar running low and the bloom of a bar that breaks (the ring's arcs, the target's bars) are wider and brighter; on a Steam Deck's screen the bloom went unseen (Shockwave, the owner). A bloom no longer waits out the first 1.6 seconds of flight.
 - **Refreshed again: your shield says when it is down (issue 47):** after it fails the shield rebuilds while every hit goes to the hull, and the meter only looked low (Shockwave). Until the game brings it back, the shield's whole arc pulses slowly in its own blue, and SHIELDS / DOWN stands at the reticle's lower left, switching between blue and red as fast as the flash limit allows (2.9 Hz; steady red under FADES or NONE motion). The words stand clear of the shield's arc (the owner).

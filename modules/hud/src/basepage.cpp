@@ -1863,17 +1863,21 @@ void Update(float dt, bool pad)
             if (g_filterWord[i].empty())
             {
                 // the game's words, the last one off where the four must stand in one list's width ("EXTERNAL EQUIPMENT")
+                static const wchar_t* const kWords[] = {L"WEAPONS", L"AMMO", L"EXTERNAL", L"INTERNAL", L"GOODS"};
                 g_filterWord[i] = Upper(baseinfo::HintText(uiclick::Find(kFilterControl[i])));
                 const size_t sp = g_filterWord[i].find(L' ');
                 if (sp != std::wstring::npos)
                     g_filterWord[i].resize(sp);
+                // a long word: the short one where the game's is that word in English (AMMUNITION -> AMMO: "AMMU." read as cut, Shockwave), else its first four and a stop
                 if (g_filterWord[i].size() > 8)
-                    g_filterWord[i].resize(4), g_filterWord[i] += L".";
-                if (g_filterWord[i].empty())
                 {
-                    static const wchar_t* const kWords[] = {L"WEAPONS", L"AMMO", L"EXTERNAL", L"INTERNAL", L"GOODS"};
-                    g_filterWord[i] = kWords[i];
+                    if (g_filterWord[i].compare(0, 3, kWords[i], 3) == 0)
+                        g_filterWord[i] = kWords[i];
+                    else
+                        g_filterWord[i].resize(4), g_filterWord[i] += L".";
                 }
+                if (g_filterWord[i].empty())
+                    g_filterWord[i] = kWords[i];
             }
         if (!room::NNWindowBusy())
         {
