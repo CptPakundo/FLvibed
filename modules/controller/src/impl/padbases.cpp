@@ -97,6 +97,7 @@ static Where g_where = Where::Menu;
 static Screen g_screen = Screen::None;
 static float g_screenRefresh = 0;
 static u32 g_owned = 0;          // XINPUT masks consumed this frame
+static bool g_pageStick = false; // a HUD 2 page took the right stick this frame (PageOwnsStick)
 static bool g_cursorShown = false; // the stick showed the cursor last (a D-pad / bumper press hides it)
 static bool g_cursorBefore = false; // ... as it was before this frame's buttons
 static float g_dt = 0;
@@ -568,11 +569,51 @@ static void HoverFocus()
     g_rehover = 0.5f; // the game's own picking may clear it: re-assert twice a second
 }
 
+// The pad's focus and the game's own picking agree: the game hovers whatever the cursor stands on every frame, so a hidden cursor resting on a hotspot or
+// another character (the stick's cursor, the mouse, a window) took the highlight from the D-pad's character (the owner, 7 Nov 2026: "always be able to snap
+// to the room's participants"). While the pad leads, the hidden cursor stands on the focused character's pick box; the stick's cursor or the mouse take it back.
+static bool g_parked = false, g_roomFrame = false, g_wasRoomFrame = false;
+static float g_parkX = -1, g_parkY = -1;
+static void Unpark()
+{
+    if (g_parked)
+        dimouse::ReleaseTarget(), g_parked = false;
+}
+static void ParkOnFocus()
+{
+    void* o = FocusObj();
+    float x, y, w, h;
+    if (!device::Pad() || g_cursorShown || !o || !baseinfo::CharacterScreenRect(o, x, y, w, h))
+        return Unpark();
+    g_parkX = x + w * 0.5f, g_parkY = y + h * 0.45f;
+    dimouse::MoveTo(g_parkX, g_parkY);
+    g_parked = true;
+}
+
+// The cast on screen changed (a camera track brought one in, took one out): read again - the list once kept everyone off the screen at the room's start out
+static void RefreshIfShown()
+{
+    size_t shown = 0;
+    bool missing = false;
+    for (void* o : g_charObjs)
+        if (ScreenX(o) != -2)
+        {
+            ++shown;
+            bool in = false;
+            for (const Char& c : g_chars)
+                in |= c.obj == o;
+            missing |= !in;
+        }
+    if (missing || shown != g_chars.size())
+        RefreshChars();
+}
+
 static void LeaveChars()
 {
     if (g_hovered)
         room::Unhover(g_hovered);
     g_hovered = nullptr;
+    Unpark();
 }
 
 // ---------------------------------------------------------------- the frame
@@ -1052,6 +1093,10 @@ static void CycleFilter()
 
 static void UpdateRoom(const Gamepad& pad)
 {
+    g_roomFrame = true;
+    // back in the room from a window the pad closed (the map shows its own cursor): the room's highlight comes back at once, not at the next D-pad press
+    if (!g_wasRoomFrame && device::Pad() && !(pad.Cur().lx != 0 || pad.Cur().ly != 0))
+        g_cursorShown = false;
     g_roomRefresh -= g_dt;
     if (g_roomRefresh <= 0)
     {
@@ -1078,7 +1123,7 @@ static void UpdateRoom(const Gamepad& pad)
         if (!g_conversation && (stale || was))
             RefreshChars(), stale = false;
         else if (!g_conversation)
-            ResortIfMoved();
+            RefreshIfShown(), ResortIfMoved();
     }
     // a queued ring step once the NavBar is ready
     if (!g_pendingRoom.empty())
@@ -1142,24 +1187,44 @@ static void UpdateRoom(const Gamepad& pad)
         LeaveChars(); // (no talk, no focus walk mid-conversation: the buttons are left to the game's windows)
     else if (strip)
     {
-        const int n = static_cast<int>(g_chars.size());
         const bool left = pad.Pressed(XINPUT_GAMEPAD_DPAD_LEFT), right = pad.Pressed(XINPUT_GAMEPAD_DPAD_RIGHT);
         if (left || right)
         {
-            // from the character the pad cursor (or the game's own picking) hovers, when it is not the focus
-            for (int i = 0; i < n; ++i)
-                if (g_cursorBefore && g_chars[i].obj != g_hovered && HoverFlag(g_chars[i].obj) == 1)
+            RefreshIfShown();
+            for (Char& c : g_chars)
+                c.sx = ScreenX(c.obj);
+            const int n = static_cast<int>(g_chars.size());
+            // snap: when something else moved the cursor since the pad last led (the stick's cursor, the mouse, a window), or the focus is gone from the
+            // screen, the nearest participant that way from where the cursor stands; else the next one in screen order
+            const float mx = static_cast<float>(fl::MouseX()), my = static_cast<float>(fl::MouseY());
+            void* f = FocusObj();
+            const bool snap = g_cursorBefore || !g_parked || fabsf(mx - g_parkX) > 12 || fabsf(my - g_parkY) > 12 || !f || ScreenX(f) < 0;
+            if (n > 0 && snap)
+            {
+                int best = -1;
+                float bd = 1e30f;
+                for (int i = 0; i < n; ++i)
                 {
-                    g_charFocus = i;
-                    break;
+                    const float sx = g_chars[i].sx;
+                    if (sx < 0 || (right ? sx <= mx : sx >= mx))
+                        continue;
+                    if (fabsf(sx - mx) < bd)
+                        bd = fabsf(sx - mx), best = i;
                 }
-            if (g_charFocus < 0)
-                g_charFocus = 0;
-            else
-                g_charFocus = (g_charFocus + (right ? 1 : -1) + n) % n;
-            events::Push("pad room: character %d/%d %s", g_charFocus + 1, n, g_chars[g_charFocus].offer.c_str());
+                if (best < 0) // none that way: the far end on the other side (the walk wraps)
+                    for (int i = 0; i < n; ++i)
+                        if (g_chars[i].sx >= 0 && (best < 0 || (right ? g_chars[i].sx < g_chars[best].sx : g_chars[i].sx > g_chars[best].sx)))
+                            best = i;
+                g_charFocus = best >= 0 ? best : 0;
+            }
+            else if (n > 0)
+                g_charFocus = g_charFocus < 0 ? 0 : (g_charFocus + (right ? 1 : -1) + n) % n;
+            if (n > 0)
+                events::Push("pad room: character %d/%d %s%s", g_charFocus + 1, n, g_chars[g_charFocus].offer.c_str(), snap ? " (snapped)" : "");
+            g_rehover = 0;
         }
         HoverFocus();
+        ParkOnFocus();
         if (pad.Pressed(XINPUT_GAMEPAD_A) && !g_cursorShown && g_charFocus >= 0 && !g_chars[g_charFocus].player)
         {
             const Char& c = g_chars[g_charFocus];
@@ -1302,7 +1367,8 @@ static void StickScroll(const PadState& s)
 static bool PageStands() { return views::HudPageOn() && !(g_screen == Screen::NnInventory && JettisonOpen()); }
 static void UpdatePage(const Gamepad& pad)
 {
-    StickScroll(pad.Cur());
+    if (g_screen != Screen::Jobs && g_screen != Screen::News) // (the board's page steps its list or scrolls its text by the stick itself, by side: issue 45)
+        StickScroll(pad.Cur());
     u32 pressed = 0, held = 0;
     for (const u32 b : {XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y, XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT})
     {
@@ -1312,7 +1378,7 @@ static void UpdatePage(const Gamepad& pad)
     if (device::Pad())
         g_cursorShown = false; // (the page goes by its rows: the pad's arrow has nothing to point at)
     g_lastHovered = Focused(); // (the jettison panel hands the frame back to UpdateWindow: a row "newly focused" there would be clicked, and a row's click closes the panel)
-    for (const u32 b : {XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER, XINPUT_GAMEPAD_LEFT_THUMB})
+    for (const u32 b : {XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER, XINPUT_GAMEPAD_LEFT_THUMB, XINPUT_GAMEPAD_RIGHT_THUMB}) // (RS's click: the dealer's compare tag)
     {
         pressed |= pad.Pressed(b) ? b : 0;
         held |= pad.Cur().buttons & b;
@@ -1324,6 +1390,9 @@ static void UpdatePage(const Gamepad& pad)
     if (g_screen == Screen::Commodity || g_screen == Screen::Equipment)
         TriggerQuantity(pad, "QuantitySlider");
     const u32 took = views::HudPagePad(pressed, held, g_dt);
+    // the stick is the page's (its card, the game's bars above): the wheel it would also send reached the ship dealer's 3D view, which zoomed as the
+    // description scrolled (Shockwave, issue 41); the page turns and zooms it itself (basepage ShipTurn / ShipZoom). (A flag of its own: the page's stick bits are PAD_LT / PAD_RT's)
+    g_pageStick = true;
     g_owned |= took | XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
     if (!(took & XINPUT_GAMEPAD_DPAD_UP) && (pressed & (XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN))) // (the digital way through a text: a few lines a press)
         if (const u32 bar = StickBar())
@@ -1641,6 +1710,11 @@ static bool StepTabs(const Gamepad& pad)
 void Update(float dt, const Gamepad& pad, Where where)
 {
     g_owned = 0;
+    g_pageStick = false;
+    if (!g_roomFrame) // (the last frame was no room's: the parked cursor goes back to the player - a window, a dealer, flight)
+        Unpark();
+    g_wasRoomFrame = g_roomFrame;
+    g_roomFrame = false;
     g_dt = dt;
     const bool wasActive = g_where != Where::Menu;
     g_where = where;
@@ -1774,6 +1848,7 @@ void Update(float dt, const Gamepad& pad, Where where)
 }
 
 bool Owns(u32 mask) { return ((g_owned | padmap::Owned()) & mask) != 0; }
+bool PageOwnsStick() { return g_pageStick; }
 
 bool CursorAllowed() { return uiopt::Get().padCursor != 0; }
 

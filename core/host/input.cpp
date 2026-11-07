@@ -44,6 +44,37 @@ bool TakeCommandFrame()
         --g_commandFrames;
     return g_commandNow;
 }
+// The objective banner between two NeuroNet tabs (issue 43): an NN window aborts the banner without popping its objective, and the pump makes it again in any
+// frame with no NN window open - the gap of a tab step - with its ui_new_story_star sound (exe::ObjectiveBannerPump, decompiled). Quiet while an NN window
+// stands (the manager's +0x3A8, the pump's own test 0x45A470) or its transition runs (+0x330 / +0x350, as room::NNWindowBusy), and 0.4 s after: a tab
+// step's gap falls inside, the queued objective shows once the player is back on the HUD.
+typedef void(__cdecl* PumpFn)();
+static PumpFn g_origPump = nullptr;
+static ULONGLONG g_bannerQuietUntil = 0;
+static bool NeuroNetActive()
+{
+    if (!exe::NNManager.ok() || !exe::TransitionRunning.ok())
+        return false;
+    __try
+    {
+        const u32 mgr = Mem<u32>(exe::NNManager);
+        return mgr && (Mem<u32>(mgr + 0x3A8) || Mem<u8>(mgr + 0x330 + 0x18) || Mem<u8>(mgr + 0x350 + 0x18));
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+static void __cdecl BannerPumpHook()
+{
+    const ULONGLONG now = GetTickCount64();
+    if (NeuroNetActive())
+        g_bannerQuietUntil = now + 400;
+    if (now < g_bannerQuietUntil)
+        return;
+    g_origPump();
+}
+
 typedef void(__cdecl* PlotFn)(const float*, const float*, u32, u32);
 static PlotFn g_origPlot = nullptr;
 static void __cdecl PlotHook(const float* from, const float* to, u32 object, u32 system)
@@ -335,6 +366,9 @@ void Install()
         if (g_origGamePaused && exe::PlotBestPath.ok())
             g_origPlot = static_cast<PlotFn>(hk::Detour(exe::PlotBestPath, PlotHook, 6, "a route under the NeuroNet pause"));
     }
+    // ObjectiveBannerPump: mov eax, fs:[0] (6 bytes, no relative addressing)
+    if (exe::ObjectiveBannerPump.ok())
+        g_origPump = static_cast<PumpFn>(hk::Detour(exe::ObjectiveBannerPump, BannerPumpHook, 6, "no objective banner between NeuroNet tabs"));
     // MouseSteer: sub esp,18h; push ebx; push esi (5 bytes). The override writes the mouse-flight globals.
     if (exe::MouseX.ok() && exe::MouseY.ok() && exe::MouseFlightToggle.ok() && exe::MouseFlightTimer.ok() &&
         exe::MouseFlightEngaged.ok())

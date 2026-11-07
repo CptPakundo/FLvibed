@@ -722,7 +722,8 @@ static void DrawInventory(const Frame& f, u32 root)
     g_shipView = inSpace && exe::FrameUpdate.ok();
     if (g_shipView)
     {
-        g_shipRect[0] = (mx0 + mx1) / 2, g_shipRect[1] = my + 0.125f * H, g_shipRect[2] = (mx1 - mx0) / 2, g_shipRect[3] = 0.125f * H;
+        // no wider than tall: the view fits the model by its width, and a long ship (Shockwave's Anubis) ran out of a wide, low box at its nose (issue 46)
+        g_shipRect[0] = (mx0 + mx1) / 2, g_shipRect[1] = my + 0.125f * H, g_shipRect[2] = std::min((mx1 - mx0) / 2, 0.125f * H), g_shipRect[3] = 0.125f * H;
         my += 0.262f * H;
     }
     const float rowH = skinrules::kRowMin * H;

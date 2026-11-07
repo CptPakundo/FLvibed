@@ -27,6 +27,7 @@ static u32 g_lastRealTick = 0; // last time the physical mouse did anything
 static bool g_realButton[8] = {}; // the physical buttons as last reported (before the virtual ones are merged in)
 static float g_realDx = 0, g_realDy = 0; // the physical motion since RealMotion last took it (pixels)
 static int g_realWheel = 0;               // the physical wheel since RealWheel last took it (WHEEL_DELTA units)
+static bool g_holdWheel = false;          // HoldRealWheel: the physical wheel counted, not passed on
 
 static float CountScale()
 {
@@ -140,6 +141,8 @@ static HRESULT WINAPI GetDeviceStateHook(void* self, DWORD cb, void* data)
         g_realButton[i] = (st->rgbButtons[i] & 0x80) != 0;
     if (MotionViaState())
         g_realDx += st->lX * CountScale(), g_realDy += st->lY * CountScale(), g_realWheel += st->lZ;
+    if (g_holdWheel)
+        st->lZ = 0;
     if (MotionViaState())
     {
         int cx, cy;
@@ -199,6 +202,14 @@ static HRESULT WINAPI GetDeviceDataHook(void* self, DWORD cbObj, DIDEVICEOBJECTD
             g_realDy += static_cast<int>(rgdod[i].dwData) * CountScale();
         else if (rgdod[i].dwOfs == DIMOFS_Z && !(Mem<u8>(exe::MouseObj, fl::MOUSE_FLAGS) & 0x40))
             g_realWheel += static_cast<int>(rgdod[i].dwData);
+    }
+    if (g_holdWheel) // (counted above, kept from the game)
+    {
+        DWORD kept = 0;
+        for (DWORD i = 0; i < n; ++i)
+            if (rgdod[i].dwOfs != DIMOFS_Z)
+                rgdod[kept++] = rgdod[i];
+        *inOut = n = kept;
     }
     const DWORD now = GetTickCount();
     auto push = [&](DWORD ofs, DWORD value)
@@ -318,6 +329,7 @@ void ReleaseTarget()
 }
 
 void Wheel(int notches) { g_pendWheel += notches; }
+void HoldRealWheel(bool on) { g_holdWheel = on; }
 
 void SetButton(int index, bool down)
 {

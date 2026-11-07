@@ -987,7 +987,10 @@ bool PlaceBoxes(const Spec& s, float screenH)
     ui::Item rootIt;
     const bool rooted = s.ruleTop > 0 && ui::ControlRect(g_window, rootIt) && rootIt.hh > 0.5f;
     const float top = anchored ? anchor.y + (s.boxTop + (bare ? 0.016f : 0.0f)) * screenH + shift : rooted ? rootIt.y - rootIt.hh + s.ruleTop * screenH : 0;
-    const float bottom = anchored ? anchor.y + s.boxBottom * screenH : rooted ? rootIt.y + rootIt.hh + (s.footOff + s.grow) * screenH : 0;
+    // (a rooted box - INFO's, LOG's - ends over the prompts' lane: its last two lines stood under the pad's pills at 1280x800, issue 42)
+    const float bottom = anchored ? anchor.y + s.boxBottom * screenH
+                         : rooted ? std::min(rootIt.y + rootIt.hh + (s.footOff + s.grow) * screenH, (deckmode::LaneTopH() - 0.012f) * screenH)
+                                  : 0;
     bool changed = false;
     for (u32 box : g_boxes)
     {

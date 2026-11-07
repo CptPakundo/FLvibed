@@ -239,6 +239,10 @@ ShipFacts ShipNamed(const std::wstring& name)
 
 static float Strength(const Spec* s) { return s && !s->stats.empty() ? s->stats[0].value : 0; }
 
+static u32 g_tagged = 0;
+void TagCompare(u32 arch) { g_tagged = arch; }
+u32 TaggedCompare() { return g_tagged; }
+
 Versus Against(u32 arch)
 {
     Versus v;
@@ -248,6 +252,7 @@ Versus Against(u32 arch)
     v.hasSlot = true;
     const std::vector<baseinfo::Item> items = baseinfo::Equipment();
     float weakest = 0;
+    bool taggedHere = false; // the tagged item sits on a hardpoint this one could go on
     for (const Hp& h : ShipHardpoints(baseinfo::ShipArch()))
     {
         if (!Accepts(h, me->type))
@@ -262,10 +267,13 @@ Versus Against(u32 arch)
             v.freeHp = true;
             continue;
         }
+        taggedHere |= g_tagged && on == g_tagged;
         const float s = Strength(Equip(on));
         if (!v.arch || s < weakest)
             v.arch = on, weakest = s;
     }
+    if (taggedHere)
+        v.arch = g_tagged, v.tagged = true;
     return v;
 }
 

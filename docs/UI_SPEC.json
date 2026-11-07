@@ -5062,7 +5062,7 @@
       },
       {
        "def": "CONTEXTUAL",
-       "help": "The bottom-right row of button prompts on controller screens. Contextual: on every window, menu and modal for as long as it is open, and in a base room when it is new to you or a decision is pending; Always: in the rooms too.",
+       "help": "The bottom-right row of button prompts on controller screens. Contextual: on every window, menu and modal for as long as it is open, and in a base room while you move and act there, fading four seconds after the last of it (a new room and a decision pending count too); Always: in the rooms too.",
        "id": "prompt_bar",
        "key": "prompt_bar",
        "kind": "picker",

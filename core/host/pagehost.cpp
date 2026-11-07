@@ -306,6 +306,7 @@ void Start()
     g_host.calls.SetFlightLock = input::SetFlightLock;
     g_host.calls.SetWorldPause = input::SetWorldPause;
     g_host.calls.WorldCommand = input::WorldCommand;
+    g_host.calls.HoldRealWheel = dimouse::HoldRealWheel;
     g_hud = router::ModuleOn(modules::kHud);
     g_flies = router::ModuleOn(modules::kAutopilot) || g_hud;
     g_story = g_flies || router::ModuleOn(modules::kSpeedrun);

@@ -38,8 +38,13 @@ struct Versus
     bool fits = false;    // a hardpoint of this ship takes it
     bool freeHp = false;  // and one of those is free
     bool hasSlot = false; // the item goes on a hardpoint at all
+    bool tagged = false;  // `arch` is the item the player tagged (TagCompare), not the weakest that would go
 };
 Versus Against(u32 arch);
+// The mounted item the store's items compare with where it could be replaced by them (issue 41's sibling 44: the weakest of a kind stood for every gun);
+// 0 clears. By archetype: two of one item have the same numbers.
+void TagCompare(u32 arch);
+u32 TaggedCompare();
 // The hardpoints free now under `filter` (-1 all).
 std::vector<equiprules::Hp> FreeHardpoints(int filter);
 // The mountable items in the hold that one hardpoint takes.

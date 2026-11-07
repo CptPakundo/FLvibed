@@ -34,6 +34,9 @@ bool RealMotion(int* dx, int* dy);
 // The physical wheel's whole notches since the last call (+ away from the player = up; the virtual mouse's excluded) -
 // HostApi v27 RealMouseWheel.
 int RealWheel();
+// The physical wheel kept from the game while on (RealWheel still counts it): a page that scrolls by it says so, so the control under the cursor does not
+// take it too - the ship dealer's 3D view zoomed as its description scrolled (issue 41). The virtual wheel (Wheel) still reaches the game.
+void HoldRealWheel(bool on);
 // The game runs out of focus (host keep-running): its device is not acquired, so reads fail; they then return the
 // virtual mouse alone (the physical one belongs to Windows meanwhile).
 void SetBackground(bool on);

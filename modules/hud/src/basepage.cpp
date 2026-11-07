@@ -244,6 +244,19 @@ static void Trade()
     uiclick::Click(uiclick::FindVisible("BuySellTradeButton"));
     g_tradeWait = 0.35f; // (the rows move a moment later)
 }
+// a mounted item the store compares with (issue 44): your side of the equipment dealer, one with numbers
+static bool CanTag()
+{
+    const Row* r = Focus();
+    const equiprules::Spec* s = r ? gamedata::Equip(r->arch) : nullptr;
+    return g_kind == Kind::Equipment && g_side == Yours && r && r->mounted && r->hp < 0 && s && !s->stats.empty();
+}
+static bool Tagged() { return CanTag() && Focus()->arch == gamedata::TaggedCompare(); }
+static void ToggleTag()
+{
+    if (CanTag())
+        gamedata::TagCompare(Tagged() ? 0 : Focus()->arch);
+}
 static bool Mountable(const Row* r) { return g_kind == Kind::Equipment && g_side == Yours && r && r->hp < 0 && !r->slot.empty(); }
 static void Mount()
 {
@@ -289,6 +302,7 @@ enum Chip
     kLess,
     kMore,
     kMount,
+    kTag,
     kClose,
     kShipBuy,
     kAccept,
@@ -329,6 +343,7 @@ static void ChipClick(int chip)
     case kLess: Quantity(-1); break;
     case kMore: Quantity(1); break;
     case kMount: Mount(); break;
+    case kTag: ToggleTag(); break;
     case kClose:
         if (const u32 c = uiclick::FindVisible(g_kind == Kind::Ships ? "ShipTraderCancelButton" : g_kind == Kind::Jobs ? "MissionVendorCloseButton" : g_kind == Kind::News ? "NewsCloseButton" : g_kind == Kind::Repair ? "RepairCancelButton" : g_kind == Kind::Prices ? "CommodityByBaseCloseButton" : "Inventory_Close"))
             uiclick::Click(c);
@@ -480,7 +495,9 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
         if (r.hp < 0)
         {
             if (side == Yours)
-                under = r.mounted ? L"MOUNTED" : r.count > 1 ? L"x" + std::to_wstring(r.count) : L"IN HOLD";
+                under = r.mounted ? (r.arch == gamedata::TaggedCompare() ? L"MOUNTED, TAGGED TO COMPARE" : L"MOUNTED") : r.count > 1 ? L"x" + std::to_wstring(r.count) : L"IN HOLD";
+            if (side == Yours && r.mounted && r.arch == gamedata::TaggedCompare())
+                underRgb = kActive;
             else
                 under = r.slot;
             if (r.noSlot)
@@ -697,6 +714,20 @@ static void DrawMiddle(const Frame& f, float x0, float x1, float y)
             ChipAt(x0, y, 0.044f * H, r->mounted ? L"UNMOUNT" : L"MOUNT", ChipClick, kMount);
             y += 0.056f * H;
         }
+    }
+    // the compare tag (issue 44), on either card: the mouse's chip; the pad's click in words (the lane is full at 1280 and drops it - ITEM, side, SELL,
+    // FILTER, UNMOUNT)
+    if (CanTag() && !g_pad)
+    {
+        ChipAt(x0, y, 0.044f * H, Tagged() ? L"UNTAG" : L"COMPARE THE STORE WITH THIS", ChipClick, kTag);
+        y += 0.056f * H;
+    }
+    else if (CanTag())
+    {
+        const float gh = 0.028f * H, gw = GlyphWidth(glyphs::R3, gh);
+        Glyph(glyphs::R3, x0 + gw / 2, y + 0.018f * H, gh, Argb(kInk, 1));
+        Text(x0 + gw + 0.010f * H, y + 0.018f * H, Tagged() ? L"CLICK: UNTAG" : L"CLICK: COMPARE THE STORE WITH THIS", 0.024f * H, Argb(Tagged() ? kActive : kChrome, 1));
+        y += 0.046f * H;
     }
     skinkit::Rule(x0, x1, y);
     y += 0.008f * H;
@@ -1114,6 +1145,9 @@ struct Offer
 };
 static std::vector<Offer> g_offers;
 static int g_shipSel = -1;
+static int g_shipFocus = 0;    // the pad's side of the ship dealer: 0 the list, 1 the ship (the stick turns it)
+static int g_rsWas = 0;        // the stick's step direction last frame, and the time to its next repeat
+static float g_rsRepeat = 0;
 static u32 g_ship = 0; // NN_ShipTrader
 static float g_view[4] = {};
 
@@ -1155,6 +1189,90 @@ static void ShipBuy()
         uiclick::Click(uiclick::FindVisible("ShipTraderBuyButton"));
 }
 
+// The ship's hole in the page, fractions of H (the view's 0.165 + 0.115 .. 0.42): the wheel over it is the view's (Update)
+constexpr float kShipHoleHalfW = 0.19f, kShipHoleTop = 0.28f, kShipHoleFoot = 0.585f;
+static bool g_wheelHeld = false;
+static void HoldWheel(bool on)
+{
+    if (on != g_wheelHeld && hostcalls::g.HoldRealWheel)
+        hostcalls::g.HoldRealWheel(on), g_wheelHeld = on;
+}
+
+// The pad's stick turns the game's ship view as its mouse drag does (ShipViewControl, exe::VtShipView; drag 0x584C80, decompiled 7 Nov 2026): yaw +0x520 and
+// pitch +0x524 in degrees, wrapped to +-360, yaw's sense flipped past 180 of pitch; copied to the live YPR +0x37C / +0x380; the matrix +0x358 it draws by
+// rebuilt the same way (Ry(yaw), then Rx(pitch); roll stays 0). No easing pair: what is written stands, and a later mouse drag goes on from it.
+static void ShipTurn(float rx, float ry, float dt)
+{
+    constexpr float kDead = 0.2f, kYawRate = 180.0f, kPitchRate = 120.0f, kDeg = 3.14159265f / 180.0f;
+    const float sx = fabsf(rx) > kDead ? rx : 0, sy = fabsf(ry) > kDead ? ry : 0;
+    const u32 view = uiclick::Find("ShipTrader3DShip");
+    if ((sx == 0 && sy == 0) || !view || !exe::VtShipView.is(R32(view)))
+        return;
+    float yp[2] = {};
+    if (!safemem::Read(view + 0x520, yp, sizeof(yp)) || !std::isfinite(yp[0]) || !std::isfinite(yp[1]))
+        return;
+    const auto wrap = [](float a) { while (a > 360) a -= 360; while (a < -360) a += 360; return a; };
+    const float yaw = wrap(yp[0] + (fabsf(yp[1]) > 180 ? -1.0f : 1.0f) * sx * kYawRate * dt), pitch = wrap(yp[1] - sy * kPitchRate * dt); // (stick down as a drag down)
+    float m[9] = {};
+    const float cy = cosf(yaw * kDeg), syw = sinf(yaw * kDeg), cp = cosf(pitch * kDeg), sp = sinf(pitch * kDeg);
+    m[4] = 1, m[0] = m[8] = cy, m[2] = syw, m[6] = -syw;
+    for (int k = 0; k < 3; ++k)
+    {
+        const float a = m[3 + k], b = m[6 + k];
+        m[3 + k] = cp * a - sp * b, m[6 + k] = a * sp + cp * b;
+    }
+    const auto put = [view](u32 off, float v) { *reinterpret_cast<float*>(static_cast<uintptr_t>(view + off)) = v; }; // (the view's own fields, read just above)
+    put(0x520, yaw), put(0x524, pitch), put(0x37C, yaw), put(0x380, pitch);
+    for (u32 i = 0; i < 9; ++i)
+        put(0x358 + i * 4, m[i]);
+}
+
+// The ship's zoom is HDE's, not the game's (flplusplus: its handler in the view's wheel slot vt[0x48] adds speed x notches to +0x3EC, negative = farther,
+// clamped by its ini's min / max; research\repos\flplusplus src\shippreviewscroll.cpp). The triggers move that field each frame, smoothly (the owner, 7 Nov 2026:
+// the wheel's notches were stepped). No such plugin in the slot: no zoom, no prompt.
+static u32 ShipViewCtl()
+{
+    const u32 view = uiclick::Find("ShipTrader3DShip");
+    return view && exe::VtShipView.is(R32(view)) ? view : 0;
+}
+static bool ShipZoomable()
+{
+    const u32 view = ShipViewCtl();
+    HMODULE in = nullptr;
+    return view && GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                      reinterpret_cast<LPCSTR>(static_cast<uintptr_t>(R32(R32(view) + 0x48))), &in) &&
+           in != GetModuleHandleA(nullptr);
+}
+static void ShipZoom(float lt, float rt, float dt)
+{
+    static bool read = false;
+    static float speed = 3, nearest = 0, farthest = 100;
+    if (!read)
+    {
+        read = true;
+        char path[MAX_PATH] = {}, v[32] = {};
+        GetModuleFileNameA(nullptr, path, MAX_PATH);
+        if (char* slash = strrchr(path, '\\'))
+            strcpy_s(slash + 1, path + MAX_PATH - (slash + 1), "flplusplus.ini");
+        const auto num = [&](const char* key, float def)
+        {
+            GetPrivateProfileStringA("flplusplus", key, "", v, sizeof(v), path);
+            return v[0] ? static_cast<float>(atof(v)) : def;
+        };
+        speed = num("ship_preview_scrolling_speed", 3), nearest = num("ship_preview_scrolling_min_distance", 0), farthest = std::max(nearest, num("ship_preview_scrolling_max_distance", 100));
+        GetPrivateProfileStringA("flplusplus", "ship_preview_scrolling_inverse", "", v, sizeof(v), path);
+        if (!_stricmp(v, "true") || !strcmp(v, "1"))
+            speed = -speed;
+    }
+    const float t = (rt > 0.1f ? rt : 0) - (lt > 0.1f ? lt : 0); // RT in (the field toward 0), LT out
+    const u32 view = ShipViewCtl();
+    float z = 0;
+    if (t == 0 || !ShipZoomable() || !safemem::Read(view + 0x3EC, &z, 4) || !std::isfinite(z))
+        return;
+    z = std::max(-farthest, std::min(-nearest, z + t * speed * 8.0f * dt)); // (8 notches' worth a second at a full trigger)
+    *reinterpret_cast<float*>(static_cast<uintptr_t>(view + 0x3EC)) = z;
+}
+
 // The game's 3D view stays the game's: the window goes off the screen, the view comes back to the page's place, a hole in the ground over it.
 // (it has no rectangle: it goes where the window goes, by its own position call, so it is called back)
 static void ViewBack(u32 view)
@@ -1192,13 +1310,29 @@ static void DrawShips(const Frame& f)
     const float ly0 = f.left, ly1 = 0.30f * W, cx0 = 0.325f * W, cx1 = 0.675f * W, ry0 = 0.70f * W, ry1 = f.right;
     // the view stands where the game has it, in the screen's middle
     g_nextHoles = Holes();
-    g_nextHoles.Add(W / 2 - 0.19f * H, view + 0.115f * H, W / 2 + 0.19f * H, view + 0.42f * H);
+    g_nextHoles.Add(W / 2 - kShipHoleHalfW * H, kShipHoleTop * H, W / 2 + kShipHoleHalfW * H, kShipHoleFoot * H);
+    (void)view;
     GroundBut(0, top, W, H, g_holes);
     float y = top + 0.024f * H;
     Heading(ly0, ly1, y, H, L"SHIPS HERE", std::to_wstring(g_offers.size()) + L" ON SALE");
     y += 0.036f * H;
     const float pitch = 0.100f * H, cell = 0.092f * H;
     const int hover = skinchip::Hovered();
+    // the pad on the ship's side: its view framed as the focus, the stick's glyph and TURN under it (the owner: say plainly the stick turns the ship now)
+    const bool shipSide = g_shipFocus == 1 && views::DevicePad() && g_shipSel >= 0;
+    if (shipSide)
+    {
+        const float hx0 = W / 2 - kShipHoleHalfW * H, hy0 = kShipHoleTop * H, hx1 = W / 2 + kShipHoleHalfW * H, hy1 = kShipHoleFoot * H, gh = 0.030f * H;
+        const float e = std::max(1.0f, 0.003f * H); // (a whole rectangle in the focus's yellow: the list's style left it three lines - the owner)
+        Rect(hx0, hy0, hx1 - hx0, e, Argb(kActive, 0.85f));
+        Rect(hx0, hy1 - e, hx1 - hx0, e, Argb(kActive, 0.85f));
+        Rect(hx0, hy0, e, hy1 - hy0, Argb(kActive, 0.85f));
+        Rect(hx1 - e, hy0, e, hy1 - hy0, Argb(kActive, 0.85f));
+        const std::wstring word = L"TURN";
+        const float tw = TextWidth(word, 0.026f * H), gw = GlyphWidth(glyphs::RS, gh), x = W / 2 - (gw + 0.008f * H + tw) / 2, ty = hy1 - 0.026f * H;
+        Glyph(glyphs::RS, x + gw / 2, ty, gh, Argb(kInk, 1));
+        Text(x + gw + 0.008f * H, ty, word, 0.026f * H, Argb(kInk, 1));
+    }
     Icon icons[3];
     for (size_t i = 0; i < g_offers.size(); ++i, y += pitch)
     {
@@ -1207,8 +1341,10 @@ static void DrawShips(const Frame& f)
         const int slot = skinchip::Hot({ly0, y, ly1, y + pitch}, RowClick, static_cast<int>(i));
         icons[i] = {ly0 + cell / 2, y + pitch / 2, true};
         g_nextHoles.Add(ly0 + 1, y + (pitch - cell) / 2, ly0 + cell - 1, y + (pitch + cell) / 2);
-        if (on)
+        if (on && !shipSide)
             skinkit::Focus(ly0 + cell, y + 0.002f * H, ly1, y + pitch - 0.002f * H);
+        else if (on)
+            Rect(ly0 + cell, y, ly1 - ly0 - cell, pitch, Argb(kChrome, 0.06f)); // (chosen: the focus is on the ship)
         else if (slot >= 0 && slot == hover)
             Rect(ly0 + cell, y, ly1 - ly0 - cell, pitch, Argb(kChrome, 0.10f));
         const float pad = 0.012f * H, tx = ly0 + cell + pad;
@@ -1351,6 +1487,11 @@ static void TextScroll(float px)
     if (const u32 bar = TextBar())
         uiclick::Scroll(bar, px, false, nullptr, nullptr);
 }
+// The pad's side of the board (issue 45: the stick scrolled the list, a long description could not be read): 0 the list, 1 the text - only while the text
+// overflows (D-pad right goes over), as the dealers' sides
+static int g_boardSide = 0;
+static float g_textAcc = 0;
+static bool BoardTextSide() { return g_boardSide == 1 && TextBar() != 0; }
 
 struct Panel
 {
@@ -1481,8 +1622,10 @@ static void DrawBoard(const Frame& f)
         const float top = list0 + i * pitch, a = x0 + cell + 0.012f * H;
         const int slot = skinchip::Hot({x0, top, x1, top + pitch}, RowClick, i);
         const bool on = i == sel;
-        if (on)
+        if (on && !(g_pad && BoardTextSide()))
             skinkit::Focus(a - 0.006f * H, top + 0.003f * H, x1, top + pitch - 0.003f * H);
+        else if (on)
+            Rect(a - 0.006f * H, top, x1 - a + 0.006f * H, pitch, Argb(kChrome, 0.06f)); // (chosen: the pad is on the text)
         else if (slot >= 0 && slot == hover)
             Rect(a - 0.006f * H, top, x1 - a + 0.006f * H, pitch, Argb(kChrome, 0.10f));
         char n[48];
@@ -1573,6 +1716,14 @@ static void DrawBoard(const Frame& f)
             skinkit::ScrollBar(p.tx1 + 0.012f * H, p.ty0, p.ty1, (pos - lo) / whole, room / whole);
         }
     }
+    if (g_pad && BoardTextSide()) // the pad on the text: framed as the ship dealer's ship is
+    {
+        const float e = std::max(1.0f, 0.003f * H), fx0 = p.tx0 - 0.010f * H, fy0 = p.ty0 - 0.008f * H, fx1 = p.tx1 + 0.026f * H, fy1 = p.ty1 + 0.008f * H;
+        Rect(fx0, fy0, fx1 - fx0, e, Argb(kActive, 0.85f));
+        Rect(fx0, fy1 - e, fx1 - fx0, e, Argb(kActive, 0.85f));
+        Rect(fx0, fy0, e, fy1 - fy0, Argb(kActive, 0.85f));
+        Rect(fx1 - e, fy0, e, fy1 - fy0, Argb(kActive, 0.85f));
+    }
     if (!g_pad)
     {
         float cx = ChipAt(p.x0, LaneY(), LaneChipH(), L"CLOSE", ChipClick, kClose);
@@ -1612,7 +1763,7 @@ void Update(float dt, bool pad)
     const u32 d = kind == Kind::Ships ? uiclick::FindVisible("NN_ShipTrader") : kind == Kind::Jobs ? uiclick::FindVisible("NN_MissionVendor") : kind == Kind::News ? uiclick::FindVisible("NN_News") : kind == Kind::Repair ? uiclick::FindVisible("NN_Repair") : kind == Kind::Prices ? uiclick::FindVisible("NN_CommodityByBase") : kind != Kind::None ? uiclick::FindVisible("NN_Dealer") : 0;
     if (kind != g_kind || d != g_dealer)
     {
-        g_offers.clear(), g_shipSel = -1, g_shipCardArch = 0;
+        g_offers.clear(), g_shipSel = -1, g_shipCardArch = 0, g_shipFocus = 0, g_boardSide = 0;
         g_read = 0, g_tradeWait = 0, g_cardArch = 0;
         g_rows[0].clear(), g_rows[1].clear();
         g_list[0] = g_list[1] = List();
@@ -1621,6 +1772,8 @@ void Update(float dt, bool pad)
         g_buyStop = kind == Kind::Final; // (the focus opens on BUY SHIP, as the pad's way always did: its hold needs a fresh press)
     }
     g_kind = kind, g_dealer = d;
+    if (kind != Kind::Ships)
+        HoldWheel(false);
     if (kind == Kind::None)
         return;
     const int wheelNow = kind == Kind::Repair || kind == Kind::Prices ? (hostcalls::g.RealMouseWheel ? hostcalls::g.RealMouseWheel() : 0) : 0;
@@ -1675,8 +1828,13 @@ void Update(float dt, bool pad)
                     ShipPick(0);
             }
         }
+        // the wheel over the ship is the game's 3D view's (its zoom), anywhere else the card's - and kept from the view: it zoomed as the card scrolled (issue 41)
+        const float H = winplates::g_H, W = winplates::g_W, mx = static_cast<float>(fl::MouseX()), my = static_cast<float>(fl::MouseY());
+        const bool overShip = fabsf(mx - W / 2) <= kShipHoleHalfW * H && my >= kShipHoleTop * H && my <= kShipHoleFoot * H;
+        HoldWheel(!overShip);
         const int wheel = hostcalls::g.RealMouseWheel ? hostcalls::g.RealMouseWheel() : 0;
-        g_cardFirst -= wheel;
+        if (!overShip)
+            g_cardFirst -= wheel;
         return;
     }
     g_inv = uiclick::FindVisible("NN_Inventory");
@@ -1782,20 +1940,42 @@ int Prompts(views::PagePrompt* out, int max)
     };
     if (g_kind == Kind::Jobs || g_kind == Kind::News)
     {
-        add(DU, g_kind == Kind::Jobs ? L"JOB" : L"STORY", DD);
+        // one side's words, only the D-pad direction that goes over (the dealers' rule)
+        if (!BoardTextSide())
+        {
+            add(DU, g_kind == Kind::Jobs ? L"JOB" : L"STORY", DD);
+            if (TextBar())
+                add(DR, L"READ");
+        }
+        else
+        {
+            add(DL, g_kind == Kind::Jobs ? L"JOBS" : L"STORIES");
+            add(RS, L"SCROLL");
+        }
         if (g_kind == Kind::Jobs && uiclick::FindVisible("MissionVendorAcceptButton"))
             add(A, L"ACCEPT", -1, true, g_aFired ? 0 : std::min(1.0f, g_aHeld / kHoldSec));
-        if (TextBar())
-            add(RS, L"SCROLL");
         return n;
     }
     if (g_kind == Kind::Ships)
     {
-        add(DU, L"SHIP", DD);
+        // one side's words at a time, and only the D-pad direction that goes over (the dealers' rule)
+        if (g_shipFocus == 0)
+        {
+            add(DU, L"SHIP", DD);
+            if (g_shipSel >= 0)
+                add(DR, L"VIEW SHIP");
+        }
+        else
+        {
+            add(DL, L"SHIP LIST");
+            add(RS, L"TURN");
+            if (g_cardLines > g_cardRoom)
+                add(DU, L"SCROLL CARD", DD);
+        }
+        if (ShipZoomable())
+            add(LT, L"ZOOM", RT);
         if (CanBuyShip())
             add(A, L"BUY THIS SHIP", -1, true, g_aFired ? 0 : std::min(1.0f, g_aHeld / kHoldSec));
-        if (g_cardLines > g_cardRoom)
-            add(RS, L"SCROLL CARD");
         return n;
     }
     const float progress = g_aFired ? 0 : std::min(1.0f, g_aHeld / kHoldSec);
@@ -1845,6 +2025,8 @@ int Prompts(views::PagePrompt* out, int max)
         add(X, L"BEST PRICES");
     if (Mountable(r))
         add(LS, r->mounted ? L"UNMOUNT" : L"MOUNT");
+    if (CanTag())
+        add(R3, Tagged() ? L"CLICK UNTAG" : L"CLICK COMPARE WITH");
     if (Final() && uiclick::FindVisible("BackToShipDealer"))
         add(B, L"BACK TO SHIPS");
     return n;
@@ -1897,10 +2079,35 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
     }
     if (g_kind == Kind::Jobs || g_kind == Kind::News)
     {
-        if (pressed & XINPUT_GAMEPAD_DPAD_UP)
-            BoardStep(-1);
-        if (pressed & XINPUT_GAMEPAD_DPAD_DOWN)
-            BoardStep(1);
+        // two sides (issue 45, the owner): D-pad left the list - the stick and D-pad up / down step it; D-pad right the text, while it overflows - the stick
+        // and D-pad up / down scroll it
+        const bool canText = TextBar() != 0;
+        if (pressed & XINPUT_GAMEPAD_DPAD_LEFT)
+            g_boardSide = 0;
+        if ((pressed & XINPUT_GAMEPAD_DPAD_RIGHT) && canText)
+            g_boardSide = 1;
+        const int rs = (held & views::kPagePadRsUp) ? -1 : (held & views::kPagePadRsDown) ? 1 : 0;
+        if (!BoardTextSide())
+        {
+            int step = (pressed & XINPUT_GAMEPAD_DPAD_UP) ? -1 : (pressed & XINPUT_GAMEPAD_DPAD_DOWN) ? 1 : 0;
+            if (rs != g_rsWas)
+                step = rs, g_rsRepeat = 0.35f;
+            else if (rs && (g_rsRepeat -= dt) <= 0)
+                step = rs, g_rsRepeat = 0.12f;
+            if (step)
+                BoardStep(step);
+            g_textAcc = 0;
+        }
+        else
+        {
+            const float H = winplates::g_H;
+            if (pressed & (XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN))
+                TextScroll(((pressed & XINPUT_GAMEPAD_DPAD_UP) ? -0.11f : 0.11f) * H);
+            g_textAcc = rs ? g_textAcc + rs * 0.9f * H * dt : 0;
+            if (fabsf(g_textAcc) >= 0.02f * H)
+                TextScroll(g_textAcc), g_textAcc = 0;
+        }
+        g_rsWas = rs;
         const bool hold = (held & XINPUT_GAMEPAD_A) != 0;
         g_aHeld = hold ? g_aHeld + dt : 0;
         if (!hold)
@@ -1911,19 +2118,47 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
     }
     if (g_kind == Kind::Ships)
     {
+        // two sides, as the dealers' (the owner, 7 Nov 2026, issue 41): D-pad left the list, where the stick and D-pad up / down step the ships; D-pad right
+        // the ship, where the stick turns it and D-pad up / down scroll its card. The triggers zoom it on either side (padbases)
+        if (pressed & XINPUT_GAMEPAD_DPAD_LEFT)
+            g_shipFocus = 0;
+        if ((pressed & XINPUT_GAMEPAD_DPAD_RIGHT) && g_shipSel >= 0)
+            g_shipFocus = 1;
         const int n = static_cast<int>(g_offers.size());
-        if ((pressed & XINPUT_GAMEPAD_DPAD_UP) && g_shipSel > 0)
-            ShipPick(g_shipSel - 1);
-        if ((pressed & XINPUT_GAMEPAD_DPAD_DOWN) && g_shipSel + 1 < n)
-            ShipPick(g_shipSel + 1);
+        const int rs = (held & views::kPagePadRsUp) ? -1 : (held & views::kPagePadRsDown) ? 1 : 0;
+        if (g_shipFocus == 0)
+        {
+            int step = (pressed & XINPUT_GAMEPAD_DPAD_UP) ? -1 : (pressed & XINPUT_GAMEPAD_DPAD_DOWN) ? 1 : 0;
+            if (rs != g_rsWas) // (a ship a push, then repeats while it is held, as a list's stick does)
+                step = rs, g_rsRepeat = 0.35f;
+            else if (rs && (g_rsRepeat -= dt) <= 0)
+                step = rs, g_rsRepeat = 0.12f;
+            if (step < 0 && g_shipSel > 0)
+                ShipPick(g_shipSel - 1);
+            if (step > 0 && g_shipSel + 1 < n)
+                ShipPick(g_shipSel + 1);
+        }
+        else
+        {
+            if (pressed & XINPUT_GAMEPAD_DPAD_DOWN)
+                g_cardFirst = std::min(g_cardFirst + 3, g_cardLines);
+            if (pressed & XINPUT_GAMEPAD_DPAD_UP)
+                g_cardFirst = std::max(g_cardFirst - 3, 0);
+        }
+        float raw[6] = {};
+        u32 buttons = 0;
+        if (views::padflight.Raw)
+            views::padflight.Raw(raw, &buttons);
+        if (g_shipFocus == 1)
+            ShipTurn(raw[2], raw[3], dt);
+        ShipZoom(raw[4], raw[5], dt);
+        g_rsWas = rs;
         const bool hold = (held & XINPUT_GAMEPAD_A) != 0;
         g_aHeld = hold ? g_aHeld + dt : 0;
         if (!hold)
             g_aFired = false;
         if (hold && !g_aFired && g_aHeld >= kHoldSec && CanBuyShip())
             g_aFired = true, ShipBuy();
-        g_cardFirst += (held & views::kPagePadRsDown) && g_cardFirst < g_cardLines ? 1 : 0;
-        g_cardFirst -= (held & views::kPagePadRsUp) ? 1 : 0;
         return XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_LEFT | XINPUT_GAMEPAD_DPAD_RIGHT | XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y;
     }
     if (Final())
@@ -1961,6 +2196,8 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
         Quantity(1000);
     if (pressed & XINPUT_GAMEPAD_LEFT_THUMB)
         Mount();
+    if (pressed & XINPUT_GAMEPAD_RIGHT_THUMB) // RS's click on a mounted item: what the store's items compare with; again: back to the weakest that would go
+        ToggleTag();
     // a held A trades, as a job or a ship is taken (dealer_rules.h): a tap on a row never spends
     const bool down = (held & XINPUT_GAMEPAD_A) != 0;
     g_aHeld = down ? g_aHeld + dt : 0;
@@ -1979,11 +2216,12 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
         const int lines = static_cast<int>(g_cardStep);
         g_cardFirst += lines, g_cardStep -= static_cast<float>(lines);
     }
-    return XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_LEFT | XINPUT_GAMEPAD_DPAD_RIGHT | XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y | XINPUT_GAMEPAD_LEFT_SHOULDER | XINPUT_GAMEPAD_RIGHT_SHOULDER | XINPUT_GAMEPAD_LEFT_THUMB;
+    return XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_LEFT | XINPUT_GAMEPAD_DPAD_RIGHT | XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y | XINPUT_GAMEPAD_LEFT_SHOULDER | XINPUT_GAMEPAD_RIGHT_SHOULDER | XINPUT_GAMEPAD_LEFT_THUMB | XINPUT_GAMEPAD_RIGHT_THUMB;
 }
 
 void Shutdown()
 {
+    HoldWheel(false);
     g_kind = Kind::None;
     g_dealer = g_inv = 0;
 }
@@ -2035,14 +2273,22 @@ std::string Command(std::istream& in)
         o << "basepage final stop=" << g_buyStop << " can=" << CanBuyFinal() << " back=" << (uiclick::FindVisible("BackToShipDealer") != 0) << " why=" << text::Utf8(TextIn("ShipBuyProblem")) << " tradein=" << static_cast<int>(R32(g_dealer + 0x9FC)) << " ";
     if (g_kind == Kind::Ships)
     {
-        o << "basepage ships sel=" << g_shipSel << " can=" << CanBuyShip();
+        o << "basepage ships sel=" << g_shipSel << " can=" << CanBuyShip() << " side=" << g_shipFocus << " zoomable=" << ShipZoomable();
+        if (const u32 v = ShipViewCtl())
+        {
+            float f[3] = {};
+            safemem::Read(v + 0x3EC, &f[0], 4), safemem::Read(v + 0x520, &f[1], 8);
+            o << " zoom=" << f[0] << " yaw=" << f[1] << " pitch=" << f[2];
+        }
         for (const Offer& s : g_offers)
             o << " [" << text::Utf8(s.name) << " $" << s.price << " ref=" << s.refusal << " lvl=" << s.level << " facts=" << gamedata::ShipNamed(s.name).ok << "]";
         return o.str();
     }
     if (g_kind == Kind::Jobs || g_kind == Kind::News)
     {
-        o << "basepage board sel=" << BoardSel() << " bar=" << TextBar();
+        o << "basepage board sel=" << BoardSel() << " bar=" << TextBar() << " side=" << g_boardSide;
+        if (const u32 bar = TextBar())
+            o << " textAt=" << uiclick::Scroll(bar, 0, false, nullptr, nullptr);
         return o.str();
     }
     o << "basepage kind=" << static_cast<int>(g_kind) << " side=" << g_side << " yours=" << g_rows[Yours].size() << " theirs=" << g_rows[Theirs].size() << " sel=" << g_list[g_side].sel;
@@ -2050,7 +2296,14 @@ std::string Command(std::istream& in)
     {
         o << " filter=" << NowFilter() << " rowY=" << static_cast<int>(R32(g_inv + kRow)) << " rowT=" << static_cast<int>(R32(g_dealer + kRow)) << " canTrade=" << CanTrade() << " qty=" << Qty() << "/" << QtyMost() << " credits=" << baseinfo::Credits();
         if (const Row* r = Focus())
-            o << " item=" << text::Utf8(r->name) << " card=" << g_cardText.size();
+        {
+            o << " item=" << text::Utf8(r->name) << " card=" << g_cardText.size() << " mounted=" << r->mounted << " tagged=" << gamedata::TaggedCompare();
+            if (!r->mounted)
+            {
+                const gamedata::Versus v = gamedata::Against(r->arch);
+                o << " vs=" << text::Utf8(v.arch ? hudinfo::EquipName(v.arch) : std::wstring(L"-")) << " vsTagged=" << v.tagged << " free=" << v.freeHp;
+            }
+        }
     }
     return o.str();
 }

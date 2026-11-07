@@ -35,6 +35,7 @@ void Update(float dt, const Gamepad& pad, Where where);
 // Pad buttons (XINPUT_GAMEPAD_* masks) this code consumes this frame: the generic UI code leaves them alone. Includes
 // padmap's while the nav map is open.
 bool Owns(u32 mask);
+bool PageOwnsStick(); // a HUD 2 page scrolls by the right stick this frame: no wheel to the game (it reached the ship dealer's 3D view: issue 41)
 // A control the D-pad's focus passes over here.
 bool SkipsFocus(const char* name);
 bool EntryFocus(); // the screen's own entry focus stands or is coming: no auto-focus over it

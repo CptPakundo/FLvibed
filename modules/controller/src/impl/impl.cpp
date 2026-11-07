@@ -44,7 +44,8 @@ static void ImplInit(const HostApi* host)
                     nullptr, host->version >= 37 ? host->SetSteerLift : nullptr, host->version >= 39 ? host->SetTargetMute : nullptr,
                     host->version >= 39 ? host->TargetMuteReady : nullptr, host->version >= 40 ? host->SetLoadDraw : nullptr,
                     host->version >= 44 ? host->SetWorldPause : nullptr, host->version >= 43 ? host->SetFlightLock : nullptr,
-                    host->version >= 45 ? host->OfferDifficulties : nullptr, host->version >= 45 ? host->WorldCommand : nullptr};
+                    host->version >= 45 ? host->OfferDifficulties : nullptr, host->version >= 45 ? host->WorldCommand : nullptr,
+                    host->version >= 46 ? host->HoldRealWheel : nullptr};
     device_view::Publish();
     ctl::PublishPadFlight();
     ctl::PublishFrame();

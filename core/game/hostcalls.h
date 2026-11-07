@@ -81,6 +81,7 @@ struct Table
     void (*SetFlightLock)(); // each frame a full-screen window stands: the player's keys and mouse fly nothing (input.h)
     int (*OfferDifficulties)(u32 base, u32* rewards, int* difficulties, int max); // the job board's offers (events.h)
     void (*WorldCommand)(); // a command under the NeuroNet pause: the server answers on frames with no time (input.h)
+    void (*HoldRealWheel)(bool on); // the physical wheel kept from the game, still counted (dimouse.h)
 };
 inline Table g = {};
 

@@ -43,7 +43,7 @@
 namespace promptbar
 {
 constexpr int kMax = promptfit::kLaneMax;
-constexpr float kContextualSec = 3.0f;
+constexpr float kContextualSec = 4.0f; // a room's prompts stay this long after the last pad input, a new room or new words (hud_prompts' four seconds)
 static Prompt g_items[kMax];
 static std::wstring g_labels[kMax]; // the labels' own storage (an owner may pass temporaries)
 static int g_count = 0;
@@ -53,8 +53,9 @@ static bool g_ambient = false; // the owner's screen is no window (SetAmbient): 
 static bool g_fresh = false;
 static int g_priority = 0; // of the frame's prompts (a lower Set after a higher one is ignored until Draw)
 static std::set<std::string> g_seen;
-static ULONGLONG g_shownSince = 0; // tick of the first appearance of g_screen (contextual timer)
+static ULONGLONG g_activeAt = 0; // CONTEXTUAL in a room: the last new room or change of words (the pad's own inputs: device::LastPadTick)
 static std::string g_timedScreen;
+static std::wstring g_timedWords;
 static bool g_visible = false;
 static int g_drawn = 0;
 static int g_rows = 0, g_dropped = 0; // rows drawn, pills dropped (this frame)
@@ -728,12 +729,22 @@ static void DrawFrame()
     g_priority = 0;
     const uiopt::UiOptions& o = uiopt::Get();
     const ULONGLONG now = GetTickCount64();
-    if (g_screen != g_timedScreen)
-    {
-        g_timedScreen = g_screen;
-        g_shownSince = g_seen.insert(g_screen).second ? now : 0; // a screen seen before gets no timer
-    }
-    const bool timer = g_shownSince && now - g_shownSince < static_cast<ULONGLONG>(kContextualSec * 1000);
+    // CONTEXTUAL in a room: shown while the player moves and acts, gone a few seconds after the last of it (the owner, 7 Nov 2026, as the HUD's contextual
+    // rule; before, a room showed them 3 s the first time it was seen, then never: "they disappear immediately"). A new room and new words count as an action
+    std::wstring words;
+    for (int i = 0; i < g_count; ++i)
+        words += g_labels[i] + L"|";
+    float raw[6] = {};
+    u32 held = 0;
+    if (views::padflight.Raw)
+        views::padflight.Raw(raw, &held);
+    // (a stick held still moves the cursor: movement. Past the deadzone already: a light push reads 0.08)
+    const bool moving = fabsf(raw[0]) > 0.05f || fabsf(raw[1]) > 0.05f || fabsf(raw[2]) > 0.05f || fabsf(raw[3]) > 0.05f;
+    if (g_screen != g_timedScreen || words != g_timedWords || moving)
+        g_timedScreen = g_screen, g_timedWords = words, g_activeAt = now;
+    g_seen.insert(g_screen);
+    const u32 padAt = device::LastPadTick(), kMs = static_cast<u32>(kContextualSec * 1000);
+    const bool timer = now - g_activeAt < kMs || (padAt && static_cast<u32>(GetTickCount()) - padAt < kMs);
     const bool pendingHeld = g_steady.Shown(g_pending, now); // (a gap of a few frames, the buy button's on a buy, never shows)
     g_visible = wanted && (o.promptBar == 1 || !g_ambient || pendingHeld || timer);
     void* device = g_host && g_host->GetD3DDevice ? g_host->GetD3DDevice() : nullptr;

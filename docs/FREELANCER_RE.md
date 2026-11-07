@@ -1068,6 +1068,13 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
   0.5H − 0.2391H (hit cells sit half a row above the drawn text).
 - Base launch: planets have a sub-button (RoomControl under the Launch Pad room icon) that only appears
   when the story allows launching.
+- **The banner's pump (decompiled 7 Nov 2026; the tab gap seen in game):** `exe::ObjectiveBannerPump` 0x4BC990 (per frame from
+  0x45C8C0) creates MissionObjectiveWindow (vt 0x5D5A8C, init 0x4BB270 plays ui_new_story_star, id 0xF of 0x6149E8) while no
+  banner stands (0x672400), an objective is queued (0x672328 / count 0x67232C), no NN window is open (NNManager +0x3A8,
+  0x45A470) and no dealer / repair / news / job board window. An NN window opening early aborts the banner (+0x338) without
+  popping its entry, so the pump made it again in every tab step's gap frame (issue 43: released 0.4.5 popped it on all six
+  steps). MissionLogMoveTo / FromNNWindow (vt 0x5D5DD4 / 0x5D5EAC) are side effects of the banner's death / birth
+  (0x4BB1E0 / 0x4BB270), silent. FLvibed's detour stays quiet while an NN window stands or transitions and 0.4 s after.
 - **Objective banner (19 Oct 2026, in game):** the HUD's typed objective text at the top centre ("FLY TO RESEARCH
   STATION WILLARD", 0.17-0.225 H) is the text control **"MissionObjectiveText"** (vt 0x5E4F24), created at 0x4BB270
   through the text-control factory 0x5A0E30 with the fonts.ini nickname "MissionObjective" (Agency FB, 0.06 H) and
@@ -2565,6 +2572,12 @@ Read in Ghidra, used in game (instance 7, background); the research is `docs\res
 - NN_Repair: `RepairCheckBoxN` toggle +0x3A0 is 0 ticked, 1 not; `RepairSmallIconsN` are image controls (PlaceAt moves them); `RepairPlayerCash`, `RepairTotalCost`; `RepairItemDamageN` holds no readable share. The client's equipment list node holds the health at +0x18.
 - The final stage: `InvSelected` works on both windows (each its own +0x34C list; 0x47E790 with +0x35C and +0x978 == 2). ShipDealerShipPrice is net of the dealer's side; the charge is that less NN_Dealer +0x9FC. Same-named controls of the two lists stand in no fixed order: tell them by the +4 parent chain.
 - NN_CommodityByBase vt 0x5D027C; rows `CommodityByBasePriceN`, `CommodityByBuySellPriceN`, `CommodityByBaseBaseN`, `CommodityByBaseSystemN`. It replaces the inventory while it stands.
+- **ShipViewControl** (`exe::VtShipView` 0x5E4BCC, ctor 0x5836A0; NN_ShipTrader keeps it at +0x370; decompiled and seen in
+  game 7 Nov 2026): the dealer's update 0x4B9260 drags it (0x584C80, the cursor in the rect +0x494..+0x4A0, a button down):
+  yaw +0x520 / pitch +0x524 in degrees (a rect's width = 180), wrapped to +-360, copied to the live YPR +0x37C / +0x380, the
+  matrix +0x358 (9 floats, Ry then Rx) rebuilt; no easing pair, so a write stands (basepage ShipTurn). The game has no zoom
+  (wheel slot vt[0x48] returns 0): HDE's flplusplus puts its handler there and adds speed x notches to +0x3EC (negative =
+  farther, clamped by flplusplus.ini; about -30 for a new ship) - basepage ShipZoom writes it. Yaw, pitch and zoom reset per ship.
 - ShipView_Control (Inventory +0x330, vt 0x5E4BCC as ShipTrader3DShip): hidden by the builder 0x478100 (+0x6C bits 0 and 1 cleared), companions ShipView_Toggle / _DamageBar / _Name, Shipview_Frame fetched in 0x47B410 (decompiled; what sets its ship unread).
 - The dealer's whole stock: write +0x3A4 = k, `exe::DealerSelectedGood`, restore; `exe::InvSelectRow` selects on either window, row counted from +0x3C4, and clears the other window's +0x3A4.
 - A window moved off the screen goes on working: clicks by name, the slider, filters, buying and selling. An image control (vt 0x5E4D7C, a row's mesh) moves by position property 6 through vt[0xA8]; its parent's bar: +0x3D0.

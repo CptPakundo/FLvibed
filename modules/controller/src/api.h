@@ -31,7 +31,8 @@ struct ShmBlock;
 // v41 SdlPadTriggers + SdlPadTriggerRumble + the grips' stream (modules\controller\docs\HAPTICS.md). A logic DLL must check `version` before using functions added in later versions.
 // v42 SdlPadTouchRead: the pad's touchpad fingers (the nav map's drag and zoom, docs\MAP_PLAN.md). v43 SetFlightLock: keys and mouse fly nothing under the full-screen map. v44 SetWorldPause: a NeuroNet window stops the world.
 // v45 OfferDifficulties: the job board's offers with the difficulty the detail prints; WorldCommand: a command under the NeuroNet pause.
-constexpr u32 kHostApiVersion = 45;
+// v46 HoldRealWheel: the physical wheel kept from the game while a page scrolls by it (the ship dealer's view zoomed: issue 41).
+constexpr u32 kHostApiVersion = 46;
 // Logic DLL API version, checked by the host when loading the logic DLL (exact match): v2 adds OnRenderUnderHud, v3
 // adds OnUiButton and OnRawKey (the UI build), v4 OnKeyCmd (the game's key commands after it handled them: the maneuver
 // lock's answer and hud_prompts' actions for the keyboard, 0.2.1).
@@ -327,6 +328,8 @@ struct HostApi
     int (*OfferDifficulties)(u32 base, u32* rewards, int* difficulties, int max);
     // v45: a command under the NeuroNet pause (a press or click on a page): the server answers it on a few frames with no time in them.
     void (*WorldCommand)();
+    // v46: the physical wheel kept from the game while a page scrolls by it (dimouse::HoldRealWheel; issue 41).
+    void (*HoldRealWheel)(bool on);
 };
 
 struct ImplApi

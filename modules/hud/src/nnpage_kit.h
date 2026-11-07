@@ -261,6 +261,8 @@ inline float Compare(float x0, float x1, float y, u32 arch, bool mounted, float 
         head = L"MOUNTED";
     else if (v.hasSlot && !v.fits)
         head = L"NO HARDPOINT ON THIS SHIP TAKES IT", rgb = kAmber;
+    else if (v.tagged && other) // (the player's choice first, a free hardpoint or not)
+        head = L"VS " + Upper(hudinfo::EquipName(v.arch)) + L" (TAGGED)", rgb = kActive;
     else if (v.freeHp)
         head = L"FITS A FREE HARDPOINT", rgb = kFriend;
     else if (other)

@@ -305,7 +305,7 @@ void UpdateFreeCursor(float dt)
     dimouse::SetButton(1, in[glyphs::X] && !padbases::Owns(XINPUT_GAMEPAD_X));
 
     // Right stick vertical scrolls lists (on the map it pans).
-    if (fabsf(p.ry) > 0 && in[glyphs::RS] && !padmap::OwnsRightStick())
+    if (fabsf(p.ry) > 0 && in[glyphs::RS] && !padmap::OwnsRightStick() && !padbases::PageOwnsStick()) // (a HUD 2 page scrolls by itself)
     {
         g_wheelAccum += p.ry * g_opt.wheelRate * dt;
         const int notches = static_cast<int>(g_wheelAccum);
