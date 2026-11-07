@@ -452,5 +452,8 @@ subtitle data. It links the third-party libraries named below under their own li
 controller backend (`pad_backend = 1`). SDL is © 1997-2026 Sam Lantinga and is used under the **zlib licence**
 ([LICENSES/SDL3-zlib.txt](LICENSES/SDL3-zlib.txt)); it is built unmodified from the official release source.
 
+🧪 **Playtesting:** **Shockwave** ([Shockwave508](https://github.com/Shockwave508)) did the majority of FLvibed's playtesting
+and bug reporting, most of it on a Steam Deck. Many of the fixes in the changelog started as one of Shockwave's reports.
+
 🙏 **Thanks** to Jason Hood (adoxa) for his Freelancer plugins and their sources, the Freelancer: HD Edition team, The
 Starport (FLUF, FLSubs) and the Freelancer community's documentation and transcripts.
