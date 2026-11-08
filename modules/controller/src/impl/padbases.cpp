@@ -1411,9 +1411,23 @@ static void UpdatePage(const Gamepad& pad)
     // description scrolled (Shockwave, issue 41); the page turns and zooms it itself (basepage ShipTurn / ShipZoom). (A flag of its own: the page's stick bits are PAD_LT / PAD_RT's)
     g_pageStick = true;
     g_owned |= took | XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
-    if (!(took & XINPUT_GAMEPAD_DPAD_UP) && (pressed & (XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN))) // (the digital way through a text: a few lines a press)
-        if (const u32 bar = StickBar())
-            uiclick::Scroll(bar, static_cast<float>(fl::ScreenHeight()) * ((pressed & XINPUT_GAMEPAD_DPAD_UP) ? -0.11f : 0.11f), false, nullptr, nullptr);
+    // the digital way through a text: a few lines a press, and on while held - 0.35 s, then ten steps a second (a held D-pad gave one step: LOG and INFO sluggish, issue 68)
+    {
+        static float textHeld = 0;
+        const u32 walk = XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
+        u32 step = pressed & walk;
+        if ((held & walk) && !(took & XINPUT_GAMEPAD_DPAD_UP))
+        {
+            textHeld += g_dt;
+            if (textHeld > 0.35f)
+                step |= held & walk, textHeld -= 0.10f;
+        }
+        else
+            textHeld = 0;
+        if (!(took & XINPUT_GAMEPAD_DPAD_UP) && step)
+            if (const u32 bar = StickBar())
+                uiclick::Scroll(bar, static_cast<float>(fl::ScreenHeight()) * ((step & XINPUT_GAMEPAD_DPAD_UP) ? -0.11f : 0.11f), false, nullptr, nullptr);
+    }
     if (took & XINPUT_GAMEPAD_B)
         return;
     const char* close = CloseName();

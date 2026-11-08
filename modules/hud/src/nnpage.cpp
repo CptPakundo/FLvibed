@@ -1373,8 +1373,7 @@ int Prompts(views::PagePrompt* out, int max)
     switch (g_page)
     {
     case Page::Status:
-        add(DU, L"FACTION", DD);
-        add(RS, L"SCROLL CARD");
+        add(DU, L"FACTION", DD); // (the right stick walks them too; the card has nothing to scroll)
         {
             static std::wstring next;
             next = L"SHOW ";
@@ -1420,10 +1419,19 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
         return basepage::Pad(pressed, held, dt);
     if (pressed & (XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_B | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y))
         hostcalls::WorldCommand(); // (what the press asks of the game gets its frame: Update's note on the pause)
+    // STATUS: the right stick walks the factions as the D-pad does - its card has no scroll of its own, the stick moved the game's list under the page (Shockwave, issue 68)
+    if (g_page == Page::Status)
+    {
+        static unsigned rsWas = 0;
+        const unsigned rs = (held & views::kPagePadRsUp) ? XINPUT_GAMEPAD_DPAD_UP : (held & views::kPagePadRsDown) ? XINPUT_GAMEPAD_DPAD_DOWN : 0;
+        pressed |= rs & ~rsWas;
+        held |= rs;
+        rsWas = rs;
+    }
     // a held D-pad walks a list: 0.4 s, then about 12 rows a second
     static float repeat = 0;
     const unsigned walk = XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
-    if ((held & walk) && (g_page == Page::Status || g_page == Page::Inventory) && !g_card)
+    if ((held & walk) && (g_page == Page::Status || g_page == Page::Inventory)) // (STATUS's card stands as long as the page: it blocked the repeat there, issue 68)
     {
         repeat += dt;
         if (repeat > 0.4f)
