@@ -134,21 +134,44 @@ inline std::vector<Hp> Free(const std::vector<Hp>& hps, const std::vector<std::s
     return out;
 }
 
-// The ship's hardpoints a filter shows, in their fixed order - by kind, then by name (HpWeapon01 before HpWeapon02): a slot keeps its place whatever is on it, its place is
-// part of the ship (the owner, issue 52).
+// A hardpoint name before another by its own number: HpWeapon02 before HpWeapon10 (the trailing digits as a number, the rest as text).
+inline bool SlotNameLess(const std::string& a, const std::string& b)
+{
+    auto split = [](const std::string& s, std::string& head, long& n)
+    {
+        size_t i = s.size();
+        while (i > 0 && isdigit(static_cast<unsigned char>(s[i - 1])))
+            --i;
+        head = s.substr(0, i);
+        n = i < s.size() ? atol(s.c_str() + i) : -1;
+    };
+    std::string ha, hb;
+    long na = 0, nb = 0;
+    split(a, ha, na), split(b, hb, nb);
+    return ha != hb ? ha < hb : na < nb;
+}
+
+// The ship's hardpoints a filter shows, in the ship's own order: its kinds as its shiparch lines first name them, each kind's slots by their own numbers (HpWeapon01, 02,
+// 03 - the lines go by gun class, the Starflier's first names HpWeapon03 alone). Never an order of ours: a slot keeps its place whatever is on it, its place is part of the
+// ship (the owner, issue 52).
 inline std::vector<Hp> Slots(const std::vector<Hp>& hps, int filter)
 {
     std::vector<Hp> out;
+    std::vector<int> kinds; // the kinds' ranks, in the order the lines first name them
     for (const Hp& h : hps)
     {
         const Slot s = BestOf(h);
-        if (s.word && (filter < 0 || s.filter == filter))
-            out.push_back(h);
+        if (!s.word || (filter >= 0 && s.filter != filter))
+            continue;
+        out.push_back(h);
+        if (std::find(kinds.begin(), kinds.end(), s.rank) == kinds.end())
+            kinds.push_back(s.rank);
     }
-    std::stable_sort(out.begin(), out.end(), [](const Hp& a, const Hp& b)
+    auto kindOf = [&](const Hp& h) { return std::find(kinds.begin(), kinds.end(), BestOf(h).rank) - kinds.begin(); };
+    std::stable_sort(out.begin(), out.end(), [&](const Hp& a, const Hp& b)
     {
-        const Slot x = BestOf(a), y = BestOf(b);
-        return x.rank != y.rank ? x.rank < y.rank : a.name < b.name;
+        const auto ka = kindOf(a), kb = kindOf(b);
+        return ka != kb ? ka < kb : SlotNameLess(a.name, b.name);
     });
     return out;
 }

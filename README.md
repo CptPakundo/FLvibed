@@ -9,13 +9,13 @@
 A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller support, subtitles for every line of dialogue, a clear modern HUD and tidier movies. One installer, nothing else to set up.
 
 <p>
-<a href="../../releases/download/v0.4.5/FLvibed-0.4.5-Setup.exe"><img alt="Download FLvibed 0.4.5 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.4.5-5865f2?style=for-the-badge"></a>
+<a href="../../releases/download/v0.4.5.8/FLvibed-0.4.5.8-Setup.exe"><img alt="Download FLvibed 0.4.5.8 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.4.5.8-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.4.5/FLvibed-0.4.5.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.4.5">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.4.5.8/FLvibed-0.4.5.8.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.4.5.8">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.4.5" src="https://img.shields.io/badge/version-0.4.5-5865f2?style=for-the-badge">
+<img alt="Version 0.4.5.8" src="https://img.shields.io/badge/version-0.4.5.8-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -28,7 +28,7 @@ A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller sup
 
 > Made with AI: written by Claude, by Anthropic, under the author's direction and tested in game. Free, with no warranty.
 
-## 🆕 New in 0.4.5
+## 🆕 New in 0.4.5.8
 
 **HUD 2 now covers the whole game.** The full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -183,7 +183,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 | 🧩 **Compatibility** | HD Edition 0.7.1, the original 1.1, FLUF beside it | Newer HD Edition releases, more mods |
 
 > [!IMPORTANT]
-> 🧪 **0.4.5 is an early preview - expect rough edges and change.**
+> 🧪 **0.4.5.8 is an early preview - expect rough edges and change.**
 > - **Some features are incomplete:** the Advanced Autopilot is work in progress, a few screens and controls are not
 >   built yet, and some are proven only by the test harness so far.
 > - **Design choices are still subject to change:** button layouts, HUD 2's look, setting names
@@ -217,7 +217,7 @@ fails some runs: docking at moving ships, the mines in mission 11 (about half it
 
 **2. Install FLvibed** - one click
 
-1. ⬇️ Download **[FLvibed-0.4.5-Setup.exe](../../releases/download/v0.4.5/FLvibed-0.4.5-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.4.5.8-Setup.exe](../../releases/download/v0.4.5.8/FLvibed-0.4.5.8-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders - else you pick the folder):
    choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -228,7 +228,7 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.4.5.zip](../../releases/download/v0.4.5/FLvibed-0.4.5.zip)** and unpack it.
+1. Download **[FLvibed-0.4.5.8.zip](../../releases/download/v0.4.5.8/FLvibed-0.4.5.8.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
    `FLvibed.dll`, `FLSubtitles\` and `FLvibed\` land in `EXE\`. An update this way keeps your settings.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins
@@ -246,7 +246,7 @@ To remove it by hand: take the `FLvibed.dll` line out of `EXE\dacom.ini`, then d
 The game runs under Wine or Proton, so FLvibed goes into the game's folder inside your prefix. This route is new and has
 not been tried on a real Linux machine yet: reports are welcome.
 
-1. Download **[FLvibed-0.4.5.zip](../../releases/download/v0.4.5/FLvibed-0.4.5.zip)** and unpack it.
+1. Download **[FLvibed-0.4.5.8.zip](../../releases/download/v0.4.5.8/FLvibed-0.4.5.8.zip)** and unpack it.
 2. In the unpacked folder: `./flvibed-linux.sh install "<game folder>"`, the folder that holds `EXE/Freelancer.exe`.
 3. For a USB DualSense's full haptics: `./flvibed-linux.sh haptics` sets its speaker to Surround 4.0 with `pactl`. Run it
    again after a replug.

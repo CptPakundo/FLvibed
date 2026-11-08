@@ -24,13 +24,25 @@ void Test_equip_rules()
     CHECK(free.size() == 3 && free[0].name == "hpweapon02");
     CHECK(Free(hps, {}, 0).size() == 2);
     CHECK(Free(hps, {}, 2).size() == 2);
-    // the slots in their fixed order, whatever is mounted: by kind, then by name (issue 52)
+    // the slots in the ship's own order, whatever is mounted (issue 52): its kinds as its lines first name them, each kind by slot number. The Starflier's (ge_fighter)
+    // lines: HpWeapon03 alone on the class 3 line first, the mine dropper before the countermeasure
     std::vector<Hp> ship;
-    AddLine(ship, {"hp_gun_special_1", "HpWeapon03", "HpWeapon01", "HpWeapon02"});
+    AddLine(ship, {"hp_gun_special_3", "HpWeapon03"});
+    AddLine(ship, {"hp_gun_special_2", "HpWeapon01", "HpWeapon02", "HpWeapon03"});
     AddLine(ship, {"hp_fighter_shield_special_1", "HpShield01"});
+    AddLine(ship, {"hp_mine_dropper", "HpMine01"});
+    AddLine(ship, {"hp_countermeasure_dropper", "HpCM01"});
     const auto slots = Slots(ship, 0);
-    CHECK(slots.size() == 3 && slots[0].name == "hpweapon01" && slots[1].name == "hpweapon02" && slots[2].name == "hpweapon03");
-    CHECK(Slots(ship, 2).size() == 1 && Slots(ship, -1).size() == 4);
+    CHECK(slots.size() == 5 && slots[0].name == "hpweapon01" && slots[1].name == "hpweapon02" && slots[2].name == "hpweapon03" && slots[3].name == "hpmine01" &&
+          slots[4].name == "hpcm01");
+    CHECK(Slots(ship, 2).size() == 1 && Slots(ship, -1).size() == 6);
+    // a kind the lines name first stands first; numbers as numbers
+    std::vector<Hp> other;
+    AddLine(other, {"hp_countermeasure_dropper", "HpCM01"});
+    AddLine(other, {"hp_gun_special_1", "HpWeapon10", "HpWeapon02"});
+    const auto o = Slots(other, 0);
+    CHECK(o.size() == 3 && o[0].name == "hpcm01" && o[1].name == "hpweapon02" && o[2].name == "hpweapon10");
+    CHECK(SlotNameLess("hpweapon9", "hpweapon10") && !SlotNameLess("hpweapon10", "hpweapon9"));
     // the numbers
     Stat up{L"HULL", 120, 1, L""}, down{L"DRAW", 120, -1, L""}, neutral{L"RATE", 120, 0, L""};
     CHECK(Judge(up, 100) == Verdict::Better && Judge(down, 100) == Verdict::Worse && Judge(neutral, 100) == Verdict::Other);
