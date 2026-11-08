@@ -16,6 +16,7 @@ namespace
 {
 int g_applied = 100; // the size the tables hold
 int g_fixedSet = 0, g_richSet = 0;
+int g_richHeld = -1; // the percent the rich table holds since RichSet last wrote it, -1 unknown
 std::string g_note = "not applied";
 
 std::string ReadFile(const char* name)
@@ -138,6 +139,7 @@ void Apply(int percent)
     }
     g_fixedSet = WriteFixed(fixed, percent);
     g_richSet = WriteRich(rich, percent);
+    g_richHeld = -1; // (Apply writes from its own parse: RichSet's next call writes again)
     const auto flush = reinterpret_cast<ReinitializeFn>(exe::FontFlush.get());
     const bool flushed = CallVoid(flush);
     g_note = flushed ? "applied" : "flush faulted";
@@ -157,14 +159,21 @@ int Applied() { return g_applied; }
 void RichNow(int percent)
 {
     g_richSet = WriteRich(fontscale::ParseRich(ReadFile("rich_fonts.ini")), percent);
+    g_richHeld = -1;
     Log("gametext: rich %d %% now - %d fonts", percent, g_richSet);
 }
 
-void RichSet(int percent)
+bool RichSet(int percent)
 {
+    if (percent == g_richHeld)
+        return false;
     static std::vector<fontscale::Rich> rich = fontscale::ParseRich(ReadFile("rich_fonts.ini"));
     g_richSet = WriteRich(rich, percent);
+    g_richHeld = g_richSet > 0 ? percent : -1;
+    return true;
 }
+
+void RichForget() { g_richHeld = -1; }
 
 std::vector<Font> Fonts()
 {

@@ -73,15 +73,28 @@ static void Skin(float dt, bool padOwns, bool enabled, bool docked)
     sc.style = uiStyle;
     sc.pad = padOwns;
     sc.enabled = enabled;
-    uiskin::Update(dt, sc);
+    {
+        perf::Scope ps("hud.uiskinUpdate");
+        uiskin::Update(dt, sc);
+    }
     skinmenu::Frame(dt, !padOwns);
     nnstrip::Update(dt, padOwns);
-    nnpage::Update(dt, padOwns);
-    basepage::Update(dt, padOwns);
-    uistrip::Update(dt, enabled && uiStyle == 1 && docked);
+    {
+        perf::Scope ps("hud.nnpage");
+        nnpage::Update(dt, padOwns);
+    }
+    {
+        perf::Scope ps("hud.basepage");
+        basepage::Update(dt, padOwns);
+    }
+    {
+        perf::Scope ps("hud.uistrip");
+        uistrip::Update(dt, enabled && uiStyle == 1 && docked);
+    }
     winplates::SetMapOver(enabled && uiStyle == 1 && navnew::Grown());
     // a NeuroNet page places the game's card through it whatever window_text says: with it off the card stood at the game's place, its title and X over the
     // page and the faction names gone (Shockwave's Steam Deck, 7 Nov 2026)
+    perf::Scope ps("hud.windowtext");
     windowtext::Frame((h.windowText || nnpage::On()) && enabled && uiStyle == 1);
 }
 

@@ -2046,8 +2046,8 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
     if (held & walk)
     {
         repeat += dt;
-        if (repeat > 0.4f)
-            pressed |= held & walk, repeat -= 0.08f;
+        if (repeat > 0.3f) // (0.3 s, then 20 rows a second, as the NeuroNet pages: issue 68)
+            pressed |= held & walk, repeat -= 0.05f;
     }
     else
         repeat = 0;

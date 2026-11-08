@@ -13,7 +13,10 @@ void Frame(int percent, bool menu);
 // Research (debug `gametext rich <percent>`): the rich table alone, at once. The caller re-lays out what is open.
 void RichNow(int percent);
 // The rich table at `percent` from the file read once: a window's size while it is open (windowtext). Nothing in it opens a file.
-void RichSet(int percent);
+// True when it wrote: a table already at `percent` is left alone (each write rebuilds all 32 rich fonts - a STATUS card's step paid it twice, issue 68).
+bool RichSet(int percent);
+// The next RichSet writes whatever the table is thought to hold (a window's opening: nothing assumed across windows).
+void RichForget();
 // The size the tables hold: game_text_size takes effect at the main menu, so it can differ from the setting.
 int Applied();
 // fonts.ini as the game holds it: every font the game's list has, with its face from the file. `entry` is what a text object keeps.

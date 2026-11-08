@@ -1113,18 +1113,17 @@ void FitRich()
     // (a window with a stats table stays at kRichSize whatever the window text does: the table is sized for it, and at 125 % a label wrapped at 800 lines, which put every
     // number beside the wrong label and laid two bars over the values. tests\docked_text.ps1 LABELS)
     const int chosen = g_stats ? kRichSize : std::max(kRichSize, gametext::Applied());
-    gametext::RichSet(chosen);
     g_richFits = 1;
-    for (u32 box : boxes)
-        Relay(box);
-    gametext::RichSet(chosen);
+    // one pass, and none when the table already holds the size: the game laid the new filling out in it (it set the table twice and laid out every box twice,
+    // the same size both times - up to 6.4 ms a STATUS step, issue 68; each opening still sets and lays out once: Frame's RichForget)
+    if (gametext::RichSet(chosen))
+        for (u32 box : boxes)
+        {
+            Relay(box);
+            W<u8>(box + kDirty, 1);
+            W<u8>(box + kDirty + 1, 1);
+        }
     g_rich = chosen;
-    for (u32 box : boxes)
-    {
-        Relay(box);
-        W<u8>(box + kDirty, 1);
-        W<u8>(box + kDirty + 1, 1);
-    }
     g_richKey = RichKey();
     QueryPerformanceCounter(&t1);
     QueryPerformanceFrequency(&f);
@@ -1419,6 +1418,7 @@ void Frame(bool on)
     }
     if (g_spec)
     {
+        perf::Scope ps("wt.find");
         u32 window = 0;
         const Spec* now = Find(window);
         if (now != g_spec || window != g_window)
@@ -1428,6 +1428,7 @@ void Frame(bool on)
         return;
     if (!g_spec)
     {
+        perf::Scope ps("wt.collect");
         // every frame, as an open window's own check above: every 12th left the game's text at its own size and place for 12 frames, then it popped
         // (the owner: "frame-perfect", 7 Nov 2026)
         u32 window = 0;
@@ -1439,26 +1440,34 @@ void Frame(bool on)
             BuildLadder(), ladderAt = gametext::Applied();
         g_spec = spec, g_window = window;
         g_base.clear();
+        gametext::RichForget(); // (a window's opening sets and lays out its rich text once, whatever the table was thought to hold)
         Collect(*spec);
     }
     if (g_ladder.empty())
         return;
     const float screenH = static_cast<float>(fl::ScreenHeight());
-    if (g_spec->drop > 0)
-        Drop(*g_spec);
-    else if (g_spec->frame)
-        Place(*g_spec);
-    for (Column& c : g_columns)
-        Rows(c, screenH);
-    Singles();
-    Loose();
-    PlaceFramed(screenH);
-    StretchFoot(*g_spec, screenH);
-    if (g_shipClose)
-        StandShipHead(screenH);
-    winplates::SetRootGrow(g_spec->fit ? FitFoot(screenH) : g_spec->grow);
-    if (!g_lifted.empty())
-        Lift(uiclick::FindVisible("QuantitySlider") ? kStackNudge : winplates::kStackLift);
+    {
+        perf::Scope ps("wt.place");
+        if (g_spec->drop > 0)
+            Drop(*g_spec);
+        else if (g_spec->frame)
+            Place(*g_spec);
+    }
+    {
+        perf::Scope ps("wt.texts");
+        for (Column& c : g_columns)
+            Rows(c, screenH);
+        Singles();
+        Loose();
+        PlaceFramed(screenH);
+        StretchFoot(*g_spec, screenH);
+        if (g_shipClose)
+            StandShipHead(screenH);
+        winplates::SetRootGrow(g_spec->fit ? FitFoot(screenH) : g_spec->grow);
+        if (!g_lifted.empty())
+            Lift(uiclick::FindVisible("QuantitySlider") ? kStackNudge : winplates::kStackLift);
+    }
+    perf::Scope ps("wt.boxes");
     if (PlaceBoxes(*g_spec, screenH))
         g_richKey = 0; // fitted after the next draw has the new pixels
     else

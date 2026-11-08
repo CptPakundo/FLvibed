@@ -108,6 +108,14 @@ static List g_repList;
 static std::wstring g_head[13], g_stat[13];
 static float g_statusRead = 0, g_placesRead = 0;
 static bool g_card = false;
+
+// The game's own refresh of a step - STATUS's faction card, INVENTORY's selection (the card it shows) - is not per step: each new card is laid out and
+// measured again (windowtext: up to 6.4 ms a step on this PC, issue 68 - a Deck several times that), which a held or tapped walk paid at 20 steps a second.
+// The page's own focus moves at once; the game follows a lone tap at once too, a walk when it rests (0.1 s) or every 0.25 s. Anything that acts on the game's
+// selection (mount, jettison, best prices) brings it up to date first (SyncNow).
+static float g_stepAge = 1e9f, g_syncAge = 1e9f;
+static bool g_syncPending = false;
+static bool SyncDue() { return g_stepAge >= 0.10f || g_syncAge >= 0.25f; }
 static std::wstring g_cardName;
 
 static void ShowReps()
@@ -123,6 +131,7 @@ static void ShowReps()
 
 static void ReadStatus(u32 root)
 {
+    perf::Scope ps("nn.ReadStatus");
     const u32 begin = R32(root + kRepBegin), end = R32(root + kRepEnd);
     if (begin && end > begin && (end - begin) / 8 < 512)
     {
@@ -178,9 +187,13 @@ static void ShowCard()
     if (g_repList.count <= 0 || !exe::StatusFactionCard.ok() || !g_root || room::NNWindowBusy() || g_stat[0].empty())
         return;
     const Rep& r = g_repShown[g_repList.sel];
-    if (r.index == g_cardShown)
+    if (r.index == g_cardShown || !SyncDue())
         return;
-    hk::Call<void(__thiscall*)(u32, int)>(exe::StatusFactionCard, g_root, r.index);
+    g_syncAge = 0;
+    {
+        perf::Scope ps("nn.StatusCard");
+        hk::Call<void(__thiscall*)(u32, int)>(exe::StatusFactionCard, g_root, r.index);
+    }
     g_cardShown = r.index, g_card = true, g_cardName = r.name;
     // (the card stands as long as the page: its close button has nothing to close, and it stood over the text)
     for (const char* n : {"NavMapCloseInfocardButton", "NavMapCloseInfocardText"})
@@ -310,14 +323,17 @@ static void DrawStatus(const Frame& f)
 
 static unsigned PadStatus(unsigned pressed)
 {
+    bool stepped = false;
     if (pressed & XINPUT_GAMEPAD_DPAD_UP)
-        g_repList.Step(-1);
+        stepped |= g_repList.Step(-1);
     if (pressed & XINPUT_GAMEPAD_DPAD_DOWN)
-        g_repList.Step(1);
+        stepped |= g_repList.Step(1);
     if (pressed & XINPUT_GAMEPAD_DPAD_LEFT)
-        g_repList.Step(-g_repList.rows);
+        stepped |= g_repList.Step(-g_repList.rows);
     if (pressed & XINPUT_GAMEPAD_DPAD_RIGHT)
-        g_repList.Step(g_repList.rows);
+        stepped |= g_repList.Step(g_repList.rows);
+    if (stepped)
+        g_stepAge = 0; // (the card follows: ShowCard, SyncDue)
     if (pressed & XINPUT_GAMEPAD_X)
         g_filter = static_cast<nnrules::Filter>((g_filter + 1) % nnrules::kFilters), g_repList.sel = 0, g_repList.first = 0, ShowReps();
     if (pressed & XINPUT_GAMEPAD_Y)
@@ -385,6 +401,7 @@ static bool Mountable(int filter) { return filter == 0 || filter == 2 || filter 
 // The window's own answer for each of its rows (0x47E790, its filter and order), asked row by row: the game's five rows are five of these. Its selection goes back after.
 static void ReadItems(u32 root)
 {
+    perf::Scope ps("nn.ReadItems");
     if (!exe::InvSelected.ok())
         return;
     const u32 row = R32(root + kInvRow), desc = R32(root + kInvDesc);
@@ -442,11 +459,21 @@ static void SelectItem(u32 root)
     if (g_itemList.count <= 0 || !exe::InvSelectRow.ok() || g_items[g_itemList.sel].hp >= 0)
         return;
     const int first = static_cast<int>(R32(root + kInvFirst));
+    perf::Scope ps("nn.InvSelect");
     hk::Call<void(__thiscall*)(u32, int, int)>(exe::InvSelectRow, root, g_items[g_itemList.sel].row - first, 1);
     g_itemSelected = true;
 }
+// The game's selection brought up to the page's focus now (a deferred step: SyncDue), before anything that acts on it.
+static void SyncNow(u32 root)
+{
+    if (!g_syncPending)
+        return;
+    g_syncPending = false, g_syncAge = 0;
+    SelectItem(root);
+}
 static void SetFilter(u32 root, int filter)
 {
+    g_syncPending = false; // (a new filter starts its own selection)
     if (!exe::InvSetFilter.ok())
         return;
     hk::Call<void(__thiscall*)(u32, int, int)>(exe::InvSetFilter, root, filter, 1);
@@ -466,6 +493,7 @@ static const Item* ForEmpty()
 }
 static void ToggleMount(u32 root)
 {
+    SyncNow(root);
     if (g_itemList.count <= 0 || !exe::InvMount.ok() || !Mountable(Filter(root)))
         return;
     if (OnEmpty())
@@ -487,6 +515,7 @@ static bool g_shipView = false;
 static float g_shipRect[4] = {};
 static bool Jettison()
 {
+    SyncNow(g_root);
     const u32 c = uiclick::FindVisible("JettisonButton");
     if (!c || g_itemList.count <= 0 || OnEmpty())
         return false;
@@ -532,6 +561,7 @@ static void HideTrade()
 }
 static bool Trade()
 {
+    SyncNow(g_root);
     const u32 c = uiclick::Find("TradeRouteButton");
     return c && TradeOffered() && uiclick::Click(c);
 }
@@ -833,12 +863,11 @@ static unsigned PadInventory(u32 root, unsigned pressed)
     const int filter = Filter(root);
     if (pressed & ~static_cast<unsigned>(XINPUT_GAMEPAD_Y))
         g_jettisonArmed = 0;
-    if (pressed & XINPUT_GAMEPAD_DPAD_UP)
-        if (g_itemList.Step(-1))
-            SelectItem(root);
-    if (pressed & XINPUT_GAMEPAD_DPAD_DOWN)
-        if (g_itemList.Step(1))
-            SelectItem(root);
+    // (the game's selection follows in Update when due: SyncDue)
+    if ((pressed & XINPUT_GAMEPAD_DPAD_UP) && g_itemList.Step(-1))
+        g_stepAge = 0, g_syncPending = true;
+    if ((pressed & XINPUT_GAMEPAD_DPAD_DOWN) && g_itemList.Step(1))
+        g_stepAge = 0, g_syncPending = true;
     if (pressed & XINPUT_GAMEPAD_DPAD_LEFT)
         SetFilter(root, (filter + 4) % 5);
     if (pressed & XINPUT_GAMEPAD_DPAD_RIGHT)
@@ -1224,7 +1253,10 @@ void Update(float dt, bool pad)
             s.clear();
         g_placesRead = 0;
     }
+    if (page != g_page || root != g_root)
+        g_syncPending = false;
     g_page = page, g_root = root;
+    g_stepAge += dt, g_syncAge += dt;
     // the world stops in single player, in space, the map too; an autopilot under the window goes on flying (the owner, 5 Nov, issue 25)
     // (the status window's numbers and factions come from the in-process server, which the pause stops: the world goes on the moment until they are in)
     const bool waiting = page == Page::Status && (g_reps.empty() || g_stat[0].empty());
@@ -1270,6 +1302,8 @@ void Update(float dt, bool pad)
     }
     else if (page == Page::Inventory)
     {
+        if (g_syncPending && SyncDue() && !room::NNWindowBusy())
+            SyncNow(root); // (the game's selection catches up with a walk: SyncDue)
         if ((g_itemRead -= dt) <= 0)
         {
             ReadItems(root), g_itemRead = 0.5f;
@@ -1428,14 +1462,14 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
         held |= rs;
         rsWas = rs;
     }
-    // a held D-pad walks a list: 0.4 s, then about 12 rows a second
+    // a held D-pad walks a list: 0.3 s, then 20 rows a second (0.4 s / 12.5 a second: "could be a little faster", Shockwave, issue 68)
     static float repeat = 0;
     const unsigned walk = XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
     if ((held & walk) && (g_page == Page::Status || g_page == Page::Inventory)) // (STATUS's card stands as long as the page: it blocked the repeat there, issue 68)
     {
         repeat += dt;
-        if (repeat > 0.4f)
-            pressed |= held & walk, repeat -= 0.08f;
+        if (repeat > 0.3f)
+            pressed |= held & walk, repeat -= 0.05f;
     }
     else
         repeat = 0;
@@ -1485,7 +1519,7 @@ std::string Command(std::istream& in)
     }
     std::ostringstream o;
     o << "nnpage page=" << static_cast<int>(g_page) << " root=0x" << std::hex << g_root << std::dec << " pad=" << g_pad << " reps=" << g_reps.size() << " shown=" << g_repList.count << " sel=" << g_repList.sel
-      << " paused=" << g_paused << " card=" << g_card << " places=" << g_places.size() << " guns=" << g_load.guns << " hullps=" << g_load.hull << " items=" << g_items.size() << " itemSel=" << g_itemList.sel;
+      << " paused=" << g_paused << " card=" << g_card << " cardFor=" << (g_repList.count > 0 && g_repList.sel < static_cast<int>(g_repShown.size()) ? static_cast<int>(g_repShown[g_repList.sel].index == g_cardShown) : -1) << " syncPending=" << g_syncPending << " places=" << g_places.size() << " guns=" << g_load.guns << " hullps=" << g_load.hull << " items=" << g_items.size() << " itemSel=" << g_itemList.sel;
     if (g_page == Page::Inventory && g_root)
         o << " filter=" << Filter(g_root) << " gameRow=" << static_cast<int>(R32(g_root + kInvRow)) << " tradeBlanked=" << g_tradeBlanked;
     for (int i = 0; i < 13; ++i)

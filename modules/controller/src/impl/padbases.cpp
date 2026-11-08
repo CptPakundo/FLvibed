@@ -1346,7 +1346,7 @@ static bool StickStepRow(int dir)
 
 static void StickScroll(const PadState& s)
 {
-    constexpr float kRowsPerSec = 10.0f;
+    constexpr float kRowsPerSec = 15.0f; // (10: "could be a little faster", Shockwave, issue 68)
     static float accum = 0;
     if (s.ry == 0)
     {
@@ -1419,8 +1419,8 @@ static void UpdatePage(const Gamepad& pad)
         if ((held & walk) && !(took & XINPUT_GAMEPAD_DPAD_UP))
         {
             textHeld += g_dt;
-            if (textHeld > 0.35f)
-                step |= held & walk, textHeld -= 0.10f;
+            if (textHeld > 0.3f) // (0.3 s, then 14 steps a second)
+                step |= held & walk, textHeld -= 0.07f;
         }
         else
             textHeld = 0;
