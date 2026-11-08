@@ -134,6 +134,25 @@ inline std::vector<Hp> Free(const std::vector<Hp>& hps, const std::vector<std::s
     return out;
 }
 
+// The ship's hardpoints a filter shows, in their fixed order - by kind, then by name (HpWeapon01 before HpWeapon02): a slot keeps its place whatever is on it, its place is
+// part of the ship (the owner, issue 52).
+inline std::vector<Hp> Slots(const std::vector<Hp>& hps, int filter)
+{
+    std::vector<Hp> out;
+    for (const Hp& h : hps)
+    {
+        const Slot s = BestOf(h);
+        if (s.word && (filter < 0 || s.filter == filter))
+            out.push_back(h);
+    }
+    std::stable_sort(out.begin(), out.end(), [](const Hp& a, const Hp& b)
+    {
+        const Slot x = BestOf(a), y = BestOf(b);
+        return x.rank != y.rank ? x.rank < y.rank : a.name < b.name;
+    });
+    return out;
+}
+
 // One number of an item. `better`: +1 more is better, -1 less is better, 0 neither.
 struct Stat
 {

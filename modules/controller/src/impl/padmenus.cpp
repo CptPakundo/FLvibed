@@ -732,11 +732,32 @@ void Update(float dt, const char* modeName)
     }
     case Screen::Death:
     {
+        // single player: a button each, every choice in the lane (issue 50: the screen a HUD 2 page; the owner's rule, every button but shoulders, Menu, View)
+        // - A LOAD AUTOSAVE, X LOAD GAME, Y MAIN MENU, the game's own buttons clicked natively; B does nothing on purpose
+        if (uiclick::FindVisible("LoadAutosaveButton"))
+        {
+            static promptbar::Prompt p[3];
+            int n = 0;
+            if (uiclick::FindVisible("LoadAutosaveButton"))
+                p[n++] = {glyphs::A, L"LOAD AUTOSAVE"};
+            if (uiclick::FindVisible("LoadSavegameButton"))
+                p[n++] = {glyphs::X, L"LOAD GAME"};
+            if (uiclick::FindVisible("MainMenuButton"))
+                p[n++] = {glyphs::Y, L"MAIN MENU"};
+            promptbar::Set("death", p, n, true, 10);
+            if (settled && in.accept && ClickNamed("LoadAutosaveButton", "death autosave"))
+                g_owns = true;
+            else if (settled && x.x && ClickNamed("LoadSavegameButton", "death load game"))
+                g_owns = true;
+            else if (settled && x.y && ClickNamed("MainMenuButton", "death main menu"))
+                g_owns = true;
+            if (in.back || in.accept || x.x || x.y)
+                g_owns = true;
+            break;
+        }
         // (FIX2: the focus on LOAD AUTOSAVE once the dialog is up, so A SELECT has a mark - the game's own rollover)
         // (multiplayer: the focus on RESPAWN)
-        u32 first = uiclick::FindVisible("LoadAutosaveButton");
-        if (!first)
-            first = uiclick::FindVisible("RespawnButtonButton");
+        const u32 first = uiclick::FindVisible("RespawnButtonButton");
         if (!g_focused && settled && first && ItemOf(first))
             SnapTo(first), g_focused = true;
         static const promptbar::Prompt p[] = {{glyphs::A, L"SELECT"}};

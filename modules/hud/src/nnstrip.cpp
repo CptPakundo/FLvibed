@@ -44,9 +44,12 @@ static bool OwnFrameShown()
     return false;
 }
 
+// The log after a death or a failed mission (single player): no tab leads anywhere from it, its page is nnpage's (issue 50).
+static bool DeathShown() { return !nnwin::Multiplayer() && uiclick::FindVisible("LoadAutosaveButton"); }
+
 bool Wanted()
 {
-    return winplates::g_on && !winplates::g_scene && !winplates::g_modalOpen && !views::PanelOwnsHotspots() && nnwin::OpenTab() >= 0 && !OwnFrameShown();
+    return winplates::g_on && !winplates::g_scene && !winplates::g_modalOpen && !views::PanelOwnsHotspots() && nnwin::OpenTab() >= 0 && !OwnFrameShown() && !DeathShown();
 }
 
 void Update(float dt, bool pad)

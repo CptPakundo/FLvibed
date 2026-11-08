@@ -38,6 +38,46 @@ inline void W32(u32 a, u32 v)
         safemem::Write(a + i, static_cast<u8>(v >> (8 * i)));
 }
 
+// An EquipDesc's hardpoint, lower case ("" in the hold): its name through the pointer at +8 (baseinfo's WalkEquipment reads the same, node +0x10).
+inline std::string DescHardpoint(u32 desc)
+{
+    char hp[33] = {};
+    const u32 p = R32(desc + 8);
+    if (!p || !safemem::Read(p, hp, 32))
+        return std::string();
+    return equiprules::Lower(hp);
+}
+
+// A list of the ship's items in its slots' fixed order (issue 52, the owner: a slot's place is part of the ship): every hardpoint of the filter where it stands, what is
+// mounted there or an EMPTY row; then the rest (the hold, a hardpoint not read) in the game's order. `hpOf(row)` the row's hardpoint, `empty(i)` the EMPTY row of free[i];
+// `free` comes back holding the empty slots in that order.
+template <class R, class HpOf, class Empty>
+std::vector<R> InSlotOrder(const std::vector<R>& rows, int filter, std::vector<equiprules::Hp>& free, HpOf hpOf, Empty empty)
+{
+    std::vector<R> out;
+    std::vector<bool> used(rows.size(), false);
+    free.clear();
+    for (const equiprules::Hp& h : gamedata::ShipSlots(filter))
+    {
+        size_t at = rows.size();
+        for (size_t i = 0; i < rows.size() && at == rows.size(); ++i)
+            if (!used[i] && hpOf(rows[i]) == h.name)
+                at = i;
+        if (at < rows.size())
+        {
+            used[at] = true;
+            out.push_back(rows[at]);
+            continue;
+        }
+        free.push_back(h);
+        out.push_back(empty(static_cast<int>(free.size()) - 1));
+    }
+    for (size_t i = 0; i < rows.size(); ++i)
+        if (!used[i])
+            out.push_back(rows[i]);
+    return out;
+}
+
 // ---- the holes: the game's text shows through
 struct Box
 {

@@ -1269,8 +1269,14 @@ void Geometry(void* device)
         if (w.fam != kFamNavBar && w.fam != kFamNNBox && Shown(w.root) && (!g_scene || SceneSkinned(w.fam)) &&
             !(w.fam == kFamMainMenu && g_modalOpen)) // (the main menu's plates never over a modal screen's scrim)
         {
+            // a HUD 2 page lies over the log window, its text in a hole: the window is no obstacle to the lane - it ends above it (the death screen's log
+            // reaches down to its load buttons, which put the pad's prompts at the top: issue 50); above the lane it stays one, for the subtitles
+            const size_t kept = g_keep.size();
             WindowPass pass;
             WindowPlates(w, pass);
+            if (w.fam == kFamLog && views::HudPageOn())
+                for (size_t i = kept; i < g_keep.size(); ++i)
+                    g_keep[i].y1 = std::min(g_keep[i].y1, deckmode::LaneTopH() * g_H - Hf(0.008f));
         }
 }
 

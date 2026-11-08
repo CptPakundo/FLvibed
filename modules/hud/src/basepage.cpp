@@ -141,20 +141,17 @@ static void ReadRows(int side)
     W32(w + kRow, row);
     W32(w + kDesc, desc);
     g_free.clear();
-    if (g_kind == Kind::Equipment)
-    {
-        const int filter = static_cast<int>(R32(w + kFilter));
-        if (filter == 0 || filter == 2)
-            g_free = gamedata::FreeHardpoints(filter);
-    }
-    for (size_t i = 0; i < g_free.size(); ++i)
-    {
-        Row r;
-        r.hp = static_cast<int>(i);
-        r.name = L"EMPTY";
-        r.slot = equiprules::SlotWord(equiprules::BestOf(g_free[i]));
-        rows.push_back(r);
-    }
+    const int filter = g_kind == Kind::Equipment ? static_cast<int>(R32(w + kFilter)) : -1;
+    if (filter == 0 || filter == 2) // every slot in its own place, EMPTY where nothing is mounted (issue 52)
+        rows = InSlotOrder(rows, filter, g_free, [](const Row& r) { return r.mounted ? DescHardpoint(r.desc) : std::string(); },
+                           [](int i)
+                           {
+                               Row r;
+                               r.hp = i;
+                               r.name = L"EMPTY";
+                               r.slot = equiprules::SlotWord(equiprules::BestOf(g_free[i]));
+                               return r;
+                           });
     const u16 keep = OnRow() && g_side == side ? g_rows[side][g_list[side].sel].id : 0;
     g_rows[side].swap(rows);
     g_list[side].count = static_cast<int>(g_rows[side].size());

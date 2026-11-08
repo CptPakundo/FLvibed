@@ -32,6 +32,8 @@ Refreshed a ninth and tenth time (the owner's word): the playtesting credit (Sho
 
 Refreshed an eleventh time (the owner's word; Shockwave: BEST PRICES stuck after one step down): `nnrules::List::Scroll` keeps the focus inside `Fit`'s lead (the page's per-frame Fit pulled the window back), the pad on BEST PRICES steps the focus; the wheel lists of the dealers and NeuroNet pages had the same fault. Unit test (Scroll + Fit both ways); in game only the one-base page (no save knows more bases than rows).
 
+Refreshed a twelfth time (the owner's word, 8 Nov; issues 50, 52): the single-player death / mission-failed log as a HUD 2 page (`nnpage` Page::Death, no strip, the log centred by `windowtext`, chips on the game's buttons; the pad A LOAD AUTOSAVE / X LOAD GAME / Y MAIN MENU in `padmenus`; `winplates` ends the log's keep-out above the lane under a page); every hardpoint in its fixed place on the inventory and the dealer (`equiprules::Slots`, `nnkit::InSlotOrder`, the row's EquipDesc hardpoint). Seen at 1280x800 (selfdestruct on SaveC706, A loaded the autosave; an unmounted gun left EMPTY in its slot). Not seen: a chip clicked, X / Y, a mission failure, subtitles beside the centred log.
+
 ## Not run
 No full sweep, no gate, no perf numbers. Never tried: a real pad, a real mouse's clicks and wheel on the pages, multiplayer on the pages, 4:3, FLUF beside the new word tabs.
 

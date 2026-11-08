@@ -1182,7 +1182,9 @@ void Place(const Spec& s)
         return;
     const float H = static_cast<float>(fl::ScreenHeight()), W = static_cast<float>(fl::ScreenWidth());
     // centred between what stands around it (the owner, 6 Nov 2026): on the screen's middle, and between the strip's tabs and the prompts' row; a window that grows downwards stands higher by half of it
-    float dx = (W / 2 + s.shift * H - it.x) / H;
+    // (the log after a death or a failed mission is a page with nothing at its left - no ship, no place: the log stands in the middle, issue 50)
+    const bool death = strcmp(s.window, "NeuroNetStoryStar") == 0 && uiclick::FindVisible("LoadAutosaveButton");
+    float dx = (W / 2 + (death ? 0 : s.shift) * H - it.x) / H;
     ui::Item edge;
     if (s.rightEdge && ui::ControlRect(uiclick::FindVisible(s.rightEdge), edge) && edge.hw > 0.5f)
         dx = ((1 - deckmode::SideW()) * W - (edge.x + edge.hw)) / H;

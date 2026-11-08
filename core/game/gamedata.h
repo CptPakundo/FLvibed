@@ -47,6 +47,8 @@ void TagCompare(u32 arch);
 u32 TaggedCompare();
 // The hardpoints free now under `filter` (-1 all).
 std::vector<equiprules::Hp> FreeHardpoints(int filter);
+// The player's ship's hardpoints of an inventory filter in their fixed order (equiprules::Slots), mounted or not.
+std::vector<equiprules::Hp> ShipSlots(int filter);
 // The mountable items in the hold that one hardpoint takes.
 std::vector<u32> HoldItemsFor(const equiprules::Hp& hp);
 

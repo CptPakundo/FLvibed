@@ -25,7 +25,8 @@
 
 **Rules from the research taken:** a single item's jettison asks once more by a press, never a hold (XAG 115); tabs never shift; a row of lead in lists; the band in words and place, not colour alone; more than one way through a long list (filter, sort, page by D-pad left / right).
 
-**Steps aside:** the log after a death or a failed mission (its load buttons stand: `LoadAutosaveButton`); a dealer's or a job board's frame (`nnstrip::Wanted`); `ui_style` classic.
+**Steps aside:** a dealer's or a job board's frame (`nnstrip::Wanted`); `ui_style` classic; the multiplayer death dialog (RESPAWN ...: the game's, A SELECT on the focus).
+**The log after a death or a failed mission** (single player, `LoadAutosaveButton` shown; issue 50, 8 Nov 2026): its own page (`nnpage` Page::Death) with no tabs (`nnstrip::Wanted` false), the log's text in its hole and the window in the middle (`windowtext` drops its shift there), HUD 2 chips on the game's three buttons for the mouse (a click goes through to the game's own); the pad: A LOAD AUTOSAVE, X LOAD GAME, Y MAIN MENU in the lane (`padmenus` Screen::Death; `winplates` ends the log window's keep-out above the lane under a page).
 
 ## The refinement pass (the owner, 7 Nov 2026: "avoid having tons of blank space", "no single screen feels worse or less useful than its vanilla FL counterpart")
 

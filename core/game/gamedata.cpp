@@ -286,6 +286,8 @@ std::vector<Hp> FreeHardpoints(int filter)
     return Free(ShipHardpoints(baseinfo::ShipArch()), used, filter);
 }
 
+std::vector<Hp> ShipSlots(int filter) { return Slots(ShipHardpoints(baseinfo::ShipArch()), filter); }
+
 std::vector<u32> HoldItemsFor(const Hp& hp)
 {
     std::vector<u32> out;

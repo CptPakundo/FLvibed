@@ -41,7 +41,8 @@ enum class Page
     Log,
     Inventory,
     Status,
-    Info
+    Info,
+    Death // the log after a death or a failed mission, single player: its three load buttons (issue 50)
 };
 static Page g_page = Page::None;
 static u32 g_root = 0;
@@ -418,14 +419,16 @@ static void ReadItems(u32 root)
     W32(root + kInvDesc, desc);
     ReadLoadout();
     const int filter = Filter(root);
-    g_free = filter == 0 || filter == 2 ? gamedata::FreeHardpoints(filter) : std::vector<equiprules::Hp>();
-    for (size_t i = 0; i < g_free.size(); ++i)
-    {
-        Item it;
-        it.hp = static_cast<int>(i), it.row = -1;
-        it.name = L"EMPTY";
-        items.push_back(it);
-    }
+    g_free.clear();
+    if (filter == 0 || filter == 2) // every slot in its own place, EMPTY where nothing is mounted (issue 52)
+        items = InSlotOrder(items, filter, g_free, [](const Item& it) { return it.mounted ? DescHardpoint(it.desc) : std::string(); },
+                            [](int i)
+                            {
+                                Item it;
+                                it.hp = i, it.row = -1;
+                                it.name = L"EMPTY";
+                                return it;
+                            });
     g_items.swap(items);
     g_itemList.count = static_cast<int>(g_items.size());
     for (int i = 0; keep && i < g_itemList.count; ++i)
@@ -979,6 +982,41 @@ static void DrawLog(const Frame& f, u32 root)
     }
 }
 
+// The log after a death or a failed mission (FREELANCER_RE "The death / mission-failed dialog"): the game's text through its hole, the reason at its top;
+// the three buttons stay the game's, where the game put them under the text, HUD 2 chips drawn on them (a click goes through to the game's own button).
+// The pad's binds are padmenus' (Screen::Death): A, X, Y, its prompts in the lane.
+static const char* const kDeathButton[3][2] = {{"LoadAutosaveButton", "LoadAutosaveText"}, {"MainMenuButton", "MainMenuText"}, {"LoadSavegameButton", "LoadSavegameText"}};
+static void DrawDeath(const Frame& f)
+{
+    const float H = f.H;
+    Box hole;
+    hole.Add(uiclick::FindVisible("StoryStarHistoryText"), 0.012f * H);
+    Cover(f.W, H, hole);
+    Title(f, L"NEURAL NET LOG");
+    if (g_pad)
+        return;
+    const float mx = static_cast<float>(fl::MouseX()), my = static_cast<float>(fl::MouseY());
+    for (const auto& b : kDeathButton)
+    {
+        ui::Item it;
+        const u32 ctl = uiclick::FindVisible(b[0]);
+        if (!ctl || !ui::ControlRect(ctl, it) || it.hw <= 1)
+            continue;
+        std::wstring word;
+        winplates::TextOf(uiclick::Find(b[1]), word);
+        if (word.empty())
+            word = b[0][0] == 'M' ? L"MAIN MENU" : b[0][4] == 'A' ? L"LOAD AUTOSAVE" : L"LOAD GAME";
+        for (wchar_t& c : word)
+            c = towupper(c);
+        const navlayout::Rect r{it.x - it.hw, it.y - it.hh, it.x + it.hw, it.y + it.hh};
+        const bool over = mx >= r.x0 && mx <= r.x1 && my >= r.y0 && my <= r.y1;
+        Ground(r.x0, r.y0, r.x1, r.y1); // (the game's art and caption under the chip)
+        skinchip::Chip(r, word, std::min(0.030f * H, (r.y1 - r.y0) * 0.6f), over ? skinchip::Look::Hover : skinchip::Look::Plain);
+    }
+}
+static bool DeathShown() { return !nnwin::Multiplayer() && uiclick::FindVisible("LoadAutosaveButton") && uiclick::FindVisible("StoryStarHistoryText"); }
+// (windowtext puts the log in the middle on this screen: the page has nothing for its left - no ship, no place to read)
+
 static void ReadPlaces()
 {
     g_places.clear(), g_ships.clear();
@@ -1160,7 +1198,12 @@ void Update(float dt, bool pad)
     g_dt = dt;
     Page page = Page::None;
     u32 root = 0;
-    if (nnstrip::Wanted() && !uiclick::FindVisible("LoadAutosaveButton")) // (the log after a death or a failed mission is its own screen: its load buttons stand in it)
+    if (winplates::g_on && !winplates::g_scene && DeathShown()) // (the log after a death or a failed mission: its own page, no tabs - the strip stands down)
+    {
+        root = RootOf(winplates::kFamLog);
+        page = root ? Page::Death : Page::None;
+    }
+    else if (nnstrip::Wanted() && !uiclick::FindVisible("LoadAutosaveButton"))
     {
         const int cmd = nnwin::OpenCommand();
         root = cmd == nntabs::kCmdLog         ? RootOf(winplates::kFamLog)
@@ -1292,6 +1335,7 @@ void Draw()
     case Page::Inventory: DrawInventory(f, g_root); break;
     case Page::Log: DrawLog(f, g_root); break;
     case Page::Info: DrawInfo(f); break;
+    case Page::Death: DrawDeath(f); break;
     default: break;
     }
 }

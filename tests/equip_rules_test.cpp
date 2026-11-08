@@ -24,6 +24,13 @@ void Test_equip_rules()
     CHECK(free.size() == 3 && free[0].name == "hpweapon02");
     CHECK(Free(hps, {}, 0).size() == 2);
     CHECK(Free(hps, {}, 2).size() == 2);
+    // the slots in their fixed order, whatever is mounted: by kind, then by name (issue 52)
+    std::vector<Hp> ship;
+    AddLine(ship, {"hp_gun_special_1", "HpWeapon03", "HpWeapon01", "HpWeapon02"});
+    AddLine(ship, {"hp_fighter_shield_special_1", "HpShield01"});
+    const auto slots = Slots(ship, 0);
+    CHECK(slots.size() == 3 && slots[0].name == "hpweapon01" && slots[1].name == "hpweapon02" && slots[2].name == "hpweapon03");
+    CHECK(Slots(ship, 2).size() == 1 && Slots(ship, -1).size() == 4);
     // the numbers
     Stat up{L"HULL", 120, 1, L""}, down{L"DRAW", 120, -1, L""}, neutral{L"RATE", 120, 0, L""};
     CHECK(Judge(up, 100) == Verdict::Better && Judge(down, 100) == Verdict::Worse && Judge(neutral, 100) == Verdict::Other);
