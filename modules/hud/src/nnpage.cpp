@@ -1198,7 +1198,7 @@ void Update(float dt, bool pad)
     g_dt = dt;
     Page page = Page::None;
     u32 root = 0;
-    if (winplates::g_on && !winplates::g_scene && DeathShown()) // (the log after a death or a failed mission: its own page, no tabs - the strip stands down)
+    if (winplates::g_on && !winplates::g_scene && nnwin::OpenTab() >= 0 && DeathShown()) // (the lookups only with a NeuroNet window open: issue 68) // (the log after a death or a failed mission: its own page, no tabs - the strip stands down)
     {
         root = RootOf(winplates::kFamLog);
         page = root ? Page::Death : Page::None;

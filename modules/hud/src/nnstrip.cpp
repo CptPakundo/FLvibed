@@ -44,18 +44,20 @@ static bool OwnFrameShown()
     return false;
 }
 
-// The log after a death or a failed mission (single player): no tab leads anywhere from it, its page is nnpage's (issue 50).
-static bool DeathShown() { return !nnwin::Multiplayer() && uiclick::FindVisible("LoadAutosaveButton"); }
+// The log after a death or a failed mission (single player): no tab leads anywhere from it, its page is nnpage's (issue 50). Looked up once a frame in Update: Wanted runs
+// several times a frame, and a lookup by name walks the UI tree - in every call it made the NeuroNet pages' pad sluggish (issue 68).
+static bool g_death = false;
 
 bool Wanted()
 {
-    return winplates::g_on && !winplates::g_scene && !winplates::g_modalOpen && !views::PanelOwnsHotspots() && nnwin::OpenTab() >= 0 && !OwnFrameShown() && !DeathShown();
+    return winplates::g_on && !winplates::g_scene && !winplates::g_modalOpen && !views::PanelOwnsHotspots() && nnwin::OpenTab() >= 0 && !OwnFrameShown() && !g_death;
 }
 
 void Update(float dt, bool pad)
 {
     g_pad = pad;
     g_dt = dt;
+    g_death = winplates::g_on && nnwin::OpenTab() >= 0 && !nnwin::Multiplayer() && uiclick::FindVisible("LoadAutosaveButton");
     g_read += dt;
     nnwin::Frame(dt);
     skinchip::Frame(g_standing || g_roomUp);
