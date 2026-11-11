@@ -60,6 +60,9 @@ void NoteCursorHidden(bool hidden);
 // The mission locked the maneuvers (Act_LockManeuvers) and the player asked for one: HUD 2's alert card says LOCKED BY
 // THE MISSION for 2.5 s (shown whatever hud_alerts says: it answers the player's press). False when HUD 2 is not shown.
 bool LockNotice();
+// A box over the flight that the pad answers (the cargo demand) stands and HUD 2 shows its answers in its prompt lanes this
+// frame: the pad's prompt bar does not show them a second time.
+bool FlightAnswers();
 // Debug: hud2 on|off|auto|state|sim <state>|perf|hot|click <slot>|list [on|off|0..4]|lint [off]
 std::string Command(std::istream& in);
 void OnDeviceLost();

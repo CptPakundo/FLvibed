@@ -22,6 +22,10 @@ LPU Beta leader's story line cutting Newark's `DX_M01_0320`. **The design (new d
 centre stage as the primary subtitles and hold their place until their audio ends; NPC lines that do not open the comm
 portrait go to the game's side chat (its chat window), so chatter never replaces or covers a story line; a player option
 also copies the story lines into the chat (`chat_all_dialogue`, default off: the chat log then holds every spoken line).
+The copy is made before a category's own switch (issue 83): with `comms 0` (or `story`, `bar`, `neural_net` 0) and the copy on,
+those lines stand in the chat only, shown as chatter is (the log, and HUD 2's chat band while HUD 2 hides the game's chat
+window); a line also shown as a subtitle is copied to the log only, once. With comms off the game's comm window stays where
+HUD 2 or the host's shift puts it (seen: top left under HUD 2's nav block, 1280x800), not in a panel slot.
 - **The split, from what the game decides for that comm** (`impl.cpp` OnComm, no name lists): **dialogue** = a scripted
   story line (the data's `story` / `unique` kind: the mission's DX_ ids) or a comm the game opens its portrait for (to the
   player, from someone else, with a costume: Dispatch's rule, `..\..\docs\FREELANCER_RE.md` "The comm window live"; dock
@@ -256,11 +260,23 @@ and Death Stranding 2 excerpts had (almost) no subtitles. Findings:
 - XAG 104: at most 2 lines (3 exceptionally), name when the speaker changes, adjustable backing; nothing on motion.
 
 Decisions (built 19 Oct 2026):
-- **The game's own typefaces** (`font 0`, default): `DATA\FONTS\fonts.ini` [FontFiles] loaded for the process
+- **The game's own typefaces** (`font 0`, the default until 0.4.6): `DATA\FONTS\fonts.ini` [FontFiles] loaded for the process
   (`AddFontResourceExW` FR_PRIVATE, as the game uses them) - speaker names in **Agency FB Bold** (the HUD labels, the
   objective banner, "Neural Net"), 1.2x the text size (condensed face); text in **Arial Unicode MS** (the game's body
   text: lists, tooltips, infocards; widest coverage), rows at 0.98x its line height. A face GDI would substitute is
-  refused and Segoe UI semibold used (`font 1` = Segoe UI always).
+  refused and Segoe UI semibold used (`font 1` = Segoe UI always). `font 2` (GitHub issue 82; the default since 0.4.6, the
+  owner: "Make 82 default"): HUD 2's look everywhere - the text in Agency FB too (1.2x, regular weight), in rooms,
+  cutscenes, movies and flight, HUD 2 on or off, the HUD module loaded or not (the face is the game's label face,
+  `core\game\gamefont.*`); without the game's fonts, Segoe UI as `font 1`. With `font 0` the text turns Agency FB only in
+  flight while HUD 2 shows (as before). The row width cap follows the face (`avg * kMaxChars`), so a row holds about as
+  many characters as before; Agency FB's rows are taller (1.2x em, 1.10x line height): two rows fill the 0.14 H
+  letterbox bar exactly, a third stands over the picture, as with `font 0` (readability over the bar). Saved files: every
+  `[Subtitles]` key is written whenever the page or `config save` saves, so a pre-0.4.6 file holds `font = 0` whether or
+  not the player chose it - and could not have chosen it against HUD 2's font, which did not exist. Such a file (no
+  `settings_rev`, or below 1) reads `font 0` as 2 (display.cpp `kCarry`, `core\settings.h` `Carry`); `font 1` stays.
+  Every save writes `settings_rev = 1`, after which a picked GAME stays. Seen on instance 11 by `config load` (the start's
+  own LoadSettings; `deploy.ps1` replaces an instance's FLSubtitles.ini at each start): old file 0 -> 2 (a bar
+  conversation in Agency FB), GAME picked on the page and saved -> 0, old file 1 -> 1.
 - **Colours:** names by character (Trent amber, each story character its own colour) or relation ("Speaker colours"
   above); text white (option yellow).
 - **Backing:** one panel per speaker. `background_style 1` (default since 21 Oct 2026, an experiment the user asked

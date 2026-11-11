@@ -32,10 +32,11 @@ struct DeviceView
     bool (*PadActive)(); // the player is on the pad
     bool (*LaneWanted)(); // the prompt lane is in use this frame
     bool (*OskOpen)();    // the on-screen keyboard
-    bool (*RearView)();   // the wheel's rear view is on
+    bool (*RearView)();   // the wheel's rear view is on (none since GitHub issue 65: the controller publishes nullptr)
     bool (*PromptVisible)();
     const wchar_t* (*HoveredOffer)(); // the pad's offer word for the hovered room character
     bool (*HoveredIsStory)();
+    int (*PromptPlates)(float* xyxy, int max); // the prompt lane's pills as the last overlay pass drew them: x0 y0 x1 y1 each, pixels; how many
 };
 inline DeviceView device = {};
 
@@ -197,6 +198,8 @@ struct HudView
     bool (*PageOn)();
     int (*PagePrompts)(PagePrompt* out, int max);
     unsigned (*PagePad)(unsigned pressed, unsigned held, float dt);
+    // a box over the flight that the pad answers (the cargo demand): HUD 2 shows its answers in its prompt lanes this frame
+    bool (*FlightAnswers)();
 };
 inline HudView hud = {};
 
@@ -265,6 +268,8 @@ inline bool HudUnderBegin(void* device, bool flying) { return hud.UnderBegin && 
 inline bool HudPresent() { return hud.Flight != nullptr; }
 inline bool DeviceRearView() { return device.RearView && device.RearView(); }
 inline bool DevicePromptVisible() { return device.PromptVisible && device.PromptVisible(); }
+// The prompt lane's pills from the last overlay pass (4 floats each); 0 without the controller or with the lane hidden.
+inline int DevicePromptPlates(float* xyxy, int max) { return device.PromptPlates ? device.PromptPlates(xyxy, max) : 0; }
 inline const wchar_t* DeviceHoveredOffer() { return device.HoveredOffer ? device.HoveredOffer() : nullptr; }
 inline bool DeviceHoveredIsStory() { return device.HoveredIsStory && device.HoveredIsStory(); }
 // The strip of words stands this frame: the bumpers step the tabs. False with the HUD off or on the classic look: the pad keeps its older bumpers.
@@ -288,6 +293,7 @@ inline void HudMapChipStep(int id, int dir)
 inline bool HudPageOn() { return hud.PageOn && hud.PageOn(); }
 inline int HudPagePrompts(PagePrompt* out, int max) { return hud.PagePrompts ? hud.PagePrompts(out, max) : 0; }
 inline unsigned HudPagePad(unsigned pressed, unsigned held, float dt) { return hud.PagePad ? hud.PagePad(pressed, held, dt) : 0; }
+inline bool HudFlightAnswers() { return hud.FlightAnswers && hud.FlightAnswers(); }
 inline void HudMapList(bool open)
 {
     if (hud.MapList)

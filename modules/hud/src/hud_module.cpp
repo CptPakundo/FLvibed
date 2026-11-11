@@ -36,6 +36,21 @@ static void Cues(float dt, bool flying, bool autopilot)
     reticlecue::Update(dt, flying, autopilot);
 }
 
+// HUD 2's frame. A Neural Net tab open or on its way (nnstrip::Wanted: the game's window manager holds one, the scrim and the page's cover stand) is a
+// window over the flight, also where the frame's mode reads flight: between two tabs (the old window's close, the new one's open) and on a first open no
+// window root is shown yet, and the reticle's ring and mark faded in over the cover and stood on the next page's first frames (issue 62's gap).
+static void Flight(float dt, const views::HudContext& c)
+{
+    if (c.space && nnstrip::Wanted())
+    {
+        views::HudContext window = c;
+        window.space = false, window.spaceUi = true;
+        hud2::Update(dt, window);
+        return;
+    }
+    hud2::Update(dt, c);
+}
+
 static int GameTextPercent() { return hudsize::GameTextPercent(hudrows::g.gameTextSize, hudsize::g_preset); }
 static void GameText(bool menu) { gametext::Frame(GameTextPercent(), menu); }
 
@@ -61,7 +76,10 @@ static void Cursor(float dt, bool padOwns, bool flyingFree, bool (*onlyHudOpen)(
     const bool eligible = flyingFree && hud2::CursorIdleEligible() && onlyHudOpen() && !options_page::IsOpen() && !flufaware::InputWindowOpen();
     const int fade = uiopt::Get().hudFade <= 0 ? 0 : 1;
     const bool hide = hudwake::CursorStep(cs, fade, eligible, activity, dt);
-    hostcalls::CursorHide(hostcalls::kCursorHideIdle, hide);
+    // a Neural Net tab on its way with no window up yet (Flight above): the game still shows its flight cursor, the reticle's centre mark, over the cover;
+    // it goes until the window takes the mouse (the game's arrow)
+    const bool cover = nnstrip::Wanted() && _stricmp(fl::CursorName(), "arrow") != 0;
+    hostcalls::CursorHide(hostcalls::kCursorHideIdle, hide || cover);
     hud2::NoteCursorHidden(hide);
 }
 
@@ -137,7 +155,11 @@ static void Strip(void* device)
 }
 
 // Last of the overlay
-static void Top(void* device) { skinover::Draw(device, uiskin::On(), uiskin::PadOwns()); }
+static void Top(void* device)
+{
+    uiskin::GiveHelpBack(); // (after the game's UI pass: its hover help was hidden for that pass alone)
+    skinover::Draw(device, uiskin::On(), uiskin::PadOwns());
+}
 
 // One click box: the strip and the map's chips hold it while a NeuroNet window stands, HUD 2's keyboard form otherwise.
 static void Hotspot(int slot)
@@ -154,10 +176,10 @@ static void Attach()
     views::skin = {G(uiskin::On), G(skindialog::ActionWord), G(skindialog::SafeWord), G(skindialog::FocusAction),
                    G(skinmenu::Offered), G(skinmenu::Focus), G(skinmenu::Go)};
     views::hud = {G(hud2::TargetCardAnchor), G(hud2::BottomPanelsTop), G(uistrip::StripRight), G(uistrip::StripBottom), G(hud2::Active), G(hud2::RingRadius),
-                  G(hud2::CycleListFilter), G(hud2::LockNotice), G(hud2::NoteAction), G(Hotspot), G(uistrip::Active), G(StripDrawn), G(uiskin::DrawOver), G(Cues), G(GameText), G(hud2::Update),
+                  G(hud2::CycleListFilter), G(hud2::LockNotice), G(hud2::NoteAction), G(Hotspot), G(uistrip::Active), G(StripDrawn), G(uiskin::DrawOver), G(Cues), G(GameText), G(Flight),
                   G(Cursor), G(Skin), G(UnderBegin), G(UnderEnd), G(Overlay), G(Strip), G(hud2::OnDeviceLost), G(Top), G(nnstrip::Rect),
                   G(navskin::Chips), G(navskin::ChipPress), G(navskin::ChipStep), G(navskin::ChipFocus), G(navskin::ListOpen),
-                  G(nnpage::On), G(nnpage::Prompts), G(nnpage::Pad)};
+                  G(nnpage::On), G(nnpage::Prompts), G(nnpage::Pad), G(hud2::FlightAnswers)};
     if (hostcalls::g.SetLoadDraw)
         hostcalls::g.SetLoadDraw(G(skinload::Draw));
 #undef G

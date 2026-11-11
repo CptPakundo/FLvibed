@@ -737,6 +737,21 @@ bool Command(const std::string& cmd, const std::string& rest, std::string* reply
         *reply = std::string("godmode ") + (Mem<u8>(exe::GodMode) ? "on" : "off");
         return true;
     }
+    if (cmd == "cash") // cash <amount>: TEST ONLY - the player's money changed by the server's own call a mission's reward makes (pub::Player::AdjustCash, single player)
+    {
+        typedef int(__cdecl * AdjustFn)(const u32&, int);
+        static const AdjustFn adjust =
+            reinterpret_cast<AdjustFn>(GetProcAddress(GetModuleHandleA("server.dll"), "?AdjustCash@Player@pub@@YAHABIH@Z"));
+        const int amount = atoi(rest.c_str());
+        if (!adjust || Multiplayer() || !amount)
+        {
+            *reply = "cash: unavailable (server.dll's AdjustCash, single player, a non-zero amount)";
+            return true;
+        }
+        const u32 client = 1;
+        *reply = "cash " + std::to_string(amount) + " rc=" + std::to_string(adjust(client, amount));
+        return true;
+    }
     if (cmd == "attitude") // attitude <id>: the object's faction towards the player
     {
         float att = 0;

@@ -30,7 +30,6 @@ static void Note(const char* fmt, ...)
 
 static long __cdecl PlayMovieHook(HWND hwnd, bool b, const char* path)
 {
-    path = router::MoviePath(path);
     const long r = g_origPlayMovie(hwnd, b, path);
     g_moviePlaying = r >= 0;
     Note("PlayMovie(%s) -> %ld", path ? path : "", r);

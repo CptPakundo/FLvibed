@@ -223,12 +223,12 @@ table.bind td.conf select { border-color: var(--warn); }
 .nav button:hover { color: var(--fg); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
 #doc { max-width: 1240px; margin: 0 auto; }
-.docsec { display: grid; gap: 14px; padding-bottom: 40px; }
+.docsec { display: grid; gap: 24px; padding-bottom: 48px; }
 .docsec h2 { font-family: var(--font-game); font-weight: 600; font-size: 40px; letter-spacing: .03em; margin: 4px 0 0; color: var(--fg); text-wrap: balance; }
 .docsec h3 { font-family: var(--font-game); font-weight: 500; font-size: 24px; letter-spacing: .06em; text-transform: uppercase; color: var(--cyan); margin: 18px 0 0; }
 .docsec h4 { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-dim); margin: 10px 0 0; }
-.docsec p { margin: 0; max-width: 72ch; font-family: var(--font-help); font-size: 15px; line-height: 1.55; }
-.docsec p.lead { font-size: 17px; color: #d5dcf5; }
+.docsec p { margin: 0; max-width: 68ch; font-family: var(--font-help); font-size: 15.5px; line-height: 1.6; }
+.docsec p.lead { font-size: 18px; line-height: 1.6; color: #d5dcf5; max-width: 62ch; }
 .docsec code { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--cyan); }
 .tscroll { overflow-x: auto; max-width: 100%; }
 table.doc { border-collapse: collapse; width: 100%; font-family: var(--font-help); font-size: 13.5px; line-height: 1.45; }
@@ -239,7 +239,7 @@ table.doc.binds td.gcell { font-size: 20px; width: 70px; }
 .tag { display: inline-block; font-family: var(--font-ui); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--fg-dim); border: 1px solid var(--line); border-radius: 2px; padding: 0 4px; }
 .tag.warn { color: var(--warn); border-color: var(--warn); }
 figure { margin: 0; }
-.cmp { display: grid; gap: 6px; min-width: 0; }
+.cmp { display: grid; gap: 8px; min-width: 0; max-width: 1100px; }
 .cmp figcaption { font-family: var(--font-ui); font-size: 16px; }
 .cstage { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; border: 1px solid var(--line); background: #000; }
 .cstage img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -253,7 +253,7 @@ figure { margin: 0; }
 .cap { font-size: 14px !important; color: var(--fg-dim); }
 .fam { display: grid; gap: 10px; }
 .famgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 22px 18px; }
-.gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+.gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 26px 20px; }
 .gal img { display: block; width: 100%; border: 1px solid var(--line); }
 .gal figcaption { font-family: var(--font-help); font-size: 13.5px; line-height: 1.45; color: var(--fg-dim); margin-top: 6px; }
 .gal figcaption b { color: var(--fg); }
@@ -261,7 +261,16 @@ details.devblk { border: 1px solid var(--line); border-left: 3px solid var(--cya
 details.devblk summary, details.more summary { cursor: pointer; font-family: var(--font-game); font-size: 18px; letter-spacing: .06em; text-transform: uppercase; color: var(--cyan); }
 details.devblk[open] { display: grid; gap: 10px; padding-bottom: 14px; }
 details.devblk p { max-width: 100ch; font-size: 14px; }
-details.more { display: grid; gap: 6px; }
+details.more { border: 1px solid var(--line); background: var(--bg-2); padding: 0 14px; }
+details.more > summary { list-style: none; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 17px; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: "\25B8"; color: var(--accent); transition: transform .15s; }
+details.more[open] > summary::before { transform: rotate(90deg); }
+details.more > summary .cnt { font-family: var(--font-ui); font-size: 12px; letter-spacing: .05em; color: var(--fg-dim); border: 1px solid var(--line); padding: 0 6px; }
+details.more .foldin { display: grid; gap: 10px; padding: 4px 0 14px; }
+details.capmore { display: inline; } details.capmore summary { display: inline; cursor: pointer; color: var(--cyan); font-size: 13px; list-style: none; }
+details.capmore summary::-webkit-details-marker { display: none; } details.capmore[open] summary { display: none; }
+table.doc tr.hit td { background: rgba(232,163,58,.14); }
 .seg { display: flex; gap: 4px; flex-wrap: wrap; }
 .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
 button.go { border-color: var(--cyan-2); color: var(--cyan); }
@@ -271,7 +280,7 @@ button.go { border-color: var(--cyan-2); color: var(--cyan); }
 .st { display: inline-block; font-family: var(--font-ui); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; border: 1px solid; border-radius: 2px; padding: 0 5px; white-space: nowrap; }
 .st.ok { color: #7fd99a; } .st.no { color: var(--warn); } .st.wip { color: #e8a33a; } .st.up { color: var(--cyan); }
 .itool { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
-@media (max-width: 600px) { .docsec h2 { font-size: 30px; } .nav button { font-size: 15px; padding: 4px 6px; } }
+@media (max-width: 600px) { .docsec h2 { font-size: 30px; } .nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; } .nav button { font-size: 15px; padding: 8px 8px; white-space: nowrap; flex: 0 0 auto; } .docsec { gap: 20px; } #doc { padding: 0 2px; } }
 /* read-only (the default: everyone but the owner / an editor, and every copy outside the claude.ai viewer) vs the editor
    view: the script sets body.ed only when the platform says this viewer may edit (part3b_editor.js resolveMode) */
 body:not(.ed) .edonly { display: none !important; }

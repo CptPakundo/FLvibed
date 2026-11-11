@@ -822,12 +822,84 @@ static void LightSlots(Model& m, bool shieldLow)
     }
 }
 
+// The flight notice's credits watch (hud2_notice.h CashWatch): read in Slow, forgotten out of the flight.
+static hud2notice::CashWatch g_cashWatch;
+void NoticeForget() { g_cashWatch.Forget(); }
+static double g_noticeLoadAt = 0; // the last game load: the credits watch arms 1.5 s after it, as after entering space
+static bool g_lootPrimed = false; // (the loot's: below)
+void NoticeGameLoad()
+{
+    g_cashWatch.Forget();
+    g_lootPrimed = false; // (a record the last game left unread is not this one's)
+    g_noticeLoadAt = perf::Now();
+}
+
+// The flight notice's loot (GitHub issue 69): the game tells its client each item a ship's tractor took into the hold
+// (the HUD bus's loot records, core\host\events.cpp; docs\FREELANCER_RE.md "Loot into the hold") - nothing else sends it,
+// so a purchase, a mount, a mission's cargo or a load never shows. The record names the loot object, which has left the
+// contacts by then: its kind and name come from the loot this pass saw last (g_lootSeen, refilled from the contacts
+// every pass, names kept by id so each is asked once).
+struct LootSeen
+{
+    u32 id, good;
+    std::wstring name;
+};
+static std::vector<LootSeen> g_lootSeen;
+static u32 g_lootSerial = 0;   // the last loot record read
+// g_lootPrimed (above): the first look takes the newest as read - what came before this logic ran, or before a load, is not news
+static void NoteLootIn(Model& m, const std::vector<space::Contact>& all)
+{
+    const HudBus* bus = g_host->GetHudBus ? g_host->GetHudBus() : nullptr;
+    if (bus && bus->version >= 7 && bus->LootSerial && bus->ReadLoot)
+    {
+        const u32 newest = bus->LootSerial(), me = space::PlayerShipId();
+        if (!g_lootPrimed)
+            g_lootSerial = newest, g_lootPrimed = true;
+        if (newest - g_lootSerial > kHudLootKept) // (more than the bus keeps: the older ones are gone)
+            g_lootSerial = newest - kHudLootKept;
+        for (u32 s = g_lootSerial + 1; s <= newest; ++s)
+        {
+            HudLoot r = {};
+            if (!bus->ReadLoot(s, &r) || !me || r.ship != me || !r.units)
+                continue;
+            const LootSeen* seen = nullptr;
+            for (const LootSeen& l : g_lootSeen)
+                if (l.id == r.loot)
+                    seen = &l;
+            m.notice.Add(seen ? seen->good : 0, seen ? seen->name : std::wstring(), static_cast<int>(r.units));
+            Log("hud2: notice LOOT %ls x%u (loot %u, good %u)", seen ? seen->name.c_str() : L"?", r.units, r.loot,
+                seen ? seen->good : 0);
+        }
+        g_lootSerial = newest;
+    }
+    // this pass's loot, for the next records
+    std::vector<LootSeen> now;
+    for (const space::Contact& c : all)
+        if (c.type & space::kLoot)
+        {
+            LootSeen l = {c.id, c.lootGood, {}};
+            for (const LootSeen& o : g_lootSeen)
+                if (o.id == c.id)
+                    l.name = o.name;
+            if (l.name.empty())
+            {
+                l.name = hudinfo::DisplayName(c.id);
+                if (l.name.empty())
+                    l.name = text::Ids(c.nameIds);
+                l.name = Upper(l.name);
+            }
+            now.push_back(std::move(l));
+        }
+    g_lootSeen.swap(now);
+}
+
 void Slow()
 {
     Model& m = g_m;
     const uiopt::UiOptions& o = uiopt::Get();
     RefreshKeys();
     const std::vector<space::Contact> all = space::Contacts();
+    NoteLootIn(m, all);
     const u32 tid = fl::TargetId();
     // ---- the target
     m.target = false;
@@ -1017,7 +1089,20 @@ void Slow()
     else
         m.holdUsed = -1;
     m.credits = g_creditsTest >= 0 ? g_creditsTest : hudinfo::Credits();
-    m.shipName = g_haveSelf ? shipname::Name(g_self.shipArch) : L"";
+    // the flight notice's payout (GitHub issue 70): a rise of the balance in flight - a mission's reward, the only money
+    // that comes in space (purchases, repairs and sales are docked, where the watch forgets: NoticeForget). Armed with the
+    // alerts, 1.5 s after entering space or a game load (NoticeGameLoad: a load from space stays in space): a load's
+    // first reads are not a payout.
+    {
+        const long long rise = g_cashWatch.Step(g_creditsTest >= 0 ? -1 : m.credits,
+                                                perf::Now() - std::max(g_spaceSince, g_noticeLoadAt) >= 1.5);
+        if (rise > 0)
+        {
+            m.notice.Credit(m.credits, rise);
+            Log("hud2: notice CREDITS %lld (+%lld)", m.credits, rise);
+        }
+    }
+    m.shipName =g_haveSelf ? shipname::Name(g_self.shipArch) : L"";
     m.shipClass = me ? hudinfo::ClassName(me) : L"";
 
     // ---- the loadout
@@ -1832,6 +1917,14 @@ void Simulate(Model& m)
             m.tIcon = flicons::JumpGate;
             AddCtx(A::Hub, L"MAP");
         }
+        else if (g_sim == "loot" && g_simLootN > 0) // debug `hud2 simloot` (issue 78's scene): calm after a fight, nothing
+        {                                            // targeted, the nearest loot named - [A] TRACTOR <name> . <dist>,
+            calm();                                  // [X] TRACTOR ALL n, [Y] CRUISE as Slow's calm state builds them
+            m.target = false;
+            m.loot = g_simLootN, m.lootName = g_simLootName, m.lootDist = g_simLootDist;
+            TractorCtx(true);
+            AddCtx(A::Cruise, L"CRUISE");
+        }
         else if (g_sim == "loot") // loot in the tractor's reach (m.loot: TRACTOR 3 in the right lane, 5.23), the loot
         {                         // targeted (class LOOT, no attitude: neutral, no bars), the beam pulling (TRACTOR ACTIVE)
             calm();
@@ -1884,5 +1977,23 @@ void Simulate(Model& m)
             AddCtx(A::FreeFlight, L"ABORT DOCK");
         }
     }
+    // debug `hud2 simmark` (issue 77's crossing): the sim target's place, still or to and fro
+    if (g_simMark.on && m.target)
+    {
+        float t = 0;
+        if (g_simMark.sec > 0)
+        {
+            const float ph = fmodf(static_cast<float>(perf::Now() - g_simMark.t0) / g_simMark.sec, 2.0f);
+            t = ph <= 1 ? ph : 2 - ph;
+        }
+        if (!m.targetId)
+            m.targetId = 424242;
+        m.tMark.onScreen = true, m.tMark.r = 0.02f * g_L.H;
+        m.tMark.x = (g_simMark.x0 + (g_simMark.x1 - g_simMark.x0) * t) * g_L.W;
+        m.tMark.y = (g_simMark.y0 + (g_simMark.y1 - g_simMark.y0) * t) * g_L.H;
+    }
 }
+int g_simLootN = 0;
+std::wstring g_simLootName, g_simLootDist;
+SimMark g_simMark;
 } // namespace hud2

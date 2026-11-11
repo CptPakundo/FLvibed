@@ -11,7 +11,6 @@
 #include "display.h"
 #include "feed.h"
 #include "mixcues.h"
-#include "game/moviescreen.h"
 #include "movie.h"
 #include "names.h"
 #include "speakers.h"
@@ -626,8 +625,6 @@ static std::string Command(const std::string& line)
         if (rest == "load")
         {
             display::LoadSettings(IniPath());
-            if (moviescreen::settingsChanged)
-                moviescreen::settingsChanged();
         }
         return display::Describe();
     }
@@ -640,10 +637,7 @@ static std::string Command(const std::string& line)
         kv >> k >> v;
         if (!display::Set(k, v))
             return "unknown setting " + k;
-        size_t n = 0;
-        const settings::Def* defs = display::Defs(n);
-        movie::OnSettingApplied(settings::Find(defs, n, k)); // (display::Set did the display's own reactions)
-        return "ok";
+        return "ok"; // (display::Set did the reactions)
     }
     if (cmd == "trace")
     {
@@ -825,11 +819,7 @@ static std::string Command(const std::string& line)
 // lists, changes and saves it through the bus. A change applied there gets the reactions `set` has (OnSettingApplied).
 static int g_busSection = 0;
 static SettingsBusSection g_busDesc;
-static void BusApplied(void*, const settings::Def* d)
-{
-    display::OnSettingApplied(d);
-    movie::OnSettingApplied(d); // movie_intro -> the Movies module (a missing file resets the value to 0)
-}
+static void BusApplied(void*, const settings::Def* d) { display::OnSettingApplied(d); }
 static void BusSave(void*) { display::SaveSettings(IniPath()); }
 
 static void RegisterBus()
@@ -865,8 +855,6 @@ static void ImplInit(const HostApi* host)
     RegisterBus(); // before the ini loads: the bus's defaults = the struct initialisers
     display::LoadSettings(IniPath());
     movie::Attach();
-    if (moviescreen::settingsChanged)
-        moviescreen::settingsChanged(); // the Movies module started first: now its rows are on the bus
     LoadData();
     movie::Load(std::string(host->dllDir) + "FLSubtitles\\movies.tsv");
     display::SeedGlyphs(movie::Text());

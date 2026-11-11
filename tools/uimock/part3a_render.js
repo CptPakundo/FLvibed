@@ -14,7 +14,7 @@ const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 // (the spec's {A} .. {Y} name a pad's button in the live family in game, its {version} the build; here plain)
-function esc(s) { return String(s).replace(/\{([ABXY])\}/g, '$1').replace('{version}', '0.4.0').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function esc(s) { return String(s).replace(/\{([ABXY])\}/g, '$1').replace('{version}', typeof FLV_VERSION === 'string' ? FLV_VERSION : '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 function allRows() { const out = []; spec.tabs.forEach(t => t.sections.forEach(s => s.rows.forEach(r => out.push({ r, t, s })))); return out; }
 function findRow(id) { return allRows().find(x => x.r.id === id) || null; }
 function rowByKey(key) { return allRows().find(x => x.r.key === key); }
@@ -234,7 +234,7 @@ function renderBindings(stage) {
   svg.push(`<rect class="dpart${bindSel === 'LB' ? ' sel' : ''}" data-part="LB" x="640" y="170" width="100" height="36" rx="8"/><rect class="dpart${bindSel === 'RB' ? ' sel' : ''}" data-part="RB" x="1180" y="170" width="100" height="36" rx="8"/>`);
   svg.push(`<circle class="dpart${bindSel === 'LS' || bindSel === 'L3' ? ' sel' : ''}" data-part="LS" cx="690" cy="420" r="58"/><circle class="dpart${bindSel === 'RS' || bindSel === 'R3' ? ' sel' : ''}" data-part="RS" cx="1120" cy="600" r="58"/>`);
   svg.push(`<rect class="dpart${bindSel === 'VIEW' ? ' sel' : ''}" data-part="VIEW" x="840" y="315" width="40" height="30" rx="6"/><rect class="dpart${bindSel === 'MENU' ? ' sel' : ''}" data-part="MENU" x="1040" y="315" width="40" height="30" rx="6"/>`);
-  [['Y', 1230, 350], ['X', 1170, 410], ['B', 1290, 410], ['A', 1230, 470]].forEach(([k, x, y]) => svg.push(`<circle class="dpart${bindSel === k ? ' sel' : ''}" data-part="${k}" cx="${x}" cy="${y}" r="30" style="stroke:${GLYPHSETS[set][k][1]}"/><text x="${x}" y="${y + 9}" text-anchor="middle" class="dlab key" style="font-size:28px;fill:${GLYPHSETS[set][k][1]}">${GLYPHSETS[set][k][0]}</text>`));
+  [['Y', 1230, 350], ['X', 1170, 410], ['B', 1290, 410], ['A', 1230, 470]].forEach(([k, x, y]) => svg.push(`<circle class="dpart${bindSel === k ? ' sel' : ''}" data-part="${k}" cx="${x}" cy="${y}" r="30" style="stroke:${GLYPHSETS[set][k][2] || GLYPHSETS[set][k][1]}"/><text x="${x}" y="${y + 9}" text-anchor="middle" class="dlab key" style="font-size:28px;fill:${GLYPHSETS[set][k][1]}">${GLYPHSETS[set][k][0]}</text>`));
   svg.push(`<path class="dpart${['DU', 'DD', 'DL', 'DR'].includes(bindSel) ? ' sel' : ''}" data-part="DU" d="M780 540 h40 v40 h40 v40 h-40 v40 h-40 v-40 h-40 v-40 h40 z"/>`);
   Object.entries(DIAG).forEach(([k, [px, py, lx, ly, side]]) => {
     const b = bd[k] || Bd(); const parts = [lab(b.tap)]; if (b.hold !== 'none') parts.push('hold: ' + lab(b.hold)); if (b.dbl !== 'none') parts.push('×2: ' + lab(b.dbl));

@@ -70,7 +70,7 @@ static const settings::Def kModuleDefs[] = {
     {"npc", settings::Bool, &g_want[modules::kNpc], 0, 1,
      "The recorder of stalled ships, a log for bug reports. It changes nothing in the game. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
     {"movies", settings::Bool, &g_want[modules::kMovies], 0, 1,
-     "Movies fitted to the screen, the choice of intro and the skip of the startup movies. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
+     "Movies fitted to the screen and the skip of the startup movies. It needs the Subtitles or the Controller module on. Takes effect after the game restarts."},
 };
 static_assert(sizeof(kModuleDefs) / sizeof(kModuleDefs[0]) == modules::kRows, "a row of every module");
 static const char* const kModuleDefaults[] = {"1", "1", "1", "1", "1", "1", "1", "1"}; // on, whatever the ini says now

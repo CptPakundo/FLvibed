@@ -8,7 +8,8 @@
 // one value id visible twice (except declared second channels); a bound action with no reachable prompt / keycap /
 // wheel entry, or a wheel action with no wheel bind; an analog control in use without its readout; a latched toggle
 // without a state word. Plus (UI_HUD2_PRESETS.md 7 A1 / B4-B7) panel.overlap: two drawn items of
-// one panel that overlap or sit closer than 0.01 H (PanelOverlap below). WARN - budgets, prompt counts, the ship
+// one panel that overlap or sit closer than 0.01 H (PanelOverlap below); part.over (GitHub issues 77 / 78): a part drawn
+// over another part's reserved area (hud2_layout.h Reserved). WARN - budgets, prompt counts, the ship
 // keep-out, and title-safe 90 % (U35's rule 1; the presets doc names no severity for it, so WARN). Contrast is not here
 // (it needs frames): the named hook below.
 // Every number carries its source. Units: pixels of the back buffer, H = its height.
@@ -150,6 +151,13 @@ struct Zone
     bool texts = false;                   // every recorded item inside it fails (the lower centre, 5.23: plates, texts,
                                           // glyphs, keycaps, icons, arcs, shapes - overlays apart), not only a plate
 };
+// A reserved area of the frame (hud2_layout.h Reserved: what the layout placed for a part this frame and the placers keep
+// off): the part that draws it ("" = none of HUD 2's: the subtitles' panel), its name, its rectangle.
+struct Area
+{
+    std::string part, name;
+    float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+};
 struct Action
 {
     std::string name;
@@ -176,6 +184,7 @@ struct Input
     std::vector<Toggle> toggles;
     float budget = kBudget;   // boxed area cap, fraction of the screen
     float dlgX0 = 0, dlgY0 = 0, dlgX1 = 0, dlgY1 = 0; // the subtitles' dialogue panel (pixels), 0 none
+    std::vector<Area> areas; // the reserved areas of the parts that draw this frame (part.over)
     int pillCap = LimitsOf(Standard(), false, false).pills; // the caps (-1 none): LimitsOf(preset, combat, kbm)
     int pairCap = LimitsOf(Standard(), false, false).pairs;
     bool keepOut = true, titleSafe = true;
@@ -505,6 +514,17 @@ inline std::string PartOf(const std::string& comp)
     const std::string p = comp.substr(0, comp.find('.'));
     return p == "list" ? std::string("card") : p;
 }
+// part.over's owner of an item: its part as PartOf, the card's corner words (the hints, the enemies cue: they stand where the
+// card does when no target shows) the card's, the cross's centre mark the loadout's, the centre stack one part ("ring").
+inline std::string OwnerOf(const std::string& comp)
+{
+    const std::string p = PartOf(comp);
+    if (p.compare(0, 5, "ring.") == 0)
+        return "ring";
+    if (p == "hints" || p == "enemycue")
+        return "card";
+    return p == "crossmark" ? std::string("loadout") : p;
+}
 // The items the rule weighs: the ones that carry information - text, glyphs, keycaps, icons. Plates hold them, bars /
 // lines / arcs are their tracks (the centre stack's arcs: centre.overlap).
 inline bool PanelItem(const Item& it)
@@ -663,6 +683,38 @@ inline Result Lint(const Input& in)
             }
         }
     }
+    // FAIL: one part drawn over another part's reserved area (GitHub issues 77 / 78: the target's name block over the
+    // weapons, the tractor prompts over the consumables' cross; the owner: "positioning and no overlap rules") -
+    // OwnerOf below. The marks at the object (target.mark: the target's carets and its waypoint diamond) pass behind the
+    // panels, which draw over them, and are not weighed; the alert cards have alert.overlap, a prompt on the subtitles
+    // prompt.subtitles, the centre stack under a box over the flight (part "dialog") is covered by it. A fading item under
+    // kVisibleAlpha does not count.
+    if (!Skipped(in, "part.over"))
+        for (const Area& ar : in.areas)
+        {
+            Item box;
+            box.kind = Kind::Plate, box.x0 = ar.x0, box.y0 = ar.y0, box.x1 = ar.x1, box.y1 = ar.y1;
+            if (ar.part == "alert" || ar.x1 <= ar.x0 || ar.y1 <= ar.y0)
+                continue;
+            for (const Item& it : in.items)
+            {
+                if (it.alpha < kVisibleAlpha || it.overlay || it.comp.compare(0, 11, "target.mark") == 0)
+                    continue;
+                const std::string owner = OwnerOf(it.comp);
+                if (owner == ar.part || owner == "alert" || (ar.part.empty() && owner == "context"))
+                    continue;
+                // (a box over the flight keeps the game's place over the reticle, its buttons take the clicks there: the
+                // centre stack, which cannot move, stands under it - covered, not covering)
+                if (ar.part == "dialog" && owner == "ring")
+                    continue;
+                if (BoxGap(it.x0, it.y0, it.x1, it.y1, ar.x0, ar.y0, ar.x1, ar.y1) < -kEdgePx && ItemGap(it, box) < -kEdgePx)
+                {
+                    snprintf(why, sizeof why, "%s drawn over the %s's reserved area [%s,%s-%s,%s]", owner.c_str(),
+                             ar.name.c_str(), Px(ar.x0).c_str(), Px(ar.y0).c_str(), Px(ar.x1).c_str(), Px(ar.y1).c_str());
+                    Add(r, Sev::Fail, "part.over", Who(it), why);
+                }
+            }
+        }
     // WARN: a plate whose content does not sit evenly in it (the owner, 6 Nov 2026: equal space on both axes, none wasted, everywhere): the air on the two sides of an axis apart by more than
     // 0.008 H. Text boxes carry the font's line, so a small difference is not read as a fault
     if (in.air && !Skipped(in, "panel.air"))

@@ -173,6 +173,33 @@ P045_NAMES = {
 }
 
 
+# the 0.4.6 recapture (11 Nov 2026, release build 7a2b9749, instance 8; 3840x2160 unless the name says: SaveC706 in
+# flight - a real fight with spawned pirates, real loot, the payout by the test aid `cash` -, SaveC701 docked at Manhattan;
+# the cargo demand through the game's own opener `uiskin cargodemand`, the room word's hint through `uiskin hover`)
+S046 = os.path.join(RUNS, 'spec_046_2026-11-11')
+S046_NAMES = {
+    'f_travel_h2': 'travel_h2', 'm_travel': 'travel_h2', 'k_full': 'travel_h2', 'g_h2_look0': 'travel_h2',
+    'f_travel_cl': 'travel_cl', 'g_cl_look0': 'travel_cl', 'g_h2_look1': 'look1_h2', 'g_cl_look2': 'look2_cl',
+    'f_cruise_h2': 'cruise_h2', 'm_cruise': 'cruise_h2', 'f_cruise_cl': 'cruise_cl',
+    'f_combat_h2': 'combat_h2', 'm_combat': 'combat_h2', 'f_combat_cl': 'combat_cl',
+    'f_dock_h2': 'ap_dock_h2', 'm_dock': 'ap_dock_h2', 'p_ap_h2': 'ap_dock_h2', 'f_dock_cl': 'ap_dock_cl', 'p_ap_cl': 'ap_dock_cl',
+    'f_turret': 'turret_h2', 'a_gimbal_h2': 'gimbal_h2', 'a_reticle_h2': 'reticle_h2', 'a_gimbal_cl': 'gimbal_cl',
+    'a_reticle_cl': 'reticle_cl', 'k_idle': 'k_idle', 'k_steer': 'k_steer', 'k_boost': 'k_boost', 'k_wrap': 'loot_prompts',
+    'p_wheel': 'wheel_h2', 'w_wheel_classic': 'wheel_cl', 'p_picker': 'picker_h2', 'p_goals': 'goals_h2',
+    'n_credits': 'notice_credits', 'n_loot': 'notice_loot', 'x_demand': 'demand_pad', 'x_hint': 'hint_room',
+    'map_system': 'map_system2', 'map_selected': 'map_selected', 'map_sirius': 'map_sirius',
+    'x_room_launchpad_h2': 'room_launchpad_h2', 'x_room_launchpad_cl': 'room_launchpad_cl', 'x_room_bar_h2': 'room_bar_h2',
+    'x_room_bar_cl': 'room_bar_cl', 'x_room_trader_h2': 'room_trader_h2', 'x_room_trader_cl': 'room_trader_cl',
+    'x_room_equipment_h2': 'room_equipment_h2', 'x_room_equipment_cl': 'room_equipment_cl',
+    'x_nn_log_docked_h2': 'nn_log_h2', 'x_nn_inventory_docked_h2': 'nn_inventory_h2', 'x_nn_playerinfo_docked_h2': 'nn_status_h2',
+    'x_nn_help_docked_h2': 'nn_info_h2', 'x_pause_docked_h2': 'pause_docked', 'x_death_h2': 'death_page',
+    'o_4k_min': 'o_min', 'o_4k_max': 'o_max', 'o_subtitles': 'o_more',
+    't_43_room': 't43_room', 't_43_jobboard': 't43_jobboard', 't_43_pause': 't43_pause', 't_43_equipment': 't43_equipment',
+    'a_1610_commodity': 'a1610_commodity', 'a_1610_shipdealer': 'a1610_shipdealer',
+}
+S046_CROPS = {'map_legend': ('map_legend', (1100, 0, 3840, 2160))}  # the Legend and the layers card (the route card left out)
+
+
 def save(src, name, width=1600, crop=None):
     if not os.path.exists(src):
         print('missing', src)
@@ -219,6 +246,10 @@ def main():
         save(os.path.join(MAP7, f + '.png'), n)
     for n, f in P045_NAMES.items():   # the 0.4.5 pages, last
         save(os.path.join(P045, f + '.png'), n)
+    for n, f in S046_NAMES.items():   # the 0.4.6 recapture, last of all
+        save(os.path.join(S046, f + '.png'), n, 1200 if n.startswith('a_') else 1600)
+    for n, (f, box) in S046_CROPS.items():
+        save(os.path.join(S046, f + '.png'), n, 1600, box)
     print(len(os.listdir(OUT)), 'images in', OUT)
 
 

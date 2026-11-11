@@ -1,6 +1,7 @@
 // The strip of words: nnstrip.h. Its place: navmap_layout.h; its tabs: core\game\nntabs.h.
 #include "nnstrip.h"
 
+#include "flexe.h"
 #include "game/baseinfo.h"
 #include "game/deckmode.h"
 #include "game/nntabs.h"
@@ -16,13 +17,14 @@
 #include "ui/winplates.h"
 
 #include <sstream>
+#include <vector>
 
 namespace nnstrip
 {
 using namespace hud2kit;
 
-static bool g_pad = false, g_standing = false;
-static navlayout::Rect g_box;
+static bool g_pad = false, g_standing = false, g_stood = false; // (g_stood: it stood in the last pass)
+static navlayout::Rect g_box, g_outer, g_close; // (g_outer: with the View badge beside it, docked on the pad; g_close: the mouse's CLOSE, else empty)
 static int g_tab = -1;
 static float g_in = 0, g_dt = 0; // the slide in: 0 at the top left, 1 in place
 static bool g_roomUp = false;    // the room's words stand this frame: the click box is theirs too, and the pages' chips ride on it
@@ -31,6 +33,56 @@ constexpr float kSlideIn = 0.30f;
 
 // The scrim of the five windows (R8, 6.9): the full map's, set by the owner's frames.
 constexpr float kScrim = 0.78f;
+
+// What the hover help asks (WordAt): each word's click box with the game control it stands for, and the plates under them. Drawn into `next` this pass,
+// read from `last` - the pass before, since the help is decided before the game's UI pass and the words draw after it.
+struct Spot
+{
+    float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    u32 ctl = 0;
+    std::wstring word; // empty: a plate
+};
+static std::vector<Spot> g_spotsLast, g_spotsNext;
+static void Note(float x0, float y0, float x1, float y1, u32 ctl = 0, const std::wstring& word = std::wstring())
+{
+    Spot s;
+    s.x0 = x0, s.y0 = y0, s.x1 = x1, s.y1 = y1, s.ctl = ctl, s.word = word;
+    g_spotsNext.push_back(s);
+}
+
+// The NeuroNet box's button that sends `cmd` - the control a tab's word stands for, as the game's own click on it sends that command: an icon button under the
+// box (NN_MainButton) with the command at +0x34C and its hint IDS at +0xCC (FREELANCER_RE "FLvibed's native buttons"; NNMissionLogButtonRoot: 0x67, IDS 1057
+// "Neural Net Log"). Found again whenever the game's control list changed; 0 none (the box not built).
+static u32 BoxButton(int cmd)
+{
+    using winplates::R32;
+    static u32 found[nntabs::kAllTabs] = {}, gen = 0xFFFFFFFFu;
+    const int tab = nntabs::IndexOf(cmd, true);
+    if (tab < 0 || !exe::UiControls.ok() || !exe::VtIconButton.ok() || !exe::VtNNMainButton.ok())
+        return 0;
+    if (gen != winplates::g_gen)
+    {
+        gen = winplates::g_gen;
+        for (u32& f : found)
+            f = 0;
+        u32 head = 0, node = 0;
+        if (R32(static_cast<u32>(exe::UiControls.get()), head) && head && R32(head + 4, node))
+            for (int guard = 0; node && node != head && guard < 8000; ++guard)
+            {
+                u32 c = 0, vt = 0, command = 0, ids = 0, parent = 0, pvt = 0;
+                if (R32(node + 8, c) && c && R32(c, vt) && exe::VtIconButton.is(vt) && R32(c + 0x34C, command) && R32(c + 0xCC, ids) && ids &&
+                    R32(c + 4, parent) && parent && R32(parent, pvt) && exe::VtNNMainButton.is(pvt))
+                {
+                    const int i = nntabs::IndexOf(static_cast<int>(command), true);
+                    if (i >= 0 && !found[i])
+                        found[i] = c;
+                }
+                if (!R32(node + 4, node))
+                    break;
+            }
+    }
+    return found[tab];
+}
 
 // A dealer shares the inventory's command and a room's window can hold the manager too: those screens have their own frame.
 static bool OwnFrameShown()
@@ -65,8 +117,10 @@ void Update(float dt, bool pad)
 
 void BeginPass()
 {
+    g_stood = g_standing;
     g_standing = g_roomUp = false;
     g_left = g_leftNext, g_foot = g_footNext, g_leftNext = g_footNext = 0;
+    g_spotsLast.swap(g_spotsNext), g_spotsNext.clear();
     skinchip::HotBegin();
 }
 
@@ -99,7 +153,8 @@ bool Draw()
     for (int i = 0; i < in.tabs; ++i)
         o.word[i].x0 += shift, o.word[i].x1 += shift;
     o.close.y0 = deckmode::LaneTopH() * H, o.close.y1 = deckmode::LaneBottomH() * H;
-    g_box = o.box;
+    g_box = g_outer = o.box;
+    g_close = {};
     g_tab = nntabs::IndexOf(nnwin::Held() ? nnwin::Held() : nnwin::OpenCommand(), mp);
     g_in = std::min(1.0f, g_in + g_dt / kSlideIn);
     const float rest = 1 - g_in, eased = 1 - rest * rest * rest;
@@ -112,14 +167,19 @@ bool Draw()
         Glyph(glyphs::LB, o.lbX, cy, glyphH, Argb(kChrome, 1));
         Glyph(glyphs::RB, o.rbX, cy, glyphH, Argb(kChrome, 1));
         if (baseinfo::Docked()) // View closes the NeuroNet docked as in flight: its badge just left of the strip (the owner's yes to Shockwave, 7 Nov 2026)
+        {
             Glyph(glyphs::VIEW, o.box.x0 - 0.010f * H - GlyphWidth(glyphs::VIEW, glyphH) / 2, cy, glyphH, Argb(kChrome, 1));
+            g_outer.x0 = o.box.x0 - 0.010f * H - GlyphWidth(glyphs::VIEW, glyphH);
+        }
     }
     const int hover = skinchip::Hovered();
     for (int i = 0; i < in.tabs; ++i)
     {
         const int slot = skinchip::Hot(o.word[i], Press, i);
         skinchip::Tab(o.word[i], nntabs::kTabs[i].word, o.size, i == g_tab, slot >= 0 && slot == hover);
+        Note(o.word[i].x0, o.word[i].y0, o.word[i].x1, o.word[i].y1, BoxButton(nntabs::kTabs[i].cmd), nntabs::kTabs[i].word);
     }
+    Note(o.box.x0, o.box.y0, o.box.x1, o.box.y1);
     SetOffset(0, 0);
     SetAlpha(1);
     if (!g_pad) // (the pad has its B pill there)
@@ -127,6 +187,8 @@ bool Draw()
         const int slot = skinchip::Hot(o.close, CloseChip, 0);
         skinchip::Chip(o.close, L"CLOSE", o.size, slot >= 0 && slot == hover ? skinchip::Look::Hover : skinchip::Look::Plain);
         winplates::g_keep.push_back({o.close.x0, o.close.y0, o.close.x1, o.close.y1});
+        Note(o.close.x0, o.close.y0, o.close.x1, o.close.y1);
+        g_close = o.close;
     }
     winplates::g_keep.push_back({o.box.x0, o.box.y0, o.box.x1, o.box.y1});
     g_standing = true;
@@ -139,6 +201,7 @@ struct RoomWord
     std::wstring word;
     std::string label;
     float x = 0; // the game's button's centre: the words stand in the buttons' order
+    u32 ctl = 0; // that button (a tab: the box's button of its command), whose help the word shows
 };
 static std::vector<RoomWord> g_rooms, g_acts;
 static std::vector<std::pair<std::string, std::wstring>> g_said; // a label's word, read once
@@ -182,7 +245,7 @@ static void ReadRoom()
             continue;
         const bool action = h.control.rfind("ButtonControl", 0) != 0;
         RoomWord r;
-        r.word = Said(h, action), r.label = h.label, r.x = b.cx;
+        r.word = Said(h, action), r.label = h.label, r.x = b.cx, r.ctl = h.ctl;
         (action ? g_acts : g_rooms).push_back(r);
     }
     auto byX = [](const RoomWord& a, const RoomWord& b) { return a.x < b.x; };
@@ -224,6 +287,7 @@ static void Row(const std::vector<RoomWord>& v, float x0, float x1, float y0, fl
         const float w = TextWidth(v[i].word, size);
         const int slot = skinchip::Hot({x, std::max(y0, 0.0f), x + w + air, y1}, act, static_cast<int>(i));
         skinchip::Tab({x + air / 2, cy - h / 2, x + air / 2 + w, cy + h / 2}, v[i].word, size, here && !_stricmp(v[i].label.c_str(), g_here.c_str()), slot >= 0 && slot == hover);
+        Note(x, std::max(y0, 0.0f), x + w + air, y1, v[i].ctl, v[i].word);
         x += w + air;
     }
 }
@@ -248,7 +312,7 @@ void DrawRoom()
     for (int i = 0; d.nn && i < nntabs::Count(nnwin::Multiplayer()); ++i)
     {
         RoomWord r;
-        r.word = nntabs::kTabs[i].word;
+        r.word = nntabs::kTabs[i].word, r.ctl = BoxButton(nntabs::kTabs[i].cmd);
         tabs.push_back(r);
     }
     // the plates cover the game's icons and their old glass; the largest words that leave the strip its room and the NeuroNet's plate clear; else the old look stands
@@ -287,6 +351,7 @@ void DrawRoom()
         Plate(sx0, y1 - 0.01f * H, sx1, foot, 0.008f * H, kBL | kBR, 1.0f, kChrome, 0.45f);
         Row(g_acts, sx0 + pad, sx1 - pad, y1, foot, size, ActClick, false);
         winplates::g_keep.push_back({sx0, y1, sx1, foot});
+        Note(sx0, y1, sx1, foot);
     }
     Plate(x0, y0, x1, y1, 0.008f * H, kBL | kBR, 1.0f, kChrome, 0.45f);
     if (d.glyphs)
@@ -296,6 +361,7 @@ void DrawRoom()
     }
     Row(g_rooms, x0 + pad + side, x1 - pad - side, y0, y1, size, RoomClick, true);
     winplates::g_keep.push_back({x0, 0, x1, y1});
+    Note(x0, 0, x1, y1);
     if (d.nn)
     {
         Plate(nnRight - nnW, y0, nnRight, y1, 0.008f * H, kBL, 1.0f, kChrome, 0.45f);
@@ -303,6 +369,7 @@ void DrawRoom()
             Glyph(glyphs::VIEW, nnRight - nnW + pad + (viewW - pad) / 2, y1 / 2, glyphH, Argb(kInk, 1));
         Row(tabs, nnRight - nnW + pad + viewW, nnRight - pad, y0, y1, size, TabClick, false);
         winplates::g_keep.push_back({nnRight - nnW, 0, nnRight, y1});
+        Note(nnRight - nnW, 0, nnRight, y1);
     }
     g_leftNext = x0, g_footNext = foot, g_roomUp = true;
 }
@@ -318,9 +385,34 @@ bool Rect(float out[4])
     return true;
 }
 
+bool WordAt(float x, float y, u32& ctl, std::wstring& word, float r[4])
+{
+    ctl = 0, word.clear();
+    const Spot* on = nullptr;
+    for (const Spot& s : g_spotsLast)
+        if (x >= s.x0 && x < s.x1 && y >= s.y0 && y < s.y1 && (!on || (on->word.empty() && !s.word.empty())))
+            on = &s; // (a word before the plate it stands on)
+    if (!on)
+        return false;
+    ctl = on->ctl, word = on->word;
+    r[0] = on->x0, r[1] = on->y0, r[2] = on->x1, r[3] = on->y1;
+    return true;
+}
+
+int LastAreas(navlayout::Rect out[2])
+{
+    if (!g_stood && !g_standing)
+        return 0;
+    out[0] = g_outer;
+    if (!(g_close.W() > 0))
+        return 1;
+    out[1] = g_close;
+    return 2;
+}
+
 void Shutdown()
 {
-    g_standing = false;
+    g_standing = g_stood = false;
     skinchip::GiveBack();
     nnwin::SetSlideSeconds(0);
 }
@@ -329,12 +421,26 @@ std::string Command(std::istream& in)
 {
     std::string what;
     in >> what;
-    if (what == "go") // go <0..6>: a press on that tab, as a click
+    if (what == "go") // go <log|map|inventory|status|info|chat|group> or <0..6>: a press on that tab, as a click
     {
+        // (a word read as a number was 0, LOG: `go info` went to LOG, and `go inventory` from LOG pressed the open tab, which does nothing)
+        std::string word;
+        in >> word;
+        const int n = nntabs::Count(nnwin::Multiplayer());
         int t = -1;
-        in >> t;
-        if (t < 0 || t >= nntabs::Count(nnwin::Multiplayer()))
-            return "nnstrip go <0.." + std::to_string(nntabs::Count(nnwin::Multiplayer()) - 1) + ">";
+        if (!word.empty() && word.find_first_not_of("0123456789") == std::string::npos)
+            t = atoi(word.c_str());
+        else
+            for (int i = 0; i < n && t < 0; ++i)
+                if (_stricmp(word.c_str(), str::Narrow(nntabs::kTabs[i].word).c_str()) == 0)
+                    t = i;
+        if (t < 0 || t >= n)
+        {
+            std::string words;
+            for (int i = 0; i < n; ++i)
+                words += (i ? "|" : "") + str::Narrow(nntabs::kTabs[i].word);
+            return "nnstrip go: unknown tab \"" + word + "\": <" + words + "> or <0.." + std::to_string(n - 1) + ">";
+        }
         return nnwin::Go(nntabs::kTabs[t].cmd) ? "nnstrip: pressed" : "nnstrip: no window open";
     }
     if (what == "step") // step <-1|1>: the bumpers' press
@@ -360,6 +466,12 @@ std::string Command(std::istream& in)
             o << "room " << r.label << " \"" << str::Narrow(r.word) << "\"\n";
         for (const RoomWord& r : g_acts)
             o << "act " << r.label << " \"" << str::Narrow(r.word) << "\"\n";
+        for (const Spot& s : g_spotsLast) // what the hover help asks: each word's click box and its control, the plates
+        {
+            char line[96];
+            sprintf_s(line, "%s %.0f,%.0f-%.0f,%.0f ctl=%08X", s.word.empty() ? "plate" : "word", s.x0, s.y0, s.x1, s.y1, s.ctl);
+            o << line << (s.word.empty() ? "" : " \"" + str::Narrow(s.word) + "\"") << "\n";
+        }
         o << skinchip::Status();
         return o.str();
     }

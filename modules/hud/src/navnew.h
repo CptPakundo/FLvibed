@@ -23,8 +23,9 @@ float DrawLeft(const navlayout::Rect& panel, float H, bool title = true);
 bool HasInfo();
 bool HasCard();
 float DrawRight(const navlayout::Rect& panel, float H);
-// HUD 2's labels, marks, sectors and route over the map's viewport.
-void DrawOverMap(const navlayout::Rect& map);
+// HUD 2's labels, marks, sectors and route over the map's viewport; no label crosses a keep-out (the plates and words drawn over the map, and the hover's name tag, whose
+// place keeps no label of its own while it shows).
+void DrawOverMap(const navlayout::Rect& map, const navlayout::Rect* keep = nullptr, int nKeep = 0);
 // The map holds a selection (its Set / Clear Waypoint stand): the record at the game's selected point gets the card.
 void SetSelected(bool on);
 // The map's window went: the game's label flag back. A write inside the window goes with it.

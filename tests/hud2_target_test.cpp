@@ -168,7 +168,7 @@ void Test_hud2_target()
         CHECK(!Run(s, in, 0.5f).seat);
         CHECK(Run(s, in, 2.0f).seat);
     }
-    // no room for the card: at its opening the settled form at once, later the change starts
+    // no room for the card: the settled form at once, at its opening and later (a change from the card's place ran 0.35 s over the panel: 0.4.6's lint)
     {
         State s;
         In in = Base(W, H, 2800, 500);
@@ -178,8 +178,8 @@ void Test_hud2_target()
         In f = Base(W, H, 2800, 500);
         Run(l, f, 1.0f);
         f.panels[0] = {2700, 400, 3400, 600}, f.nPanels = 1;
-        Run(l, f, 0.1f);
-        CHECK(Run(l, f, 0.5f).settle > 0.99f);
+        const Out at = l.Step(f);
+        CHECK(at.settle > 0.99f && at.plateA == 0);
     }
     // a block that opens with no room opens faded, not whole
     {
@@ -221,6 +221,63 @@ void Test_hud2_target()
         CHECK(moved.blockY < in.y && moved.wordsA > 0.99f);
         in.panels[1] = {0, 0, W, in.y}, in.nPanels = 2;
         CHECK(Run(s, in, 1.0f).wordsA < 0.01f);
+    }
+    // the keep-off where the block is drawn (GitHub issue 77): a block that travels off a panel (the weapons display) stays faded while it still crosses it -
+    // it came back at once, at the place it went to, while it was drawn over the weapons
+    {
+        State s;
+        In in = Base(W, H, 2800, 1200);
+        const Out free = Run(s, in, 3.0f);
+        const float half = kBarW * H / 2 + kGap * H, bh = State::BlockH(H, 1);
+        // (under the ship, up to just below the place above it: the block goes there, and crosses the panel nearly all the way)
+        const float hm = free.mark / 2 + QuadReach(free.mark, H, 1), aboveBottom = in.y - hm - 2 * kGap * H - kMarkFloor * H * 0.5f;
+        const Box panel = {free.blockX - 400, aboveBottom + 4, free.blockX + 400, free.blockY + 0.12f * H};
+        in.panels[0] = panel, in.nPanels = 1;
+        float worst = 0;
+        bool left = false, back = false, crossed = false;
+        for (int i = 0; i < 60; ++i)
+        {
+            const Out o = s.Step(in);
+            const Box shown = {o.blockX - half, o.blockY, o.blockX + half, o.blockY + bh};
+            if (Touch(shown, panel)) // (the words gone over it from the first frame: the fade's own 0.15 s ran over the panel before 0.4.6's last round)
+                worst = std::max(worst, o.wordsA), crossed = true;
+            left |= !Touch(shown, panel);
+            back |= left && o.wordsA > 0.99f;
+        }
+        CHECK(crossed && worst == 0); // (the old rule: 1.0 all the way across)
+        CHECK(left && back);  // (above the ship it stands whole again)
+        // a block moving into an area (the consumables' cross, issue 77's lint): the fade runs ahead of it and has ended when it reaches it - never a word
+        // drawn over it, from the first frame it touches
+        {
+            State m;
+            In in2 = Base(W, H, 2600, 1200); // (off the ring's seat: a steady motion)
+            const Out at = Run(m, in2, 3.0f);
+            const float x1 = at.blockX + half; // (the block's right edge)
+            const Box cross = {x1 + 300, 0, W, H}; // (the full height: no place above or below the ship takes the block out of its way)
+            in2.panels[0] = cross, in2.nPanels = 1;
+            float before = 1, over = 0;
+            bool met = false;
+            for (int i = 0; i < 120 && !met; ++i)
+            {
+                in2.x += 15; // (900 px/s at 60 fps: the 0.15 s fade starts 135 px out)
+                const Out o = m.Step(in2);
+                const Box shown = {o.blockX - half, o.blockY, o.blockX + half, o.blockY + bh};
+                if (Touch(shown, cross))
+                    met = true, over = o.wordsA;
+                else
+                    before = o.wordsA;
+            }
+            CHECK(met && over == 0 && before < 0.10f); // (under the lint's visible alpha, hud2_lint.h kVisibleAlpha, the frame before)
+        }
+        // waiting off screen where it stood: on a panel it stays faded (it came back whole for 0.5 s)
+        State w;
+        In o = Base(W, H, 2800, 1200);
+        const Out at = Run(w, o, 3.0f);
+        o.panels[0] = {at.blockX - 400, at.blockY - 10, at.blockX + 400, at.blockY + 0.12f * H}, o.panels[1] = {0, 0, W, o.y}, o.nPanels = 2; // (no room anywhere: the words go)
+        CHECK(Run(w, o, 0.5f).wordsA < 0.01f);
+        o.onScreen = false;
+        const Out gone = Run(w, o, 0.2f);
+        CHECK(gone.show && gone.wordsA < 0.01f);
     }
     // after a hit: numbers 3 s, a 0.4 s fade, white pips for what was lost; another hit starts it again
     {

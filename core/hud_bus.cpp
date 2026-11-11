@@ -142,10 +142,29 @@ u32 ReadTractorFail(int* reason, u32* ageMs)
     return g_tractorSerial;
 }
 
-const HudBus g_bus = {6,          PublishLayout, ReadLayout,        PublishSubtitles, ReadSubtitles,
+// version 7: the loot tractored in, the last kHudLootKept records by serial
+HudLoot g_loot[kHudLootKept] = {};
+u32 g_lootSerial = 0;
+void NoteLoot(u32 loot, u32 ship, u32 units)
+{
+    ++g_lootSerial;
+    g_loot[g_lootSerial % kHudLootKept] = {g_lootSerial, loot, ship, units};
+}
+u32 LootSerial() { return g_lootSerial; }
+bool ReadLoot(u32 serial, HudLoot* out)
+{
+    const HudLoot& r = g_loot[serial % kHudLootKept];
+    if (!out || !serial || r.serial != serial)
+        return false;
+    *out = r;
+    return true;
+}
+
+const HudBus g_bus = {7,          PublishLayout, ReadLayout,        PublishSubtitles, ReadSubtitles,
                       Frame,       PublishLane,   ReadLane,          LaneFrame,        PublishFloor,
                       ReadFloor,   FloorFrame,    PublishDockedSubs, ReadDockedSubs,   DockedSubsFrame,
-                      ReadFluf,    SetFlufPolicy, ReadFlufExtra,     NoteTractorFail,  ReadTractorFail};
+                      ReadFluf,    SetFlufPolicy, ReadFlufExtra,     NoteTractorFail,  ReadTractorFail,
+                      NoteLoot,    LootSerial,    ReadLoot};
 } // namespace
 
 extern "C" const HudBus* flv_hud_bus() { return &g_bus; }

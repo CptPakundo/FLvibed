@@ -1,7 +1,7 @@
-// The Movies module's logic: which picture area a movie has, the fit to the screen, the intro override, the native skip, and the slices
-// of the movie loop's wait. The window over the video is core's (core\game\moviescreen.h); the lines over it are the Subtitles module's.
-// Its rows (`movie_fit`, `movie_skip`, `movie_intro`) are in the subtitles' registry: read through the bus while that is on, from
-// FLSubtitles.ini without it.
+// The Movies module's logic: which picture area a movie has, the fit to the screen, the native skip, and the slices of the movie
+// loop's wait. The window over the video is core's (core\game\moviescreen.h); the lines over it are the Subtitles module's.
+// Its rows (`movie_fit`, `movie_skip`) are in the subtitles' registry: read through the bus while that is on, from FLSubtitles.ini
+// without it. Which intro plays is the install's own choice (HD Edition's installer; issue 80 removed `movie_intro`).
 #include "../api.h"
 #include "flexe.h"
 #include "game/moviescreen.h"
@@ -17,7 +17,7 @@ static const MoviesHostApi* g_host = nullptr;
 static bool g_on = false;   // this logic saw the movie start: its own teardown is owed, whatever moviescreen's state
 static std::string g_id;
 static bool g_iniFit = true;
-static int g_iniSkip = 0, g_iniIntro = 0;
+static int g_iniSkip = 0;
 
 static int Row(const char* key, int fallback)
 {
@@ -262,35 +262,6 @@ static void RequestNativeSkip()
         Log("movie: %s skipped (movie_skip 1)", moviescreen::Current().id.c_str());
 }
 
-// movie_intro -> the host's intro override (movie.h). The files sit beside the game's own intro (DATA\MOVIES; HD
-// Edition's "English improvements" option names the HD intro fl_intro.wmv and keeps the 2003 one as fl_intro_vanilla.wmv;
-// the full Bonus DVD intro is the player's own copy as fl_intro_full.wmv): an absolute path, so the host's existence
-// check and Movie.dll's open do not depend on the working directory.
-static const char* const kIntroFiles[] = {nullptr, "fl_intro.wmv", "fl_intro_vanilla.wmv", "fl_intro_full.wmv"};
-
-static void ApplyIntro()
-{
-    int choice = Row("movie_intro", g_iniIntro);
-    if (choice < 0 || choice > 3)
-        choice = 0;
-    std::string path;
-    if (choice)
-    {
-        path = std::string(g_host->dllDir) + "..\\DATA\\MOVIES\\" + kIntroFiles[choice];
-        if (GetFileAttributesA(path.c_str()) == INVALID_FILE_ATTRIBUTES)
-        {
-            Log("movie_intro %d: %s is not in this install - back to 0 (as installed)", choice, path.c_str());
-            choice = 0;
-            path.clear();
-            g_iniIntro = 0;
-            if (const SettingsBus* bus = g_host->GetSettingsBus ? g_host->GetSettingsBus() : nullptr)
-                bus->Set("Subtitles", "movie_intro", "0");
-        }
-    }
-    g_host->SetIntroOverride(path.empty() ? nullptr : path.c_str());
-    Log("movie_intro %d: the intro plays %s", choice, path.empty() ? "as installed" : path.c_str());
-}
-
 // Movie.dll's UpdateMovie starts with Sleep(300) (Movie.dll 0x10001730: push 12Ch; call [Sleep]): the movie loop runs
 // ~3 passes a second while the video plays on DirectShow's own thread. Its import of Sleep is chained while a movie
 // plays: the same total wait, cut into slices - one composition frame each (DwmFlush) while a transition runs, else
@@ -417,16 +388,10 @@ static void OnStop()
 }
 
 // With the subtitles off their registry is gone: the rows' home is here, so the page shows them live and the file keeps them.
-static const settings::Def kRows[] = {FLV_ROW_MOVIE_FIT(&g_iniFit) FLV_ROW_MOVIE_SKIP(&g_iniSkip) FLV_ROW_MOVIE_INTRO(&g_iniIntro)};
+static const settings::Def kRows[] = {FLV_ROW_MOVIE_FIT(&g_iniFit) FLV_ROW_MOVIE_SKIP(&g_iniSkip)};
 static SettingsBusSection g_section;
 static int g_busId = 0;
 static const SettingsBus* Bus() { return g_host->GetSettingsBus ? g_host->GetSettingsBus() : nullptr; }
-
-static void RowsApplied(void*, const settings::Def* d)
-{
-    if (!strcmp(d->name, "movie_intro"))
-        ApplyIntro();
-}
 
 static void RowsSave(void*)
 {
@@ -442,16 +407,13 @@ static void ImplInit(const MoviesHostApi* host)
     exe::ResolveAll("movies logic");
     if (const SettingsBus* bus = Bus(); bus && !host->ModuleOn(modules::kSubtitles)) // (before the load: the bus's defaults are the values as they start)
     {
-        g_section = {"movies", "Subtitles", kRows, sizeof(kRows) / sizeof(kRows[0]), nullptr, RowsApplied, RowsSave, nullptr};
+        g_section = {"movies", "Subtitles", kRows, sizeof(kRows) / sizeof(kRows[0]), nullptr, nullptr, RowsSave, nullptr};
         g_busId = bus->Register(&g_section);
     }
     const std::string ini = std::string(host->dllDir) + "FLSubtitles.ini";
     g_iniFit = GetPrivateProfileIntA("Subtitles", "movie_fit", 1, ini.c_str()) != 0;
     g_iniSkip = static_cast<int>(GetPrivateProfileIntA("Subtitles", "movie_skip", 0, ini.c_str()));
-    g_iniIntro = static_cast<int>(GetPrivateProfileIntA("Subtitles", "movie_intro", 0, ini.c_str()));
     LoadFrames(std::string(host->dllDir) + "FLSubtitles\\movie_frames.tsv");
-    ApplyIntro(); // before the intro: the logic loads at the first startup movie, a logo, whose path has already gone to PlayMovie
-    moviescreen::settingsChanged = ApplyIntro;
 }
 
 // The logic goes (a reload, an unload): a movie keeps playing, as Movie.dll draws it, and nothing of this code stays behind in the
@@ -461,7 +423,6 @@ static void ImplShutdown()
     if (const SettingsBus* bus = Bus(); bus && g_busId)
         bus->Unregister(g_busId);
     g_busId = 0;
-    moviescreen::settingsChanged = nullptr;
     OnStop();
     moviescreen::Shutdown();
 }

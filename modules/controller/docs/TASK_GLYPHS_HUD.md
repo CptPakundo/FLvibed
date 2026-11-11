@@ -177,7 +177,8 @@ after, 4K and 720p, crops per region).
   at 0.8 coverage (the glyph backs itself only within its silhouette: no plates, no grey discs), outlines and the
   letters on bumpers / triggers / sticks in the tint colour (chrome or yellow), the letters in the HUD's face (Agency FB
   through `core\game\gamefont`), the face buttons in their family colours (Xbox A green / B red / X blue / Y yellow,
-  PlayStation shapes, Nintendo letters), the D-pad one cross with the pressed arm white, View / Menu their marks. Drawn
+  PlayStation shapes, Nintendo letters) and, since 0.4.6 (the owner, 11 Nov 2026), their rings in that colour too
+  (`glyphs::OutlineRgb`: Steam, whose buttons have no colours, keeps the tint; a lit badge's ring stays yellow), the D-pad one cross with the pressed arm white, View / Menu their marks. Drawn
   at 4x supersampling per needed size (one atlas per family and size).
 - **The legend** (right-middle, contextual by state; `button_legend`): glyphs at the HUD font's height (0.029 H, the
   labels' em), rows 1.3 of it, labels in the HUD font, a thin frame-coloured edge line at the left; a long legend (combat,

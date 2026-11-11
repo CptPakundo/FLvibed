@@ -97,9 +97,16 @@ RefOut Ref(const Frame& f)
         {
             L.fallback = true;
             const float top = std::min(L.shipY0, L.loY0);
-            const promptfit::LaneGeom up = promptfit::LanesAbove(W, H, k, L.mx, top, 0.40f, 0.60f);
+            promptfit::LaneGeom up = promptfit::LanesAbove(W, H, k, L.mx, top, 0.40f, 0.60f);
             CHECK_NEAR(up.y0, top - 0.04f * H * k, 0.01);  // (the old centred line's baseline)
             CHECK(up.lx1 <= 0.40f * W && up.rx0 >= 0.60f * W); // never in the lower centre's columns
+            // (GitHub issue 78: the right lane ends left of the consumables' cross its rows meet, by the lanes' clearance)
+            for (int row = 0; row < 2; ++row)
+            {
+                const float y = up.y0 - row * up.pitch, half = 0.026f * H * k + 0.006f * H;
+                if (L.consY0 < y + half && L.consY1 > y - half && L.consX0 < up.rx1 && L.consX1 > up.rx0)
+                    up.rx1 = std::min(up.rx1, L.consX0 - (0.012f * H * k + 0.012f * H * k));
+            }
             L.ctxY = up.y0;
             place(up);
         }
@@ -623,6 +630,97 @@ void Test_hud2_layout()
         const Out ob = ComputeWith(big, S, r);
         CHECK((ob.budgetOff & Bit(Ship)) != 0);
         CHECK(ob.boxed <= ob.budget || ob.budgetOff == (Bit(Ship) | Bit(Loadout) | Bit(List)));
+    }
+    // ---- the reserved areas (GitHub issues 77 / 78): the layout's own boxes, as each placer read them before (the card
+    // while a target shows, the list while it shows, the panels always), the prompts' plates and the alert placed;
+    // what does not draw is quiet
+    {
+        Frame f = Base(3840, 2160, false);
+        f.combat = f.list = f.alert = true;
+        Prompts(f, 2, 0.16f, 0);
+        f.m.alertW = 0.5f * f.H;
+        const Out o = Compute(f, S);
+        const Reserved& r = o.res;
+        CHECK(r.Placed(ANav) && r.Placed(ACard) && r.Placed(AList) && r.Placed(AShip) && r.Placed(ALoadout) && r.Placed(ACons));
+        CHECK(r.at[ACons].x0 == o.cons.x0 && r.at[ACons].y1 == o.cons.y1 && r.at[ALoadout].x0 == o.loadout.x0);
+        CHECK(r.at[AList].y0 == o.thrY0 && r.at[AList].y1 == o.thrY1 && r.at[ACard].y1 == o.card.y1);
+        CHECK(o.nCtx == 2 && r.Placed(ACtx0) && r.Placed(ACtx1) && !r.Placed(ACtx2) && r.Placed(AAlert) && !r.Placed(ADialogue));
+        CHECK(r.at[ACtx0].x0 == o.ctxX[0] - 0.012f * f.H * o.k && r.at[ACtx0].y1 == o.ctxPY[0] + 0.026f * f.H * o.k);
+        CHECK(r.at[AAlert].x0 == o.alertX0 && r.at[AAlert].y1 == o.alertY1);
+        CHECK(r.quiet == 0);
+        CHECK(r.Meets(o.cons, kAreasAll) == ACons && r.Free({0, 0, 1, 1}, kAreasAll));
+        CHECK(r.Meets({o.cons.x0 - 5, o.cons.y0, o.cons.x0 - 1, o.cons.y1}, kAreasAll) < 0);
+        CHECK(r.Meets({o.cons.x0 - 5, o.cons.y0, o.cons.x0 - 1, o.cons.y1}, kAreasAll, 8) == ACons); // (with a clearance)
+        Frame calm = Base(3840, 2160, false);
+        calm.target = false;
+        const Out c = Compute(calm, S);
+        CHECK(!c.res.Placed(ACard) && !c.res.Placed(AList) && !c.res.Placed(AAlert));
+        Frame lb = f;
+        lb.letterbox = true;
+        const u32 q = Compute(lb, S).res.quiet;
+        CHECK((q & (1u << ALoadout)) && (q & (1u << ACons)) && (q & (1u << ACard)) && !(q & (1u << ANav)) && !(q & (1u << AAlert)));
+        // the subtitles' panel over a lane's row closes it and the rows above (its prompts take the other lane)
+        promptfit::LaneGeom g = promptfit::ContextLanes(3840, 2160, 1, o.ship.x1, o.loadout.x0);
+        const promptfit::LaneGeom g0 = g;
+        Reserved d;
+        d.at[ADialogue] = {g.lx0, g.y0 - g.pitch - 10, g.lx1, g.y0 - g.pitch + 10};
+        FitLanes(g, d, 2160, 1);
+        CHECK(g.leftRows == 1 && g.rightRows == 2 && g.lx0 == g0.lx0 && g.rx1 == g0.rx1);
+        d.at[ADialogue] = {g.rx0, g.y0 - 5, g.rx1, g.y0 + 5};
+        FitLanes(g, d, 2160, 1);
+        CHECK(g.rightRows == 0 && g.leftRows == 1);
+        const float wide[2] = {300, 300};
+        const int right[2] = {1, 1};
+        const promptfit::LanesPlaced p = promptfit::PlaceLanes(wide, nullptr, right, 2, 30, g, 2160, 1);
+        CHECK(p.n == 1 && p.side[0] == 0 && p.row[0] == 0); // (the right lane closed, the left one row)
+        // beside the panels nothing else moves: the lanes as ContextLanes made them
+        promptfit::LaneGeom same = g0;
+        FitLanes(same, o.res, 2160, 1);
+        CHECK(same.lx0 == g0.lx0 && same.rx1 == g0.rx1 && same.leftRows == 2 && same.rightRows == 2);
+        // a box over the flight (the cargo demand, Frame::box) is a reserved area: a lane row it meets closes as the subtitles'
+        // panel does, the alert beside the ring keeps off it, and so does the notice; the panels keep their places
+        Reserved b;
+        promptfit::LaneGeom gb = g0;
+        b.at[ABox] = {g0.lx0, g0.y0 - 5, g0.lx1, g0.y0 + 5};
+        FitLanes(gb, b, 2160, 1);
+        CHECK(gb.leftRows == 0 && gb.rightRows == 2 && std::string(AreaPart(ABox)) == "dialog");
+        Frame fb = f;
+        fb.box = {0.30f * 3840, 0.40f * 2160, 0.70f * 3840, 0.70f * 2160}; // (the 1280x800 plate's place: 356,372-911,552)
+        fb.m.alertSide = -1, fb.m.alertW = 0.3f * fb.H;
+        fb.m.noticeW = 0.25f * fb.H, fb.m.noticeH = 0.08f * fb.H;
+        const Out ob = Compute(fb, S);
+        CHECK(ob.res.Placed(ABox) && ob.res.at[ABox].x0 == fb.box.x0);
+        CHECK(ob.res.Free({ob.alertX0, ob.alertY, ob.alertX1, ob.alertY1}, 1u << ABox));
+        CHECK(!ob.noticeShow || ob.res.Free(ob.notice, 1u << ABox));
+        for (int i = 0; i < ob.nCtx; ++i)
+            CHECK(ob.res.Free(ob.res.at[ACtx0 + i], 1u << ABox));
+        CHECK(ob.ship.x0 == o.ship.x0 && ob.loadout.x0 == o.loadout.x0 && ob.cons.y0 == o.cons.y0);
+        CHECK(!Compute(f, S).res.Placed(ABox));
+    }
+    // ---- GitHub issue 78: the lanes above the panels end left of the consumables' cross (1280x800 at 120 %, the report's
+    // screen: a long first prompt on the right - TRACTOR COUNTERMEASURE DROPPER - leaves no lane beside the panels)
+    for (int kbm = 0; kbm < 2; ++kbm)
+    {
+        Frame f = Base(1280, 800, kbm != 0);
+        f.target = false, f.hudScale = 120;
+        Prompts(f, 3, 0.45f, 0);
+        const float k = Scale(f);
+        for (int i = 0; i < 3; ++i)
+            f.m.labelMin[i] = 0.25f * 800 * k, f.m.side[i] = i < 2 ? 1 : 0;
+        const Out o = Compute(f, S);
+        CHECK(o.ctxFallback && o.nCtx >= 2);
+        for (int i = 0; i < o.nCtx; ++i)
+        {
+            const Rect& plate = o.res.at[ACtx0 + i];
+            CHECK(o.res.Free(plate, kAreasBottom | kAreasAlerts | (1u << ANav) | (1u << ACard) | (1u << AList)));
+            if (o.ctxSide[i] == 1) // (the plate 0.012 H x k clear of the cross: the lanes' gap to a panel)
+                CHECK(plate.x1 <= o.cons.x0 - 0.012f * 800 * o.k + 0.5f);
+        }
+        if (!kbm) // (the pad's: the first keeps its lane, squeezed; the keyboard's wider grid leaves it too little, it takes the left)
+            CHECK(o.ctxSide[0] == 1 && o.ctxWrap[0]);
+        if (g_test.verbose)
+            printf("issue 78 lanes %s: k %.2f nCtx %d first side %d x %.0f w %.0f cons.x0 %.0f\n", kbm ? "K&M" : "pad", o.k, o.nCtx,
+                   o.ctxSide[0], o.ctxX[0], o.ctxW[0], o.cons.x0);
     }
     // ---- fail closed: no screen
     {

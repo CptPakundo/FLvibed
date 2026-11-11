@@ -8,6 +8,8 @@
 #include "game/space.h"
 #include "ui/hud2_kit.h"
 #include "hud2_bars.h"
+#include "hud2_layout.h"
+#include "hud2_notice.h"
 #include "hud2_preset.h"
 
 #include <istream>
@@ -185,6 +187,7 @@ struct Model
     int nEscorts = 0;
     int holdUsed = -1, holdCap = 0;
     long long credits = -1;
+    hud2notice::Notice notice; // the flight notice: a payout, the loot tractored in (hud2_notice.h)
     std::wstring shipName, shipClass; // the player's ship (its archetype's ids_name) and class word, above HOLD
     // ---- loadout
     int nano = -1, batt = -1, cm = -1, mines = -1;
@@ -297,6 +300,9 @@ struct Layout
     float form = 0;          // the card's fight form 0..1
     float bandY = 0, holdY = 0; // the band's line (inside the arcs since 5.23), the bottom-left's last escort row's (0.93)
     float clearY0 = 0;          // the lower centre's clear zone's top (hud2_layout.h Out::clearY0; UI_HUD2.md 5.23)
+    float ntX0 = 0, ntY0 = 0, ntX1 = 0, ntY1 = 0; // the flight notice's place (hud2_layout.h PlaceNotice), as placed
+    bool ntShow = false;                          // ... it has one this frame
+    hud2layout::Reserved res;   // the reserved areas (hud2_layout.h Reserved): what the targeting display keeps off, the lint's part.over
 };
 
 // hud2.cpp: the current frame's model, layout and context (read-only, for hud2_lint_live.cpp)
@@ -372,6 +378,9 @@ float ShipContentHeight(const Model& m, const Layout& L);    // (0.2.1 round 6: 
 float LoadoutContentHeight(const Model& m, const Layout& L); //   0 = not drawn yet (the maximum)
 float ListContentWidth(const Model& m, const Layout& L);   // hud2_click.cpp: the threat / contact list under the card
 float CardIconsContentWidth(const Model& m, const Layout& L); // hud2_click.cpp: the K&M card's click row (short form)
+// The flight notice (hud2_notice.h) at the layout's place: measure = its card's width and height (pixels; 0 when it holds
+// nothing), else drawn at (x0, y0).
+void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bool measure, float* w = nullptr, float* h = nullptr);
 // The alert card; returns its width (measure).
 float DrawAlert(const Model& m, const Layout& L, float a, bool measure);
 float DrawCard(const AlertCard& c, float x0, float y0, const Layout& L, float a, bool measure); // (returns its width)

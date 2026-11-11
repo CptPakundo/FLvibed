@@ -40,9 +40,6 @@ struct Content
 };
 inline Content content = {};
 
-// A [Subtitles] movie row changed: the Movies module's reaction (the rows are in the subtitles' registry). Null without it.
-inline void (*settingsChanged)() = nullptr;
-
 double Seconds(); // a monotonic clock
 // The movie starts. Both modules call it for the same event: the second call is a no-op.
 void Begin(HWND hwnd, const char* path);

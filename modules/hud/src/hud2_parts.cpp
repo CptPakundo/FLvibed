@@ -1540,6 +1540,78 @@ float DrawAlert(const Model& m, const Layout& L, float a, bool measure)
     return DrawCard(c, L.alertX0, m.alertSide && m.alertYNow >= 0 ? m.alertYNow : L.alertY, L, a, measure);
 }
 
+// ---------------------------------------------------------------- the flight notice (hud2_notice.h; GitHub issues 70, 69)
+// The bottom-left panels' card (the ship panel's plate and corners) with the docked strip's grammar (uistrip.cpp DrawStrip):
+// a label in chrome, its value in ink, what is new in the game's active yellow. Lines, top to bottom: CREDITS $50,000
+// +$16,000; one line per item kind, SHIELD BATTERY x5 (the count merged while the card shows); +n MORE past four kinds;
+// CARGO 12 / 45 under loot (the INVENTORY page's and the strip's words; amber when full). Text at the 0.024 H x k floor,
+// the values 0.026 (the ship name's size): as small as it can read, it is not the flight's business. Rows 0.038 apart:
+// the lint's 0.01 H between the lines' texts (panel.overlap).
+constexpr float kNoticeLabel = 0.024f, kNoticeValue = 0.026f, kNoticePitch = 0.038f, kNoticePadX = 0.014f, kNoticePadY = 0.008f;
+void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bool measure, float* outW, float* outH)
+{
+    const hud2notice::Notice& n = m.notice;
+    if (outW)
+        *outW = 0;
+    if (outH)
+        *outH = 0;
+    if (n.Empty())
+        return;
+    const float H = L.H, k = L.k, T = kNoticeLabel * H * k, V = kNoticeValue * H * k, pitch = kNoticePitch * H * k;
+    const float padX = kNoticePadX * H * k, padY = kNoticePadY * H * k, gapIn = 0.010f * H * k, gapNew = 0.012f * H * k;
+    struct Seg
+    {
+        std::wstring s;
+        float size, track;
+        u32 col;
+        float before;
+    };
+    std::vector<std::vector<Seg>> rows;
+    if (n.credits)
+        rows.push_back({{L"CREDITS", T, 0.06f, kChrome, 0},
+                        {hud2notice::Money(n.cash), V, 0, kInk, gapIn},
+                        {L"+" + hud2notice::Money(n.gain), V, 0, kActive, gapNew}});
+    for (int i = 0; i < n.nItems; ++i)
+        rows.push_back({{n.items[i].name.empty() ? std::wstring(L"ITEM") : n.items[i].name, T, 0.04f, kInk, 0},
+                        {L"x" + std::to_wstring(n.items[i].count), V, 0, kActive, gapIn}});
+    if (n.nExtra > 0)
+        rows.push_back({{L"+" + std::to_wstring(n.nExtra) + L" MORE", T, 0.06f, kChrome, 0}});
+    if (n.Loot() && m.holdUsed >= 0 && m.holdCap > 0)
+        rows.push_back({{L"CARGO", T, 0.06f, kChrome, 0},
+                        {std::to_wstring(m.holdUsed) + L" / " + std::to_wstring(m.holdCap), V, 0,
+                         m.holdUsed >= m.holdCap ? kWarn : kInk, gapIn}});
+    float w = 0;
+    for (const auto& r : rows)
+    {
+        float rw = 0;
+        for (const Seg& s : r)
+            rw += s.before + TextWidth(s.s, s.size, s.track);
+        w = std::max(w, rw);
+    }
+    w += 2 * padX;
+    const float h = 2 * padY + pitch * static_cast<float>(rows.size());
+    if (outW)
+        *outW = w;
+    if (outH)
+        *outH = h;
+    if (measure)
+        return;
+    SetAlpha(a);
+    Plate(x0, y0, x0 + w, y0 + h, 0.012f * H * k, kTL | kBR, 200 / 255.0f);
+    float yc = y0 + padY + pitch * 0.5f;
+    for (const auto& r : rows)
+    {
+        const RecUnit unit; // (a line's label, value and news read as one)
+        float x = x0 + padX;
+        for (const Seg& s : r)
+        {
+            x += s.before;
+            x += Text(x, yc, s.s, s.size, Argb(s.col, 1), Left, s.track, false);
+        }
+        yc += pitch;
+    }
+}
+
 // ================================================================ Focus (modules\hud\docs\UI_HUD2_PRESETS.md 2.2 "glass and edges";
 // UI_HUD2.md 5.18): the parts Standard's cannot draw. Geometry from the layout core (hud2_layout.h FocusCorners), the
 // reticle's numbers from the data (ui_meta.h "reticle" rows), visibility from its reveal (hud2_layout.h Reveal).

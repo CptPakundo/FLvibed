@@ -135,6 +135,24 @@ static bool OnlyHudOpen()
                        { return std::find(g_hudRoots.begin(), g_hudRoots.end(), r) != g_hudRoots.end(); });
 }
 
+// The flight view for the mode: only the flight HUD's windows and boxes over the flight are open. The cargo demand is one: the game switches to the
+// arrow for it, but neither pauses nor hides its own HUD, and the box closes by itself 20 s on while the player may be under fire - so it is flight,
+// not a NeuroNet window (the flight HUD, the pad's flight). OnlyHudOpen stays the cursor's test: the box keeps the cursor shown.
+static bool FlightViewOnly()
+{
+    if (g_hudRoots.empty())
+        return false;
+    const std::vector<uintptr_t> roots = ui::VisibleRoots();
+    return std::all_of(roots.begin(), roots.end(), [](uintptr_t r)
+                       { return std::find(g_hudRoots.begin(), g_hudRoots.end(), r) != g_hudRoots.end() || winplates::CargoDemand(static_cast<u32>(r)); });
+}
+
+static bool CargoDemandUp()
+{
+    const std::vector<uintptr_t> roots = ui::VisibleRoots();
+    return std::any_of(roots.begin(), roots.end(), [](uintptr_t r) { return winplates::CargoDemand(static_cast<u32>(r)); });
+}
+
 // HUD hit-test suppression (HostApi::SetHudHitSuppression).
 static bool g_hudSuppressed = false;
 static bool g_hudRootsChanged = false;
@@ -450,7 +468,7 @@ void OnFrame(double dtd)
             lastExclusion = exclusion;
         }
     }
-    const Mode detected = gamemode::Detect(OnlyHudOpen, gamemode::SpaceWindowOpen);
+    const Mode detected = gamemode::Detect(FlightViewOnly, gamemode::SpaceWindowOpen);
     candidateFrames = detected == candidate ? candidateFrames + 1 : 1;
     candidate = detected;
     const Mode mode = candidateFrames >= 3 ? detected : g_mode;
@@ -488,9 +506,13 @@ void OnFrame(double dtd)
         hc.pad = padOwns;
         hc.autopilot = views::ApActive();
         hc.apKnown = views::ApPresent() && (uiopt::Get().apHints || session::Current() == session::ASSISTED);
+        // a box over the flight with the pad (the cargo demand: the game's arrow up, flight by FlightViewOnly): its prompt bar takes A and B, so the context
+        // line steps aside as for the picker - its B / X holds were not true while the box stood
+        const bool flightBox = padOwns && detected == Mode::Space && CargoDemandUp();
         hc.modal = views::PanelOpen();
         if (pad.FillHud)
-            pad.FillHud(hc);
+            pad.FillHud(hc); // (sets modal from the pad's own windows)
+        hc.modal |= flightBox;
         if (views::hud.Flight)
             views::hud.Flight(dt, hc);
         if (views::hud.Cursor)

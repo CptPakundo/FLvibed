@@ -135,33 +135,48 @@ void Dialog(const DialogBox& b, const std::wstring& title, const std::wstring& c
         Body(b.x0 + Px(0.020f), b.costY - Px(kBodyHigh) / 2, wide, cost, 3, kChrome, Center);
 }
 
-bool Tooltip(float x, float y, const std::wstring& text)
+bool TooltipFit(const std::wstring& text, TooltipLines& out)
 {
+    out.n = 0;
     if (text.empty() || g_W <= 0)
         return false;
-    const float size = Px(kTooltipBody), pad = Px(0.010f), side = g_W * deckmode::SideW(), edge = g_H * deckmode::EdgeH();
-    std::wstring lines[4];
-    float drawn = size;
+    const float size = Px(kTooltipBody), pad = Px(0.010f), side = g_W * deckmode::SideW();
+    out.size = size;
     const float room = std::min(g_W * 0.4f, g_W - 2 * side - 2 * pad);
-    int n = 0;
-    for (size_t at = 0; at <= text.size() && n < 4;) // (the game's own line breaks first: a character's card is three lines)
+    for (size_t at = 0; at <= text.size() && out.n < 4;) // (the game's own line breaks first: a character's card is three lines)
     {
         size_t end = text.find(L'\n', at);
         if (end == std::wstring::npos)
             end = text.size();
-        n += FitLines(text.substr(at, end - at), size, room, 0, lines + n, 4 - n, drawn);
+        out.n += FitLines(text.substr(at, end - at), size, room, 0, out.lines + out.n, 4 - out.n, out.size);
         at = end + 1;
     }
-    if (n <= 0)
+    if (out.n <= 0)
         return false;
     float w = 0;
-    for (int i = 0; i < n; ++i)
-        w = std::max(w, TextWidth(lines[i], drawn));
-    const float pitch = drawn * 1.15f, h = pitch * static_cast<float>(n) + 2 * pad;
-    const float x0 = std::min(std::max(x, side), g_W - side - w - 2 * pad), y0 = std::min(std::max(y, edge), g_H - edge - h);
-    Plate(x0, y0, x0 + w + 2 * pad, y0 + h, kTL | kBR);
-    for (int i = 0; i < n; ++i)
-        Text(x0 + pad, y0 + pad + pitch * (static_cast<float>(i) + 0.5f), lines[i], drawn, Argb(kInk, 1));
+    for (int i = 0; i < out.n; ++i)
+        w = std::max(w, TextWidth(out.lines[i], out.size));
+    out.w = w + 2 * pad, out.h = out.size * 1.15f * static_cast<float>(out.n) + 2 * pad;
+    return true;
+}
+
+void TooltipAt(float x0, float y0, const TooltipLines& t)
+{
+    const float pad = Px(0.010f), pitch = t.size * 1.15f;
+    Plate(x0, y0, x0 + t.w, y0 + t.h, kTL | kBR);
+    for (int i = 0; i < t.n; ++i)
+        Text(x0 + pad, y0 + pad + pitch * (static_cast<float>(i) + 0.5f), t.lines[i], t.size, Argb(kInk, 1));
+}
+
+TipRect SafeArea() { return {g_W * deckmode::SideW(), g_H * deckmode::EdgeH(), g_W - g_W * deckmode::SideW(), g_H - g_H * deckmode::EdgeH()}; }
+
+bool Tooltip(float x, float y, const std::wstring& text)
+{
+    TooltipLines t;
+    if (!TooltipFit(text, t))
+        return false;
+    const TipRect a = SafeArea();
+    TooltipAt(std::min(std::max(x, a.x0), a.x1 - t.w), std::min(std::max(y, a.y0), a.y1 - t.h), t);
     return true;
 }
 

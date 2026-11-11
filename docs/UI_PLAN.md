@@ -154,14 +154,15 @@ cutscenes [`cinematic_single_speaker`]; MOTION: Motion [`motion`], Spoken-word p
 colours [`neural_net_severity`]. Advanced: the offsets, lingers, narrow-screen variants, chat layouts.
 
 **MOVIES** (new keys: the module's movie handling has none today) - Fit movies to the screen [`movie_fit`, default on];
-Startup movies PLAY / SKIP [`movie_skip`, default play; the native skip exists]; Intro AS INSTALLED / HD / ORIGINAL
-2003 / FULL (BONUS DVD) [`movie_intro`; only the files present are offered]; Movie subtitles [`movie_subtitles`].
+Startup movies PLAY / SKIP [`movie_skip`, default play; the native skip exists]; Movie subtitles [`movie_subtitles`].
+(An Intro picker, `movie_intro`, was built and removed in 0.4.6, issue 80: which intro plays is HD Edition's installer
+choice.)
 
 ### 3.4 What the registry needs (no change to `set` / the ini writers)
 A UI table per module beside `kDefs`: key -> tab, section, order, player label, enum labels (the picker words), tier
 (player / advanced), what a change needs (live / next load / restart), preset membership, and for a few rows a parent
 (greys out). The help strings exist; some get a player rewrite. New keys: `speaker_colors`, `maneuver_button`,
-`autopilot_key`, `movie_fit`, `movie_skip`, `movie_intro`, `movie_subtitles`. The subtitle and binding presets become
+`autopilot_key`, `movie_fit`, `movie_skip`, `movie_subtitles`. The subtitle and binding presets become
 data (the autopilot's exist: `ap preset`).
 
 ### 3.5 Build order and effort (S <= 1 session, M 2-3)
@@ -249,8 +250,9 @@ centre with the reticle off), else the nearest enemy / tap again = the next of t
 rear view (the owner's scheme, 25 Oct; the double tap costs the cycle a double-tap window - B when nothing is running is
 the fallback home for "clear");
 LS throttle lever + strafe; LS click engine kill; RT fire; LT afterburner (hold); LB tap the target picker / hold the
-action wheel (scan cargo, weapon group, cruise disruptor, formation, comms, contact filter, autopilot goals, rear
-view; picked with the right stick, dead-zoned, the stick let go back to the middle picks nothing again (a safe retreat: the owner, 7 Nov 2026), the D-pad works too, the left stick keeps flying; the right stick is the
+action wheel (scan cargo, weapon group, edit groups, cruise disruptor, formation, comms, contact filter, autopilot goals,
+HUD always / fades; no rear view since GitHub issue 65 - RS click held is the rear view in every layout; the slots spread
+evenly round the ring; picked with the right stick, dead-zoned, the stick let go back to the middle picks nothing again (a safe retreat: the owner, 7 Nov 2026), the D-pad works too, the left stick keeps flying; the right stick is the
 wheel's alone while it is open and after it closes until let go - never steering, the autopilot's aim or its take-back
 (Shockwave's report, 7 Nov 2026: with the autopilot flying, the pick drove the crosshair to the screen's edge) - the owner's calls of
 25 Oct: wheels belong on a bumper, scan cargo is contextual and fits the wheel, and Freelancer needs no "my attacker"
@@ -261,12 +263,16 @@ NeuroNet hub (map first) / hold
 half a second = Advanced Autopilot on / off; Menu pause. **ACE** (arcade flight, for Ace Combat / Rogue Squadron / Star Fox hands; tidied 25 Oct to the same rules): LS
 steers (gimbal lock on the target), RS strafes, RT throttle up with afterburner at full pull, LT throttle down / brake
 with reverse at full pull (the lever persists, as Ace Combat's accelerate / decelerate), A guns, B missile / hold
-torpedo, Y the smart target (under the reticle else nearest, again next, double clear - Ace Combat's change-target
-button), X context / hold turret view, RB next enemy / hold previous, LB tap picker / hold the action wheel, RS click
-cruise / hold rear view, LS click engine kill, D-pad consumables as above, View hub / hold autopilot, Menu pause. Favours one
+torpedo (as designed 25 Oct also: Y the smart target, X context / hold turret view, RB next enemy / hold previous,
+LB tap picker / hold the action wheel, RS click cruise / hold rear view; as built, the spec's ACE table: Y nearest enemy
+/ hold the target picker, X context / hold go to, RB next enemy, LB countermeasure, RS click next enemy / hold rear view,
+D-pad left cruise; ACE binds no action wheel and no turret view), LS click engine kill, D-pad nanobot / battery / mine,
+View hub / hold autopilot, Menu pause. Favours one
 thumb flying and aiming with the other free for the weapons; sets aside the finger throttle lever and the D-pad's
 cheapness (the left thumb steers, so a nanobot mid-fight costs steering). **ASSISTED**: the autopilot flies; RS aims, RT guns, RB missile / hold torpedo,
-A context / accept, B hand back, Y target / hold picker, X goal panel, D-pad consumables. Shared situations: menus
+A context / accept, B hand back, Y target / hold picker, X goal panel, D-pad consumables (as designed 25 Oct; built:
+LT picker, Y cruise / hold the action wheel, RS click nearest target / hold rear view / double next enemy, and since GitHub
+issue 65 X tractor all, the goal panel in the wheel). Shared situations: menus
 (D-pad / LS focus, A accept, B back / hold close all, X context, Y secondary, LB / RB tabs, LT / RT pages, RS scroll (what the focus is on: the list whose row the D-pad or cursor is on, or that text; Shockwave, 7 Nov 2026), RS click
 reset view, LS click pad cursor), bases (LB / RB rooms, D-pad left / right characters, A talk, Y launch or job board, X
 news, LS cursor), dealers (LB / RB side, D-pad rows, LT / RT quantity, A held buy / sell, LS click mount, Y all, X filter), nav map
@@ -281,8 +287,8 @@ order), the badge and the combat legend show it; **TWO GROUPS ON THE TRIGGERS**:
 (the Armored Core / MechWarrior pattern; afterburner moves to the LS click, engine kill into the wheel; ACE: A / B). In every
 mode launchers fire only on their own buttons; groups are assigned with the action wheel's EDIT GROUPS (`wgroups.*`,
 UI_HUD2.md 5.30; the inventory's ticks planned here were never built).
-**Turret view** (the game's H; the owner's question, 25 Oct): in FREELANCER **X held** (the owner's call), in ACE a
-toggle in the action wheel (RS aims, RT fires, LS keeps the throttle and strafes, the ship flies straight on, B exits);
+**Turret view** (the game's H; the owner's question, 25 Oct): in FREELANCER **X held** (the owner's call) and under the
+autopilot in every layout; in ACE planned as a toggle in the action wheel, not built (ACE binds no wheel) (RS aims, RT fires, LS keeps the throttle and strafes, the ship flies straight on, B exits);
 **ASSISTED is built on it** - the autopilot flies and fights, the player aims and fires from the
 turret camera (this answers AUTOPILOT_UX.md open question 11: turret mode = the Assisted preset, not a separate
 toggle). Hand-back exception: with the autopilot on, the right stick is the aim in turret view and does not hand the
@@ -300,7 +306,8 @@ AFTERBURNER, MISSILE 24, NEXT ENEMY, NANOBOT 3, BATTERY 3, COUNTERMEASURE 12, MI
 HAND BACK, GOALS, AUTOPILOT OFF held), stepping aside while a panel has its own prompt bar; an **autopilot status
 line** under the maneuver bar while the autopilot flies, cruise charges or turret view is on; **world prompts** only
 when something unusual is possible now; the **target picker** on LB tap, the **action wheel** on LB hold, the **goal
-panel** on X while the autopilot flies, the **speedrun timer** top right under the NeuroNet box in speedrun mode. The prompt bar is contextual by default
+panel** in the action wheel (AUTOPILOT GOALS; on X while the autopilot flies until GitHub issue 65, where X became tractor
+all as in FREELANCER's free flight), the **speedrun timer** top right under the NeuroNet box in speedrun mode. The prompt bar is contextual by default
 (every window, menu and modal for as long as it is open; a base room when new or a decision is pending), bottom right, confirm first, at most five glyphs. The **pad cursor is on
 everywhere by default** (the owner, 25 Oct: rooms, the bar's characters, menus, dealers, the map), coexisting with
 focus navigation on every screen: the left stick shows it and the game reacts as to the mouse (a character lights up

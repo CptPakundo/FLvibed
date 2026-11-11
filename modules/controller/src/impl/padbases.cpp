@@ -110,6 +110,7 @@ static bool g_modal = false;       // a modal window is over the base: this code
 // The frame's arrow decision (NoteFrame / Update) and Overlay's stand-down: overlay passes since the last pad frame.
 static bool g_wantHidden = false;
 static bool g_menuScreen = false; // padmenus has one of its screens up this frame
+static bool g_baseFrame = false;  // this pad frame ran Update (a base screen, a window over the flight: its rule decided the arrow)
 static int g_overlaysIdle = 99;
 
 static void ApplyCursorHidden(bool hidden)
@@ -1738,10 +1739,43 @@ static bool StepTabs(const Gamepad& pad)
     return true;
 }
 
+// Between two NeuroNet pages (the old window's close, the new one's open: about a second docked) HUD 2 stands the chosen page's ground and title over the room
+// (nnpage Draw) while no page answers yet, and over the windows' slides into the map. Nothing under the cover may take a press: the room's A, the generic focus's D-pad, the stick's wheel. What acts
+// is what acts on the page itself before its window is up: the bumpers (StepTabs), B and View close the NeuroNet. The window that will stand, by its command.
+static const char* PageGapScreen()
+{
+    if (!views::HudNNStrip() || views::HudPageOn())
+        return nullptr;
+    switch (nnwin::OpenCommand())
+    {
+    case nntabs::kCmdLog: return ScreenName(Screen::NnLog);
+    case nntabs::kCmdInventory: return ScreenName(Screen::NnInventory);
+    case nntabs::kCmdStatus: return ScreenName(Screen::NnPlayer);
+    case nntabs::kCmdInfo: return ScreenName(Screen::NnHelp);
+    // (the map has no page: its gap is the slides, and the room's screen until the screen's next read names the map, when padmap takes it)
+    case nntabs::kCmdMap: return room::NNWindowBusy() || g_screen == Screen::Room ? ScreenName(Screen::NavMap) : nullptr;
+    default: return nullptr;
+    }
+}
+static void UpdatePageGap(const Gamepad& pad, const char* screen)
+{
+    LeaveChars();
+    if (device::Pad())
+        g_cursorShown = false; // (no row to point at yet)
+    g_pageStick = true;        // (the right stick's wheel would scroll what stands under the cover)
+    g_owned |= XINPUT_GAMEPAD_A | XINPUT_GAMEPAD_B | XINPUT_GAMEPAD_X | XINPUT_GAMEPAD_Y | XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_LEFT |
+                XINPUT_GAMEPAD_DPAD_RIGHT | XINPUT_GAMEPAD_LEFT_THUMB | XINPUT_GAMEPAD_RIGHT_THUMB | XINPUT_GAMEPAD_BACK;
+    if (pad.Pressed(XINPUT_GAMEPAD_B) || pad.Pressed(XINPUT_GAMEPAD_BACK))
+        events::Push("pad page gap: close the NeuroNet %s", nnwin::Close() ? "ok" : "refused");
+    const promptbar::Prompt close[1] = {{Id::B, L"CLOSE"}};
+    promptbar::Set(screen, close, 1, false);
+}
+
 void Update(float dt, const Gamepad& pad, Where where)
 {
     g_owned = 0;
     g_pageStick = false;
+    g_baseFrame = true;
     if (!g_roomFrame) // (the last frame was no room's: the parked cursor goes back to the player - a window, a dealer, flight)
         Unpark();
     g_wasRoomFrame = g_roomFrame;
@@ -1870,6 +1904,11 @@ void Update(float dt, const Gamepad& pad, Where where)
     if (mapOpen)
         return;
     const bool tabs = StepTabs(pad);
+    if (const char* gap = tabs ? PageGapScreen() : nullptr)
+    {
+        UpdatePageGap(pad, gap);
+        return;
+    }
     if (g_screen == Screen::Room && !tabs) // (multiplayer's chat over a room: the bumpers are the strip's)
         UpdateRoom(pad);
     else if (g_screen != Screen::None && g_screen != Screen::NavMap) // (the map's first 100 ms: padmap opens it)
@@ -1910,9 +1949,12 @@ void NoteFrame(bool menuScreen)
 {
     g_overlaysIdle = 0;
     g_menuScreen = menuScreen;
+    g_baseFrame = false;
     // (Update, when it runs this frame, decides again for the base screens; in flight nothing hides the arrow)
     g_wantHidden = menuScreen && ArrowRule();
 }
+
+void NoteHideArrow() { g_overlaysIdle = 0, g_wantHidden = true; }
 
 void Overlay()
 {
@@ -1933,7 +1975,12 @@ void Overlay()
         ApplyCursorHidden(false);
         return;
     }
-    ApplyCursorHidden(g_wantHidden);
+    // A NeuroNet window over the flight, open or on its way: the game switches to its arrow as the window takes the mouse, while the frame's mode still reads
+    // flight for its 3-frame debounce, so no Update decides yet - the arrow stood at the screen's centre for those frames of every page's opening and tab
+    // switch. Decided here, in the cursor pass right before the game draws it, from the window itself: hidden from its first frame; Update's rule from then on.
+    // (the map's too: its cursor is the arrow, which Update shows once padmap has the map - before, it blinked in its first frame, then hid until then)
+    const bool flightWindow = !g_baseFrame && fl::PlayerIObj() && !fl::PlayerBase() && (nnwin::OpenTab() >= 0 || nnwin::Held() != 0);
+    ApplyCursorHidden(g_wantHidden || flightWindow);
 }
 
 // ---------------------------------------------------------------- the pad cursor's magnetism

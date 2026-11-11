@@ -11,7 +11,7 @@ patch.json: { "add_rows": {"<tab id>/<section label>": {"first": true | "after":
 "help": ".."}}, "states": {"<screen>/<state>": {"notes": [".."], "prompts": [[["<key>", ..], "<label>", "hold"?], ..] (the
 list replaced whole), "extras": {"<t>": {"<field>": value}}}}, "decisions": {"<id>": {"note": ".."}}, "top": {"<key>": <block>},
 "bindings": {"presets/<PRESET>/flight/<input>" | "common/<context>/<input>": {"tap" | "hold" | "dbl": "<action>"}},
-"new_rows": [row, ..], "retab": [{"id", "label", "presetKey"?, "head"?, "sections": [{"label", "head"?, "indent"?, "rows": ["<key>", ..]}]}],
+"remove_rows": ["<key>", ..], "new_rows": [row, ..], "retab": [{"id", "label", "presetKey"?, "head"?, "sections": [{"label", "head"?, "indent"?, "rows": ["<key>", ..]}]}],
 "presets": {"<group>": [{"name", "values": {..}}]} }. "top" sets a spec-only top-level block (the spec half only; e.g. "hud2_presets", Q7).
 "retab" rebuilds the tabs from the rows by key, new_rows included: every existing row must land once; the mock-up's TABS block is then
 written from the patched spec, so it needs --spec as well. "presets" sets whole groups in both halves. A decision note is appended to the
@@ -32,6 +32,22 @@ def js_literal(v):
     if isinstance(v, bool):
         return 'true' if v else 'false'
     return json.dumps(v)
+
+
+def remove_rows_js(src, patch):
+    """patch['remove_rows'] in the mock-up source: the row's line goes; a section close it carried moves to the line before."""
+    lines = src.split('\n')
+    for key in patch.get('remove_rows', []):
+        i = next((i for i, l in enumerate(lines) if re.match(r"\s*[TPSKB]\('%s', " % re.escape(key), l)), None)
+        if i is None:
+            continue
+        closed = re.match(r".*\)(\s*\] \},?\s*)$", lines[i])
+        if closed:
+            if not lines[i - 1].rstrip().endswith('),'):
+                sys.exit('row %s closes its section and is its only row: remove the section by hand' % key)
+            lines[i - 1] = lines[i - 1].rstrip()[:-1] + closed.group(1).rstrip()
+        del lines[i]
+    return '\n'.join(lines)
 
 
 def patch_js(src, patch):
@@ -104,7 +120,7 @@ def patch_js(src, patch):
         if m and m.group(1) in patch.get('decisions', {}):
             note = patch['decisions'][m.group(1)].get('note', '')
             def rep_note(mm):
-                old = mm.group(1)
+                old = re.sub(r"\\(.)", r"\1", mm.group(1))  # the source's escapes undone: js_literal escapes again
                 return "note: " + js_literal((old + ' | ' if old else '') + note)
             line, n = re.subn(r"note: '((?:[^'\\]|\\.)*)'", rep_note, line)
             if n == 0:
@@ -312,6 +328,12 @@ def patch_spec(doc, patch):
             tabs.append(tab)
         spec['tabs'] = tabs
     spec.get('presets', {}).update(patch.get('presets', {}))
+    # remove_rows: a setting that left the game (11 Nov 2026, movie_intro). A row already gone is fine (the spec file
+    # and the owner's document may be at different points); a row still under a parent or bundle is not checked here.
+    for key in patch.get('remove_rows', []):
+        for t in spec['tabs']:
+            for sec in t['sections']:
+                sec['rows'] = [r for r in sec['rows'] if r['key'] != key]
     for where, p in patch.get('add_rows', {}).items():
         tab, label = where.split('/', 1)
         t = next((t for t in spec['tabs'] if t['id'] == tab), None)
@@ -393,7 +415,7 @@ def main():
         print('patched', out)
     if a.js:
         src = open(a.js, encoding='utf-8').read()
-        src = patch_bindings_js(add_rows_js(src, patch), patch)
+        src = patch_bindings_js(add_rows_js(remove_rows_js(src, patch), patch), patch)
         src = presets_js(patch_js(src, patch), patch)
         if 'retab' in patch:
             src = retab_js(src, doc['spec'] if 'spec' in doc and 'tabs' in doc['spec'] else doc)

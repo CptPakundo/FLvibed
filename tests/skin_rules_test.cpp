@@ -63,6 +63,29 @@ void Test_skin_rules()
             CHECK(strcmp(CursorRows()[i].name, CursorRows()[j].name) != 0);
     }
     CHECK(fabsf(CursorSize(1920) / 1080 - 0.052f) < 0.0001f);
+    // the hover help's place: where the game put it when nothing stands there; else the nearest free place, inside the area
+    {
+        const TipRect area = {64, 40, 1216, 760}, want = {110, 0, 400, 110}; // the room bar's long hint at 1280x800, under the strip's card
+        TipRect out;
+        CHECK(TipPlace(want, area, nullptr, 0, 8, out) && out.x0 == 110 && out.y0 == 40 && out.y1 == 150);
+        const TipRect card = {0, 0, 350, 160};
+        CHECK(TipPlace(want, area, &card, 1, 8, out) && out.y0 == 168 && out.x0 == 110); // under the card: nearer than right of it
+        const TipRect two[2] = {{0, 0, 350, 160}, {80, 160, 500, 400}}; // pushed under the card onto a second block: past both
+        CHECK(TipPlace(want, area, two, 2, 8, out) && !TipOverlaps(out, two[0]) && !TipOverlaps(out, two[1]) && out.x0 >= area.x0 && out.x1 <= area.x1);
+        const TipRect all = {0, 0, 1280, 800}; // nowhere free: the wanted place inside the area
+        CHECK(!TipPlace(want, area, &all, 1, 8, out) && out.x0 == 110 && out.y0 == 40);
+        const TipRect lane = {0, 720, 1280, 800}, low = {600, 700, 700, 740};
+        CHECK(TipPlace(low, area, &lane, 1, 8, out) && out.y1 <= 712 && out.x0 == 600); // above the prompt lane
+    }
+    // a HUD 2 word's help (issue 71): the short tip only where it says more than the word
+    {
+        CHECK(SameWords(L"BAR", L"Bar") && SameWords(L"SHIP DEALER", L"Ship Dealer") && SameWords(L"SHIP DEALER", L"ShipDealer"));
+        CHECK(!SameWords(L"TRADER", L"Commodity Trader") && !SameWords(L"LOG", L"Neural Net Log (F5)") && !SameWords(L"BAR", L"") && SameWords(L"", L" "));
+        CHECK(WordHelpText(L"BAR", L"Bar", L"The Bar is the place ...") == L"The Bar is the place ...");
+        CHECK(WordHelpText(L"LOG", L"Neural Net Log (F5)", L"Mission objectives.") == L"Neural Net Log (F5)\nMission objectives.");
+        CHECK(WordHelpText(L"TRADER", L"Commodity Trader", L"") == L"Commodity Trader");
+        CHECK(WordHelpText(L"SHIP DEALER", L"Ship Dealer", L"").empty() && WordHelpText(L"NEWS", L"", L"").empty());
+    }
     // CONTINUE
     CHECK(LatestSave(nullptr, 0) == -1);
     SaveStamp s[3] = {{"a.fl", 10, false}, {"b.fl", 30, true}, {"c.fl", 20, false}};

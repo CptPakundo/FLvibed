@@ -30,7 +30,7 @@ release would hide exactly the state bugs a reload can cause.
 | HUD | `modules\hud\` | HUD 2, the Extended HUD 2 skin, shield and reticle cues | HUD 2 on keyboard and mouse |
 | Controller | `modules\controller\` | device, presets, aim, pad screens, prompt bar, on-screen keyboard, wheel, picker, groups, haptics | the full pad game on the classic HUD |
 | Subtitles | `modules\subtitles\` | dialogue, chat, speakers, the display, the shipped lines | subtitles on the classic HUD |
-| Movies | `modules\movies\` | fit to screen, intro override, skip | fitted movies |
+| Movies | `modules\movies\` | fit to screen, skip | fitted movies |
 | Autopilot | `modules\autopilot\` | the autopilot, situation assessment, goal queue, goal panel, bar button | the autopilot on keyboard and mouse |
 | NPC | `modules\npc\` | the stall recorder and watch | the recorder |
 | Display | `modules\display\` | borderless windowed, window fit, running out of focus | window mode without the pad |
@@ -55,7 +55,7 @@ the namespaces make such a call fail to link. Module to module runs through core
 | a place in the frame, a draw pass, init, shutdown, a debug verb, a game event | a slot in `core\game\modslots.h`, called at a fixed place, so an off module is an empty slot and the order cannot drift |
 | to read a module that may be off | a view in `core\ui\views.h`, with a helper that behaves as without that module when the view is null |
 | a host service | `core\game\hostcalls.h` |
-| settings | a registry over `core\settings.h`, shared through `core\settings_bus.*`; the options page reads every registry through the bus |
+| settings | a registry over `core\settings.h`, shared through `core\settings_bus.*`; the options page reads every registry through the bus. A changed default reaches files saved before it through the section's `settings_rev` and its `Carry` rows (`core\settings.h`) |
 | the screen layout of another part | `core\hud_bus.*`, a published read-only view; a missing publisher means stale, absent, classic behaviour |
 | held input | `core\game\flightio.*` over `core\host\input.*`: one slot per command, tagged with the owner that last claimed it (`core\game\input_rules.h` says who may); a release is for everyone, the frame claims again in the same pass |
 

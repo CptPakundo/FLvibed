@@ -40,8 +40,10 @@ int FindAt(const std::vector<Item>& items, float x, float y);
 const char* ControlName(uintptr_t ctl);
 uintptr_t FindControl(const char* name);
 
-// Ask Freelancer which control would be hovered with the cursor at screen pixel (x, y).
-uintptr_t HitTest(float x, float y);
+// Ask Freelancer which control would be hovered with the cursor at screen pixel (x, y). The game's test shows the hover
+// help of what it passes (ui.cpp QuietHelp): `quiet` takes back what this call showed; false leaves it, as the game's own
+// hover does (a test aid's stand-in for the hover a background game does not compute).
+uintptr_t HitTest(float x, float y, bool quiet = true);
 // The hover help (ToolTip, Rollover) off for this frame, the game's way: its timer starts over.
 void HideHoverHelp();
 

@@ -40,7 +40,7 @@ bool SpaceWindowOpen()
     return open;
 }
 
-Mode Detect(bool (*onlyHudOpen)(), bool (*spaceWindowOpen)())
+Mode Detect(bool (*flightViewOnly)(), bool (*spaceWindowOpen)())
 {
     if (fl::PlayerBase())
         return Mode::Docked;
@@ -50,8 +50,8 @@ Mode Detect(bool (*onlyHudOpen)(), bool (*spaceWindowOpen)())
         if (exe::CamCutscene.is(cam) || exe::CamDocking.is(cam))
             return Mode::Cutscene;
         // Freelancer switches to the arrow cursor while a NeuroNet window takes the mouse - and also while the cursor
-        // rests on the HUD, which is still flight.
-        if (_stricmp(fl::CursorName(), "arrow") == 0 && !(onlyHudOpen && onlyHudOpen()))
+        // rests on the HUD, or while a box over the flight stands (the cargo demand), which are still flight.
+        if (_stricmp(fl::CursorName(), "arrow") == 0 && !(flightViewOnly && flightViewOnly()))
             return Mode::SpaceUi;
         // (D-BASES) the NeuroNet windows hang under the HUD's own NeuroNet root: known by their root controls
         if (spaceWindowOpen && spaceWindowOpen())

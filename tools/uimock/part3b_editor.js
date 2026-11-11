@@ -228,7 +228,7 @@ async function initStore() {
 // ================================================================== toolbar
 $$('#itoolViews button').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; selected = null; render(); }));
 $('#backDoc').addEventListener('click', () => { view = VIEW_PARENT[view] || 'overview'; selected = null; render(); });
-try { const h = (location.hash || '').slice(1); if (isDocView(h) || VIEW_PARENT[h]) view = h; } catch (e) { }
+try { const h = (location.hash || '').slice(1); if (isDocView(h) || VIEW_PARENT[h]) view = h; else takeRowHash(); } catch (e) { }
 $$('.toolbar .dev').forEach(b => b.addEventListener('click', () => { devPicked = true; spec.device = b.dataset.dev; const gs = rowByKey('glyph_style'); if (gs && b.dataset.dev !== 'km') { const m = { xbox: 'XBOX', ps: 'PLAYSTATION', switch: 'NINTENDO', steam: 'STEAM' }; if (gs.r.value !== 'AUTOMATIC') gs.r.value = m[b.dataset.dev]; } touched(); render(); }));
 $('#roToggle').addEventListener('click', () => {
   if (!isEditor) return; const d = spec.device;

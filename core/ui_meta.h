@@ -266,11 +266,11 @@ inline constexpr Row kRows_subtitles_0[] = {
     {"chatter", "Subtitles", "chatter", Picker, "Radio chatter", kOpt_chatter, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Simple, Live, "enabled", false, nullptr, "Other pilots' talk outside the story: in the chat window, as subtitles, or off.", nullptr, nullptr, nullptr},
 };
 // SUBTITLES / TEXT
-inline constexpr const char* kOpt_font[] = {"GAME", "SEGOE UI"};
+inline constexpr const char* kOpt_font[] = {"GAME", "SEGOE UI", "HUD 2"};
 inline constexpr const char* kOpt_text_color[] = {"WHITE", "YELLOW"};
 inline constexpr Row kRows_subtitles_1[] = {
     {"mod_subtitles", "Modules", "subtitles", Toggle, "Subtitles module", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Advanced, Restart, nullptr, false, nullptr, "Dialogue subtitles. FLvibed needs this module or the Controller module: with both off it does not start at all, this page included, so one of the two stays on. Takes effect after the game restarts.", nullptr, nullptr, nullptr},
-    {"font", "Subtitles", "font", Picker, "Font", kOpt_font, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "The game's own fonts, or Segoe UI.", nullptr, nullptr, nullptr},
+    {"font", "Subtitles", "font", Picker, "Font", kOpt_font, 3, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "2", Player, Live, "enabled", false, nullptr, "HUD 2 = HUD 2's font everywhere: cutscenes, rooms, movies and flight; Game = the game's own fonts (HUD 2's in flight while HUD 2 shows); Segoe UI = Windows' font.", nullptr, nullptr, nullptr},
     {"text_color", "Subtitles", "text_color", Picker, "Text colour", kOpt_text_color, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "White or yellow text.", nullptr, nullptr, nullptr},
     {"shadow", "Subtitles", "shadow", Toggle, "Shadow", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "A text shadow for readability.", nullptr, nullptr, nullptr},
 };
@@ -289,7 +289,7 @@ inline constexpr Row kRows_subtitles_3[] = {
 inline constexpr const char* kOpt_chat_size[] = {"NORMAL", "LARGE"};
 inline constexpr Row kRows_subtitles_4[] = {
     {"story", "Subtitles", "story", Toggle, "Story", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Story cutscene lines.", nullptr, nullptr, nullptr},
-    {"comms", "Subtitles", "comms", Toggle, "Comms", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Mission comms.", nullptr, nullptr, nullptr},
+    {"comms", "Subtitles", "comms", Toggle, "Comms", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Mission comms. Off, with Dialogue also in the chat window on: mission comms in the chat only.", nullptr, nullptr, nullptr},
     {"bar", "Subtitles", "bar", Toggle, "Bar", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Bar and base conversations.", nullptr, nullptr, nullptr},
     {"neural_net", "Subtitles", "neural_net", Toggle, "Neural Net", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, "enabled", false, nullptr, "Neural Net lines.", nullptr, nullptr, nullptr},
     {"chat_all_dialogue", "Subtitles", "chat_all_dialogue", Toggle, "Dialogue also in the chat window", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Player, Live, "enabled", false, nullptr, "Also copy every story, mission and Neural Net line into the chat window, so its log holds every spoken line - a rolling history to scroll back through. The subtitles stay as they are.", nullptr, nullptr, nullptr},
@@ -372,11 +372,9 @@ inline constexpr Section kSections_autopilot[] = {
 
 // MORE / (no header)
 inline constexpr const char* kOpt_movie_skip[] = {"PLAY", "SKIP"};
-inline constexpr const char* kOpt_movie_intro[] = {"AS INSTALLED", "HD", "ORIGINAL 2003", "FULL (BONUS DVD)"};
 inline constexpr Row kRows_more_0[] = {
-    {"mod_movies", "Modules", "movies", Toggle, "Movie handling", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Simple, Restart, nullptr, false, nullptr, "Movies fitted to the screen, the choice of intro, skipping the startup movies. Takes effect at the next start.", "movies", "Movie handling is disabled, so this has no effect. Your setting is kept.", nullptr},
+    {"mod_movies", "Modules", "movies", Toggle, "Movie handling", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Simple, Restart, nullptr, false, nullptr, "Movies fitted to the screen, skipping the startup movies. Takes effect at the next start.", "movies", "Movie handling is disabled, so this has no effect. Your setting is kept.", nullptr},
     {"movie_skip", "Subtitles", "movie_skip", Picker, "Startup movies", kOpt_movie_skip, 2, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Simple, Live, nullptr, false, nullptr, "Skip goes straight to the main menu.", nullptr, nullptr, nullptr},
-    {"movie_intro", "Subtitles", "movie_intro", Picker, "Intro", kOpt_movie_intro, 4, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "0", Simple, Live, nullptr, false, nullptr, "Which intro plays. Only the versions this install has are offered.", nullptr, nullptr, nullptr},
     {"movie_fit", "Subtitles", "movie_fit", Toggle, "Fit movies to the screen", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", "1", Player, Live, nullptr, false, nullptr, "Movies keep their aspect ratio and the encoded black bars are zoomed out of view.", nullptr, nullptr, nullptr},
 };
 // MORE / (no header)
@@ -413,7 +411,7 @@ inline constexpr Row kRows_more_5[] = {
     {"about", "Controller", nullptr, Button, "About", nullptr, 0, nullptr, 0.0f, 0.0f, 0.0f, 1.0f, "", nullptr, Simple, Live, nullptr, false, "VERSION AND CREDITS", "FLvibed {version}, its credits and licences, and where the settings files are.", nullptr, nullptr, nullptr},
 };
 inline constexpr Section kSections_more[] = {
-    {"", kRows_more_0, 4, "mod_movies", true},
+    {"", kRows_more_0, 3, "mod_movies", true},
     {"", kRows_more_1, 3, "mod_display", true},
     {"", kRows_more_2, 5, "mod_speedrun", true},
     {"", kRows_more_3, 1, "mod_npc", true},
@@ -628,7 +626,7 @@ inline constexpr Bind kBind_ACE[] = {
 inline constexpr Bind kBind_ASSISTED[] = {
     {"A", "context", "none", "none"},
     {"B", "handback", "none", "none"},
-    {"X", "goal_panel", "none", "none"},
+    {"X", "tractor", "none", "none"},
     {"Y", "cruise", "action_wheel", "none"},
     {"LB", "none", "none", "none"},
     {"RB", "missile", "torpedo", "none"},
@@ -676,7 +674,7 @@ inline constexpr Bind kBind_common_dealers[] = {
 inline constexpr Bind kBind_common_flight_ap[] = {
     {"A", "accept", "none", "none"},
     {"B", "handback", "none", "none"},
-    {"X", "goal_panel", "turret", "none"},
+    {"X", "tractor", "turret", "none"},
     {"Y", "cruise", "none", "none"},
     {"LB", "target_picker", "action_wheel", "none"},
     {"RB", "missile", "torpedo", "none"},

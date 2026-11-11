@@ -1,5 +1,5 @@
 // FLvibed - the movie event: Movie.dll's imports of Freelancer.exe and its CoCreateInstance, once, for the Subtitles and Movies modules
-// (router::Client movie, moviePoll, moviePath, in the order of router.cpp's kMovieOrder). Installed by the first of them to start.
+// (router::Client movie, moviePoll, in the order of router.cpp's kMovieOrder). Installed by the first of them to start.
 #pragma once
 #include "common.h"
 

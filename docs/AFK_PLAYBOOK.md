@@ -6,8 +6,12 @@ compaction audit) are the afk-run skill's; the rules behind them are the private
 `docs\TESTING.md`. This page is the order of work and the lessons. Read it at the start and after every compaction.
 
 ## 1. The session
-1. **One session drives the whole run:** started by the owner on the Desktop app, **Opus 5.5, effort High, Remote
-   Control on** (the owner, 31 Oct 2026, non-negotiable: AFK means away from the desktop). The app's
+1. **One session drives the whole run:** started by the owner on the Desktop app, on **the model and effort the owner
+   picks** - or, when they ask for a run without naming one, the setup Claude recommends for the run's plan before it
+   starts (the owner, 11 Nov 2026; the routing table's "afk" row: Fable 5.2 high for design- and
+   orchestration-heavy plans, Opus 5.5 high for leg iteration, tests, builds and chores; the afk-run skill "The driver's
+   model and effort") - with **Remote Control on** (the owner, 31 Oct 2026, non-negotiable: AFK means away from the
+   desktop). The app's
    "Connect new sessions to Remote Control" covers a session the owner starts, not a scheduled run, and a scheduled run
    cannot switch it on itself (measured 31 Oct) - so **no rollover**: `..\.claude\afk.norollover` stays,
    `afk_handover.ps1 -Request` refuses, the successor task stays paused. The session compacts in place; after each
@@ -47,7 +51,8 @@ compaction audit) are the afk-run skill's; the rules behind them are the private
 11. **Harness failures are harness bugs** (stuck, popup, crash, a loop, a missed event): classify, fix at the source,
     never count as a result (31 Oct: the AUTOPILOT LOOP stop in Leg.ps1).
 12. **Bundle tests:** build several changes, then one probe / set that covers them by reach; the gate (`flgate`) only
-    at the end of a leg's iteration for the switches being kept.
+    when the owner names it (11 Nov 2026): at the end of a leg's iteration write "gate due: <the switches being kept>"
+    into the handoff and go on (`docs\TESTING.md` test loop 6).
 13. **The review** (`tools\drift_check.ps1 -Leg <target>`) every 2 h or 3 judged sets; its verdicts are binding:
     UNRELIABLE = fail states first, NO PROGRESS = change the approach or the target, never a fourth variation.
 13a. **Escalate a section that does not improve** (the owner, 31 Oct 2026 05:03): 1. two or three agents analyse it, one
@@ -68,8 +73,12 @@ compaction audit) are the afk-run skill's; the rules behind them are the private
 15. A package ends with the docs-auditor, its retro row in `docs\test_budget.tsv` and **one repeat turned into a check**
     (a guard, a criterion, a skill line). The development itself must get measurably better (memory
     work_improves_over_time; `node tools\claude\health\health.js --md` at each review).
-16. Name work in plain words, not only codenames. Ask nothing while the owner is away; a push notification only for
-    what truly needs the owner.
+16. Name work in plain words, not only codenames. Ask nothing while the owner is away. What needs the
+    owner's word (a push, tag, release or GitHub post; the leg gate or the full sweep; deleting what this run did not
+    make; a driver or system-wide install; a game in front or with sound) is neither done nor asked about: it goes
+    under "WAITS ON THE OWNER" in the RESUME block with what is prepared, and the run goes on. A push notification only
+    for what stops the run itself. If everything planned waits on the owner, find more work that is not owner-only
+    (the owner, 11 Nov 2026; where to look: the afk-run skill "Never end it yourself").
 
 ## 5. What to work on (the owner's order of 31 Oct ~00:40, still binding)
 1. **M13 to par** by mimicking the runners - bold changes, no constant small-change testing (then every mission).

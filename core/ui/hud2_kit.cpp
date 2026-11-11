@@ -919,6 +919,9 @@ void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
     // pressed arm the atlas's light; sizes, positions and the rest stay HUD 2's
     const bool coloured = glyphs::LookFor(true) == glyphs::Look::Coloured;
     const u32 mark = glyphs::FaceColours(fam) && glyphs::FaceRgb(fam, id) ? Argb(glyphs::FaceRgb(fam, id), a) : argb;
+    // the face button's ring shares its mark's colour where its family's buttons have one (glyphs::OutlineRgb), so it
+    // dims with the mark; the hold ring outside stays in the caller's colour
+    const u32 ring = glyphs::FaceColours(fam) && glyphs::OutlineRgb(fam, id) ? mark : argb;
     const u32 arm = coloured ? Argb(glyphs::kPressedArm, a) : argb;
     auto letter = [&](const wchar_t* s, float k) { Mark(cx, cy, s, h * k, argb); };
     if (const wchar_t* pill = PillLabel(id))
@@ -946,7 +949,7 @@ void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
     else
     {
         Disc(cx, cy, r, body);
-        Ring(cx, cy, r - lw * 0.5f, lw, argb);
+        Ring(cx, cy, r - lw * 0.5f, lw, ring);
         switch (id)
         {
         case glyphs::A:

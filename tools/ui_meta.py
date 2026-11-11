@@ -81,7 +81,6 @@ ALIASES = {
     # MORE: the movies' rows stay in [Subtitles]
     "movie_fit": dict(section="Subtitles"),
     "movie_skip": dict(section="Subtitles"),
-    "movie_intro": dict(section="Subtitles"),
 }
 
 # The spec's preset groups: the row that names each group.

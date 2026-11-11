@@ -1,9 +1,13 @@
 // Game event ring and the hooks on Content.dll that record mission, objective, comm and dock state for every module.
 #include "all.h"
 
+#include "hud_bus.h"
+
 #include <cstdarg>
 #include <deque>
 #include <vector>
+
+extern "C" const HudBus* flv_hud_bus();
 
 namespace events
 {
@@ -1099,6 +1103,23 @@ static bool __fastcall ClientMissionMsgHook(void* self, void* edx, u32 client, c
     return g_origClientMissionMsg(self, edx, client, packet);
 }
 
+// Slot 64 ITEMTRACTORED (exe::ClientItemTractored): a ship's tractor took loot into its hold - the server's word, after
+// the item is in, in single player and multiplayer alike; nothing else sends it (a purchase, a mount, a mission's cargo,
+// a load do not). The packet: +0 the loot's id, +4 the ship's, +0xA the units taken (u16); docs\FREELANCER_RE.md "Loot
+// into the hold". Recorded on the HUD bus (version 7) for HUD 2's loot notice, which keeps the player's own.
+typedef bool(__fastcall* ClientTractoredFn)(void* self, void* edx, u32 client, const void* packet);
+static ClientTractoredFn g_origClientTractored = nullptr;
+static bool __fastcall ClientTractoredHook(void* self, void* edx, u32 client, const void* packet)
+{
+    if (packet)
+    {
+        const u32 loot = Word(packet, 0), ship = Word(packet, 4), units = Word(packet, 8) >> 16;
+        Push("loot-tractored loot=%u ship=%u units=%u", loot, ship, units);
+        flv_hud_bus()->NoteLoot(loot, ship, units);
+    }
+    return g_origClientTractored(self, edx, client, packet);
+}
+
 static bool HookExeClient()
 {
     static bool tried = false;
@@ -1137,6 +1158,11 @@ static bool HookExeClient()
         reinterpret_cast<ClientObjectivesFn>(hk::PatchVtable(vt, 72, reinterpret_cast<void*>(ClientObjectivesHook)));
     g_origClientMissionMsg =
         reinterpret_cast<ClientMissionMsgFn>(hk::PatchVtable(vt, 70, reinterpret_cast<void*>(ClientMissionMsgHook)));
+    // (the slot's handler by its signature: another build's or another mod's pointer there is left alone)
+    if (exe::ClientItemTractored.is(reinterpret_cast<uintptr_t>(vt[64])))
+        g_origClientTractored =
+            reinterpret_cast<ClientTractoredFn>(hk::PatchVtable(vt, 64, reinterpret_cast<void*>(ClientTractoredHook)));
+    Log("events: tractored-loot hook %s", g_origClientTractored ? "installed" : "off (slot 64 is not exe::ClientItemTractored)");
     g_exeClient = true;
     Log("events: Freelancer.exe's Client object hooked (objectives, marks, replies: single player and multiplayer)");
     return true;

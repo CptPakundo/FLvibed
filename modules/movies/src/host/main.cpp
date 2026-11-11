@@ -1,4 +1,4 @@
-// The Movies module's host part: a client of the router's movie event, the intro override, and the module's logic. Core headers and `Log`
+// The Movies module's host part: a client of the router's movie event, and the module's logic. Core headers and `Log`
 // come from build.cmd's :wrappart.
 #include "../api.h"
 #include "loader.h"
@@ -10,14 +10,11 @@ static const MoviesImplApi* g_impl = nullptr;
 static bool g_opened = false;
 static bool g_faulted = false;
 
-static char g_introOverride[MAX_PATH] = {}; // the movie_intro row: the startup movie whose file name contains "intro" plays this
-
 static void HostLogWrite(const char* line) { LogTo(g_logChannel, line); }
 
 static void Fault(const char* where, DWORD code)
 {
     g_faulted = true;
-    g_introOverride[0] = 0;
     Log("FATAL: exception 0x%08X in the movies' %s; they play as the game plays them until reload", code, where);
 }
 
@@ -78,40 +75,6 @@ static void GuardedMovie(int event, void* hwnd, const char* path)
     }
 }
 
-static void HostSetIntroOverride(const char* path)
-{
-    if (path && *path)
-        strncpy_s(g_introOverride, path, _TRUNCATE);
-    else
-        g_introOverride[0] = 0;
-    Log("intro override: %s", g_introOverride[0] ? g_introOverride : "as installed");
-}
-
-static bool IsIntroMovie(const char* path)
-{
-    if (!path)
-        return false;
-    const char* name = strrchr(path, '\\');
-    name = name ? name + 1 : path;
-    for (const char* p = name; *p; ++p)
-        if (_strnicmp(p, "intro", 5) == 0)
-            return true;
-    return false;
-}
-
-static const char* MoviePath(const char* path)
-{
-    if (!g_introOverride[0] || !IsIntroMovie(path))
-        return path;
-    if (GetFileAttributesA(g_introOverride) == INVALID_FILE_ATTRIBUTES)
-    {
-        Log("intro override %s does not exist: %s plays as installed", g_introOverride, path);
-        return path;
-    }
-    Log("PlayMovie(%s) -> the intro override %s", path, g_introOverride);
-    return g_introOverride;
-}
-
 void Start()
 {
     const int home = router::LogChannel(router::kSubtitles) >= 0 ? router::kSubtitles : router::kController;
@@ -123,13 +86,11 @@ void Start()
     g_host.LogWrite = HostLogWrite;
     g_host.GetSettingsBus = flv_settings_bus;
     g_host.GetMovieGraph = moviehooks::Graph;
-    g_host.SetIntroOverride = HostSetIntroOverride;
     g_host.SkipMovie = moviehooks::Skip;
     static const LogicClient client = {StopLogic, StartLogic, HostLogWrite};
     flv_logic_loader()->Register(kLogicMovies, &client);
     static router::Client events = {};
     events.movie = GuardedMovie;
-    events.moviePath = MoviePath;
     router::Register(router::kMovies, &events);
     moviehooks::Install(); // (the subtitles' part installed them already when it is on)
 }

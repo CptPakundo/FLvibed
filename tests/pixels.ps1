@@ -50,7 +50,12 @@ try {
         $null = Wait-FLRoomReady
         $r = Send-FL 'goto IDS_HOTSPOT_EQUIPMENT' # the room's sub-button: the dealer's window
         "  dealer: $r"
-        $null = Wait-FLUntil { if ((Send-FL 'uiitems') -match '(?m)^\s*ItemButton1\s') { 1 } } 'the dealer window' 15
+        # (the equipment dealer is a HUD 2 page since 0.4.5: its own state answers; the game's ItemButton1 where the build or the classic HUD shows the game's window)
+        $null = Wait-FLUntil {
+            $b = Send-FL 'basepage state'
+            if ($b -match 'kind=([1-9])' -and $b -match 'theirs=[1-9]') { 1 }
+            elseif ((Send-FL 'uiitems') -match '(?m)^\s*ItemButton1\s') { 1 }
+        } 'the dealer (page or window)' 20
         $null = Wait-FLFramesPassed 120
         Set-FLPad -RY 0.6; $null = Wait-FLFramesPassed 30; Clear-FLPad; $null = Wait-FLFramesPassed 30
         Shot "${tag}_dealer"

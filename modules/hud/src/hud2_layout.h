@@ -102,6 +102,7 @@ struct Measures
 {
     bool ctxMeasured = false; // false = the player types: the line measures 0 and steps aside (ContextWidths false)
     int nCtx = 0;             // the model's context prompts (0..3 are placed)
+    bool answers = false;     // they are a box's answers (Frame::box): both stand, a preset's pill cap does not cut them
     float base[3] = {}, glyph[3] = {}, label[3] = {}; // each prompt's width without a HOLD word, its glyph's, its label's
     float labelMin[3] = {}; // the narrowest the label reads whole in: two lines at the floor (promptfit LabelMinWidth;
                             // 0 = not measured: two floor-sized ems, the old marquee's squeeze)
@@ -128,6 +129,7 @@ struct Measures
     // the loadout base panel (pixels, eased the same way; hud2_parts.cpp *ContentHeight), anchored to the bottom margin;
     // std_ov::kShipH / the preset's loadout h their maxima, kShipMinH / kLoadMinH their floors. 0 = unmeasured.
     float shipH = 0, loadH = 0;
+    float noticeW = 0, noticeH = 0; // the flight notice's card (pixels; hud2_parts.cpp DrawNotice measures), 0 = none shows
 };
 // The subtitles' dialogue panel as the HUD bus last published it (fractions of the screen; hud2.cpp reads the bus).
 struct Dialogue
@@ -135,6 +137,7 @@ struct Dialogue
     bool fresh = false; // a fresh, non-empty record (the subtitles' frame changed within the last 2 publishes)
     bool comm = false;  // the comm surface shows (a fresh panel in the upper 30 %, or `hud2 sim <name>+comm`)
     float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    float cx0 = 0, cy0 = 0, cx1 = 0, cy1 = 0; // the comm feed's cards as drawn in HUD 2's chat band (fresh; cx1 <= cx0: none)
 };
 struct Frame
 {
@@ -153,16 +156,94 @@ struct Frame
     // the nav's drawn bottom last frame, eased (0 = none yet): Focus's nav grows with its chip lines; Standard's box is as
     // tall as it up to its old height (0.2.1 round 4)
     float navBottom = 0;
+    // a box over the flight that the player answers (the cargo demand's plate: modules\hud\src\skindialog.h FlightBox;
+    // pixels, x1 <= x0 none): a reserved area while it stands
+    Rect box;
     // (Focus; Standard reads none of these)
     float form = -1;     // the card's fight form 0..1 as Reveal eased it (-1 = the context's: combat 1, else 0)
     u32 held = 0;        // the elements the reveal holds back this frame (not in the boxed area)
+    // (every preset) the elements still drawn this frame, their fades not ended: one held back or suppressed keeps its area
+    // (not quiet) until it has faded out - the notice stood over a ship panel still fading (0.4.6). 0 = none known: what
+    // is held back or suppressed is quiet at once
+    u32 drawn = 0;
     Measures m;
     Dialogue dlg;
+};
+
+// ---- the reserved areas (GitHub issues 77 and 78): what stands on the flight HUD this frame, one rectangle per area, from
+// the solved layout as it is placed (ComputeWith). Every placer that keeps something off HUD 2's parts asks this one list:
+// the context lanes (FitLanes), the alert cards beside the ring and their dialogue fallback, the targeting display's name
+// block and the other ships' marks (hud2_target.cpp); the lint fails a part drawn over another part's area (hud2_lint.h
+// part.over). Before it each placer copied the boxes it knew of by hand, and the lanes above the panels missed the
+// consumables' cross (issue 78).
+enum Area : int
+{
+    ANav,
+    ACard,     // the target card's plate (a target shows)
+    AList,     // the threat / contact list under the card (it shows)
+    AShip,     // the ship panel
+    ALoadout,  // the loadout's base panel (the weapons)
+    ACons,     // the consumables' cross stacked on it
+    ACtx0,     // each context prompt's plate (its wrapped label and a HOLD word over it included)
+    ACtx1,
+    ACtx2,
+    AAlert,    // the alert card
+    AHeld0,    // the cards a newer alert pushed down
+    AHeld1,
+    ADialogue, // the subtitles' dialogue panel (not HUD 2's: its keep-off)
+    AChat,     // the subtitles' comm feed in HUD 2's chat band, its cards as drawn (not HUD 2's: it keeps its place, the
+               // prompt lanes and the notice keep off it; the alert cards do not - the feed narrows for them, one owner)
+    ABox,      // a box over the flight that the player answers (the cargo demand: Frame::box), as drawn over the HUD; its
+               // answers stand in the prompt lanes. Not HUD 2's: everything that can move keeps off it; the centre stack
+               // stands under it (the box keeps the game's place, its buttons take the clicks there)
+    ANotice,   // the flight notice (PlaceNotice: placed last, so it keeps off everything above and nothing moves for it)
+    kAreaCount
+};
+// The HUD part that draws an area (the lint's component names: hud2_lint.h PartOf); "" = none of HUD 2's (the subtitles'
+// panel: a prompt on it is the lint's prompt.subtitles); "chat" = the subtitles' comm feed, which no HUD 2 part may cover;
+// "dialog" = a box over the flight (hud2_lint.h part.over: the centre stack under it apart).
+inline const char* AreaPart(int a)
+{
+    static const char* const kParts[kAreaCount] = {"nav",     "card",    "card",  "ship",  "loadout", "loadout", "context",
+                                                   "context", "context", "alert", "alert", "alert",   "",        "chat",
+                                                   "dialog",  "notice"};
+    return a >= 0 && a < kAreaCount ? kParts[a] : "";
+}
+inline const char* AreaName(int a)
+{
+    static const char* const kNames[kAreaCount] = {"nav",  "card",  "list",  "ship",  "loadout", "cons",      "ctx0",
+                                                   "ctx1", "ctx2",  "alert", "held0", "held1",   "subtitles", "chat",
+                                                   "box",  "notice"};
+    return a >= 0 && a < kAreaCount ? kNames[a] : "?";
+}
+constexpr u32 kAreasAll = (1u << kAreaCount) - 1;
+constexpr u32 kAreasContext = (1u << ACtx0) | (1u << ACtx1) | (1u << ACtx2);
+constexpr u32 kAreasAlerts = (1u << AAlert) | (1u << AHeld0) | (1u << AHeld1);
+constexpr u32 kAreasBottom = (1u << AShip) | (1u << ALoadout) | (1u << ACons); // the panels the context lanes hug
+constexpr u32 kAreasSubtitles = (1u << ADialogue) | (1u << AChat); // the subtitles'
+constexpr u32 kAreasCloseRows = kAreasSubtitles | (1u << ABox); // not HUD 2's, they keep their place: a lane row they meet closes
+struct Reserved
+{
+    Rect at[kAreaCount]; // x1 <= x0: not placed this frame
+    u32 quiet = 0;       // placed but not drawn: held back (Focus's reveal, Standard's calm ship panel) or suppressed
+                         // (the letterbox). The placers keep off them as before; the lint skips them
+    bool Placed(int a) const { return at[a].x1 > at[a].x0; }
+    // The first placed area of `mask` that `q` meets with `clear` between them, -1 none.
+    int Meets(const Rect& q, u32 mask, float clear = 0) const
+    {
+        for (int a = 0; a < kAreaCount; ++a)
+            if ((mask & (1u << a)) && Placed(a) && q.x0 - clear < at[a].x1 && q.x1 + clear > at[a].x0 &&
+                q.y0 - clear < at[a].y1 && q.y1 + clear > at[a].y0)
+                return a;
+        return -1;
+    }
+    bool Free(const Rect& q, u32 mask, float clear = 0) const { return Meets(q, mask, clear) < 0; }
 };
 
 // ---- the output (pixels of the back buffer)
 struct Out
 {
+    Reserved res; // the reserved areas (above): every placer reads them
     float W = 0, H = 0, k = 1, aspect = 1;
     float mx = 0, my = 0, cx = 0, cy = 0, R = 0;
     Rect nav;
@@ -197,9 +278,12 @@ struct Out
     float form = 0;          // the card's fight form drawn (0 calm .. 1 the combat form; its rows fade in from 0.8)
     float bandY = 0;         // the band's centre line (0 = none): inside the arcs' circle since 5.23
     float holdY = 0;         // the hold strip's centre line (0 = none)
+    float shipTop = 0;       // the escort rows' drawn top (0 = none): the bottom-left block's reserved area reaches it
     // the lower centre's clear zone (UI_HUD2.md 5.23): its top = the ring's lowest drawn edge
     // (RingBottom) + the centre stack's 0.01 H; x kBottomBandX0W .. X1W, down to the screen's bottom
     float clearY0 = 0;
+    Rect notice;              // the flight notice's card (PlaceNotice)
+    bool noticeShow = false;  // ... it has a place this frame (false: none free, or no notice)
 };
 
 // ---- Standard's overrides: today's literals the spec cannot express without moving Standard (the owner's rule:
@@ -450,6 +534,10 @@ inline void FocusCorners(const Frame& f, const hp::Preset& p, const Rules& rules
     L.ship.x0 = L.mx, L.ship.x1 = L.mx + focus_ns::kShipW * H * k, L.ship.y1 = H - myBottom,
     L.ship.y0 = L.ship.y1 - focus_ns::kShipH * H * k;
     L.holdY = L.ship.y1 - (1.0f - hp::kMarginBottom - hp::Num(p, "calm", "hold", "y", 0.93f)) * H * k;
+    // the escort rows as drawn (hud2_parts.cpp DrawShipStrip: three at the spec's row_h up from the hold line, their text
+    // 0.026 H x k): the first row's top stood 0.017 H above kShipH's block, and the flight notice placed above that block
+    // touched it in a fight (0.4.6's final check, 1280x800)
+    L.shipTop = L.holdY - 2 * hp::Num(p, "combat", "ship", "row_h", 0.042f) * H * k - 0.013f * H * k;
     // the fire strip: its base the weapons only, the cross stacked on its right end (
     // the spec's w / w_kbm 0.36 / 0.40 held the cross inside: focus_ns::kStripW), the cross as tall as the strip
     const float loH = hp::Num(p, "combat", "loadout", "h", 0.14f);
@@ -462,6 +550,107 @@ inline void FocusCorners(const Frame& f, const hp::Preset& p, const Rules& rules
     // the under-arc band
     L.bandY = L.cy + hp::Num(p, "reticle", "reticle", "band_dy", 0.14f) * H * k;
     L.unplated = rules.unplated;
+}
+
+// ---- the reserved areas filled as the layout is placed (Reserved, above). The corners and the subtitles' panel first,
+// as the placers read them before: the card while a target shows, the list while it shows, the panels always (a held or
+// suppressed one is marked quiet at the end: ReserveQuiet).
+inline void ReserveCorners(const Frame& f, Out& L)
+{
+    Reserved& r = L.res;
+    r = Reserved();
+    r.at[ANav] = L.nav;
+    if (f.target)
+        r.at[ACard] = L.card;
+    if (f.list)
+        r.at[AList] = {L.card.x0, L.thrY0, L.card.x1, L.thrY1};
+    r.at[AShip] = L.ship, r.at[ALoadout] = L.loadout, r.at[ACons] = L.cons;
+    if (L.shipTop > 0) // (Focus: the area holds the escort rows whole)
+        r.at[AShip].y0 = std::min(r.at[AShip].y0, L.shipTop);
+    if (f.dlg.fresh && f.dlg.x1 > f.dlg.x0)
+        r.at[ADialogue] = {f.dlg.x0 * f.W, f.dlg.y0 * f.H, f.dlg.x1 * f.W, f.dlg.y1 * f.H};
+    if (f.dlg.cx1 > f.dlg.cx0 && f.dlg.cy1 > f.dlg.cy0)
+        r.at[AChat] = {f.dlg.cx0 * f.W, f.dlg.cy0 * f.H, f.dlg.cx1 * f.W, f.dlg.cy1 * f.H};
+    if (f.box.x1 > f.box.x0 && f.box.y1 > f.box.y0)
+        r.at[ABox] = f.box;
+}
+// The context prompts' plates (DrawContext: the content +- 0.012 H x k, +- 0.026 H x k about the line; a wrapped label's
+// plate ctxTall taller; a HOLD word over it rises above) and the alert cards, once both are placed.
+inline void ReservePromptsAndAlerts(const Frame& f, float ctxWord, Out& L)
+{
+    Reserved& r = L.res;
+    const float H = L.H, k = L.k, pad = 0.012f * H * k, half = 0.026f * H * k;
+    for (int i = 0; i < 3; ++i)
+    {
+        r.at[ACtx0 + i] = Rect();
+        if (i >= L.nCtx)
+            continue;
+        const float tall = L.ctxWrap[i] ? L.ctxTall : 0.0f;
+        const float top = promptfit::Raised(L.ctxPlan.at[i]) ? L.ctxPY[i] - half - tall - 0.001f * H - ctxWord
+                                                              : L.ctxPY[i] - half - tall;
+        r.at[ACtx0 + i] = {L.ctxX[i] - pad, top, L.ctxX[i] + L.ctxW[i] + pad, L.ctxPY[i] + half};
+    }
+    r.at[AAlert] = f.alert && L.alertX1 > L.alertX0 ? Rect{L.alertX0, L.alertY, L.alertX1, L.alertY1} : Rect();
+    for (int i = 0; i < 2; ++i)
+        r.at[AHeld0 + i] = f.m.heldW[i] > 0 && L.heldShow[i]
+                               ? Rect{L.heldX[i], L.heldY[i], L.heldX[i] + f.m.heldW[i], L.heldY[i] + kAlertStackH * H * k}
+                               : Rect();
+}
+// The areas of the parts that do not draw this frame (`off`: the elements held back or suppressed): quiet.
+inline void ReserveQuiet(u32 off, Out& L)
+{
+    u32 q = 0;
+    const struct
+    {
+        int elem;
+        u32 areas;
+    } kMap[] = {{Nav, 1u << ANav},         {Card, 1u << ACard},     {List, 1u << AList},
+                {Ship, 1u << AShip},       {Loadout, (1u << ALoadout) | (1u << ACons)},
+                {Context, kAreasContext},  {Alert, kAreasAlerts}};
+    for (const auto& e : kMap)
+        if (off & Bit(e.elem))
+            q |= e.areas;
+    L.res.quiet = q;
+}
+
+// The context lanes against what stands (issue 78): a bottom panel that a lane's rows meet moves the lane's anchored end
+// past it with the lanes' clearance (they hug the panels: ContextLanes' 0.012 gap + 0.012 pad) - the lanes above the
+// panels (LanesAbove) ran from the screen's margin across the consumables' cross; the subtitles' panel, their comm
+// feed's cards or a box over the flight (kAreasCloseRows: they keep their place) over a row close that row and the rows
+// above it in its lane, whose prompts take the other lane (the rule
+// the left lane's upper row had: TURRET touched the panel at 1280x800; the feed's card covered TRACTOR ALL at 1280x800,
+// 0.4.6). Beside the panels (ContextLanes) no panel meets a lane, so only the subtitles' rule acts there, as before.
+inline void FitLanes(promptfit::LaneGeom& g, const Reserved& res, float H, float k)
+{
+    const float half = 0.026f * H * k + 0.006f * H; // a row's plate and its air
+    const float clear = 0.012f * H * k + 0.012f * H * k;
+    for (int row = 0; row < g.rows; ++row)
+    {
+        const float y = g.y0 - row * g.pitch, y0 = y - half, y1 = y + half;
+        for (int a = 0; a < kAreaCount; ++a)
+        {
+            if (!res.Placed(a) || !((kAreasBottom | kAreasCloseRows) & (1u << a)))
+                continue;
+            const Rect& p = res.at[a];
+            if (p.y0 >= y1 || p.y1 <= y0)
+                continue;
+            const bool left = p.x0 < g.lx1 && p.x1 > g.lx0, right = p.x0 < g.rx1 && p.x1 > g.rx0;
+            if (kAreasCloseRows & (1u << a))
+            {
+                if (left)
+                    g.leftRows = std::min(g.leftRows, row);
+                if (right)
+                    g.rightRows = std::min(g.rightRows, row);
+            }
+            else
+            {
+                if (left)
+                    g.lx0 = std::max(g.lx0, p.x1 + clear);
+                if (right)
+                    g.rx1 = std::min(g.rx1, p.x0 - clear);
+            }
+        }
+    }
 }
 
 // ---- the context prompts (decision 4; UI_HUD2.md 5.20): "tight to the bottom-left and
@@ -482,13 +671,7 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
         L.ctxW[i] = L.ctxX[i] = L.ctxPY[i] = 0, L.ctxSide[i] = 0, L.ctxWrap[i] = false;
     promptfit::LaneGeom g =
         promptfit::ContextLanes(W, H, k, L.ship.x1, L.loadout.x0, lineY, kBottomBandX0W, kBottomBandX1W);
-    // the subtitles' panel over the left lane's upper row closes it: a prompt there takes the other lane (TURRET touched the panel at 1280x800)
-    if (f.dlg.fresh && f.dlg.x1 > f.dlg.x0)
-    {
-        const float rowY = g.y0 - g.pitch, half = 0.026f * H * k + 0.006f * H;
-        if (f.dlg.x1 * W > g.lx0 && f.dlg.y0 * H < rowY + half && f.dlg.y1 * H > rowY - half)
-            g.leftRows = 1;
-    }
+    FitLanes(g, L.res, H, k); // (the subtitles' panel over a row: its prompts take the other lane)
     L.ctxTall = g.tall;
     const float floorPx = textfit::MinSize(H); // (the labels' floor)
     // the narrowest a prompt is squeezed to: its label whole on two lines at the floor (0.2.1, the owner: prompts never
@@ -517,12 +700,14 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
     };
     place(g);
     // both lanes closed: the lanes above the panels (promptfit.h LanesAbove) - the old centred line above the panels
-    // crossed the lower centre (5.23); where even they have no room, no prompt (never one in the lower centre)
+    // crossed the lower centre (5.23) - fitted to what stands there (the consumables' cross over the right lane's end,
+    // the subtitles' panel: FitLanes, issue 78); where even they have no room, no prompt (never one in the lower centre)
     if (c.none)
     {
         L.ctxFallback = true;
-        const promptfit::LaneGeom up = promptfit::LanesAbove(W, H, k, L.mx, std::min(L.ship.y0, L.loadout.y0),
-                                                             kBottomBandX0W, kBottomBandX1W);
+        promptfit::LaneGeom up = promptfit::LanesAbove(W, H, k, L.mx, std::min(L.ship.y0, L.loadout.y0),
+                                                       kBottomBandX0W, kBottomBandX1W);
+        FitLanes(up, L.res, H, k);
         L.ctxY = up.y0;
         place(up);
     }
@@ -540,6 +725,65 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
                                           ? L.ctxPY[i] - 0.026f * H * k - tall - 0.001f * H - f.m.ctxWord
                                           : L.ctxPY[i] - 0.03f * H - tall);
     }
+}
+
+// ---- the flight notice (hud2_notice.h; GitHub issues 70 and 69: "the lower-left corner"): placed after everything else,
+// so it keeps off every part that draws (the reserved areas but the quiet ones: a panel held back is not on the screen -
+// should it wake, the next frame's place moves the notice), the subtitles' panel, the preset's clear fields
+// (the lint's CentreToCard zones, S1) and the lower centre. The places it tries, the first free one wins: the bottom-left
+// corner (where the ship panel stands when it shows); above that panel; beside it in the left prompt lane; then up the
+// left column a step at a time to the nav. None free: it waits unplaced (its time runs). Registers its own area (ANotice).
+constexpr float kNoticeGap = 0.012f; // from what it stands beside, H x k (the lanes' and the alert cards' clearance)
+inline void PlaceNotice(const Frame& f, const hp::Preset& p, Out& L)
+{
+    L.notice = Rect(), L.noticeShow = false;
+    L.res.at[ANotice] = Rect();
+    const float W = L.W, H = L.H, k = L.k, w = f.m.noticeW, h = f.m.noticeH;
+    if (w <= 0 || h <= 0 || f.letterbox)
+        return;
+    const float gap = kNoticeGap * H * k, bottom = H - deckmode::FlightTopBottom(hp::kMarginBottom) * H;
+    const u32 standing = kAreasAll & ~L.res.quiet & ~(1u << ANotice);
+    // the keep-outs beside the reserved areas: the clear fields (as hud2_lint.h ZonesOf places them), the lower centre, the chat
+    Rect keep[8];
+    int nKeep = 0;
+    const bool narrow = W / H < 16.0f / 9.0f - 0.01f;
+    for (int i = 0; i < p.zoneCount && nKeep < 6; ++i)
+        if (p.zones[i].anchor == hp::Anchor::CentreToCard)
+        {
+            const hp::Zone& d = p.zones[i];
+            const float half = std::max(0.0f, std::min(d.halfMax * H, L.card.x0 - L.cx - (narrow ? d.cardGapNarrow : d.cardGap) * H));
+            keep[nKeep++] = {L.cx - half, d.y0 * H, L.cx + half, d.y1 * H};
+        }
+    keep[nKeep++] = {kBottomBandX0W * W, L.clearY0, kBottomBandX1W * W, H};
+    auto isFree = [&](const Rect& q) {
+        if (q.x0 < L.mx * 0.5f || q.x1 > W - L.mx * 0.5f || q.y0 < L.my || q.y1 > bottom + 0.5f)
+            return false;
+        for (int i = 0; i < nKeep; ++i)
+            if (keep[i].x1 > keep[i].x0 && q.x0 - gap < keep[i].x1 && q.x1 + gap > keep[i].x0 && q.y0 - gap < keep[i].y1 &&
+                q.y1 + gap > keep[i].y0)
+                return false;
+        return L.res.Free(q, standing, gap);
+    };
+    const bool shipUp = L.res.Placed(AShip) && !((L.res.quiet >> AShip) & 1);
+    const float shipY0 = L.res.Placed(AShip) ? L.res.at[AShip].y0 : L.ship.y0; // (its area's top: Focus's escort rows)
+    Rect tries[3] = {{L.mx, bottom - h, L.mx + w, bottom}, // the corner
+                     {L.mx, shipY0 - gap - h, L.mx + w, shipY0 - gap}, // above the ship panel
+                     {L.ship.x1 + 2 * gap, bottom - h, L.ship.x1 + 2 * gap + w, bottom}}; // beside it
+    for (int i = 0; i < 3; ++i)
+        if ((i == 0 || shipUp) && isFree(tries[i]))
+        {
+            L.notice = tries[i], L.noticeShow = true;
+            break;
+        }
+    // up the left column, a step at a time, to the nav
+    for (float y1 = tries[1].y1 - 0.02f * H; !L.noticeShow && y1 - h > L.nav.y1 + gap; y1 -= 0.02f * H)
+    {
+        const Rect q = {L.mx, y1 - h, L.mx + w, y1};
+        if (isFree(q))
+            L.notice = q, L.noticeShow = true;
+    }
+    if (L.noticeShow)
+        L.res.at[ANotice] = L.notice;
 }
 
 // ---- the panels sized to their content (0.2.1 round 3): the spec's width is the maximum, a measured (eased) content
@@ -660,12 +904,13 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
         L.consCells = 4 * cell * cell + (f.kbm ? 0.0f : cross * cross);
     }
     }
+    ReserveCorners(f, L); // (what the placers below keep off)
     // the context prompts in two lanes hugging the bottom panels (PlaceContextLanes);
     // a preset with a pill cap (Focus: <= 1 calm, 2 combat) keeps its first ones
     const float lineY = hp::Num(p, "calm", "context", "y", 0.915f);
     {
         int n = std::min(f.m.nCtx, 3);
-        if (rules.capPills)
+        if (rules.capPills && !f.m.answers)
             n = std::min(n, static_cast<int>(hp::Num(p, f.combat ? "combat" : "calm", "context", "pills_max", 3.0f)));
         PlaceContextLanes(f, n, lineY, L);
     }
@@ -686,14 +931,11 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
         const float off = kAlertSideR * H * k, y1 = y0 + cardH;
         const float x0 = side < 0 ? L.cx - off - w : L.cx + off, x1 = x0 + w;
         const float clear = kAlertClear * H * k; // (the plate's bloom stands off it too)
-        auto meets = [&](float a0, float b0, float a1, float b1)
-        { return a1 > a0 && x0 - clear < a1 && x1 + clear > a0 && y0 - clear < b1 && y1 + clear > b0; };
         x = x0;
-        return x0 >= L.mx * 0.5f && x1 <= W - L.mx * 0.5f && y1 <= H - L.my && !meets(L.nav.x0, L.nav.y0, L.nav.x1, L.nav.y1) &&
-               !meets(L.ship.x0, L.ship.y0, L.ship.x1, L.ship.y1) && !meets(L.loadout.x0, L.loadout.y0, L.loadout.x1, L.loadout.y1) &&
-               !meets(L.cons.x0, L.cons.y0, L.cons.x1, L.cons.y1) &&
-               !((f.target || f.list) && meets(L.card.x0, f.target ? L.card.y0 : L.thrY0, L.card.x1, f.list ? L.thrY1 : L.card.y1)) &&
-               !(f.dlg.fresh && meets(f.dlg.x0 * W, f.dlg.y0 * H, f.dlg.x1 * W, f.dlg.y1 * H));
+        // (the corners and the subtitles' panel; the context prompts step aside for an alert: below; the comm feed narrows
+        // for it - one owner, the subtitles' DrawHud2Feed)
+        return x0 >= L.mx * 0.5f && x1 <= W - L.mx * 0.5f && y1 <= H - L.my &&
+               L.res.Free({x0, y0, x1, y1}, kAreasAll & ~kAreasContext & ~kAreasAlerts & ~(1u << AChat), clear);
     };
     bool beside = false;
     for (int side : {-1, 1})
@@ -748,14 +990,11 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
         auto meets = [&](float x0, float y0, float x1, float y1, float y) {
             return x1 > x0 && L.alertX0 < x1 && L.alertX1 > x0 && y < y1 && y + ah > y0;
         };
-        const bool list = f.list;
+        // (above the bottom panels; the ring with its words; the reserved areas but the prompts, which step aside)
         auto clear = [&](float y) {
             return y >= L.my * 0.5f && y + ah <= std::min(L.ship.y0, L.loadout.y0) - 0.006f * H &&
-                   !meets(dx0, dy0, dx1, dy1, y) && !meets(L.cx - L.R, ringY0, L.cx + L.R, ringY1, y) &&
-                   !meets(L.nav.x0, L.nav.y0, L.nav.x1, L.nav.y1, y) &&
-                   !meets(L.cons.x0, L.cons.y0, L.cons.x1, L.cons.y1, y) && // (the stacked cross: decision 3)
-                   !((f.target || list) &&
-                     meets(L.card.x0, f.target ? L.card.y0 : L.thrY0, L.card.x1, list ? L.thrY1 : L.card.y1, y));
+                   !meets(L.cx - L.R, ringY0, L.cx + L.R, ringY1, y) &&
+                   L.res.Free({L.alertX0, y, L.alertX1, y + ah}, kAreasAll & ~kAreasContext & ~kAreasAlerts & ~(1u << AChat));
         };
         if (meets(dx0, dy0, dx1, dy1, L.alertY))
             for (float y : {dy1 + gap, dy0 - gap - ah, ringY1 + 0.006f * H})
@@ -785,6 +1024,7 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
         if (meet)
             L.nCtx = 0;
     }
+    ReservePromptsAndAlerts(f, f.m.ctxWord, L);
     // the HUD bus's rectangles (overrides: the spec names the comm feed's 16:9 place only)
     if (rules.corners == 1) // Focus: the same rules, its own numbers (focus_ns; the comm feed's right edge 0.30 W)
     {
@@ -809,6 +1049,8 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     L.budgetOff = BudgetSuppress(rules, f, L, ctxOff | L.held, L.budget);
     L.suppressed = ctxOff | L.budgetOff;
     L.boxed = Boxed(f, L, L.suppressed | L.held);
+    ReserveQuiet((L.suppressed | L.held) & ~f.drawn, L); // (a part still fading out keeps its area until it is gone)
+    PlaceNotice(f, p, L); // (last: it keeps off what stands, nothing moves for it)
     return L;
 }
 // The drawn preset's layout (its data and rules).

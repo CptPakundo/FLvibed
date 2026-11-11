@@ -228,7 +228,6 @@ static void PadDied() { StopBot("player-death"); }
 static void PadModeChange(Mode from, Mode mode)
 {
     g_dispatch.Reset(); // the pad's holds and latches end with the mode
-    wheel::DropRearView();
     // Turret view is the game's toggle: a window over the flight (space <-> space-ui) leaves it on, so FLvibed's flag stays with it; leaving space ends it
     if (mode != Mode::Space && mode != Mode::SpaceUi)
         g_turret = false;

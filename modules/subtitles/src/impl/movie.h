@@ -9,9 +9,8 @@
 namespace movie
 {
 bool Load(const std::string& path);
-// The lines join core's window (at Init). A movie row changed: the Movies module hears it.
+// The lines join core's window (at Init).
 void Attach();
-void OnSettingApplied(const settings::Def* d);
 // Movie.dll PlayMovie(hwnd, ?, path) / UpdateMovie() (once per movie loop pass) / StopMovie().
 void OnStart(HWND hwnd, const char* path);
 void OnUpdate();

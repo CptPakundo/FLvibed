@@ -388,6 +388,51 @@ void Test_hud2_lint()
         out.items.push_back(Box(Kind::Text, "alert", 0.06f, 0.06f, 0.33f, 0.09f));
         CHECK(Has(Lint(out), "alert.overlap", "out of the card"));
     }
+    // ---- FAIL: a part over another part's reserved area (GitHub issues 77 / 78): the target's words over the loadout, a
+    // prompt over the consumables' cross; not its own part's area, not the marks at the object (they pass behind the
+    // panels), not a word fading under 10 %, not the alert cards (alert.overlap) nor a prompt on the subtitles
+    // (prompt.subtitles)
+    {
+        Input in = Passing();
+        auto area = [](const char* part, const char* name, float x0, float y0, float x1, float y1) // (fractions of H)
+        { return Area{part, name, x0 * kH, y0 * kH, x1 * kH, y1 * kH}; };
+        in.areas = {area("loadout", "loadout", 1.329f, 0.82f, 1.689f, 0.95f), area("loadout", "cons", 1.50f, 0.66f, 1.689f, 0.81f),
+                    area("ship", "ship", 0.10f, 0.83f, 0.389f, 0.95f), area("", "subtitles", 0.05f, 0.60f, 0.40f, 0.70f),
+                    area("alert", "alert", 1.0f, 0.40f, 1.3f, 0.45f)};
+        CHECK(Count(Lint(in), "part.over") == 0); // (the passing layout: every part on its own area)
+        Input words = in;
+        words.items.push_back(Box(Kind::Text, "target.form", 1.30f, 0.84f, 1.45f, 0.87f));
+        Item faint = Box(Kind::Text, "target.form", 1.30f, 0.88f, 1.45f, 0.91f);
+        faint.alpha = 0.05f;
+        words.items.push_back(faint);
+        words.items.push_back(Box(Kind::Shape, "target.mark", 1.40f, 0.85f, 1.42f, 0.87f));
+        const Result r = Lint(words);
+        CHECK(Count(r, "part.over") == 1 && Has(r, "part.over", "target drawn over the loadout's reserved area"));
+        Input pill = in;
+        pill.items.push_back(Box(Kind::Plate, "context", 1.20f, 0.70f, 1.55f, 0.75f));
+        CHECK(Count(Lint(pill), "part.over") == 1 && Has(Lint(pill), "part.over", "context drawn over the cons's"));
+        Input skip = in; // (the cross's own centre mark; a prompt on the subtitles; a card over an alert's area; touching only)
+        skip.items.push_back(Box(Kind::Glyph, "crossmark", 1.58f, 0.72f, 1.61f, 0.75f));
+        skip.items.push_back(Box(Kind::Text, "context", 0.30f, 0.65f, 0.38f, 0.68f));
+        skip.items.push_back(Box(Kind::Text, "card", 1.1f, 0.41f, 1.2f, 0.44f));
+        skip.items.push_back(Box(Kind::Text, "nav", 0.389f, 0.85f, 0.45f, 0.88f));
+        CHECK(Count(Lint(skip), "part.over") == 0);
+        Input subs = in; // (anything else of HUD 2's on the subtitles' panel)
+        subs.items.push_back(Box(Kind::Text, "nav", 0.10f, 0.62f, 0.30f, 0.65f));
+        CHECK(Has(Lint(subs), "part.over", "nav drawn over the subtitles's"));
+        Input na = words;
+        na.na.push_back({"part.over", "test"});
+        CHECK(Count(Lint(na), "part.over") == 0);
+        // a box over the flight (the cargo demand, part "dialog"): the centre stack stands under it, anything else of HUD 2's fails
+        Input box = in;
+        box.areas.push_back(area("dialog", "box", 0.55f, 0.47f, 1.24f, 0.69f));
+        box.items.push_back(Box(Kind::Text, "ring.speed", 0.87f, 0.62f, 0.91f, 0.65f));
+        Item arc = Box(Kind::Arc, "ring.shield", 0.80f, 0.45f, 0.84f, 0.60f);
+        box.items.push_back(arc);
+        CHECK(Count(Lint(box), "part.over") == 0);
+        box.items.push_back(Box(Kind::Text, "context", 0.60f, 0.66f, 0.70f, 0.68f));
+        CHECK(Count(Lint(box), "part.over") == 1 && Has(Lint(box), "part.over", "context drawn over the box's"));
+    }
     // ---- FAIL: centre-stack overlaps (no overlap + 0.01 H gap)
     {
         const float c = 0.5f;

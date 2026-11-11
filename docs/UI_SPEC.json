@@ -185,7 +185,7 @@
     "X": {
      "dbl": "none",
      "hold": "turret",
-     "tap": "goal_panel"
+     "tap": "tractor"
     },
     "Y": {
      "dbl": "none",
@@ -743,7 +743,7 @@
      "X": {
       "dbl": "none",
       "hold": "none",
-      "tap": "goal_panel"
+      "tap": "tractor"
      },
      "Y": {
       "dbl": "none",
@@ -940,7 +940,7 @@
   {
    "answer": 0,
    "id": "movies",
-   "note": "Built: the Intro row greys a missing file's word as (MISSING) and skips it; the four new keys exist.",
+   "note": "Built: the Intro row greys a missing file's word as (MISSING) and skips it; the four new keys exist. | Removed 11 Nov 2026 (0.4.6, issue 80): the Intro row and movie_intro are gone; the intro is HD Edition's own choice, an old movie_intro line is ignored.",
    "options": [
     "Now",
     "Later",
@@ -2114,10 +2114,6 @@
          "HAND BACK"
         ],
         [
-         "X",
-         "GOALS"
-        ],
-        [
          "VIEW",
          "AUTOPILOT OFF",
          "hold"
@@ -2136,7 +2132,8 @@
      "notes": [
       "While the autopilot flies, its one state line sits under the maneuver bar (what it does, how far, why it waits) and the bar's autopilot button is lit; the legend shows the three things that matter: hand back, the goal panel, off.",
       "Any stick past the hand-back threshold returns the ship at once; letting go does not re-engage (in turret view the right stick aims, so only the left stick or B hands back). RT still fires.",
-      "Built: the status line is mode, target, distance and the autopilot's wait reason; it also shows CRUISE - CHARGING - <target> and TURRET VIEW."
+      "Built: the status line is mode, target, distance and the autopilot's wait reason; it also shows CRUISE - CHARGING - <target> and TURRET VIEW.",
+      "Built 11 Nov 2026 (0.4.6, issue 65): X tap under the autopilot tractors everything in reach ([X] TRACTOR ALL n shows only with loot in reach; X held stays turret view); the goal panel is the wheel's AUTOPILOT GOALS (LB held). The [X] GOALS prompt is gone."
      ],
      "prompts": []
     },
@@ -2358,7 +2355,6 @@
         "COMMS",
         "CONTACT FILTER",
         "AUTOPILOT GOALS",
-        "REAR VIEW",
         "HUD FADES"
        ],
        "sel": null,
@@ -2372,7 +2368,8 @@
       "Built: nothing is pre-highlighted - the right stick (past a dead zone) or the D-pad picks, a bare hold and release does nothing; drawn as label boxes on a ring round the reticle, the pick repeated under it; with TWO GROUPS ON THE TRIGGERS an ENGINE KILL slot joins; COMMS = the game's hail (USER_RADIO); the right stick does not steer while the wheel is open.",
       "Built: EDIT GROUPS opens the weapon group editor over the HUD: the ship's guns with a tick each, A switches the focused gun on or off in the group, D-pad up / down the gun, LB / RB the group (which also makes it the active group), B done; the sticks keep flying and RT keeps firing. The game stores the groups. Guns only: launchers fire on their own buttons.",
       "Built 4 Nov 2026 (0.2.7): the wheel's CRUISE DISRUPTOR stays, and the missile button held (RB in FREELANCER, ASSISTED and under the autopilot, B in ACE) also fires a cruise disruptor when the ship has one and no torpedo; HUD 2's torpedo row then says HOLD for it. Tested on a virtual pad, not a real one.",
-      "Built 7 Nov 2026 (dev, after 0.4.0): the right stick is the wheel's alone while it is open and after it closes until the stick is let go: it never steers, never moves the autopilot's crosshair and never takes the autopilot back."
+      "Built 7 Nov 2026 (dev, after 0.4.0): the right stick is the wheel's alone while it is open and after it closes until the stick is let go: it never steers, never moves the autopilot's crosshair and never takes the autopilot back.",
+      "Built 11 Nov 2026 (0.4.6, issue 65): REAR VIEW left the wheel (the right stick's click held is the rear view in every layout; a latch only with Held buttons = TOGGLE). With HUD 2 and the autopilot module nine slices 40 degrees apart, evenly round the ring; eight on the classic HUD. Not seen on a real pad, nor the classic HUD's wheel."
      ],
      "prompts": [
       {
@@ -2632,10 +2629,6 @@
         [
          "LS",
          "HAND BACK"
-        ],
-        [
-         "X",
-         "GOALS"
         ],
         [
          "VIEW",
@@ -5281,8 +5274,8 @@
        "value": true
       },
       {
-       "def": "GAME",
-       "help": "The game's own fonts, or Segoe UI.",
+       "def": "HUD 2",
+       "help": "HUD 2 = HUD 2's font everywhere: cutscenes, rooms, movies and flight; Game = the game's own fonts (HUD 2's in flight while HUD 2 shows); Segoe UI = Windows' font.",
        "id": "font",
        "key": "font",
        "kind": "picker",
@@ -5290,11 +5283,12 @@
        "needs": "live",
        "options": [
         "GAME",
-        "SEGOE UI"
+        "SEGOE UI",
+        "HUD 2"
        ],
        "parent": "enabled",
        "tier": "player",
-       "value": "GAME"
+       "value": "HUD 2"
       },
       {
        "def": "WHITE",
@@ -5393,7 +5387,7 @@
       },
       {
        "def": true,
-       "help": "Mission comms.",
+       "help": "Mission comms. Off, with Dialogue also in the chat window on: mission comms in the chat only.",
        "id": "comms",
        "key": "comms",
        "kind": "toggle",
@@ -5993,7 +5987,7 @@
      "rows": [
       {
        "def": true,
-       "help": "Movies fitted to the screen, the choice of intro, skipping the startup movies. Takes effect at the next start.",
+       "help": "Movies fitted to the screen, skipping the startup movies. Takes effect at the next start.",
        "id": "mod_movies",
        "key": "mod_movies",
        "kind": "toggle",
@@ -6020,24 +6014,6 @@
        "parent": null,
        "tier": "simple",
        "value": "PLAY"
-      },
-      {
-       "def": "AS INSTALLED",
-       "help": "Which intro plays. Only the versions this install has are offered.",
-       "id": "movie_intro",
-       "key": "movie_intro",
-       "kind": "picker",
-       "label": "Intro",
-       "needs": "live",
-       "options": [
-        "AS INSTALLED",
-        "HD",
-        "ORIGINAL 2003",
-        "FULL (BONUS DVD)"
-       ],
-       "parent": null,
-       "tier": "simple",
-       "value": "AS INSTALLED"
       },
       {
        "def": true,

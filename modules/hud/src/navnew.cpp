@@ -16,6 +16,7 @@
 #include "log.h"
 #include "navmap_labels.h"
 #include "safemem.h"
+#include "skinover.h"
 #include "text.h"
 #include "ui/hud2_kit.h"
 #include "ui/winplates.h"
@@ -61,6 +62,10 @@ static Rc g_port;
 static float g_frameW = 0, g_frameH = 0;
 static bool g_transform = false;
 static u32 g_records = 0, g_drawn = 0, g_dropped = 0;
+static Rc g_lastKeep[32]; // the keep-outs the last labels kept clear of (debug `navnew keep`)
+static int g_nLastKeep = 0;
+static Rc g_lastLabels[64]; // and the labels that stood
+static int g_nLastLabels = 0;
 
 struct Named
 {
@@ -109,28 +114,72 @@ static void LabelsOff(bool off)
     }
 }
 
+// The game's own box, origin and scale back where they still hold FLvibed's.
+static void Restore()
+{
+    if (!g_w.grown || !g_w.root || !Valid(g_w.root, exe::VtNavMap.get()))
+        return;
+    float v = 0;
+    for (int i = 0; i < 3; ++i)
+        if (RF(g_w.root + kFrameOrigin + 4 * i, v) && v == g_w.mineOrigin[i])
+            WF(g_w.root + kFrameOrigin + 4 * i, g_w.origin[i]);
+    if (RF(g_w.root + kBoxW, v) && v == g_w.mineBox[0])
+        WF(g_w.root + kBoxW, g_w.box[0]);
+    if (RF(g_w.root + kBoxH, v) && v == g_w.mineBox[1])
+        WF(g_w.root + kBoxH, g_w.box[1]);
+    if (RF(g_w.root + kScaleX, v) && v == g_w.mineScale[0])
+        WF(g_w.root + kScaleX, g_w.baseScale[0]);
+    if (RF(g_w.root + kScaleZ, v) && v == g_w.mineScale[1])
+        WF(g_w.root + kScaleZ, g_w.baseScale[1]);
+}
+
+// The Legend's icons are one textured quad, NAV_legend.3db (+0xC20, placed at +0x81C), drawn by the map's camera, which is as wide as it is tall. Its texture is square and its
+// icons are square in it, but the quad is 0.3119 x 0.2759 half across (the mesh's VMeshRef), and 0x493184 scales its orientation x 1.175 and y 1.5: every icon stood 0.886 as wide
+// as tall at any aspect, the game's own map too (measured at 16:9, 16:10, 4:3, 21:9, 11 Nov 2026; the owner: "shouldn't be stretched or squished"). The quad's x scale is set so a
+// texel is square, and the quad moves so the icons' column (u 0.156 of the texture) stays under the words. Once per mesh: the game writes it only when it builds the quad.
+constexpr u32 kLegendMesh = 0xC20, kLegendPos = 0x81C;
+constexpr float kLegendHalfW = 0.31188f, kLegendHalfH = 0.27588f, kLegendColumn = kLegendHalfW * (2 * 0.156f - 1);
+static u32 g_legendDone = 0;
+
+static void SquareLegend(u32 root)
+{
+    static void** engineAt = nullptr;
+    if (!engineAt)
+        if (const HMODULE da = GetModuleHandleA("dalib.dll"))
+            engineAt = reinterpret_cast<void**>(GetProcAddress(da, "?Engine@DALib@@3PAUIEngine@@A"));
+    u32 mesh = 0;
+    float pos[3] = {};
+    if (!engineAt || !R32(root + kLegendMesh, mesh) || !mesh || mesh == 0xFFFFFFFFu || mesh == g_legendDone || !safemem::Read(root + kLegendPos, pos, sizeof(pos)))
+        return;
+    __try
+    {
+        void* engine = *engineAt;
+        void** vt = *reinterpret_cast<void***>(engine);
+        const float* now = reinterpret_cast<const float*(__stdcall*)(void*, u32)>(vt[0xA0 / 4])(engine, mesh);
+        float m[12];
+        memcpy(m, now, sizeof(m));
+        if (!(m[0] > 0) || !(m[4] > 0))
+            return;
+        const float x = m[4] * kLegendHalfH / kLegendHalfW;
+        pos[0] += kLegendColumn * (m[0] - x);
+        m[0] = x;
+        reinterpret_cast<void(__stdcall*)(void*, u32, const float*)>(vt[0x9C / 4])(engine, mesh, m);
+        reinterpret_cast<void(__stdcall*)(void*, u32, const float*)>(vt[0x8C / 4])(engine, mesh, pos);
+        reinterpret_cast<void(__stdcall*)(void*, u32, int, int)>(vt[0x6C / 4])(engine, mesh, 0, 0);
+        g_legendDone = mesh;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        g_legendDone = mesh; // (fails closed: the game's own Legend)
+    }
+}
+
 static void GiveBack()
 {
     LabelsOff(false);
-    if (g_w.root && Valid(g_w.root, exe::VtNavMap.get()))
-    {
-        float v = 0;
-        if (g_w.grown)
-        {
-            for (int i = 0; i < 3; ++i)
-                if (RF(g_w.root + kFrameOrigin + 4 * i, v) && v == g_w.mineOrigin[i])
-                    WF(g_w.root + kFrameOrigin + 4 * i, g_w.origin[i]);
-            if (RF(g_w.root + kBoxW, v) && v == g_w.mineBox[0])
-                WF(g_w.root + kBoxW, g_w.box[0]);
-            if (RF(g_w.root + kBoxH, v) && v == g_w.mineBox[1])
-                WF(g_w.root + kBoxH, g_w.box[1]);
-            if (RF(g_w.root + kScaleX, v) && v == g_w.mineScale[0])
-                WF(g_w.root + kScaleX, g_w.baseScale[0]);
-            if (RF(g_w.root + kScaleZ, v) && v == g_w.mineScale[1])
-                WF(g_w.root + kScaleZ, g_w.baseScale[1]);
-        }
-    }
+    Restore();
     g_w = Written();
+    g_legendDone = 0;
     g_frameW = g_frameH = 0;
     navview::SetFrame(0, 0);
     g_names.clear();
@@ -158,6 +207,14 @@ static bool HoldScale(u32 root, float ratioX, float ratioZ)
     return changed;
 }
 
+// The game's box and origin as it built them, kept for the give-back; from here the map is the full-screen one.
+static void TakeGame(float boxW, float boxH, const float* origin)
+{
+    g_w.box[0] = boxW, g_w.box[1] = boxH;
+    memcpy(g_w.origin, origin, sizeof(g_w.origin));
+    g_w.grown = true;
+}
+
 // The growth: once the window has stopped sliding, the box at `want`. The viewport's pixels per box unit are read, not assumed.
 static void Grow(u32 root, const Rc& port, const Rc& want, const Rc& square)
 {
@@ -169,9 +226,7 @@ static void Grow(u32 root, const Rc& port, const Rc& want, const Rc& square)
     const float kx = port.W() / boxW, ky = port.H() / boxH;
     if (!g_w.grown)
     {
-        g_w.box[0] = boxW, g_w.box[1] = boxH;
-        memcpy(g_w.origin, origin, sizeof(origin));
-        g_w.grown = true;
+        TakeGame(boxW, boxH, origin);
         Log("navnew: the map grown to %.0f x %.0f px at %.0f, %.0f", want.W(), want.H(), want.x0, want.y0);
     }
     // to `want` from where the viewport stands, whatever moved it (a change of view, windowtext's drop, a mod); the game's rectangle follows a frame later, so a move waits for it
@@ -318,11 +373,26 @@ void Frame(u32 root, const Rc& map, bool pad)
     R8(root + kAnimating, animating);
     // (the universe's art and links have no second scale: it keeps the square; the game's zoom in and out of it runs there too)
     const bool universe = view == 0 || animating;
-    Grow(root, map, universe ? g_lay.map : navlayout::Bleed(g_W, g_H, g_lay.map), g_lay.map);
+    // the legend (layer 4) is drawn in the game's own box: its swatches and icons stand at box units beside its words, which stand in pixels, so on the grown box they
+    // grew past the screen's edge (issue 59). It gets the game's box, origin and scale while it shows; the next layer grows the map again from where the game's stands
+    int layer = 0;
+    if (exe::NavMapMode.ok())
+        safemem::Read(static_cast<u32>(exe::NavMapMode.get()), &layer, 4);
+    if (layer == 4)
+    {
+        // (a map opened on the Legend is the full-screen map too: the game's values are taken as Grow takes them, and nothing is written)
+        float boxW = 0, boxH = 0, origin[3] = {};
+        if (!g_w.grown && !room::NNWindowBusy() && RF(root + kBoxW, boxW) && RF(root + kBoxH, boxH) && safemem::Read(root + kFrameOrigin, origin, sizeof(origin)) && boxW > 0.05f && boxH > 0.05f)
+            TakeGame(boxW, boxH, origin);
+        Restore();
+        SquareLegend(root);
+    }
+    else
+        Grow(root, map, universe ? g_lay.map : navlayout::Bleed(g_W, g_H, g_lay.map), g_lay.map);
     // the screen is the map: what the player presses here is the map's, not the ship's, on keys and mouse as on the pad (the owner, 7 Nov 2026)
     if (g_w.grown && hostcalls::g.SetFlightLock)
         hostcalls::g.SetFlightLock();
-    if (g_w.grown && !universe)
+    if (g_w.grown && !universe && layer != 4)
         HoldMarks(root);
     if (!pad && g_w.grown)
         MouseFrame(root);
@@ -580,7 +650,7 @@ static void DrawSectors(const Rc& port, float H)
     }
 }
 
-void DrawOverMap(const Rc& port)
+void DrawOverMap(const Rc& port, const Rc* keep, int nKeep)
 {
     if (!g_on || !g_transform)
         return;
@@ -633,8 +703,33 @@ void DrawOverMap(const Rc& port)
         meta[n] = {d.nameIds, id};
         ++n;
     }
-    const int shown = navlabels::Declutter(labels, n, order, port);
+    // the name tag by the cursor (the last overlay's): one more keep-out, as the cards are, since text draws over every plate; and the place it names keeps no second label
+    // under it (GitHub issue 75's frame: Trenton Outpost through the tag, Planet Manhattan twice)
+    constexpr int kMaxKeep = 24;
+    Rc keepAll[kMaxKeep + 1];
+    int nAll = 0;
+    for (int i = 0; i < nKeep && nAll < kMaxKeep; ++i)
+        keepAll[nAll++] = keep[i];
+    float tag[4] = {};
+    std::wstring tagText;
+    if (skinover::MapTag(tag, tagText))
+    {
+        keepAll[nAll++] = {tag[0], tag[1], tag[2], tag[3]};
+        static bool named[kMaxLabels];
+        for (int i = 0; i < n; ++i)
+            named[i] = g_names[meta[i].ids].text == tagText;
+        const int hovered = navlabels::Hovered(labels, named, n, static_cast<float>(fl::MouseX()), static_cast<float>(fl::MouseY()));
+        if (hovered >= 0)
+            labels[hovered].w = 1e6f;
+    }
+    std::copy(keepAll, keepAll + nAll, g_lastKeep);
+    g_nLastKeep = nAll;
+    const int shown = navlabels::Declutter(labels, n, order, port, keepAll, nAll);
     g_drawn = static_cast<u32>(shown), g_dropped = static_cast<u32>(n - shown);
+    g_nLastLabels = 0;
+    for (int i = 0; i < n && g_nLastLabels < 64; ++i)
+        if (labels[i].shown)
+            g_lastLabels[g_nLastLabels++] = labels[i].box;
     DrawSectors(port, H);
     DrawRoute(port, H);
     for (int i = 0; i < n; ++i)
@@ -675,6 +770,13 @@ std::string Command(std::istream& in)
         safemem::Read(g_w.root + kSelected, at, sizeof(at));
     o << "navnew sel=" << g_selected << " at=" << at[0] << "," << at[2] << " rec=" << (g_w.root ? SelectedRecord(g_w.root) : 0) << " on=" << g_on << " grown=" << g_w.grown << " transform=" << g_transform << " view=" << g_view.view << " scale=" << g_view.scaleX << "," << g_view.scaleZ
       << " zoom=" << g_view.zoom << " records=" << g_records << " labels=" << g_drawn << " dropped=" << g_dropped << " gameLabelsOff=" << g_w.labelsOff << " show=" << g_w.showLabels;
+    if (what == "keep") // the keep-outs the last labels kept clear of, and the labels that stood
+    {
+        for (int i = 0; i < g_nLastKeep; ++i)
+            o << "\n  keep " << g_lastKeep[i].x0 << "," << g_lastKeep[i].y0 << " - " << g_lastKeep[i].x1 << "," << g_lastKeep[i].y1;
+        for (int i = 0; i < g_nLastLabels; ++i)
+            o << "\n  label " << g_lastLabels[i].x0 << "," << g_lastLabels[i].y0 << " - " << g_lastLabels[i].x1 << "," << g_lastLabels[i].y1;
+    }
     return o.str();
 }
 

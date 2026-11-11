@@ -147,20 +147,23 @@ static void ReadStatus(u32 root)
         g_reps.swap(reps);
         ShowReps();
     }
-    if (g_card)
-        return; // (the game hides its stats under a card: what was read stands)
-    // (the first read of an open window may come before the server's answer)
+    // (the first read of an open window may come before the server's answer.) The game hides its stats under the faction card, which stands as long as the page,
+    // and goes on writing them there (Total Time counts on: issue 73): read hidden then
+    const auto find = [](const char* n) { return g_card ? uiclick::Find(n) : uiclick::FindVisible(n); };
     for (int i = 0; i < 13; ++i)
     {
         char name[32];
         sprintf_s(name, "PlayerInfoHeading%d", i);
         std::wstring h, s;
-        if (winplates::TextOf(uiclick::FindVisible(name), h))
+        if (winplates::TextOf(find(name), h))
             g_head[i] = nnrules::Heading(h);
-        else
+        else if (!g_card)
             g_head[i].clear();
         sprintf_s(name, "PlayerInfoStat%d", i);
-        g_stat[i] = winplates::TextOf(uiclick::FindVisible(name), s) ? s : std::wstring();
+        if (winplates::TextOf(find(name), s))
+            g_stat[i] = s;
+        else if (!g_card)
+            g_stat[i].clear(); // (under the card a row the game does not answer keeps what was read)
     }
 }
 
@@ -209,12 +212,13 @@ static void DrawStatus(const Frame& f)
 {
     const float H = f.H, W = f.W;
     Box hole;
+    const u32 card = g_card ? uiclick::FindVisible("FactionInfoCard") : 0;
     if (g_card)
     {
-        hole.Add(uiclick::FindVisible("FactionInfoCard"), 0.012f * H);
+        hole.Add(card, 0.012f * H);
         hole.y0 -= 0.05f * H; // (the card lays its heading out above its box's top)
     }
-    Cover(W, H, hole);
+    Cover(W, H, OpenHole(hole, card));
     Title(f, L"PLAYER STATUS");
     // the pilot: three numbers large, the rest as rows
     const float x0 = f.left, x1 = 0.30f * W;
@@ -396,7 +400,8 @@ static void ReadLoadout()
 }
 
 static int Filter(u32 root) { return static_cast<int>(R32(root + kInvFilter)); }
-static bool Mountable(int filter) { return filter == 0 || filter == 2 || filter == 3; }
+// Mounting is a dock's: the game's own window hides its mount toggles (EquipToggle1..5) in space and shows them docked (issue 79, its dumps).
+static bool Mountable(int filter) { return fl::PlayerBase() && (filter == 0 || filter == 2 || filter == 3); }
 
 // The window's own answer for each of its rows (0x47E790, its filter and order), asked row by row: the game's five rows are five of these. Its selection goes back after.
 static void ReadItems(u32 root)
@@ -567,6 +572,15 @@ static bool Trade()
 }
 static bool JettisonOpen() { return uiclick::FindVisible("JettisonAcceptButton") != 0; }
 static Holes g_iconCells;
+static ListIcons g_invIcons; // the rows the page drew, their models sent in Under
+// Every row of the list as the icons need it: its game row, its item.
+static std::vector<IconRow> InvRows()
+{
+    std::vector<IconRow> rows(g_items.size());
+    for (size_t i = 0; i < g_items.size(); ++i)
+        rows[i] = {g_items[i].row, g_items[i].arch, 0, 0};
+    return rows;
+}
 
 // The jettison panel as the page's: the item with its mesh, the game's own count (+0x93C of +0x940) on a bar of the page's. The game's slider and buttons stand off the screen for as long as it
 // stands and go on answering by name; its number field comes into the page, it can still be typed in.
@@ -598,15 +612,19 @@ static void DrawJettison(const Frame& f, u32 root)
     // (the game's window stands behind the page here, so what shows through a hole stands below it: the item's mesh, and for the keyboard the game's number field)
     const float cell = 0.092f * H, shown = 0.715f * H;
     Holes h;
-    Icon icons[5];
     const Item* it = g_itemList.sel < static_cast<int>(g_items.size()) ? &g_items[g_itemList.sel] : nullptr;
-    const int mesh = it ? it->row - static_cast<int>(R32(root + kInvFirst)) : -1;
-    if (mesh >= 0 && mesh < 5)
+    int mesh = -1;
+    if (it)
     {
-        icons[mesh] = {axis, shown + cell / 2, true};
-        h.Add(axis - cell / 2, shown, axis + cell / 2, shown + cell);
+        const IconRow one{it->row, it->arch, axis, shown + cell / 2};
+        g_invIcons.Set(root, &one, 1, InvRows()); // (Under places the item's mesh and sends its model)
+        if (const int* sent = g_invIcons.MeshesFor(root, 0))
+            mesh = sent[0];
     }
-    PlaceIcons("ItemMesh%d", 1, 5, 1, icons);
+    else
+        g_invIcons = ListIcons();
+    if (mesh >= 0)
+        h.Add(axis - cell / 2, shown, axis + cell / 2, shown + cell);
     const u32 edit = uiclick::FindVisible("JettisonQuantityEdit");
     Box field;
     if (!g_pad)
@@ -669,12 +687,13 @@ static void DrawInventory(const Frame& f, u32 root)
     PlaceAt(uiclick::FindVisible("TradeRouteButton"), -W, 0); // (it stood in the card's hole: the page has its own word for it, Trade; its label is HideTrade's)
     HideTrade();
     Box hole;
-    hole.Add(uiclick::FindVisible("InfoCard_Info"), 0.012f * H);
+    const u32 card = uiclick::FindVisible("InfoCard_Info");
+    hole.Add(card, 0.012f * H);
     // (an empty hardpoint has no card of the game's: what stood there was the last row's)
     const bool empty = OnEmpty();
     {
         Holes h = g_iconCells;
-        if (!empty && hole.ok)
+        if (!empty && OpenHole(hole, card).ok)
             h.Add(hole.x0, hole.y0, hole.x1, hole.y1);
         GroundBut(0, 0, W, H, h);
     }
@@ -716,23 +735,22 @@ static void DrawInventory(const Frame& f, u32 root)
     const float y = ty + tabH + 0.012f * H, foot = f.bottom, pitch = std::min(0.126f * H, (foot - y) / 5), cell = std::min(0.092f * H, pitch);
     g_itemList.rows = 5;
     g_itemList.Fit();
-    Icon icons[5];
     Holes cells;
-    const int nativeFirst = static_cast<int>(R32(root + kInvFirst));
+    const int n = std::min(g_itemList.rows, std::max(0, g_itemList.count - g_itemList.first));
+    // the icons: Under places the meshes and sends their models from the list as it stands then (the frame of a step); a row gets a cell when Under gave
+    // it its own model this frame
+    const int* meshOf = g_invIcons.MeshesFor(root, g_itemList.first);
+    g_invIcons.SetList(root, InvRows(), &g_itemList, x0 + cell / 2, y, pitch);
     if (g_items.empty())
         Text(x0, y + pitch / 2, L"NOTHING HERE", 0.030f * H, Argb(kDim, 1));
-    for (int i = 0; i < g_itemList.rows && g_itemList.first + i < g_itemList.count; ++i)
+    for (int i = 0; i < n; ++i)
     {
         const int row = g_itemList.first + i;
         const Item& it = g_items[row];
         const float top = y + i * pitch, cy = top + pitch * 0.36f;
         const int slot = skinchip::Hot({x0, top, x1, top + pitch}, RowClick, row);
-        const int mesh = it.row - nativeFirst;
-        if (it.row >= 0 && mesh >= 0 && mesh < 5)
-        {
-            icons[mesh] = {x0 + cell / 2, top + pitch / 2, true};
+        if (meshOf && meshOf[i] >= 0)
             cells.Add(x0 + 1, top + (pitch - cell) / 2, x0 + cell - 1, top + (pitch + cell) / 2);
-        }
         if (row == g_itemList.sel)
             skinkit::Focus(x0 + cell, top + 0.002f * H, x1, top + pitch - 0.002f * H);
         else if (slot >= 0 && slot == hover)
@@ -751,7 +769,6 @@ static void DrawInventory(const Frame& f, u32 root)
     }
     if (g_itemList.count > g_itemList.rows)
         skinkit::ScrollBar(x1 + 0.006f * H, y, y + g_itemList.rows * pitch, static_cast<float>(g_itemList.first) / g_itemList.count, static_cast<float>(g_itemList.rows) / g_itemList.count);
-    PlaceIcons("ItemMesh%d", 1, 5, 1, icons);
     g_iconCells = cells;
     // the middle: the ship, what it carries and what it can do
     const float mx0 = 0.425f * W, mx1 = (hole.ok ? hole.x0 : f.right) - 0.03f * H, inSpace = !fl::PlayerBase();
@@ -763,12 +780,6 @@ static void DrawInventory(const Frame& f, u32 root)
         g_shipRect[0] = (mx0 + mx1) / 2, g_shipRect[1] = my + 0.125f * H, g_shipRect[2] = std::min((mx1 - mx0) / 2, 0.125f * H), g_shipRect[3] = 0.125f * H;
         my += 0.262f * H;
     }
-    const float rowH = skinrules::kRowMin * H;
-    auto row = [&](const std::wstring& name, const std::wstring& value)
-    {
-        skinkit::Row(mx0, mx1, my, rowH, name, value);
-        my += rowH;
-    };
     wchar_t b[48];
     // docked no view of the ship stands (the status panel's lives in space; the window's own ShipView_Control is hidden by its builder, BASE_ROOMS_PLAN): the column carries what the ship is, two numbers a line
     if (!inSpace)
@@ -815,16 +826,21 @@ static void DrawInventory(const Frame& f, u32 root)
             my += 0.044f * H;
         }
     }
-    // the hold and the purse stand at the foot
-    my = std::max(my, f.bottom - 2 * rowH - 0.02f * H);
-    int used = 0, cap = 0;
-    if (baseinfo::Cargo(used, cap) && cap > 0)
+    // the purse and the hold under the ship's name, in the docked strip's words and sizes (uistrip DrawStrip's second line, which stands down over a NeuroNet
+    // window): at the column's foot the compare block pushed them under the prompts (issue 67)
     {
-        row(L"Cargo", std::to_wstring(used) + L" / " + std::to_wstring(cap));
-        skinkit::Pips(mx0, my, mx1 - mx0, 0.010f * H, static_cast<float>(used) / cap, 20, used >= cap ? kWarn : kChrome);
-        my += 0.02f * H;
+        float lx = f.left;
+        const float ly = f.titleY + 0.043f * H; // (between the title and the filters: at 1280x800 0.050 H left the filters 8 px under it)
+        const auto item = [&](const wchar_t* label, const std::wstring& value, u32 rgb)
+        {
+            lx += Text(lx, ly, label, 0.024f * H, Argb(kChrome, 1), Left, 0.06f) + 0.010f * H;
+            lx += Text(lx, ly, value, 0.030f * H, Argb(rgb, 1)) + 0.032f * H;
+        };
+        item(L"CREDITS", Money(baseinfo::Credits()), kInk);
+        int used = 0, cap = 0;
+        if (baseinfo::Cargo(used, cap) && cap > 0)
+            item(L"CARGO", std::to_wstring(used) + L" / " + std::to_wstring(cap), used >= cap ? kWarn : kInk);
     }
-    row(L"Credits", Money(baseinfo::Credits()));
     if (!g_pad && g_itemList.count > 0)
     {
         float cx = 0.425f * W;
@@ -885,6 +901,10 @@ static unsigned PadInventory(u32 root, unsigned pressed)
 }
 
 // ---- LOG and INFO: the game's text in a column, HUD 2 round it
+// The hole for the game's text starts a little below the text's top: the window's art (a tab's foot, a line) stands on the text's top left, and a hole grown up by
+// 0.012 H like its other sides showed it above the first line (issue 63, Shockwave's Deck). At 4K the art's foot stood 8 px under the text's top, the first line's
+// capitals 19 px: the hole starts between them, 13 px (0.006 H; the game's UI scales with the height).
+constexpr float kTextTop = -0.006f;
 static std::wstring g_objective;
 static void LogTab(int mission)
 {
@@ -966,8 +986,10 @@ static void DrawLog(const Frame& f, u32 root)
 {
     const float H = f.H;
     Box hole;
-    hole.Add(uiclick::FindVisible("StoryStarHistoryText"), 0.012f * H);
-    Cover(f.W, H, hole);
+    const u32 text = uiclick::FindVisible("StoryStarHistoryText");
+    hole.Add(text, 0.012f * H, kTextTop * H);
+    const Box open = OpenHole(hole, text);
+    Cover(f.W, H, open);
     Title(f, L"NEURAL NET LOG");
     u8 tab = 0;
     safemem::Read(root + kLogTab, &tab, 1);
@@ -983,6 +1005,15 @@ static void DrawLog(const Frame& f, u32 root)
         skinchip::Tab(r, word, size, (i == 0) == (tab != 0), slot >= 0 && slot == hover);
         tx += w + 0.008f * H;
     }
+    if (!g_pad)
+    {
+        if (!g_objective.empty())
+            ChipAt(0.425f * f.W, LaneY(), LaneChipH(), L"SHOW ON MAP", kChipMap);
+        Mouse(f, L"WHEEL SCROLLS THE TEXT");
+    }
+    // (the column comes with the text, in the frame it stands laid out where it stays: before, it followed it from the game's place)
+    if (hole.ok && !open.ok)
+        return;
     const float x1 = hole.ok ? hole.x0 - 0.03f * H : 0.34f * f.W, inner = 0.016f * H;
     float y = f.top + tabH + 0.02f * H;
     const float cardH = g_objective.empty() ? 0.10f * H : 0.21f * H;
@@ -1003,12 +1034,6 @@ static void DrawLog(const Frame& f, u32 root)
     y = Here(f, y, x1);
     y = Fact(f, y, x1, L"SHIP", baseinfo::ShipName());
     DrawList(f, y, f.left, x1, L"NEAR YOU", g_places, false);
-    if (!g_pad)
-    {
-        if (!g_objective.empty())
-            ChipAt(0.425f * f.W, LaneY(), LaneChipH(), L"SHOW ON MAP", kChipMap);
-        Mouse(f, L"WHEEL SCROLLS THE TEXT");
-    }
 }
 
 // The log after a death or a failed mission (FREELANCER_RE "The death / mission-failed dialog"): the game's text through its hole, the reason at its top;
@@ -1019,8 +1044,9 @@ static void DrawDeath(const Frame& f)
 {
     const float H = f.H;
     Box hole;
-    hole.Add(uiclick::FindVisible("StoryStarHistoryText"), 0.012f * H);
-    Cover(f.W, H, hole);
+    const u32 text = uiclick::FindVisible("StoryStarHistoryText");
+    hole.Add(text, 0.012f * H, kTextTop * H);
+    Cover(f.W, H, OpenHole(hole, text));
     Title(f, L"NEURAL NET LOG");
     if (g_pad)
         return;
@@ -1132,13 +1158,10 @@ static float DrawFactions(float x0, float x1, float y, float foot, float H, cons
     }
     return y;
 }
-static void DrawInfo(const Frame& f)
+// INFO's two columns, laid out by the game's text: the left one ends short of it, the ships stand under it
+static void InfoColumns(const Frame& f, const Box& hole)
 {
     const float H = f.H;
-    Box hole;
-    hole.Add(uiclick::FindVisible("PlayerInfoText"), 0.012f * H);
-    Cover(f.W, H, hole);
-    Title(f, L"CURRENT INFORMATION");
     const float x1 = hole.ok ? hole.x0 - 0.03f * H : 0.34f * f.W;
     float y = Here(f, f.top + 0.03f * H, x1);
     const u32 base = fl::PlayerBase();
@@ -1164,10 +1187,23 @@ static void DrawInfo(const Frame& f)
         DrawList(f, half, f.left, x1, L"FOUND IN THIS SYSTEM", g_places, false);
         // the game's text may be one line: the room under it says who is around
         const u32 text = uiclick::FindVisible("PlayerInfoText");
-        const float used = text ? static_cast<float>(R32(text + 0x380)) : 1e6f;
-        if (hole.ok && hole.y0 + used + 0.08f * H < f.bottom)
-            DrawList(f, hole.y0 + used + 0.05f * H, hole.x0 + 0.012f * H, f.right, L"SHIPS NEAR YOU", g_ships, true);
+        const float used = text ? static_cast<float>(R32(text + 0x380)) : 1e6f, top = hole.y0 + (kTextTop - 0.012f) * H; // (from 0.012 H above the text, as before issue 63)
+        if (hole.ok && top + used + 0.08f * H < f.bottom)
+            DrawList(f, top + used + 0.05f * H, hole.x0 + 0.012f * H, f.right, L"SHIPS NEAR YOU", g_ships, true);
     }
+}
+static void DrawInfo(const Frame& f)
+{
+    const float H = f.H;
+    Box hole;
+    const u32 infoText = uiclick::FindVisible("PlayerInfoText");
+    hole.Add(infoText, 0.012f * H, kTextTop * H);
+    const Box open = OpenHole(hole, infoText);
+    Cover(f.W, H, open);
+    Title(f, L"CURRENT INFORMATION");
+    // (the columns come with the text, in the frame it stands laid out where it stays: before, they followed it from the game's place and jumped twice)
+    if (open.ok || !hole.ok)
+        InfoColumns(f, hole);
     if (!g_pad)
     {
         ChipAt(0.425f * f.W, LaneY(), LaneChipH(), L"SHOW ON MAP", kChipMap);
@@ -1304,11 +1340,17 @@ void Update(float dt, bool pad)
     {
         if (g_syncPending && SyncDue() && !room::NNWindowBusy())
             SyncNow(root); // (the game's selection catches up with a walk: SyncDue)
+        // the game's list stands where the page's does: its five icons are the page's (RowIcons lends one to a shown row outside them)
+        if (!room::NNWindowBusy())
+        {
+            int shown[kListMeshCount], n = 0;
+            for (; n < kListMeshCount && g_itemList.first + n < static_cast<int>(g_items.size()); ++n)
+                shown[n] = g_items[g_itemList.first + n].row;
+            SyncList(root, shown, n);
+        }
         if ((g_itemRead -= dt) <= 0)
         {
             ReadItems(root), g_itemRead = 0.5f;
-            if (g_itemList.first < static_cast<int>(g_items.size()) && g_items[g_itemList.first].row >= 0 && !room::NNWindowBusy())
-                SyncList(root, g_items[g_itemList.first].row);
             for (int i = 0; i < 5; ++i)
                 if (g_filterWord[i].empty())
                 {
@@ -1357,6 +1399,22 @@ void Draw()
         const int cmd = nnstrip::Wanted() ? nnwin::OpenCommand() : 0;
         if (cmd == nntabs::kCmdChat || cmd == nntabs::kCmdGroup)
             Title(Bounds(), cmd == nntabs::kCmdChat ? L"CHAT" : L"GROUP");
+        // Between two windows (the old one's close, the new one's open: about a second) no root of a page is shown yet, and the room, the NeuroNet box and the
+        // windows' slides stood under the scrim (issue 62): the page's ground and title stand for the tab already chosen. Not on the death screen (its own page).
+        // The map has no page: its gap is the windows' slides (the map grows to its own ground the frame they end, navnew Grow), and its title waits for the map,
+        // which may open on another view than the player's system.
+        else if ((cmd == nntabs::kCmdLog || cmd == nntabs::kCmdInventory || cmd == nntabs::kCmdStatus || cmd == nntabs::kCmdInfo ||
+                  (cmd == nntabs::kCmdMap && room::NNWindowBusy())) &&
+                 !uiclick::FindVisible("LoadAutosaveButton"))
+        {
+            const Frame f = Bounds();
+            Ground(0, 0, f.W, f.H);
+            const float lane = deckmode::LaneTopH() * f.H; // (the pad's CLOSE stands at the right edge, where the page's prompts end: as below)
+            winplates::g_keep.push_back({f.left, lane, f.left + 0.02f * f.H, lane + 0.02f * f.H});
+            const std::wstring ship = cmd == nntabs::kCmdInventory ? Upper(baseinfo::ShipName()) : std::wstring();
+            if (cmd != nntabs::kCmdMap)
+                Title(f, cmd == nntabs::kCmdLog ? L"NEURAL NET LOG" : cmd == nntabs::kCmdStatus ? L"PLAYER STATUS" : cmd == nntabs::kCmdInfo ? L"CURRENT INFORMATION" : ship.empty() ? L"INVENTORY" : ship);
+        }
         return;
     }
     const Frame f = Bounds();
@@ -1378,10 +1436,19 @@ void Under()
 {
     if (g_page == Page::Inventory)
         HideTrade();
+    // the rows' item models, between the game's row fill and the UI pass that draws them (nnpage_kit.h RowIcons); a window gone since the page drew sends nothing
+    if (g_page == Page::Inventory && g_root && uiclick::FindVisible("NN_Inventory") == g_root)
+        g_invIcons.Send(g_root);
+    else
+        g_invIcons = ListIcons();
+    basepage::IconsUnder();
+    LentSweep(); // (a lent model no page sent this frame: its mesh's true name back)
     // STATUS: the card's window brings its X along (PlayerInfoCloseButton), cut at the page's top right (Shockwave's shots, the owner, 7 Nov 2026): off the page,
-    // which closes by its own CLOSE. The STATUS word beside it is no text control (PlayerInfoTitle blanked, PlayerStatsTitle is the faction's name): not hidden yet
+    // which closes by its own CLOSE. So does the window's own title, PlayerInfoMainTitle (IDS 931 PLAYER STATUS: its STATUS stood cut by the top edge of the
+    // card's hole); the page's title says it. The card's heading, the faction's name, is the card's own and stays (docs\FREELANCER_RE.md "Base windows").
     if (g_page == Page::Status)
-        PlaceAt(uiclick::FindVisible("PlayerInfoCloseButton"), -static_cast<float>(fl::ScreenWidth()), 0);
+        for (const char* n : {"PlayerInfoCloseButton", "PlayerInfoMainTitle"})
+            PlaceAt(uiclick::FindVisible(n), -static_cast<float>(fl::ScreenWidth()), 0);
 }
 
 void DrawAfter()
@@ -1495,6 +1562,7 @@ unsigned Pad(unsigned pressed, unsigned held, float dt)
 
 void Shutdown()
 {
+    LentSweep(true); // (the game's own window must not keep a lent model under another name)
     g_page = Page::None;
     g_root = 0;
 }
@@ -1521,7 +1589,15 @@ std::string Command(std::istream& in)
     o << "nnpage page=" << static_cast<int>(g_page) << " root=0x" << std::hex << g_root << std::dec << " pad=" << g_pad << " reps=" << g_reps.size() << " shown=" << g_repList.count << " sel=" << g_repList.sel
       << " paused=" << g_paused << " card=" << g_card << " cardFor=" << (g_repList.count > 0 && g_repList.sel < static_cast<int>(g_repShown.size()) ? static_cast<int>(g_repShown[g_repList.sel].index == g_cardShown) : -1) << " syncPending=" << g_syncPending << " places=" << g_places.size() << " guns=" << g_load.guns << " hullps=" << g_load.hull << " items=" << g_items.size() << " itemSel=" << g_itemList.sel;
     if (g_page == Page::Inventory && g_root)
-        o << " filter=" << Filter(g_root) << " gameRow=" << static_cast<int>(R32(g_root + kInvRow)) << " tradeBlanked=" << g_tradeBlanked;
+        o << " filter=" << Filter(g_root) << " gameRow=" << static_cast<int>(R32(g_root + kInvRow)) << " tradeBlanked=" << g_tradeBlanked << " gameFirst=" << static_cast<int>(R32(g_root + kInvFirst));
+    o << " shownRows=";
+    for (int i = 0; i < g_invIcons.n; ++i)
+        o << (i ? "," : "") << g_invIcons.shown[i].gameRow;
+    o << " iconSends=" << g_iconSends << " iconLoads=" << g_iconLoads << " iconCatchUps=" << g_iconCatchUps << " iconHidden=" << g_iconHidden; // (both pages: nnpage_kit.h RowIcons)
+    int lent = 0;
+    for (const LentModel& l : g_lent)
+        lent += l.file != nullptr;
+    o << " lent=" << lent;
     for (int i = 0; i < 13; ++i)
         if (!g_stat[i].empty())
             o << " s" << i << "=" << g_stat[i].size();

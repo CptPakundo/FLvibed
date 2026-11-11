@@ -7,11 +7,13 @@
 #include "game/hudsize.h"
 #include "game/navview.h"
 #include "game/nnwin.h"
+#include "game/promptfit.h"
 #include "game/room.h"
 #include "game/space.h"
 #include "log.h"
 #include "navmap_layout.h"
 #include "navnew.h"
+#include "nnpage_kit.h"
 #include "safemem.h"
 #include "skin_rules.h"
 #include "skinchip.h"
@@ -19,6 +21,7 @@
 #include "ui/hud2_kit.h"
 #include "ui/hud_rows.h"
 #include "ui/ui.h"
+#include "ui/views.h"
 #include "windowtext.h"
 
 #include <sstream>
@@ -105,6 +108,11 @@ static int g_focus = -1;
 static bool g_listOpen = false; // the pad's destination list stands
 static bool g_failed = false, g_restoreOwed = false, g_nativeAsked = false;
 static bool g_pad = false;
+// What the full-screen map draws over itself (the title, the strip, the cards, the chips, the lines at its foot): the labels keep out of it (issue 72; text draws after
+// every plate, so a label there stood on the card). The map's labels draw first, so they read the last frame's.
+constexpr int kMaxKeepOut = 24;
+static Rc g_keepOut[kMaxKeepOut], g_keepNext[kMaxKeepOut];
+static int g_nKeepOut = 0, g_nKeepNext = 0;
 
 bool NativeAsked() { return g_nativeAsked || skinrules::NativeListed(hudrows::g.skinNative, "navmap"); }
 
@@ -235,7 +243,7 @@ void Unbind()
 {
     RestoreCaptions();
     navnew::Closed();
-    g_root = 0, g_nChips = 0, g_focus = -1;
+    g_root = 0, g_nChips = 0, g_focus = -1, g_nKeepOut = 0;
     memset(g_ctl, 0, sizeof(g_ctl));
 }
 
@@ -375,6 +383,17 @@ static float g_cardAt[2] = {};
 static bool g_cardUp = false, g_clickWas = false; // the mouse's card: where it opened
 static unsigned long long g_panelTick = 0;
 
+static void KeepOut(const Rc& r)
+{
+    if (g_nKeepNext < kMaxKeepOut)
+        g_keepNext[g_nKeepNext++] = r;
+}
+static void Keep(const Rc& r)
+{
+    g_keep.push_back({r.x0, r.y0, r.x1, r.y1});
+    KeepOut(r);
+}
+
 static void EasePanel(float& h, float target)
 {
     const unsigned long long now = GetTickCount64();
@@ -391,20 +410,34 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
     const float W = g_W, H = g_H, side = lay.side * W, right = W - side, gap = kChipGap * H, pad2 = kPanelPad * H;
     const float top = deckmode::EdgeH() * H, chipH = kChipH * H;
     auto shown = [&](int i) { return g_ctl[i] && Shown(g_ctl[i]); };
-    // the title: the game's own word for the system on show
+    // the title: the game's own word for the system on show, where every other tab has its title (issue 74: the solver's margin, which gives way to the
+    // gutter below about 16:9, is the cards')
     std::wstring name;
     if (const u32 c = Child(g_root, "NavMapSystemName"))
         TextOf(c, name);
-    const float titleSize = 0.044f * H;
-    const float titleW = name.empty() ? 0 : TextWidth(name, titleSize);
+    g_nKeepNext = 0;
     if (!name.empty())
-        Text(side, top + chipH / 2, name, titleSize, Argb(kInk, 1));
-    (void)titleW;
+    {
+        const nnkit::Frame f = nnkit::Bounds();
+        nnkit::Title(f, name);
+        const float h = 0.044f * H; // (Title's size)
+        KeepOut({f.left, f.titleY - h * 0.6f, f.left + TextWidth(name, h), f.titleY + h * 0.6f});
+    }
+    // the strip and the mouse's CLOSE: they draw after the map in the pass, so their places from the last (issue 72: names stood on the tabs)
+    Rc strip[2];
+    for (int i = 0, n = nnstrip::LastAreas(strip); i < n; ++i)
+        KeepOut(strip[i]);
+    // the pad's prompt lane (A SELECT ... B CLOSE), each pill as the controller's bar drew it, in one row or two: it draws after the map too (issue 72: Trenton
+    // Outpost stood under A SELECT)
+    float plates[promptfit::kLaneMax * 4];
+    for (int i = 0, n = views::DevicePromptPlates(plates, promptfit::kLaneMax); i < n; ++i)
+        KeepOut({plates[i * 4], plates[i * 4 + 1], plates[i * 4 + 2], plates[i * 4 + 3]});
     // the mouse's way into the layers' card, where the pad has D-pad right
     if (!pad)
     {
         const float w = TextWidth(L"LAYERS", size) + 2 * pad2;
         DrawChip(kOpenLayers, {right - w, top, right, top + chipH}, L"LAYERS", size, true, g_layersOpen, false, hover);
+        KeepOut({right - w, top, right, top + chipH});
     }
     // the left card: what the mission asks and the route
     int mission[4], nm = 0;
@@ -427,7 +460,7 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
             DrawChip(mission[k], c[0], kDefs[mission[k]].word, size, NativeEnabled(g_ctl[mission[k]]), false, false, hover);
         }
         EasePanel(g_panelH[0], y + pad2 - p.y0);
-        g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
+        Keep(p);
     }
     else
         g_panelH[0] = 0;
@@ -472,7 +505,7 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
                 DrawChip(sel[i], c[i], Word(sel[i], v), size, NativeEnabled(g_ctl[sel[i]]), false, false, hover);
         }
         EasePanel(g_panelH[1], y + pad2 - p.y0);
-        g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
+        Keep(p);
     }
     else
         g_panelH[1] = 0, g_cardUp = false;
@@ -518,7 +551,7 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
             chip(ids[i], kDefs[ids[i]].word, c[i], NativeEnabled(g_ctl[ids[i]]), Current(ids[i], v, layer));
         EasePanel(g_panelH[2], bottom + pad2 - p.y0);
         if (open)
-            g_keep.push_back({p.x0, p.y0, p.x1, p.y1});
+            Keep(p);
     }
     // the bottom's left half, the mirror of the prompts: how to move about the map, in two lines; what does nothing now dims, and a line that does not fit loses its last words first
     if (pad)
@@ -566,10 +599,10 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
         const float laneMid = (deckmode::LaneTopH() + deckmode::LaneBottomH()) / 2 * H;
         line(upper, 5, laneMid - 0.042f * H, right);
         // (the prompts' second row, when they need one, stands beside what this line leaves)
-        g_keep.push_back({side, deckmode::LaneTopH() * H - 0.06f * H, upperEnd, deckmode::LaneTopH() * H - 0.001f * H});
+        Keep({side, deckmode::LaneTopH() * H - 0.06f * H, upperEnd, deckmode::LaneTopH() * H - 0.001f * H});
         line(lower, 3, laneMid, limit);
         // (this holds the lane's left, as the tabs did: the prompts stand at the right edge as its mirror, promptbar.cpp CentreLane)
-        g_keep.push_back({side, deckmode::LaneTopH() * H, limit, deckmode::LaneBottomH() * H});
+        Keep({side, deckmode::LaneTopH() * H, limit, deckmode::LaneBottomH() * H});
     }
     else
     {
@@ -596,7 +629,10 @@ static void DrawFull(const navlayout::MapOut& lay, int v, int layer, float size,
             Text(hx, y, r.word, s, Argb(kInk, a));
             hx += TextWidth(r.word, s) + 0.030f * H;
         }
+        KeepOut({side, deckmode::LaneTopH() * H, hx, deckmode::LaneBottomH() * H});
     }
+    std::copy(g_keepNext, g_keepNext + g_nKeepNext, g_keepOut);
+    g_nKeepOut = g_nKeepNext;
 }
 
 void Draw(const Win* map, bool pad)
@@ -632,7 +668,9 @@ void DrawOver()
     const int v = View(), layer = Layer();
     // (the popup stands, by the zoom button every popup shows: Set Waypoint is not in the popup of an object the click hit, the owner's Newark, 7 Nov 2026)
     navnew::SetSelected((Child(g_root, "NavMapOutZoom") && Shown(Child(g_root, "NavMapOutZoom"))) || (Child(g_root, "NavMapInZoom") && Shown(Child(g_root, "NavMapInZoom"))));
-    navnew::DrawOverMap(mapRect);
+    if (!navnew::Grown())
+        g_nKeepOut = 0;
+    navnew::DrawOverMap(mapRect, g_keepOut, g_nKeepOut);
     const float size = kWordH * H * hudsize::g_baseK * (deckmode::g_on ? 1.2f : 1.0f);
     const int hover = skinchip::Hovered();
     if (navnew::Grown())

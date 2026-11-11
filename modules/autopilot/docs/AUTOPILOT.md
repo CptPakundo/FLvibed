@@ -358,7 +358,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
     the player's stop (StopReason::PlayerInput): it ends the objective mode as the pad's View hold always did (before,
     `Stop("bar")` left the supervisor on, which re-decided into Hold - found by the parity test). The goal panel
     (AUTOPILOT_UX.md 5.3) has a keyboard + mouse form: Shift + the autopilot key or Shift + click on the bar button /
-    HUD 2's icon opens it (the pad: X while it flies, the wheel's AUTOPILOT GOALS). Verified 26 Oct 2026 (release, HDE
+    HUD 2's icon opens it (the pad: the wheel's AUTOPILOT GOALS; X while it flies until GitHub issue 65, 11 Nov 2026). Verified 26 Oct 2026 (release, HDE
     4K, `research\experience\runs\autopilot_parity_2026-10-26\`): M03 SaveS010 K and View held -> objective; SaveS023
     (no objective) with a waypoint -> waypoint travel, without -> target, both devices.
   - **Missiles** (18 Oct 2026): wanted on need (outmatched by measured time-to-kill vs time-to-die, big ship, slow kill)

@@ -150,6 +150,12 @@ bool IsAncestor(u32 root, u32 ctl)
     return false;
 }
 
+bool CargoDemand(u32 root)
+{
+    u32 vt = 0;
+    return root && R32(root, vt) && exe::VtMissionMessage.is(vt) && Child(root, "DropCargoButton") && Child(root, "DCCancelButton");
+}
+
 bool RectOf(u32 ctl, Box& b)
 {
     ui::Item it;
@@ -329,6 +335,7 @@ float g_lowestModalY1 = 0;
 bool g_modalOpen = false, g_dockedFrame = false, g_dockedLane = false;
 float g_nnRight = 0, g_nnBottom = 0;
 std::vector<KeepOut> g_keep;
+size_t g_keepUnder = 0;
 bool g_paint = false;
 static bool g_laneTrim = false; // the prompt lane is in use this frame: plates with a `trim` end there
 int g_sw = 0, g_sh = 0;
@@ -1235,7 +1242,12 @@ void Geometry(void* device)
     g_lowestModalY1 = 0, g_modalOpen = false, g_dockedFrame = false, g_dockedLane = false, g_nnRight = 0, g_nnBottom = 0;
     g_docked = DockedGeo();
     g_keep.clear();
+    g_keepUnder = 0;
     g_paint = false;
+    struct Under // (whatever way the pass ends: what it collected is the under pass's)
+    {
+        ~Under() { g_keepUnder = g_keep.size(); }
+    } under;
     if (g_wins.empty() || !device)
         return;
     render::SetDevice(device);
@@ -1288,6 +1300,7 @@ void ClassicPass(void* device, bool enabled, bool pad, bool classic)
     {
         g_wins.clear();
         g_keep.clear();
+        g_keepUnder = 0;
         g_scene = false, g_modalOpen = g_dockedLane = g_dockedFrame = false, g_nnBottom = g_lowestModalY1 = 0;
         if (enabled && classic)
             gamecard::NativeCard(LetterboxNow() > 0.001f); // the game's name card off the character (mouse)

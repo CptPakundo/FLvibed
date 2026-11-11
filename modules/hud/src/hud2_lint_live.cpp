@@ -207,6 +207,13 @@ std::string LintCommand(std::istream& in)
     // (the consumables' cross stacked on the loadout cuts the rail at its top: the owner's decision 3; the lower centre's
     // clear zone is every preset's, from the drawn ring's lowest edge + 0.01 H: decision 4, UI_HUD2.md 5.23)
     li.dlgX0 = L.dlgX0, li.dlgY0 = L.dlgY0, li.dlgX1 = L.dlgX1, li.dlgY1 = L.dlgY1;
+    // (the reserved areas of the parts that draw this frame: a quiet one - held back, suppressed - covers nothing)
+    for (int a = 0; a < hud2layout::kAreaCount; ++a)
+        if (L.res.Placed(a) && !((L.res.quiet >> a) & 1))
+        {
+            const hud2layout::Rect& r = L.res.at[a];
+            li.areas.push_back({hud2layout::AreaPart(a), hud2layout::AreaName(a), r.x0, r.y0, r.x1, r.y1});
+        }
     // (`m.list`: a contact list the player opened stands in S2 on the pad as it does on the keyboard; the pad's automatic list keeps the 1.3 rule)
     li.zones = hud2lint::ZonesOf(preset, L.W, L.H, L.tgtX0, L.tgtX1, m.kbm || m.list, L.consY1 > L.consY0 ? L.consX0 : 0,
                                  L.consY1 > L.consY0 ? L.consY0 : 0, L.clearY0);

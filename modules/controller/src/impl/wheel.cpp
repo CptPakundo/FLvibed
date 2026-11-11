@@ -30,7 +30,6 @@ enum class Slot
     Comms,
     Filter,
     Goals,
-    Rear,
     HudMode,
     EngineKill,
 };
@@ -44,7 +43,6 @@ struct Item
 static bool g_open = false;
 static std::vector<Item> g_items;
 static int g_sel = -1; // the highlighted slot (-1 none: a bare hold and release does nothing)
-static bool g_rear = false;
 static int g_filter = 0; // the contact filter the wheel clicked last (its own count; the HUD does not tell)
 static Edges g_edges;
 static float g_rx = 0, g_ry = 0;
@@ -65,7 +63,7 @@ static void Build()
     g_items.push_back({Slot::Filter, L"CONTACT FILTER", true});
     if (views::ApPresent())
         g_items.push_back({Slot::Goals, L"AUTOPILOT GOALS", true});
-    g_items.push_back({Slot::Rear, L"REAR VIEW", true});
+    // (no REAR VIEW: the right stick's click held is the rear view in every layout - GitHub issue 65, the owner 11 Nov 2026)
     if (views::HudActive()) // hud_fade, HUD 2's row: the plate says the setting as the options page does (the owner, 6 Nov 2026)
         g_items.push_back({Slot::HudMode, uiopt::Get().hudFade == 0 ? L"HUD ALWAYS" : L"HUD FADES", true});
     if (uiopt::Get().weaponGroups == 2) // the triggers fire the groups: the afterburner took L3, engine kill lives here
@@ -93,8 +91,6 @@ void Cancel()
 }
 
 bool IsOpen() { return g_open; }
-bool RearView() { return g_rear; }
-void DropRearView() { g_rear = false; }
 
 bool OwnsButton(glyphs::Id b)
 {
@@ -161,10 +157,6 @@ presets::Action Commit()
     case Slot::Filter: CycleFilter(); break;
     case Slot::Goals: views::PanelToggle(); break;
     case Slot::EditGroups: wgroups::Open(); break;
-    case Slot::Rear:
-        g_rear = !g_rear;
-        events::Push("wheel rear view %s", g_rear ? "on" : "off");
-        break;
     case Slot::Comms: Tap(fl::USER_RADIO); break; // the game's hail (keymap P): what it does in single player is the game's
     case Slot::HudMode:
     {
@@ -417,11 +409,9 @@ std::string Command(std::istream& in)
     }
     else if (what == "cancel")
         Cancel();
-    else if (what == "rear")
-        g_rear = !g_rear;
     else if (what != "state" && !what.empty())
-        return "wheel: open | pick <n> | commit | cancel | rear | state";
-    o << "wheel open=" << g_open << " sel=" << g_sel << " rear=" << g_rear << " filter=" << g_filter
+        return "wheel: open | pick <n> | commit | cancel | state";
+    o << "wheel open=" << g_open << " sel=" << g_sel << " filter=" << g_filter
       << " rs=" << g_rx << "," << g_ry << "\n";
     for (size_t i = 0; i < g_items.size(); ++i)
         o << (static_cast<int>(i) == g_sel ? " > " : "   ") << i << " " << text::Utf8(g_items[i].label)

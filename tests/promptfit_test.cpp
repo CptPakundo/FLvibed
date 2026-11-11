@@ -755,6 +755,18 @@ void Test_promptfit()
             const LanesPlaced o = promptfit::PlaceLanes(w, nullptr, side, 3, gap, t, H, k);
             CHECK(o.n == 1 && o.side[0] == 1 && o.moved[0]);
         }
+        // a lane's rows closed (the subtitles' panel over them: HUD 2's FitLanes): the right lane's prompts take the left
+        {
+            LaneGeom t = g;
+            t.rightRows = 0;
+            const float w[2] = {100, 100};
+            const int side[2] = {1, 1};
+            const LanesPlaced o = promptfit::PlaceLanes(w, nullptr, side, 2, gap, t, H, k);
+            CHECK(o.n == 2 && o.side[0] == 0 && o.side[1] == 0 && o.moved[0] && o.moved[1]);
+            t.rightRows = 1;
+            const LanesPlaced p = promptfit::PlaceLanes(w, nullptr, side, 2, gap, t, H, k);
+            CHECK(p.n == 2 && p.side[0] == 1 && p.row[0] == 0 && p.side[1] == 0);
+        }
         // typing (no widths): every prompt kept, nothing measured
         {
             const LanesPlaced o = promptfit::PlaceLanes(nullptr, nullptr, nullptr, 3, gap, g, H, k);

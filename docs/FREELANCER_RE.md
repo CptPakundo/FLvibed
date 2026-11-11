@@ -940,6 +940,14 @@ Verified in game on instance 5 (SaveC705, HDE 0.7.1, 4K) unless marked; screensh
   loot objects vanished into the hold; USER_TRACTOR_BEAM with nothing targeted did nothing). Loot in reach = CLoot
   objects within the tractor's [Tractor] max_length (Starflier 1500 m). (`destroytarget` kills of spawned pirates DID
   drop loot here: 6 items.)
+- **Loot into the hold** (11 Nov 2026, GitHub issue 69; decompiled HDE 0.7.1 + **verified in game**, SaveC706): the server tells the client each item
+  a ship's tractor took in through IClient slot 64, Send_FLPACKET_SERVER_ITEMTRACTORED (FLHookSDK's layout; the exe's Client object's slot =
+  exe::ClientItemTractored 0x53C5D0, thiscall(client, const packet*) ret 8). The packet: +0 the loot's id, +4 the ship's id, +8 u16 the tractor's equip
+  id, +0xA u16 the units taken. The handler removes the arm's target (0x52F9A0 -> CETractor::RemoveTarget) and in multiplayer subtracts the units
+  from the CLoot (+0xF0). It comes for every ship the client hears of, NPCs too (a police ship took one of a dead pirate's six items in the first
+  try). Seen: 6 records for the player's ship (11) on USER_COLLECT_LOOT beside 6 items, each loot's good (the contact's lootGood) equal to the archetype
+  whose count rose in the server's equipment list, nothing else changed; the loot object has left the contacts when it arrives. Nothing else sends it
+  (a purchase, a mount, a mission's cargo, a load). core\host\events.cpp records it on the HUD bus (version 7); HUD 2's loot notice reads it.
 - **Missile lock:** CEGun::GetSecondsTillLock = max(0, Munition time_to_lock (+0x94) - the gun's lock clock (+0x26C)),
   only for seeker = LOCK (+0x90 = 2); every munition in HDE's data has `time_to_lock = 0`, so the lock is immediate:
   MissileLock() reads 1 with a guided launcher and a ship targeted, -1 without either and on a solar (the gun's clock
@@ -1100,6 +1108,8 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
   Table: `modules\hud\docs\UI_HUD2_INPUTS.md` 4.
 - **The alerts:** `MissileAlert`, `TrailAlert`, `RadiationAlert`, `LagAlert` are children of `Targetable_Objects` (constructor 0x4E8FE0; update 0x4EC450). In game: `RadiationAlert` stands at about 0.77 W, 0.11 H at 16:9, draws over the nav map, the pause and the death dialog, and toggles on under the pause.
 - **The nav map's labels** (5 Nov 2026, in game): 0x499C20 places them, in views 0 and 1, at (x / +0x4A8) x 0.2, (z / +0x4AC) x 0.18, constants that do not follow the box +0x418 / +0x41C; writing those fields x 0.468 / box makes them follow. +0x4A8 is rewritten on a return from the universe view (112000 in New York). The map is a new object at every open. `+0x84 = -1` takes its frame off, bit 1 of the windows at +0xBB8 / +0xBBC their art. White in the Political map is the game's "neutral".
+  The filter ALL is not the union of FRIENDLY and HOSTILE (11 Nov 2026, the game's own map, `navskin native on` + `navnew off`, New York): Political ALL drew large white zones, FRIENDLY one green zone; Patrols ALL drew white paths, FRIENDLY green paths elsewhere. FLvibed's map drew the same sets (issue 61; the report's Hamburg, where Patrols ALL drew nothing, was not reached). Confirmed with FLvibed's HUD module off (`-Modules subtitles,controller,hud=0`). The Legend (layer 4) draws its swatches and icons in the box's units, fixed on the screen, and its words as the window's own text, which moves with the window: with the module off every word stands beside its swatch; windowtext's 0.05 H drop of the map window put each word a row below its swatch.
+  The Legend's icons are one textured quad (11 Nov 2026, read and measured): 0x4926D0 builds `Interface\NeuroNet\NavMap\NewNavMap\NAV_legend.3db` once into +0xC20 (handle -1 until then), places it at +0x81C (0, 0, -0.71) by DALib's `IEngine` vt[0x8C], and scales its orientation (vt[0xA0] read, vt[0x9C] write, vt[0x6C] update) x 1.175 and y 1.5 (0x493184); the map's camera +0xC80 draws it, square per pixel (focal 1019.87 px both axes at 4K), in the game's square box (0.468 x 0.468) and viewport (1048 x 1049 px). The quad is 0.3119 x 0.2759 half across (VMeshRef) and its 1024 x 1024 texture holds square icons (swatches 56 x 56 texels, column at u 0.156), so every swatch stood 0.886 as wide as tall: measured 0.87-0.91 in the game with the HUD module off at 3840x2160, 1280x800, 1600x1200 and 2560x1080, the same at each aspect. FLvibed's map sets the quad's x scale to y x 0.2759 / 0.3119 and moves it so the column stays (navnew SquareLegend).
 - **Six top-level controls (parent 0) hold the whole flight HUD:** `HUD_Maneuvers` (the maneuver bar, the cruise box,
   FLvibed's autopilot button), `NN_MainButton` (the NeuroNet box), `HUD_Target` (the target panel), `HUD_ContactList`
   (the contact list and its filters), `HUD_Status` (the status / weapon panel, nanobots, batteries, the weapon groups),
@@ -1144,6 +1154,34 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
   second, none once the test stopped or put them back (`ui::HitTest`, `QuietHelp`). Which control's vt[0x10] does it was not read.
   `QuietHelp` leaves help that was already up, so with the pad's hidden cursor on another control the game's hover and the test rewrite the one ToolTip: on a still job board "Kill Ships"
   and "Accept Job." swapped on screen, read frame by frame (6 Nov 2026). `ui::HideHoverHelp` takes it down before the UI draws in a pad window with the arrow hidden; rooms keep it, there it is the name card.
+- **The hover help's fields (read in Ghidra and in game 11 Nov 2026, instance 9, SaveC701, 1280x800 and 4K; GitHub issues 71, 75):** a control's vt[0x10] under the hit
+  test passes one help record to both helpers: 0x4BE370 -> 0x4BDEA0 (the ToolTip) and 0x4B62B0 -> 0x4B5CA0 (the **Rollover**, global 0x672288, ctor 0x4B6630, vt
+  0x5D5454 `exe::VtRollover`). Both draw while **state bits 0 and 1** are set; **the text is the control's text object at +0x7C** (vt[0x70] 0x5A1CB0 = `this + 0x7C`
+  -> 0x415860, which copies into a buffer whose wchar_t* is the object's first word); the place is +0x60, projected. **+0x159 is not "showing":** the update
+  0x4BDDA0 sets it while a mouse button is down over the help (0x4BDE87) and 0x4BDEA0 then keeps the same help hidden: it is the click's dismissal, 0 for
+  every ordinary hover; **+0x104 read 0** with a box on screen (so `skinover`'s Shadow read, which tested both, never read once until 0.4.6). The ToolTip
+  stays up while something re-shows it each frame (+0x164 "asked this frame", cleared by the update), appears after the cursor rested +0x168 = 0.25 s
+  (+0x160) and switches at once while +0x15C (0.25 s after it last showed) runs. The Rollover keeps its own clocks (+0x164 hold, +0x17C 0.5 s, +0x180
+  rest) and **places itself at a fixed spot** (x from +0x184 / +0x188 by 0x5B0880, y 0.385 at z -1: the top left, 111, 1 at 1280x800). What each shows:
+  a room button: the ToolTip its hint IDS ("Bar"), the Rollover the hotspot's long hint ("The Bar is the place to hear the latest news, ..." - the box
+  of issue 71, which drew under HUD 2's character card); a NeuroNet box button: "Neural Net Log (F5)" and "Mission objectives and personal log
+  entries."; a pause menu button: the ToolTip alone. **The nav map's hover is the ToolTip** ("Planet Manhattan"; the Rollover stays hidden, state 0x08), placed
+  by the game on its own map's size: on FLvibed's grown map (`navnew`) it stood away from the hovered place (issue 75's "Alsterfeld").
+- **Where a control's help texts come from (Ghidra 11 Nov 2026, read in game the same day, instance 9, SaveC701; GitHub issue 71):** the hit test's vt[0x10]
+  (the base 0x5A0340, also the icon button's) calls vt[0x88] while the control has a hint IDS (+0xCC) and state bits 0 and 1. The icon button's vt[0x88] 0x55BDE0
+  hands both helpers one record: [0] = [1] = +0xCC, [0x11] = the command +0x34C (the base's 0x5A0530: [0] the control, [1] +0xCC, no command). **The ToolTip**
+  (0x4BD880) shows IDS [1] and, while `exe::CommandKey` 0x577DD0 finds a key bound to the command, " (" + `exe::CommandKeyText` 0x577F50 + ")": "Neural Net Log
+  (F5)". **The Rollover** (0x4B5CA0) looks [1] up in its own map at **+0x150** (std::map: head +0x154, nil +0x158; node +0 left, +8 right, +0xC hint IDS, +0x10
+  the long hint's IDS; lower bound 0x432240, then the key itself) and shows that IDS: 1057 -> 2057 "Mission objectives and personal log entries.", 6506 (Bar) ->
+  2306, 1319 (Commodity Trader) -> 2305, 6501 (Launch Pad) -> 2301, 1321 (Ship Dealer) -> 2307, 6502 (News) -> 2302. Each shows only while its UI option is on
+  (`exe::UiOptionFind` 0x5B36B0, value float at +0x14 >= 0.999: "enable_tooltips", "enable_rollover"). **The NeuroNet box's buttons** are icon buttons under
+  NN_MainButton carrying the tab's command: NNMissionLogButtonRoot +0xCC 1057, +0x34C 0x67. HUD 2's words (`nnstrip`) stand elsewhere than these hidden buttons,
+  so the game's hover there names whatever button lies under the word (issue 71: "Neural Net Log (F5)" on INVENTORY at 4K); `skinover::WordHelp` reads a word's
+  own control this way instead.
+- **A background game computes no hover:** the UI update 0x59E080 asks the hit test with the cursor ray at 0x67DBCC, which the mouse's motion messages write
+  (0x59D2A5 / 0x59D540); an unfocused window gets none, so `HoveredControl` stays 0 and no help starts whatever `mouse x y` does. The test aid `uiskin hover
+  <x> <y>` asks the hit test at that pixel each frame after the update and before the UI pass and leaves what it shows (`ui::HitTest(x, y, false)`): the
+  help's own rest timer, text and placing then run as on a real hover.
 - **The flat icon sheets on vanilla 1.1:** `DATA\INTERFACE\ButtonTextures.txm` (0.96 MB) holds Montage32 / Montage64 /
   HUD_targetingelement as 256 x 256 uncompressed TGA MIP0 (HDE: 1024 x 1024) with the same grid and meanings (shaded
   grey art instead of HDE's flat white); HUD_talkelement besides.
@@ -1158,6 +1196,10 @@ subtitles' `background_style 1` reproduces it (modules\subtitles\docs\DISPLAY_PL
   four slide sites (0x45CDBE, 0x45D10E, 0x45D277, 0x45D68C): no immediate, so no code patch and no hook on 0x55E120 is needed (a hook there would also miss
   the close's 0x55E590). 0x5A0300 / 0x5A0320 (vt[0x80] / vt[0x84] of every window class) set and clear the modal byte +0x2D0; the manager's open and switch
   do not call them, so a NeuroNet window is not modal by that road: probe N1 of `modules\hud\docs\UI_HUD2_BUILD_040.md` reads it.
+  In game (11 Nov 2026, instance 9, SaveC706, fpscap 60, frames grabbed): in space, between two windows (the old one's slide-out, the waiting one's open:
+  about 0.6 s) and on a first open from flight until its window stands, **no window root is shown and the cursor stays the flight cross**, so a mode read
+  from the roots and the arrow says flight; only the manager's open / waiting command (`nnwin::OpenCommand`) knows a window is on its way. HUD 2 takes
+  that as a window (`modules\hud\src\hud_module.cpp` Flight).
 - **The cruise line:** `HUD_CruiseProgress` (vt 0x5D7EBC, its text built by 0x4D5DB0) draws its text child `CruiseProgressText` itself
   (0x4D5EB0): while the engine charges "%s - %d%%" with IDS 1413 "CRUISE ENGINE CHARGING - WEAPONS OFFLINE", while the
   charge clock is negative (disrupted) "%s - %d" with IDS 1615 "Cruise Disrupted" and the seconds left (ceil).
@@ -1438,8 +1480,12 @@ Every window is a root control named after its class; a window is open when its 
   `LogButton` (2359 x 1394) (text buttons), `StoryStarHistoryText`, `ScrollV_1`, `StoryStarCloseButton` (2816 x 388);
   player status = `NN_PlayerInfo`: `PlayerInfoFactionFrame0..5` (text buttons: the faction rows) with `...Name N`,
   `PlayerInfoUnfriendlyBar N` / `PlayerInfofriendlyBar N`, `FactionInfoCard`, `PlayerInfoScroll`,
-  `PlayerInfoHeading0..12` / `PlayerInfoStat0..12` (the statistics, in the same window: no REPUTATION / STATS tabs),
-  `PlayerInfoCloseButton` (2816 x 365); help = `NN_Help` with `PlayerInfoText`, `ScrollV_2` and **a close button also
+  `PlayerInfoHeading0..12` / `PlayerInfoStat0..12` (the statistics, in the same window: no REPUTATION / STATS tabs;
+  hidden while a faction's card stands, but the game goes on writing them there: Total Time counted 00:36:35 -> 00:36:40
+  in 5 s read through `uiclick::Find`, docked, SaveC701, 11 Nov 2026, issue 73),
+  `PlayerInfoCloseButton` (2816 x 365); the window's title `PlayerInfoMainTitle` (a title text, vt 0x5E4F24, IDS 931) stands over
+  the faction card's top: with the card up, its STATUS showed at the card's top left at 4K, and went with the control alone (its
+  visible bit cleared by hand, 11 Nov 2026, docked, SaveC701; the card's own heading, the faction's name, stayed); help = `NN_Help` with `PlayerInfoText`, `ScrollV_2` and **a close button also
   named `PlayerInfoCloseButton`** (2798 x 368). `USER_INVENTORY` opens `NN_Inventory` while docked too (verified in game
   5 Nov 2026, SaveC701; an older line here said it opens nothing).
 - **Nav map** (verified in game 25 Oct 2026, SaveC702, 4K): the root is **`NeuroNetNavMap`** (class NN_NavMap, vt
@@ -1832,12 +1878,28 @@ and HDE 0.7.1 / upstream: same TimeDateStamp 0x3ECBB142, same RVAs; v1.0's diffe
 - **Mission / tutorial message box** (M01's "Enter formation with the USV Brandt" etc.): its window's vtable is 0x5D24F4
   (`exe::VtMissionMessage`, signed 2 Nov 2026 with sigtool on the 0.7.1 install; its OK button = `MMOkButton`); the HUD 2
   skin draws its plate from the box's own rect (89042a3e). Not yet checked against the upstream HDE exe.
+- **The cargo demand** (GitHub issue 76; Ghidra and in game 11 Nov 2026, instance 9, SaveC706, 1280x800 and 4K): the same box in **mode 4** (box +0x360 from
+  0x671FF8). The client's slot 0x53DB40 (IClient table 0x5E6828; it needs the player's ship) calls **0x48A180 `void cdecl(u32 ship, u32 good)`**
+  (`exe::CargoDemandOpen`): it keeps the ship at 0x671F78 and the good at 0x671F74, counts the player's units of the good, builds the text as a FmtStr at
+  0x671F98 (`exe::MissionMessageFmt`; IDS 1310 mad lib: "Hand over your Nanobots(15) or I'll open fire!") and makes `NeuroNetMissionMessage`. The builder
+  0x48A4C0 then makes `MissionCloseButton` (the X), the title `MissionMessageTitle` = the ship's name ("Andrew Farhat"), the rich text `MissionMessageText`
+  (formatted from 0x671F98 by exe::FmtStrFormat at 0x48ABBE), `DropCargoButton` + `DropCargoText` (IDS 1311 "DROP CARGO") and `DCCancelButton` +
+  `DCCancelText` (IDS 1597 "CANCEL") - no MM* button. **Nothing pauses** (UiBusy is set only in mode 6), and the update 0x48ADF0 closes the box **20 s** after it
+  opened, at once when the ship is gone, unknown or out of reach (0x45A490). The handler 0x48AF30: DROP CARGO jettisons the whole stack of the good (the
+  player's object's vt[0x38]) and closes; CANCEL and the X close only. A second demand ends the first and makes the next box in the same call, at the same
+  address as seen (the skin's registry kept the first one's record: `uiskin` HideOwn hides a rebuilt window's new mesh again). Test aid: `uiskin
+  cargodemand <ship id> <good id>` with a ship spawned near (`spawn ... 1 400`).
+  In game 11 Nov 2026 (instance 9, SaveC706, 1280x800 and 4K): the game **keeps its own flight HUD** under the box (`hud_style 0`: every panel shown) but
+  switches the cursor to the **arrow** for it wherever the mouse is, so it read as a NeuroNet window (Mode::SpaceUi) and HUD 2 stood down: FLvibed's mode
+  now counts the box as part of the flight view (`core\game\coreframe.cpp` FlightViewOnly, `winplates::CargoDemand`). Under the box the game takes the
+  flight commands (the throttle went 0 -> 80 m/s, the pad's left stick) but does not steer by the mouse (the pad's right stick turned nothing: the arrow is
+  not the flight cursor). The opener with a spawned ship that was attacking the player closed at once (twice); a neutral one held the box its 20 s.
 - **Main menu** = static object 0x67B780 (vt 0x5E27CC, handler vt[0x5C] = 0x566BD0). Unnamed buttons with ids
   0x10 New Game, 0x03 Load Game, 0x04 Multiplayer (confirmation dialog 0x4740F0), 0x0A Options, 0x0B Exit
   (0x471F30; **asks "EXIT GAME?"** - verified 28 Oct 2026, HDE and vanilla: `ExitButtonBox0` = YES (left),
   `ExitButtonBox1` = NO, the MMOk button class vt 0x5E614C; YES ends the process at once, exit code 0; the pause menu's
   Quit = the PauseButtonBox with action code 5 (`pausecodes`), asking in NN_Confirm `Confirm_delBtnYes` / `No`); ids 0x10/0x03/0x0A are acted on after a short transition (+0x568 id, +0x56C pending, then +0x80).
-- **The load's frame, the save list and the menu's buttons (6 Nov 2026; decompiled and signed, not verified in game unless marked):** 0x578F70 `thiscall(float dt)`: BeginScene, 0x59E500, the bar, its text, then `exe::UiBatchClose` 0x59E5A0 from 0x5790ED with the scene open (probe 9, seen on every path). Its float is the seconds since the last tick, no progress: the bar control (vt 0x5E44A4) adds it to +0x330, wrapping at +0x338, so **no 0..1 progress exists**. Verified in game 7 Nov 2026: two controls are named `LoadingProgressBar` (the bar, vt 0x5E44A4, top-level, and its image child, vt 0x5E4D7C, which a name search may return first); the bar's +0x33C is `LoadingProgressText` (VtTitleText), text object +0x334 -> {+0 wchar_t* "LOADING", +4 8, +8 0x7FFF}, its colour set (property 0x33 from 0x679BB0) and drawn (vt+0x34 = 0x58A7F0, no visible-bit check) each load frame before the batch close; its glyphs reach the screen after anything drawn at that close, so HUD 2's loading screen sets it to a space by its setter (message 0x1D) and back after the load (skinload). Writing the buffer's characters changes nothing on screen: a TextControl draws the layout made when its text was set (the owner's frame, 7 Nov 2026). `exe::SaveList` 0x67E970 (manager 0x67E7B8 + 0x1B8): node [next, prev, record]; record +0 file name, +0x200 hidden, +0x218 description, +0x224 description id, +0x228 FILETIME; filled at the startup scan, no screen needed. The menu's update 0x566510 rewrites every button through its vt[0x14] while the slide runs (a double at menu +0x560, probe 8) and leaves them alone at rest; a button draws its own caption. ToolTip: +0x159 showing, text likely the wide pointer at +0x104, placed at +0x60. The Rollover's text field is unknown. `Version` is the TextControl at 0x67BCC8.
+- **The load's frame, the save list and the menu's buttons (6 Nov 2026; decompiled and signed, not verified in game unless marked):** 0x578F70 `thiscall(float dt)`: BeginScene, 0x59E500, the bar, its text, then `exe::UiBatchClose` 0x59E5A0 from 0x5790ED with the scene open (probe 9, seen on every path). Its float is the seconds since the last tick, no progress: the bar control (vt 0x5E44A4) adds it to +0x330, wrapping at +0x338, so **no 0..1 progress exists**. Verified in game 7 Nov 2026: two controls are named `LoadingProgressBar` (the bar, vt 0x5E44A4, top-level, and its image child, vt 0x5E4D7C, which a name search may return first); the bar's +0x33C is `LoadingProgressText` (VtTitleText), text object +0x334 -> {+0 wchar_t* "LOADING", +4 8, +8 0x7FFF}, its colour set (property 0x33 from 0x679BB0) and drawn (vt+0x34 = 0x58A7F0, no visible-bit check) each load frame before the batch close; its glyphs reach the screen after anything drawn at that close, so HUD 2's loading screen sets it to a space by its setter (message 0x1D) and back after the load (skinload). Writing the buffer's characters changes nothing on screen: a TextControl draws the layout made when its text was set (the owner's frame, 7 Nov 2026). `exe::SaveList` 0x67E970 (manager 0x67E7B8 + 0x1B8): node [next, prev, record]; record +0 file name, +0x200 hidden, +0x218 description, +0x224 description id, +0x228 FILETIME; filled at the startup scan, no screen needed. The menu's update 0x566510 rewrites every button through its vt[0x14] while the slide runs (a double at menu +0x560, probe 8) and leaves them alone at rest; a button draws its own caption. ToolTip and Rollover: see "The hover help's fields" (the text at +0x7C; +0x159 is a click's dismissal, not "showing"). `Version` is the TextControl at 0x67BCC8.
 - **Main menu load screen** = character select, static 0x67AE10 (vt 0x5E2A84, handler 0x56C360): buttons
   LoadCharacter (+0xC8, id 0x3003), DeleteCharacter (+0xCC), MainMenu; save list = list control at +0xD8 (vt
   0x5E5CB4, also the `CharSelDesc` control): +0x8A4 rows, +0x8AC selected (-1 none), +0x8C row data (CHARACTER_ID =
@@ -2563,6 +2625,7 @@ Trent's bar replies are `$BGCS_Trent_<code>P0N_<variant>` (voice trent_voice).
 ## The NeuroNet windows by their own calls (7 Nov 2026)
 Read in Ghidra, used in game (instance 7, background); the research is `docs\research\neuronet-windows-facts.md`, the use `docs\NEURONET_PLAN.md`.
 - **InvSelected 0x47E790** answers the EquipDesc of the row at +0x3A4 under the filter at +0x32C: asking row by row lists a whole filter (verified in game). **InvSelectRow 0x47E0E0**, **InvSetFilter 0x47F240**, **InvMount 0x47F720** (thiscall(EquipDesc*, mounted)). Filters: 0 weapons, 1 ammo, 2 external, 3 internal, 4 commodities (the hint words verified).
+- **Mounting is a dock's** (GitHub issue 79, read from the window dumps and seen in game 11 Nov 2026, commit b2c75339): the game's own inventory window hides its mount toggles `EquipToggle1..5` in space (state 0x0A / 0x5A; docked 0x2B / 0x7B), and **InvMount 0x47F720 itself has no docked test**: a caller must make it (FLvibed's INVENTORY page: `nnpage.cpp` Mountable, the player docked). Before that, A unmounted a gun in flight. Details: `docs\research\neuronet-windows-facts.md` section 2.
 - **The map's marks without a size of their own** (records of type 2 ship, 3, 4; 0x496600, read and driven 7 Nov 2026): their size is record +0x3C, divided by max(1, Z / 2) in view 2 and then scaled like the world, so a grown map grows them; other records take +0xF48 instead. **The status window's data** is the in-process server's answer to the draw's once-a-second vt+0x124: with `FrameUpdate`'s gates shut it never comes (seen in game: numbers blank, the pairs at +0x410 empty).
 - **StatusFactionCard 0x4A8E80** thiscall(index) opens a faction's card; the status pairs sit at +0x410. The game's five standings come from 0x45A6E0 (thresholds -0.6, -0.2, 0.2, 0.6).
 - **GamePaused**, by return address: 13 callers. Answering true to the world's update and the frame update only stops the world while the window stays open (the game's own pause closes it); verified in game, contacts freeze and resume.
@@ -2581,6 +2644,30 @@ Read in Ghidra, used in game (instance 7, background); the research is `docs\res
 - ShipView_Control (Inventory +0x330, vt 0x5E4BCC as ShipTrader3DShip): hidden by the builder 0x478100 (+0x6C bits 0 and 1 cleared), companions ShipView_Toggle / _DamageBar / _Name, Shipview_Frame fetched in 0x47B410 (decompiled; what sets its ship unread).
 - The dealer's whole stock: write +0x3A4 = k, `exe::DealerSelectedGood`, restore; `exe::InvSelectRow` selects on either window, row counted from +0x3C4, and clears the other window's +0x3A4.
 - A window moved off the screen goes on working: clicks by name, the slider, filters, buying and selling. An image control (vt 0x5E4D7C, a row's mesh) moves by position property 6 through vt[0xA8]; its parent's bar: +0x3D0.
+- **The list rows' item models** (NN_Inventory, NN_Dealer and its partner; decompiled 0x47B410 / 0x47C740 / 0x47D2F0 / 0x589050 /
+  0x5A13C0 / 0x59FBD0, verified in game 11 Nov 2026, instance 4, HDE 0.7.1, 1280x800 and 3840x2160, docked and in space; issue 58,
+  `modules\hud\src\nnpage_kit.h` RowIcons): each window has five image controls `ItemMesh1..5` at +0x44C + 4k (0x47B410; vt 0x5E4D7C,
+  `exe::ImageSetProperty`), and its list update 0x47D2F0 runs **every frame** from the window's update (a write watch on mesh +0x2EC:
+  317 writes in 311 frames, eip 0x47D091, caller 0x47D7BB): the row fill 0x47C740 gives mesh k = (game row - +0x3C4) its row's icon,
+  rows outside the window of five are skipped. The game's rows count the ship's **empty hardpoints** too (InvSelected answers 0 for
+  them; their fill sends (0x17, -1) and the mesh drops its model). The fill's messages through vt[0xA8]: mesh +0x2EC = k; (4, GoodInfo
+  +0x78, 0) when not 0; (0x19, 0x10000, 0x10000); (0xC, row == +0x3A4, 0); (0x17, -1, 0) for a row with no GoodInfo. GoodInfo +0x78 is
+  the good's `item_icon` file name (a `const char*`: the mesh then holds "equipment\models\commodities\nn_icons\EQUIPICON_gun.3db";
+  every gun shares that file, launchers have their own). Message 4 goes to ControlSetProperty, which calls vt[0x98] = 0x59FBD0: it
+  returns at once when the control holds a model (+0x84 != -1) of the same name (stricmp with +0xD0), else copies the name to +0xD0,
+  drops the old model and loads the new one. 0xC sets +0x347; 0x17 sets +0x84 = -1. Sent from outside, a model takes **only between
+  the fill and the UI pass** (the pages' Under, `views` UnderBegin): sent after the UI pass (the overlay) it was undone by the next
+  fill before it was ever drawn (a Javelin launcher's row stayed blank, gun rows looked right only because the game's own model was
+  the same file). A load costs about 10 us at 1280x800 and up to about 360 us at 3840x2160 when two models alternate on one mesh
+  every frame (the fill's and the page's), so the page moves the window (its scroll bar +0x3D0) to cover the most
+  shown rows and lends a mesh only to the rest. The list update keeps +0x3C4 inside the list (start <= count - 5).
+  A lent model can stay without a load a frame (verified in game 11 Nov 2026, instance 4, both sizes; `nn.RowModel` 49 / 22 us a frame at
+  1280x800 / 3840x2160 -> 0.6 us, the game's frame rate 55 / 45 -> 60 under fpscap 60): with its name +0xD0 set to the model the fill sends
+  that mesh, 0x59FBD0 finds that name with a model held and returns, and the lent model is drawn. A model's load or drop goes through
+  0x59EEE0 -> 0x420F70, which destroys the instance (Engine vt[0x60]) before 0x59EC80 makes the new one (Engine vt[0x44] finds the archetype
+  by name, vt[0x5C] makes an instance); the engine **reuses instance handles**, so a new model can come back under the old +0x84: tell a
+  model by handle and name together. (0x17, h) puts handle h at +0x84 after destroying the old instance. A mesh whose own row the fill sends
+  (0x17, -1) (an EMPTY hardpoint) keeps nothing: lent last (`nnpage_kit.h` LentModel).
 - ItemPrice0N holds a visible row's own number. NN_ShipTrader +0x414 holds indices, not ships. ShipTrader3DShip has no rectangle and follows its window by its own vt[0x14].
 - The ship view's selected part (decompiled, 0x4E6EC0, 0x4E6CB0): `ViewPrepare` colours the watched ship's equipment and armour groups; the one whose id equals the short at owner +0x3B4 pulses (0x561F20). `FUN_00405a00(list, root, flag, argb)` sets a part's vertex colour.
 - HD Edition's base infocards list ships and commodities.

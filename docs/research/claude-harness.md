@@ -166,3 +166,38 @@ Would have fired / of those failed then, per rule, as the README carried it (29 
 | `retro-row` | audit B5 |
 | `retro-docs-auditor` | new 30 Oct 2026 evening (the auditor ran as batches after the commits; 16 nudges passed by) |
 | `speedrun-ref-read` | replay: 47 fires in 236 transcripts |
+
+## The documentation re-read after the 0.4.6 sweep (11 Nov 2026 evening; proposals, nothing applied)
+
+The owner asked for it while the sweep ran. Two agents read the pages and compared them with the harness; the lead
+added what the sweep itself showed (one lead, about 40 subagent runs, six worktrees: `docs\RELEASE_0.4.6.md`).
+Read: Claude Code's sub-agents, hooks guide and reference (first 100K characters), worktrees, context-window, workflows,
+agent-teams, best-practices, memory, checkpointing, model-config (in part); the Fable 5.2 prompting page, the prompting
+best practices, the migration guide. NOT read: the Claude Code overview page itself, settings / permissions, skills,
+plugins, desktop, Remote Control, scheduled tasks, output styles, MCP, headless, costs, the changelog; the effort and
+compaction pages of the platform docs. Nothing read contradicts the instruction audit of the same morning except item 3.
+
+| # | Proposal | Rests on | What the sweep showed |
+|---|---|---|---|
+| 1 | Agent definitions for the spawns that recur: `fix-worker` (the workers' brief as its body, model and effort in the frontmatter, `skills:` preloading build-and-test and new-exe-symbol), `release-verifier` (no Edit / Write), `spec-publisher`. `route-agent.js` fills a missing model or effort and logs an off-policy choice, but no longer refuses one | sub-agents: the model's order is the call's parameter, then the definition's frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`; a definition's skills are injected whole | The keyword classifier put a C++ debugging lane on the cheaper model (stopped and respawned); 35 lane prompts written by hand around a scratch file; four spawns refused for naming the owner's own model and effort |
+| 2 | A verifier of its own for each lane as soon as its fix is committed, not two passes at the end | best-practices: a fresh reviewer has not seen the reasoning; workflows: a verify stage, fix until a check passes | Three "FIXED + VERIFIED" did not hold in the release build (58, 71, the notice at a load), found hours later |
+| 3 | The ownership grant ("this codebase is yours ... fix what you find nearby") leaves the always-loaded CLAUDE.md and goes into the briefs of feature and change packages; the three limits stay | the Fable 5.2 page: a rule that limits scope does not cancel the grant; leave the sentence out where the code is to change as little as possible | Workers of a bug sweep reported unasked changes (the cargo pips, placement side effects). The owner's own rule of 11 Nov: his decision |
+| 4 | Worktrees for workers made by one mechanism: a `WorktreeCreate` hook (git worktree add, the `Install` junction, the SDL3 cache, a git-ignored scratch folder inside the worktree) with its `WorktreeRemove`; the guard refuses `git stash` in a linked worktree | worktrees: the hook replaces the default logic; `.worktreeinclude` cannot make a junction | Made by hand; workers overwrote each other's scratch helpers and frames; one used the shared stash, which the power cut then caught mid-write |
+| 5 | A `PreCompact` hook naming what the summary must keep (the open lanes, the release doc, the running agents); HANDOFF.txt's "CARRIED" and "OLDER OPEN ITEMS" halves moved to the docs they belong to | hooks reference: PreCompact's stdout becomes instructions for the summary; the Fable page: remove notes no longer needed | The 8,000-character cap refused a commit seven times in one day; the lead trimmed by a few characters each time |
+| 6 | `spec-with-changelog` reminds instead of refusing while a release doc lists the spec as open; `handoff-size` stays a refusal | best-practices: a hook is for a rule with zero exceptions; the README's own rule that a guard whose fires are all overrides goes | About twelve refusals, each passed with the escape comment for the same true reason. Check `guard_fires.tsv` first |
+| 7 | `CLAUDE_CODE_SUBAGENT_MODEL` as the default model for spawns, so the guard no longer has to enforce it | sub-agents: a default that a definition or the call still overrides | The guard exists to stop spawns inheriting the session's model |
+| 8 | A long orchestration keeps the lead's context for decisions: verifiers judge the frames and return verdicts, a fresh lead per round reads the release doc | sub-agents and context-window on many detailed results; the best-practices page on a new context over compaction | The lead passed 400K tokens, much of it frames and reports |
+| 9 | One owner for the AFK "never idle" text (the afk-run skill), the hooks pointing at it; `context-warn.js` line 55 lacks the owner's-word exception | the Fable page: "never" is read as absolute; rewrite absolutes with scope and reason | Two commits on 11 Nov edited the same rule in six files |
+| 10 | Owner-facing reports name things by what they are, not by the session's codenames; the Fable page's block on writing for a reader without the context, in CLAUDE.md; HANDOFF.txt exempt | the Fable page: no term made up during the work; key points first | The lead's own messages of the sweep ("r4flight", "verifier B") |
+| 11 | Measure before changing: the routing table's efforts re-swept on Fable; the guard's rules replayed on Fable transcripts and those that catch nothing pruned; `health.js`'s delegation counts for Fable leads | the Fable page: rerun the effort sweep; narrow stopping conditions that are not needed; review standing delegation lines | The table and about 35 guard rules were tuned on Opus 5.5 |
+| 12 | A line on recovery after a crash: resume the lead, then the workers by id; work in progress is committed (now in the workers' brief) | checkpointing: not a replacement for version control, subagents' and shell edits are not tracked | The power cut of 15:03 |
+
+Left alone because the pages recommend what the project does: hooks only for what must always hold and CLAUDE.md as a
+short map; the SessionStart re-injection after a compaction; path-scoped rules for C++ and PowerShell; a rewrite
+instead of a refusal for a bare `python`; read-only agents with tool limits and the neutral run-judge brief; workers
+never editing shared files; word caps on reports; rules that carry the owner's reason and date; the explicit list of
+what needs the owner's word; "verified means" and "say what was not checked".
+Checked and not a fit: agent teams (experimental, no restore after a resume, changes how named subagents start);
+checkpoints as a backup; `.worktreeinclude` alone; `memory:` on agents (the knowledge base does that job); ultracode by
+default; `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` (it would override the definitions); importing HANDOFF.txt into CLAUDE.md
+(it would ride in every spawn).

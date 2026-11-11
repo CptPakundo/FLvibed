@@ -190,23 +190,6 @@ constexpr ULONGLONG kSettleMs = 150, kSettleCapMs = 3000;
 static void FreePreview();
 static void FreeCaption();
 
-// MOVIES / Intro (`movie_intro`): only the files present are offered (UI_PLAN 3.3). The page checks the install's files
-// itself (EXE\..\DATA\MOVIES, the names the subtitles logic maps the values to: movie.cpp ApplyIntro) when it opens:
-// a missing file's word is greyed and marked, and stepping the picker skips it; the subtitles logic applies the same
-// rule to a value set any other way (it resets a value naming a missing file to 0 and logs).
-static const char* const kIntroFiles[] = {nullptr, "fl_intro.wmv", "fl_intro_vanilla.wmv", "fl_intro_full.wmv"};
-static bool g_introHave[4] = {true, false, false, false};
-
-static void RefreshIntroFiles()
-{
-    const std::string dir = std::string(DllDir().c_str()) + "..\\DATA\\MOVIES\\";
-    for (int i = 1; i < 4; ++i)
-        g_introHave[i] = GetFileAttributesA((dir + kIntroFiles[i]).c_str()) != INVALID_FILE_ATTRIBUTES;
-}
-
-static bool IsIntroRow(const uimeta::Row* m) { return m && m->key && strcmp(m->key, "movie_intro") == 0; }
-static bool IntroAvailable(int option) { return option >= 0 && option < 4 ? g_introHave[option] : false; }
-
 // ------------------------------------------------------------------ the local bus (a host without one)
 namespace localbus
 {
@@ -463,7 +446,7 @@ static int RowOwner(const char* section, const char* key)
         int row;
     } kRows[] = {{"borderless", modules::kDisplay},        {"run_in_background", modules::kDisplay},  {"speedrun_timer", modules::kSpeedrun},
                  {"livesplit", modules::kSpeedrun},        {"livesplit_port", modules::kSpeedrun},    {"livesplit_gametime", modules::kSpeedrun},
-                 {"movie_fit", modules::kMovies},          {"movie_skip", modules::kMovies},          {"movie_intro", modules::kMovies},
+                 {"movie_fit", modules::kMovies},          {"movie_skip", modules::kMovies},
                  {"npc_stall_log", modules::kNpc},         {"maneuver_button", modules::kAutopilot},  {"autopilot_key", modules::kAutopilot},
                  {"autopilot_cancel", modules::kAutopilot}, {"ap_hints", modules::kAutopilot},        {"maneuver_watchdog", -1},
                  {"text_size", -1},                        {"hud_size", -1},                          {"fluf_windows", -1},
@@ -1130,7 +1113,6 @@ static void OpenAs(Host how)
     g_input.Reset();
     g_fileWrites.clear();
     TakeSnapshot();
-    RefreshIntroFiles();
     BuildEntries();
     SettleFocus();
     if (how == Host::Standalone)
@@ -1646,13 +1628,7 @@ static void ActOnRow(Entry& e, int dir)
             break;
         }
         const int i = PickerIndex(e);
-        int next = i < 0 ? 0 : i + (dir == 0 ? 1 : dir);
-        if (IsIntroRow(&m)) // Intro: the words of missing files are skipped (the available set, refreshed at open)
-        {
-            const int n = m.optionCount, step = dir < 0 ? -1 : 1;
-            for (int tries = 0; tries < n && !IntroAvailable(((next % n) + n) % n); ++tries)
-                next += step;
-        }
+        const int next = i < 0 ? 0 : i + (dir == 0 ? 1 : dir);
         SetPickerIndex(e, next);
         break;
     }
@@ -2116,18 +2092,22 @@ static void DrawPreview(const uikit::Fonts& f)
     }
     static const float kSizes[] = {0.030f, 0.036f, 0.044f, 0.054f, 0.072f};
     const int size = std::clamp(atoi(Get("Subtitles", "size").c_str()), 0, 4);
-    const int face = atoi(Get("Subtitles", "font").c_str()) == 0 && gamefont::Load() ? 0 : 1;
+    // the subtitles' font setting: 0 the game's (Arial Unicode MS text), 1 Segoe UI, 2 HUD 2's (Agency FB text, 1.2x as
+    // the names); 0 and 2 need the game's fonts, else Segoe UI (modules\subtitles\src\impl\display.cpp BuildFonts)
+    const int fontSet = atoi(Get("Subtitles", "font").c_str());
+    const int face = (fontSet == 0 || fontSet == 2) && gamefont::Load() ? fontSet : 1;
     const int px = std::max(8, static_cast<int>(sh * kSizes[size] + 0.5f));
     if (px != g_pvPx || face != g_pvFace || !g_pvText.texture)
     {
         std::wstring chars;
         for (wchar_t c = 32; c < 127; ++c)
             chars += c;
-        const bool text = face == 0 ? render::BuildFont(g_pvText, L"Arial Unicode MS", px, 400, chars)
-                                    : render::BuildFont(g_pvText, L"Segoe UI", px, 600, chars);
+        const bool text = face == 0   ? render::BuildFont(g_pvText, L"Arial Unicode MS", px, 400, chars)
+                          : face == 2 ? render::BuildFont(g_pvText, L"Agency FB", static_cast<int>(px * 1.2f + 0.5f), 400, chars)
+                                      : render::BuildFont(g_pvText, L"Segoe UI", px, 600, chars);
         if (!text && !render::BuildFont(g_pvText, L"Segoe UI", px, 600, chars))
             return;
-        if (!(face == 0 && render::BuildFont(g_pvName, L"Agency FB", static_cast<int>(px * 1.2f + 0.5f), 700, chars)) &&
+        if (!(face != 1 && render::BuildFont(g_pvName, L"Agency FB", static_cast<int>(px * 1.2f + 0.5f), 700, chars)) &&
             !render::BuildFont(g_pvName, L"Segoe UI", px, 700, chars))
             render::FreeFont(g_pvName);
         g_pvPx = px;
@@ -2452,13 +2432,6 @@ static void DrawEntry(const uikit::Fonts& f, Entry& e, int visibleIndex, bool fo
             word = Widen(v.c_str());
         else
             word = L"NOT AVAILABLE";
-        if (IsIntroRow(&m) && i >= 0 && !IntroAvailable(i)) // a file this install lacks: the word greyed and marked
-        {
-            uikit::RowStyle grey = s;
-            grey.enabled = false;
-            uikit::RowPicker(f, g, grey, word + L" (MISSING)");
-            break;
-        }
         uikit::RowPicker(f, g, s, word);
         break;
     }

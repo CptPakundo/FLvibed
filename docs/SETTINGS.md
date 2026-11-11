@@ -4,6 +4,9 @@
 in the source and regenerate.** `set <name> <value>` / `ap set` change a value live; `config save` writes the ini with these
 help lines; `config settings` / `ap settings` / `settings` list them in the game. Behaviour, measurements and the why of
 each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DISPLAY_PLAN.md`, `modules\hud\docs\HUD_CUES.md`.
+A saved ini holds every key of its section, defaults included: a changed default reaches files saved before it only
+through a carry row (`core\settings.h` `Carry`; the file's `settings_rev` key, not a setting). `[Subtitles]` carries one:
+`font` 0 in a file before revision 1 (0.4.6) reads as 2.
 
 ## [Controller] - EXE\FLController.ini [Controller] (92 keys; source `modules\controller\src\impl\controller_settings.cpp`)
 
@@ -272,7 +275,7 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `consumables` | word | needed | never | needed | sets missiles, repair and countermeasures together (user, 18 Oct 2026) |
 | `p.<field>` | string | - | - | a personality field of the [Pilot] by its ini name (e.g. p.trail_distance = 200) |
 
-## [Subtitles] - EXE\FLSubtitles.ini [Subtitles] (43 keys; source `modules\subtitles\src\impl\display.cpp`)
+## [Subtitles] - EXE\FLSubtitles.ini [Subtitles] (42 keys; source `modules\subtitles\src\impl\display.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -284,7 +287,7 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `text_color` | int | 0 .. 1 | 0 | 0 white, 1 yellow |
 | `speaker_names` | int | 0 .. 2 | 0 | 0 the name on its own row, 1 inline 'Name: text', 2 off |
 | `story` | bool | 0 \| 1 | true | story cutscene lines |
-| `comms` | bool | 0 \| 1 | true | mission comms |
+| `comms` | bool | 0 \| 1 | true | mission comms; 0 with chat_all_dialogue 1: mission comms in the chat window only |
 | `bar` | bool | 0 \| 1 | true | bar and base conversations |
 | `neural_net` | bool | 0 \| 1 | true | Neural Net lines |
 | `chatter` | int | 0 .. 2 | 0 | NPC lines without their comm portrait (chatter, broadcasts): 0 to the chat window, 1 as subtitles where the dialogue leaves room, 2 off |
@@ -293,7 +296,7 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `bottom_space` | float | 0 .. 0.9f | 0.305 | in space (space_position 0): the same, above the HUD's bottom panels |
 | `bottom_cutscene` | float | 0 .. 0.9f | 0.025 | cutscenes: the same, inside the lower letterbox bar |
 | `space_position` | int | 0 .. 2 | 2 | in flight: 2 a HUD panel at the top centre (the maneuver bar moves left), 1 the top third, 0 between the bottom panels |
-| `font` | int | 0 .. 1 | 0 | 0 the game's own fonts, 1 Segoe UI |
+| `font` | int | 0 .. 2 | 2 | 0 the game's own fonts, 1 Segoe UI, 2 HUD 2's font (Agency FB) everywhere: cutscenes, rooms, movies and flight |
 | `motion` | bool | 0 \| 1 | true | lines fade in / out and the stack glides; 0 = instant |
 | `neural_net_severity` | bool | 0 \| 1 | true | Neural Net lines coded by severity (colour, brightness pulses) |
 | `neural_net_reason` | bool | 0 \| 1 | true | the Tractor Failure line says why the item was refused (hold, nanobots, shield batteries or ammo full); with HUD 2's alerts on, the alert card says it |
@@ -317,7 +320,6 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `speaker_colors` | bool | 0 \| 1 | true | story speakers' names in their own colours; 0 = every name by the speaker's relation to you |
 | `movie_fit` | bool | 0 \| 1 | true | movies keep their aspect ratio and the encoded black bars are zoomed out of view |
 | `movie_skip` | int | 0 .. 1 | 0 | the startup movies: 0 play, 1 skip (natively, as a finished movie) |
-| `movie_intro` | int | 0 .. 3 | 0 | which intro plays: 0 as installed, 1 HD (fl_intro.wmv), 2 original 2003 (fl_intro_vanilla.wmv), 3 full Bonus DVD (fl_intro_full.wmv), from DATA\MOVIES - a file the install lacks falls back to 0 |
 | `movie_subtitles` | bool | 0 \| 1 | true | subtitles over the intros and startup movies |
 
 ## [Modules] - EXE\FLvibed.ini [Modules] (8 keys; source `core\flvibed.cpp`)
@@ -331,4 +333,4 @@ each default: `modules\autopilot\docs\AUTOPILOT.md`, `modules\subtitles\docs\DIS
 | `speedrun` | bool | 0 \| 1 | on | Speedrun mode: NEW GAME offers it, then the timer, the splits and LiveSplit, with keyboard and mouse or a controller. It needs the Subtitles or the Controller module on. Takes effect after the game restarts. |
 | `display` | bool | 0 \| 1 | on | Borderless windowed, the window's fit to its monitor, and running out of focus. It needs the Subtitles or the Controller module on. Takes effect after the game restarts. |
 | `npc` | bool | 0 \| 1 | on | The recorder of stalled ships, a log for bug reports. It changes nothing in the game. It needs the Subtitles or the Controller module on. Takes effect after the game restarts. |
-| `movies` | bool | 0 \| 1 | on | Movies fitted to the screen, the choice of intro and the skip of the startup movies. It needs the Subtitles or the Controller module on. Takes effect after the game restarts. |
+| `movies` | bool | 0 \| 1 | on | Movies fitted to the screen and the skip of the startup movies. It needs the Subtitles or the Controller module on. Takes effect after the game restarts. |

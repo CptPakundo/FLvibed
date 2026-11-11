@@ -130,7 +130,3 @@ struct Values
      "movies keep their aspect ratio and the encoded black bars are zoomed out of view"},
 #define FLV_ROW_MOVIE_SKIP(value) \
     {"movie_skip", settings::Int, value, 0, 1, "the startup movies: 0 play, 1 skip (natively, as a finished movie)"},
-#define FLV_ROW_MOVIE_INTRO(value) \
-    {"movie_intro", settings::Int, value, 0, 3, \
-     "which intro plays: 0 as installed, 1 HD (fl_intro.wmv), 2 original 2003 (fl_intro_vanilla.wmv), 3 full Bonus " \
-     "DVD (fl_intro_full.wmv), from DATA\\MOVIES - a file the install lacks falls back to 0"},

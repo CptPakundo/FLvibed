@@ -1,10 +1,12 @@
 // HUD 2's dialogs - see skindialog.h. The children by class: docs\FREELANCER_RE.md "Dialogs" (decompiled; a probe per class is owed, UI_HUD2_SKIN.md 15 step 1).
 #include "skindialog.h"
 
+#include "flexe.h"
 #include "game/room.h"
 #include "skin_rules.h"
 #include "skinkit.h"
 #include "ui/hud2_kit.h"
+#include "ui/ui.h"
 #include "uiskin.h"
 
 #include <string>
@@ -68,9 +70,62 @@ void ChipRect(Box& b)
     const float h = ChipHeight((b.y1 - b.y0) / g_H) * g_H;
     b.y0 = b.cy - h / 2, b.y1 = b.cy + h / 2;
 }
+
+// The mission message box in its drop-cargo form (a pirate's demand, a scan's): its two buttons, made only in that form (the builder 0x48A4C0, mode 4).
+bool DropForm(u32 root) { return winplates::CargoDemand(root); }
+
+// Its words: the box keeps them as a FmtStr and shows them in a rich text, which has no reader; the game's own formatter makes the same text.
+bool FormatDemand(wchar_t* out, int max)
+{
+    if (!exe::FmtStrFormat.ok() || !exe::MissionMessageFmt.ok() || max < 2)
+        return false;
+    out[0] = 0;
+    __try
+    {
+        hk::Call<int(__fastcall*)(const void*, void*, wchar_t*, int)>(exe::FmtStrFormat, reinterpret_cast<const void*>(exe::MissionMessageFmt.get()), nullptr, out, max - 1);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+    out[max - 1] = 0;
+    return out[0] != 0;
+}
+
+// Where a skinned dialog stands (pixels): its chips on the game's buttons and the plate round them and its words. The one rule for the draw and for what the
+// flight HUD keeps off (FlightBox). False: a button has no box, or the plate does not fit the screen.
+bool Fit(const Open& o, Box& a, Box& s, DialogBox& b)
+{
+    using namespace hud2kit;
+    const bool hasAction = o.action != 0, hasSafe = o.safe != 0;
+    if ((hasAction && (!RectOf(o.action, a) || !a.box)) || (hasSafe && (!RectOf(o.safe, s) || !s.box)))
+        return false;
+    if (hasAction)
+        ChipRect(a);
+    if (hasSafe)
+        ChipRect(s);
+    DialogIn in;
+    in.W = g_W, in.H = g_H, in.centreY = g_H / 2;
+    if (hasSafe)
+    {
+        in.chipsX0 = hasAction ? a.x0 : s.x0, in.chipsX1 = s.x1;
+        in.chipsY0 = hasAction ? std::min(a.y0, s.y0) : s.y0, in.chipsY1 = hasAction ? std::max(a.y1, s.y1) : s.y1;
+    }
+    in.titleW = o.title.empty() ? 0 : TextWidth(o.title, skinkit::Px(kHeaderTitle));
+    const float room = g_W * 0.45f;
+    const float costW = o.cost.empty() ? 0 : TextWidth(o.cost, skinkit::Px(kBodyLow));
+    in.costW = std::min(costW, room);
+    in.costLines = room > 0 ? std::min(3, 1 + static_cast<int>(costW / room)) : 1;
+    return DialogFit(in, b);
+}
 } // namespace
 
-bool IsDialog(int fam) { return fam == kFamConfirm || fam == kFamExit || fam == kFamError || fam == kFamNetOp || fam == kFamPrompt; }
+bool IsDialog(int fam, u32 root)
+{
+    return fam == kFamConfirm || fam == kFamExit || fam == kFamError || fam == kFamNetOp || fam == kFamPrompt || (fam == kFamPopup && DropForm(root));
+}
+
+bool Pauses(int fam) { return fam != kFamPopup; }
 
 bool Prepare(const Win& w, bool mainMenuBehind, std::vector<u32>& hide)
 {
@@ -95,6 +150,21 @@ bool Prepare(const Win& w, bool mainMenuBehind, std::vector<u32>& hide)
     }
     else if (w.fam == kFamNetOp)
         ok = Read(w.root, "ExitText", o.cost, hide);
+    else if (w.fam == kFamPopup && DropForm(w.root))
+    {
+        // the cargo demand: the demanding ship's name over the game's words, DROP CARGO and CANCEL as the game words them; its X (the same as CANCEL) goes with the art
+        wchar_t demand[512];
+        std::wstring who;
+        ok = FormatDemand(demand, 512) && Answers(o, w.root, DialogKind::Other, demand, name, "DropCargoButton", "DCCancelButton", "DropCargoText", "DCCancelText", hide);
+        if (ok)
+        {
+            if (Read(w.root, "MissionMessageTitle", who, hide))
+                o.title = who;
+            for (const char* n : {"MissionMessageText", "MissionCloseButton"})
+                if (const u32 c = Child(w.root, n))
+                    hide.push_back(c);
+        }
+    }
     // NN_Prompt: PromptText is rich text, whose string has no known field, and the caption controls of PromptYes / PromptNo are unnamed: nothing to read yet
     if (Open* have = Find(w.root))
         *have = o;
@@ -172,30 +242,11 @@ bool Draw(const Win& w, u32 hovered)
     const Open* o = Find(w.root);
     if (!o)
         return false;
-    using namespace hud2kit;
     Box a, s;
-    const bool hasAction = o->action != 0, hasSafe = o->safe != 0;
-    if ((hasAction && (!RectOf(o->action, a) || !a.box)) || (hasSafe && (!RectOf(o->safe, s) || !s.box)))
-        return false;
-    if (hasAction)
-        ChipRect(a);
-    if (hasSafe)
-        ChipRect(s);
-    DialogIn in;
-    in.W = g_W, in.H = g_H, in.centreY = g_H / 2;
-    if (hasSafe)
-    {
-        in.chipsX0 = hasAction ? a.x0 : s.x0, in.chipsX1 = s.x1;
-        in.chipsY0 = hasAction ? std::min(a.y0, s.y0) : s.y0, in.chipsY1 = hasAction ? std::max(a.y1, s.y1) : s.y1;
-    }
-    in.titleW = o->title.empty() ? 0 : TextWidth(o->title, skinkit::Px(kHeaderTitle));
-    const float room = g_W * 0.45f;
-    const float costW = o->cost.empty() ? 0 : TextWidth(o->cost, skinkit::Px(kBodyLow));
-    in.costW = std::min(costW, room);
-    in.costLines = room > 0 ? std::min(3, 1 + static_cast<int>(costW / room)) : 1;
     DialogBox b;
-    if (!DialogFit(in, b))
+    if (!Fit(*o, a, s, b))
         return false;
+    const bool hasAction = o->action != 0, hasSafe = o->safe != 0;
     skinkit::Dialog(b, o->title, o->cost, o->amber);
     if (hasAction)
     {
@@ -210,6 +261,31 @@ bool Draw(const Win& w, u32 hovered)
         skinkit::Chip(s.x0, s.y0, s.x1, s.y1, o->safeWord, st);
     }
     return true;
+}
+
+bool FlightBox(float rect[4], std::wstring& accept, std::wstring& cancel)
+{
+    for (const uintptr_t r : ui::VisibleRoots())
+    {
+        const u32 root = static_cast<u32>(r);
+        if (!winplates::CargoDemand(root))
+            continue;
+        Box a, s;
+        DialogBox b;
+        if (const Open* o = Find(root); o && Fit(*o, a, s, b))
+        {
+            rect[0] = b.x0, rect[1] = b.y0, rect[2] = b.x1, rect[3] = b.y1;
+            accept = o->actionWord, cancel = o->safeWord;
+            return true;
+        }
+        // (not ours: the game's own box and its own words)
+        Box g;
+        if (!RectOf(root, g) || !g.box || !TextOf(Child(root, "DropCargoText"), accept) || !TextOf(Child(root, "DCCancelText"), cancel))
+            return false;
+        rect[0] = g.x0, rect[1] = g.y0, rect[2] = g.x1, rect[3] = g.y1;
+        return true;
+    }
+    return false;
 }
 
 // (the topmost open dialog: the last that opened)

@@ -71,6 +71,11 @@ bool InConversation();
 // frame ran (keyboard and mouse, the controller off, the autopilot flying, the options page) it stands down: the
 // arrow shows and the room character the pad hovered is released (the game's own unhover).
 void NoteFrame(bool menuScreen);
+// After NoteFrame: this pad frame hides the arrow whatever the pad cursor rule says (a box over the flight that the pad
+// answers by its buttons: padmenus' cargo demand). Overlay applies it; with no pad frame it stands down as above.
+void NoteHideArrow();
+// ... and, in the cursor pass right before the game draws its arrow, hides it under a NeuroNet window over the flight in the frames before the mode reads
+// the window (no Update decides yet): the game shows its arrow from the window's first frame.
 void Overlay();
 // Debug: bases state | rooms | chars
 std::string Command(std::istream& in);

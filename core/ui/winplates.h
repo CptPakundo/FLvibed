@@ -36,6 +36,9 @@ bool Enabled(u32 ctl);
 // the first descendant of `root` named `name` (any state), depth-first; 0 none
 u32 Child(u32 root, const char* name, int depth = 0);
 bool IsAncestor(u32 root, u32 ctl);
+// The mission message box in its drop-cargo form (a pirate's or the police's cargo demand: DropCargoButton and DCCancelButton, made only in that form).
+// A box over the flight, not a window: the game neither pauses for it nor hides its own HUD under it (docs\FREELANCER_RE.md "The cargo demand").
+bool CargoDemand(u32 root);
 
 // The control's projected rectangle (pixels: x0 y0 x1 y1) and centre; false when not projectable.
 struct Box
@@ -189,6 +192,9 @@ struct KeepOut
     float x0, y0, x1, y1;
 };
 extern std::vector<KeepOut> g_keep;
+// How many of g_keep the under pass collected (Geometry); those after it were added over the game's UI this frame (the map's panels and its lane: navskin's
+// DrawOver), so they cover what the game draws there.
+extern size_t g_keepUnder;
 extern bool g_paint; // the paint pass: the plates draw through g_ops, the keep-outs are not collected twice
 extern int g_sw, g_sh;
 extern float g_H, g_W;

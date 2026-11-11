@@ -36,7 +36,6 @@ struct Client
     // The movie event (moviehooks.h): 0 = PlayMovie(hwnd, path), 1 = UpdateMovie, each pass of the movie loop, 2 = StopMovie.
     void (*movie)(int event, void* hwnd, const char* path);
     void (*moviePoll)();                       // each pass, before Movie.dll's
-    const char* (*moviePath)(const char* path); // what PlayMovie really plays
 };
 
 // The start, from DllMain, before any module's part: the logs, the symbols, the shared hooks, the core's own.
@@ -77,7 +76,6 @@ void ButtonClicked(int id);
 void D3dResetReply(char* reply, size_t len);
 void MovieEvent(int event, void* hwnd, const char* path);
 void MoviePoll();
-const char* MoviePath(const char* path);
 
 // Game loads: each loads a fresh Content.dll. The count runs from the start; a subscriber hears the loads after it subscribed
 // (a notification from the loader: no logic calls in it).

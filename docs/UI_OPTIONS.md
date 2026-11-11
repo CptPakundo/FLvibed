@@ -137,9 +137,8 @@ Each feature is a head; its rows stand under it, indented. Off greys those rows 
 
 | Row | Values | Key | Says |
 |---|---|---|---|
-| **Movie handling** (head) | ENABLED / DISABLED | `[Modules] movies` | Movies fitted to the screen, the choice of intro, skipping the startup movies. Takes effect at the next start. |
+| **Movie handling** (head) | ENABLED / DISABLED | `[Modules] movies` | Movies fitted to the screen, skipping the startup movies. Takes effect at the next start. |
 | Startup movies | PLAY / SKIP | `movie_skip` | Skip goes straight to the main menu. |
-| Intro | AS INSTALLED / HD / ORIGINAL 2003 / FULL (BONUS DVD) | `movie_intro` | Which intro plays. Only the versions this install has are offered. |
 | **Window handling** (head) | ENABLED / DISABLED | `[Modules] display` | Borderless window, fit to the monitor, running in the background. Takes effect at the next start. |
 | Keep running in background | DISABLED / ENABLED | `run_in_background` | The game normally pauses when you switch to another window. |
 | **Speedrun mode** (head) | ENABLED / DISABLED | `[Modules] speedrun` | The New Game choice, the timer, the splits and LiveSplit. Takes effect at the next start. |

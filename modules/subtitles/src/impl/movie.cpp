@@ -373,12 +373,6 @@ static void Paint(u32* pixels, int w, int h, const RECT& picture, bool transluce
 
 void Attach() { moviescreen::content = {Lines, Paint}; }
 
-void OnSettingApplied(const settings::Def* d)
-{
-    if (d && strcmp(d->name, "movie_intro") == 0 && moviescreen::settingsChanged)
-        moviescreen::settingsChanged();
-}
-
 void OnStart(HWND hwnd, const char* path)
 {
     moviescreen::Begin(hwnd, path);

@@ -548,7 +548,7 @@ void Start(HMODULE)
                                           GuardedUi,  DeviceLost,  DeviceReset,   DeviceCreated,
                                           OnComm,     OnManeuverLayout, OnRoomCharacter,
                                           nullptr,    nullptr,     nullptr,
-                                          GuardedMovie, MoviePoll, nullptr};
+                                          GuardedMovie, MoviePoll};
     router::Register(router::kSubtitles, &events);
 
     shm::Init();

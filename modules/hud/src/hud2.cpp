@@ -30,6 +30,8 @@
 #include "hudvis.h"
 #include "log.h"
 #include "settings_bus.h"
+#include "skindialog.h"
+#include "str.h"
 #include "text.h"
 #include "ui/hud_rows.h"
 #include "ui/ui.h"
@@ -101,6 +103,7 @@ static struct
 static float g_navRight = 0; // the nav's drawn right edge (last frame)
 static bool g_formOn = true; // debug `hud2 form on|off`: the targeting display, or the game's bracket
 static float g_formDt = 0; // the time since the targeting display last stepped
+static float g_noticeDt = 0; // ... and since the flight notice last travelled
 static float g_radArt[2] = {}; // where the nav's radiation line wants the game's art (last frame; 0 none)
 // the nav's scrim: [0] [1] its text block's drawn right / bottom (last frame), [2] [3] as ComputeLayout eased them
 static float g_navScrim[4] = {};
@@ -128,6 +131,10 @@ static unsigned CtxSig(const Model& m)
 }
 
 static bool g_alertsOff = false; // the layout has the alert slot off this frame (a cinematic): the held cards go with it
+// a box over the flight (the cargo demand): it stands, its plate (pixels x0 y0 x1 y1); the context lanes show its answers
+static bool g_boxUp = false, g_boxAnswers = false;
+static float g_box[4] = {};
+bool FlightAnswers() { return g_boxAnswers && g_active && g_visible; }
 
 // ---------------------------------------------------------------- layout, fades, the bus
 // The threat list under the target card: the pad's in combat (with a target, as built); the keyboard form's header
@@ -222,6 +229,21 @@ static void ComputeLayout(float W, float H)
         f.navRight = ease(r, g_navRight), f.navBottom = ease(b, g_navBottom);
         g_navScrim[2] = ease(sr, g_navScrim[0]), g_navScrim[3] = ease(sb, g_navScrim[1]);
     }
+    if (g_boxUp)
+        f.box = {g_box[0], g_box[1], g_box[2], g_box[3]};
+    // the parts still drawn (Render's threshold): one held back or suppressed keeps its area until it has faded out
+    {
+        namespace hl = hud2layout;
+        const struct
+        {
+            int elem;
+            float fade;
+        } kDrawn[] = {{hl::Nav, g_f.nav},   {hl::Card, g_f.target},     {hl::List, g_f.target}, {hl::Ship, g_f.ship},
+                      {hl::Loadout, g_f.loadout}, {hl::Context, g_f.context}, {hl::Alert, g_f.alert}};
+        for (const auto& d : kDrawn)
+            if (d.fade > 0.01f)
+                f.drawn |= hl::Bit(d.elem);
+    }
     if (g_m.presetDrawn == hud2preset::Focus) // (Focus: its reveal's form and held parts)
         f.form = g_rv.form, f.held = g_rv.held;
     else if (!ShipPanelWanted())
@@ -230,7 +252,7 @@ static void ComputeLayout(float W, float H)
     Layout& L = g_L;
     L.W = W, L.H = H, L.k = hud2layout::Scale(f);
     f.m.cardFloorH = g_m.kbm ? 0.0f : 0.182f * H * std::max(L.k, 1.0f); // (the pad's card has no click row to give: its last row stood on the plate's edge at 0.17)
-    f.m.nCtx = g_m.nCtx;
+    f.m.nCtx = g_m.nCtx, f.m.answers = g_boxAnswers;
     f.m.ctxMeasured = ContextWidths(g_m, L, f.m.base, f.m.glyph, f.m.label, f.m.hold, f.m.dims);
     if (f.m.ctxMeasured)
         ContextLabelMins(g_m, L, f.m.labelMin); // (a squeezed prompt's label wraps, never scrolls: 0.2.1)
@@ -288,6 +310,12 @@ static void ComputeLayout(float W, float H)
     f.dlg.fresh = read && bus->Frame() - subsSeenAt <= 2 && subs.dialogue.x1 > subs.dialogue.x0;
     f.dlg.comm = g_m.comm;
     f.dlg.x0 = subs.dialogue.x0, f.dlg.y0 = subs.dialogue.y0, f.dlg.x1 = subs.dialogue.x1, f.dlg.y1 = subs.dialogue.y1;
+    // the comm feed's cards in the chat band as the subtitles drew them (a reserved area: the lanes and the notice keep off)
+    if (read && bus->Frame() - subsSeenAt <= 2)
+        f.dlg.cx0 = subs.chat.x0, f.dlg.cy0 = subs.chat.y0, f.dlg.cx1 = subs.chat.x1, f.dlg.cy1 = subs.chat.y1;
+    // the flight notice's card, measured with this frame's scale (hud2_layout.h PlaceNotice places it)
+    if (g_m.notice.Up())
+        DrawNotice(g_m, L, 0, 0, 1, true, &f.m.noticeW, &f.m.noticeH);
     // the core (the drawn preset's data and rules)
     const hud2layout::Out& c = g_core = hud2layout::Compute(f, hud2preset::Data(g_m.presetDrawn));
     L.aspect = c.aspect, L.k = c.k;
@@ -307,6 +335,8 @@ static void ComputeLayout(float W, float H)
     for (int i = 0; i < 2; ++i)
         L.heldX[i] = c.heldX[i], L.heldY[i] = c.heldY[i], L.heldShow[i] = c.heldShow[i];
     L.listInCard = c.listInCard, L.form = c.form, L.bandY = c.bandY, L.holdY = c.holdY, L.clearY0 = c.clearY0;
+    L.ntX0 = c.notice.x0, L.ntY0 = c.notice.y0, L.ntX1 = c.notice.x1, L.ntY1 = c.notice.y1, L.ntShow = c.noticeShow;
+    L.res = c.res;
     g_m.nCtx = c.nCtx; // (the last prompts that did not fit gave way; a preset's pill cap too)
 }
 
@@ -425,6 +455,16 @@ void Update(float dt, const Context& c)
         s.padPreset = o.padPreset, s.weaponGroups = o.weaponGroups, s.holdsAsToggles = o.holdsAsToggles, s.kbm = !c.pad;
         g_m.adapt = hud2preset::AdaptTo(p, s);
     }
+    // the flight notice: a game load ends the flight it watched, also a load from space into space that never leaves it
+    // here (hud2_notice.h LoadWatch): no card carries over, the credits watch and the loot's first look prime again
+    {
+        static hud2notice::LoadWatch s_loads;
+        if (s_loads.Step(g_host->GameLoads ? g_host->GameLoads() : 0))
+        {
+            Log("hud2: notice forgotten at a game load%s", g_m.notice.Up() ? " (a card cleared)" : "");
+            g_m.notice.Clear(), NoticeGameLoad();
+        }
+    }
     const bool inSpace = c.space || c.spaceUi;
     bool want = o.hudStyle == 2 || (o.hudStyle == 1 && c.pad);
     if (g_force >= 0)
@@ -445,6 +485,10 @@ void Update(float dt, const Context& c)
             hudvis::Invalidate(); // the HUD goes with the flight (a load, a dock, the menu): drop the roots
             ClearAlerts();
         }
+        // the flight notice: an in-flight cutscene keeps it (and the credits watch: a reward paid in it shows after);
+        // anything else ends the flight, and the next one starts with no card and a watch that primes again
+        if (!c.cutscene)
+            g_m.notice.Clear(), NoticeForget();
         // An in-flight cutscene (a docking, a mission's scene) has no HUD, but HUD 2's comm feed stays the chat's look:
         // the game's chat window came back here with bare lines at the screen's edge (a player's report)
         const bool feed = want && c.cutscene && g_L.W > 0;
@@ -509,10 +553,32 @@ void Update(float dt, const Context& c)
     }
     Simulate(g_m);
     StepBars(g_m, dt, hudrows::g.skinMotion);
+    g_m.notice.Step(dt, hudrows::g.skinMotion); // (its fade by skin_motion: none = on and off at once)
     if (built) // the prompt set's signature as built (the layout trims nCtx every frame after: not a change)
         g_ctxSig = CtxSig(g_m);
     if (c.modal)
         g_m.nCtx = 0; // the context line steps aside while a modal shows its prompt bar
+    // A box over the flight (the cargo demand: skindialog::FlightBox; the game shows the arrow for it, the cheap test first)
+    // is a reserved area (ComputeLayout), on either device. With the pad its answers take the context lanes, placed as every
+    // flight prompt (clear of the panels, the cross and the comm feed; where no lane has room they wrap or give way), and the
+    // pad's prompt bar stands down for them (FlightAnswers). A / B by the menus' grammar, as padmenus answers them
+    // (glyphs::Menu: confirm_button)
+    {
+        std::wstring accept, cancel;
+        g_boxUp = c.space && _stricmp(fl::CursorName(), "arrow") == 0 && skindialog::FlightBox(g_box, accept, cancel);
+        g_boxAnswers = g_boxUp && c.pad && c.modal;
+        if (g_boxAnswers)
+        {
+            g_m.nCtx = 0;
+            // (each answer in the lane on its chip's side: DROP CARGO left, CANCEL right)
+            for (const auto& a : {std::make_pair(glyphs::A, &accept), std::make_pair(glyphs::B, &cancel)})
+            {
+                Prompt& p = g_m.ctx[g_m.nCtx];
+                p = Prompt();
+                p.btn = glyphs::Menu(a.first), p.label = *a.second, p.side = g_m.nCtx++;
+            }
+        }
+    }
     // the fades
     const bool calm = g_m.state == State::Calm || g_m.state == State::CruiseCharge || g_m.state == State::Maneuver ||
                       (g_m.state == State::Autopilot && !g_combat) || // the autopilot travelling is calm flight too
@@ -705,6 +771,7 @@ void Update(float dt, const Context& c)
     g_f.slide = 1 - g_t;
     ComputeLayout(static_cast<float>(fl::ScreenWidth()), static_cast<float>(fl::ScreenHeight()));
     g_formDt += dt; // (stepped at the draw, on the projection of that moment)
+    g_noticeDt += dt;
     SlideAlerts(dt);
     RequestViews(c);
     Publish(active);
@@ -861,6 +928,34 @@ void Render(void* device)
     // Focus (UI_HUD2_PRESETS.md 2.2): its own nav form, card, bottom-left text, fire strip and reticle (hud2_parts.cpp's
     // Focus parts); the context line, the alert and the keyboard form's list as Standard's
     const bool focus = g_m.presetDrawn == hud2preset::Focus;
+    // The centre and what stands at the objects in space first, the panels over them (GitHub issue 77, the owner: "the
+    // loadout HUD element, like all other space flight HUD elements, should draw last"): the target's name block, its
+    // carets and the other ships' marks travel with the ships and can pass behind a corner panel; the ring and the cue
+    // stand at the centre, under the targeting display that crosses them (its caret over the arcs, motion p2l)
+    part(0, 0);
+    if (g_sim.empty())
+        ProjectTarget(g_m);
+    // (the ring as DrawRing fades it, below: a faded ring leaves nothing to stand by)
+    StepTargetForm(g_m, L, g_formDt, hudrows::g.skinMotion, g_f.ringOn * (focus || uiopt::Get().hudFade <= 0 ? 1.0f : g_f.ring) > 0.5f);
+    g_formDt = 0;
+    RecordTag("ring"); // (DrawRing tags its elements itself: ring.shield, ring.speed, ring.cruise, ...)
+    if (focus)
+    {
+        FocusVis v;
+        v.shield = g_f.arcShield, v.hull = g_f.arcHull, v.power = g_f.arcPower, v.band = g_f.band, v.speed = g_f.speed;
+        v.fight = g_rv.fight, v.readout = g_focusReadout;
+        DrawSplitArcs(g_m, L, base * fRing, v);
+    }
+    else if (g_f.ring > 0.01f || true)
+        DrawRing(g_m, L, base * fRing * (g_m.presetDrawn == hud2preset::Focus || uiopt::Get().hudFade <= 0 ? 1.0f : g_f.ring),
+                 g_f.ring); // (CONTEXTUAL, 0.2.1: the speed and the cruise readout go with the ring - DrawRing keeps
+                            // them at 60 % of a dimmed ring, the old CALM DIMS)
+    DrawCue(g_m, L, base * fRing, hudrows::g.skinMotion);
+    if ((hudvis::TargetFormOn() || !g_sim.empty()) && !g_m.cine)
+    {
+        RecordTag("target.form");
+        DrawTargetForm(g_m, L, base * (g_t >= 1 ? 1.0f : g_t), hudrows::g.skinMotion);
+    }
     part(-1, -1);
     RecordTag("nav");
     {
@@ -926,35 +1021,33 @@ void Render(void* device)
         else
             DrawLoadout(g_m, L, lo);
     }
-    part(0, 0);
-    if (g_sim.empty())
-        ProjectTarget(g_m);
-    // (the ring as DrawRing fades it, below: a faded ring leaves nothing to stand by)
-    StepTargetForm(g_m, L, g_formDt, hudrows::g.skinMotion, g_f.ringOn * (focus || uiopt::Get().hudFade <= 0 ? 1.0f : g_f.ring) > 0.5f);
-    g_formDt = 0;
-    RecordTag("ring"); // (DrawRing tags its elements itself: ring.shield, ring.speed, ring.cruise, ...)
-    if (focus)
-    {
-        FocusVis v;
-        v.shield = g_f.arcShield, v.hull = g_f.arcHull, v.power = g_f.arcPower, v.band = g_f.band, v.speed = g_f.speed;
-        v.fight = g_rv.fight, v.readout = g_focusReadout;
-        DrawSplitArcs(g_m, L, base * fRing, v);
-    }
-    else if (g_f.ring > 0.01f || true)
-        DrawRing(g_m, L, base * fRing * (g_m.presetDrawn == hud2preset::Focus || uiopt::Get().hudFade <= 0 ? 1.0f : g_f.ring),
-                 g_f.ring); // (CONTEXTUAL, 0.2.1: the speed and the cruise readout go with the ring - DrawRing keeps
-                            // them at 60 % of a dimmed ring, the old CALM DIMS)
-    DrawCue(g_m, L, base * fRing, hudrows::g.skinMotion);
-    if ((hudvis::TargetFormOn() || !g_sim.empty()) && !g_m.cine) // (over the ring: its arcs cut the caret, motion p2l)
-    {
-        RecordTag("target.form");
-        DrawTargetForm(g_m, L, base * (g_t >= 1 ? 1.0f : g_t), hudrows::g.skinMotion);
-    }
     if (g_f.context > 0.01f && g_m.nCtx)
     {
         part(0, 1);
         RecordTag("context");
         DrawContext(g_m, L, base * g_f.context * fCtx, false);
+    }
+    // the flight notice (a payout, the loot taken in): where the layout found room, travelling when that place moves
+    // (skin_motion 0; its fades and none: it stands at once), fading by its own time
+    {
+        static float nx = -1, ny = -1;
+        if (!L.ntShow || g_m.notice.alpha <= 0)
+            nx = ny = -1;
+        else
+        {
+            const bool still = hudrows::g.skinMotion != 0 || nx < 0;
+            const float ease = std::min(1.0f, g_noticeDt / 0.08f);
+            nx = still ? L.ntX0 : nx + (L.ntX0 - nx) * ease, ny = still ? L.ntY0 : ny + (L.ntY0 - ny) * ease;
+            // (a travel that would cross what stands - an area that just appeared under its old place, the comm feed's
+            // stack grown: it takes its new place at once, never drawn over a part)
+            const hud2layout::Rect on = {nx, ny, nx + (L.ntX1 - L.ntX0), ny + (L.ntY1 - L.ntY0)};
+            if (L.res.Meets(on, hud2layout::kAreasAll & ~L.res.quiet & ~(1u << hud2layout::ANotice)) >= 0)
+                nx = L.ntX0, ny = L.ntY0;
+            part(-1, 1);
+            RecordTag("notice");
+            DrawNotice(g_m, L, nx, ny, base * g_m.notice.alpha, false);
+        }
+        g_noticeDt = 0;
     }
     // the pushed-down cards first: while one slides under a new card the new card stays on top; each fades on its own time
     for (int i = 1; i >= 0 && !g_alertsOff; --i)
@@ -1089,6 +1182,39 @@ std::string Command(std::istream& in)
         in >> g_creditsTest;
         return "credits " + std::to_string(g_creditsTest);
     }
+    // hud2 notice [credits <balance> <rise> | item <units> <name ...> | clear]: TEST ONLY - feeds the flight notice as a payout /
+    // a tractored item would (sims and frames without a mission or loot); bare: what it holds and where it stands
+    if (what == "notice")
+    {
+        std::string kind;
+        in >> kind;
+        hud2notice::Notice& n = g_m.notice;
+        if (kind == "credits")
+        {
+            long long now = 0, rise = 0;
+            in >> now >> rise;
+            n.Credit(now, rise);
+        }
+        else if (kind == "item")
+        {
+            int units = 0;
+            std::string name;
+            in >> units;
+            std::getline(in, name);
+            const size_t at = name.find_first_not_of(' ');
+            n.Add(0, Upper(str::Widen(at == std::string::npos ? std::string() : name.substr(at))), units);
+        }
+        else if (kind == "clear")
+            n.Clear();
+        char b[200];
+        snprintf(b, sizeof b, "notice up=%d alpha=%.2f left=%.1f credits=%d cash=%lld gain=%lld items=%d more=%d place=%s %.0f,%.0f-%.0f,%.0f",
+                 n.Up() ? 1 : 0, n.alpha, n.left, n.credits ? 1 : 0, n.cash, n.gain, n.nItems, n.nExtra,
+                 g_L.ntShow ? "yes" : "none", g_L.ntX0, g_L.ntY0, g_L.ntX1, g_L.ntY1);
+        std::string s = b;
+        for (int i = 0; i < n.nItems; ++i)
+            s += " | " + str::Narrow(n.items[i].name) + " x" + std::to_string(n.items[i].count);
+        return s;
+    }
     if (what == "alert") // hud2 alert shield|hull|missile|cargo|tractor <3-6>: that alert's card on the live HUD, for frames (3 s)
     {
         using A = presets::Action;
@@ -1112,6 +1238,43 @@ std::string Command(std::istream& in)
         else
             return "hud2 alert shield|hull|missile|cargo|tractor <3-6>";
         return "alert " + which;
+    }
+    if (what == "simloot") // TEST ONLY: hud2 simloot <n> <dist> <name ...> | off (the `loot` sim with nothing targeted: issue 78)
+    {
+        std::string n, dist, w, name;
+        in >> n >> dist;
+        while (in >> w)
+            name += (name.empty() ? "" : " ") + w;
+        if (n.empty() || n == "off" || name.empty())
+        {
+            g_simLootN = 0;
+            return "hud2 simloot off (usage: hud2 simloot <n> <dist> <name ...>)";
+        }
+        std::replace(dist.begin(), dist.end(), '_', ' '); // ("1.2_km": one word on the command line)
+        g_simLootN = std::max(1, atoi(n.c_str())), g_simLootDist = str::Widen(dist), g_simLootName = str::Widen(name);
+        return "hud2 simloot " + std::to_string(g_simLootN) + " '" + name + "' " + dist;
+    }
+    if (what == "simmark") // TEST ONLY: hud2 simmark <x0> <y0> [<x1> <y1> <sec>] | off (the sim target's place: issue 77)
+    {
+        std::string a;
+        in >> a;
+        if (a.empty() || a == "off")
+        {
+            g_simMark.on = false;
+            return "hud2 simmark off";
+        }
+        SimMark s;
+        s.on = true, s.x0 = s.x1 = static_cast<float>(atof(a.c_str()));
+        in >> s.y0;
+        s.y1 = s.y0;
+        if (in >> s.x1 >> s.y1 >> s.sec)
+            s.t0 = perf::Now();
+        else
+            s.x1 = s.x0, s.y1 = s.y0, s.sec = 0;
+        g_simMark = s;
+        char b[120];
+        snprintf(b, sizeof b, "hud2 simmark (%.3f, %.3f) -> (%.3f, %.3f) %.2f s each way", s.x0, s.y0, s.x1, s.y1, s.sec);
+        return b;
     }
     if (what == "sim")
     {
@@ -1217,6 +1380,16 @@ std::string Command(std::istream& in)
                     o << (n++ ? "," : "") << z[i].n << "/" << z[j].n;
         o << (n ? "" : "none") << " gaps top=" << static_cast<int>(L.tgtX0 - L.navMaxX)
           << " bottom=" << static_cast<int>(L.loX0 - L.shipX1) << "\n";
+        // the reserved areas every placer keeps off (hud2_layout.h Reserved; issues 77 / 78), `(quiet)` = placed, not drawn
+        o << "reserved";
+        for (int a = 0; a < hud2layout::kAreaCount; ++a)
+            if (L.res.Placed(a))
+            {
+                const hud2layout::Rect& r = L.res.at[a];
+                o << " " << hud2layout::AreaName(a) << "=" << static_cast<int>(r.x0) << "," << static_cast<int>(r.y0) << ","
+                  << static_cast<int>(r.x1) << "," << static_cast<int>(r.y1) << ((L.res.quiet >> a) & 1 ? "(quiet)" : "");
+            }
+        o << "\n";
         // the layout core (hud2_layout.h): the drawn preset, what its rules suppress, the boxed area against its cap
         const hud2layout::Out& core = g_core;
         o << "core preset=" << hud2preset::Data(g_m.presetDrawn).name << " suppressed=";

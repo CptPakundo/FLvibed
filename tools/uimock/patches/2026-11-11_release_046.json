@@ -1,0 +1,30 @@
+{
+ "_about": "0.4.6 (CHANGELOG.md 0.4.6, docs/RELEASE_0.4.6.md): the Intro row removed (issue 80), the Font row's third choice HUD 2 as the default (82), the Comms help (83), X = tractor all in ASSISTED and under the autopilot (65), the action wheel without REAR VIEW (65). The rows and bindings were already in docs/UI_SPEC.json (commits dcb62085, f6250c5e, 4eb45f93); this patch brings the artifact's ui/spec and the mock-up's source to the same state, and sets the drawn screens' wheel and legends.",
+ "remove_rows": ["movie_intro"],
+ "rows": {
+  "mod_movies": {"help": "Movies fitted to the screen, skipping the startup movies. Takes effect at the next start."},
+  "font": {"label": "Font", "options": ["GAME", "SEGOE UI", "HUD 2"], "def": "HUD 2", "value": "HUD 2", "help": "HUD 2 = HUD 2's font everywhere: cutscenes, rooms, movies and flight; Game = the game's own fonts (HUD 2's in flight while HUD 2 shows); Segoe UI = Windows' font."},
+  "comms": {"help": "Mission comms. Off, with Dialogue also in the chat window on: mission comms in the chat only."},
+  "prompt_bar": {"help": "The bottom-right row of button prompts on controller screens. Contextual: on every window, menu and modal for as long as it is open, and in a base room while you move and act there, fading four seconds after the last of it (a new room and a decision pending count too); Always: in the rooms too."}
+ },
+ "bindings": {
+  "presets/ASSISTED/flight/X": {"tap": "tractor"},
+  "common/flight_ap/X": {"tap": "tractor"}
+ },
+ "states": {
+  "hud/wheel": {
+   "extras": {"wheel": {"items": ["SCAN CARGO", "WEAPON GROUP", "EDIT GROUPS", "CRUISE DISRUPTOR", "FORMATION", "COMMS", "CONTACT FILTER", "AUTOPILOT GOALS", "HUD FADES"]}},
+   "notes": ["Built 11 Nov 2026 (0.4.6, issue 65): REAR VIEW left the wheel (the right stick's click held is the rear view in every layout; a latch only with Held buttons = TOGGLE). With HUD 2 and the autopilot module nine slices 40 degrees apart, evenly round the ring; eight on the classic HUD. Not seen on a real pad, nor the classic HUD's wheel."]
+  },
+  "hud/autopilot": {
+   "extras": {"legend": {"items": [["LS", "HAND BACK"], ["VIEW", "AUTOPILOT OFF", "hold"], ["RT", "FIRE"]]}},
+   "notes": ["Built 11 Nov 2026 (0.4.6, issue 65): X tap under the autopilot tractors everything in reach ([X] TRACTOR ALL n shows only with loot in reach; X held stays turret view); the goal panel is the wheel's AUTOPILOT GOALS (LB held). The [X] GOALS prompt is gone."]
+  },
+  "hud/speedrun": {
+   "extras": {"legend": {"items": [["LS", "HAND BACK"], ["VIEW", "AUTOPILOT OFF", "hold"]]}}
+  }
+ },
+ "decisions": {
+  "movies": {"note": "Removed 11 Nov 2026 (0.4.6, issue 80): the Intro row and movie_intro are gone; the intro is HD Edition's own choice, an old movie_intro line is ignored."}
+ }
+}

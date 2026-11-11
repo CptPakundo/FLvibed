@@ -19,6 +19,7 @@ const char* Name(Mode m);
 bool SpaceWindowOpen();
 
 // This frame's mode. The two questions are the caller's until the windows are core's (P4), asked only in flight and in this
-// order: only the flight HUD is open; a NeuroNet window is open.
-Mode Detect(bool (*onlyHudOpen)(), bool (*spaceWindowOpen)());
+// order: only the flight view is open (the flight HUD and the boxes over the flight, such as the cargo demand: core\game\coreframe.cpp FlightViewOnly);
+// a NeuroNet window is open.
+Mode Detect(bool (*flightViewOnly)(), bool (*spaceWindowOpen)());
 } // namespace gamemode

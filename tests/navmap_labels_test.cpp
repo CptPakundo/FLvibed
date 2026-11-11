@@ -107,6 +107,55 @@ void Test_navmap_labels()
     Declutter(l, 4, order, b);
     CHECK(l[0].shown);
 
+    // a keep-out (a card over the map): a label that would cross it takes the other side, else it drops; its mark stays
+    {
+        Label k[3];
+        int ko[3];
+        for (Label& one : k)
+            one.w = 100, one.h = 20, one.gap = 6;
+        k[0].x = 300, k[0].y = 300; // the card at its right: it goes left
+        k[1].x = 500, k[1].y = 600; // the card covers both sides: it drops
+        k[2].x = 800, k[2].y = 800; // clear of every card
+        const navlayout::Rect keep[2] = {{310, 280, 500, 320}, {350, 580, 650, 620}};
+        CHECK(Declutter(k, 3, ko, b, keep, 2) == 2);
+        CHECK(k[0].shown && k[0].left);
+        CHECK(!k[1].shown);
+        CHECK(k[2].shown && !k[2].left);
+        for (const Label& one : k)
+            if (one.shown)
+                CHECK(!one.box.Overlaps(keep[0]) && !one.box.Overlaps(keep[1]));
+        // without keep-outs, as before
+        CHECK(Declutter(k, 3, ko, b) == 3 && !k[0].left);
+    }
+
+    // the hover's name tag (issue 75: New York's cluster at zoom 4, 4K): the tag below right of the cursor on Planet Manhattan is one more keep-out. Trenton Outpost, whose
+    // right side the tag covers, takes its left; the planet's own label stands down (the tag says it), its mark stays; Newark Station, clear of the tag, keeps its right.
+    // The same scene twice gives the same answer (no flicker from the order of the list)
+    {
+        Label k[3];
+        int ko[3];
+        for (Label& one : k)
+            one.h = 40, one.gap = 18;
+        k[0].x = 1444, k[0].y = 562, k[0].w = 290, k[0].rank = 0; // Planet Manhattan
+        k[1].x = 1512, k[1].y = 649, k[1].w = 270, k[1].rank = 0; // Trenton Outpost
+        k[2].x = 1380, k[2].y = 758, k[2].w = 260, k[2].rank = 0; // Newark Station
+        const navlayout::Rect screen = {0, 0, 3840, 2160}, tag[1] = {{1511, 629, 1872, 737}};
+        const bool named[3] = {true, false, false};
+        const int hovered = Hovered(k, named, 3, 1444, 562);
+        CHECK(hovered == 0);
+        k[hovered].w = 1e6f;
+        for (int pass = 0; pass < 2; ++pass)
+        {
+            CHECK(Declutter(k, 3, ko, screen, tag, 1) == 2);
+            CHECK(!k[0].shown);
+            CHECK(k[1].shown && k[1].left && !k[1].box.Overlaps(tag[0]));
+            CHECK(k[2].shown && !k[2].left);
+        }
+        const bool none[3] = {false, false, false}, twice[3] = {true, false, true};
+        CHECK(Hovered(k, none, 3, 1444, 562) == -1);
+        CHECK(Hovered(k, twice, 3, 1390, 750) == 2); // (two places of one name: the one under the cursor)
+    }
+
     // a dense scene: nothing overlaps and something stands
     std::vector<Label> many(120);
     std::vector<int> ord(120);

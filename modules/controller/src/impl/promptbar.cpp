@@ -59,6 +59,8 @@ static std::wstring g_timedWords;
 static bool g_visible = false;
 static int g_drawn = 0;
 static int g_rows = 0, g_dropped = 0; // rows drawn, pills dropped (this frame)
+static float g_plates[kMax][4] = {};  // each pill drawn this pass, its word above it included (pixels x0 y0 x1 y1): Plates
+static int g_nPlates = 0;
 
 // The lane's placement this frame (the pure geometry: core\game\promptfit.h, host-free tests tests\promptfit_test.cpp).
 using Mode = promptfit::LaneMode;
@@ -119,6 +121,22 @@ float Top(float H, const render::Font&) { return H * deckmode::LaneTopH(); }
 void Update(float) {}
 
 bool Visible() { return g_visible; }
+
+// (a pill as drawn: what draws before the bar in the next pass keeps out of it)
+static void NotePlate(float x0, float y0, float x1, float y1)
+{
+    if (g_nPlates < kMax)
+        g_plates[g_nPlates][0] = x0, g_plates[g_nPlates][1] = y0, g_plates[g_nPlates][2] = x1, g_plates[g_nPlates][3] = y1, ++g_nPlates;
+}
+
+int Plates(float* xyxy, int max)
+{
+    const int n = std::min(g_nPlates, max);
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < 4; ++j)
+            xyxy[i * 4 + j] = g_plates[i][j];
+    return n;
+}
 
 // The keep-outs this frame besides uiskin's geometry (pixels): uistrip's drawings, the QUANTITY line, the OSK, and HUD
 // 2's panels while a menu screen's prompts show in flight (not the flight modals: HUD 2 fades its loadout under them).
@@ -500,6 +518,7 @@ static void DrawHud2(void* device, int sw, int sh, bool visible)
             if (p.btn2 != glyphs::COUNT)
                 hud2kit::Glyph(p.btn2, cx + gw + g2 - (g2 - H * 0.006f) / 2, y - tall / 2, g, hud2kit::Argb(hud2kit::kChrome, a), false);
             hud2kit::Text((x0 + x1) / 2, y + tall / 2, p.label ? p.label : L"", size, hud2kit::Argb(hud2kit::kInk, a), hud2kit::Center);
+            NotePlate(x0, y - tall, x1, y + tall);
             ++g_drawn;
             continue;
         }
@@ -535,6 +554,8 @@ static void DrawHud2(void* device, int sw, int sh, bool visible)
         if (p.progress > 0) // a hold's sweep along the pill's foot
             hud2kit::Rect(x0, y + half - H * 0.004f, w[i] * (p.progress > 1 ? 1 : p.progress), H * 0.004f,
                           hud2kit::Argb(hud2kit::kActive, 1));
+        const float wordTop = at == promptfit::WordAt::Ring ? y - g * 0.62f - floorSize / 2 : promptfit::Raised(at) ? y - half - H * 0.001f - floorSize : y - half;
+        NotePlate(x0, std::min(y - half, wordTop), x1, y + half);
         ++g_drawn;
     }
     hud2kit::End();
@@ -624,6 +645,7 @@ static void DrawClassic(int sw, int sh, bool visible)
             render::Text(x + gap * 0.7f, cy - f.body.lineHeight * 0.5f, L"HOLD", dim);
             render::SetFont(f.label);
         }
+        NotePlate(g_last.x0[i] - gap * 0.5f, cy - rowH * 0.5f - H * 0.004f, g_last.x0[i] + w[i] + gap * 0.5f, cy + rowH * 0.5f + H * 0.004f);
         ++g_drawn;
     }
     render::End(false);
@@ -709,7 +731,7 @@ std::string Trace(bool reset)
 
 static void DrawFrame()
 {
-    g_drawn = 0, g_rows = 0, g_dropped = 0;
+    g_drawn = 0, g_rows = 0, g_dropped = 0, g_nPlates = 0;
     // the skin's overlay pieces first (the confirm's focus over its own dimming box): the one overlay call this
     // component and the skin share, so the controller's frame needs no extra call
     if (views::SkinOn() && g_host && g_host->GetD3DDevice)

@@ -10,6 +10,8 @@
 #include "game/deckmode.h"
 #include "game/roletext.h"
 #include "gametext.h"
+#include "navnew.h"
+#include "navskin.h"
 #include "skin_rules.h"
 #include "hook.h"
 #include "log.h"
@@ -362,6 +364,11 @@ int g_rich = 100;
 u32 g_richKey = 0;
 u32 g_placeKey = 0; // where the boxes stand: the window is still sliding in while it changes
 int g_placeRest = 0;
+// The open window's text stands laid out where it stays (TextReady): its one frame placed (R8, or nothing to place), then a pass of the boxes after that
+// which saw every box now shown (g_placedSet: a box the game shows later, STATUS's faction card, is sized by the next pass), and the opening's one fit of
+// the rich text's size (FitRich) done: a later filling is laid out by the game in the size the table holds
+bool g_frameDone = false, g_placed = false, g_placing = false, g_fitted = false;
+u32 g_placedSet = 0;
 int g_richFits = 0;
 double g_richMs = 0;
 
@@ -951,6 +958,16 @@ static struct
     u32 box;
     float units, pixels;
 } g_askedHeight = {};
+// The boxes a pass of PlaceBoxes works on: the rich ones shown and drawn
+static u32 BoxSet()
+{
+    u32 key = 0;
+    for (u32 box : g_boxes)
+        if (IsRich(box) && Shown(box) && R32(box + kBoxW))
+            key = key * 31 + box;
+    return key;
+}
+
 static float ToPixels(u32 box, float units, float pixels, float want)
 {
     if (g_askedHeight.box == box && fabsf(g_askedHeight.units - units) < 0.002f && g_askedHeight.pixels == pixels)
@@ -965,7 +982,10 @@ static float ToPixels(u32 box, float units, float pixels, float want)
 bool PlaceBoxes(const Spec& s, float screenH)
 {
     if (!exe::RichSetSize.ok())
+    {
+        g_placed = true; // (nothing here moves a box)
         return false;
+    }
     ui::Item anchor;
     const bool anchored = s.anchor && g_anchor && ui::ControlRect(g_anchor, anchor);
     if (s.anchor && !anchored)
@@ -979,6 +999,9 @@ bool PlaceBoxes(const Spec& s, float screenH)
     g_placeKey = place;
     if (g_placeRest < kPlaceRest)
         return false;
+    // (this pass puts the boxes where they stay: its moves take effect at once, so they stand in place from this frame on)
+    if (g_frameDone)
+        g_placed = true, g_placedSet = BoxSet();
     // the trade words at the ship's final stage have no heading: they stand even in the plate, not hard under its top
     const bool bare = g_wide && !(IsRich(g_stats) && Shown(g_stats)) && uiclick::FindVisible("BackToShipDealer");
     // (the panel under the row takes the room the row leaves: its boxes go with it, beyond a pixel's noise)
@@ -1125,6 +1148,7 @@ void FitRich()
         }
     g_rich = chosen;
     g_richKey = RichKey();
+    g_fitted = true;
     QueryPerformanceCounter(&t1);
     QueryPerformanceFrequency(&f);
     g_richMs = static_cast<double>(t1.QuadPart - t0.QuadPart) * 1000.0 / static_cast<double>(f.QuadPart);
@@ -1166,7 +1190,10 @@ void Place(const Spec& s)
 {
     const u32 set = R32(R32(g_window) + 0x14);
     if ((s.frame == 2 && !g_inventoryFrame) || g_dropTries >= 3 || !(exe::ControlSetPosition.is(set) || exe::InventorySetPosition.is(set)))
+    {
+        g_frameDone = true; // (it stands where it stands)
         return;
+    }
     float pos[3] = {};
     ui::Item it;
     if (!safemem::Read(g_window + 0x60, pos, sizeof(pos)) || !ui::ControlRect(g_window, it) || it.hw <= 0.5f)
@@ -1189,10 +1216,14 @@ void Place(const Spec& s)
         dx = ((1 - deckmode::SideW()) * W - (edge.x + edge.hw)) / H;
     const float dy = (it.y - H * (skinrules::kFrameCentreY - s.grow / 2)) / H;
     if (fabsf(dx) < 0.002f && fabsf(dy) < 0.002f)
+    {
+        g_frameDone = true;
         return;
+    }
     pos[0] += dx, pos[1] += dy;
     ++g_dropTries;
     g_dropRest = 0;
+    g_frameDone = fabsf(dx) * H < 2.5f && fabsf(dy) * H < 2.5f; // (a measure's last pixel or two: the window stands where it stays)
     hk::Call<void(__thiscall*)(u32, const float*)>(exe::ControlSetPosition.is(set) ? exe::ControlSetPosition : exe::InventorySetPosition, g_window, pos);
 }
 
@@ -1350,6 +1381,8 @@ void Closed()
     g_liftNow = 0;
     g_jobReward = 0;
     g_dropRest = g_dropTries = 0;
+    g_frameDone = g_placed = g_fitted = false;
+    g_placedSet = 0;
     const int base = gametext::Applied();
     if (g_rich != base)
         gametext::RichSet(base);
@@ -1404,6 +1437,7 @@ const Spec* Find(u32& window)
 
 void Frame(bool on)
 {
+    g_placing = false;
     if (!on)
     {
         Lift(0);
@@ -1445,11 +1479,19 @@ void Frame(bool on)
     }
     if (g_ladder.empty())
         return;
+    g_placing = true;
     const float screenH = static_cast<float>(fl::ScreenHeight());
     {
         perf::Scope ps("wt.place");
+        if (g_spec->drop > 0 || !g_spec->frame)
+            g_frameDone = true; // (no frame of R8 to wait for)
+        // (the drop clears the old map's toolbar from the subtitles' panel. The full-screen map hides that toolbar and places its own box, and the window's
+        // words move with the window while the Legend's swatches do not: dropped, every Legend word stood a row below its swatch, issue 59)
         if (g_spec->drop > 0)
-            Drop(*g_spec);
+        {
+            if (!(navnew::On() && !navskin::NativeAsked()))
+                Drop(*g_spec);
+        }
         else if (g_spec->frame)
             Place(*g_spec);
     }
@@ -1475,6 +1517,16 @@ void Frame(bool on)
 }
 
 void SetInventoryFrame(bool on) { g_inventoryFrame = on; }
+
+bool TextReady(u32 ctl)
+{
+    if (!ctl || !g_placing || !g_spec || std::find(g_boxes.begin(), g_boxes.end(), ctl) == g_boxes.end())
+        return true; // (a box nothing here moves stands where the game put it)
+    if (!exe::RichSetSize.ok())
+        return true; // (nothing here moves or sizes a box)
+    // (no fit to wait for: nothing to lay out, or the symbol unresolved)
+    return g_placed && g_placedSet == BoxSet() && (g_fitted || !exe::RichLayout.ok() || !RichKey());
+}
 
 void StandText(const char* name, float centreY)
 {

@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cwchar>
+#include <cwchar> // (iswalnum, towupper: the CRT's wchar.h declares them)
 #include <string>
 
 namespace skinrules
@@ -330,6 +330,97 @@ inline const CursorRow* CursorFor(const char* name)
 // The game's software cursor scales with the screen's width, so this one does: 0.052 H at 16:9, the size of the frames.
 constexpr float kCursorSizeW = 0.052f * 9.0f / 16.0f;
 inline float CursorSize(float screenW) { return kCursorSizeW * screenW; }
+
+// ---- the hover help's place (6.6): the box where the game put it, unless something HUD 2 draws over the game's UI stands there (the strip, the room
+// words, the NeuroNet box, a map panel, the prompt lane: the game's own box sat under them, GitHub issue 71); then the free place nearest to it. Pixels.
+struct TipRect
+{
+    float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+};
+inline bool TipOverlaps(const TipRect& a, const TipRect& b) { return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0; }
+// `want` the box at the game's place, `area` where a box may stand (the safe area), `blocks` what it must not cover, `gap` kept from them. The candidates are the
+// wanted place kept inside the area and, for each block a candidate covers, that candidate moved just past each of the block's four sides (three rounds: a
+// box pushed off the strip may land on the room words). The nearest free one wins (its top-left's distance from the wanted one); with none free, the
+// wanted place inside the area (false).
+inline bool TipPlace(const TipRect& want, const TipRect& area, const TipRect* blocks, int n, float gap, TipRect& out)
+{
+    const float w = want.x1 - want.x0, h = want.y1 - want.y0;
+    const auto at = [&](float x, float y)
+    {
+        TipRect r;
+        r.x0 = std::min(std::max(x, area.x0), area.x1 - w), r.y0 = std::min(std::max(y, area.y0), area.y1 - h);
+        r.x1 = r.x0 + w, r.y1 = r.y0 + h;
+        return r;
+    };
+    const auto clear = [&](const TipRect& r)
+    {
+        for (int i = 0; i < n; ++i)
+            if (TipOverlaps(r, blocks[i]))
+                return false;
+        return true;
+    };
+    constexpr int kMax = 256;
+    TipRect cand[kMax];
+    int count = 0;
+    cand[count++] = at(want.x0, want.y0);
+    for (int round = 0, from = 0; round < 3; ++round)
+    {
+        const int to = count;
+        for (int c = from; c < to; ++c)
+            for (int i = 0; i < n && count + 4 <= kMax; ++i)
+                if (TipOverlaps(cand[c], blocks[i]))
+                {
+                    const TipRect& b = blocks[i];
+                    cand[count++] = at(b.x1 + gap, cand[c].y0);
+                    cand[count++] = at(b.x0 - gap - w, cand[c].y0);
+                    cand[count++] = at(cand[c].x0, b.y1 + gap);
+                    cand[count++] = at(cand[c].x0, b.y0 - gap - h);
+                }
+        from = to;
+    }
+    int best = -1;
+    float bestD = 0;
+    for (int c = 0; c < count; ++c)
+    {
+        const float dx = cand[c].x0 - want.x0, dy = cand[c].y0 - want.y0, d = dx * dx + dy * dy;
+        if (clear(cand[c]) && (best < 0 || d < bestD))
+            best = c, bestD = d;
+    }
+    out = cand[best < 0 ? 0 : best];
+    return best >= 0;
+}
+
+// ---- a HUD 2 word's help (6.6, GitHub issue 71): the help of the game control the word stands for - its ToolTip's short tip (the hint IDS, with the
+// command's key: "Neural Net Log (F5)") and its Rollover's long hint ("The Bar is the place ..."). The short tip shows only where it says more than the word:
+// it is left out when it reads as the word itself, letters and digits alike, case aside ("Bar" on BAR, "Ship Dealer" on SHIP DEALER). The game shows the
+// help after the cursor rested on the control a quarter of a second (the ToolTip's +0x168, the Rollover's 0.25 s: FREELANCER_RE "The hover help's fields").
+constexpr float kHelpRest = 0.25f;
+inline bool SameWords(const std::wstring& a, const std::wstring& b)
+{
+    const auto next = [](const std::wstring& s, size_t& i) -> wchar_t
+    {
+        for (; i < s.size(); ++i)
+            if (iswalnum(s[i]))
+                return static_cast<wchar_t>(towupper(s[i++]));
+        return 0;
+    };
+    for (size_t i = 0, j = 0;;)
+    {
+        const wchar_t x = next(a, i), y = next(b, j);
+        if (x != y)
+            return false;
+        if (!x)
+            return true;
+    }
+}
+// The help's lines: the short tip unless it is the word, then the long hint; empty for none.
+inline std::wstring WordHelpText(const std::wstring& word, const std::wstring& tip, const std::wstring& hint)
+{
+    std::wstring s = tip.empty() || SameWords(word, tip) ? std::wstring() : tip;
+    if (!hint.empty())
+        s += (s.empty() ? L"" : L"\n") + hint;
+    return s;
+}
 
 // ---- CONTINUE (6.3, D9): one press loads the latest save
 struct SaveStamp

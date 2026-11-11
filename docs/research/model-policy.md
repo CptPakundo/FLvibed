@@ -8,6 +8,31 @@ Sources: a research workflow (29 Oct 2026, the owner's request); the numbers are
 
 ## What it means for FLvibed
 
+*11 Nov 2026:* **either model may lead, the owner's choice per session, and the owner hears the table's suggestion**
+(the owner, with Fable 5.2 out: "I may wish to start a Fable 5.2 session and have it orchestrate, or I may start an
+Opus 5.5 session for the same task"; then: "I am willing to at least hear suggestions regarding best combinations for
+tasks being worked on, and naturally spawned agents and sessions should be decided by decision making that is aware of
+the project and Claude best practices, backed up by data where possible"). So the route line names a **suggested lead**
+per task, once, with its basis, and the session goes on as it is. Suggested leads now: **Fable 5.2 high** for Ghidra /
+hook-site decisions, C++ design and root-cause debugging, and as the lead of HUD design rounds and check-ups ([C]
+Anthropic's 5.2 guidance: high for hard coding and agentic work, good results as planner and orchestrator over cheaper
+models); **Opus 5.5** for UI build, leg iteration, routine C++ fixes, game tests, subtitle review (medium) and releases
+(high) ([M] the tier these ran on here; half the list price). List prices per Mtok in / out, 3 Nov 2026: Fable 5.2
+$8 / $40, Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10, Haiku 5.5 $0.10 / $0.50 - Fable 5.2 is 2x Opus 5.5, not the 3.2x of
+5.1. A session started from a session gets the suggested lead of its brief, downward only (`route-session.js`). **AFK
+drivers:** the owner's pick, or the recommended setup when they name none (`policy.json` "afk": Fable 5.2 high for
+design- and orchestration-heavy plans [C], Opus 5.5 high for leg iteration, tests, builds and chores [M]); the fixed
+"Opus 5.5 High" of 31 Oct below is replaced. The table's model column otherwise reads as the tier of a class's
+**spawns** (the same under either lead). What differs per
+lead is in `policy.json` "leads": after two failed attempts an Opus lead escalates to Fable for one attempt, a Fable
+lead goes a step up in effort or takes a fresh-eyes Opus reviewer; a workflow whose agents name no model is refused
+under a Fable lead (they would all inherit the costliest tier) and noted under an Opus lead; a Fable agent named on
+purpose passes with a note under both. Every Fable figure below (3.2x, "medium below Opus medium", the $377) was
+measured on Fable 5.1 and is **not carried over** to 5.2: Anthropic's guidance for 5.2 is to rerun the effort sweep
+(low on 5.2 scored close to 5.1 at higher levels; most of the gain is present at high). So T26 now has a second axis:
+the same tasks under each lead, and the spawn tiers per lead. Until it runs, the per-lead spawn tiers are equal by
+judgement, not by measurement.
+
 *31 Oct 2026 ~04:00 (fc379a3, short form):* **an AFK driver is Opus 5.5 High, set by the owner's rule** (b195314, 31 Oct, 'MUST start at Opus 5.5 High'; the table's 'Opus 5.5, medium' rows are for attended sessions). Measured that day: `set_session_effort` on another session works; `set_session_model` there was blocked by the auto-mode classifier and `set_remote_control` is refused in a scheduled run (both need the owner's allow rules, which are in since fec472b, and the second still fails unattended), so the handover that depended on them is suspended (4fb61dc; `afk-autonomy.md`). The routing hooks tightened (79a963e, 6d6d1b2) without changing the table. T23-T27 unchanged.
 
 *30 Oct 2026 (aafe41d, check-up):* **T27 is built** (65ccf70, WORK_QUEUE H3): `tools\digest.py` reads legs / sets /

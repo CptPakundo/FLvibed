@@ -51,6 +51,17 @@ void Scrim(float peak, float level);
 void Dialog(const skinrules::DialogBox& b, const std::wstring& title, const std::wstring& cost, bool amber);
 // A tooltip: plate, body at 0.026 H, at (x, y) kept inside the safe area. False when nothing could be placed.
 bool Tooltip(float x, float y, const std::wstring& text);
+// The same in two steps, for a caller that places the box itself (skinrules::TipPlace): its lines and size, then the drawing at a top-left.
+struct TooltipLines
+{
+    std::wstring lines[4];
+    int n = 0;
+    float size = 0, w = 0, h = 0; // the text's size, the box's width and height, pixels
+};
+bool TooltipFit(const std::wstring& text, TooltipLines& out);
+void TooltipAt(float x0, float y0, const TooltipLines& t);
+// The screen's safe area (the deck's gutters), pixels.
+skinrules::TipRect SafeArea();
 // The grammar: a quantity as segments (never a bare bar).
 void Pips(float x, float y, float w, float h, float share, int n, u32 rgb);
 // The grammar: a hold filling round a glyph.

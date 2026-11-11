@@ -2,17 +2,26 @@
 #include "skinover.h"
 
 #include "flexe.h"
+#include "game/baseinfo.h"
 #include "game/deckmode.h"
 #include "game/fl.h"
 #include "game/ini.h"
 #include "game/hostcalls.h"
 #include "game/render.h"
+#include "hook.h"
 #include "log.h"
+#include "navnew.h"
+#include "navskin.h"
+#include "nnstrip.h"
 #include "skin_rules.h"
 #include "skinkit.h"
+#include "str.h"
+#include "text.h"
+#include "uistrip.h"
 #include "ui/hud2_kit.h"
 #include "ui/hud_rows.h"
 #include "ui/ui.h"
+#include "ui/views.h"
 #include "ui/winplates.h"
 
 #include <map>
@@ -29,11 +38,31 @@ using namespace skinrules;
 using winplates::R32;
 using winplates::RBytes;
 
-std::wstring g_tipText;
-float g_tipX = 0, g_tipY = 0;
-bool g_tipLive = false;
+// The game's two hover help controls as read before the UI pass (FREELANCER_RE "The hover help"): 0 the ToolTip box, 1 the Rollover line.
+struct Help
+{
+    std::wstring text;
+    float x = 0, y = 0; // the game's place, pixels
+    bool live = false;
+    TipRect drawn;      // where HUD 2's stood this frame (state report)
+    bool moved = false; // it stands away from the game's place: something HUD 2 draws over the game's UI was there
+};
+Help g_help[2];
+// A HUD 2 word's help (WordHelp): its control's texts, read when the cursor comes onto the word
+struct WordTip
+{
+    u32 ctl = 0;
+    std::wstring word, text;
+    TipRect box;    // the word's click box
+    float rest = 0; // seconds the cursor stayed on it
+    bool live = false;
+    TipRect drawn;
+};
+WordTip g_word;
+std::vector<TipRect> g_blocks; // what the help kept clear of, the last frame it stood (state report)
 std::set<std::string> g_unknown;
 const CursorRow* g_row = nullptr;
+bool g_mapTag = false; // the last Draw stood the ToolTip as the full-screen map's name tag
 bool g_sheet = false; // debug `uiskin cursorsheet 1`: every flight reticle drawn in a row (the owner judges the set from one frame)
 
 u32 Tint(CursorTint t)
@@ -181,13 +210,17 @@ const CursorRow* CurrentRow()
 }
 } // namespace
 
-bool TipRead(u32 tip)
+bool HelpRead(int which, u32 ctl)
 {
-    g_tipLive = false;
-    u8 showing = 0;
+    if (which < 0 || which > 1)
+        return false;
+    Help& h = g_help[which];
+    h.live = false;
+    u8 state = 0;
     u32 text = 0;
     float pos[3] = {};
-    if (!tip || !winplates::R8(tip + 0x159, showing) || !showing || !R32(tip + 0x104, text) || !text || !RBytes(tip + 0x60, pos, sizeof(pos)))
+    // drawn while state bits 0 and 1 stand; the text object at +0x7C (the class's vt[0x70] sets it) holds the string's pointer first
+    if (!ctl || !winplates::R8(ctl + 0x6C, state) || (state & 3) != 3 || !R32(ctl + 0x7C, text) || !text || !RBytes(ctl + 0x60, pos, sizeof(pos)))
         return false;
     std::wstring s;
     for (int i = 0; i < 400; ++i)
@@ -201,12 +234,158 @@ bool TipRead(u32 tip)
             return false; // not text: the field is not what the decompiler said
         s.push_back(c);
     }
-    if (s.empty() || !ui::Project(pos[0], pos[1], pos[2], g_tipX, g_tipY))
+    if (s.empty() || !ui::Project(pos[0], pos[1], pos[2], h.x, h.y))
         return false;
-    g_tipText.swap(s);
-    g_tipLive = true;
+    h.text.swap(s);
+    h.live = true;
     return true;
 }
+
+void HelpClear(int which)
+{
+    if (which >= 0 && which <= 1)
+        g_help[which].live = false;
+}
+
+bool MapTag(float r[4], std::wstring& text)
+{
+    if (!g_mapTag || !g_help[0].live)
+        return false;
+    const TipRect& d = g_help[0].drawn;
+    r[0] = d.x0, r[1] = d.y0, r[2] = d.x1, r[3] = d.y1;
+    text = g_help[0].text;
+    return true;
+}
+
+namespace
+{
+std::wstring Trim(std::wstring s)
+{
+    while (!s.empty() && iswspace(s.back()))
+        s.pop_back();
+    size_t i = 0;
+    while (i < s.size() && iswspace(s[i]))
+        ++i;
+    return s.substr(i);
+}
+
+// The game's UI option `name` on, as the help's own draw tests it (>= 0.999: 0x4BDEA0 "enable_tooltips", 0x4B5CA0 "enable_rollover"); off when unreadable.
+bool OptionOn(const char* name)
+{
+    const u32 o = exe::UiOptionFind.ok() ? hk::Call<u32(__cdecl*)(const char*)>(exe::UiOptionFind, name) : 0;
+    float v = 0;
+    return o && RBytes(o + 0x14, &v, sizeof(v)) && v >= 0.999f;
+}
+
+// The ToolTip's text for a control, as 0x4BD880 makes it from what the control's help hands it (FREELANCER_RE "The hover help's fields"): the hint IDS +0xCC,
+// and on an icon button (vt[0x88] 0x55BDE0 hands its command +0x34C too) " (<key>)" while a key is bound to the command - "Neural Net Log (F5)".
+std::wstring ShortTip(u32 ctl)
+{
+    std::wstring s = baseinfo::HintText(ctl);
+    u32 vt = 0, cmd = 0;
+    int key[3] = {};
+    if (s.empty() || !R32(ctl, vt) || !exe::VtIconButton.is(vt) || !R32(ctl + 0x34C, cmd) || !cmd || !exe::CommandKey.ok() || !exe::CommandKeyText.ok() ||
+        !hk::Call<bool(__cdecl*)(int, int*)>(exe::CommandKey, static_cast<int>(cmd), key) || !key[1])
+        return s;
+    wchar_t name[256] = {};
+    hk::Call<void(__cdecl*)(const int*, wchar_t*, u32)>(exe::CommandKeyText, key, name, 256u);
+    name[255] = 0;
+    return name[0] ? s + L" (" + name + L")" : s;
+}
+
+// The Rollover's text for a control: its map at +0x150 from hint IDS to long hint IDS (head +0x154, nil +0x158; node +0 left, +8 right, +0xC the key, +0x10
+// the long hint's IDS), looked up as 0x4B5CA0 does (0x432240: the lower bound, then the key itself). Read in game 11 Nov 2026: 1057 -> 2057, 6506 -> 2306.
+std::wstring LongHint(u32 ctl)
+{
+    static u32 roll = 0;
+    u32 vt = 0, ids = 0, head = 0, nil = 0, node = 0, best = 0, key = 0, hint = 0;
+    if (!roll || !R32(roll, vt) || !exe::VtRollover.is(vt))
+        roll = static_cast<u32>(ui::FindControl("Rollover"));
+    if (!roll || !R32(roll, vt) || !exe::VtRollover.is(vt) || !R32(ctl + 0xCC, ids) || !ids || !R32(roll + 0x154, head) || !R32(roll + 0x158, nil) ||
+        !head || !R32(head + 4, node))
+        return L"";
+    for (int guard = 0; node && node != nil && node != head && guard < 64; ++guard)
+    {
+        if (!R32(node + 0xC, key))
+            return L"";
+        if (key < ids)
+        {
+            if (!R32(node + 8, node))
+                return L"";
+        }
+        else
+        {
+            best = node;
+            if (!R32(node, node))
+                return L"";
+        }
+    }
+    if (!best || !R32(best + 0xC, key) || key != ids || !R32(best + 0x10, hint) || !hint)
+        return L"";
+    return Trim(text::Ids(hint));
+}
+} // namespace
+
+void WordHelp(u32 ctl, const std::wstring& word, const float r[4], float dt, bool tip, bool rollover)
+{
+    if (!ctl)
+    {
+        g_word = WordTip();
+        return;
+    }
+    if (ctl != g_word.ctl || word != g_word.word)
+    {
+        g_word = WordTip();
+        g_word.ctl = ctl, g_word.word = word;
+        const std::wstring s = tip && OptionOn("enable_tooltips") ? ShortTip(ctl) : std::wstring();
+        const std::wstring l = rollover && OptionOn("enable_rollover") ? LongHint(ctl) : std::wstring();
+        g_word.text = skinrules::WordHelpText(word, s, l);
+    }
+    g_word.box = {r[0], r[1], r[2], r[3]};
+    g_word.rest += dt;
+    g_word.live = g_word.rest >= skinrules::kHelpRest && !g_word.text.empty();
+}
+
+namespace
+{
+// What HUD 2 draws over the game's UI this frame, where a help box must not stand (the game's own box sat under it, GitHub issue 71): the strip and the
+// character card, the room words and the NeuroNet box, a NeuroNet window's tabs, the full-screen map's top row and chips, what was kept out over the UI pass (the
+// map's cards and lane), the prompt lane.
+// Not the windows' own plates: they lie under the UI pass, and a row's help belongs on its window.
+std::vector<TipRect> Blocks(float W, float H)
+{
+    std::vector<TipRect> b;
+    for (const views::HudRect& r : uistrip::Drawn())
+        b.push_back({r.x0, r.y0, r.x1, r.y1});
+    const winplates::DockedGeo& d = winplates::g_docked;
+    if (d.live)
+    {
+        b.push_back({d.bx0, 0, d.bx1, d.by1});
+        if (d.sub)
+            b.push_back({d.sx0, 0, d.sx1, d.sy1});
+        if (d.nn)
+            b.push_back({d.nx0, 0, d.nx1, d.ny1});
+    }
+    float s[4];
+    if (nnstrip::Rect(s))
+    {
+        b.push_back({s[0], s[1], s[2], s[3]});
+        if (navnew::Grown()) // the full-screen map's top row: the system's name, the tabs, LAYERS (navskin DrawFull) - one band down to the tabs' foot
+            b.push_back({0, 0, W, s[3]});
+    }
+    views::MapChip chips[32]; // the map's chips (LAYERS, CLOSE, the cards' actions)
+    for (int i = 0, n = navskin::Chips(chips, 32); i < n; ++i)
+        b.push_back({chips[i].x0, chips[i].y0, chips[i].x1, chips[i].y1});
+    for (size_t i = winplates::g_keepUnder; i < winplates::g_keep.size(); ++i)
+    {
+        const winplates::KeepOut& k = winplates::g_keep[i];
+        b.push_back({k.x0, k.y0, k.x1, k.y1});
+    }
+    if (views::LaneWanted() || views::DevicePromptVisible()) // (this late in the overlay the lane has drawn: its "wanted" is spent, its shown stands)
+        b.push_back({0, H * deckmode::LaneTopH(), W, H});
+    return b;
+}
+} // namespace
 
 void Draw(void* device, bool on, bool pad)
 {
@@ -215,7 +394,8 @@ void Draw(void* device, bool on, bool pad)
     // (hidden the frame before it is drawn, and the game's shows at once for anything this pass cannot draw)
     hostcalls::CursorHide(hostcalls::kCursorHideSkin, g_row != nullptr);
     const bool drawCursor = g_row && !hostcalls::CursorHiddenBesides(hostcalls::kCursorHideSkin) && Mem<u8>(exe::CursorShown) != 0;
-    const bool drawTip = on && g_tipLive;
+    const bool drawTip = on && (g_help[0].live || g_help[1].live || g_word.live);
+    g_mapTag = false;
     if (!device || (!drawCursor && !drawTip && !g_sheet))
         return;
     int sw = 0, sh = 0;
@@ -227,10 +407,43 @@ void Draw(void* device, bool on, bool pad)
     skinkit::SetScreen(W, H);
     if (drawTip)
     {
-        if (pad) // no cursor for the help to stand by: a fixed line over the prompt lane
-            skinkit::Tooltip(W * deckmode::SideW(), H * (deckmode::LaneTopH() - 0.06f), g_tipText);
-        else
-            skinkit::Tooltip(g_tipX, g_tipY, g_tipText);
+        // the box first (it stands by what is hovered), then the line, each clear of what HUD 2 draws over the game's UI and of the one before
+        std::vector<TipRect> blocks = Blocks(W, H);
+        g_blocks = blocks;
+        const float gap = H * 0.008f;
+        for (Help& h : g_help)
+        {
+            skinkit::TooltipLines t;
+            h.moved = false;
+            if (!h.live || !skinkit::TooltipFit(h.text, t))
+                continue;
+            float x = h.x, y = h.y;
+            if (&h == &g_help[0] && navnew::Grown())
+            {
+                // the full-screen map: the game places its box by its own map's size, which no longer stands (GitHub issue 75: "Alsterfeld" well away from
+                // the field). What it names is under the cursor - the game's hit test found it there, the pad's map cursor too - so the tag stands below
+                // right of the arrow
+                const float s = CursorSize(W);
+                x = static_cast<float>(fl::MouseX()) + s * 0.6f, y = static_cast<float>(fl::MouseY()) + s * 0.6f;
+            }
+            else if (pad) // no cursor for the help to stand by: a fixed line over the prompt lane
+                x = W * deckmode::SideW(), y = H * (deckmode::LaneTopH() - 0.06f);
+            TipRect want, at;
+            want.x0 = x, want.y0 = y, want.x1 = x + t.w, want.y1 = y + t.h;
+            skinrules::TipPlace(want, skinkit::SafeArea(), blocks.data(), static_cast<int>(blocks.size()), gap, at);
+            skinkit::TooltipAt(at.x0, at.y0, t);
+            h.drawn = at, h.moved = fabsf(at.x0 - x) > 1 || fabsf(at.y0 - y) > 1;
+            g_mapTag |= &h == &g_help[0] && navnew::Grown();
+            blocks.push_back(at);
+        }
+        skinkit::TooltipLines t;
+        if (on && g_word.live && skinkit::TooltipFit(g_word.text, t)) // a word's help: under the word, at the free place nearest to it (mouse and pad alike)
+        {
+            TipRect want;
+            want.x0 = g_word.box.x0, want.y0 = g_word.box.y1 + gap, want.x1 = want.x0 + t.w, want.y1 = want.y0 + t.h;
+            skinrules::TipPlace(want, skinkit::SafeArea(), blocks.data(), static_cast<int>(blocks.size()), gap, g_word.drawn);
+            skinkit::TooltipAt(g_word.drawn.x0, g_word.drawn.y0, t);
+        }
     }
     if (drawCursor)
         DrawCursor(W);
@@ -260,14 +473,45 @@ void Sheet(bool on) { g_sheet = on; }
 void Shutdown()
 {
     hostcalls::CursorHide(hostcalls::kCursorHideSkin, false);
-    g_tipLive = false;
+    g_help[0].live = g_help[1].live = false;
+    g_word = WordTip();
     g_row = nullptr;
 }
 
 std::string Status()
 {
     std::ostringstream o;
-    o << "skinover cursor=" << (g_row ? g_row->name : "game's") << " unknown=" << g_unknown.size() << " tip=" << (g_tipLive ? 1 : 0);
+    o << "skinover cursor=" << (g_row ? g_row->name : "game's") << " unknown=" << g_unknown.size() << " tip=" << (g_help[0].live ? 1 : 0)
+      << " rollover=" << (g_help[1].live ? 1 : 0);
+    static const char* const kName[2] = {"tooltip", "rollover"};
+    for (int i = 0; i < 2; ++i)
+        if (g_help[i].live)
+        {
+            char line[160];
+            sprintf_s(line, "\n  %s game=%.0f,%.0f drawn=%.0f,%.0f-%.0f,%.0f%s \"", kName[i], g_help[i].x, g_help[i].y, g_help[i].drawn.x0, g_help[i].drawn.y0,
+                      g_help[i].drawn.x1, g_help[i].drawn.y1, g_help[i].moved ? " moved" : "");
+            o << line;
+            for (wchar_t c : g_help[i].text.substr(0, 60))
+                o << (c >= 0x20 && c < 0x7F ? static_cast<char>(c) : '?');
+            o << "\"";
+        }
+    if (g_word.ctl)
+    {
+        char line[200];
+        sprintf_s(line, "\n  word \"%s\" ctl=%08X rest=%.2f live=%d drawn=%.0f,%.0f-%.0f,%.0f \"", str::Narrow(g_word.word).c_str(), g_word.ctl, g_word.rest,
+                  g_word.live ? 1 : 0, g_word.drawn.x0, g_word.drawn.y0, g_word.drawn.x1, g_word.drawn.y1);
+        o << line;
+        for (wchar_t c : g_word.text.substr(0, 160))
+            o << (c >= 0x20 && c < 0x7F ? static_cast<char>(c) : '|');
+        o << "\"";
+    }
+    if (g_help[0].live || g_help[1].live || g_word.live)
+        for (const TipRect& b : g_blocks)
+        {
+            char line[96];
+            sprintf_s(line, "\n  help keeps clear of %.0f,%.0f-%.0f,%.0f", b.x0, b.y0, b.x1, b.y1);
+            o << line;
+        }
     return o.str();
 }
 } // namespace skinover

@@ -527,15 +527,6 @@ void MoviePoll()
     });
 }
 
-const char* MoviePath(const char* path)
-{
-    Each(kMovieOrder, [&](const Client& c) {
-        if (c.moviePath)
-            path = c.moviePath(path);
-    });
-    return path;
-}
-
 static void InstallShared()
 {
     hk::Owner own(SharedOwner());

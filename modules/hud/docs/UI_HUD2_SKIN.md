@@ -253,6 +253,13 @@ Frames: `research\evidence\hud2_gate\mock\navmap_*`, on the real grown map. Nati
 ### 6.2 Quit and every confirm
 Frames: `quit_confirm_4k_pad`, `quit_confirm_1280x800_pad`, `exit_game_4k_pad`.
 
+**The cargo demand (0.4.6, GitHub issue 76):** the mission message box's drop-cargo form (told from the other forms by `DropCargoButton` and `DCCancelButton`)
+is this dialog too: the demanding ship's name as the title, the game's own words (formatted from the box's FmtStr, its rich text has no reader), DROP CARGO
+and CANCEL as the game words them, the X (the same as CANCEL) gone. No scrim and the flight HUD not put under it: the game does not pause for it and closes it
+by itself after 20 s. The pad: A drops, B cancels (`padmenus` Popup). Under the flight HUD (0.4.6's verification): its plate is a reserved area of HUD 2's
+(`ABox`, `UI_HUD2.md` 5.45), its answers stand in HUD 2's prompt lanes (not the prompt bar, whose fallback put them on the weapons panel), and the game's arrow,
+which the box switches to wherever the pad's aim stands, is hidden while the pad is the device.
+
 One dialog primitive for NN_Confirm, the Exit dialog, NN_Prompt, NN_Error, the MP prompt, abort mission, ship purchase. The ornate box goes (`Confirm_deleteBox`, `ExitFrame`, `ExitTextFrame`: art children). `UI_HUD2_EXTENDED.md` kept the confirm's box because it dims the pause menu; the scrim takes over that job and the boxes behind go dark under it.
 
 **The dialog stays a centred box (the owner, R10, 6 Nov 2026; the critique's alert card overruled):** HUD 2's own plate, centred, title and cost centred, the two chips side by side, as `decisions\R10_dialog.jpg` A. What goes is the game's ornate art, not the centred form. The focused chip's word is in INK (R9; the sheet still draws it blue): the verbs are chips the skin draws. Where a dialog keeps the game's own words on a native box button, R9's limit holds and the word keeps today's colour.
@@ -292,6 +299,22 @@ Frame: `servers_4k_pad`; rows illustrative, places from `PAGE_ServerSelect.page`
 
 ### 6.6 Small things
 - **Tooltip, Rollover:** Shadow: the text read, the game's box hidden, HUD 2's drawn beside its control. On the pad the fixed help line. No autopop; the game's delay stays.
+  Built in 0.4.6 (GitHub issue 71: the Shadow read had tested a click flag and an empty field, so it never read; the game's boxes stood under the strip):
+  both read from +0x7C on skin screens (docked, a window, a menu; plain flight keeps the game's), the game's hidden for one UI pass and given back after
+  it, HUD 2's at the game's place unless the strip, the room words, the NeuroNet box, a NeuroNet window's tabs, the map's panels or the prompt lane
+  stand there - then the free place nearest to it (`skinrules::TipPlace`); the box first, the line clear of it. The full-screen map (GitHub issue 75): the
+  map's hover is the ToolTip, which the game places by its own map's size, so there the name tag stands below right of the cursor (mouse and the pad's
+  map cursor alike), clear of the top row (title, tabs, LAYERS), the chips and the cards; nothing hovered, no tag. The map's place names keep out of
+  the tag as they keep out of the cards (the other side of their mark, else they drop), and the hovered place's own name stands down while the tag says it.
+  **HUD 2's words** (issue 71, second round): the room bar's words, the actions under it, the NeuroNet box's and the strip's tabs stand elsewhere than the
+  game's buttons they stand for, which stay hidden at their own places - the game's hover there named whatever button lay under the word. With a cursor on
+  screen (mouse, the pad's stick cursor) and the cursor on one of their plates, the game's help is hidden and not drawn; on a word, HUD 2 shows the help of
+  the control that word stands for (the one its click acts for: `nnstrip::WordAt`), read as the game reads it (`skinover::WordHelp`: the hint IDS with the
+  command's key, the Rollover's long hint by its map, each only while the game's option for it is on), after the game's quarter-second rest, under the word
+  by `TipPlace`. The short tip shows only where it says more than the word (`skinrules::WordHelpText`: "Neural Net Log (F5)" on LOG, "Commodity Trader" on
+  TRADER; not "Bar" on BAR). The D-pad's focus (no cursor) keeps the path above.
+  FLvibed's options page over the screen: the help stays the game's, under the page (read and drawn last of the overlay, a hovered character's name card
+  had stood over the page).
 - **Popups:** the title in INK, OK a chip. They stay until dismissed, as the game's do.
 - **Death:** native buttons on the plate; focus on LOAD AUTOSAVE, one press to retry; input taken at once. The ~2 s before they appear is the game's.
 - **Cursor (decided: HUD 2's own, the set of `decisions\D1b_cursor.jpg`, as drawn; the owner, D1):** all 19 names of `DATA\mouse.ini`, one meaning each. An arrow for menus and `stretch`; a four-part reticle for flight, colour by attitude and a form per state (since 7 Nov 2026, the owner: "include inwards-pointing triangles ... a bit closer to vanilla FL": four arcs on the axes that read as the game's ring, its dot, and over a ship four darts in the diagonal gaps pointing in, solid / hollow / open by attitude as the target's carets; firing pushes them in and bolds the ring, as the game's hostile_fire; no-fire a bar; free aim the ring and dot alone; debug `uiskin cursorsheet 1` draws the set); a word in a bubble for the `talk_*` names: JOB, INFO, RUMOR, STORY, BRIBE, "...", GEAR, GOODS, SHIPS. At the game's own cursor position, with the game's mesh hidden through `SetCursorHidden`. The shape comes from the game's current cursor name; a name the table does not know (a mod's) stays the game's and is logged. The game's cursor is a software mesh that scales with screen width, so HUD 2's keeps that rule, at the size of the frames. Position, clicks and hover stay the game's: a change of look, no emulation. It costs what the game's software cursor already costs.
@@ -352,7 +375,7 @@ It replaces the native bracket corners, label and bars on screen. No anchor at t
 | Size | Marks follow the object's on-screen size from the game's radius, floor 0.030 H, cap 0.10 H, so the block stays on screen on a capital |
 | After a hit | The remaining shield or hull in numbers beside its bar for 3 s, faded over 0.4 s; another hit starts it again; a white trail marks what was just lost: held 0.35 s after the last hit, then drained to the left towards the value (about 0.6 s for a fifth of the bar; gone at once under skin_motion NONE), not held for the numbers' 3 s (Shockwave via the owner, 7 Nov 2026) |
 | Inside the ring | **The seat (the owner, 6 Nov 2026; was the shoulder):** the four carets stay on the ship; bars and words stand centred on top of the reticle: over the cue's row while it shows, just over the ring when it does not, over an alert card that stands there. With the ring faded there is no seat and they stay with the target. A new target's card opens there. Enter and leave thresholds by probe T8 (the research's R + 0.03, R + 0.06 to start from) |
-| Close ships | The target in full. Each other ship takes the richest form that touches nothing, falling a step when it would: caret and name, caret and distance, caret and one row of hull pips, bare caret. Where no room exists for the card, the target goes straight to the settled form (this design's pick; not drawn) |
+| Close ships | The target in full. Each other ship takes the richest form that touches nothing, falling a step when it would: caret and name, caret and distance, caret and one row of hull pips, bare caret; no mark at all where the caret would stand on a panel, a prompt or the subtitles (GitHub issue 77). Where no room exists for the card, the target goes straight to the settled form (this design's pick; not drawn) |
 | Waypoint target | **By its type:** a ship stays a ship, a solar a solar; a solar with nothing to damage has no bars. Being the waypoint adds a small diamond round the attitude caret, no more. The game's large diamond and its distance go, the distance into the words line. If the diamond's art cannot be hidden (+0x7B4, unprobed), it stays round the same form |
 | Breathing | The lock's glow on the cue at 1 Hz, the waypoint diamond's at 0.5 Hz (the owner); both hold steady under `skin_motion` FADES and NONE |
 | Off screen | The game's arrow, name and distance on the card. On leaving, the words wait by the arrow about 0.5 s and fade, so a target at the edge does not flicker |
@@ -548,8 +571,8 @@ Built to the unit tests and the release build only. Files: `skin_rules.h` (teste
 | Loading, each path: menu load, in-game load, New Game, MP connect, launch, dock | navy from the first frame, no native bar flash, black frames between (probe 9) none or fill by 0x578F70; bar only past 1.5 s; load time unchanged within noise |
 | `uiskin loadplace 1` on each path | says which paths read the right place; only those go live |
 | Cursor: each of the 19 names, K&M, pad's cursor, FLUF beside, options page, modal loop | shape at the game's hot spot, the mesh gone, a mod's name logged and native, no cursor in a movie |
-| ToolTip: read `+0x104` while hovering | same text as the frame; else it stays native by itself |
-| Rollover | dump 0x672288 for its text field; native until then |
+| ToolTip: read `+0x7C` while hovering (`uiskin hover x y` in a background game) | same text as the frame; else it stays native by itself. Done 11 Nov 2026 |
+| Rollover | its text at +0x7C too (FREELANCER_RE "The hover help's fields"); read and drawn since 0.4.6 |
 | Popups, front load | MMOkButton's and the load buttons' frames gone, hit and click kept |
 | Page rule on every `.page` screen | art with a rectangle has a plate, no unknown class hidden, `seams` lists what is left |
 | `uiskin seams` at every moment of 3.1 | zero, or each line owned by a row |

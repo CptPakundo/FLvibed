@@ -298,9 +298,14 @@ the save's first segment then starts N s past the checkpoint (a `seg` run: compa
    cover ref.py's speed / phase profile side by side with ours (time at engine speed outside the one charge, braking,
    stops). Every LONGER / OFF-ROUTE / SLOW / GUARD flag is read in the trace before the set is called done - a flagged
    segment is a finding, also when its time looks fine.
-6. **Shared code** (travel, combat, dock, guard, objective logic) changed -> the leg gate (`tools\flgate.ps1`: every leg
+6. **Shared code** (travel, combat, dock, guard, objective logic) changed -> a leg gate is DUE, and **the gate runs only
+   when the owner names it** (the owner, 5 and 11 Nov 2026: "do not do a full gate check!"; then, asked which rule holds
+   everywhere, "only when I name it" - attended and AFK alike; the full sweep `flsweep` the same). So: write "gate due:
+   <what changed>" into the handoff, say it to the owner once, and go on; never ask again and never start it. Until it
+   runs, cover the change by the smallest test by reach (a leg from the nearest fit checkpoint save, a probe, a set).
+   The gate (`tools\flgate.ps1`: every leg
    once from its start save in `docs\legs_reference.tsv`; `-ApSet` carries a switch to every leg, e.g. the measurement
-   gate `situation_shadow 1` read by `tools\shadow_digest.py --gate <tag>`) before the next change set, compared checkpoint by checkpoint with the last gate (`splits.py compare
+   gate `situation_shadow 1` read by `tools\shadow_digest.py --gate <tag>`) is compared checkpoint by checkpoint with the last gate (`splits.py compare
    'gate-<last>$' 'gate-<new>$'`); a WORSE segment of one run is a lead to re-run (one run is noise), a leg whose
    segments stay worse is a regression to fix first. **Since 30 Oct 2026 evening every gate harvests** (fresh
    checkpoint saves by default, `-NoFreshSaves` off; after the queue `sets\gate_<tag>_A.tsv` from `tools\gate_harvest.py`
@@ -473,7 +478,10 @@ saves.
 ## AFK sessions: continuous work (user, 23 Oct 2026)
 The user's AFK go-ahead covers working, iterating, fixing, testing, self-reflection and course corrections, without
 asking, **continuously until the user says otherwise** (it also allowed a child session near a full context, which an
-AFK turn cannot start: 3.). **Since 31 Oct 2026 the run is one owner-started Desktop session (Opus 5.5 High, Remote
+AFK turn cannot start: 3.). "Without asking" is not leave for what needs the owner's word (a push, tag, release or
+GitHub post; the leg gate or full sweep; deleting what the run did not make; a system-wide install; a game in front or
+with sound): that is neither done nor asked about, it is written under "WAITS ON THE OWNER" in the handoff and the run
+goes on (the afk-run skill "Never end it yourself"). **Since 31 Oct 2026 the run is one owner-started Desktop session (the owner's model and effort, or the recommended setup: the afk-run skill; Remote
 Control on) that compacts in place:** scheduled successor runs cannot switch Remote Control on (the owner's
 non-negotiable rule), so rollover is suspended (`..\..\.claude\afk.norollover`; the afk-run skill "Rollover"). **How
 the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
@@ -530,7 +538,8 @@ the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
    - **UNRELIABLE** (PASS under 5 / 6 in a recent set): fail states first - read every failed run before any speed work.
    - any other ATTENTION: fix it before the next set (a regression in decisions / replay / saves is a stop-the-line;
      `health` is the weekly trend, for the end-of-run report).
-   - every 6 hours, or after a shared change is kept: the leg gate (`tools\flgate.ps1`) and `splits.py compare
+   - after a shared change is kept: a leg gate is due - "gate due: <what changed>" into the handoff; the gate itself
+     runs only when the owner names it, AFK too (test loop 6; no gate by the clock). After one: `splits.py compare
      'gate-<last>$' 'gate-<new>$'`; a leg that got WORSE is the next target.
    - the research check-up round (docs\research\README.md) when the review shows stale notes and nothing is running.
    The review's line goes into the handoff ("REVIEW <time>: ..."). `drift_check` (each check isolated: a broken one
@@ -540,7 +549,7 @@ the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
    it is missing, over 2 h old or unfinished, `stop-the-line` refuses a set while it shows ATTENTION / ERROR on
    decisions / replay / saves (and a flleg run from an unfit save) - each refusal names the step that clears it (the
    `afk-run` skill, the private Claude Code harness notes). A kept change is turned on by default only after
-   the gate shows no regression on the other legs (speedrun-only knowledge stays behind its preset / switch and names
+   a gate (run on the owner's word) shows no regression on the other legs; until then it stays behind its switch (speedrun-only knowledge stays behind its preset / switch and names
    its source - `modules\autopilot\docs\AUTOPILOT_UX.md` 2a). Long runs (the leg gate, several legs in a row) go
    as detached pwsh (`Start-Process`), not as tool background tasks: those end at the tool's 10 min timeout. Quote the
    script path inside one `-ArgumentList` string (`"-NoProfile -File `"$g`" ..."`): an array splits the path at its

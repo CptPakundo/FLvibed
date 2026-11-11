@@ -290,7 +290,7 @@ void HideHoverHelp()
     }
 }
 
-uintptr_t HitTest(float x, float y)
+uintptr_t HitTest(float x, float y, bool quiet)
 {
     // Same ray Freelancer builds for its cursor (0x4BDD40 + camera rotation + normalize).
     if (!exe::UiCamera.ok())
@@ -310,7 +310,8 @@ uintptr_t HitTest(float x, float y)
     typedef uintptr_t(__cdecl * HitTestFn)(const float* ray);
     const QuietHelp help;
     const uintptr_t hit = hk::Call<HitTestFn>(exe::HitTest, static_cast<const float*>(r));
-    help.Restore();
+    if (quiet)
+        help.Restore();
     return hit;
 }
 

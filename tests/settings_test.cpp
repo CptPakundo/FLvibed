@@ -44,4 +44,17 @@ void Test_settings()
     // an unclamped int never goes through an undefined float -> int conversion
     CHECK(settings::Apply(du, "1e10") && u == 2147483647);
     CHECK(settings::Apply(du, "-1e10") && u == -2147483647);
+
+    // carried defaults (settings::Carried; the subtitles' font row of 0.4.6, issue 82): a file below the row's revision
+    // that holds the old default reads as the new one; another value, a current file and another key stay
+    const settings::Carry carry[] = {{1, "font", "0", "2"}};
+    CHECK(settings::Carried(carry, 1, 0, "font", "0") == "2"); // pre-0.4.6 file (no settings_rev) with 0 -> 2
+    CHECK(settings::Carried(carry, 1, 0, "font", "1") == "1"); // pre-0.4.6 file with Segoe UI -> kept
+    CHECK(settings::Carried(carry, 1, 1, "font", "0") == "0"); // current file: 0 was picked -> kept
+    CHECK(settings::Carried(carry, 1, 0, "size", "0") == "0"); // another key
+    // no file: Load reads no key, so the struct's default (2) stands
+    int font = 2;
+    const settings::Def fontDef[] = {{"font", settings::Int, &font, 0, 2, ""}};
+    settings::Load("Subtitles", "Z:\\no\\such\\dir\\FLSubtitles.ini", fontDef, 1, carry, 1);
+    CHECK(font == 2);
 }

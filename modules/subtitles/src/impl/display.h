@@ -70,7 +70,9 @@ struct Settings
     // 22 Oct 2026: 0 after the Donau cutscene, then "a tiny bit more time": 0.35, then "disappeared a tiny bit too
     // quickly": 0.6, rounded to the 250 ms steps: 0.75 - the fade then 0.5 + 0.75 = 1.25 s)
     float retireDelayCinematic = 0.75f;
-    int font = 0;           // 0 the game's own fonts (DATA\FONTS: names Agency FB, text Arial Unicode MS), 1 Segoe UI
+    int font = 2;           // 0 the game's own fonts (DATA\FONTS: names Agency FB, text Arial Unicode MS), 1 Segoe UI,
+                            // 2 HUD 2's face (Agency FB) for the text too, everywhere (issue 82; the default since 0.4.6,
+                            // the owner: "Make 82 default")
     bool motion = true;     // lines fade in / out and the stack glides (TLOU2 / Star Wars Outlaws style); 0 = instant
     bool nnSeverity = true; // Neural Net lines coded by severity: colour + brightness pulses (danger 2, warning 1)
     bool nnReason = true;   // the Tractor Failure line carries the game's reason (core\game\tractorfail.h)
@@ -122,12 +124,10 @@ struct Settings
     // colours (data\speaker_colors.tsv); 0 = every name by the speaker's relation to the player only.
     bool speakerColors = true;
     // Movies (movie.cpp): the picture fitted to the screen (aspect kept, the encoded black bars zoomed out of view);
-    // the startup movies skipped natively (1) or played (0); which intro plays (0 as installed; 1 HD, 2 the original
-    // 2003, 3 the full Bonus DVD intro - DATA\MOVIES files through the host's intro override, movie.cpp ApplyIntro: a
-    // missing file falls back to 0); subtitles over them.
+    // the startup movies skipped natively (1) or played (0); subtitles over them. Which intro plays is the install's
+    // (issue 80 removed movie_intro: a value left in FLSubtitles.ini is ignored).
     bool movieFit = true;
     int movieSkip = 0;
-    int movieIntro = 0;
     bool movieSubtitles = true;
 };
 

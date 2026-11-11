@@ -23,6 +23,7 @@
 #include "ui/ui.h"
 #include "ui/uikit.h"
 #include "ui/uiopt.h"
+#include "ui/views.h"
 #include "game/flhash.h"
 #include "game/ini.h"
 #include "game/menu.h"
@@ -59,7 +60,8 @@ enum class Screen
     MpTable, // the multiplayer server list (ServerTable) or character list (CharacterTable): table controls
     MpPrompt // the MULTIPLAYER button's "LAN / INTERNET" prompt (PromptYes LAN, PromptNo INTERNET, PromptExit; a modal loop)
 };
-static const char* kScreenName[] = {"none", "mainmenu", "load", "load", "save", "pause", "death", "chat", "confirm", "options", "popup", "mptable", "mpprompt"};
+static const char* kScreenName[] = {"none", "mainmenu", "load", "load", "save", "pause", "death", "chat", "confirm", "exit", "options", "popup", "mptable", "mpprompt"};
+static_assert(sizeof(kScreenName) / sizeof(kScreenName[0]) == static_cast<int>(Screen::MpPrompt) + 1, "a name per Screen");
 
 // The multiplayer lists: the table, the screen's action (CONNECT on the server list, LOAD on the character list), its
 // back button. Rows from 1 (row 0 is never selectable: docs\FREELANCER_RE.md "Multiplayer").
@@ -91,17 +93,18 @@ static bool StepMpRow(u32 table, int dir)
 }
 
 // The popup's buttons (Freelancer.exe's names; PopUpDialog's `buttons` bits 0x1 YES, 0x2 NO, 0x4 LATER, 0x8 OK - the
-// story's tutorial boxes are 0x8, OK alone): A = the accepting one, B = the declining one, else the only one.
+// story's tutorial boxes are 0x8, OK alone): A = the accepting one, B = the declining one, else the only one. The same box's drop-cargo form (a pirate's
+// demand, a scan's: DropCargoButton / DCCancelButton, docs\FREELANCER_RE.md "The cargo demand") answers as the other dialogs: A gives in, B refuses.
 static const char* PopupAccept()
 {
-    for (const char* n : {"MMOkButton", "MMYesButton"})
+    for (const char* n : {"MMOkButton", "MMYesButton", "DropCargoButton"})
         if (uiclick::FindVisible(n))
             return n;
     return nullptr;
 }
 static const char* PopupDecline()
 {
-    for (const char* n : {"MMNoButton", "MMLaterButton", "MMOkButton"})
+    for (const char* n : {"MMNoButton", "MMLaterButton", "DCCancelButton", "MMOkButton"})
         if (uiclick::FindVisible(n))
             return n;
     return nullptr;
@@ -484,6 +487,11 @@ void Update(float dt, const char* modeName)
     }
     // the game's arrow on the menu screens (padbases owns the decision; the chat in flight keeps the flight cursor)
     padbases::NoteFrame(s != Screen::None && s != Screen::Chat && s != Screen::Popup); // (the popup: natively, no arrow)
+    // ... but the cargo demand's box switches the game's cursor to the arrow wherever the pad's aim stands (it sat on the
+    // box's title): the pad answers it by A / B and its stick flies, so the arrow hides while the pad is the device (a real
+    // mouse's move hands the device back and the arrow returns: padbases::Overlay)
+    if (s == Screen::Popup && uiclick::FindVisible("DropCargoButton"))
+        padbases::NoteHideArrow();
     if (osk::IsOpen())
     {
         osk::Input(in, x);
@@ -865,10 +873,12 @@ void Update(float dt, const char* modeName)
         promptbar::Prompt p[2];
         int n = 0;
         if (acc)
-            p[n++] = {glyphs::A, strcmp(acc, "MMYesButton") == 0 ? L"YES" : L"OK"};
+            p[n++] = {glyphs::A, strcmp(acc, "MMYesButton") == 0 ? L"YES" : strcmp(acc, "DropCargoButton") == 0 ? L"DROP CARGO" : L"OK"};
         if (dec)
-            p[n++] = {glyphs::B, single ? L"CLOSE" : strcmp(dec, "MMNoButton") == 0 ? L"NO" : L"LATER"};
-        promptbar::Set("popup", p, n, true, 10);
+            p[n++] = {glyphs::B, single ? L"CLOSE" : strcmp(dec, "MMNoButton") == 0 ? L"NO" : strcmp(dec, "DCCancelButton") == 0 ? L"CANCEL" : L"LATER"};
+        // (the cargo demand over the flight HUD: HUD 2 shows these answers in its prompt lanes, clear of its panels - hud2::FlightAnswers)
+        if (!views::HudFlightAnswers())
+            promptbar::Set("popup", p, n, true, 10);
         if (in.accept && acc && settled)
         {
             ClickNamed(acc, "popup accept");

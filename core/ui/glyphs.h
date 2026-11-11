@@ -62,7 +62,8 @@ void SetDevice(void* device);
 
 // The glyphs' look is the HUD's own (TASK_GLYPHS_HUD.md 5): the body in the panel base, the outlines and the letters on
 // bumpers / triggers / sticks / View / Menu in a tint colour given per draw - the HUD's chrome normally, the game's active
-// yellow for a badge on a lit control; the face buttons keep their family colours.
+// yellow for a badge on a lit control; the face buttons keep their family colours, their rings too (OutlineRgb; a lit
+// badge's ring stays yellow).
 constexpr u32 kChrome = 0x82C9F3; // (130, 201, 243): the HUD's chrome blue
 constexpr u32 kLit = 0xFCF344;    // (252, 243, 68): the game's active yellow (uidraw::kSelected)
 
@@ -82,6 +83,10 @@ Look LookFor(bool hud2Surface);
 bool FaceColours(Family f);
 // The family colour of a face button's mark (0xRRGGBB); 0 for the other buttons. One table for both kits.
 u32 FaceRgb(Family f, Id id);
+// The colour of a face button's outline (the owner, 11 Nov 2026: the ring shares its button's colour, so the prompts read
+// less monochrome): FaceRgb's for a family whose buttons have colours of their own, 0 = the outline keeps the caller's
+// colour (Steam, whose buttons have none; every button but A B X Y). The kits use it only where the mark is coloured.
+u32 OutlineRgb(Family f, Id id);
 constexpr u32 kPressedArm = 0xF0F4F8; // the coloured look's pressed D-pad arm (and Steam's letters)
 // Inside a render pass (render::Begin.. End): the glyph centred on (cx, cy), `h` pixels tall. False when no atlas
 // could be built (no device).

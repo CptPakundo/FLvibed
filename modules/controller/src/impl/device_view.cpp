@@ -71,7 +71,7 @@ bool PadActive() { return device::Pad(); }
 
 void Publish()
 {
-    views::device = {NewPad, Poll, Extra, Connected, padbases::NoteFrame, promptbar::Set, promptbar::Top, PadActive, promptbar::LaneWanted, osk::IsOpen, wheel::RearView, promptbar::Visible, padbases::HoveredOffer, padbases::HoveredIsStory};
+    views::device = {NewPad, Poll, Extra, Connected, padbases::NoteFrame, promptbar::Set, promptbar::Top, PadActive, promptbar::LaneWanted, osk::IsOpen, nullptr /* RearView: the wheel has none since GitHub issue 65 */, promptbar::Visible, padbases::HoveredOffer, padbases::HoveredIsStory, promptbar::Plates};
 }
 
 void Withdraw()

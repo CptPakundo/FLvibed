@@ -116,4 +116,58 @@ inline std::wstring Heading(std::wstring s)
         s.pop_back();
     return s;
 }
+
+// Which of a list window's five item meshes shows each of the page's `n` shown rows (nnpage_kit.h RowIcons). The game's mesh k shows its row
+// first + k; a shown row inside that window keeps its own mesh. A row outside it that has an item (`wants`) borrows a mesh no shown row keeps:
+// first one that holds the row's model already (`holds(row, mesh)`: no load), else the lowest free. meshOf -1: no icon (an EMPTY slot, no item,
+// no mesh left); borrowed: the mesh is sent the row's item.
+constexpr int kMeshes = 5;
+// Where the game's window of five should start so its own meshes show the most of the page's shown rows (game rows, -1 none): the first row of
+// the best start; -1 when no shown row has a game row. (Every row it misses borrows a mesh, which the game's fill undoes each frame: a load each.)
+inline int BestWindowStart(const int* gameRow, int n)
+{
+    int best = -1, most = 0;
+    for (int i = 0; i < n; ++i)
+    {
+        if (gameRow[i] < 0)
+            continue;
+        int covered = 0;
+        for (int j = 0; j < n; ++j)
+            covered += gameRow[j] >= gameRow[i] && gameRow[j] < gameRow[i] + kMeshes;
+        if (covered > most || (covered == most && gameRow[i] < best))
+            best = gameRow[i], most = covered;
+    }
+    return best;
+}
+// ... and among the rest one that `keeps(mesh)` (its own row's model is one the game sends: the lent model can stay under that name, no load a
+// frame), before one whose own row the game blanks every frame.
+template <class Holds, class Keeps>
+inline void AssignMeshes(int first, const int* gameRow, const bool* wants, int n, Holds holds, Keeps keeps, int* meshOf, bool* borrowed)
+{
+    bool taken[kMeshes] = {};
+    for (int i = 0; i < n; ++i)
+    {
+        const int k = gameRow[i] - first;
+        meshOf[i] = gameRow[i] >= 0 && k >= 0 && k < kMeshes ? k : -1;
+        borrowed[i] = false;
+        if (meshOf[i] >= 0)
+            taken[k] = true;
+    }
+    for (int i = 0; i < n; ++i)
+    {
+        if (meshOf[i] >= 0 || gameRow[i] < 0 || !wants[i])
+            continue;
+        for (int pass = 0; pass < 3 && meshOf[i] < 0; ++pass)
+            for (int k = 0; k < kMeshes && meshOf[i] < 0; ++k)
+                if (!taken[k] && (pass == 2 || (pass == 0 ? holds(i, k) : keeps(k))))
+                    meshOf[i] = k;
+        if (meshOf[i] >= 0)
+            taken[meshOf[i]] = true, borrowed[i] = true;
+    }
+}
+template <class Holds>
+inline void AssignMeshes(int first, const int* gameRow, const bool* wants, int n, Holds holds, int* meshOf, bool* borrowed)
+{
+    AssignMeshes(first, gameRow, wants, n, holds, [](int) { return false; }, meshOf, borrowed);
+}
 } // namespace nnrules

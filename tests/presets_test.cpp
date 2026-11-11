@@ -71,6 +71,16 @@ void Test_presets()
         CHECK(presets::Flight(p).b[glyphs::VIEW].hold == Action::Autopilot);
     const presets::Table& ap = presets::FlightAp();
     CHECK(ap.b[glyphs::A].tap == Action::Accept && ap.b[glyphs::X].hold == Action::Turret);
+    // X tractors everything in reach in FREELANCER, ASSISTED and under the autopilot; the goal panel is the action wheel's,
+    // no button's (GitHub issue 65)
+    for (const presets::Table* t : {&fl, &as, &ap})
+    {
+        CHECK(t->b[glyphs::X].tap == Action::Tractor);
+        glyphs::Id gb = glyphs::COUNT;
+        int gs = -1;
+        CHECK(!presets::Find(*t, Action::GoalPanel, gb, gs));
+    }
+    CHECK(as.b[glyphs::Y].hold == Action::ActionWheel && ap.b[glyphs::LB].hold == Action::ActionWheel);
     // weapon_groups 2 under the autopilot: the triggers as in free flight (GitHub issue 31); no other setting moves anything
     for (int p : {presets::FREELANCER, presets::ASSISTED})
     {

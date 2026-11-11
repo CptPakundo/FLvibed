@@ -32,6 +32,8 @@ Sources: end of note. Tags: **[photo]** measured from a photo, **[press]** a pub
 
 **Method:** the photo's 2400-pixel rendering, read in the browser, nothing saved. At each button, the most saturated 5 % of a square around it, by saturation times value, and the median of each channel. **Raised** = brightness alone, hue and saturation held, until 4.5:1 against the glyph's body 0D0B1A. That floor is WCAG AA's figure, chosen here.
 
+**The rings (0.4.6, the owner, 11 Nov 2026):** a face button's ring takes the same shade (`glyphs::OutlineRgb`; Steam keeps the chrome). The ring lies on the glyph's own body (HUD 2's kit: wholly inside it; the classic atlas: half over the ground), so the darkest case is the body over black and the lightest the body (0.75 coverage) over white. Computed (WCAG relative luminance): over black every shade holds 4.6:1 or more (Xbox X 4.6, Xbox B 4.6, New 3DS X 4.6, the rest 4.9 to 11.5); over white, Xbox B, Xbox X and New 3DS X fall to 2.1:1, New 3DS Y 2.2, New 3DS A 2.4, DualShock 4 circle 2.5, under the 3:1 a graphic needs (WCAG 1.4.11), where the chrome ring held 5.0. The letters inside stand on the same body and share those numbers. No shade was changed for it (no new colours without the owner's word).
+
 **Not settled:** another unit, finish or light would read differently. Only the Carbon Black was measured for Xbox, and only a black DualShock 4.
 
 ## Sources

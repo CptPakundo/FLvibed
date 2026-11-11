@@ -235,7 +235,7 @@ void SpecShape()
             }
         }
     CHECK(heads == 8);    // a head per module
-    CHECK(simple == 40);  // 30 settings, 2 + 6 heads, the page's rows, the changed count
+    CHECK(simple == 39);  // 29 settings (0.4.6, issue 80: movie_intro removed), 2 + 6 heads, the page's rows, the changed count
     // the haptics' rows: Full is the default; trigger_effects is Player tier, the page shows it by pad (docs\UI_OPTIONS.md 4), so the count above stands
     const uimeta::Row* triggers = uimeta::FindRow("trigger_effects");
     CHECK(triggers && triggers->tier == uimeta::Player && triggers->optionCount == 3 && !strcmp(triggers->def, "2") && !strcmp(triggers->values[2], "0"));

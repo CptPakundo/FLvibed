@@ -4,7 +4,7 @@
 #include "common.h"
 #include "settings_bus.h"
 
-constexpr u32 kMoviesApiVersion = 2;
+constexpr u32 kMoviesApiVersion = 3; // v3: SetIntroOverride gone (issue 80 removed movie_intro)
 
 struct MoviesHostApi
 {
@@ -13,7 +13,6 @@ struct MoviesHostApi
     void (*LogWrite)(const char* line);
     const SettingsBus* (*GetSettingsBus)();
     void* (*GetMovieGraph)();                    // the DirectShow graph of the movie playing, or null
-    void (*SetIntroOverride)(const char* path);  // null = the intro as installed
     bool (*SkipMovie)();                         // the movie ends as a finished one
     bool (*ModuleOn)(int row);                   // a [Modules] row (core\modules_rules.h)
 };

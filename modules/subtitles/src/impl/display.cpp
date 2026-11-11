@@ -70,7 +70,8 @@ static const settings::Def kDefs[] = {
     {"text_color", Int, &g_set.textColor, 0, 1, "0 white, 1 yellow"},
     {"speaker_names", Int, &g_set.nameMode, 0, 2, "0 the name on its own row, 1 inline 'Name: text', 2 off"},
     {"story", Bool, &g_set.story, 0, 0, "story cutscene lines"},
-    {"comms", Bool, &g_set.comms, 0, 0, "mission comms"},
+    {"comms", Bool, &g_set.comms, 0, 0,
+     "mission comms; 0 with chat_all_dialogue 1: mission comms in the chat window only"},
     {"bar", Bool, &g_set.bar, 0, 0, "bar and base conversations"},
     {"neural_net", Bool, &g_set.nn, 0, 0, "Neural Net lines"},
     {"chatter", Int, &g_set.chatter, 0, 2,
@@ -86,7 +87,8 @@ static const settings::Def kDefs[] = {
     {"space_position", Int, &g_set.spacePosition, 0, 2,
      "in flight: 2 a HUD panel at the top centre (the maneuver bar moves left), 1 the top third, 0 between the bottom "
      "panels"},
-    {"font", Int, &g_set.font, 0, 1, "0 the game's own fonts, 1 Segoe UI"},
+    {"font", Int, &g_set.font, 0, 2,
+     "0 the game's own fonts, 1 Segoe UI, 2 HUD 2's font (Agency FB) everywhere: cutscenes, rooms, movies and flight"},
     {"motion", Bool, &g_set.motion, 0, 0, "lines fade in / out and the stack glides; 0 = instant"},
     {"neural_net_severity", Bool, &g_set.nnSeverity, 0, 0,
      "Neural Net lines coded by severity (colour, brightness pulses)"},
@@ -127,7 +129,6 @@ static const settings::Def kDefs[] = {
      "story speakers' names in their own colours; 0 = every name by the speaker's relation to you"},
     FLV_ROW_MOVIE_FIT(&g_set.movieFit)
     FLV_ROW_MOVIE_SKIP(&g_set.movieSkip)
-    FLV_ROW_MOVIE_INTRO(&g_set.movieIntro)
     {"movie_subtitles", Bool, &g_set.movieSubtitles, 0, 0, "subtitles over the intros and startup movies"},
 };
 static const size_t kDefCount = sizeof(kDefs) / sizeof(kDefs[0]);
@@ -138,13 +139,21 @@ const settings::Def* Defs(size_t& count)
     return kDefs;
 }
 
+// FLSubtitles.ini's revision ([Subtitles] settings_rev) and the defaults it carries over (core\settings.h Carry): a
+// changed default adds a row and raises kRev to the row's revision.
+static constexpr int kRev = 1;
+static const settings::Carry kCarry[] = {
+    // 0.4.6 (issue 82): HUD 2's font became the default; a saved 0 was the old default (only 1, Segoe UI, could be picked)
+    {1, "font", "0", "2"},
+};
+
 void LoadSettings(const std::string& ini)
 {
     g_set = Settings(); // the defaults, then what the file says (a `config load` undoes live changes)
-    settings::Load("Subtitles", ini, kDefs, kDefCount);
+    settings::Load("Subtitles", ini, kDefs, kDefCount, kCarry, sizeof(kCarry) / sizeof(kCarry[0]));
 }
 
-void SaveSettings(const std::string& ini) { settings::Save("Subtitles", ini, kDefs, kDefCount); }
+void SaveSettings(const std::string& ini) { settings::Save("Subtitles", ini, kDefs, kDefCount, kRev); }
 
 std::string Describe()
 {
@@ -382,6 +391,15 @@ void Show(Category cat, const std::wstring& speaker, Relation rel, const std::ws
                     : cat == Category::Bar   ? g_set.bar
                     : cat == Category::Nn    ? g_set.nn
                                              : g_set.chatter == 1;
+    // the chat's copy of every spoken line (chat_all_dialogue) goes before the category's switch: with comms off and the copy
+    // on, the mission's lines stand in the lower-left chat only (issue 83) - shown as chatter is (impl.cpp OnComm): the log,
+    // and HUD 2's chat band while HUD 2 hides the game's chat window. A line shown as a subtitle too gets the log only.
+    if (g_set.chatAll && cat != Category::Chatter)
+    {
+        chat::Print(speaker, SpeakerRgb(speaker, rel), text);
+        if (!on)
+            Hud2Feed(speaker, SpeakerRgb(speaker, rel), text, seconds);
+    }
     if (!on)
         return;
     if (cat == Category::Chatter)
@@ -399,8 +417,6 @@ void Show(Category cat, const std::wstring& speaker, Relation rel, const std::ws
     }
     static const char* kCat[] = {"story", "comms", "bar", "nn", "chatter"};
     feed::Push("sub", kCat[static_cast<int>(cat)], speaker, text);
-    if (g_set.chatAll && cat != Category::Chatter)
-        chat::Print(speaker, SpeakerRgb(speaker, rel), text);
     for (wchar_t c : speaker + text)
         if (g_chars.find(c) == std::wstring::npos)
         {
@@ -1789,11 +1805,15 @@ bool GameFonts() { return gamefont::Load(); }
 // Segoe UI. Agency FB is condensed with a small x-height: its names are drawn 1.2x larger to read as the same size.
 // With HUD 2 (agency): the text in Agency FB too (the round 3 critique of the built HUD 2: speaker names and lines in
 // two families beside HUD 2's Agency FB throughout), 1.2x as the names for the same reading size.
+// Setting font 2 (HUD 2's font, issue 82; the default since 0.4.6): the agency look everywhere - rooms, cutscenes,
+// movies, flight - whether or not HUD 2 is on or the HUD module loaded (the face is the game's label face,
+// core\game\gamefont.*, not the HUD module's); when the game's fonts do not resolve, Segoe UI, as font 0 then.
 static int g_fontsPx = 0;          // the em px the fonts were last built for (Agency FB is built larger)
-static bool g_fontsAgency = false; // built with Agency FB text (HUD 2 showed)
+static bool g_fontsAgency = false; // built with Agency FB text (HUD 2 showed, or font 2)
 static bool BuildFonts(int px, const std::wstring& chars, bool agency = false)
 {
-    const bool game = g_set.font == 0 && GameFonts();
+    const bool game = (g_set.font == 0 || g_set.font == 2) && GameFonts();
+    agency = agency || g_set.font == 2;
     g_fontsPx = px, g_fontsAgency = agency; // (what was asked for: a missing face does not rebuild every frame)
     const bool useAgency = agency && game;
     const bool gameText =
@@ -2236,8 +2256,14 @@ static void Hud2Publish()
     if (g_set.enabled && (g_set.chatter == 0 || g_set.chatAll))
     {
         const HudLayout* l = Hud2Layout();
-        if (l && Shown(l->chatFree)) // HUD 2's comm feed in its band (DrawHud2Feed)
-            s.chat = {l->chatFree.x0, l->chatFree.y0, std::min(l->chatFree.x1, l->chatFree.x0 + 0.30f), l->chatFree.y1};
+        // HUD 2's comm feed in its band (DrawHud2Feed): the cards as last drawn, their stack's whole extent (scrim and feather),
+        // none while no card shows - HUD 2's placers keep off it (its reserved area AChat: the prompt lanes, the notice, the
+        // lint's part.over; GitHub issues 77 / 78)
+        if (l && Shown(l->chatFree))
+        {
+            if (GetTickCount64() - g_feedDrawn.at < 100 && g_feedDrawn.x1 > g_feedDrawn.x0)
+                s.chat = {g_feedDrawn.x0 / sw, g_feedDrawn.y0 / sh, g_feedDrawn.x1 / sw, g_feedDrawn.y1 / sh};
+        }
         else
         {
             const float left = sh * 0.01f, top = 0.30f;
@@ -2837,8 +2863,8 @@ static void DrawImpl(int sw, int sh, bool ownScene, u32* soft)
             if (!exe::CamCutscene.is(cam) && hk::Call<void*(__cdecl*)()>(exe::GetPlayerIObj))
                 fontScale = 0.9f;
     const int px = std::max(8, static_cast<int>(sh * kSizes[g_set.size] * fontScale + 0.5f));
-    // (Agency FB text while HUD 2 shows, in flight - not over a movie)
-    const bool agency = !soft && Hud2Layout() != nullptr;
+    // (Agency FB text while HUD 2 shows, in flight - not over a movie; with font 2 always)
+    const bool agency = g_set.font == 2 || (!soft && Hud2Layout() != nullptr);
     if (g_font.px < 0 || g_fontsPx != px || g_fontsAgency != agency || !g_font.texture)
     {
         std::wstring chars = g_chars;

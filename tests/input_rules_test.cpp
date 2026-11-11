@@ -26,7 +26,7 @@ void Test_input_rules()
             CHECK(Want(Channel::Reverse, ap, pad) == ap);              // reverse
             CHECK(Want(Channel::Slide, ap, pad) == ap);                // o.slide == n
             CHECK(Want(Channel::Missile, ap, pad) == pad);             // Held(Missile); the autopilot taps apart
-            CHECK(Want(Channel::Rear, ap, pad) == pad);                // Held(Rear) || wheel::RearView()
+            CHECK(Want(Channel::Rear, ap, pad) == pad);                // Held(Rear)
             for (Channel c : {Channel::Fire, Channel::Missile, Channel::Afterburner, Channel::Reverse, Channel::Rear, Channel::Slide})
                 CHECK(Want(c, ap, pad) == (ClaimedBy(c, ap, pad) != OwnerNone)); // whoever a command is held for owns it
         }

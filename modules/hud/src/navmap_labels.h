@@ -99,9 +99,25 @@ struct Label
     navlayout::Rect box;
 };
 
+// The hovered place's label: the name tag by the cursor already says its name, so that label stands down while the tag shows (its mark stays). Of the labels whose name is the
+// tag's (`named[i]`), the one whose mark is nearest the cursor; -1 if none.
+inline int Hovered(const Label* l, const bool* named, int n, float cx, float cy)
+{
+    int best = -1;
+    float bestD = 0;
+    for (int i = 0; i < n; ++i)
+    {
+        const float d = (l[i].x - cx) * (l[i].x - cx) + (l[i].y - cy) * (l[i].y - cy);
+        if (named[i] && (best < 0 || d < bestD))
+            best = i, bestD = d;
+    }
+    return best;
+}
+
 // Places the labels by rank, then by their order in the list, so the same scene always gives the same answer: right of the mark, else left, else it drops. Every mark's
-// own circle is kept clear too. Fills order[0..n) with a scratch of ints the caller owns; returns how many stand.
-inline int Declutter(Label* l, int n, int* order, const navlayout::Rect& bounds)
+// own circle is kept clear too, and the keep-outs (the plates and words over the map: their text would draw over them, issue 72) as a shown label is. Fills order[0..n)
+// with a scratch of ints the caller owns; returns how many stand.
+inline int Declutter(Label* l, int n, int* order, const navlayout::Rect& bounds, const navlayout::Rect* keep = nullptr, int nKeep = 0)
 {
     for (int i = 0; i < n; ++i)
         order[i] = i, l[i].shown = false;
@@ -121,6 +137,8 @@ inline int Declutter(Label* l, int n, int* order, const navlayout::Rect& bounds)
             if (b.x0 < bounds.x0 || b.x1 > bounds.x1 || b.y0 < bounds.y0 || b.y1 > bounds.y1)
                 continue;
             bool clear = true;
+            for (int j = 0; j < nKeep && clear; ++j)
+                clear = !b.Overlaps(keep[j]);
             for (int j = 0; j < n && clear; ++j)
             {
                 const Label& o = l[j];

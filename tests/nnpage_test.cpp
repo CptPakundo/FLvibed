@@ -72,6 +72,48 @@ void Test_nnpage()
         p.Scroll(-1), p.Fit();
         CHECK(p.first == i);
     }
+    // the rows' item meshes (issue 58): the game's window of five starts at its row 2; the page shows its rows 0, EMPTY, 4, 9, 11
+    {
+        const int game[5] = {0, -1, 4, 9, 11};
+        const bool wants[5] = {true, false, true, true, false}; // (row 11: no icon of its own)
+        int meshOf[5];
+        bool borrowed[5];
+        // nothing holds a model yet: row 4 keeps the game's mesh 2, rows 0 and 9 borrow the lowest free ones, 0 and 1
+        AssignMeshes(2, game, wants, 5, [](int, int) { return false; }, meshOf, borrowed);
+        CHECK(meshOf[2] == 2 && !borrowed[2]);
+        CHECK(meshOf[0] == 0 && borrowed[0] && meshOf[3] == 1 && borrowed[3]);
+        CHECK(meshOf[1] == -1 && meshOf[4] == -1);
+        // a free mesh that holds the row's model already is taken first (no load)
+        AssignMeshes(2, game, wants, 5, [](int row, int mesh) { return row == 3 && mesh == 4; }, meshOf, borrowed);
+        CHECK(meshOf[3] == 4 && meshOf[0] == 0);
+        // none holds it: a mesh the game does not blank each frame (`keeps`: its own row has a model) before the lowest free one
+        AssignMeshes(2, game, wants, 5, [](int, int) { return false; }, [](int mesh) { return mesh == 3; }, meshOf, borrowed);
+        CHECK(meshOf[0] == 3 && borrowed[0] && meshOf[3] == 0 && borrowed[3]);
+        // holding the model still comes first
+        AssignMeshes(2, game, wants, 5, [](int row, int mesh) { return row == 0 && mesh == 1; }, [](int mesh) { return mesh == 3; }, meshOf, borrowed);
+        CHECK(meshOf[0] == 1 && meshOf[3] == 3);
+        // every shown row inside the window: nothing borrowed
+        const int inside[3] = {2, 3, 6};
+        const bool all[3] = {true, true, true};
+        AssignMeshes(2, inside, all, 3, [](int, int) { return false; }, meshOf, borrowed);
+        CHECK(meshOf[0] == 0 && meshOf[1] == 1 && meshOf[2] == 4 && !borrowed[0] && !borrowed[1] && !borrowed[2]);
+        // five rows outside the window, five meshes: each gets one
+        const int far[5] = {10, 11, 12, 13, 14};
+        const bool five[5] = {true, true, true, true, true};
+        AssignMeshes(0, far, five, 5, [](int, int) { return false; }, meshOf, borrowed);
+        CHECK(meshOf[0] == 0 && meshOf[4] == 4 && borrowed[4]);
+    }
+    // the game's window for the shown rows: the start that covers the most (issue 58: an EMPTY top row left the window where it was)
+    {
+        const int shown[5] = {-1, 5, 6, 7, 8};
+        CHECK(BestWindowStart(shown, 5) == 5);
+        const int spread[5] = {1, 2, -1, 9, 10}; // (1..5 covers two, 9..13 two: the lower)
+        CHECK(BestWindowStart(spread, 5) == 1);
+        const int three[4] = {0, 7, 8, 11}; // (7..11 covers three)
+        CHECK(BestWindowStart(three, 4) == 7);
+        const int none[2] = {-1, -1};
+        CHECK(BestWindowStart(none, 2) == -1 && BestWindowStart(none, 0) == -1);
+    }
     // numbers and headings
     CHECK(Number(L"$1,250,000") == 1250000 && Number(L"") == 0);
     CHECK(Share(500, 1000) > 0.49f && Share(500, 1000) < 0.51f && Share(5, 0) == 0 && Share(5000, 1000) == 1);

@@ -1,205 +1,435 @@
 # Changelog
 
+Newest release first. Each release opens with a line or two on what it was about; the entries under it say what changed
+for the player, with the GitHub issue number in brackets where there is one.
+
+## 0.4.6 (11 Nov 2026)
+A sweep over the players' reports: the two critical bugs first, then the other bugs, then the smaller requests. Playtesting and reports: **Shockwave** ([Shockwave508](https://github.com/Shockwave508)); every numbered issue below is one of those reports.
+How each fix was found and checked: `docs/RELEASE_0.4.6.md`.
+
+### The two critical fixes
+
+- **No mounting in flight:** the Neural Net inventory let you take a weapon off, or put one on, in the middle of space. MOUNT and UNMOUNT work only while docked now, as in the game's own window; JETTISON is as before. (issue 79)
+
+- **The Intro option is gone:** the options page's Intro picker did nothing on a default HD Edition install, and on a Steam Deck its 2003 choice left the game on a black screen at every start. The intro is HD Edition's own choice again: the one its installer set up plays, with its subtitles, and an old `movie_intro` line in `FLSubtitles.ini` is ignored. The Feature Tour's row about the Bonus DVD intro went with it. (issue 80)
+
+### Fixed
+
+- **Nothing draws over the weapons display:** a target's name and meters could draw across the weapons and the consumables, and after a fight a long TRACTOR prompt could run across them. The panels stay clear now: the prompts stop beside the consumables and wrap, and a target's name and other ships' marks keep off the panels, the prompts and the subtitles. A target's name also no longer jumps above its ship in the gaps under the target card and between the two prompt groups. (issues 77, 78)
+
+- **Radio chatter no longer covers prompts:** a chatter card at the lower left could cover a prompt such as TRACTOR ALL, TARGET AHEAD or CRUISE. The prompts, a target's name and other ships' marks keep clear of the chatter's cards now.
+
+- **Clean switches between Neural Net tabs:** stepping from one tab to the next flashed the room bar, the Neural Net box and the game's old window art for about a second, and in space the reticle's ring for half a second. The page's cover now stays up and clean until the next page draws, its columns appear with its text at their final width, and no window title or mouse arrow flashes as a page opens. (issue 62)
+
+- **Nothing reaches the room between two tabs:** while the next page loaded, the pad's prompt lane showed the room's prompts, and A could click the room behind. Only B CLOSE shows now, the bumpers keep switching tabs, and opening the Neural Net from flight takes the flight HUD away at once.
+
+- **Mission comms in the chat only:** with Comms off and "Dialogue also in the chat window" on, mission lines vanished altogether. They appear in the lower-left chat now, as that setting says, and switched-off story, bar and Neural Net lines do the same. The Comms option's help says how to set this up (Show all settings under MORE, then both rows on the SUBTITLES tab). (issue 83)
+
+- **Every item's icon on the inventory and at the equipment dealer:** since the lists follow the ship's hardpoints, some of your own items showed no icon until you scrolled to the right spot. Every row with an item shows its icon now, at any scroll position, docked and in flight. (issue 58)
+
+- **Total Time counts:** STATUS showed the play time of the moment the tab opened. It ticks on while the page is open now. (issue 73)
+
+### New
+
+- **Payouts and loot show briefly on the flight HUD:** nothing on HUD 2 showed money coming in or what the tractor had pulled in. A small card at the lower left now shows a mission's payout in space (CREDITS $516,000 +$16,000) or the loot taken in (DRAIL x2, up to four kinds, then +1 MORE) with CARGO 12 / 45. It fades four seconds after the last arrival, and nothing else about credits or the hold stays on the HUD; docked purchases, sales and loads never show it. (issues 70, 69)
+
+- **Cargo demands in HUD 2's look:** a pirate's or the police's demand to drop cargo came in the game's old window, and the flight HUD vanished for as long as it stood, while you could be under fire. It is HUD 2's dialog now, with the ship's name, the game's words and DROP CARGO / CANCEL (on a pad A drops, B cancels, shown in the flight HUD's prompt lanes), and the flight HUD stays up and live under it. The window's X is gone, since CANCEL does the same; as before the game does not pause and the demand closes by itself after 20 seconds. (issue 76)
+
+- **Hover help in HUD 2's look:** with the mouse or the left stick's cursor, the hints for the room bar and the Neural Net box sat under HUD 2's top strip, and a word showed the hint of a hidden button under it, or none. Each of HUD 2's words now shows its own hint under it, and the hints in the pause menu and the windows take the same look. (issue 71)
+
+- **Map names in HUD 2's look:** hovering a place on the map showed the game's old box, away from the place. It is a HUD 2 name tag by the cursor now, clear of the title, the chips and the cards; nearby names step aside, and the hovered place's name does not show twice. (issue 75)
+
+- **Locked items say where you stand:** a locked item's card showed only what it needs. It reads NEEDS LEVEL 10 · YOU: LEVEL 2 now (or the same for reputation), and the ship dealer says it under the deal rows. (issue 56)
+
+### Changed
+
+- **Subtitles in HUD 2's font everywhere:** story cutscenes, bar conversations and the intro movies used the game's 2003 font, and only flight used HUD 2's cleaner one. Every subtitle uses HUD 2's font by default now, for existing players too unless they had picked Segoe UI; it works with the HUD module off, and the options page's preview shows the chosen font. To change it: Options, MORE, Show all settings, then SUBTITLES, Font: GAME / SEGOE UI / HUD 2. (issue 82)
+
+- **Credits in view on the inventory:** with a weapon of many stats selected, the credits stood under the button prompts. CREDITS and CARGO stand under the ship's name now, as on the docked screens; the row of cargo pips is gone, and a full hold shows its number in the warning colour. (issue 67)
+
+### Changed for controllers
+
+- **Rear View off the action wheel:** hold the right stick's click for the rear view, in every layout. The wheel's version stayed on until switched off; the stick's lasts while held. The nine remaining actions spread evenly round the wheel. (issue 65)
+
+- **X tractors in every layout:** in the Assisted layout and while the autopilot flies, X opened the autopilot's goals. It tractors everything in reach now, as it already did in the Freelancer layout, so the Assisted layout has a tractor button at last; Autopilot Goals stays on the action wheel. (issue 65)
+
+- **Coloured button outlines:** the ring around A, B, X and Y in a prompt was the same blue on every button. It takes the button's own colour now (green A, red B, blue X, yellow Y; the PlayStation and Nintendo prompts likewise), and dims with a greyed-out prompt. Steam's plain prompts, the bumpers, triggers, sticks and D-pad keep the common outline. (the owner's request)
+
+### Smaller fixes
+
+- **The map's Legend at the right size:** its swatches and ship icon were huge and the red box ran off the screen. They stand at the game's own size now, each word beside its swatch, and the swatches stay square on every screen shape; the Bases list's words moved up to where the game puts them. (issue 59)
+
+- **The map's title lines up with the other tabs:** at HUD size Normal on a 16:10 screen, the system's name on MAP sat further left than the titles of the other tabs. (issue 74)
+
+- **Map names stay off the cards:** zoomed in, place names drew over the objective and route card. A name that would cross a card, the title, the tabs, the CLOSE button or the lines at the foot moves to its mark's other side now, or hides while its mark stays, with mouse and pad alike. (issue 72)
+
+- **No cut word on STATUS:** a piece of the window's own STATUS title showed cut at the top of the faction card.
+
+- **No window edge above the text:** a piece of the game's window frame peeked out above the text on INFO and LOG. (issue 63)
+
+- **No yellow mark between rooms:** a yellow highlight flashed at the top right in the fade from one docked room to the next. (issue 57)
+
+- **Durability meters line up:** at the equipment dealer each row's meter took whatever room its words left. Every meter in a list has the same width now. (issue 55)
+
 ## 0.4.5.8 (8 Nov 2026; first released as 0.4.5 on 7 Nov)
+HUD 2 game-wide: the Neural Net's windows as full screens, and the bases' windows (dealers, ship dealer, repair, job board, news, best prices) as HUD 2 pages. The entries marked "Refreshed the same day" and "Refreshed again" are fixes folded into the release after it first went out on 7 Nov.
 Playtesting and bug reports: **Shockwave** ([Shockwave508](https://github.com/Shockwave508)) did most of the testing behind this release, on a Steam Deck; every "(Shockwave)" below is one of those reports.
 
 - **Refreshed again: each new card costs a fraction of what it did (issue 68):** whenever a window's text changed (each STATUS step brings a new faction card), FLvibed rebuilt all 32 of the game's rich-text fonts twice and laid the text out twice at the same size - up to 6 ms per step on a desktop. It now rebuilds them only when the size really changes (once per window opening) and lays out once: about 0.03 ms per step, the card exactly as before.
+
 - **Refreshed again: fast walks don't rebuild every card (issue 68):** on STATUS each step had the game build a new faction card and FLvibed lay its text out again (up to 6 ms on a desktop, far more on a Steam Deck), and on INVENTORY each step changed the game's selection and its card. The highlight still moves at once and a single tap's card follows at once; during fast taps, a hold or the stick the card catches up when you pause (0.1 s) or every quarter second. MOUNT, JETTISON and BEST PRICES always act on the row you see.
+
 - **Refreshed again: faster holds (issue 68):** a held D-pad or stick on any page's list starts sooner and moves 20 rows a second (it was 12); the right stick scrolls cards 15 lines a second (10), and a held D-pad scrolls LOG and INFO faster too (Shockwave: "could be a little faster").
+
 - **Refreshed again: a held D-pad keeps going on every Neural Net page (issue 68):** on INVENTORY and STATUS holding up or down did nothing and on LOG and INFO it scrolled one step (Shockwave); now each keeps going after a moment, to either end. On STATUS the right stick walks the factions too: it moved nothing there, and its SCROLL CARD prompt is gone.
+
 - **Refreshed again: the Neural Net pages answer the D-pad at once again (issue 68):** since the death screen's page, LOG, INVENTORY, STATUS and INFO looked for the death screen's button by name several times a frame, which made scrolling sluggish and dropped presses (Shockwave). It is looked up once a frame now, and only while a Neural Net window is open.
+
 - **Refreshed again: the death and mission-failed screen in HUD 2 (issue 50):** the log that comes up when you die or fail a mission kept the game's old window, with the Neural Net's tabs over it that led nowhere. It is a HUD 2 page now: the log in the middle, LOAD AUTOSAVE, MAIN MENU and LOAD GAME as HUD 2 buttons under it. On a controller A loads the autosave, X opens the load screen and Y goes to the main menu, shown in the prompts at the bottom (it was the D-pad's focus and A SELECT).
+
 - **Refreshed again: every hardpoint keeps its place (issue 52):** on the inventory and the equipment dealer the EMPTY rows stood under everything you carry, so a slot moved down the list when you took its gun off. Each of your ship's hardpoints now has a fixed place in the ship's own order - its kinds as the ship's data lists them, each kind by slot number - showing what is mounted there or EMPTY; what is in your hold follows.
+
 - **Refreshed again: BEST PRICES scrolls the whole list (Shockwave):** with more bases known than fit, the list moved down one step and then stuck both ways: the page pulled its window back to keep a row of air around the highlighted base. The D-pad now walks the highlighted base, as on every other list, and the window follows; the mouse wheel scrolls the whole list on BEST PRICES, the dealers and the Neural Net's lists.
+
 - **Refreshed again: the Neural Net box comes back after the docked map:** opening the map docked and switching from it to another Neural Net tab left the LOG MAP INVENTORY STATUS INFO box at the top right missing in the rooms after (the docked map hides the room's icons while it stands, and that switch never gave them back).
+
 - **Refreshed again: repair, the room's camera and the Neural Net on the pad, docked (Shockwave):** X opens the repair window in the equipment room and on a station's Deck (only the left stick's cursor reached it; the bar keeps X NEWS). Y is the equipment room's CHANGE VIEW (the Deck keeps Y LAUNCH, the bar Y JOB BOARD). View opens the Neural Net on its map from any docked room, dealer or board, and closes it again from a Neural Net window, as in flight; a View badge on the Neural Net's words (the LOG MAP INVENTORY STATUS INFO box, the Neural Net's tabs) says so on every docked screen (Shockwave, the owner).
+
 - **Refreshed again: B backs out of BEST PRICES in space:** opened from a commodity in the inventory while flying, the best prices page took every button but View: no B, no D-pad, no sticks, and the Neural Net had to be closed whole (Shockwave). FLvibed did not count that window as a Neural Net window, so it read the screen as flight under the paused world. Now B goes back to the inventory, docked or in space, and the page's prompts show.
+
 - **Refreshed again: the cruise meter flashes only when cruise breaks:** with the bigger bloom, the halo that breathed with the cruise arc flashed hard all through a normal cruise (Shockwave). Charging and cruising now glow quietly and steadily, a normal end just fades, and only a disruption blooms out, red and as big as a breaking shield or hull, before the arc runs down.
+
 - **Refreshed again: one red for a meter that hits zero:** the shield bloomed out in its own blue when it failed. Now a shield, hull or cruise that is knocked to nothing flares out in the same red, on the ring and on the target's bars alike (the owner).
+
 - **Refreshed again: one name card in rooms:** highlighting yourself or someone in a room with the D-pad, the game's own name card kept flickering back over HUD 2's (Shockwave). The game's card is hidden again just before each frame draws, so a card the game shows or moves during the frame never appears. The pad also stops re-entering a highlight the game still holds and keeps its hidden cursor still on the character.
+
 - **Refreshed again: AMMO, not AMMU., at the equipment dealer:** the game's AMMUNITION was cut to its first four letters for the tab, which read as a word sheared off (Shockwave). The tab says AMMO now.
+
 - **Refreshed again: the compare tag works with an empty hold:** on the inventory tab only the items in your hold compared with the tagged one, so with nothing in the hold tagging did nothing (Shockwave). Your other mounted items of the same kind compare with it too now, the card saying VS ITS NAME (TAGGED), on the inventory tab and at the equipment dealer.
+
 - **Refreshed again: bars flash and bloom bigger:** the glow of a bar running low and the bloom of a bar that breaks (the ring's arcs, the target's bars) are wider and brighter; on a Steam Deck's screen the bloom went unseen (Shockwave, the owner). A bloom no longer waits out the first 1.6 seconds of flight.
+
 - **Refreshed again: your shield says when it is down (issue 47):** after it fails the shield rebuilds while every hit goes to the hull, and the meter only looked low (Shockwave). Until the game brings it back, the shield's whole arc pulses slowly in its own blue, and SHIELDS / DOWN stands at the reticle's lower left, switching between blue and red as fast as the flash limit allows (2.9 Hz; steady red under FADES or NONE motion). The words stand clear of the shield's arc (the owner).
+
 - **Refreshed again: the equipment dealer's rows of your ship read right again:** your items' rows printed their class twice, one over the other, and lost the green MOUNTED (Shockwave). MOUNTED is green again, the class stands at the row's right, and a tagged item says TAGGED TO COMPARE in the class's place.
+
 - **Refreshed again: the inventory's ship whole (issue 46):** a long ship's nose ran out of INVENTORY's ship view in space (Shockwave's Anubis). The view's box is no wider than it is tall now, so a ship that fits across fits from nose to tail.
+
 - **Refreshed again: the job board's text can be read on a pad (issue 45):** the right stick stepped the list, so a long job description could not be scrolled (Shockwave). Now, as at the dealers, D-pad left is the list (the stick and D-pad up / down step it) and D-pad right is the description, framed, where the stick and D-pad up / down scroll it - offered only when it is longer than its box. The news board works the same way.
+
 - **Refreshed again: the compare tag on the inventory tab too (issue 44, Shockwave):** the same RS click (or the card's COMPARE THE OTHERS WITH THIS chip with the mouse) on a mounted item in INVENTORY tags it; the items in your hold compare with it, and the one tag serves both the inventory and the equipment dealer.
+
 - **Refreshed again: choose what the store compares with (issue 44):** at the equipment dealer every gun on sale compared itself with the weakest gun of its kind you carry, so one gun stood for all (Shockwave). Click RS on one of your mounted items (or the mouse's COMPARE THE STORE WITH THIS chip on its card) and the store's items that could replace it compare with it, the card saying VS ITS NAME (TAGGED) and your row MOUNTED, TAGGED TO COMPARE; click again to untag.
+
 - **Refreshed again: no objective banner between NeuroNet tabs (issue 43):** after accepting a mission, stepping through LOG / MAP / INVENTORY / STATUS / INFO showed the objective big on the screen with its sound at every step, docked and in flight (Shockwave). The game made its banner again in the frame between two windows; it now waits until you are back on the HUD, where it shows once as it always did.
+
 - **Refreshed again: INFO's text clear of the prompts (issue 42):** a long description's last lines stood under the pad's prompts at 1280x800 (Shockwave); INFO's and LOG's text now ends above them.
+
 - **Refreshed again: a room's pad prompts stay while you use them:** with the prompt bar on CONTEXTUAL (the default), a room showed its prompts for 3 seconds the first time you saw it, then never again (the owner). Now they show on entering a room and while you move or act there, and fade four seconds after the last of it, as the HUD's contextual rule. Back from a window the pad closed (the map), the room's highlight returns at once.
+
 - **Refreshed again: the D-pad always finds the room's people:** after the left stick's cursor, the mouse, or a window had moved the cursor, the D-pad's character walk could leave the highlight on nothing or on something else, and people a camera move brought in were missing from it (the owner). Now a D-pad press snaps to the nearest person that way from where the cursor stands, the hidden cursor stays on the highlighted person so the game's own pick agrees with it, and the list follows who is on screen.
+
 - **Refreshed again: the ship dealer on a pad: two sides, as the dealers (issue 41):** the stick scrolled the description and also sent the game a mouse wheel, which zoomed the 3D ship (Shockwave). Now D-pad left is the ship list, where the stick and D-pad up / down step the ships; D-pad right is the ship, framed with RS TURN: the stick turns it as a mouse drag does and D-pad up / down scroll its description. The triggers zoom it smoothly on either side (RT in, LT out; HDE's ship preview zoom, within its own limits). On HUD 2's pages the stick no longer sends a wheel. With a mouse, the wheel over the ship zooms it, anywhere else it scrolls the page and no longer reaches the ship.
+
 - **Refreshed again: a station's dealers light their own word:** a station's trader and equipment dealer are rooms inside its deck to the game, so DECK stayed lit in them (Shockwave). The docked bar now lights TRADER or EQUIPMENT there.
+
 - **Refreshed again: the mission briefing's title on the top line:** MISSION BRIEFING stood on the map's letter row; it now stands on the top line with the system's name and LAYERS (Shockwave).
+
 - **Refreshed again: no window X on STATUS:** the game's close button of the faction card stood cut at the page's top right; it is gone (the page closes with its own CLOSE).
 
 - **Refreshed the same day: NeuroNet pages fit 16:10 (Shockwave, Steam Deck):** the card of STATUS, INVENTORY, LOG and INFO now ends at the screen's right edge on any aspect ratio, so the list beside it gets the room. At 1280x800 the reputation list was a thin strip, the inventory's numbers ran into each other and INFO's faction names scrolled. STATUS puts what a standing means on its own line under it, and its bars no longer run under the HOSTILE / FRIENDLY words.
+
 - **Refreshed the same day: a station's deck actions get their plate:** where the game centres a room's actions under the bar rather than under the current room (a station's DECK at the bar's left end), they stood as bare icons; now they are words on their plate like every room's (Shockwave).
+
 - **Refreshed the same day: HUD 2 swaps in the same frame:** where a HUD 2 element replaces one of the game's, it now comes and goes in the frame the game's would. The target display and the missile card follow a new target or missile at once instead of up to 6 frames later; the flight HUD no longer draws 3 frames over a base, menu or docking scene, and the docked strip no longer comes 3 frames late; room words, the character card and a refusal's text follow a change at once; the chat window and the cruise-disrupted line come back in their frame; a newly opened window's text is placed at once instead of after up to 12 frames; a dealer's rows show as its slide ends.
+
 - **Refreshed the same day: commands work under the NeuroNet pause:** with the world paused under the map or the inventory, a route set from the destination list (or the map's own Best Path) and a jettison were lost: the game's in-process server that answers them was paused too (Shockwave). Now the server takes such a request on a frame with no time in it, so the world stays frozen and the command goes through.
+
 - **Refreshed the same day: the job board shows every job's difficulty:** DIFFICULTY n on each row, the game's own number from the job's text, so you can compare jobs without opening each one (Shockwave). A bar beside the rows shows when there are more jobs than fit.
+
 - **Refreshed the same day: lists say when they are cut:** INFO's and LOG's lists (who flies here, places found, ships near, offices) show "8 OF 20" beside their title when the page has no room for all.
+
 - **Refreshed the same day: dealers say what you lack, at a glance:** a row you cannot buy yet says NEEDS LEVEL n or NEEDS REP n% in amber, from the base's own market data, without selecting it (Shockwave). Ammo for a launcher you have mounted says FOR MOUNTED, on both sides (Shockwave). The side prompt shows only the direction that goes over: YOUR SHIP on the dealer's side, DEALER on yours.
+
 - **Refreshed the same day: no more TRADE ROUTES in the inventory card:** the game's label for the commodity price list stood in the card's text in space; it is gone, and X (BEST PRICES) still opens the list.
+
 - **Refreshed the same day: the mission briefing:** the game's CONTINUE no longer stands a second time at the map's foot, and the docked strip no longer runs under the map's title (Shockwave).
+
 - **The living spec is now the Feature Tour:** the same page, its new name throughout the README and docs.
+
 - **Refreshed the same day: a mission offer names its giver whole:** the name takes the header's room up to the title, and MISSION steps right for a long one, never into the X ("COORDINATOR WILLIAM CAM..." before).
+
 - **Refreshed again: the NeuroNet pages with Larger window text off:** STATUS, INVENTORY and INFO showed the game's card at its own place, its title and X over the page, and STATUS lost its faction names (Shockwave, Steam Deck). The pages now place the card whatever that setting says.
+
 - **Refreshed again: credits on dealers and traders:** the character card (credits, cargo) was gone on every dealer, trader and job page since the briefing fix; it shows again (Shockwave).
+
 - **Refreshed again: the docked map without the game's icons:** the full-screen map, docked, showed the room bar's icons, the room's actions and the NeuroNet box's icons over it (Shockwave, the owner); they are hidden while it stands.
+
 - **Refreshed again: the tutorial box fits its text:** at 1280x800's larger text, M01's tutorial boxes took a scroll bar; the box now grows to its text, its OK button and frame with it.
 
 - **Dealer switches:** `base_pages` and `ui_style` now apply at a dealer's next opening, so switching them with a window open strands nothing, and `ui_style` 0 gives the game's dealer windows back.
+
 - **LOG as a full screen:** title, MISSION and JOURNAL as tabs, a RIGHT NOW card with the live objective (only with one), the game's text in a reading column. Y shows the map.
+
 - **Dealers as pages:** the commodity and equipment dealers are HUD 2 pages below the strip and room buttons: your ship left, the dealer's whole stock right, in the middle the selected item's 3D mesh, name, trade line, compare and description. The game's icons stand in the rows (five rows a list) and its own prices show; empty hardpoints are listed, FIREPOWER stands at the foot. Pad: D-pad item and side, hold A trades, Y max, LT / RT quantity, X filter, LS mount. Mouse: rows, BUY / - / + / MAX / MOUNT chips, a CLOSE chip, the wheel.
+
 - **Ship dealer as a page:** offers with icons, deal rows (trade-in, costs you, credits after), the game's 3D ship in the middle, numbers against your ship and the description. Hold A or the chip buys; the final stage stays the game's.
+
 - **Job board and news as pages:** a panel in the room with the room showing beside it. Rows carry the job's type (ASSASSINATE, KILL SHIPS ...), reward, faction and system, with the game's icon, picture and text. D-pad, hold A accepts, RS scrolls; mouse rows, ACCEPT JOB and CLOSE chips, the wheel.
+
 - **Repair as a page:** every damaged item with its tick, icon, health bar and price, the total and the credits after it, and what the item in focus does. A ticks, X ticks all or none, a held Y repairs; the mouse ticks by a click on a row.
+
 - **The ship dealer's final stage as a page:** what goes on the new ship, what goes to the dealer, and the deal in the middle: new ship, trade-in, sold, what you pay. BUY SHIP stands between the two lists on the D-pad, a held A buys, B goes back to the offers.
+
 - **Best prices as a page:** the bases you know by highest price, with where to sell, where to buy and the profit on a full hold named beside them.
+
 - **Jettison panel:** a real quantity bar. The triggers stay; the mouse has the wheel, a click on the bar and chips.
+
 - **Docked inventory:** the middle column opens with the ship's numbers, where it stood blank.
+
 - **Room bar and NeuroNet buttons as words:** docked, the rooms, the room's actions and LOG, MAP, INVENTORY, STATUS, INFO are word tabs in HUD 2's language, the current room underlined. LB / RB and every prompt stay. `ui_style` 0 keeps the game's icons.
+
 - **Offers under a scene:** the mission offer, rumour and bribe take HUD 2's plate in a letterboxed scene too, and the giver's name no longer runs over a bribe's text.
+
 - **Base pages by mouse:** rows and chips of the docked pages get their click area; a page's top now follows the strip, so a third line no longer loses CREDITS.
+
 - **`base_pages`** (default 1): 0 brings back the game's windows with the skin. The bar and the launch pad are unchanged.
+
 - **Inventory shows what is missing and what changes:** empty hardpoints are listed (A mounts the first hold item that fits), and the selected item is compared with what it would replace (guns, shields, thrusters, mines, countermeasures; green better, red worse). In space the selected mounted item pulses on the ship view.
+
 - **INFO says more:** docked, the system, the base, what it offers, who keeps an office (factions in standing colours, with weight) and the job board's size. In space, who flies in the system with standing and share, found places with where gates lead and what bases offer, and the ships near.
+
 - **A text only just too wide stands whole:** it no longer scrolls (Shockwave's "Anubis" at 1280x800).
+
 - **INVENTORY as a full screen:** one list of every row of a filter (five rows show at a time, the list scrolls), the filters in the game's own names, the game's card on the right, cargo and credits under the list. A mounts, Y jettisons. In space the ship's own 3D view stands in the middle with the loadout totals (guns, hull and shield damage a second, energy draw, cargo, credits), every gun's row says what it does, and X on a commodity shows its best prices.
+
 - **STATUS as a full screen:** rank, worth and the next level large, the other numbers as rows; every faction on one list with a bar and its standing in words. X filters, Y sorts, The focused faction's card stays up beside the list, with no press to open it, and shows its standing and how far hostile it is.
+
 - **INFO as a full screen:** the target's or the system's card in a reading column.
+
 - **LOG and INFO say where you are:** the system, zone or base, and what is near; INFO adds the ships near, by faction in the colour of their standing.
+
 - **The map on keyboard and mouse:** the selection's card opens beside the click, and a right click sets a waypoint. The ship, waypoint and mission marks stay near the game's size at every zoom.
+
 - **Prompts stay at the bottom:** under the NeuroNet tabs they take two rows before they ever become a column.
+
 - **One more ask for a single item:** jettisoning a single item asks once more, by a press and never a hold.
+
 - **The NeuroNet pauses the world:** in single player, in space, the world stops while a NeuroNet window is open and PAUSED shows. `nn_pause` 0 keeps the game going behind the windows. The autopilot keeps flying.
+
 - **Nothing flies under a NeuroNet window:** keys and mouse fly and fire nothing while any NeuroNet window is open.
 
 ## 0.4.0 (7 Nov 2026)
 
+The star map rebuilt, haptics on every pad, HUD 2's targeting display and meters reworked, and a simple mode for the options page.
 First released 6 Nov, released again 7 Nov under the same number with everything from the star map down to the Linux line below it.
 
 - **The star map, rebuilt:** it fills the whole screen on a dark ground, with HUD 2's labels, sector marks and a yellow route line. It zooms smoothly toward the cursor (triggers, mouse wheel, two fingers on a touchpad) from the whole system down to the sector, and past the widest zoom goes to Sirius. The right stick, a mouse drag or one finger on a touchpad moves it, also beside the destination list (`map_touchpad` turns the touchpad off), and the cursor pushed against the screen's edge carries the map on. Cards appear only with something to say: the route, the selection's name, faction and distance, and the layers on D-pad right.
+
 - **Every button has a job on the map:** A selects, A again plots the route, replacing an old one. X adds a waypoint at the cursor, on the object if it points at one; hold X removes the one you point at, or clears them all. Y flies the route. D-pad left opens the destinations; D-pad up and down walk them with or without the list, the map centred on each. A click of the left stick finds your ship, from anywhere, Sirius too; a click of the right goes to Sirius and back. The prompts say what each press does at that moment, and only what does something is listed.
+
 - **Selecting on the map:** every object selects, big bases included. With the mouse a selection stays while you travel to its card, and the hints on the map cover keyboard and mouse too.
+
 - **The map keeps your discoveries:** the destinations list only places you have found, by the same test as the target menu's "Unknown Jump Gate". The route card names a trade lane only when you have found both its ends, otherwise it reads Trade Lane.
+
 - **The ship waits while you read the map:** keys and mouse no longer fly or fire it under the map. The autopilot flies on.
+
 - **NeuroNet tabs:** they stand at the top of the screen on every NeuroNet window, sliding in from the flight HUD's NEURAL NET. LB and RB pick a tab and open it once the presses stop, and the ship takes no pad input between windows.
+
 - **Comm portrait clear of HUD 2:** with no subtitle panel holding it (subtitles or their module off, comms lines off, the portrait row off) it stood at the game's own place, under the nav. It now stands below the nav's text and follows it, with the speaker over the faction under it in HUD 2's text, unless the panel already names the speaker.
+
 - **Main menu CONTINUE** wears the game's own caption: the same face, weight and shadow as NEW GAME and the rest, on a plate of the same height. The FLvibed version line and the save's name follow, and the name shows only while CONTINUE is highlighted.
+
 - **The right-stick tap is reticle first:** a tap takes the object nearest the screen centre inside the reticle ring; taps within 3 s walk the enemies (nearest not yet taken); with nothing in the ring, the nearest enemy. The legend reads TARGET AHEAD / ENEMY (with a target: AHEAD / NEXT ENEMY).
+
 - **The target marker** is four carets on the target's diagonals pointing in, in place of the single caret over the ship: solid for hostile, hollow for neutral, open for friendly.
+
 - **The flight cursor** is four arcs that read as the game's ring, and a dot; over a ship four darts point in from the diagonals (solid, hollow or open by attitude). Firing pushes them in and bolds the ring, a target you cannot fire at shows a bar.
+
 - **Autopilot goals panel:** sized to its setting names and never over the reticle ring; with HUD 2 on it wears HUD 2's look (glass plate, tab plates with the current one underlined in yellow, a yellow focus fill with a bar at its left edge).
+
 - **Action wheel:** the right stick belongs to the wheel while it is open and until you let go after it closes: it no longer steers, moves the autopilot's crosshair or takes the autopilot back. Let go, it clears the pick, a safe retreat.
+
 - **TRAVEL flies your waypoints in order.**
+
 - **Dealers on a pad:** D-pad left is your side, right the dealer's, without a wrap. A name too wide at the smallest size scrolls in its row. The right stick goes through every item of a list, not only the view, and scrolls what the focus is on.
+
 - **NeuroNet inventory on a pad:** Y jettisons, the triggers set how many.
+
 - **DualSense and DualShock 4:** View is the touchpad's click, not Share. A, B or Menu skip the startup movies on any pad.
+
 - **Haptics:** the boost sits on the left trigger alone, and the cruise charge builds from the inside out.
+
 - **Death / mission-failed screen:** its three buttons sit at the foot of the taller log window, clear of the text.
+
 - **Smaller fixes:** the game's LOADING no longer stands over HUD 2's and its bar reads again; the options page hosted in the game's Options window stays inside its frame; a target's white damage trail drains to the left; the flight cursor turns at the game's own rate.
+
 - **Linux / Wine:** the release zip carries `flvibed-linux.sh` (install and uninstall into a Wine or Proton prefix; `haptics` sets the DualSense's card to Surround 4.0 with pactl), and the waveform haptics now start under Wine / Proton, finding the pad's speaker by name. Not yet tried on Linux itself.
 
 - **Haptics, on every pad** (built, not yet felt on a pad): one engine fed by the game. A near-quiet bed from your engine's own numbers; hits, blasts and collisions
   from the side they came; guns by their rate and damage; missiles felt before they are seen; the cruise charge and its release, lanes ring by ring, jump gates
   and holes; radiation, nebulas and asteroids. Maximum strength is kept for the biggest moments. Everything else in the mix follows Rumble.
+
 - **Adaptive Triggers on a DualSense:** gun power and the thruster gauge are pull weight that thins as they drain, vibration while you fire and on the afterburner,
   limp when empty, a wall when you cannot fire. A held trigger settles so it does not tire the finger. **Trigger effects:** FULL, LIGHT, OFF.
+
 - **Impulse Triggers on Xbox One and Series pads** on USB or the dongle: the trigger motors pulse with your guns and from the side of a hit. Over Bluetooth, the two
   main motors only.
+
 - **Waveform on a USB DualSense,** on by default, off under Show all settings (Motors): its grips driven as audio, the speaker set to four channels in the Sound panel. If it cannot start, the motors take over and the log says why.
+
 - Show all settings has a strength for each of Ship and engine, Weapons, Hits and danger, Set pieces and Prompts. Steam Input is never needed for any of it.
+
 - Autopilot: docking at a base beyond the game's dock range no longer stops at once. It flies into range, then docks (the original game and mods built on it allow 10 km, HD Edition 50 km).
+
 - On the original game and on mods built on it, a pad strafe up or down no longer keeps sliding after the stick is let go.
+
 - Beside a newer FLSharp, FLvibed no longer refuses two of its cursor addresses. A game with no startup movies keeps FLvibed's core lines in `FLController.log`.
+
 - **HUD size:** one row, AUTOMATIC, SMALL, NORMAL, LARGE. Small is close to the game's own HUD, Large is what Steam Deck mode was, and Automatic reads the
   machine. A saved Steam Deck mode moves into it.
+
 - **Windows fit what they hold:** the dealers', ship dealer's, job board's and offer's panels are now sized from the game's own controls as they stand: side-by-side panels end level, the infocard takes the room they leave, a short list shortens its panel and an edge travels instead of jumping. A text wider than its box steps down, the job lines no longer touch, and the job board, news and inventory stand centred. Every list row places its lines by its own frame, so a price no longer crosses it and a line alone stands in the middle. Text boxes end on a whole line, the log and info text start under their title's rule, and both windows use more of the screen. Dealers refuse in HUD 2's amber line, as the ship dealer does; the ship's refusal and trade-in stand in the centre panel and its panels start at their headings. The room bar's underline stands on the current room's button and no longer slides, no highlight flashes on the bar while a window opens, and a dealer's panels and prompts no longer open offset. The prompts keep to the column beside the infocard, with a stacked pill where one is too wide.
+
 - The native HUD no longer shows for one frame when a load reaches space, and the NeuroNet box's art no longer stands under a window in flight.
+
 - The flight HUD covers less: hold and credits leave it, the ship panel stands only in a fight or formation, the target card is narrower and shorter, the
   consumables are small dark cells with no plate, the escorts a slim plate. A fight shows two context prompts at most.
+
 - **The bottom of the reticle** (GitHub issue 28): the energy meter drains to the middle, the throttle sits inside the ring and fills from the middle out, and
   the speed stands under the meter. Every ring arc has a thin dark edge, so it reads over a bright planet.
+
 - The target card and the threat list read the same distance as the game's own label, to the surface.
+
 - Keyboard and mouse: one lit chip with its key names the running maneuver, and the whole row reads in words while the mouse is on it. The target card's
   buttons read NEXT and CLEAR, and up to four hostiles are listed while no target is held.
+
 - The Neural Net's lines no longer run off the screen's edge at 1280x800.
+
 - **The targeting display:** HUD 2 replaces the game's bracket, label and bars. A new target opens as a small card beside the ship, then settles into marks
   the ship wears: the attitude by shape as well as colour, two bars, name and distance. Inside the ring they move to a seat beside the cue.
+
 - **The weapon group cue** (GitHub issue 26): a row above the ring with your groups, then M and T. The selected group is yellow; a mark fills when your target
   is in the centre and in its reach; M or T glows under a tick while locked, shows a thin bar while reloading, and goes amber with a slash when it cannot fire.
   `group_cue` turns it off.
+
 - **Failing bars:** a bar running low breathes in its own colour, faster as it falls, always under 3 Hz; a bar that breaks blooms. The HUD's motion has a row:
   `skin_motion`, full, fades or none.
+
 - The flight HUD's label reads NEURAL NET, the game's own name for it.
+
 - **One strip of words on every NeuroNet window:** LOG, MAP, INVENTORY, STATUS, INFO, with CHAT and GROUP in multiplayer, in place of the box's icons. The open
   one is yellow and underlined, and a click switches straight to a window, also during a slide. A CLOSE chip stands at the lane's right end on keyboard and
   mouse. The five windows share one scrim.
+
 - **The nav map's frame comes off, and words replace its icons:** PHYSICAL, POLITICAL, PATROLS, MINING, BASES, LEGEND, MISSION, LABELS, SYSTEM, SIRIUS and what a
   selection offers, on the map's cards, each calling the game's own button. A button the game disables shows disabled.
+
 - **The pad on the map has two zones:** the map itself and its layers' card (the D-pad walks every word, A presses, the left stick or B returns), so a press never means
   two things.
+
 - **The pad reaches every NeuroNet window:** under HUD 2, LB and RB step the strip from any of them, wrapping. Only the map had a pad route until now. The log's
   MISSION and LOG move to the D-pad's left and right.
+
 - Loot the tractor refuses says why, in the game's own words (GitHub issue 33): HUD 2's card, or the Neural Net line.
+
 - An alert card no longer lies over another part of the HUD, at any HUD size, and its words stay on it (GitHub issue 35).
+
 - Names with an apostrophe, a curly quote or an accented letter read right on the pad's screens, not with a question mark: Death's Hand in the weapon group window (GitHub issue 37).
+
 - Names in capitals keep their accents as capitals: GRAFENWÖHR, GROSSGLOCKNER. Unproven: not seen in game yet (`tests\apostrophe_game.md`).
+
 - Autopilot: a mission ship whose name has an accent or apostrophe is found by its name, Tekagi's Transport and the Rheinland cruisers among them. Unproven: not seen in game yet (`tests\apostrophe_game.md`).
+
 - Radiation, a ship on your tail and multiplayer lag have homes in HUD 2 (GitHub issue 27): an amber line in the nav block with the game's own radiation art,
   a mark on the ring at the ship's bearing, one small word. The game's icons no longer draw over the target card, the map or the pause menu.
+
 - **The options page has a simple mode:** five tabs by what they belong to (HUD, CONTROLLER, SUBTITLES, AUTOPILOT, MORE) and the settings most players
   need, with no scrolling on a Steam Deck at the Large size. Your settings stay exactly as they are. A hidden setting you changed comes back on its tab under
   YOU CHANGED, and **Show all settings** on MORE lists the rest. Each feature's switch is the first row of its tab, and off greys what stands under it; a
   switch that needs a restart says so on the row, in amber. The page's text now follows HUD size, and the description stands in the page, under the rows.
+
 - **Page controls:** DEFAULT (X / D), CANCEL (Y / C) and CLOSE (B / Esc) carry their buttons, Q / E and LB / RB change the tab, and a held direction repeats
   after 0.4 s. Esc on the hosted page now goes back to the game's Options column instead of leaving the screen.
+
 - **New rows:** Button hints and Hit effects, one word each over several settings, reading CUSTOM when you change a part of them; Window text size. Steering
   response is a word now (the number is under Show all settings), Stick dead zone reads in percent. A on Layout shows every button of that layout.
+
 - **Disabling the Controller and Reset Everything now ask first,** with the safe answer focused. The rule that one of Subtitles and Controller stays on no longer
   refuses you: disable both and the subtitles simply stay hidden.
+
 - **First start:** a fresh install meets one card over the main menu with HUD size, Subtitles, Hit effects and Held buttons; closing it is the skip. A player
   upgrading never sees it.
+
 - HUD 2: the focused word on the pause menu, the job rows and the dealers' rows now reads in the bright text colour on its yellow block, so the row you are on is as legible as the rows around it.
+
 - HUD 2: the quit, delete and exit questions and the game's error and please-wait boxes are one centred dialog that says what it does (the multiplayer prompt keeps the game's look): QUIT ANYWAY, KEEP PLAYING, DELETE, KEEP SAVE. B and Escape answer safely. An amber edge marks what can lose progress. Any other text keeps the game's own words.
+
 - Pad: deleting a save is a press of X into the game's confirm, no longer a one-second hold.
+
 - HUD 2: **CONTINUE** on the main menu: one press loads your latest save. The menu's buttons are floating chips, the front load screen's too.
+
 - HUD 2: a new loading screen: a navy screen and, where the game gives it, where you are going, else LOADING; a bar only if the load runs past a second and a half.
+
 - HUD 2: its own cursor, an arrow, a reticle and word bubbles for all 19 of the game's cursors; tooltips and popups in HUD 2's look.
+
 - HUD 2: at 800 lines the names in the dealers' and inventory rows stand one size larger, the same size for a whole visit. Large keeps text by role in the windows. The log, status and info windows share one top line, left edge and dimmed backdrop, and INFO's plate ends at its text.
+
 - Pad: a tap on the dealer's own BUY or SELL does the trade, as an alternative to the hold on the row; the prompt says which.
+
 - Pad: a ship can be bought without a mouse (GitHub issue 34). The ship dealer's final stage opens on BUY SHIP: hold A, as for any purchase. On a row the hold is the game's TRANSFER, and LB / RB reach BUY SHIP from either list.
+
 - Pad: a button still held from the screen before no longer counts on the new one: release it first.
+
 - Pad: at the dealers a held A on a filter no longer trades the row selected behind it. The prompt reads SELECT there.
+
 - HUD 2: the ship dealer's final stage sets its words on a plate, and the prompts keep off them.
+
 - Subtitles: the fonts no longer rebuild every frame while a line and the Neural Net feed show together.
+
 - HUD 2: **a long pilot name reads whole,** past the game's own 23 characters, where the game's data can finish it.
+
 - HUD 2: the reticle goes with the rest of the HUD in a jump, a lane's entry and a dock's scene.
+
 - HUD 2: close to the reticle, the target's bars and words stand centred on top of it, just over the ring when no weapon group row shows, over an alert that stands there. With the ring faded they stay with the target.
+
 - HUD 2: the panels fit what they show, with even space around it: the target card, the ship panel, the loadout, the alert card and the contact rows. The consumables stand closer to the loadout.
+
 - HUD 2: the prompts beside the bottom panels mirror each other on the centre where the room allows, and a row of pad prompts stands centred under the screen where its band is free.
+
 - HUD 2: the reticle's bottom is now the boost meter, always there: yellow, emptying to the middle, breathing and blooming when it runs out as the hull does. The percentage stands beside BOOST.
+
 - HUD 2: the cruise meter stands at the reticle's top, in cyan, only while cruise charges or runs. Its glow grows as it charges; running, it breathes at 1 Hz; turned off, it blooms out gently. Disrupted, it turns red, breathes fast and empties the moment cruise can charge again.
+
 - HUD 2: the power meter moved inside the reticle's top.
+
 - Dealers: the stats line up with their labels and lose their scroll bars; prices, classes and long names no longer run into each other or out of their rows; the FAIR / GOOD word gives way on a long name, the coloured mark stays. The quantity block rises into the slider's room when there is no slider.
+
 - HUD 2: the prompts stand in a centred column balanced on the dealer's bottom panel, and bottom centre in rooms where the row has the room.
+
 - The Neural Net log, help and status windows stand centred between the docked strip and the prompts.
+
 - HUD 2: the on-target firing cursor turns again, as the game's does, at the rate of the game's data.
+
 - Pad: HUD FADES / HUD ALWAYS on the action wheel, the options page's setting, live and saved.
+
 - HUD 2: the target's bars and distance no longer vanish for good after a wide alert card has gone.
+
 - Pad: a mapper's keys are dropped again on a PC that refuses a hook by DLL.
+
 - HUD 2: a new alert card no longer lands on the one sliding out of its place. Under `skin_motion` Fades and None nothing on the HUD pulses or slides.
+
 - Pad: a dealer's first row is no longer missed when the window is still sliding in.
+
 - Pad: at the dealers the D-pad no longer stops on the room's bar, the NeuroNet's box behind the window or the description's scroll bar, and LB / RB bring the focus back from a filter when the other list is empty.
+
 - Pad: at the dealers the right stick scrolls the list you are on, by the D-pad or the cursor, and no longer the other side's (GitHub issue 36).
+
 - HUD 2: a window the skin cannot draw keeps the game's look until it closes, and one line says so. New rows: **Menu motion** (`skin_motion`) and `skin_native`, a list of windows that keep the game's look.
 
 ## 0.3.5rc (test build)
 
+Native PlayStation and Switch pads, FLvibed split into a core and eight modules that can each be switched off, and many fixes.
 A test build of 0.3.5: every change below, not yet through the full regression sweep and gate. Short checks only: unit tests, the module matrix, one start each of flight, a dock, a subtitle and a movie.
 
 - **PlayStation and Switch pads work natively, with no setting and no mapper:** FLvibed reads them itself through SDL3, with the right button
@@ -286,6 +516,7 @@ A test build of 0.3.5: every change below, not yet through the full regression s
 - Uninstall removes `FLvibed_npc_stalls.log`.
 
 ## 0.3.0 - 5 Nov 2026
+HUD 2's danger alerts beside the reticle, trading and weapon groups on the pad reworked, Steam prompts, and larger text in the game's windows.
 
 - HUD 2, danger alerts: Shield Failing now stands by the left meter, Missile Incoming and Hull Critical by the right, level with
   the reticle, so your eyes stay near the centre (GitHub issue 21). Two dangers show together instead of one erasing the other:
@@ -325,12 +556,14 @@ A test build of 0.3.5: every change below, not yet through the full regression s
 - PlayStation prompts: L1 / R1 no longer read as U.
 
 ## 0.2.7a - 4 Nov 2026
+Two small fixes to 0.2.7: the bumpers in a Bar with no news or job board, and smoother cutscenes.
 
 - Pad, in bases: the bumpers work in a Bar with no news or job board (two-room bases such as Ku07_02). 0.2.7 took that Bar
   for the Deck, so LB / RB seemed to do nothing there.
 - Smoother cutscenes: a story line and a chat card on screen together no longer rebuild the text every frame.
 
 ## 0.2.7 - 4 Nov 2026
+Fixes for the GitHub reports on 0.2.6 (issues 6 to 12): the pad in bases, HUD 2's dealer screens and chat, torpedoes in every layout.
 
 - HUD 2: Neural Net lines (Objective Reached, Tractor Failure, the docking lines and the rest), voice and subtitle, play
   in flight. With HUD 2 on, only the first one played and the others waited until the NeuroNet opened (GitHub issue 8).
@@ -359,6 +592,7 @@ A test build of 0.3.5: every change below, not yet through the full regression s
   near no longer stops the clicks from moving on.
 
 ## 0.2.6 - 4 Nov 2026
+Fixes for the first GitHub reports (issues 1 to 5): the Neural Net and the nav map on the pad, weapon groups, torpedoes and HUD 2's colours; and a recorder for enemies that sit idle.
 
 - Pad: the NeuroNet box's buttons (mission log, inventory, player info, help) can be reached with the cursor in flight,
   and the nav map answers the cursor. A NeuroNet window now takes the cursor whoever flies, the pad, the autopilot or
@@ -394,6 +628,7 @@ A test build of 0.3.5: every change below, not yet through the full regression s
   On ships where the two orders differ it could leave a gun idle or fire a launcher's slot. It now reads the game's list.
 
 ## 0.2.5 - 2 Nov 2026
+The contextual HUD becomes the default, HUD 2's panels fit what they show, and the options page fits its frame.
 
 - Note: the FLVIBED options page still needs the controller module (`controller = 1`, the default). This is
   temporary: HUD 2, the menus' look and the options page will become their own core module in a later version.
@@ -447,6 +682,7 @@ A test build of 0.3.5: every change below, not yet through the full regression s
   screen) and hides again only after three idle seconds back in flight.
 
 ## 0.2.0 - 1 Nov 2026 - second preview
+HUD 2 and every feature on by default, multiplayer, rumble on hits, and a much stronger autopilot in fights.
 
 - **HUD 2 is the default** with the controller and with keyboard and mouse (`hud_style = 2`), and HUD 2's look over the
   menus, bases, dealers and dialogs (Extended HUD 2 in 0.1.0) is now part of HUD 2 and on with it. `hud_style = 0`

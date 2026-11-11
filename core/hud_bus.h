@@ -45,7 +45,8 @@ struct HudSubtitles
 {
     u32 frame;
     HudRect dialogue; // the dialogue panel (with the comm portrait) as placed; empty = none shows
-    HudRect chat;     // the chat column as placed; empty = none
+    HudRect chat;     // the chat column: with HUD 2 its comm feed's cards as drawn (the stack's extent, empty while none
+                      // shows: HUD 2's reserved area AChat); without HUD 2 the column's estimated place
 };
 
 // The pad's prompt lane on docked screens (bus version 2, 25 Oct 2026; modules\hud\docs\UI_HUD2_EXTENDED.md 13): the controller logic
@@ -147,11 +148,20 @@ struct HudFlufExtra
     HudFlufWindowExtra win[kHudFlufMax];
 };
 
+// One tractored item (bus version 7): the loot object, the ship that took it, the units it took.
+constexpr u32 kHudLootKept = 16;
+struct HudLoot
+{
+    u32 serial; // 1, 2, ... in the order the client heard them
+    u32 loot, ship, units;
+};
+
 struct HudBus
 {
     u32 version; // 1; 2 adds the lane (PublishLane / ReadLane / LaneFrame) - read them only when version >= 2; 3 adds the
                  // floor and the docked subtitles (PublishFloor ... DockedSubsFrame) - only when version >= 3; 4 adds FLUF
-                 // (ReadFluf, SetFlufPolicy) - only when version >= 4; 5 adds ReadFlufExtra; 6 adds the tractor's refusal
+                 // (ReadFluf, SetFlufPolicy) - only when version >= 4; 5 adds ReadFlufExtra; 6 adds the tractor's refusal;
+                 // 7 the loot it took (NoteLoot, LootSerial, ReadLoot)
     void (*PublishLayout)(const HudLayout* layout);
     // Copies the last layout; false when none was ever published.
     bool (*ReadLayout)(HudLayout* out);
@@ -179,4 +189,11 @@ struct HudBus
     // version 6 (appended): why the game last played its "Tractor Failure" line (core\game\tractorfail.h; core\host\tractorhook.* notes it). Read gives its serial, 0 = none yet.
     void (*NoteTractorFail)(int reason);
     u32 (*ReadTractorFail)(int* reason, u32* ageMs);
+    // version 7 (appended): loot a ship's tractor took into its hold, as the game tells its client (core\host\events.cpp,
+    // the exe's Client slot 64; docs\FREELANCER_RE.md "Loot into the hold"). Every ship the client hears of: the reader
+    // keeps its own. LootSerial = the newest record's serial (0 = none yet); ReadLoot copies the record with that serial,
+    // false when it is not kept (the last kHudLootKept) or not written yet.
+    void (*NoteLoot)(u32 loot, u32 ship, u32 units);
+    u32 (*LootSerial)();
+    bool (*ReadLoot)(u32 serial, HudLoot* out);
 };

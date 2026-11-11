@@ -19,10 +19,13 @@ ht::State g_state;
 ht::Out g_out;
 
 // The caret over the ship, its shape says the attitude as well as its colour: hostile solid, neutral hollow, friendly open.
+// A caret's navy keyline width (under its line): its lines reach half of it past the shape's points - the box the draw kit
+// records for a line (hud2_kit Line), the lint's
+float CaretKey(float s) { return std::max(1.5f, s * 0.16f) + 2; }
 void Caret(float x, float y, float s, int attitude, u32 rgb)
 {
     const u32 c = Argb(rgb, 1), navy = Argb(kNavy, 0.7f);
-    const float lw = std::max(1.5f, s * 0.16f), key = lw + 2;
+    const float lw = std::max(1.5f, s * 0.16f), key = CaretKey(s);
     const float l[2] = {x - s, y - s}, r[2] = {x + s, y - s}, b[2] = {x, y + s * 0.6f};
     Line(l[0], l[1], b[0], b[1], key, navy);
     Line(r[0], r[1], b[0], b[1], key, navy);
@@ -106,6 +109,20 @@ void FormBar(float x, float y, float w, float h, float v, u32 rgb, float glow, c
 }
 
 int AttitudeOf(u32 col) { return col == kHostile ? ht::Hostile : col == kFriend ? ht::Friendly : ht::Neutral; }
+
+// The frame's reserved areas (hud2_layout.h Reserved: the panels, the prompts, the alert cards, the subtitles' panel) as the
+// rules' boxes - the quiet ones too, as before: a panel held back in calm keeps its place for when it wakes. Returns the count.
+int ReservedBoxes(const Layout& L, ht::Box* out, int max)
+{
+    int n = 0;
+    for (int a = 0; a < hud2layout::kAreaCount && n < max; ++a)
+        if (L.res.Placed(a))
+        {
+            const hud2layout::Rect& r = L.res.at[a];
+            out[n++] = {r.x0, r.y0, r.x1, r.y1};
+        }
+    return n;
+}
 } // namespace
 
 void StepTargetForm(const Model& m, const Layout& L, float dt, int motion, bool ringUp)
@@ -115,21 +132,9 @@ void StepTargetForm(const Model& m, const Layout& L, float dt, int motion, bool 
     in.W = L.W, in.H = L.H, in.k = L.k, in.R = L.R;
     in.shield = m.tBars ? m.tShield : -1, in.hull = m.tBars ? m.tHull : -1;
     in.motion = motion, in.cueRow = m.cueShow && m.nCue > 0;
-    for (int i = 0; i < 2; ++i)
-        if (m.held[i].left > 0 && L.heldShow[i] && L.alertX1 > L.alertX0)
-            in.panels[in.nPanels++] = {L.heldX[i], L.heldY[i], L.heldX[i] + (L.alertX1 - L.alertX0), L.heldY[i] + (L.alertY1 - L.alertY)};
     in.ring = {L.cx - L.R - 0.02f * L.H * L.k, L.cy - L.R - hud2target::kRingTop * L.H * L.k, L.cx + L.R + 0.02f * L.H * L.k, L.cy + L.R + hud2target::kRingTop * L.H * L.k}, in.hasRing = ringUp, in.ringGone = !ringUp;
-    in.panels[in.nPanels++] = {L.navX0, L.navY0, L.navX1, L.navY1};
-    in.panels[in.nPanels++] = {L.tgtX0, L.tgtY0, L.tgtX1, std::max(L.tgtY1, L.thrY1)};
-    in.panels[in.nPanels++] = {L.shipX0, L.shipY0, L.shipX1, L.shipY1};
-    in.panels[in.nPanels++] = {L.loX0, L.loY0, L.loX1, L.loY1};
-    in.panels[in.nPanels++] = {L.consX0, L.consY0, L.consX1, L.consY1};
-    if (L.ctxX1 > L.ctxX0)
-        in.panels[in.nPanels++] = {L.ctxX0, L.ctxTop, L.ctxX1, L.ctxY + 0.03f * L.H};
-    if (!m.alert.empty() && m.alertLeft > 0 && L.alertX1 > L.alertX0) // (only a card that stands: the text outlives it, and a wide card gone hid the block for good: the owner's peek)
-        in.panels[in.nPanels++] = {L.alertX0, L.alertY, L.alertX1, L.alertY1};
-    if (L.dlgX1 > L.dlgX0)
-        in.panels[in.nPanels++] = {L.dlgX0, L.dlgY0, L.dlgX1, L.dlgY1};
+    // (an alert card only while it stands: its text outlives it, and a wide card gone hid the block for good - the owner's peek)
+    in.nPanels = ReservedBoxes(L, in.panels, static_cast<int>(std::size(in.panels)));
     std::wstring words = m.tName;
     words += L"  ";
     words += m.tDist;
@@ -208,6 +213,7 @@ void DrawTargetForm(const Model& m, const Layout& L, float a, int motion)
     // the carets stay on the ship, inside the ring too: four, pointing in from its diagonals (7 Nov 2026); a waypoint target adds a small diamond over them, no more
     if (o.caretY >= 0)
     {
+        RecordTag("target.mark"); // (the marks at the object: they pass behind the panels, which draw over them - issue 77)
         const float s = ht::CaretSize(o.mark, H, k); // (a ship's radius reaches the marks' cap at 300 m: the carets stay marks)
         float cy = o.caretY;
         if (m.tWaypoint)
@@ -225,32 +231,29 @@ void DrawTargetForm(const Model& m, const Layout& L, float a, int motion)
         }
         CaretQuad(m.tMark.x, m.tMark.y, o.mark / 2, s, ht::kQuadGap * H * k, att, m.tCol);
     }
-    // the other ships: each the richest form that touches nothing
-    ht::Box taken[12 + kMaxMarks];
+    // the other ships: each the richest form that touches nothing - the target's block, the ring, the HUD's reserved areas (a name stood on the subtitles and
+    // a prompt, p2r), the marks placed before it
+    ht::Box taken[2 + hud2layout::kAreaCount + kMaxMarks];
     int nTaken = 0;
     taken[nTaken++] = {std::min(wx, bx), by, std::max(wx + ww, bx + bw), wordsY + T * 0.6f};
-    // ... and off the HUD's reading parts: a name stood on the subtitles and a prompt (p2r)
     taken[nTaken++] = {L.cx - L.R, L.cy - L.R, L.cx + L.R, L.cy + L.R}; // (the ring: 6.10 "falls a step when it would touch")
-    taken[nTaken++] = {L.navX0, L.navY0, L.navX1, L.navY1};
-    taken[nTaken++] = {L.tgtX0, L.tgtY0, L.tgtX1, std::max(L.tgtY1, L.thrY1)};
-    taken[nTaken++] = {L.shipX0, L.shipY0, L.shipX1, L.shipY1};
-    taken[nTaken++] = {L.loX0, L.loY0, L.loX1, L.loY1};
-    taken[nTaken++] = {L.consX0, L.consY0, L.consX1, L.consY1};
-    taken[nTaken++] = {L.ctxX0, L.ctxTop, L.ctxX1, L.ctxY + 0.03f * H};
-    if (L.dlgX1 > L.dlgX0)
-        taken[nTaken++] = {L.dlgX0, L.dlgY0, L.dlgX1, L.dlgY1};
-    if (!m.alert.empty() && m.alertLeft > 0 && L.alertX1 > L.alertX0)
-        taken[nTaken++] = {L.alertX0, L.alertY, L.alertX1, L.alertY1};
+    nTaken += ReservedBoxes(L, taken + nTaken, hud2layout::kAreaCount);
     RecordTag("target.others");
     SetAlpha(a);
     for (int i = 0; i < m.nMarks && i < kMaxMarks; ++i)
     {
         const Model::Mark& s = m.marks[i];
-        const float hm = 0.015f * H * k, y0 = s.y + hm;
+        const float hm = 0.015f * H * k, y0 = s.y + hm, cs = 0.008f * H * k;
+        // a ship behind a panel, a prompt or the subtitles wears no mark there at all: the step after the bare caret (issue 77's rule: nothing over the weapons)
+        // (only what draws this frame: a panel held back in calm hides nothing). The caret as drawn: its keyline's half past the
+        // points, the box the lint weighs (a mark touched a comm card's edge by 2-4 px at 1280x800, 0.4.6's final check)
+        const float kh = CaretKey(cs) / 2;
+        if (L.res.Meets({s.x - cs - kh, s.y - hm - cs - kh, s.x + cs + kh, s.y - hm + cs * 0.6f + kh}, hud2layout::kAreasAll & ~L.res.quiet) >= 0)
+            continue;
         const float nw = TextWidth(s.name, T), dw = TextWidth(s.dist, T);
         const ht::Box forms[4] = {{s.x - nw / 2, y0, s.x + nw / 2, y0 + T}, {s.x - dw / 2, y0, s.x + dw / 2, y0 + T}, {s.x - bw / 4, y0, s.x + bw / 4, y0 + bh}, {s.x, y0, s.x, y0}};
         const int f = ht::FitForm(forms, taken, nTaken);
-        Caret(s.x, s.y - hm, 0.008f * H * k, AttitudeOf(s.col), s.col);
+        Caret(s.x, s.y - hm, cs, AttitudeOf(s.col), s.col);
         if (f == ht::CaretName)
             Text(s.x, y0 + T / 2, s.name, T, Argb(kInk, 1), Center);
         else if (f == ht::CaretDistance)

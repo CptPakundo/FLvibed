@@ -102,6 +102,7 @@ void Test_hud2_layout();
 void Test_hud2_focus();
 void Test_spawn_charge();
 void Test_ash_ride();
+void Test_hud2_notice();
 
 static bool DirExists(const std::string& p)
 {
@@ -321,6 +322,7 @@ int main(int argc, char** argv)
         {"hud2_focus", Test_hud2_focus},
         {"spawn_charge", Test_spawn_charge},
         {"ash_ride", Test_ash_ride},
+        {"hud2_notice", Test_hud2_notice},
     };
     for (const Test& t : tests)
     {

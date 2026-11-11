@@ -733,7 +733,9 @@ struct LaneGeom
     float y0 = 0;           // the baseline row's centre line
     float pitch = 0;        // the rows' pitch (the row above at y0 - pitch)
     int rows = 2;
-    int leftRows = 2;       // the left lane's: 1 while the subtitles' panel stands over its upper row
+    int leftRows = 2;       // the left lane's: 1 while the subtitles' panel stands over its upper row (0: over its
+                            // baseline row too - the lane is closed)
+    int rightRows = 2;      // the right lane's, the same way (HUD 2: hud2_layout.h FitLanes)
     float tall = 0;         // what a wrapped prompt's plate grows upward (two label lines: FitLabel, 0.2.1) - the row
                             // above moves up by it where its lane's baseline row holds a wrapped prompt
 };
@@ -818,7 +820,8 @@ inline LanesPlaced PlaceLanes(const float* w, const float* minW, const int* side
                     tall[s] = true; // (a wrapped prompt is alone in its row: the row above is still empty here)
                 o.moved[i] = s != own, used[s][r] = true, placed = true;
             };
-            const int laneRows = s == 0 && g.leftRows < rows ? g.leftRows : rows;
+            const int open = s == 0 ? g.leftRows : g.rightRows;
+            const int laneRows = open < rows ? (open < 0 ? 0 : open) : rows;
             for (int r = 0; r < laneRows && !placed; ++r) // whole
                 if (wi <= room(r) + 0.5f)
                     put(r, wi);

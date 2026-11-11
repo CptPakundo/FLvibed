@@ -67,9 +67,8 @@ AUTOPILOT = [
     ('tog', 'Autopilot hints', 'ENABLED', 'Show the autopilot\'s prompts before you first use it. Disabled: nothing about it shows until you start it once.', ''),
 ]
 MORE = [
-    ('head', 'Movie handling', 'ENABLED', 'Movies fitted to the screen, the choice of intro, skipping the startup movies. Takes effect at the next start.', ''),
+    ('head', 'Movie handling', 'ENABLED', 'Movies fitted to the screen, skipping the startup movies. Takes effect at the next start.', ''),
     ('pick', 'Startup movies', 'PLAY', 'Skip goes straight to the main menu.', 'sub'),
-    ('pick', 'Intro', 'AS INSTALLED', 'Which intro plays. Only the versions this install has are offered.', 'sub'),
     ('head', 'Window handling', 'ENABLED', 'Borderless window, fit to the monitor, running in the background. Takes effect at the next start.', ''),
     ('tog', 'Keep running in background', 'DISABLED', 'The game normally pauses when you switch to another window.', 'sub'),
     ('head', 'Speedrun mode', 'ENABLED', 'The New Game choice, the timer, the splits and LiveSplit. Takes effect at the next start.', ''),

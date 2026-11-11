@@ -74,7 +74,7 @@ struct In
     float shield = -1, hull = -1;     // 0..1, under 0: nothing to damage
     int motion = MotionFull;
     Box ring;      // the ring and its cue row, while the form stands off the seat
-    Box panels[10]; // the HUD's panels, prompts, alert cards and subtitles: a mini card that would touch one does not stand, the block keeps off them
+    Box panels[16]; // the HUD's reserved areas (hud2_layout.h Reserved: panels, prompts, alert cards, subtitles): a mini card that would touch one does not stand, the block keeps off them
     int nPanels = 0;
     bool hasRing = false;
     bool ringGone = false; // the ring has faded: no seat, the words stay with the target (the owner, 6 Nov 2026)
@@ -120,6 +120,22 @@ public:
         Hit(in.hull, wasH_, hitH_, lostH_, in.dt, in.motion == MotionNone);
         o.hitShieldA = HitAlpha(hitS_), o.hitHullA = HitAlpha(hitH_);
         o.lostShield = lostS_, o.lostHull = lostH_; // (its own clock: the trail, not the numbers' 3 s)
+        const float gap = kGap * H * k, bars = kBarW * H * k;
+        const float halfW = (in.wordsW > bars ? in.wordsW : bars) / 2 + gap, blockH = BlockH(H, k); // (the words are wider than the bars on a long name)
+        auto hits = [&](float x, float y, const Box* list, int n)
+        {
+            const Box b = {x - halfW, y, x + halfW, y + blockH};
+            for (int i = 0; i < n; ++i)
+                if (Touch(b, list[i]))
+                    return true;
+            return false;
+        };
+        // the words fade where they meet a panel, and come back where they leave it (kYieldSec); `hit` = where they stand now
+        auto yieldStep = [&](bool hit)
+        {
+            yield_ = !hadBlock_ ? (hit ? 1.0f : 0.0f) : Unit(yield_ + (hit ? 1 : -1) * in.dt / kYieldSec); // (a block opening on a panel opens faded: it stood there whole for 0.09 s)
+            return in.motion == MotionNone ? (hit ? 0.0f : 1.0f) : 1 - yield_;
+        };
         if (!in.onScreen)
         {
             offAge_ += in.dt;
@@ -128,6 +144,10 @@ public:
             o.show = offAge_ < kEdgeWaitSec + 0.25f;
             o.wordsA = offAge_ < kEdgeWaitSec ? 1.0f : 1 - (offAge_ - kEdgeWaitSec) / 0.25f;
             o.wordsA = o.wordsA < 0 ? 0 : o.wordsA;
+            // (waiting where it stood: on a panel it stays faded - GitHub issue 77, a block cut whole over the weapons)
+            const bool on = hits(shownX_, shownY_, in.panels, in.nPanels);
+            const float kept = yieldStep(on);
+            o.wordsA = on ? 0.0f : o.wordsA < kept ? o.wordsA : kept;
             o.settle = 1, o.mark = lastMark_, o.seat = seat_, o.side = side_;
             o.caretX = o.caretY = -1; // (no caret: the game's arrow says where)
             o.blockX = shownX_, o.blockY = shownY_; // (where it stood, fading: a dying ship's block cut 454 px to a clamped place)
@@ -140,7 +160,7 @@ public:
         o.show = true;
         o.mark = MarkSize(in.r, H, k);
         lastMark_ = o.mark, lastX_ = in.x, lastY_ = in.y;
-        const float hm = o.mark / 2 + QuadReach(o.mark, H, k), gap = kGap * H * k; // (the mark with its carets: what stands round it keeps off them)
+        const float hm = o.mark / 2 + QuadReach(o.mark, H, k); // (the mark with its carets: what stands round it keeps off them)
         const float d = sqrtf((in.x - cx) * (in.x - cx) + (in.y - cy) * (in.y - cy));
         const float dead = kSideDead * H * k;
         // The seat and side stand as they opened until the change starts: the mini card is beside the ship, and a card that would touch the ring or a panel goes (below).
@@ -161,21 +181,12 @@ public:
         }
         o.seat = seat_, o.side = side_;
         o.caretX = Clamp(in.x, gap, in.W - gap), o.caretY = in.y - hm - gap < gap ? gap : in.y - hm - gap; // (whole at the screen's edge)
-        const float bars = kBarW * H * k, halfW = (in.wordsW > bars ? in.wordsW : bars) / 2 + gap, blockH = BlockH(H, k); // (the words are wider than the bars on a long name)
         // settled: under the ship; the seat: on top of the reticle, over the cue's row
         float bx = in.x, by = in.y + hm + gap;
         if (seat_)
             bx = cx, by = cy - in.R - (in.cueRow ? kRingTop : kGap) * H * k - blockH;
         // the block stays on screen
         o.blockX = Clamp(bx, halfW, in.W - halfW), o.blockY = Clamp(by, gap, in.H - blockH - gap);
-        auto hits = [&](float x, float y, const Box* list, int n)
-        {
-            const Box b = {x - halfW, y, x + halfW, y + blockH};
-            for (int i = 0; i < n; ++i)
-                if (Touch(b, list[i]))
-                    return true;
-            return false;
-        };
         // in the seat, what stands there (an alert over the ring) moves the block up over it: it takes the next free place, it does not fade out
         for (int i = 0; seat_ && i < in.nPanels; ++i)
             if (hits(o.blockX, o.blockY, &in.panels[i], 1))
@@ -196,9 +207,7 @@ public:
         }
         else
             above_ = false;
-        const bool yield = hits(o.blockX, o.blockY, in.panels, in.nPanels);
-        yield_ = !hadBlock_ ? (yield ? 1.0f : 0.0f) : Unit(yield_ + (yield ? 1 : -1) * in.dt / kYieldSec); // (a block opening on a panel opens faded: it stood there whole for 0.09 s)
-        o.wordsA = in.motion == MotionNone ? (yield ? 0.0f : 1.0f) : 1 - yield_;
+        const bool yieldWanted = hits(o.blockX, o.blockY, in.panels, in.nPanels);
         // any jump travels, whatever made it: the wanted place against what it hangs on, the ship off the seat, the screen on it. A list of causes missed two (the fourth clip)
         const float relX = o.blockX - (seat_ ? 0 : in.x), relY = o.blockY - (seat_ ? 0 : in.y);
         const bool jump = fabsf(relX - relX_) + fabsf(relY - relY_) > kJump * H * k;
@@ -208,6 +217,24 @@ public:
         moveT_ = Unit(moveT_ + in.dt / kMoveSec);
         const float rest = in.motion == MotionFull ? 1 - Smooth(moveT_) : 0;
         o.blockX += offX_ * rest, o.blockY += offY_ * rest;
+        // the keep-off where the block is drawn as well as where it goes (GitHub issue 77): travelling off a panel it stays faded until it has left it - the
+        // words came back at once while the block still crossed the weapons. And ahead of it: the drawn block's motion carried kYieldSec on, so the words have
+        // faded by the time they reach an area; touching one they are gone - a target's words never stand visibly over a panel (the owner's rule; the lint's
+        // part.over counts a word from 10 %: the fade had run over the cross's corner for its 0.15 s)
+        const bool touch = hits(o.blockX, o.blockY, in.panels, in.nPanels);
+        bool ahead = false;
+        if (hadBlock_ && in.dt > 0)
+        {
+            const float frames = kYieldSec / in.dt + 1; // (the fade's frames and the one it starts in)
+            const float ax = o.blockX + (o.blockX - shownX_) * frames, ay = o.blockY + (o.blockY - shownY_) * frames;
+            const Box sweep = {(ax < o.blockX ? ax : o.blockX) - halfW, ay < o.blockY ? ay : o.blockY, (ax > o.blockX ? ax : o.blockX) + halfW,
+                               (ay > o.blockY ? ay : o.blockY) + blockH};
+            for (int i = 0; i < in.nPanels && !ahead; ++i)
+                ahead = Touch(sweep, in.panels[i]);
+        }
+        o.wordsA = yieldStep(yieldWanted || touch || ahead);
+        if (touch)
+            yield_ = 1, o.wordsA = 0;
         shownX_ = o.blockX, shownY_ = o.blockY, hadBlock_ = true;
         // the card: beside the ship, on the side away from the ring; the other side only where the screen ends on it, and it travels there. Never over the ship
         const float cw = in.cardW > 0 ? in.cardW : kCardW * H * k, ch = kCardH * H * k;
@@ -231,8 +258,8 @@ public:
             bool touch = in.hasRing && Touch(card, in.ring); // (in the seat too: a card there covered the ring's pips at 1280x800)
             for (int i = 0; i < in.nPanels && !touch; ++i)
                 touch = Touch(card, in.panels[i]);
-            if (touch)
-                age_ = age_ < 0.1f ? kCardSec + kMorphSec : kCardSec;
+            if (touch) // (at once, also after its opening: the change from the card's place ran its 0.35 s over the panel - the lint's part.over, the cross)
+                age_ = kCardSec + kMorphSec;
         }
         // the card, then the change
         const bool morph = in.motion == MotionFull;

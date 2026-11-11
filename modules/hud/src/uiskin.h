@@ -47,6 +47,9 @@ bool ModalOpen();
 // Everything restored (hot reload, unload).
 void Shutdown();
 void GiveBack(); // a fault's: the windows' art and colours back, the game's own
-// Debug: uiskin state | windows | restore | rescan | seams | loadplace <0|1>
+// After the game's UI pass (the overlay's last slot): the hover help skinover draws in HUD 2's look was hidden for that pass alone; its shown bit goes back, so
+// the game's own state (rest timer, placing, a click's dismissal) runs on as without the skin.
+void GiveHelpBack();
+// Debug: uiskin state | windows | restore | rescan | seams | loadplace <0|1> | hover <x> <y> | hover off (TEST ONLY: the game's hover at a pixel)
 std::string Command(std::istream& in);
 } // namespace uiskin

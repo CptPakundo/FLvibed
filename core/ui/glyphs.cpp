@@ -158,6 +158,8 @@ u32 FaceRgb(Family f, Id id)
     return f == Family::Xbox ? kXbox[id] : f == Family::PlayStation ? kPs[id] : f == Family::Nintendo ? kNintendo[id] : kPressedArm;
 }
 
+u32 OutlineRgb(Family f, Id id) { return f == Family::Steam ? 0 : FaceRgb(f, id); }
+
 // ---------------------------------------------------------------- rasterisation (GDI, 4x supersampled)
 // A glyph is two layers in the atlas (docs\FREELANCER_RE.md "HUD panels" for the colours, TASK_GLYPHS_HUD.md 5 for the
 // rules): the FIXED layer = the body (the HUD's panel base (13, 11, 26) at 0.8 coverage, so the glyph backs itself only
@@ -658,9 +660,15 @@ bool Draw(Id id, float cx, float cy, float h, float alpha, u32 tintRgb)
 {
     if (id < 0 || id >= COUNT || h < 4)
         return false;
-    Atlas* a = Get(g_current, static_cast<int>(h + 0.5f), g_device, LookFor(false) == Look::Hud2);
+    const bool hud2 = LookFor(false) == Look::Hud2;
+    Atlas* a = Get(g_current, static_cast<int>(h + 0.5f), g_device, hud2);
     if (!a)
         return false;
+    // a face button's ring (its tint layer holds only the ring) in its family colour, as its mark; the lit yellow of a
+    // badge on a running control stays: it is that badge's state, not the button's colour
+    if (!hud2 && tintRgb != kLit)
+        if (const u32 ring = OutlineRgb(g_current, id))
+            tintRgb = ring;
     const float x0 = cx - h * 0.5f, y0 = cy - h * 0.5f, x1 = x0 + h, y1 = y0 + h;
     const float xy[8] = {x0, y0, x1, y0, x1, y1, x0, y1};
     const u32 al = static_cast<u32>(Clampf(alpha, 0, 1) * 255 + 0.5f) << 24;

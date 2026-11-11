@@ -133,8 +133,7 @@ pad players: 7 ms -> 0.07 ms per frame on a dealer).
 - The options page (PAGE + INT-PAGE): five tabs, instant apply, DEFAULT / CANCEL, Show advanced, presets with CUSTOM,
   the subtitles preview, mouse / keyboard / pad; hosted in the Options screen (the game's measured geometry) and
   standalone; the page button's caption drawn by the logic (the native caption never drew: `uibtn.cpp
-  kNativeOptionsCaption`); the MOVIES Intro row offers only the files present (the subtitles logic resets a missing file
-  to 0; HostApi v7 `SetIntroOverride`).
+  kNativeOptionsCaption`). (The MOVIES Intro row, `movie_intro`, was removed in 0.4.6, issue 80.)
 - The controller UI (HUD): the input-device service, the glyph atlas (three families, FLvibed's own drawing), the
   FREELANCER / ACE / ASSISTED presets with tap / hold / double, the pad HUD layer (badges, legend, status line, world
   prompts); every FREELANCER binding verified by the key trace.

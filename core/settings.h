@@ -166,22 +166,53 @@ inline std::string Reference(const Def* defs, size_t n)
     return s;
 }
 
-// Reads the keys present in [section] of the ini (absent keys keep their value).
-inline void Load(const char* section, const std::string& ini, const Def* defs, size_t n)
+// Changed defaults carried over. Save writes every key of a section, so an ini holds a default the player never
+// touched exactly as if they had chosen it, and a later release's new default would never reach them. A section whose
+// default changes keeps a revision key (kRevKey, written by Save with the section's current revision); one Carry row
+// per changed default says: a file below revision `beforeRev` that holds `oldValue` for `key` held the old default
+// (the alternative did not exist yet, so it was no choice against it) - read it as `newValue`. A file at or above the
+// revision is never touched; a file without the key is revision 0. (Not settings_reset.h: that moves every setting
+// aside.) First row: the subtitles' font, 0.4.6 (issue 82).
+struct Carry
 {
+    int beforeRev;        // files below this revision wrote oldValue as the default
+    const char* key;      // the setting
+    const char* oldValue; // the old default as the file holds it (Value's form)
+    const char* newValue; // read as this
+};
+constexpr const char* kRevKey = "settings_rev";
+
+// The value to apply for `key` read as `value` from a file at revision `fileRev` (pure: the unit test's part).
+inline std::string Carried(const Carry* rows, size_t n, int fileRev, const char* key, const std::string& value)
+{
+    for (size_t i = 0; i < n; ++i)
+        if (fileRev < rows[i].beforeRev && strcmp(key, rows[i].key) == 0 && value == rows[i].oldValue)
+            return rows[i].newValue;
+    return value;
+}
+
+// Reads the keys present in [section] of the ini (absent keys keep their value), through the carried defaults when
+// the section has them.
+inline void Load(const char* section, const std::string& ini, const Def* defs, size_t n, const Carry* carry = nullptr,
+                 size_t carryCount = 0)
+{
+    const int rev = carryCount ? static_cast<int>(GetPrivateProfileIntA(section, kRevKey, 0, ini.c_str())) : 0;
     for (size_t i = 0; i < n; ++i)
     {
         char buf[256] = {};
         if (GetPrivateProfileStringA(section, defs[i].name, "", buf, sizeof(buf), ini.c_str()) > 0)
-            Apply(defs[i], buf);
+            Apply(defs[i], carryCount ? Carried(carry, carryCount, rev, defs[i].name, buf) : std::string(buf));
     }
 }
 
-// Writes every setting into [section] of the ini (values only; other keys of the section stay).
-inline void Save(const char* section, const std::string& ini, const Def* defs, size_t n)
+// Writes every setting into [section] of the ini (values only; other keys of the section stay), and the section's
+// revision (kRevKey) when it has one.
+inline void Save(const char* section, const std::string& ini, const Def* defs, size_t n, int rev = 0)
 {
     for (size_t i = 0; i < n; ++i)
         WritePrivateProfileStringA(section, defs[i].name, Value(defs[i]).c_str(), ini.c_str());
+    if (rev > 0)
+        WritePrivateProfileStringA(section, kRevKey, std::to_string(rev).c_str(), ini.c_str());
 }
 
 // Writes [section] with a comment line per setting into an open file (the self-documenting ini written on first run

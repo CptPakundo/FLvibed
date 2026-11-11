@@ -13,11 +13,14 @@
 //   colour   +0x348 of a title text (VtTitleText only) = CHROME; restored while still CHROME.
 //   tooltip  the top-level `ToolTip`'s bit 1 cleared while uistrip's character card replaces it (uistrip::CardTooltip),
 //            re-cleared each frame; given back (bit 1 while bit 0) the frame the card goes.
+//   help     the `ToolTip`'s and the `Rollover`'s bit 1 cleared for one UI pass while skinover draws their text in HUD 2's look; set again after the pass
+//            (GiveHelpBack, the overlay's last slot).
 // Under the game's letterbox (exe::LetterboxAmount > 0: room scenes, launch, dock) the non-modal windows are restored
 // and drawn native; the rescan after the letterbox writes them again.
 #include "uiskin.h"
 
 #include "game/fl.h"
+#include "game/hostcalls.h"
 #include "flexe.h"
 #include "game/room.h"
 #include "ui/glyphs.h"
@@ -31,6 +34,7 @@
 #include "skinover.h"
 #include "ui/hud_rows.h"
 #include "ui/hud2_kit.h"
+#include "ui/options_page.h"
 #include "log.h"
 #include "navnew.h"
 #include "navskin.h"
@@ -64,6 +68,8 @@ float g_lastMs = 0;
 u32 g_scenes = 0;
 // The native ToolTip hidden (bit 1) while uistrip's character card replaces it - only then.
 u32 g_tip = 0, g_tipHides = 0;
+// The hover help skinover draws this frame (0 ToolTip, 1 Rollover): hidden for the UI pass alone, given back after it (GiveHelpBack).
+u32 g_helpHid[2] = {}, g_helpHides = 0;
 
 // The own-art write is allowed only where the draw slot is the signed base draw or a draw that calls / jumps to it
 // within its first bytes (NN_Inventory / NN_Dealer 0x479700, the icon button's draw): read once per window.
@@ -154,10 +160,18 @@ void GiveBoxBack()
 void HideOwn(Win& w, u32 ctl)
 {
     u32 h = 0;
-    for (const Own& o : w.own)
+    if (!ctl || !R32(ctl + kOwnMesh, h))
+        return;
+    for (Own& o : w.own)
         if (o.ctl == ctl)
+        {
+            // the game rebuilt the window at the same address between two looks of the registry (the mission message box makes the next one in the same
+            // call that ends the last: a second cargo demand), so the control holds a new mesh: hidden again, the new one the one to give back
+            if (h != kNoMesh && W32(ctl + kOwnMesh, kNoMesh))
+                o.before = h;
             return;
-    if (!ctl || !R32(ctl + kOwnMesh, h) || h == kNoMesh)
+        }
+    if (h == kNoMesh)
         return;
     if (!DrawReachesBase(ctl))
     {
@@ -258,7 +272,7 @@ void WriteWindow(Win& w)
     const FamilyDef& f = kFamilies[w.fam];
     const u32 roots[2] = {w.root, w.partner};
     std::vector<u32> words;
-    if (skindialog::IsDialog(w.fam))
+    if (skindialog::IsDialog(w.fam, w.root))
     {
         bool menu = false;
         for (const Win& m : g_wins)
@@ -500,8 +514,17 @@ void RestoreTip()
 void ApplyTip();
 } // namespace
 
+// Debug `uiskin hover <x> <y> | off` (TEST ONLY): a background game computes no hover of its own (its cursor ray follows the mouse's motion messages, which an
+// unfocused window does not get), so its hover help never starts there. This asks the controls at that pixel through the game's hit test every frame, after the
+// game's update and before its UI pass, and leaves what it shows: the help's own rest timer, text and placement run as on a real hover.
+bool g_hoverAid = false;
+float g_hoverX = 0, g_hoverY = 0;
+bool g_wordCursor = false; // a cursor on screen for the words' help (ApplyTip; the state's `cursor=`)
+
 void TipUnder()
 {
+    if (g_hoverAid)
+        ui::HitTest(g_hoverX, g_hoverY, false);
     const u32 want = uistrip::HoverTipNow();
     u8 st = 0;
     if (!want || !NameIs(want, "ToolTip") || !R8(want + kState, st))
@@ -532,20 +555,58 @@ void ApplyTip()
             want = tip;
         }
     }
-    // the Shadow tier (UI_HUD2_SKIN.md 6.6): the game's box hidden only while its text reads; drawn again by skinover. Not under a card, which carries the words
-    static u32 shadow = 0, shadowGen = 0xFFFFFFFFu;
-    if (shadowGen != g_gen || (shadow && !NameIs(shadow, "ToolTip")))
+    // the Shadow tier (UI_HUD2_SKIN.md 6.6): the game's hover help read and drawn again by skinover - the ToolTip box and the Rollover line, each only while
+    // its text reads, on a screen of the skin's (docked, a window, a menu: the help in plain flight stays the game's). The game's own is hidden for this UI
+    // pass alone and given back after it (GiveHelpBack), so its rest timer, its placing and a click's dismissal run as they would without the skin. Not under a
+    // card, which carries the words, nor where the pad hides the help (above)
+    static const char* const kHelp[2] = {"ToolTip", "Rollover"};
+    static u32 shadow[2] = {}, shadowGen = 0xFFFFFFFFu;
+    if (shadowGen != g_gen || (shadow[0] && !NameIs(shadow[0], kHelp[0])) || (shadow[1] && !NameIs(shadow[1], kHelp[1])))
     {
-        shadow = static_cast<u32>(ui::FindControl("ToolTip")), shadowGen = g_gen;
-        u32 vt = 0;
-        if (shadow && (!R32(shadow, vt) || !exe::VtToolTip.is(vt)))
-            shadow = 0;
+        shadowGen = g_gen;
+        for (int i = 0; i < 2; ++i)
+        {
+            shadow[i] = static_cast<u32>(ui::FindControl(kHelp[i]));
+            u32 vt = 0, parent = 0;
+            if (shadow[i] && (!R32(shadow[i], vt) || !(i == 0 ? exe::VtToolTip : exe::VtRollover).is(vt) || !R32(shadow[i] + kParent, parent) || parent))
+                shadow[i] = 0;
+        }
     }
-    const bool read = !want && shadow && !Listed("tooltip") && skinover::TipRead(shadow);
-    if (read)
-        want = shadow;
-    else if (want || !shadow)
-        skinover::TipRead(0);
+    bool screen = false;
+    for (const Win& w : g_wins)
+        screen |= w.fam != kFamNNBox && Shown(w.root);
+    // FLvibed's options page over the screen: the help stays the game's, under the page, as before 0.4.6 (read and drawn last of the overlay, a hovered
+    // room character's name card stood over the page)
+    if (options_page::IsOpen())
+        screen = false;
+    // The cursor on a word HUD 2 draws over the game's UI (the room words, the actions, the NeuroNet box's and the strip's tabs; GitHub issue 71): the help is the
+    // help of the game control the word stands for, and the game's own help there is not shown - it belongs to whichever hidden button stands under the word
+    // (the room bar's buttons and the box's keep their places under HUD 2's longer row). Only with a cursor on screen: the pad's D-pad focus keeps what it had.
+    // The test aid's pixel is the cursor's place while it runs (a background game's cursor does not move).
+    u32 wordCtl = 0;
+    std::wstring word;
+    float wordBox[4] = {};
+    const bool cursor = exe::CursorShown.ok() && Mem<u8>(exe::CursorShown) != 0 && !hostcalls::CursorHiddenBesides(hostcalls::kCursorHideSkin);
+    g_wordCursor = cursor;
+    const float cx = g_hoverAid ? g_hoverX : static_cast<float>(fl::MouseX()), cy = g_hoverAid ? g_hoverY : static_cast<float>(fl::MouseY());
+    const bool onWords = !want && screen && cursor && nnstrip::WordAt(cx, cy, wordCtl, word, wordBox);
+    skinover::WordHelp(onWords ? wordCtl : 0, word, wordBox, g_dt, !Listed("tooltip"), !Listed("rollover"));
+    for (int i = 0; i < 2; ++i)
+    {
+        g_helpHid[i] = 0;
+        u8 hs = 0;
+        if (onWords) // (hidden for this pass while the game shows it; not drawn by HUD 2 either)
+        {
+            skinover::HelpClear(i);
+            if (shadow[i] && R8(shadow[i] + kState, hs) && (hs & 3) == 3 && W8(shadow[i] + kState, static_cast<u8>(hs & ~2)))
+                g_helpHid[i] = shadow[i], ++g_helpHides;
+        }
+        else if (!want && screen && shadow[i] && !Listed(i == 0 ? "tooltip" : "rollover") && skinover::HelpRead(i, shadow[i]) && R8(shadow[i] + kState, hs) &&
+                 W8(shadow[i] + kState, static_cast<u8>(hs & ~2)))
+            g_helpHid[i] = shadow[i], ++g_helpHides;
+        else
+            skinover::HelpClear(i);
+    }
     if (want && !NameIs(want, "ToolTip"))
         want = 0;
     if (g_tip && g_tip != want)
@@ -560,8 +621,22 @@ void ApplyTip()
         W8(want + kState, static_cast<u8>(st & ~2));
 }
 
+void GiveHelpBackNow()
+{
+    static const char* const kHelp[2] = {"ToolTip", "Rollover"};
+    for (int i = 0; i < 2; ++i)
+    {
+        u8 st = 0;
+        if (g_helpHid[i] && NameIs(g_helpHid[i], kHelp[i]) && R8(g_helpHid[i] + kState, st) && (st & 1) && !(st & 2))
+            W8(g_helpHid[i] + kState, static_cast<u8>(st | 2));
+        g_helpHid[i] = 0;
+    }
+}
+
 void RestoreAll()
 {
+    GiveHelpBackNow();
+    skinover::HelpClear(0), skinover::HelpClear(1);
     skindialog::Clear();
     skinmenu::GiveBack();
     RestoreWord();
@@ -917,7 +992,7 @@ bool DrawWindow(const Win& w, u32 hov) // true: it drew the focus
     static const int kFamNews = winplates::FamilyIndex("news");
     if (basepage::Hides() && (w.fam == kFamInventory || w.fam == kFamDealer || w.fam == kFamShipDealer || w.fam == kFamJobBoard || w.fam == kFamNews))
         return false;
-    if (skindialog::IsDialog(w.fam)) // (their own pass; a dialog that stays the game's keeps today's mark on the confirm alone)
+    if (skindialog::IsDialog(w.fam, w.root)) // (their own pass; a dialog that stays the game's keeps today's mark on the confirm alone)
     {
         if (skindialog::Skinned(w.root) || w.fam != kFamConfirm)
             return skindialog::Skinned(w.root);
@@ -1101,7 +1176,7 @@ void Draw(void* device)
             const int drew = DrawGuarded(w, hov);
             if (drew < 0)
                 Fall(w, "a fault in its pass");
-            else if (!Native(w) && !nnpage::On() && PlateMissing(w))
+            else if (!Native(w) && !nnpage::On() && !skindialog::Skinned(w.root) && PlateMissing(w)) // (a dialog's plate is skindialog's, over the UI pass)
                 Fall(w, "no plate could stand");
             focused |= drew > 0, window = true;
         }
@@ -1111,7 +1186,9 @@ void Draw(void* device)
         focused = true;
     // (not while a room character is hovered - the pad's focus is on the character strip then, and the game's resting
     // cursor over the room bar is no focus: verify 25 Oct 2026, a fill beside the Equipment icon under the bar's card)
-    if (g_dockedFrame && !focused && !uistrip::CardTooltip()) // the room / NeuroNet buttons take the one focus style too (the NeuroNet windows
+    // (only while the docked plates stand: in the fade between two rooms the game hides the bar's buttons, the plates and words drop and the click box with
+    // them, and the game's hit test then found the NeuroNet box's first button under a resting cursor - the focus mark alone stood in the dark, GitHub issue 57)
+    if (g_dockedFrame && g_docked.live && !focused && !uistrip::CardTooltip()) // the room / NeuroNet buttons take the one focus style too (the NeuroNet windows
         for (const Win& w : g_wins) // hang under the NN box: theirs drew above)
             if ((w.fam == kFamNavBar || w.fam == kFamNNBox) && Shown(w.root))
             {
@@ -1237,7 +1314,7 @@ bool ModalOpen()
         return false;
     Refresh();
     for (const Win& w : g_wins)
-        if ((kFamilies[w.fam].modal || skindialog::IsDialog(w.fam)) && Valid(w.root, w.vt) && Shown(w.root))
+        if ((kFamilies[w.fam].modal || (skindialog::Pauses(w.fam) && skindialog::IsDialog(w.fam, w.root))) && Valid(w.root, w.vt) && Shown(w.root))
             return true;
     return false;
 }
@@ -1264,13 +1341,14 @@ void DrawModal(void* device)
 {
     if (!g_on || !device)
         return;
-    bool open = false;
+    bool open = false, any = false;
     for (const Win& w : g_wins)
-        open |= skindialog::Skinned(w.root) && Shown(w.root);
+        if (skindialog::Skinned(w.root) && Shown(w.root))
+            any = true, open |= skindialog::Pauses(w.fam); // (the cargo demand dims nothing: the world runs on under it)
     const ULONGLONG now = GetTickCount64();
     const bool note = g_fellAt && now - g_fellAt < 4000;
     g_dialogScrim = skinrules::EaseStep(g_dialogScrim, open, g_dt, hudrows::g.skinMotion);
-    if (g_dialogScrim <= 0 && !note)
+    if (g_dialogScrim <= 0 && !note && !any)
         return;
     int sw = 0, sh = 0;
     render::SetDevice(device);
@@ -1279,7 +1357,7 @@ void DrawModal(void* device)
     SetAlpha(1), SetOffset(0, 0);
     skinkit::SetScreen(static_cast<float>(sw), static_cast<float>(sh));
     skinkit::Scrim(skinrules::kScrimModal, g_dialogScrim);
-    const u32 hov = open ? FocusedControl() : 0;
+    const u32 hov = any ? FocusedControl() : 0;
     for (Win& w : g_wins)
         if (skindialog::Skinned(w.root) && Shown(w.root) && !skindialog::Draw(w, hov))
             Fall(w, "its boxes cannot be read or do not fit");
@@ -1306,6 +1384,8 @@ void DrawOver(void* device)
 }
 
 void GiveBack() { RestoreAll(); }
+
+void GiveHelpBack() { GiveHelpBackNow(); }
 
 void Shutdown()
 {
@@ -1368,6 +1448,24 @@ std::string Command(std::istream& in)
         skinload::SetPlaceProbe(on != 0);
         return skinload::Status();
     }
+    if (what == "hover") // hover <x> <y> | hover off: the game's hover at that pixel each frame (TEST ONLY: TipUnder)
+    {
+        std::string t;
+        in >> t;
+        g_hoverAid = t != "off" && !t.empty();
+        if (g_hoverAid)
+            g_hoverX = static_cast<float>(atof(t.c_str())), in >> g_hoverY;
+        return g_hoverAid ? "uiskin hover " + std::to_string(static_cast<int>(g_hoverX)) + " " + std::to_string(static_cast<int>(g_hoverY)) : "uiskin hover off";
+    }
+    if (what == "cargodemand") // cargodemand <ship id> <good id> (TEST ONLY): the game's own cargo demand box, as a pirate's or a scan's opens it (exe::CargoDemandOpen)
+    {
+        u32 ship = 0, good = 0;
+        in >> ship >> good;
+        if (!exe::CargoDemandOpen.ok() || !ship || !good)
+            return "usage: uiskin cargodemand <ship id> <good id> (the ship near the player: the box closes at once without it)";
+        hk::Call<void(__cdecl*)(u32, u32)>(exe::CargoDemandOpen, ship, good);
+        return "uiskin cargodemand: opened";
+    }
     if (what == "rescan")
     {
         g_genSeen = 0xFFFFFFFFu;
@@ -1385,7 +1483,7 @@ std::string Command(std::istream& in)
         o << "uiskin on=" << g_on << " style=" << g_c.style << " pad=" << g_c.pad << " gen=" << g_gen
           << (g_genHost ? " (host v23)" : " (poll 500 ms)") << " rescans=" << g_rescans << " reclears=" << g_reclears
           << " ownRefused=" << g_ownRefused << " reposed=" << g_reposed << "/" << g_reposeFaults << " reposeRefused=" << g_reposeRefused << " modal=" << g_modalOpen << " docked=" << g_dockedFrame
-          << " scene=" << g_scene << " scenes=" << g_scenes << " tip=" << (g_tip ? 1 : 0) << " tipHides=" << g_tipHides
+          << " scene=" << g_scene << " scenes=" << g_scenes << " tip=" << (g_tip ? 1 : 0) << " tipHides=" << g_tipHides << " helpHides=" << g_helpHides << " cursor=" << g_wordCursor
           << " ms=" << g_lastMs << " windows=" << g_wins.size() << " page=" << g_page.art.size() << "/" << g_page.own.size() << " fell=" << g_fell.size() << " "
           << skinmenu::Status() << " " << skinload::Status() << " " << skinover::Status();
         const u32 hov = FocusedControl();

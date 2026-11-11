@@ -34,6 +34,9 @@ void Update(float dt);
 void Draw();
 // True while the bar draws (the pad HUD's legend steps aside: padhud::SetModal is the owners' business).
 bool Visible();
+// The pills the last overlay pass drew (none when the bar was hidden or faded), each as x0 y0 x1 y1 in pixels with its HOLD word above it, at most `max`:
+// for what draws before the bar in the pass and keeps out of it (the map's place names: issue 72). How many.
+int Plates(float* xyxy, int max);
 void Shutdown(); // (fonts belong to uikit; nothing owned here yet)
 std::string Status();
 // The pills frame by frame (debug `prompttrace [reset]`): every change of what Draw decided, with the frame and the time.

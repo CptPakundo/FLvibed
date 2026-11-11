@@ -72,7 +72,7 @@ Findings that decide the architecture:
 | **HUD** | HUD 2, Extended HUD 2 skin, shield / reticle cues | HUD 2 in its K&M form | core |
 | **Controller** | device, presets, aim, pad screens, prompt bar, OSK, wheel, picker, groups, haptics, classic-HUD pad layer | the full pad game on the classic HUD | core |
 | **Subtitles** | dialogue, chat, speakers, display, the review products | subtitles on the classic HUD | core |
-| **Movies** | fit to screen, intro override, picture areas | fitted movies | core |
+| **Movies** | fit to screen, picture areas (the intro override: removed in 0.4.6, issue 80) | fitted movies | core |
 | **Autopilot** | autopilot, situation, goal queue, goal panel, bar button, autopilot key | the autopilot on K&M | core |
 | **NPC behaviour** | stall recorder and watch; research first; later behaviour, dynamic difficulty if scoped | the recorder | core |
 | **Display** | borderless windowed, window fit, keep running out of focus | window mode without the pad module | core |
@@ -306,7 +306,7 @@ Names are `controller\src\impl\controller.cpp`. `pad` = `g_dispatch.Held(...)` a
 | `USER_LAUNCH_TORPEDOS`, `USER_LAUNCH_CRUISE_DISRUPTORS` | pad (`HoldTorpedoSlot`); `ap` taps torpedoes apart | pad |
 | `USER_AFTERBURN` | `ap` **or** pad Afterburner | pad Afterburner or ACE's burn |
 | `USER_MANEUVER_BRAKE_REVERSE` | `ap` alone: pad Reverse is not heard | pad Reverse or ACE's reverse |
-| `USER_REARVIEW_CAMERA_MODE` | pad Rear or the wheel's, as the player | the same |
+| `USER_REARVIEW_CAMERA_MODE` | pad Rear (the wheel's left with GitHub issue 65), as the player | the same |
 | `USER_MANEUVER_SLIDE_EVADE_*` | `ap` alone (`o.slide`; a dodge wins) | the stick past 0.6 |
 | `USER_LOOK_ROTATE_CAMERA_*` | `TurretLook`, as the player | `TurretLook` |
 | steering (`SetSteer` / `ReleaseSteer`) | `ap`, by its branch | the preset's stick, none in turret view |

@@ -69,8 +69,9 @@ folders EXE\FLSubtitles\ and EXE\FLvibed\. Saves stay valid.
 
 NEEDS
 Windows 10 or 11 (tested; Windows 7 SP1, 8 and 8.1 should work - checked; a tester's Windows 7 needed VxKex for 0.3.0) and your own copy
-of the game. Controllers: XInput (Xbox) pads; other pads through Steam Input,
-DS4Windows or similar. No other mod, loader or runtime is needed.
+of the game. Controllers: Xbox pads through XInput; PlayStation and Switch pads are read natively (an option hands
+them to Steam Input or a mapper instead); a Steam Deck stays on Steam Input. Keyboard and mouse work too. No other
+mod, loader or runtime is needed.
 
 THIS IS A PREVIEW
 Some features are incomplete and design choices may still change. What is new: CHANGELOG.md. Known limits, the

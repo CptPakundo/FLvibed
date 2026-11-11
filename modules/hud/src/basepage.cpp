@@ -366,7 +366,9 @@ static Holes g_holes, g_nextHoles; // this frame's and the last's: the ground go
 static float g_wheelSide = -1; // the list the mouse stands on, -1 the card
 // What the dealer asks that the player does not have, at a glance on its row (Shockwave, 7 Nov 2026): the base's market line (gamedata Need) against the player's level
 // and standing with the base's owners - the game's refusal says it only for the selected item. "" when nothing is missing or it cannot be known.
-static std::wstring NeedWord(u32 arch)
+// yours, when asked: the player's own value in the need's units ("YOU: LEVEL 4", "YOU: REP 5%"), for the card (issue 56).
+static std::wstring RepWord(float rep) { return std::to_wstring(static_cast<int>(rep * 100 + (rep >= 0 ? 0.5f : -0.5f))) + L"%"; }
+static std::wstring NeedWord(u32 arch, std::wstring* yours = nullptr)
 {
     const gamedata::BaseFacts& b = gamedata::Base(fl::PlayerBase());
     for (const gamedata::Need& n : b.needs)
@@ -374,10 +376,18 @@ static std::wstring NeedWord(u32 arch)
         {
             const int level = baseinfo::PlayerLevel();
             if (n.level > 0 && level >= 0 && level < n.level)
+            {
+                if (yours)
+                    *yours = L"YOU: LEVEL " + std::to_wstring(level);
                 return L"NEEDS LEVEL " + std::to_wstring(n.level);
+            }
             float standing = 0;
             if (n.rep > -1.0f && !b.owner.empty() && baseinfo::Standing(b.owner.c_str(), standing) && standing < n.rep)
-                return L"NEEDS REP " + std::to_wstring(static_cast<int>(n.rep * 100 + (n.rep >= 0 ? 0.5f : -0.5f))) + L"%";
+            {
+                if (yours)
+                    *yours = L"YOU: REP " + RepWord(standing);
+                return L"NEEDS REP " + RepWord(n.rep);
+            }
             return L"";
         }
     return L"";
@@ -430,6 +440,7 @@ static int MeshNth(int side)
     const int theirs = a.x > b.x ? 1 : 2;
     return side == Theirs ? theirs : 3 - theirs;
 }
+static ListIcons g_listIcons[2]; // each list's rows as the last Draw drew them, their models sent in IconsUnder
 static void DrawList(const Frame& f, int side, float x0, float x1, float y, float foot)
 {
     const float H = f.H;
@@ -440,7 +451,18 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
     l.rows = 5;
     l.Fit();
     const int hover = skinchip::Hovered();
-    Icon icons[5];
+    Icon icons[kListMeshCount];
+    IconRow shown[5];
+    int meshOf[5] = {}, n = 0;
+    for (; n < l.rows && l.first + n < l.count; ++n)
+        shown[n] = {rows[l.first + n].row, rows[l.first + n].arch, x0 + cell / 2, y + n * pitch + pitch / 2};
+    RowIcons(WindowOf(side), shown, n, icons, meshOf, false);
+    {
+        std::vector<IconRow> every(rows.size()); // (Under places and sends from the list as it stands then: issue 58's step lag)
+        for (size_t i = 0; i < rows.size(); ++i)
+            every[i] = {rows[i].row, rows[i].arch, 0, 0};
+        g_listIcons[side].SetList(WindowOf(side), std::move(every), &l, x0 + cell / 2, y, pitch);
+    }
     const int nativeFirst = static_cast<int>(R32(WindowOf(side) + kFirst));
     // what the mounted launchers fire: their ammo is tagged on both sides (Shockwave, 7 Nov 2026)
     u32 fired[16];
@@ -455,6 +477,42 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
                 return true;
         return false;
     };
+    const float pad = 0.012f * H, tx = x0 + cell + pad;
+    // a row's second line: its word on the left, the slot's (or the compare tag) on the right
+    auto WordsOf = [&](const Row& r, std::wstring& under, u32& underRgb, std::wstring& slotWord, bool& tagged) {
+        tagged = side == Yours && r.hp < 0 && r.mounted && r.arch == gamedata::TaggedCompare();
+        slotWord = tagged ? std::wstring(L"TAGGED TO COMPARE") : r.slot; // (Shockwave, 7 Nov: in the class's place, clear of the row's word)
+        if (r.hp >= 0)
+            return;
+        if (side == Yours)
+        {
+            under = r.mounted ? L"MOUNTED" : r.count > 1 ? L"x" + std::to_wstring(r.count) : L"IN HOLD";
+            if (r.mounted)
+                underRgb = kFriend; // (green, as the inventory's)
+        }
+        else
+            under = r.slot;
+        if (r.noSlot)
+            under = L"NO HARDPOINT TAKES IT", underRgb = kAmber;
+        if (r.deal != baseinfo::DealUnknown)
+            under = (side == Yours ? L"x" + std::to_wstring(r.count) + L"   " : L"") + DealWord(r.deal, side == Yours), underRgb = DealRgb(r.deal);
+    };
+    // The durability meter stands beside the row's word, clear of the slot's. One width for the whole list (issue 55: each meter took its own
+    // row's gap, so the meters of a list differed): the inventory's 0.13 H, or less when a row's gap is smaller - the text is wider against H on
+    // some screens (at 3840x2160 no gun row had 0.13 H). A row with less than 0.03 H shows none and does not narrow the others, as before.
+    auto Metered = [&](const Row& r) { return r.mounted && r.health > 0 && r.health < 0.995f; };
+    auto MeterRoom = [&](const Row& r) {
+        std::wstring under, slotWord;
+        u32 rgb = kChrome;
+        bool tagged = false;
+        WordsOf(r, under, rgb, slotWord, tagged);
+        return x1 - pad - (side == Yours ? TextWidth(slotWord, 0.022f * H) + pad : 0) - (tx + TextWidth(under, 0.024f * H) + pad);
+    };
+    float meterW = 0.13f * H;
+    for (const Row& r : rows)
+        if (Metered(r))
+            if (const float room = MeterRoom(r); room > 0.03f * H)
+                meterW = std::min(meterW, room);
     if (rows.empty())
         Text(x0, y + pitch / 2, Final() ? (side == Yours ? L"NOTHING OF THIS KIND" : L"ALL OF IT GOES ON THE NEW SHIP") : side == Yours ? L"NOTHING TO SELL HERE" : L"NOTHING ON SALE HERE", 0.028f * H, Argb(kDim, 1));
     for (int i = 0; i < l.rows && l.first + i < l.count; ++i)
@@ -464,12 +522,9 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
         const float top = y + i * pitch, y1 = top + pitch * 0.36f, y2 = top + pitch * 0.76f;
         const bool on = at == l.sel && side == g_side, chosen = at == l.sel;
         const int slot = skinchip::Hot({x0, top, x1, top + pitch}, RowClick, side * 1000 + at);
-        const int mesh = r.row - nativeFirst;
-        if (r.row >= 0 && mesh >= 0 && mesh < 5)
-        {
-            icons[mesh] = {x0 + cell / 2, top + pitch / 2, true};
+        const int mesh = r.row - nativeFirst; // (the game's own row of five: its price below)
+        if (meshOf[i] >= 0)
             g_nextHoles.Add(x0 + 1, top + (pitch - cell) / 2, x0 + cell - 1, top + (pitch + cell) / 2);
-        }
         if (on)
             skinkit::Focus(x0 + cell, top + 0.002f * H, x1, top + pitch - 0.002f * H);
         else if (slot >= 0 && slot == hover)
@@ -478,11 +533,10 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
             Rect(x0 + cell, top, x1 - x0 - cell, pitch, Argb(kChrome, 0.06f));
         if (slot >= 0 && slot == hover)
             g_wheelSide = static_cast<float>(side);
-        const float pad = 0.012f * H;
-        std::wstring right, under;
+        std::wstring right, under, slotWord;
         u32 underRgb = kChrome;
-        const bool tagged = side == Yours && r.hp < 0 && r.mounted && r.arch == gamedata::TaggedCompare();
-        const std::wstring slotWord = tagged ? std::wstring(L"TAGGED TO COMPARE") : r.slot; // (Shockwave, 7 Nov: in the class's place, clear of the row's word)
+        bool tagged = false;
+        WordsOf(r, under, underRgb, slotWord, tagged);
         if (r.hp >= 0)
             right = r.slot;
         else if (mesh >= 0 && mesh < 5) // (the game's own number: a launcher's price, a damaged item's, a sale's)
@@ -491,22 +545,7 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
             sprintf_s(name, "ItemPrice%02d", mesh + 1);
             winplates::TextOf(OnSide(name, side), right);
         }
-        if (r.hp < 0)
-        {
-            if (side == Yours)
-            {
-                under = r.mounted ? L"MOUNTED" : r.count > 1 ? L"x" + std::to_wstring(r.count) : L"IN HOLD";
-                if (r.mounted)
-                    underRgb = kFriend; // (green, as the inventory's)
-            }
-            else
-                under = r.slot;
-            if (r.noSlot)
-                under = L"NO HARDPOINT TAKES IT", underRgb = kAmber;
-            if (r.deal != baseinfo::DealUnknown)
-                under = (side == Yours ? L"x" + std::to_wstring(r.count) + L"   " : L"") + DealWord(r.deal, side == Yours), underRgb = DealRgb(r.deal);
-        }
-        const float rw = TextWidth(right, 0.028f * H), tx = x0 + cell + pad;
+        const float rw = TextWidth(right, 0.028f * H);
         TextMarquee(tx, y1, r.name, 0.032f * H, x1 - tx - rw - 2 * pad, Argb(r.hp >= 0 ? kDim : kInk, 1));
         Text(x1 - pad, y1, right, r.hp >= 0 ? 0.024f * H : 0.028f * H, Argb(r.hp >= 0 ? kChrome : on ? kInk : kActive, 1), Right);
         if (!under.empty())
@@ -521,12 +560,8 @@ static void DrawList(const Frame& f, int side, float x0, float x1, float y, floa
             else if (!r.mounted && forMounted(r.arch) && (side == Theirs || r.slot.empty()))
                 Text(x1 - pad, y2, L"FOR MOUNTED", 0.022f * H, Argb(on ? kInk : kFriend, 1), Right); // (ammo for a launcher you carry)
         }
-        if (r.mounted && r.health > 0 && r.health < 0.995f) // (beside the row's word, clear of the slot's)
-        {
-            const float px = tx + TextWidth(under, 0.024f * H) + pad, pe = x1 - pad - (side == Yours ? TextWidth(slotWord, 0.022f * H) + pad : 0);
-            if (pe - px > 0.03f * H)
-                skinkit::Pips(px, y2 - 0.003f * H, std::min(0.13f * H, pe - px), 0.006f * H, r.health, 10, r.health < 0.35f ? kHostile : kAmber);
-        }
+        if (Metered(r) && MeterRoom(r) >= meterW)
+            skinkit::Pips(tx + TextWidth(under, 0.024f * H) + pad, y2 - 0.003f * H, meterW, 0.006f * H, r.health, 10, r.health < 0.35f ? kHostile : kAmber);
     }
     if (l.count > l.rows)
         skinkit::ScrollBar(x1 + 0.006f * H, y, y + l.rows * pitch, static_cast<float>(l.first) / l.count, static_cast<float>(l.rows) / l.count);
@@ -710,6 +745,11 @@ static void DrawMiddle(const Frame& f, float x0, float x1, float y)
         const std::wstring why = TextIn("ErrorHelp");
         if (!why.empty() && Selected())
             y = skinkit::Body(x0, y, x1 - x0, why, 2, kAmber) + 0.008f * H;
+        // the need against the player's own value, under the game's refusal: that names the need at most (or another reason, a full ship), never the player's own value (issue 56)
+        std::wstring yours;
+        const std::wstring need = !selling && !Final() && Selected() ? NeedWord(r->arch, &yours) : std::wstring();
+        if (!need.empty())
+            y = skinkit::Body(x0, y, x1 - x0, need + L" \xB7 " + yours, 2, kAmber) + 0.008f * H;
         if (!g_pad && Mountable(r))
         {
             ChipAt(x0, y, 0.044f * H, r->mounted ? L"UNMOUNT" : L"MOUNT", ChipClick, kMount);
@@ -1385,6 +1425,18 @@ static void DrawShips(const Frame& f)
         y += rowH;
         skinkit::Row(ly0, ly1, y, rowH, L"Credits after", Money(credits - net));
         y += rowH;
+        // the selected ship's need against the player's own value, in the equipment card's form (issue 56; the row has no room for it beside the class
+        // word). A refusal by standing has no number of the game's: the standing with the base's owners alone, in the equipment rows' form.
+        std::wstring need;
+        const int level = baseinfo::PlayerLevel();
+        const gamedata::BaseFacts& base = gamedata::Base(fl::PlayerBase());
+        float standing = 0;
+        if (o.refusal == 1 && level >= 0)
+            need = L"NEEDS LEVEL " + std::to_wstring(o.level) + L" \xB7 YOU: LEVEL " + std::to_wstring(level);
+        else if (o.refusal == 2 && !base.owner.empty() && baseinfo::Standing(base.owner.c_str(), standing))
+            need = L"REFUSED \xB7 YOU: REP " + RepWord(standing);
+        if (!need.empty())
+            y = skinkit::Body(ly0, y + 0.008f * H, ly1 - ly0, need, 2, kAmber);
         if (!g_pad)
             ChipAt(ly0, y + 0.012f * H, 0.048f * H, L"BUY THIS SHIP", ChipClick, kShipBuy, CanBuyShip());
     }
@@ -1886,10 +1938,14 @@ void Update(float dt, bool pad)
                 Select();
         }
     }
-    // the game's lists stand where the page's do: their five icons are the page's five
-    for (int side = 0; side < 2; ++side)
-        if (!room::NNWindowBusy() && g_list[side].first < static_cast<int>(g_rows[side].size()) && g_rows[side][g_list[side].first].row >= 0)
-            SyncList(WindowOf(side), g_rows[side][g_list[side].first].row);
+    // the game's lists stand where the page's do: their five icons are the page's (RowIcons lends one to a shown row outside them)
+    for (int side = 0; side < 2 && !room::NNWindowBusy(); ++side)
+    {
+        int shown[kListMeshCount], n = 0;
+        for (; n < kListMeshCount && g_list[side].first + n < static_cast<int>(g_rows[side].size()); ++n)
+            shown[n] = g_rows[side][g_list[side].first + n].row;
+        SyncList(WindowOf(side), shown, n);
+    }
     const int wheel = hostcalls::g.RealMouseWheel ? hostcalls::g.RealMouseWheel() : 0;
     if (wheel && g_wheelSide >= 0)
         g_list[static_cast<int>(g_wheelSide)].Scroll(-wheel);
@@ -1897,8 +1953,16 @@ void Update(float dt, bool pad)
         g_cardFirst -= wheel;
 }
 
+void IconsUnder()
+{
+    for (int side = 0; side < 2; ++side)
+        if (g_kind != Kind::None && KindNow() == g_kind)
+            g_listIcons[side].Send(WindowOf(side));
+}
+
 void Draw()
 {
+    g_listIcons[0] = g_listIcons[1] = ListIcons(); // (a list this Draw does not draw sends nothing)
     if (g_kind == Kind::None)
     {
         g_holes = Holes();

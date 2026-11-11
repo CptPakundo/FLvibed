@@ -660,7 +660,7 @@ static bool ViewHeld(inputrules::Channel c)
     case Channel::Missile: return g_dispatch.Held(presets::Action::Missile);
     case Channel::Afterburner: return g_dispatch.Held(presets::Action::Afterburner);
     case Channel::Reverse: return g_dispatch.Held(presets::Action::Reverse);
-    case Channel::Rear: return g_dispatch.Held(presets::Action::Rear) || wheel::RearView();
+    case Channel::Rear: return g_dispatch.Held(presets::Action::Rear);
     default: return false;
     }
 }
@@ -989,8 +989,8 @@ static void Apply(const presets::Event& e)
         }
         break;
     // phase D modals (picker.*, wheel.*, goals.*): LB tap the target picker, LB held the action wheel (its release does
-    // the picked action; what needs this file's state - the weapon group - comes back as an action to apply), X the goal
-    // panel while the autopilot flies
+    // the picked action; what needs this file's state - the weapon group - comes back as an action to apply), the goal
+    // panel from the wheel's AUTOPILOT GOALS (GoalPanel: no default binding since GitHub issue 65)
     case Action::TargetPicker:
         if (start)
             picker::Open();
@@ -1036,7 +1036,7 @@ struct PadFrame
 // hand-back (measured); drift is the game's own toggle. Whoever flies: a latched boost under the autopilot runs out the same way.
 static void FollowTheGame(float dt)
 {
-    static presets::LatchWatch burn, rear, wheelRear;
+    static presets::LatchWatch burn, rear;
     using A = presets::Action;
     const bool rearOn = fl::RearViewOn(), rearKnown = exe::PlayerFlightState.ok(); // (a state not read leaves the latch as it was)
     // (the key goes up at once: a press in this same frame then reaches the game as a new press)
@@ -1051,11 +1051,6 @@ static void FollowTheGame(float dt)
         g_dispatch.Unlatch(A::Rear);
         Hold(fl::USER_REARVIEW_CAMERA_MODE, false);
         events::Push("pad latch: the game ended the rear view");
-    }
-    if (rearKnown && presets::LatchEnded(wheelRear, wheel::RearView(), rearOn, dt))
-    {
-        wheel::DropRearView();
-        Hold(fl::USER_REARVIEW_CAMERA_MODE, false);
     }
 }
 
@@ -1227,7 +1222,7 @@ static void FlyPlayer(float dt, const PadFrame& f)
     HoldTorpedoSlot();
     Hold(fl::USER_AFTERBURN, g_dispatch.Held(presets::Action::Afterburner) || f.aceBurn);
     Hold(fl::USER_MANEUVER_BRAKE_REVERSE, g_dispatch.Held(presets::Action::Reverse) || f.aceReverse);
-    Hold(fl::USER_REARVIEW_CAMERA_MODE, g_dispatch.Held(presets::Action::Rear) || wheel::RearView());
+    Hold(fl::USER_REARVIEW_CAMERA_MODE, g_dispatch.Held(presets::Action::Rear));
 }
 
 void UpdateSpace(float dt)

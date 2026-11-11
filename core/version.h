@@ -5,6 +5,6 @@
 
 #define FLV_VERSION_MAJOR 0
 #define FLV_VERSION_MINOR 4
-#define FLV_VERSION_PATCH 5
-#define FLV_VERSION_BUILD 8
-#define FLV_VERSION "0.4.5.8" // (the owner, 8 Nov 2026: 0.4.5 and its refreshes go out as 0.4.5.8)
+#define FLV_VERSION_PATCH 6
+#define FLV_VERSION_BUILD 0
+#define FLV_VERSION "0.4.6" // (the owner, 11 Nov 2026: the bug sweep is 0.4.6)

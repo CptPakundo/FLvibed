@@ -72,7 +72,7 @@ file	hud2_click.cpp	modules/hud/src/hud2_click.cpp	HUD	HUD cluster (plan section
 file	hud2_impl.h	modules/hud/src/hud2_impl.h	HUD	HUD cluster (plan section 1)
 file	hud2_kit.cpp	core/ui/hud2_kit.cpp	core	HUD 2's drawing kit hud2kit::; plan: Pad->HUD refs are mostly this kit = a core service (draw kit); used by promptbar, uiskin, padhud, options_page
 file	hud2_kit.h	core/ui/hud2_kit.h	core	HUD 2's drawing kit hud2kit::; plan: Pad->HUD refs are mostly this kit = a core service (draw kit); used by promptbar, uiskin, padhud, options_page
-file	hud2_layout.h	modules/hud/src/hud2_layout.h	HUD	HUD cluster (plan section 1)
+file	hud2_layout.h	modules/hud/src/hud2_layout.h	HUD	HUD cluster (plan section 1); Reserved: the flight HUD's reserved areas this frame, one list every placer reads (lanes, alerts, target block, marks, notice), lint rule part.over (hud2_lint.h)
 file	hud2_lint.h	modules/hud/src/hud2_lint.h	HUD	HUD cluster (plan section 1)
 file	hud2_lint_live.cpp	modules/hud/src/hud2_lint_live.cpp	HUD	HUD cluster (plan section 1)
 file	hud2_parts.cpp	modules/hud/src/hud2_parts.cpp	HUD	HUD cluster (plan section 1)
@@ -162,7 +162,7 @@ file	windowtext.h	modules/hud/src/windowtext.h	HUD	HUD cluster (plan section 1)
 file	pad_backend.h	modules/controller/src/pad_backend.h	Controller	pure pad-backend rules: XInput vs SDL3, native first (Fallback, Hands, HasInput, DropInjected)
 file	shm.h	modules/controller/src/shm.h	Controller	debug/test shared-memory channel struct (virtual pad fields are Controller's, the rest generic)
 file	api.h	modules/subtitles/src/api.h	Subtitles	the subtitles' HostApi/ImplApi: its events (OnComm, OnVoiceLookup, OnSoundStart, OnHudPart, OnManeuverLayout) and the core services it is handed
-file	main.cpp	modules/subtitles/src/host/main.cpp	Subtitles	the subtitles' host part, a router client: FindVoice / GetSound, PlayArch, Present, CreateID trace, HudDrawPart, the bar and comm shifts
+file	main.cpp	modules/subtitles/src/host/main.cpp	Subtitles	the subtitles' host part, a router client: FindVoice / GetSound, PlayArch, Present, HudDrawPart, the bar and comm shifts
 file	shm.cpp	modules/subtitles/src/host/shm.cpp	Subtitles	shared-memory channel creation
 file	chat.cpp	modules/subtitles/src/impl/chat.cpp	Subtitles	subtitles cluster
 file	chat.h	modules/subtitles/src/impl/chat.h	Subtitles	subtitles cluster
@@ -188,73 +188,73 @@ file	speakers.cpp	modules/subtitles/src/impl/speakers.cpp	Subtitles	subtitles cl
 file	speakers.h	modules/subtitles/src/impl/speakers.h	Subtitles	subtitles cluster
 file	stack_fit.h	modules/subtitles/src/impl/stack_fit.h	Subtitles	subtitles cluster
 file	shm.h	modules/subtitles/src/shm.h	Subtitles	shared-memory channel struct
-hostapi	controller.version	modules/controller/src/api.h:58	core	HostAtLeast(v) gates in every module; goes away when modules link against one core (all modules call it)
-hostapi	controller.dllDir	modules/controller/src/api.h:59	core	paths of ini/data files: options_page.cpp, newgame.cpp (saves.ini), runtimer.cpp, autopilot (data), impl.cpp
-hostapi	controller.shm	modules/controller/src/api.h:60	core	debug/test channel: gamepad.cpp reads the virtual test pads (Controller), shims.cpp forwards
-hostapi	controller.LogWrite	modules/controller/src/api.h:62	core	impl.cpp:24 LogSetSink; every module logs through it
-hostapi	controller.SetHeld	modules/controller/src/api.h:65	core	held game commands (IsCmdHeld hook): Controller (controller.cpp Hold :210, ReleaseAll :449) and Autopilot (UpdateAutopilot's Hold/Tap actuator) and debug `held` (debug.cpp:825)
-hostapi	controller.ClearAllHeld	modules/controller/src/api.h:66	core	fl::ClearAllHeld forwarder (shims.cpp): no logic caller found beyond the shim
-hostapi	controller.SetKeyTrace	modules/controller/src/api.h:67	core	debug `trace` (debug.cpp:831) and device.cpp (key trace for the input-device switch: Controller)
-hostapi	controller.MouseMoveBy	modules/controller/src/api.h:70	core	dimouse::MoveBy: Controller only (controller.cpp pad menu cursor :758,:851); the injection itself is shared
-hostapi	controller.MouseMoveTo	modules/controller/src/api.h:71	core	dimouse::MoveTo: Controller (controller.cpp x14 aim/cursor), Autopilot (controller.cpp UpdateAutopilot :1597,:1652,:1701,:1711,:1724 actuator), padbases.cpp, padmenus.cpp, debug.cpp
-hostapi	controller.MouseReleaseTarget	modules/controller/src/api.h:72	core	dimouse::ReleaseTarget: Controller (controller.cpp x3, padbases.cpp:1223), debug.cpp:840
-hostapi	controller.MouseWheel	modules/controller/src/api.h:73	core	dimouse::Wheel: Controller (controller.cpp :773,:873), debug.cpp
-hostapi	controller.MouseButton	modules/controller/src/api.h:74	core	dimouse::SetButton: Controller (controller.cpp x12: pad cursor clicks, auto fire-target select), debug.cpp
-hostapi	controller.MouseButtonDown	modules/controller/src/api.h:75	core	dimouse::ButtonDown: no logic caller found (shim only)
-hostapi	controller.MouseReset	modules/controller/src/api.h:76	core	dimouse::Reset: controller.cpp:456 (ReleaseAll; also run by Autopilot hand-back)
-hostapi	controller.MouseStats	modules/controller/src/api.h:77	core	dimouse::Stats: controller.cpp DescribeState (debug `state`)
-hostapi	controller.MouseIsCaptured	modules/controller/src/api.h:78	core	controller.cpp:2709 (re-capture the mouse when the pad is used)
-hostapi	controller.MouseCapture	modules/controller/src/api.h:79	core	controller.cpp:2712
-hostapi	controller.GetD3DDevice	modules/controller/src/api.h:82	core	all drawing modules: HUD (hud2, shieldcue, uiskin ... via controller.cpp router), Controller (padhud/picker/wheel/padbases/promptbar), Autopilot (goals, barbutton), Speedrun (runtimer), core (options_page, render.cpp)
-hostapi	controller.SetSteer	modules/controller/src/api.h:86	core	mouse-flight override (SteerHook): Controller (ctl::SetSteer pad flight) and Autopilot (UpdateAutopilot steering): controller.cpp HostSteer :293,:303,:440
-hostapi	controller.LastRealMouseTick	modules/controller/src/api.h:89	core	dimouse::LastRealTick: Controller (device.cpp:69 input-device switch; controller.cpp:343 WatchManeuver and :3066), HUD (hud2.cpp:2332 cursor idle)
-hostapi	controller.PushEvent	modules/controller/src/api.h:92	core	events::Push (shims.cpp): every module (autopilot x400, controller, pad screens, speedrun); the harness reads the ring
-hostapi	controller.IdsText	modules/controller/src/api.h:94	core	no logic caller: shims.cpp:42 events::IdsText computes the text locally since the 24 Oct audit; host version still exported
-hostapi	controller.SetHudHitSuppression	modules/controller/src/api.h:99	core	HitTest hook: controller.cpp:521 SetHudSuppression (pad flight and the autopilot flying = Controller + Autopilot) and options_page.cpp (core)
-hostapi	controller.GetRoomCharacters	modules/controller/src/api.h:104	core	CharCtor/CharDtor list: Controller (padbases.cpp:419,:422), HUD (uistrip.cpp:418,:421), impl.cpp:25 room::SetCharacterSource (core room.cpp readers)
-hostapi	controller.GuardEvade	modules/controller/src/api.h:109	Autopilot	ai::SetEvadeGuard(HostGuardEvade) in ctl::Init (controller.cpp:2423): the game's Evade behaviour on the player ship, used by autopilot behaviours
-hostapi	controller.SetKeepRunning	modules/controller/src/api.h:113	core	run_in_background: controller.cpp:2639 every frame; background test starts force it
-hostapi	controller.JumpInCount	modules/controller/src/api.h:117	Autopilot	autopilot_travel.cpp:1259,:1512 (jump-in completion)
-hostapi	controller.CommPlayer	modules/controller/src/api.h:122	core	debug `commplaying` / `commstate` only (debug.cpp:577,:587); no module reads it
-hostapi	controller.MissionObjects	modules/controller/src/api.h:127	core	events.cpp mission state; callers Autopilot, HUD (hud2_click.cpp:219)
-hostapi	controller.MissionMarks	modules/controller/src/api.h:132	core	events.cpp mission state; callers Autopilot (x3), Speedrun (livesplit.cpp:612)
-hostapi	controller.ObjectiveRefs	modules/controller/src/api.h:133	core	events.cpp mission state; callers Autopilot (x2)
-hostapi	controller.ObjectiveNow	modules/controller/src/api.h:136	core	events.cpp mission state; callers Autopilot (x21), HUD (hud2.cpp:1147), Speedrun (livesplit.cpp:582,:647), Controller (picker.cpp:160)
-hostapi	controller.PlayerHit	modules/controller/src/api.h:143	core	DmgInd hooks; callers HUD (hud2.cpp:638, shieldcue.cpp:133,:736,:742) and Autopilot (autopilot_combat.cpp:224)
-hostapi	controller.ObjectiveTitle	modules/controller/src/api.h:147	core	events.cpp mission state; callers Autopilot (x11)
-hostapi	controller.DockReply	modules/controller/src/api.h:154	core	ClientReply hook; callers Autopilot (x4), HUD (hud2.cpp:663)
-hostapi	controller.ObjectiveSteps	modules/controller/src/api.h:158	core	events.cpp mission state; callers Autopilot (x3)
-hostapi	controller.CommHeardAt	modules/controller/src/api.h:163	Autopilot	SendComm import hook record; only autopilot code reads it (x4)
-hostapi	controller.SpawnedShips	modules/controller/src/api.h:167	Autopilot	CreateShip import hook record; only autopilot code reads it (x4)
-hostapi	controller.GetSettingsBus	modules/controller/src/api.h:170	core	options page and every registry: controller.cpp:3296 (registers Controller + Autopilot), goals.cpp, barbutton.cpp (Autopilot), hud2.cpp:272 (reads autopilot_key), livesplit.cpp:110 (reads Controller.livesplit*), options_page.cpp
-hostapi	controller.SetUiButton	modules/controller/src/api.h:175	core	native buttons: barbutton.cpp (Autopilot, bar button) and options_page.cpp (core, FLVIBED page button)
-hostapi	controller.UiButtonRect	modules/controller/src/api.h:178	core	barbutton.cpp (Autopilot), options_page.cpp (core), padhud.cpp:495 and promptbar.cpp (Controller)
-hostapi	controller.OptionsPageState	modules/controller/src/api.h:182	core	options page open/hosted state: options_page.cpp (core), uiskin.cpp:1255,:1420 (HUD), osk.cpp (Controller)
-hostapi	controller.ShowOptionsPage	modules/controller/src/api.h:185	core	options_page.cpp (core)
-hostapi	controller.LastRealKeyTick	modules/controller/src/api.h:188	core	device.cpp:43,:139 (Controller input-device switch); produced by the WinKey hook
-hostapi	controller.RealMouseDown	modules/controller/src/api.h:190	core	device.cpp:48,:50,:140 (Controller input-device switch)
-hostapi	controller.RealMouseMotion	modules/controller/src/api.h:193	core	no logic caller found (HostApi v19 'HUD track request' never used by logic code)
-hostapi	controller.SetCursorHidden	modules/controller/src/api.h:197	core	via HostCursorHide: Controller (padbases.cpp:110 pad screens) and the HUD's idle cursor (controller.cpp OnFrame :2885 hudwake::CursorStep) - OR-ed in host.h
-hostapi	controller.MissionResult	modules/controller/src/api.h:201	core	ClientMissionMsg hook; callers Speedrun (livesplit.cpp:558), Autopilot (1)
-hostapi	controller.GetHudBus	modules/controller/src/api.h:203	core	HUD publishes (hud2.cpp), consumers Controller (promptbar.cpp x8), core (flufaware.cpp), subtitles (own copy, subtitles api v8)
-hostapi	controller.SetHudHotspots	modules/controller/src/api.h:214	core	HUD 2 click boxes: HUD (hud2_click.cpp), Autopilot (goals.cpp x4), Speedrun (livesplit.cpp)
-hostapi	controller.HudHotspotHovered	modules/controller/src/api.h:216	core	HUD (hud2_click.cpp:162), Autopilot (goals.cpp)
-hostapi	controller.UiGeneration	modules/controller/src/api.h:225	HUD	control add/remove counter (UiControlAdd/Remove hooks); only uiskin.cpp:446-450 reads it
-hostapi	controller.ObjectiveText	modules/controller/src/api.h:229	core	callers HUD (hud2.cpp:761) and NPC (stallrec.cpp:121)
-hostapi	controller.ObjectiveReread	modules/controller/src/api.h:234	core	controller.cpp OnFrame :2682,:2763 (new flight / leaving the menus): router; consumers = every reader of ObjectiveNow
+hostapi	controller.version	modules/controller/src/api.h:74	core	HostAtLeast(v) gates in every module; goes away when modules link against one core (all modules call it)
+hostapi	controller.dllDir	modules/controller/src/api.h:75	core	paths of ini/data files: options_page.cpp, newgame.cpp (saves.ini), runtimer.cpp, autopilot (data), impl.cpp
+hostapi	controller.shm	modules/controller/src/api.h:76	core	debug/test channel: gamepad.cpp reads the virtual test pads (Controller), shims.cpp forwards
+hostapi	controller.LogWrite	modules/controller/src/api.h:78	core	impl.cpp:24 LogSetSink; every module logs through it
+hostapi	controller.SetHeld	modules/controller/src/api.h:81	core	held game commands (IsCmdHeld hook): Controller (controller.cpp Hold :210, ReleaseAll :449) and Autopilot (UpdateAutopilot's Hold/Tap actuator) and debug `held` (debug.cpp:825)
+hostapi	controller.ClearAllHeld	modules/controller/src/api.h:82	core	fl::ClearAllHeld forwarder (shims.cpp): no logic caller found beyond the shim
+hostapi	controller.SetKeyTrace	modules/controller/src/api.h:83	core	debug `trace` (debug.cpp:831) and device.cpp (key trace for the input-device switch: Controller)
+hostapi	controller.MouseMoveBy	modules/controller/src/api.h:86	core	dimouse::MoveBy: Controller only (controller.cpp pad menu cursor :758,:851); the injection itself is shared
+hostapi	controller.MouseMoveTo	modules/controller/src/api.h:87	core	dimouse::MoveTo: Controller (controller.cpp x14 aim/cursor), Autopilot (controller.cpp UpdateAutopilot :1597,:1652,:1701,:1711,:1724 actuator), padbases.cpp, padmenus.cpp, debug.cpp
+hostapi	controller.MouseReleaseTarget	modules/controller/src/api.h:88	core	dimouse::ReleaseTarget: Controller (controller.cpp x3, padbases.cpp:1223), debug.cpp:840
+hostapi	controller.MouseWheel	modules/controller/src/api.h:89	core	dimouse::Wheel: Controller (controller.cpp :773,:873), debug.cpp
+hostapi	controller.MouseButton	modules/controller/src/api.h:90	core	dimouse::SetButton: Controller (controller.cpp x12: pad cursor clicks, auto fire-target select), debug.cpp
+hostapi	controller.MouseButtonDown	modules/controller/src/api.h:91	core	dimouse::ButtonDown: no logic caller found (shim only)
+hostapi	controller.MouseReset	modules/controller/src/api.h:92	core	dimouse::Reset: controller.cpp:456 (ReleaseAll; also run by Autopilot hand-back)
+hostapi	controller.MouseStats	modules/controller/src/api.h:93	core	dimouse::Stats: controller.cpp DescribeState (debug `state`)
+hostapi	controller.MouseIsCaptured	modules/controller/src/api.h:94	core	controller.cpp:2709 (re-capture the mouse when the pad is used)
+hostapi	controller.MouseCapture	modules/controller/src/api.h:95	core	controller.cpp:2712
+hostapi	controller.GetD3DDevice	modules/controller/src/api.h:98	core	all drawing modules: HUD (hud2, shieldcue, uiskin ... via controller.cpp router), Controller (padhud/picker/wheel/padbases/promptbar), Autopilot (goals, barbutton), Speedrun (runtimer), core (options_page, render.cpp)
+hostapi	controller.SetSteer	modules/controller/src/api.h:102	core	mouse-flight override (SteerHook): Controller (ctl::SetSteer pad flight) and Autopilot (UpdateAutopilot steering): controller.cpp HostSteer :293,:303,:440
+hostapi	controller.LastRealMouseTick	modules/controller/src/api.h:105	core	dimouse::LastRealTick: Controller (device.cpp:69 input-device switch; controller.cpp:343 WatchManeuver and :3066), HUD (hud2.cpp:2332 cursor idle)
+hostapi	controller.PushEvent	modules/controller/src/api.h:108	core	events::Push (shims.cpp): every module (autopilot x400, controller, pad screens, speedrun); the harness reads the ring
+hostapi	controller.IdsText	modules/controller/src/api.h:110	core	no logic caller: shims.cpp:42 events::IdsText computes the text locally since the 24 Oct audit; host version still exported
+hostapi	controller.SetHudHitSuppression	modules/controller/src/api.h:115	core	HitTest hook: controller.cpp:521 SetHudSuppression (pad flight and the autopilot flying = Controller + Autopilot) and options_page.cpp (core)
+hostapi	controller.GetRoomCharacters	modules/controller/src/api.h:120	core	CharCtor/CharDtor list: Controller (padbases.cpp:419,:422), HUD (uistrip.cpp:418,:421), impl.cpp:25 room::SetCharacterSource (core room.cpp readers)
+hostapi	controller.GuardEvade	modules/controller/src/api.h:125	Autopilot	ai::SetEvadeGuard(HostGuardEvade) in ctl::Init (controller.cpp:2423): the game's Evade behaviour on the player ship, used by autopilot behaviours
+hostapi	controller.SetKeepRunning	modules/controller/src/api.h:129	core	run_in_background: controller.cpp:2639 every frame; background test starts force it
+hostapi	controller.JumpInCount	modules/controller/src/api.h:133	Autopilot	autopilot_travel.cpp:1259,:1512 (jump-in completion)
+hostapi	controller.CommPlayer	modules/controller/src/api.h:138	core	debug `commplaying` / `commstate` only (debug.cpp:577,:587); no module reads it
+hostapi	controller.MissionObjects	modules/controller/src/api.h:143	core	events.cpp mission state; callers Autopilot, HUD (hud2_click.cpp:219)
+hostapi	controller.MissionMarks	modules/controller/src/api.h:148	core	events.cpp mission state; callers Autopilot (x3), Speedrun (livesplit.cpp:612)
+hostapi	controller.ObjectiveRefs	modules/controller/src/api.h:149	core	events.cpp mission state; callers Autopilot (x2)
+hostapi	controller.ObjectiveNow	modules/controller/src/api.h:152	core	events.cpp mission state; callers Autopilot (x21), HUD (hud2.cpp:1147), Speedrun (livesplit.cpp:582,:647), Controller (picker.cpp:160)
+hostapi	controller.PlayerHit	modules/controller/src/api.h:159	core	DmgInd hooks; callers HUD (hud2.cpp:638, shieldcue.cpp:133,:736,:742) and Autopilot (autopilot_combat.cpp:224)
+hostapi	controller.ObjectiveTitle	modules/controller/src/api.h:163	core	events.cpp mission state; callers Autopilot (x11)
+hostapi	controller.DockReply	modules/controller/src/api.h:170	core	ClientReply hook; callers Autopilot (x4), HUD (hud2.cpp:663)
+hostapi	controller.ObjectiveSteps	modules/controller/src/api.h:174	core	events.cpp mission state; callers Autopilot (x3)
+hostapi	controller.CommHeardAt	modules/controller/src/api.h:179	Autopilot	SendComm import hook record; only autopilot code reads it (x4)
+hostapi	controller.SpawnedShips	modules/controller/src/api.h:183	Autopilot	CreateShip import hook record; only autopilot code reads it (x4)
+hostapi	controller.GetSettingsBus	modules/controller/src/api.h:186	core	options page and every registry: controller.cpp:3296 (registers Controller + Autopilot), goals.cpp, barbutton.cpp (Autopilot), hud2.cpp:272 (reads autopilot_key), livesplit.cpp:110 (reads Controller.livesplit*), options_page.cpp
+hostapi	controller.SetUiButton	modules/controller/src/api.h:191	core	native buttons: barbutton.cpp (Autopilot, bar button) and options_page.cpp (core, FLVIBED page button)
+hostapi	controller.UiButtonRect	modules/controller/src/api.h:194	core	barbutton.cpp (Autopilot), options_page.cpp (core), padhud.cpp:495 and promptbar.cpp (Controller)
+hostapi	controller.OptionsPageState	modules/controller/src/api.h:198	core	options page open/hosted state: options_page.cpp (core), uiskin.cpp:1255,:1420 (HUD), osk.cpp (Controller)
+hostapi	controller.ShowOptionsPage	modules/controller/src/api.h:201	core	options_page.cpp (core)
+hostapi	controller.LastRealKeyTick	modules/controller/src/api.h:204	core	device.cpp:43,:139 (Controller input-device switch); produced by the WinKey hook
+hostapi	controller.RealMouseDown	modules/controller/src/api.h:206	core	device.cpp:48,:50,:140 (Controller input-device switch)
+hostapi	controller.RealMouseMotion	modules/controller/src/api.h:209	core	no logic caller found (HostApi v19 'HUD track request' never used by logic code)
+hostapi	controller.SetCursorHidden	modules/controller/src/api.h:213	core	via HostCursorHide: Controller (padbases.cpp:110 pad screens) and the HUD's idle cursor (controller.cpp OnFrame :2885 hudwake::CursorStep) - OR-ed in host.h
+hostapi	controller.MissionResult	modules/controller/src/api.h:217	core	ClientMissionMsg hook; callers Speedrun (livesplit.cpp:558), Autopilot (1)
+hostapi	controller.GetHudBus	modules/controller/src/api.h:219	core	HUD publishes (hud2.cpp), consumers Controller (promptbar.cpp x8), core (flufaware.cpp), subtitles (own copy, subtitles api v8)
+hostapi	controller.SetHudHotspots	modules/controller/src/api.h:230	core	HUD 2 click boxes: HUD (hud2_click.cpp), Autopilot (goals.cpp x4), Speedrun (livesplit.cpp)
+hostapi	controller.HudHotspotHovered	modules/controller/src/api.h:232	core	HUD (hud2_click.cpp:162), Autopilot (goals.cpp)
+hostapi	controller.UiGeneration	modules/controller/src/api.h:241	HUD	control add/remove counter (UiControlAdd/Remove hooks); only uiskin.cpp:446-450 reads it
+hostapi	controller.ObjectiveText	modules/controller/src/api.h:245	core	callers HUD (hud2.cpp:761) and NPC (stallrec.cpp:121)
+hostapi	controller.ObjectiveReread	modules/controller/src/api.h:250	core	controller.cpp OnFrame :2682,:2763 (new flight / leaving the menus): router; consumers = every reader of ObjectiveNow
 hostapi	controller.WindowMode	core/host/router.cpp	Display	who provides borderless: the Display module's reader through router::WindowMode; read by options_page.cpp (core) for its row text
-hostapi	controller.RealMouseWheel	modules/controller/src/api.h:240	core	options_page.cpp (core)
-hostapi	controller.SetGunAim	modules/controller/src/api.h:245	Autopilot	GunAimPoint hook: only UpdateAutopilot (controller.cpp:1551,:1552,:1736,:1752,:1755,:1757)
-hostapi	controller.DeferToFrameEnd	modules/controller/src/api.h:250	core	impl.cpp:27 uiclick::SetDeferral (core/game/room.cpp front-end clicks: Controller pad menus/bases, harness)
-hostapi	controller.ChatLineAt	modules/controller/src/api.h:254	core	mprules.cpp (core multiplayer rule reader; its answer reaches Autopilot via autopilot setting mp_autopilot)
-hostapi	controller.ServerTag	modules/controller/src/api.h:258	core	mprules.cpp
-hostapi	controller.FixedDt	modules/controller/src/api.h:261	core	debug `fixeddt` / `timing` (debug.cpp:498-514), test only
-hostapi	controller.SdlPad	modules/controller/src/api.h:268	Controller	gamepad.cpp:91,:97,:112
-hostapi	controller.SdlPadRumble	modules/controller/src/api.h:271	Controller	gamepad.cpp:345
+hostapi	controller.RealMouseWheel	modules/controller/src/api.h:256	core	options_page.cpp (core)
+hostapi	controller.SetGunAim	modules/controller/src/api.h:261	Autopilot	GunAimPoint hook: only UpdateAutopilot (controller.cpp:1551,:1552,:1736,:1752,:1755,:1757)
+hostapi	controller.DeferToFrameEnd	modules/controller/src/api.h:266	core	impl.cpp:27 uiclick::SetDeferral (core/game/room.cpp front-end clicks: Controller pad menus/bases, harness)
+hostapi	controller.ChatLineAt	modules/controller/src/api.h:270	core	mprules.cpp (core multiplayer rule reader; its answer reaches Autopilot via autopilot setting mp_autopilot)
+hostapi	controller.ServerTag	modules/controller/src/api.h:274	core	mprules.cpp
+hostapi	controller.FixedDt	modules/controller/src/api.h:277	core	debug `fixeddt` / `timing` (debug.cpp:498-514), test only
+hostapi	controller.SdlPad	modules/controller/src/api.h:285	Controller	gamepad.cpp:91,:97,:112
+hostapi	controller.SdlPadRumble	modules/controller/src/api.h:288	Controller	gamepad.cpp:345
 hostapi	controller.SetLoadDraw	modules/controller/src/api.h	core	router::SetLoadDraw: the HUD's loading screen (skinload.cpp), v39
 hostapi	controller.SdlPadFilter	modules/controller/src/api.h	Controller	gamepad.cpp Filter: a mapper's keys and mouse dropped (sdlpad.cpp hooks, dimouse::NoteMotion / MaskInjectedButton at the reads)
-hostapi	controller.GameLoads	modules/controller/src/api.h:276	core	HostGameLoads(): controller.cpp:2584 router (mission::ForgetGame, autopilot::ArbiterForgetGame); subtitles has its own copy
-hostapi	controller.MissionSave	modules/controller/src/api.h:280	Speedrun	livesplit.cpp:569,:648 (save:<ids> splits)
+hostapi	controller.GameLoads	modules/controller/src/api.h:293	core	HostGameLoads(): controller.cpp:2584 router (mission::ForgetGame, autopilot::ArbiterForgetGame); subtitles has its own copy
+hostapi	controller.MissionSave	modules/controller/src/api.h:297	Speedrun	livesplit.cpp:569,:648 (save:<ids> splits)
 hostapi	subtitles.version	modules/subtitles/src/api.h:20	core	host version gates (impl.cpp x8 Subtitles, movie.cpp)
 hostapi	subtitles.dllDir	modules/subtitles/src/api.h:21	core	ini/data paths: impl.cpp IniPath/DataPath/movies.tsv, display.cpp
 hostapi	subtitles.LogWrite	modules/subtitles/src/api.h:22	core	impl.cpp LogSetSink
@@ -267,20 +267,20 @@ hostapi	subtitles.GetSettingsBus	modules/subtitles/src/api.h:41	core	impl.cpp Re
 hostapi	subtitles.SetIntroOverride	modules/subtitles/src/api.h:43	core	unused since P6: keeps the later fields' places
 hostapi	subtitles.GetHudBus	modules/subtitles/src/api.h:46	core	display.cpp Bus(): reads HUD 2's published layout (Subtitles consumes, HUD publishes)
 hostapi	subtitles.GameLoads	modules/subtitles/src/api.h:50	core	impl.cpp TrackGameLoad; the controller host keeps its own counter (events.cpp:944)
-implapi	controller.version	modules/controller/src/api.h:58	core	
-implapi	controller.Init	modules/controller/src/api.h:288	core	called by host main.cpp:250/284 (LoadImpl); order today: impl.cpp:21-33 SetCharacterSource, SetDeferral, ResolveAll, RegisterBus, ctl::Init (pad, EvadeGuard, LoadConfig, padmenus/newgame/livesplit/runtimer Init), options_page::Init
-implapi	controller.Shutdown	modules/controller/src/api.h:289	core	part StartLogic / StopLogic (modules/controller/src/host/main.cpp); impl.cpp:35-47 order: debug::StopWatch, uiclick, options_page, barbutton, ctl::Shutdown, UnregisterBus
-implapi	controller.OnFrame	modules/controller/src/api.h:290	core	host GuardedFrame main.cpp:478 (and ModalFrame :827 from CursorUpdate in a dialog's own loop); fans out to every module: see frame rows
-implapi	controller.Command	modules/controller/src/api.h:292	core	host PollCommands main.cpp:376 -> debug::Execute; module verbs: see command rows
-implapi	controller.OnRenderOverlay	modules/controller/src/api.h:294	core	host CursorUpdateHook main.cpp:829 (GuardedOverlay :808); handled by HUD (hud2::Render, shieldcue/reticlecue fallback, uistrip), Controller (padhud, picker, wheel, wgroups, padbases, padmap, padmenus, promptbar), Autopilot (goals::Render, barbutton::Draw), Speedrun (runtimer::Draw), core (options_page::Draw)
-implapi	controller.OnDeviceLost	modules/controller/src/api.h:296	core	host ResetHook/CreateDeviceHook main.cpp:1836; handled by HUD (hud2::OnDeviceLost) and core render::OnDeviceLost
-implapi	controller.OnDeviceReset	modules/controller/src/api.h:297	core	host main.cpp:1849,:1871; controller logic handler is empty (impl OnDeviceReset {})
-implapi	controller.OnRenderUnderHud	modules/controller/src/api.h:300	core	router UiRenderHook (core/host/router.cpp) (only when UiRenderSkip <= 0); handled by HUD (hud2::RenderUnderHud, uiskin::RenderUnder, shieldcue::Render) and core (options_page::RenderUnder)
-implapi	controller.OnUiButton	modules/controller/src/api.h:302	core	router ButtonClicked (core/host/router.cpp) -> OnUiButton; fan-out impl.cpp:71-93: kUiBtnBar -> Autopilot (barbutton::OnClick), kUiBtnHud2.. -> Autopilot (goals::OnHotspot when goals::OwnsHotspots) else HUD (hud2::OnHotspot), others -> core (options_page::OnUiButton)
-implapi	controller.OnRawKey	modules/controller/src/api.h:307	core	input WinKeyHook (core/host/input.cpp); chain impl.cpp:95-112 in this order: flufaware::HoldsKeys (core, stand down), options_page::OnRawKey (core), goals::OnRawKey (Autopilot), barbutton::OnKey (Autopilot)
-implapi	controller.OnKeyCmd	modules/controller/src/api.h:310	HUD	host HandleKeyHook main.cpp:673; handler ctl::OnKeyCmd controller.cpp:264 = maneuver-lock notice + hud2::NoteAction (HUD); only HUD consumes it
+implapi	controller.version	modules/controller/src/api.h:74	core	
+implapi	controller.Init	modules/controller/src/api.h:338	core	called by host main.cpp:250/284 (LoadImpl); order today: impl.cpp:21-33 SetCharacterSource, SetDeferral, ResolveAll, RegisterBus, ctl::Init (pad, EvadeGuard, LoadConfig, padmenus/newgame/livesplit/runtimer Init), options_page::Init
+implapi	controller.Shutdown	modules/controller/src/api.h:339	core	part StartLogic / StopLogic (modules/controller/src/host/main.cpp); impl.cpp:35-47 order: debug::StopWatch, uiclick, options_page, barbutton, ctl::Shutdown, UnregisterBus
+implapi	controller.OnFrame	modules/controller/src/api.h:340	core	host GuardedFrame main.cpp:478 (and ModalFrame :827 from CursorUpdate in a dialog's own loop); fans out to every module: see frame rows
+implapi	controller.Command	modules/controller/src/api.h:342	core	host PollCommands main.cpp:376 -> debug::Execute; module verbs: see command rows
+implapi	controller.OnRenderOverlay	modules/controller/src/api.h:344	core	host CursorUpdateHook main.cpp:829 (GuardedOverlay :808); handled by HUD (hud2::Render, shieldcue/reticlecue fallback, uistrip), Controller (padhud, picker, wheel, wgroups, padbases, padmap, padmenus, promptbar), Autopilot (goals::Render, barbutton::Draw), Speedrun (runtimer::Draw), core (options_page::Draw)
+implapi	controller.OnDeviceLost	modules/controller/src/api.h:346	core	host ResetHook/CreateDeviceHook main.cpp:1836; handled by HUD (hud2::OnDeviceLost) and core render::OnDeviceLost
+implapi	controller.OnDeviceReset	modules/controller/src/api.h:347	core	host main.cpp:1849,:1871; controller logic handler is empty (impl OnDeviceReset {})
+implapi	controller.OnRenderUnderHud	modules/controller/src/api.h:350	core	router UiRenderHook (core/host/router.cpp) (only when UiRenderSkip <= 0); handled by HUD (hud2::RenderUnderHud, uiskin::RenderUnder, shieldcue::Render) and core (options_page::RenderUnder)
+implapi	controller.OnUiButton	modules/controller/src/api.h:352	core	router ButtonClicked (core/host/router.cpp) -> OnUiButton; fan-out impl.cpp:71-93: kUiBtnBar -> Autopilot (barbutton::OnClick), kUiBtnHud2.. -> Autopilot (goals::OnHotspot when goals::OwnsHotspots) else HUD (hud2::OnHotspot), others -> core (options_page::OnUiButton)
+implapi	controller.OnRawKey	modules/controller/src/api.h:357	core	input WinKeyHook (core/host/input.cpp); chain impl.cpp:95-112 in this order: flufaware::HoldsKeys (core, stand down), options_page::OnRawKey (core), goals::OnRawKey (Autopilot), barbutton::OnKey (Autopilot)
+implapi	controller.OnKeyCmd	modules/controller/src/api.h:360	HUD	host HandleKeyHook main.cpp:673; handler ctl::OnKeyCmd controller.cpp:264 = maneuver-lock notice + hud2::NoteAction (HUD); only HUD consumes it
 implapi	subtitles.version	modules/subtitles/src/api.h:20	core	
-implapi	subtitles.Init	modules/subtitles/src/api.h:67	core	host LoadImpl modules/subtitles/src/host/main.cpp:77,:111; impl.cpp:850-863 order: SetCharacterSource, ResolveAll, RegisterBus, display::LoadSettings, movie::ApplyIntro (Movies), LoadData, movie::Load, display::SeedGlyphs, render::SetDevice
+implapi	subtitles.Init	modules/subtitles/src/api.h:67	core	host LoadImpl modules/subtitles/src/host/main.cpp:77,:111; impl.cpp:850-863 order: SetCharacterSource, ResolveAll, RegisterBus, display::LoadSettings, movie::Attach, LoadData, movie::Load, display::SeedGlyphs, render::SetDevice
 implapi	subtitles.Shutdown	modules/subtitles/src/api.h:68	core	impl.cpp:866: UnregisterBus, display::RestoreHud, render::OnDeviceLost
 implapi	subtitles.OnFrame	modules/subtitles/src/api.h:69	Subtitles	host GuardedFrame modules/subtitles/src/host/main.cpp:179; impl.cpp:909-917 TrackMenu, TrackGameLoad, TrackBarConversation, mixcues::Tick, display::Update; all Subtitles
 implapi	subtitles.Command	modules/subtitles/src/api.h:71	core	host main.cpp:154; verbs: see command rows
@@ -548,48 +548,48 @@ setting	Autopilot.lane_toward	modules/autopilot/src/autopilot_settings.cpp:386	A
 setting	Autopilot.avoid	modules/autopilot/src/autopilot_settings.cpp:388	Autopilot	g_set.avoid
 setting	Autopilot.disable_at	modules/autopilot/src/autopilot_settings.cpp:389	Autopilot	g_set.disableAt
 setting	Autopilot.follow_offset	modules/autopilot/src/autopilot_settings.cpp:391	Autopilot	g_set.followOffset
-setting	Subtitles.enabled	modules/subtitles/src/impl/display.cpp:61	Subtitles	g_set.enabled
-setting	Subtitles.size	modules/subtitles/src/impl/display.cpp:62	Subtitles	g_set.size
-setting	Subtitles.background_opacity	modules/subtitles/src/impl/display.cpp:63	Subtitles	g_set.bgOpacity
-setting	Subtitles.background_style	modules/subtitles/src/impl/display.cpp:64	Subtitles	g_set.bgStyle
-setting	Subtitles.shadow	modules/subtitles/src/impl/display.cpp:66	Subtitles	g_set.shadow
-setting	Subtitles.text_color	modules/subtitles/src/impl/display.cpp:67	Subtitles	g_set.textColor
-setting	Subtitles.speaker_names	modules/subtitles/src/impl/display.cpp:68	Subtitles	g_set.nameMode
-setting	Subtitles.story	modules/subtitles/src/impl/display.cpp:69	Subtitles	g_set.story
-setting	Subtitles.comms	modules/subtitles/src/impl/display.cpp:70	Subtitles	g_set.comms
-setting	Subtitles.bar	modules/subtitles/src/impl/display.cpp:71	Subtitles	g_set.bar
-setting	Subtitles.neural_net	modules/subtitles/src/impl/display.cpp:72	Subtitles	g_set.nn
-setting	Subtitles.chatter	modules/subtitles/src/impl/display.cpp:73	Subtitles	g_set.chatter
-setting	Subtitles.chat_all_dialogue	modules/subtitles/src/impl/display.cpp:76	Subtitles	g_set.chatAll
-setting	Subtitles.bottom_base	modules/subtitles/src/impl/display.cpp:78	Subtitles	g_set.bottomBase
-setting	Subtitles.bottom_space	modules/subtitles/src/impl/display.cpp:80	Subtitles	g_set.bottomSpace
-setting	Subtitles.bottom_cutscene	modules/subtitles/src/impl/display.cpp:82	Subtitles	g_set.bottomCutscene
-setting	Subtitles.space_position	modules/subtitles/src/impl/display.cpp:83	Subtitles	g_set.spacePosition
-setting	Subtitles.font	modules/subtitles/src/impl/display.cpp:86	Subtitles	g_set.font
-setting	Subtitles.motion	modules/subtitles/src/impl/display.cpp:87	Subtitles	g_set.motion
-setting	Subtitles.neural_net_severity	modules/subtitles/src/impl/display.cpp:88	Subtitles	g_set.nnSeverity
-setting	Subtitles.bottom_movie	modules/subtitles/src/impl/display.cpp:90	Subtitles	g_set.bottomMovie; display.cpp: position of the subtitles over movies
-setting	Subtitles.linger	modules/subtitles/src/impl/display.cpp:92	Subtitles	g_set.linger
-setting	Subtitles.retire_delay	modules/subtitles/src/impl/display.cpp:93	Subtitles	g_set.retireDelay
-setting	Subtitles.retire_delay_cinematic	modules/subtitles/src/impl/display.cpp:95	Subtitles	g_set.retireDelayCinematic
-setting	Subtitles.letterbox_mode	modules/subtitles/src/impl/display.cpp:97	Subtitles	g_set.letterboxMode
-setting	Subtitles.cinematic_single_speaker	modules/subtitles/src/impl/display.cpp:99	Subtitles	g_set.cinematicSingle
-setting	Subtitles.hostile_marker	modules/subtitles/src/impl/display.cpp:100	Subtitles	g_set.hostileMarker
-setting	Subtitles.hud_arrows	modules/subtitles/src/impl/display.cpp:102	Subtitles	g_set.hudArrows; display.cpp ConfineHudArrow: moves the game's indicator arrows (classic HUD edit in Subtitles)
-setting	Subtitles.space_narrow	modules/subtitles/src/impl/display.cpp:104	Subtitles	g_set.spaceNarrow; display.cpp PlaceManeuverBar/SetControlPosition: edits the game's maneuver bar (classic HUD control) - a HUD-layout edit living in Subtitles
-setting	Subtitles.comm_portrait	modules/subtitles/src/impl/display.cpp:106	Subtitles	g_set.commPortrait; display.cpp PlaceCommWindow: moves the game's comm window (classic HUD edit in Subtitles)
-setting	Subtitles.fade_with_channel	modules/subtitles/src/impl/display.cpp:108	Subtitles	g_set.fadeWithChannel
-setting	Subtitles.word_pop	modules/subtitles/src/impl/display.cpp:110	Subtitles	g_set.wordPop
-setting	Subtitles.word_timing	modules/subtitles/src/impl/display.cpp:111	Subtitles	g_set.wordTiming
-setting	Subtitles.stack_fit	modules/subtitles/src/impl/display.cpp:113	Subtitles	g_set.stackFit
-setting	Subtitles.chat_layout_narrow	modules/subtitles/src/impl/display.cpp:115	Subtitles	g_set.chatLayoutNarrow; chat.cpp / display.cpp DrawHud2Feed: the chat column beside HUD 2 (reads HudBus)
-setting	Subtitles.chat_layout_wide	modules/subtitles/src/impl/display.cpp:117	Subtitles	g_set.chatLayoutWide; chat.cpp / display.cpp DrawHud2Feed
-setting	Subtitles.chat_size	modules/subtitles/src/impl/display.cpp:118	Subtitles	g_set.chatSize; display.cpp DrawHud2Feed via chat_size.h
-setting	Subtitles.speaker_colors	modules/subtitles/src/impl/display.cpp:121	Subtitles	g_set.speakerColors
+setting	Subtitles.enabled	modules/subtitles/src/impl/display.cpp:64	Subtitles	g_set.enabled
+setting	Subtitles.size	modules/subtitles/src/impl/display.cpp:65	Subtitles	g_set.size
+setting	Subtitles.background_opacity	modules/subtitles/src/impl/display.cpp:66	Subtitles	g_set.bgOpacity
+setting	Subtitles.background_style	modules/subtitles/src/impl/display.cpp:67	Subtitles	g_set.bgStyle
+setting	Subtitles.shadow	modules/subtitles/src/impl/display.cpp:69	Subtitles	g_set.shadow
+setting	Subtitles.text_color	modules/subtitles/src/impl/display.cpp:70	Subtitles	g_set.textColor
+setting	Subtitles.speaker_names	modules/subtitles/src/impl/display.cpp:71	Subtitles	g_set.nameMode
+setting	Subtitles.story	modules/subtitles/src/impl/display.cpp:72	Subtitles	g_set.story
+setting	Subtitles.comms	modules/subtitles/src/impl/display.cpp:73	Subtitles	g_set.comms
+setting	Subtitles.bar	modules/subtitles/src/impl/display.cpp:75	Subtitles	g_set.bar
+setting	Subtitles.neural_net	modules/subtitles/src/impl/display.cpp:76	Subtitles	g_set.nn
+setting	Subtitles.chatter	modules/subtitles/src/impl/display.cpp:77	Subtitles	g_set.chatter
+setting	Subtitles.chat_all_dialogue	modules/subtitles/src/impl/display.cpp:80	Subtitles	g_set.chatAll
+setting	Subtitles.bottom_base	modules/subtitles/src/impl/display.cpp:82	Subtitles	g_set.bottomBase
+setting	Subtitles.bottom_space	modules/subtitles/src/impl/display.cpp:84	Subtitles	g_set.bottomSpace
+setting	Subtitles.bottom_cutscene	modules/subtitles/src/impl/display.cpp:86	Subtitles	g_set.bottomCutscene
+setting	Subtitles.space_position	modules/subtitles/src/impl/display.cpp:87	Subtitles	g_set.spacePosition
+setting	Subtitles.font	modules/subtitles/src/impl/display.cpp:90	Subtitles	g_set.font
+setting	Subtitles.motion	modules/subtitles/src/impl/display.cpp:92	Subtitles	g_set.motion
+setting	Subtitles.neural_net_severity	modules/subtitles/src/impl/display.cpp:93	Subtitles	g_set.nnSeverity
+setting	Subtitles.bottom_movie	modules/subtitles/src/impl/display.cpp:97	Subtitles	g_set.bottomMovie; display.cpp: position of the subtitles over movies
+setting	Subtitles.linger	modules/subtitles/src/impl/display.cpp:99	Subtitles	g_set.linger
+setting	Subtitles.retire_delay	modules/subtitles/src/impl/display.cpp:100	Subtitles	g_set.retireDelay
+setting	Subtitles.retire_delay_cinematic	modules/subtitles/src/impl/display.cpp:102	Subtitles	g_set.retireDelayCinematic
+setting	Subtitles.letterbox_mode	modules/subtitles/src/impl/display.cpp:104	Subtitles	g_set.letterboxMode
+setting	Subtitles.cinematic_single_speaker	modules/subtitles/src/impl/display.cpp:106	Subtitles	g_set.cinematicSingle
+setting	Subtitles.hostile_marker	modules/subtitles/src/impl/display.cpp:107	Subtitles	g_set.hostileMarker
+setting	Subtitles.hud_arrows	modules/subtitles/src/impl/display.cpp:109	Subtitles	g_set.hudArrows; display.cpp ConfineHudArrow: moves the game's indicator arrows (classic HUD edit in Subtitles)
+setting	Subtitles.space_narrow	modules/subtitles/src/impl/display.cpp:111	Subtitles	g_set.spaceNarrow; display.cpp PlaceManeuverBar/SetControlPosition: edits the game's maneuver bar (classic HUD control) - a HUD-layout edit living in Subtitles
+setting	Subtitles.comm_portrait	modules/subtitles/src/impl/display.cpp:113	Subtitles	g_set.commPortrait; display.cpp PlaceCommWindow: moves the game's comm window (classic HUD edit in Subtitles)
+setting	Subtitles.fade_with_channel	modules/subtitles/src/impl/display.cpp:115	Subtitles	g_set.fadeWithChannel
+setting	Subtitles.word_pop	modules/subtitles/src/impl/display.cpp:117	Subtitles	g_set.wordPop
+setting	Subtitles.word_timing	modules/subtitles/src/impl/display.cpp:118	Subtitles	g_set.wordTiming
+setting	Subtitles.stack_fit	modules/subtitles/src/impl/display.cpp:120	Subtitles	g_set.stackFit
+setting	Subtitles.chat_layout_narrow	modules/subtitles/src/impl/display.cpp:122	Subtitles	g_set.chatLayoutNarrow; chat.cpp / display.cpp DrawHud2Feed: the chat column beside HUD 2 (reads HudBus)
+setting	Subtitles.chat_layout_wide	modules/subtitles/src/impl/display.cpp:124	Subtitles	g_set.chatLayoutWide; chat.cpp / display.cpp DrawHud2Feed
+setting	Subtitles.chat_size	modules/subtitles/src/impl/display.cpp:125	Subtitles	g_set.chatSize; display.cpp DrawHud2Feed via chat_size.h
+setting	Subtitles.speaker_colors	modules/subtitles/src/impl/display.cpp:128	Subtitles	g_set.speakerColors
 setting	Subtitles.movie_fit	modules/subtitles/src/impl/display.cpp	Movies	g_set.movieFit; read by modules/movies (FitVideo) through the bus, FLSubtitles.ini without it; the row stays in the subtitles registry
 setting	Subtitles.movie_skip	modules/subtitles/src/impl/display.cpp	Movies	g_set.movieSkip; read by modules/movies (RequestNativeSkip); the row stays in the subtitles registry
-setting	Subtitles.movie_intro	modules/subtitles/src/impl/display.cpp	Movies	g_set.movieIntro; read by modules/movies (ApplyIntro -> its host part); the row stays in the subtitles registry
-setting	Subtitles.movie_subtitles	modules/subtitles/src/impl/display.cpp:126	Subtitles	g_set.movieSubtitles; movie.cpp (the word-timed lines drawn over movies = Subtitles part of movie.cpp)
+setting	Subtitles.movie_subtitles	modules/subtitles/src/impl/display.cpp:132	Subtitles	g_set.movieSubtitles; movie.cpp (the word-timed lines drawn over movies = Subtitles part of movie.cpp)
+setting	Subtitles.settings_rev	core/settings.h:183	Subtitles	FLSubtitles.ini [Subtitles] revision stamp written by Save (display.cpp kRev, kCarry): files below it get the changed defaults carried (0.4.6: font 0 -> 2, issue 82)
 setting	Modules.subtitles	core/flvibed.cpp:58	core	g_modSubtitles; plan: [Modules] gains rows; an existing controller = 0 also turns hud/autopilot/speedrun/display off, subtitles = 0 also movies
 setting	Modules.controller	core/flvibed.cpp:60	core	g_modController; plan: [Modules] gains rows; an existing controller = 0 also turns hud/autopilot/speedrun/display off, subtitles = 0 also movies
 hook	exe::IsCmdHeld (Detour)	core/host/input.cpp	core	held game commands injected for IsCmdHeldHook: consumers Controller (controller.cpp Hold/Tap), Autopilot (UpdateAutopilot actuator holds fire/afterburner/slide), debug `held`; so K&M autopilot needs it without the pad module
@@ -602,7 +602,7 @@ hook	exe::UiRender (Detour)	core/host/router.cpp	core	OnRenderUnderHud: HUD (hud
 hook	exe::FrameUpdate (Detour)	core/host/router.cpp	core	merged in P2: one hook here, dispatched by the router; the whole controller logic frame (see frame rows); the subtitles host hooks the same function (subtitles main.cpp:855); newest hook is outermost, see hook.h Detour
 hook	exe::MouseSteer (Detour)	core/host/input.cpp	core	mouse-flight override (HostApi SetSteer): Controller pad steering and Autopilot steering (controller.cpp UpdateAutopilot) both write it
 hook	exe::GunAimPoint (Detour)	modules/controller/src/host/main.cpp	Autopilot	HostApi SetGunAim: only the autopilot flying in turret view (controller.cpp UpdateAutopilot)
-hook	exe::FrameTimer (Detour)	modules/controller/src/host/main.cpp:607	core	fixed dt, TEST ONLY (debug `fixeddt`); no module consumer
+hook	exe::FrameTimer (Detour)	modules/controller/src/host/main.cpp:697	core	fixed dt, TEST ONLY (debug `fixeddt`); no module consumer
 hook	exe::HitTest (Detour)	core/host/input.cpp	core	HUD hit suppression (HostApi SetHudHitSuppression): controller.cpp SetHudSuppression while the pad OR the autopilot/bot flies (Controller + Autopilot) and options_page.cpp (core)
 hook	exe::CharDtor (Detour)	core/host/router.cpp	core	merged in P2: one hook here, dispatched by the router; room characters list (HostApi GetRoomCharacters): Controller (padbases), HUD (uistrip), core room.cpp; the subtitles host installs the same pair (subtitles main.cpp:876)
 hook	exe::CharCtor (Detour)	core/host/router.cpp	core	merged in P2: one hook here, dispatched by the router; as CharDtor (installed only after it)
@@ -627,21 +627,21 @@ hook	Client vtable slot 75 ClientMark (PatchVtable)	core/host/events.cpp:854	cor
 hook	Client vtable slot 72 ClientObjectives (PatchVtable)	core/host/events.cpp:1078	core	ObjectiveNow/Steps/Refs/Title/Text: Autopilot (x35), HUD (hud2.cpp:1147,:761), Speedrun (livesplit.cpp:582,:647), Controller (picker.cpp:160), NPC (stallrec.cpp:121)
 hook	Client vtable slot 70 ClientMissionMsg (PatchVtable)	core/host/events.cpp:1080	core	MissionResult: Speedrun (livesplit.cpp:558), Autopilot (1)
 hook	IServerImpl vtable: SPScanCargo + 10 economy requests (HookServerMethod -> PatchVtable)	core/host/events.cpp:1146	core	event-log only (events::Push lines read by the harness `events`): no logic consumer; install sites :1217 (SPScanCargo), :1222-1236 (ReqHullStatus, ReqChangeCash, ReqSetCash, ReqEquipment, ReqCollisionGroups, ReqAddItem, ReqRemoveItem, ReqShipArch, GFGoodBuy, GFGoodSell)
-hook	Content.dll import server.dll!pub::SetMissionObjectives (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; objective state (ObjectiveNow/Steps/Refs/Title/Text/MissionObjects): Autopilot, HUD, Speedrun, Controller picker, NPC
-hook	Content.dll import server.dll!pub::SetMissionObjectiveState (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; objective state: same readers as SetMissionObjectives
-hook	Content.dll import server.dll!pub::PopUpDialog (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only (harness); no logic reader found
-hook	Content.dll import server.dll!pub::DisplayMissionMessage (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
-hook	Content.dll import server.dll!pub::SendNNMessage (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
-hook	Content.dll import server.dll!pub::SendComm (PatchImport)	core/host/events.cpp:133	Autopilot	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; CommHeardAt (autopilot only)
-hook	Content.dll import server.dll!pub::MissionVendorOfferCreate (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
-hook	Content.dll import server.dll!pub::MissionVendorOfferDestroy (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
-hook	Content.dll import server.dll!pub::SetMoneyNeededToNextRank (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
-hook	Content.dll import server.dll!pub::AdjustCash (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
-hook	Content.dll import server.dll!pub::SetRank (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
-hook	Content.dll import server.dll!pub::Save (PatchImport)	core/host/events.cpp:133	Speedrun	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; MissionSave (livesplit.cpp save:<ids> splits)
-hook	Content.dll import server.dll!pub::Create@SpaceObj (ships) (PatchImport)	core/host/events.cpp:133	Autopilot	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; SpawnedShips (autopilot only)
-hook	Content.dll import server.dll!pub::CreateLoot (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
-hook	Content.dll import server.dll!pub::CreateSolar (PatchImport)	core/host/events.cpp:133	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::SetMissionObjectives (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; objective state (ObjectiveNow/Steps/Refs/Title/Text/MissionObjects): Autopilot, HUD, Speedrun, Controller picker, NPC
+hook	Content.dll import server.dll!pub::SetMissionObjectiveState (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; objective state: same readers as SetMissionObjectives
+hook	Content.dll import server.dll!pub::PopUpDialog (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only (harness); no logic reader found
+hook	Content.dll import server.dll!pub::DisplayMissionMessage (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::SendNNMessage (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::SendComm (PatchImport)	core/host/events.cpp:137	Autopilot	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; CommHeardAt (autopilot only)
+hook	Content.dll import server.dll!pub::MissionVendorOfferCreate (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::MissionVendorOfferDestroy (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::SetMoneyNeededToNextRank (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::AdjustCash (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::SetRank (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::Save (PatchImport)	core/host/events.cpp:137	Speedrun	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; MissionSave (livesplit.cpp save:<ids> splits)
+hook	Content.dll import server.dll!pub::Create@SpaceObj (ships) (PatchImport)	core/host/events.cpp:137	Autopilot	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; SpawnedShips (autopilot only)
+hook	Content.dll import server.dll!pub::CreateLoot (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
+hook	Content.dll import server.dll!pub::CreateSolar (PatchImport)	core/host/events.cpp:137	core	re-bound by InstallContentHooks (events.cpp:1288) after every Content.dll load; event log only; no logic reader found
 hook	exe::ManeuverLayout (Detour)	core/host/router.cpp	core	merged in P2: one hook here, dispatched by the router; bar button positioning (Autopilot's 5th button) AND the subtitles host hooks it for display::OnManeuverLayout (subtitles main.cpp:865): two modules -> core
 hook	exe::ManeuverFrameSize (Detour)	core/host/uibtn.cpp:1272	Autopilot	makes room for the 5th bar button (uibtn.cpp bar button)
 hook	exe::ManeuversMessage (Detour)	core/host/uibtn.cpp:1276	Autopilot	bar button click -> OnUiButton kUiBtnBar
@@ -656,27 +656,26 @@ hook	DirectInput mouse GetDeviceState (PatchVtable slot 9)	core/host/dimouse.cpp
 hook	DirectInput mouse GetDeviceData (PatchVtable slot 10)	core/host/dimouse.cpp	core	as GetDeviceState
 hook	game font table (hk::Write, game_text_size)	modules/hud/src/gametext.cpp:63	HUD	decided: as gametext.cpp | the game's text larger: written from the logic DLL; consumers windowtext (HUD) and the options page; module not named in plan
 hook	debug `poke` (hk::Write of arbitrary bytes)	core/game/debugverbs.cpp	core	research aid
-hook	exe::FindVoice (Detour)	modules/subtitles/src/host/main.cpp:596	Subtitles	voice object lookup -> patches the voice vtable slot 5 (GetSound) -> OnVoiceLookup
+hook	exe::FindVoice (Detour)	modules/subtitles/src/host/main.cpp:576	Subtitles	voice object lookup -> patches the voice vtable slot 5 (GetSound) -> OnVoiceLookup
 hook	voice vtable slot 5 GetSound (PatchVtable)	modules/subtitles/src/host/main.cpp	Subtitles	OnVoiceLookup (scene and bar subtitles)
 hook	exe::HudDrawPart (Detour, naked entry)	modules/subtitles/src/host/main.cpp:134	Subtitles	off-screen indicator arrows kept clear (display::ConfineHudArrow, setting hud_arrows)
-hook	exe::PlayArch (Detour)	modules/subtitles/src/host/main.cpp:601	Subtitles	OnSoundStart (story sounds, scene mixes -> mixcues)
+hook	exe::PlayArch (Detour)	modules/subtitles/src/host/main.cpp:581	Subtitles	OnSoundStart (story sounds, scene mixes -> mixcues)
 hook	movie.dll!MediaPlayer::PlayMovie import of Freelancer.exe (PatchImport)	core/host/moviehooks.cpp	core	ImplApi OnMovie event 0 (also Subtitles' movie lines)
 hook	movie.dll!MediaPlayer::UpdateMovie import (PatchImport)	core/host/moviehooks.cpp	core	OnMovie event 1 each pass of the movie loop (movie lines redraw; Subtitles)
 hook	movie.dll!MediaPlayer::StopMovie import (PatchImport)	core/host/moviehooks.cpp	core	OnMovie event 2
 hook	movie.dll ole32!CoCreateInstance import (PatchImport)	core/host/moviehooks.cpp	core	captures the DirectShow graph (HostApi GetMovieGraph) for fit-to-screen
-hook	common.dll!CreateID import of Freelancer.exe (PatchImport)	modules/subtitles/src/host/main.cpp:362	core	log trace of dx_/mix_ ids only (research); no module consumer
 hook	IDirect3DDevice8::Present (PatchVtable slot Dev_Present)	modules/subtitles/src/host/main.cpp	Subtitles	OnPresent: draws subtitles when no UI pass ran (cutscenes, movies), portrait capture, research `grab`
 hook	HUD layout constants: maneuver bar x floats (hk::Write, HostApi ShiftManeuverBar)	modules/subtitles/src/host/main.cpp	Subtitles	display.cpp PlaceManeuverBar only (space_narrow); writes the game's HUD constants as HudShift does; not subtitle drawing: HUD module may own it
 hook	HUD layout constants: comm window y floats (ShiftCommWindow via ApplyShift)	modules/subtitles/src/host/main.cpp	Subtitles	display.cpp PlaceCommWindow only (comm_portrait); same write path
 hook	kernel32!Sleep import of movie.dll (PatchImport, from the logic DLL)	modules/movies/src/impl/movies.cpp	Movies	MovieSleep: lets the movie lines update once per movie loop pass; hot-reloadable logic patches an import (restored by hk::Write movie.cpp:1218)
-command	events	modules/controller/src/host/main.cpp:527	core	host-side: the event ring (harness)
-command	uibtn	modules/controller/src/host/main.cpp:528	core	host-side: native buttons status/click/mesh (bar button part = Autopilot)
+command	events	modules/controller/src/host/main.cpp:599	core	host-side: the event ring (harness)
+command	uibtn	modules/controller/src/host/main.cpp:600	core	host-side: native buttons status/click/mesh (bar button part = Autopilot)
 command	hooks	core/host/commands.cpp:69	core	the registry: every channel answers it (`hooks`: the module's rows and the shared ones)
-command	uigen	modules/controller/src/host/main.cpp:529	core	host-side: UI generation counter (Extended HUD 2)
+command	uigen	modules/controller/src/host/main.cpp:601	core	host-side: UI generation counter (Extended HUD 2)
 command	winmode	modules/display/src/display.cpp:24	Display	host-side: borderless status / altenter
-command	sdlpad	modules/controller/src/host/main.cpp:530	Controller	host-side: SDL virtual test pads (TEST ONLY)
+command	sdlpad	modules/controller/src/host/main.cpp:602	Controller	host-side: SDL virtual test pads (TEST ONLY)
 command	padfallback	modules/controller/src/impl/pad_verbs.cpp:54	Controller	the fallback's HID answer, a pulse on the pad in the hands (tests\pad_fallback.ps1)
-command	d3dreset	modules/controller/src/host/main.cpp:531	core	host-side: device Reset as the game's own (background test starts)
+command	d3dreset	modules/controller/src/host/main.cpp:603	core	host-side: device Reset as the game's own (background test starts)
 command	reload	core/host/commands.cpp:67	core	the registry: every channel answers it (`hooks`: the module's rows and the shared ones)
 command	unload	core/host/commands.cpp:68	core	the registry: every channel answers it (`hooks`: the module's rows and the shared ones)
 command	ping	core/game/debugverbs.cpp	core	
@@ -767,25 +766,25 @@ command	ap save	modules/autopilot/src/autopilot_settings.cpp	Autopilot
 command	ap load	modules/autopilot/src/autopilot_settings.cpp	Autopilot	
 command	ap settings	modules/autopilot/src/autopilot_settings.cpp	Autopilot	
 command	ap (empty)/status	modules/autopilot/src/autopilot_settings.cpp	Autopilot	
-command	uihide	core/game/room.cpp:632	core	room: UI/hotspot/dealer helpers shared with every module
-command	uinames	core/game/room.cpp:637	core	room: UI/hotspot/dealer helpers shared with every module
-command	visible	core/game/room.cpp:642	core	room: UI/hotspot/dealer helpers shared with every module
-command	ctlinfo	core/game/room.cpp:647	core	room: UI/hotspot/dealer helpers shared with every module
-command	dealer	core/game/room.cpp:666	core	room: UI/hotspot/dealer helpers shared with every module
-command	scroll	core/game/room.cpp:688	core	room: UI/hotspot/dealer helpers shared with every module
-command	table	core/game/room.cpp:706	core	room: UI/hotspot/dealer helpers shared with every module
-command	click	core/game/room.cpp:724	core	room: UI/hotspot/dealer helpers shared with every module
-command	hotspots	core/game/room.cpp:735	core	room: UI/hotspot/dealer helpers shared with every module
-command	goto	core/game/room.cpp:750	core	room: UI/hotspot/dealer helpers shared with every module
-command	talkers	core/game/room.cpp:755	core	room: UI/hotspot/dealer helpers shared with every module
-command	talk	core/game/room.cpp:764	core	room: UI/hotspot/dealer helpers shared with every module
+command	uihide	core/game/room.cpp:625	core	room: UI/hotspot/dealer helpers shared with every module
+command	uinames	core/game/room.cpp:630	core	room: UI/hotspot/dealer helpers shared with every module
+command	visible	core/game/room.cpp:635	core	room: UI/hotspot/dealer helpers shared with every module
+command	ctlinfo	core/game/room.cpp:640	core	room: UI/hotspot/dealer helpers shared with every module
+command	dealer	core/game/room.cpp:659	core	room: UI/hotspot/dealer helpers shared with every module
+command	scroll	core/game/room.cpp:681	core	room: UI/hotspot/dealer helpers shared with every module
+command	table	core/game/room.cpp:699	core	room: UI/hotspot/dealer helpers shared with every module
+command	click	core/game/room.cpp:717	core	room: UI/hotspot/dealer helpers shared with every module
+command	hotspots	core/game/room.cpp:728	core	room: UI/hotspot/dealer helpers shared with every module
+command	goto	core/game/room.cpp:743	core	room: UI/hotspot/dealer helpers shared with every module
+command	talkers	core/game/room.cpp:748	core	room: UI/hotspot/dealer helpers shared with every module
+command	talk	core/game/room.cpp:757	core	room: UI/hotspot/dealer helpers shared with every module
 command	usebattery	core/game/ai.cpp:1619	core	ai: consumables and the game's AI on the player ship
 command	usenano	core/game/ai.cpp:1620	core	ai: consumables and the game's AI on the player ship
 command	ai	core/game/ai.cpp:1627	core	ai: consumables and the game's AI on the player ship
 command	spawn	core/game/spawn.cpp:493	core	spawn: test NPCs
-command	route	core/game/route.cpp:736	core	route planning
-command	eta	core/game/route.cpp:762	core	route planning
-command	lanelaw	core/game/route.cpp:805	core	route planning
+command	route	core/game/route.cpp:745	core	route planning
+command	eta	core/game/route.cpp:771	core	route planning
+command	lanelaw	core/game/route.cpp:814	core	route planning
 command	mission	core/game/mission_live.cpp:297	core	mission live trigger table
 command	selfdestruct	core/game/menu.cpp:339	core	menus / saves
 command	pause	core/game/menu.cpp:344	core	menus / saves
@@ -806,37 +805,37 @@ command	weapons	core/game/space_debug.cpp:21	core	space readers
 command	cover	core/game/space_debug.cpp:308	core	space readers
 command	equipall	core/game/space_debug.cpp:375	core	space readers
 command	missiles	core/game/space_debug.cpp:391	core	space readers
-command	contacts	core/game/space_debug.cpp:410	core	space readers
-command	track	core/game/space_debug.cpp:449	core	space readers
-command	equipment	core/game/space_debug.cpp:465	core	space readers
-command	who	core/game/space_debug.cpp:472	core	space readers
-command	gunpoint	core/game/space_debug.cpp:480	core	space readers
-command	docked	core/game/space_debug.cpp:500	core	space readers
-command	worth	core/game/space_debug.cpp:505	core	space readers
-command	pilot	core/game/space_debug.cpp:530	core	space readers
-command	avoid	core/game/space_debug.cpp:556	core	space readers
-command	area	core/game/space_debug.cpp:572	core	space readers
-command	zonesalong	core/game/space_debug.cpp:585	core	space readers
+command	contacts	core/game/space_debug.cpp:419	core	space readers
+command	track	core/game/space_debug.cpp:458	core	space readers
+command	equipment	core/game/space_debug.cpp:474	core	space readers
+command	who	core/game/space_debug.cpp:481	core	space readers
+command	gunpoint	core/game/space_debug.cpp:489	core	space readers
+command	docked	core/game/space_debug.cpp:509	core	space readers
+command	worth	core/game/space_debug.cpp:514	core	space readers
+command	pilot	core/game/space_debug.cpp:539	core	space readers
+command	avoid	core/game/space_debug.cpp:565	core	space readers
+command	area	core/game/space_debug.cpp:581	core	space readers
+command	zonesalong	core/game/space_debug.cpp:594	core	space readers
 command	waypoint	core/game/space_debug.cpp:20	core	space readers
-command	bestpath	core/game/space_debug.cpp:650	core	space readers
-command	obstacles	core/game/space_debug.cpp:677	core	space readers
-command	godmode	core/game/space_debug.cpp:719	core	space readers
-command	attitude	core/game/space_debug.cpp:731	core	space readers
-command	rounds	core/game/space_debug.cpp:739	core	space readers
-command	laneopen	core/game/space_debug.cpp:768	core	space readers
-command	lanelinks	core/game/space_debug.cpp:780	core	space readers
-command	objobj	core/game/space_debug.cpp:789	core	space readers
-command	sight	core/game/space_debug.cpp:798	core	space readers
-command	routes	core/game/space_debug.cpp:813	core	space readers
-command	settarget	core/game/space_debug.cpp:857	core	space readers
+command	bestpath	core/game/space_debug.cpp:659	core	space readers
+command	obstacles	core/game/space_debug.cpp:686	core	space readers
+command	godmode	core/game/space_debug.cpp:728	core	space readers
+command	attitude	core/game/space_debug.cpp:755	core	space readers
+command	rounds	core/game/space_debug.cpp:763	core	space readers
+command	laneopen	core/game/space_debug.cpp:792	core	space readers
+command	lanelinks	core/game/space_debug.cpp:804	core	space readers
+command	objobj	core/game/space_debug.cpp:813	core	space readers
+command	sight	core/game/space_debug.cpp:822	core	space readers
+command	routes	core/game/space_debug.cpp:837	core	space readers
+command	settarget	core/game/space_debug.cpp:881	core	space readers
 command	motion	core/game/space_debug.cpp:113	core	space readers
-command	ping	modules/subtitles/src/host/main.cpp:579	core	host-side (the controller answers it in debug.cpp:416)
+command	ping	modules/subtitles/src/host/main.cpp:559	core	host-side (the controller answers it in debug.cpp:416)
 command	movieskip	core/host/moviehooks.cpp	core	host-side: ends the playing movie
-command	state	modules/subtitles/src/impl/impl.cpp:600	Subtitles	subtitles state dump; the controller has `state` too: collision
-command	moviesample	modules/subtitles/src/impl/impl.cpp:611	Subtitles	movie sampler thread (Movies)
-command	config	modules/subtitles/src/impl/impl.cpp:613	Subtitles	[Subtitles] ini; the controller has `config` too: collision
-command	settings	modules/subtitles/src/impl/impl.cpp:628	Subtitles	[Subtitles] registry listing
-command	set	modules/subtitles/src/impl/impl.cpp:630	Subtitles	[Subtitles] registry setter + movie::OnSettingApplied; the controller has `set` too: collision (needs a section)
+command	state	modules/subtitles/src/impl/impl.cpp:605	Subtitles	subtitles state dump; the controller has `state` too: collision
+command	moviesample	modules/subtitles/src/impl/impl.cpp:616	Subtitles	movie sampler thread (Movies)
+command	config	modules/subtitles/src/impl/impl.cpp:618	Subtitles	[Subtitles] ini; the controller has `config` too: collision
+command	settings	modules/subtitles/src/impl/impl.cpp:631	Subtitles	[Subtitles] registry listing
+command	set	modules/subtitles/src/impl/impl.cpp:633	Subtitles	[Subtitles] registry setter; the controller has `set` too: collision (needs a section)
 command	trace	modules/subtitles/src/impl/impl.cpp:642	Subtitles	subtitles trace; the controller has `trace` (key trace): collision
 command	layout	modules/subtitles/src/impl/impl.cpp:647	Subtitles	
 command	pages	modules/subtitles/src/impl/impl.cpp:649	Subtitles	
@@ -856,13 +855,13 @@ command	reloaddata	modules/subtitles/src/impl/impl.cpp:803	Subtitles
 command	jointest	modules/subtitles/src/impl/impl.cpp:808	Subtitles	
 command	colors	modules/subtitles/src/impl/impl.cpp:810	Subtitles	
 frame	FrameUpdateHook (controller host)	core/host/router.cpp:102	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #1: heartbeat++, frame serial++, ends a modal-loop flag; this is the OUTERMOST detour because the controller host installs after the subtitles host (core/hook.h Detour chains onto an existing JMP; DllMain order core/flvibed.cpp subtitles then controller). UNVERIFIED live: confirm with the `hooks` command
-frame	GuardedFrame -> LoadImpl (first call only)	modules/controller/src/host/main.cpp:248	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #2: loads the controller logic when none yet
-frame	PollCommands	modules/controller/src/host/main.cpp:195	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #3: shm debug channel executed BEFORE the logic's OnFrame (host verbs, else ImplApi::Command)
-frame	dimouse::Update (host)	modules/controller/src/host/main.cpp:256	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #4: virtual mouse state
-frame	events::Update (host)	modules/controller/src/host/main.cpp:257	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #5: 1/s: Content.dll / client / server hook upkeep (InstallContentHooks, ObjectiveReread after a load)
-frame	uibtn::OnFrame (host)	modules/controller/src/host/main.cpp:258	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #6: validates the tracked native buttons against the game's control list
-frame	TagModeCheck (host)	modules/controller/src/host/main.cpp:23	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #7: multiplayer tag mode bookkeeping
-frame	ImplOnFrame -> ImplApi::OnFrame (controller logic)	modules/controller/src/host/main.cpp:242	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #8: only if the logic is loaded and not faulted -> impl.cpp ImplOnFrame -> ctl::OnFrame (rows FRAME-LOGIC)
+frame	GuardedFrame -> LoadImpl (first call only)	modules/controller/src/host/main.cpp:320	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #2: loads the controller logic when none yet
+frame	PollCommands	modules/controller/src/host/main.cpp:267	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #3: shm debug channel executed BEFORE the logic's OnFrame (host verbs, else ImplApi::Command)
+frame	dimouse::Update (host)	modules/controller/src/host/main.cpp:328	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #4: virtual mouse state
+frame	events::Update (host)	modules/controller/src/host/main.cpp:329	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #5: 1/s: Content.dll / client / server hook upkeep (InstallContentHooks, ObjectiveReread after a load)
+frame	uibtn::OnFrame (host)	modules/controller/src/host/main.cpp:330	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #6: validates the tracked native buttons against the game's control list
+frame	TagModeCheck (host)	modules/controller/src/host/main.cpp:18	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #7: multiplayer tag mode bookkeeping
+frame	ImplOnFrame -> ImplApi::OnFrame (controller logic)	modules/controller/src/host/main.cpp:314	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #8: only if the logic is loaded and not faulted -> impl.cpp ImplOnFrame -> ctl::OnFrame (rows FRAME-LOGIC)
 frame	deferred::Run (host)	core/host/deferred.cpp	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #9: front-end clicks deferred by HostApi DeferToFrameEnd run after the logic frame
 frame	g_origFrameUpdate = FrameUpdateHook (subtitles host)	core/host/router.cpp:51	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #10: next link of the chain: heartbeat++, GuardedFrame
 frame	PollCommands (subtitles host)	modules/subtitles/src/host/main.cpp:86	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #11: the subtitles host reads the same shm channel (cmd verbs: see command rows; a verb is answered by whichever host sees it first)
@@ -870,116 +869,116 @@ frame	ImplApi::OnFrame (subtitles logic)	modules/subtitles/src/host/main.cpp	Sub
 frame	game FrameUpdate (original)	core/host/router.cpp:79	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #13: the game's own frame runs AFTER both logic frames (so FLvibed reads last frame's results; held commands set here are consumed by it)
 frame	server clock fix / AdoptRestoreStyle	modules/controller/src/host/main.cpp	core	FRAME-HOST (one game frame; core\host\router.cpp kFrameOrder: the controller, the subtitles, then the game; after it kAfterGameOrder) #14: after the game's frame: fixed-dt server clock; first frame (and when a hook saw FLUF as caller) moves hooks onto FLUF's handlers (duplicated in the subtitles host)
 frame	gameclock::Advance	core/game/coreframe.cpp	core	FRAME-LOGIC ctl::OnFrame #1: game dt as passed, before any clamp (paused = 0); first so every reader sees this frame's time
-frame	CapFrame	core/game/coreframe.cpp:224	core	FRAME-LOGIC ctl::OnFrame #2: test frame-rate cap (`fpscap`, 0 = off)
-frame	perf::NewFrame / perf::Scope	core/game/coreframe.cpp:298	core	FRAME-LOGIC ctl::OnFrame #3: CPU accounting
-frame	barbutton::Update	core/game/coreframe.cpp:301	Autopilot	FRAME-LOGIC ctl::OnFrame #4: [Autopilot] bar button state to the host (HostApi SetUiButton)
-frame	space::BeginFrame	core/game/coreframe.cpp:304	core	FRAME-LOGIC ctl::OnFrame #5: turns on the frame's memo of space scans; EndMemo destructor space::EndFrame at every return of OnFrame
-frame	game-load check: mission::ForgetGame + autopilot::ArbiterForgetGame	core/game/coreframe.cpp:17	core	FRAME-LOGIC ctl::OnFrame #6: when HostGameLoads() changed since last frame (not the first look): core mission memory + Autopilot goal-queue memory forgotten
-frame	Gamepad::IgnoreRealNow / g_pad.Update	modules/controller/src/impl/controller.cpp:125	Controller	FRAME-LOGIC ctl::OnFrame #7: [Controller] pad poll; focus_only gate; g_menuPad (confirm_button swap); press gates Observe (flight/FLUF/UI) at the next lines
-frame	TickSteerRelease	core/game/coreframe.cpp:329	Controller	FRAME-LOGIC ctl::OnFrame #8: completes a steering release started by ReleaseSteer (Controller+Autopilot steering path)
+frame	CapFrame	core/game/coreframe.cpp:268	core	FRAME-LOGIC ctl::OnFrame #2: test frame-rate cap (`fpscap`, 0 = off)
+frame	perf::NewFrame / perf::Scope	core/game/coreframe.cpp:345	core	FRAME-LOGIC ctl::OnFrame #3: CPU accounting
+frame	barbutton::Update	core/game/coreframe.cpp:348	Autopilot	FRAME-LOGIC ctl::OnFrame #4: [Autopilot] bar button state to the host (HostApi SetUiButton)
+frame	space::BeginFrame	core/game/coreframe.cpp:351	core	FRAME-LOGIC ctl::OnFrame #5: turns on the frame's memo of space scans; EndMemo destructor space::EndFrame at every return of OnFrame
+frame	game-load check: mission::ForgetGame + autopilot::ArbiterForgetGame	core/game/coreframe.cpp:19	core	FRAME-LOGIC ctl::OnFrame #6: when HostGameLoads() changed since last frame (not the first look): core mission memory + Autopilot goal-queue memory forgotten
+frame	Gamepad::IgnoreRealNow / g_pad.Update	modules/controller/src/impl/controller.cpp:127	Controller	FRAME-LOGIC ctl::OnFrame #7: [Controller] pad poll; focus_only gate; g_menuPad (confirm_button swap); press gates Observe (flight/FLUF/UI) at the next lines
+frame	TickSteerRelease	core/game/coreframe.cpp:376	Controller	FRAME-LOGIC ctl::OnFrame #8: completes a steering release started by ReleaseSteer (Controller+Autopilot steering path)
 frame	mprules::Update	core/game/coreframe.cpp	core	FRAME-LOGIC ctl::OnFrame #9: core: the server's word on the autopilot from new chat lines
 frame	ai::Update	core/game/coreframe.cpp	core	FRAME-LOGIC ctl::OnFrame #10: core/game: the player ship's AI/consumable state
-frame	spawn::CheckClearAt + space::InvalidateFrame	core/game/coreframe.cpp:332	core	FRAME-LOGIC ctl::OnFrame #11: test aid; then the frame memo is invalidated
-frame	TrackSelf	core/game/coreframe.cpp:87	core	FRAME-LOGIC ctl::OnFrame #12: 1/s self hull/shield event line (harness)
+frame	spawn::CheckClearAt + space::InvalidateFrame	core/game/coreframe.cpp:379	core	FRAME-LOGIC ctl::OnFrame #11: test aid; then the frame memo is invalidated
+frame	TrackSelf	core/game/coreframe.cpp:107	core	FRAME-LOGIC ctl::OnFrame #12: 1/s self hull/shield event line (harness)
 frame	mwatch::Frame	core/game/maneuver_watchdog.cpp	core	core's frame and core's page host, in flight, whoever flies; setting maneuver_watchdog; reissues a stalled formation / goto / dock
-frame	modslots::Frame kNpc	core/game/coreframe.cpp:337	NPC	FRAME-LOGIC ctl::OnFrame #14: [NPC] runs BEFORE the enabled gate, mode name + paused flag
-frame	flight::RecordFrame / debug::Frame	core/game/coreframe.cpp:338	core	FRAME-LOGIC ctl::OnFrame #15: core recorder; debug `shot` frames
-frame	options_page::Update	core/game/coreframe.cpp:340	core	FRAME-LOGIC ctl::OnFrame #16: [core] options page input + hosting state, before pad flight/menu code
-frame	flufaware::Update	core/game/coreframe.cpp:341	core	FRAME-LOGIC ctl::OnFrame #17: [core] FLUF's windows from the HUD bus (setting fluf_windows), before every reader
-frame	shieldcue::Update / reticlecue::Update	modules/hud/src/hud_module.cpp:24	HUD	FRAME-LOGIC ctl::OnFrame #18: [HUD] only the state update; before the enabled gate; Space/SpaceUi flag, reticlecue also autopilot::Active()
-frame	haptics::Update	modules/controller/src/impl/controller.cpp:146	Controller	FRAME-LOGIC ctl::OnFrame #19: [Controller] vibration, deliberately before the enabled check so disabling silences it
-frame	space::TrackRounds	core/game/coreframe.cpp:347	core	FRAME-LOGIC ctl::OnFrame #20: only Space/SpaceUi: incoming rounds -> damage model hit chance (Autopilot reader)
+frame	modslots::Frame kNpc	core/game/coreframe.cpp:384	NPC	FRAME-LOGIC ctl::OnFrame #14: [NPC] runs BEFORE the enabled gate, mode name + paused flag
+frame	flight::RecordFrame / debug::Frame	core/game/coreframe.cpp:385	core	FRAME-LOGIC ctl::OnFrame #15: core recorder; debug `shot` frames
+frame	options_page::Update	core/game/coreframe.cpp:387	core	FRAME-LOGIC ctl::OnFrame #16: [core] options page input + hosting state, before pad flight/menu code
+frame	flufaware::Update	core/game/coreframe.cpp:388	core	FRAME-LOGIC ctl::OnFrame #17: [core] FLUF's windows from the HUD bus (setting fluf_windows), before every reader
+frame	shieldcue::Update / reticlecue::Update	modules/hud/src/hud_module.cpp:35	HUD	FRAME-LOGIC ctl::OnFrame #18: [HUD] only the state update; before the enabled gate; Space/SpaceUi flag, reticlecue also autopilot::Active()
+frame	haptics::Update	modules/controller/src/impl/controller.cpp:171	Controller	FRAME-LOGIC ctl::OnFrame #19: [Controller] vibration, deliberately before the enabled check so disabling silences it
+frame	space::TrackRounds	core/game/coreframe.cpp:394	core	FRAME-LOGIC ctl::OnFrame #20: only Space/SpaceUi: incoming rounds -> damage model hit chance (Autopilot reader)
 frame	HostSetKeepRunning(run_in_background)	modules/controller/src/impl/controller.cpp	core	FRAME-LOGIC ctl::OnFrame #21: [core] every frame
-frame	if (!g_opt.enabled) return	modules/controller/src/impl/controller.cpp:67	core	FRAME-LOGIC ctl::OnFrame #22: KILL SWITCH: everything below (device switch, mode detection, HUD 2, uiskin, goals, autopilot via UpdateSpace, pad dispatch, timer, LiveSplit) stops; only HostCursorHide(false) runs. Today `set enabled 0` only; with controller=0 the host is not loaded at all
-frame	uiopt copy block + gametext::Frame	core/game/coreframe.cpp:35	core	FRAME-LOGIC ctl::OnFrame #23: [core] registry values copied into uiopt::UiOptions for device/glyphs/presets/padhud/hud2; deckmode::Active; gametext::Frame(game_text_size) (module ?)
-frame	device::Update	modules/controller/src/impl/controller.cpp:166	Controller	FRAME-LOGIC ctl::OnFrame #24: [Controller] input-device service: who owns cursor/steering/UI (padOwns)
-frame	space::PlayerShipId change -> HostObjectiveReread	core/game/coreframe.cpp:380	core	FRAME-LOGIC ctl::OnFrame #25: a new flight (launch or save load): objective re-read from the game's copy (feeds Autopilot/HUD/Speedrun readers)
-frame	turret view sync (exe::CamTurret)	modules/controller/src/impl/controller.cpp:81	Controller	FRAME-LOGIC ctl::OnFrame #26: g_turret follows the game's camera (Controller state also read by HUD 2 and Autopilot)
-frame	glyphs::Update; padOwns = device::Pad(); pause_on_disconnect	modules/controller/src/impl/controller.cpp:181	Controller	FRAME-LOGIC ctl::OnFrame #27: [core glyph atlas / Controller]
-frame	dimouse::Capture	modules/controller/src/impl/controller.cpp:193	Controller	FRAME-LOGIC ctl::OnFrame #28: re-capture the mouse when the pad is used (windowed)
-frame	death detect -> StopBot + autopilot::Stop	core/game/coreframe.cpp:96	core	FRAME-LOGIC ctl::OnFrame #29: camera = death camera
-frame	control-exclusion event	core/game/coreframe.cpp:419	core	FRAME-LOGIC ctl::OnFrame #30: event log of the ship's control exclusion
+frame	if (!g_opt.enabled) return	modules/controller/src/impl/controller.cpp:68	core	FRAME-LOGIC ctl::OnFrame #22: KILL SWITCH: everything below (device switch, mode detection, HUD 2, uiskin, goals, autopilot via UpdateSpace, pad dispatch, timer, LiveSplit) stops; only HostCursorHide(false) runs. Today `set enabled 0` only; with controller=0 the host is not loaded at all
+frame	uiopt copy block + gametext::Frame	core/game/coreframe.cpp:37	core	FRAME-LOGIC ctl::OnFrame #23: [core] registry values copied into uiopt::UiOptions for device/glyphs/presets/padhud/hud2; deckmode::Active; gametext::Frame(game_text_size) (module ?)
+frame	device::Update	modules/controller/src/impl/controller.cpp:195	Controller	FRAME-LOGIC ctl::OnFrame #24: [Controller] input-device service: who owns cursor/steering/UI (padOwns)
+frame	space::PlayerShipId change -> HostObjectiveReread	core/game/coreframe.cpp:425	core	FRAME-LOGIC ctl::OnFrame #25: a new flight (launch or save load): objective re-read from the game's copy (feeds Autopilot/HUD/Speedrun readers)
+frame	turret view sync (exe::CamTurret)	modules/controller/src/impl/controller.cpp:82	Controller	FRAME-LOGIC ctl::OnFrame #26: g_turret follows the game's camera (Controller state also read by HUD 2 and Autopilot)
+frame	glyphs::Update; padOwns = device::Pad(); pause_on_disconnect	modules/controller/src/impl/controller.cpp:210	Controller	FRAME-LOGIC ctl::OnFrame #27: [core glyph atlas / Controller]
+frame	dimouse::Capture	modules/controller/src/impl/controller.cpp:222	Controller	FRAME-LOGIC ctl::OnFrame #28: re-capture the mouse when the pad is used (windowed)
+frame	death detect -> StopBot + autopilot::Stop	core/game/coreframe.cpp:116	core	FRAME-LOGIC ctl::OnFrame #29: camera = death camera
+frame	control-exclusion event	core/game/coreframe.cpp:464	core	FRAME-LOGIC ctl::OnFrame #30: event log of the ship's control exclusion
 frame	DetectMode + 3-frame debounce + mode-change block	core/game/coreframe.cpp:4	core	FRAME-LOGIC ctl::OnFrame #31: mode change: autopilot::NoteMenu (to menu), HostObjectiveReread (leaving menu), ReleaseAll, g_dispatch.Reset, CloseModals, autopilot::Stop('docked'/'left space')
-frame	autopilot dock-cutscene skip	core/game/coreframe.cpp:202	Autopilot	FRAME-LOGIC ctl::OnFrame #32: Cutscene + docking camera + the autopilot's own dock: sends USER_CANCEL (Autopilot logic, runs in OnFrame not in UpdateAutopilot)
+frame	autopilot dock-cutscene skip	core/game/coreframe.cpp:244	Autopilot	FRAME-LOGIC ctl::OnFrame #32: Cutscene + docking camera + the autopilot's own dock: sends USER_CANCEL (Autopilot logic, runs in OnFrame not in UpdateAutopilot)
 frame	session::Update	core/game/coreframe.cpp	core	decided: prompt -> Controller, save mode -> Speedrun | FRAME-LOGIC ctl::OnFrame #33: [SPLIT] session mode per save, every device
-frame	modslots::Frame kSpeedrun	core/game/coreframe.cpp:337	Speedrun	FRAME-LOGIC ctl::OnFrame #34: [Speedrun] clock + split detector + LiveSplit client
-frame	hud2::Context + hud2::NoteAction(FireInput) + hud2::Update	core/game/coreframe.cpp:370	HUD	FRAME-LOGIC ctl::OnFrame #36: [HUD] fed from Controller state (padOwns, g_table, g_turret, g_weaponGroup, modal flags of picker/wheel/goals/wgroups, Autopilot::Active, newgame::Session)
-frame	hudwake::CursorStep -> HostCursorHide + hud2::NoteCursorHidden	modules/hud/src/hud_module.cpp:50	HUD	FRAME-LOGIC ctl::OnFrame #37: idle cursor hide under hud_fade 1; gated on mode Space, OnlyHudOpen, !options_page::IsOpen, flufaware
-frame	goals::Tick	core/game/coreframe.cpp:56	Autopilot	FRAME-LOGIC ctl::OnFrame #38: [Autopilot] goal panel keys/clicks/click box; after HUD 2 (which stands its click box down while the panel is open)
-frame	uiskin::Update / uistrip::Update / windowtext::Frame	modules/hud/src/hud_module.cpp:63	HUD	FRAME-LOGIC ctl::OnFrame #39: [HUD] ui_style skin; uistrip only Docked; windowtext gated on window_text and gameTextSize == 100
-frame	options_page::WantsInput early return (+pageLatch)	core/game/coreframe.cpp:481	core	FRAME-LOGIC ctl::OnFrame #40: OPEN PAGE OWNS PAD+KEYS: returns BEFORE autopilot, pad dispatch and padhud (the autopilot does not run while the page is open; latch holds until all buttons are up)
-frame	START -> USER_PAUSE	modules/controller/src/impl/controller.cpp:249	Controller	FRAME-LOGIC ctl::OnFrame #41: outside Space, when padmenus does not own input
-frame	padhud::Update / padhud::SetModal	modules/controller/src/impl/controller.cpp:268	Controller	FRAME-LOGIC ctl::OnFrame #42: [Controller] pad HUD layer context; SetModal(picker/wheel/goals/wgroups/FLUF)
-frame	SetHudSuppression	core/game/coreframe.cpp:122	Controller	FRAME-LOGIC ctl::OnFrame #43: (Space|SpaceUi) && (padOwns || autoFlies) && !SpaceWindowOpen -> HostApi SetHudHitSuppression
-frame	ui::VisibleRoots scan	core/game/coreframe.cpp:113	core	FRAME-LOGIC ctl::OnFrame #44: Space only, every 0.25 s while the cursor is not an arrow
-frame	autoFlies && Space -> UpdateSpace; return	core/game/coreframe.cpp:499	Autopilot	FRAME-LOGIC ctl::OnFrame #45: THE AUTOPILOT'S ONLY ENTRY: the bot or the autopilot flies whatever device (K&M included); needs enabled, page closed, mode Space
-frame	!padOwns branch	core/game/coreframe.cpp:146	Controller	FRAME-LOGIC ctl::OnFrame #46: K&M in use: in Space ReleaseAll/dispatch reset/close modals, autopilot::TracePlayer; return (UpdateSpace NOT run unless autoFlies above)
-frame	flufaware::OwnsPad -> UpdateFlufPad; padmenus::Idle; return	modules/controller/src/impl/controller.cpp:270	Controller	FRAME-LOGIC ctl::OnFrame #47: FLUF window drives the pad
-frame	padmenus::Update; OwnsInput -> return	modules/controller/src/impl/controller.cpp:305	Controller	FRAME-LOGIC ctl::OnFrame #48: [Controller] menu screens (main menu, load/save, pause, death, chat field)
-frame	switch (g_mode)	core/game/coreframe.cpp:556	Controller	FRAME-LOGIC ctl::OnFrame #49: Menu/Docked/SpaceUi: ReleaseSteer, padbases::Update, UpdateUiNav, UpdateFreeCursor, BACK closes window; Space: UpdateSpace; Cutscene: A/B -> Escape
+frame	modslots::Frame kSpeedrun	core/game/coreframe.cpp:384	Speedrun	FRAME-LOGIC ctl::OnFrame #34: [Speedrun] clock + split detector + LiveSplit client
+frame	hud2::Context + hud2::NoteAction(FireInput) + hud2::Update	core/game/coreframe.cpp:415	HUD	FRAME-LOGIC ctl::OnFrame #36: [HUD] fed from Controller state (padOwns, g_table, g_turret, g_weaponGroup, modal flags of picker/wheel/goals/wgroups, Autopilot::Active, newgame::Session)
+frame	hudwake::CursorStep -> HostCursorHide + hud2::NoteCursorHidden	modules/hud/src/hud_module.cpp:78	HUD	FRAME-LOGIC ctl::OnFrame #37: idle cursor hide under hud_fade 1; gated on mode Space, OnlyHudOpen, !options_page::IsOpen, flufaware
+frame	goals::Tick	core/game/coreframe.cpp:58	Autopilot	FRAME-LOGIC ctl::OnFrame #38: [Autopilot] goal panel keys/clicks/click box; after HUD 2 (which stands its click box down while the panel is open)
+frame	uiskin::Update / uistrip::Update / windowtext::Frame	modules/hud/src/hud_module.cpp:96	HUD	FRAME-LOGIC ctl::OnFrame #39: [HUD] ui_style skin; uistrip only Docked; windowtext gated on window_text and gameTextSize == 100
+frame	options_page::WantsInput early return (+pageLatch)	core/game/coreframe.cpp:530	core	FRAME-LOGIC ctl::OnFrame #40: OPEN PAGE OWNS PAD+KEYS: returns BEFORE autopilot, pad dispatch and padhud (the autopilot does not run while the page is open; latch holds until all buttons are up)
+frame	START -> USER_PAUSE	modules/controller/src/impl/controller.cpp:277	Controller	FRAME-LOGIC ctl::OnFrame #41: outside Space, when padmenus does not own input
+frame	padhud::Update / padhud::SetModal	modules/controller/src/impl/controller.cpp:296	Controller	FRAME-LOGIC ctl::OnFrame #42: [Controller] pad HUD layer context; SetModal(picker/wheel/goals/wgroups/FLUF)
+frame	SetHudSuppression	core/game/coreframe.cpp:160	Controller	FRAME-LOGIC ctl::OnFrame #43: (Space|SpaceUi) && (padOwns || autoFlies) && !SpaceWindowOpen -> HostApi SetHudHitSuppression
+frame	ui::VisibleRoots scan	core/game/coreframe.cpp:133	core	FRAME-LOGIC ctl::OnFrame #44: Space only, every 0.25 s while the cursor is not an arrow
+frame	autoFlies && Space -> UpdateSpace; return	core/game/coreframe.cpp:561	Autopilot	FRAME-LOGIC ctl::OnFrame #45: THE AUTOPILOT'S ONLY ENTRY: the bot or the autopilot flies whatever device (K&M included); needs enabled, page closed, mode Space
+frame	!padOwns branch	core/game/coreframe.cpp:184	Controller	FRAME-LOGIC ctl::OnFrame #46: K&M in use: in Space ReleaseAll/dispatch reset/close modals, autopilot::TracePlayer; return (UpdateSpace NOT run unless autoFlies above)
+frame	flufaware::OwnsPad -> UpdateFlufPad; padmenus::Idle; return	modules/controller/src/impl/controller.cpp:298	Controller	FRAME-LOGIC ctl::OnFrame #47: FLUF window drives the pad
+frame	padmenus::Update; OwnsInput -> return	modules/controller/src/impl/controller.cpp:333	Controller	FRAME-LOGIC ctl::OnFrame #48: [Controller] menu screens (main menu, load/save, pause, death, chat field)
+frame	switch (g_mode)	core/game/coreframe.cpp:618	Controller	FRAME-LOGIC ctl::OnFrame #49: Menu/Docked/SpaceUi: ReleaseSteer, padbases::Update, UpdateUiNav, UpdateFreeCursor, BACK closes window; Space: UpdateSpace; Cutscene: A/B -> Escape
 frame	UpdateBot	modules/controller/src/impl/controller.cpp	Controller	decided: as the bot command | FRAME-LOGIC ctl::UpdateSpace #1: g_bot.on: test bot flies, function returns
-frame	preset/table selection	modules/controller/src/impl/controller.cpp:49	Controller	FRAME-LOGIC ctl::UpdateSpace #2: autopilot::Active() -> shared flight_ap table else the preset's
-frame	PadInputs + g_gateFlight.Take	modules/controller/src/impl/controller.cpp:130	Controller	FRAME-LOGIC ctl::UpdateSpace #3: press ownership; stale presses hidden
-frame	picker::Update / wheel::Update / goals::Update / wgroups::Update	modules/controller/src/impl/controller.cpp:126	Controller	FRAME-LOGIC ctl::UpdateSpace #4: [Controller x3, Autopilot goals] flight modals; buttons they own are swallowed from the dispatch
-frame	ACE throttle triggers	modules/controller/src/impl/controller.cpp:383	Controller	FRAME-LOGIC ctl::UpdateSpace #5: preset ACE only
-frame	g_dispatch.Update + Apply(e)	modules/controller/src/impl/controller.cpp:78	Controller	FRAME-LOGIC ctl::UpdateSpace #6: [Controller] preset events -> Apply (taps, holds, ToggleAutopilot, ContextAction, SmartTarget)
+frame	preset/table selection	modules/controller/src/impl/controller.cpp:50	Controller	FRAME-LOGIC ctl::UpdateSpace #2: autopilot::Active() -> shared flight_ap table else the preset's
+frame	PadInputs + g_gateFlight.Take	modules/controller/src/impl/controller.cpp:132	Controller	FRAME-LOGIC ctl::UpdateSpace #3: press ownership; stale presses hidden
+frame	picker::Update / wheel::Update / goals::Update / wgroups::Update	modules/controller/src/impl/controller.cpp:128	Controller	FRAME-LOGIC ctl::UpdateSpace #4: [Controller x3, Autopilot goals] flight modals; buttons they own are swallowed from the dispatch
+frame	ACE throttle triggers	modules/controller/src/impl/controller.cpp:436	Controller	FRAME-LOGIC ctl::UpdateSpace #5: preset ACE only
+frame	g_dispatch.Update + Apply(e)	modules/controller/src/impl/controller.cpp:79	Controller	FRAME-LOGIC ctl::UpdateSpace #6: [Controller] preset events -> Apply (taps, holds, ToggleAutopilot, ContextAction, SmartTarget)
 frame	UpdateAutopilot -> return	core/game/coreframe.cpp	Autopilot	FRAME-LOGIC ctl::UpdateSpace #7: if the autopilot flew this frame, the pad's steering/throttle/fire code below is skipped (see FRAME-LOGIC UpdateAutopilot)
 frame	UpdateAutoTarget	modules/controller/src/impl/controller.cpp	Controller	FRAME-LOGIC ctl::UpdateSpace #8: setting auto_target
-frame	steering / aim / turret look	modules/controller/src/impl/controller.cpp:157	Controller	FRAME-LOGIC ctl::UpdateSpace #9: PadAim, SetSteer, dimouse::MoveTo
-frame	throttle + strafe holds	modules/controller/src/impl/controller.cpp:383	Controller	FRAME-LOGIC ctl::UpdateSpace #10: fl::SetThrottle, Hold slide-evade
-frame	fire/missile/afterburner/reverse/rear holds + UpdateFireTarget	modules/controller/src/impl/controller.cpp:237	Controller	FRAME-LOGIC ctl::UpdateSpace #11: Hold(...) as IsCmdHeld commands
-frame	not Active: autopilot::TracePlayer + handBack	core/game/coreframe.cpp:343	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #1: records the player's own flight; hand-back = ReleaseAll + SetGunAim(false)
-frame	stick hand-back check	modules/controller/src/impl/controller.cpp:388	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #2: PAD sticks beyond autopilot_cancel stop the autopilot (not for the right stick in turret/ASSISTED/wheel)
-frame	autopilot::Update(dt, o)	core/game/coreframe.cpp:301	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #3: the autopilot's decision for this frame (Out struct)
-frame	steering by Out: coast / pursue / steerTo / brake / game behaviour	modules/controller/src/impl/controller.cpp:157	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #4: aim::SteerTowards/TurnTowards/LevelSteer/Current (aim.cpp), Pursue (controller.cpp), SetSteer, dimouse::MoveTo, fl::SetThrottle
-frame	HostApi SetGunAim	modules/controller/src/impl/impl.cpp:37	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #5: turret view / covering fire
-frame	staggered fire + per-slot holds	modules/controller/src/impl/controller.cpp:237	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #6: space::PlayerWeapons, Hold/Tap of USER_FIRE_WEAPON<n>
+frame	steering / aim / turret look	modules/controller/src/impl/controller.cpp:182	Controller	FRAME-LOGIC ctl::UpdateSpace #9: PadAim, SetSteer, dimouse::MoveTo
+frame	throttle + strafe holds	modules/controller/src/impl/controller.cpp:436	Controller	FRAME-LOGIC ctl::UpdateSpace #10: fl::SetThrottle, Hold slide-evade
+frame	fire/missile/afterburner/reverse/rear holds + UpdateFireTarget	modules/controller/src/impl/controller.cpp:160	Controller	FRAME-LOGIC ctl::UpdateSpace #11: Hold(...) as IsCmdHeld commands
+frame	not Active: autopilot::TracePlayer + handBack	core/game/coreframe.cpp:390	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #1: records the player's own flight; hand-back = ReleaseAll + SetGunAim(false)
+frame	stick hand-back check	modules/controller/src/impl/controller.cpp:441	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #2: PAD sticks beyond autopilot_cancel stop the autopilot (not for the right stick in turret/ASSISTED/wheel)
+frame	autopilot::Update(dt, o)	core/game/coreframe.cpp:348	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #3: the autopilot's decision for this frame (Out struct)
+frame	steering by Out: coast / pursue / steerTo / brake / game behaviour	modules/controller/src/impl/controller.cpp:182	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #4: aim::SteerTowards/TurnTowards/LevelSteer/Current (aim.cpp), Pursue (controller.cpp), SetSteer, dimouse::MoveTo, fl::SetThrottle
+frame	HostApi SetGunAim	modules/controller/src/impl/impl.cpp:38	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #5: turret view / covering fire
+frame	staggered fire + per-slot holds	modules/controller/src/impl/controller.cpp:160	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #6: space::PlayerWeapons, Hold/Tap of USER_FIRE_WEAPON<n>
 frame	taps: missile, torpedo, mine, engineKill, cm, closestEnemy, repair, cruise, collectAll	modules/controller/src/impl/controller.cpp	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #7: Tap(...) via IsCmdHeld/key injection
-frame	holds: afterburn, reverse, rear, slide	core/game/coreframe.cpp:591	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #8: end of actuator; returns true
+frame	holds: afterburn, reverse, rear, slide	core/game/coreframe.cpp:653	Autopilot	FRAME-LOGIC ctl::UpdateAutopilot (the Autopilot actuator inside controller.cpp) #8: end of actuator; returns true
 frame	UiRenderHook (controller host)	core/host/router.cpp	core	DRAW-UNDER-HUD (game UiRender) #1: uibtn::BeforeUiDraw (hides the game's Options page under FLvibed's), then GuardedUnderHud only if exe::UiRenderSkip resolved and Mem(UiRenderSkip) <= 0, then the game's UiRender (draws the HUD controls and cursor)
-frame	ImplOnRenderUnderHud -> ctl::OnRenderUnderHud	modules/controller/src/impl/impl.cpp:92	core	DRAW-UNDER-HUD (game UiRender) #2:
-frame	space::EndFrame	core/game/coreframe.cpp:154	core	DRAW-UNDER-HUD (game UiRender) #3: scan fresh (a fault in OnFrame skips destructors)
-frame	g_menuOver / hud2::SetMenuOver	core/game/coreframe.cpp:145	HUD	DRAW-UNDER-HUD (game UiRender) #4: enabled && Space/SpaceUi && uiskin::ModalOpen()
-frame	hud2::RenderUnderHud	modules/hud/src/hud_module.cpp:73	HUD	DRAW-UNDER-HUD (game UiRender) #5: [HUD] native HUD switch + 3D views in HUD 2's windows; any mode (restores)
-frame	options_page::RenderUnder	core/game/coreframe.cpp:161	core	DRAW-UNDER-HUD (game UiRender) #6: [core] opaque base under the Options window
-frame	uiskin::RenderUnder	modules/hud/src/hud_module.cpp:79	HUD	DRAW-UNDER-HUD (game UiRender) #7: [HUD] windows' art hidden/restored + glass; any mode
-frame	shieldcue::Render	modules/hud/src/hud_module.cpp:81	HUD	DRAW-UNDER-HUD (game UiRender) #8: [HUD] enabled && Space/SpaceUi && !g_menuOver; falls back to the overlay pass if this pass did not run within 2 frames
+frame	ImplOnRenderUnderHud -> ctl::OnRenderUnderHud	modules/controller/src/impl/impl.cpp:98	core	DRAW-UNDER-HUD (game UiRender) #2:
+frame	space::EndFrame	core/game/coreframe.cpp:192	core	DRAW-UNDER-HUD (game UiRender) #3: scan fresh (a fault in OnFrame skips destructors)
+frame	g_menuOver / hud2::SetMenuOver	core/game/coreframe.cpp:183	HUD	DRAW-UNDER-HUD (game UiRender) #4: enabled && Space/SpaceUi && uiskin::ModalOpen()
+frame	hud2::RenderUnderHud	modules/hud/src/hud_module.cpp:124	HUD	DRAW-UNDER-HUD (game UiRender) #5: [HUD] native HUD switch + 3D views in HUD 2's windows; any mode (restores)
+frame	options_page::RenderUnder	core/game/coreframe.cpp:203	core	DRAW-UNDER-HUD (game UiRender) #6: [core] opaque base under the Options window
+frame	uiskin::RenderUnder	modules/hud/src/hud_module.cpp:133	HUD	DRAW-UNDER-HUD (game UiRender) #7: [HUD] windows' art hidden/restored + glass; any mode
+frame	shieldcue::Render	modules/hud/src/hud_module.cpp:135	HUD	DRAW-UNDER-HUD (game UiRender) #8: [HUD] enabled && Space/SpaceUi && !g_menuOver; falls back to the overlay pass if this pass did not run within 2 frames
 frame	CursorUpdateHook (controller host)	core/host/router.cpp:149	core	DRAW-OVERLAY (game CursorUpdate) #1: outermost: a second CursorUpdate without a FrameUpdate = a dialog's own loop -> ModalFrame (:827) serves a logic frame; then GuardedOverlay
-frame	ImplOnRenderOverlay -> ctl::OnRenderOverlay	modules/controller/src/impl/impl.cpp:88	core	DRAW-OVERLAY (game CursorUpdate) #2:
-frame	space::EndFrame	core/game/coreframe.cpp:154	core	DRAW-OVERLAY (game CursorUpdate) #3:
-frame	shieldcue::Render (fallback)	modules/hud/src/hud_module.cpp:81	HUD	DRAW-OVERLAY (game CursorUpdate) #4: Space/SpaceUi, only if no under-HUD pass ran in the last 2 frames
-frame	reticlecue::Render	modules/hud/src/hud_module.cpp:89	HUD	DRAW-OVERLAY (game CursorUpdate) #5: [HUD] !menuOver
-frame	hud2::Render	modules/hud/src/hud_module.cpp:73	HUD	DRAW-OVERLAY (game CursorUpdate) #6: [HUD] HUD 2 panels (flight modals draw over it)
-frame	padhud::Render	modules/controller/src/impl/controller.cpp:338	Controller	DRAW-OVERLAY (game CursorUpdate) #7: [Controller] pad HUD layer; !menuOver
-frame	picker::Render	modules/controller/src/impl/controller.cpp:339	Controller	DRAW-OVERLAY (game CursorUpdate) #8: [Controller] flight modal
-frame	wheel::Render	modules/controller/src/impl/controller.cpp:340	Controller	DRAW-OVERLAY (game CursorUpdate) #9: [Controller] flight modal
-frame	goals::Render	core/game/coreframe.cpp:151	Autopilot	DRAW-OVERLAY (game CursorUpdate) #10: [Autopilot] goal panel
-frame	wgroups::Render	modules/controller/src/impl/controller.cpp:358	Controller	DRAW-OVERLAY (game CursorUpdate) #11: [Controller] weapon groups modal (end of the Space/SpaceUi block)
-frame	padbases::Draw / padmap::Draw	modules/controller/src/impl/controller.cpp:345	Controller	DRAW-OVERLAY (game CursorUpdate) #12: [Controller] enabled && Docked/SpaceUi
-frame	padmenus::Draw	modules/controller/src/impl/controller.cpp:358	Controller	DRAW-OVERLAY (game CursorUpdate) #13: [Controller] New Game prompt, load tags, OSK; every mode
-frame	runtimer::Draw	core/game/coreframe.cpp:186	Speedrun	DRAW-OVERLAY (game CursorUpdate) #14: [Speedrun] HUD timer
-frame	uistrip::Draw	modules/hud/src/hud_module.cpp:93	HUD	DRAW-OVERLAY (game CursorUpdate) #15: [HUD] Extended HUD 2 docked overlay
-frame	promptbar::Draw	modules/controller/src/impl/controller.cpp:359	Controller	DRAW-OVERLAY (game CursorUpdate) #16: [Controller] shared prompt bar (HUD's uiskin and core options page also set it)
-frame	options_page::Draw	core/game/coreframe.cpp:201	core	DRAW-OVERLAY (game CursorUpdate) #17: [core] over everything while open
-frame	barbutton::Draw	core/game/coreframe.cpp:186	Autopilot	DRAW-OVERLAY (game CursorUpdate) #18: [Autopilot] bar button glyph (last controller draw)
+frame	ImplOnRenderOverlay -> ctl::OnRenderOverlay	modules/controller/src/impl/impl.cpp:94	core	DRAW-OVERLAY (game CursorUpdate) #2:
+frame	space::EndFrame	core/game/coreframe.cpp:192	core	DRAW-OVERLAY (game CursorUpdate) #3:
+frame	shieldcue::Render (fallback)	modules/hud/src/hud_module.cpp:135	HUD	DRAW-OVERLAY (game CursorUpdate) #4: Space/SpaceUi, only if no under-HUD pass ran in the last 2 frames
+frame	reticlecue::Render	modules/hud/src/hud_module.cpp:143	HUD	DRAW-OVERLAY (game CursorUpdate) #5: [HUD] !menuOver
+frame	hud2::Render	modules/hud/src/hud_module.cpp:124	HUD	DRAW-OVERLAY (game CursorUpdate) #6: [HUD] HUD 2 panels (flight modals draw over it)
+frame	padhud::Render	modules/controller/src/impl/controller.cpp:381	Controller	DRAW-OVERLAY (game CursorUpdate) #7: [Controller] pad HUD layer; !menuOver
+frame	picker::Render	modules/controller/src/impl/controller.cpp:382	Controller	DRAW-OVERLAY (game CursorUpdate) #8: [Controller] flight modal
+frame	wheel::Render	modules/controller/src/impl/controller.cpp:383	Controller	DRAW-OVERLAY (game CursorUpdate) #9: [Controller] flight modal
+frame	goals::Render	core/game/coreframe.cpp:189	Autopilot	DRAW-OVERLAY (game CursorUpdate) #10: [Autopilot] goal panel
+frame	wgroups::Render	modules/controller/src/impl/controller.cpp:411	Controller	DRAW-OVERLAY (game CursorUpdate) #11: [Controller] weapon groups modal (end of the Space/SpaceUi block)
+frame	padbases::Draw / padmap::Draw	modules/controller/src/impl/controller.cpp:389	Controller	DRAW-OVERLAY (game CursorUpdate) #12: [Controller] enabled && Docked/SpaceUi
+frame	padmenus::Draw	modules/controller/src/impl/controller.cpp:411	Controller	DRAW-OVERLAY (game CursorUpdate) #13: [Controller] New Game prompt, load tags, OSK; every mode
+frame	runtimer::Draw	core/game/coreframe.cpp:228	Speedrun	DRAW-OVERLAY (game CursorUpdate) #14: [Speedrun] HUD timer
+frame	uistrip::Draw	modules/hud/src/hud_module.cpp:147	HUD	DRAW-OVERLAY (game CursorUpdate) #15: [HUD] Extended HUD 2 docked overlay
+frame	promptbar::Draw	modules/controller/src/impl/controller.cpp:399	Controller	DRAW-OVERLAY (game CursorUpdate) #16: [Controller] shared prompt bar (HUD's uiskin and core options page also set it)
+frame	options_page::Draw	core/game/coreframe.cpp:243	core	DRAW-OVERLAY (game CursorUpdate) #17: [core] over everything while open
+frame	barbutton::Draw	core/game/coreframe.cpp:228	Autopilot	DRAW-OVERLAY (game CursorUpdate) #18: [Autopilot] bar button glyph (last controller draw)
 frame	dimouse::BackgroundCursor + cursor-hidden handling	core/host/router.cpp:158	core	DRAW-OVERLAY (game CursorUpdate) #19: then g_origCursorUpdate()
 frame	CursorUpdateHook (subtitles host) -> GuardedUi -> ImplApi::OnRenderUi	core/host/router.cpp:149	core	DRAW-OVERLAY (game CursorUpdate) #20: reached through g_origCursorUpdate: the subtitles are drawn AFTER the controller overlay and BEFORE the game's own cursor, so subtitles sit above the controller overlay (if the hook order above holds; the plan's 'subtitles before controller' wording means the opposite - verify)
-frame	display::Draw(false)	modules/subtitles/src/impl/impl.cpp:957	Subtitles	DRAW-OVERLAY (game CursorUpdate) #21: modules/subtitles/src/impl/impl.cpp ImplOnRenderUi; sets g_drawnInUi
-frame	PresentHook -> GuardedPresent -> ImplApi::OnPresent	modules/subtitles/src/host/main.cpp:416	Subtitles	DRAW-PRESENT (D3D Present, subtitles host only) #1: only for the game's device
-frame	display::CapturePortrait	modules/subtitles/src/impl/impl.cpp:995	Subtitles	DRAW-PRESENT (D3D Present, subtitles host only) #2:
-frame	grab capture block	modules/subtitles/src/impl/impl.cpp:30	core	DRAW-PRESENT (D3D Present, subtitles host only) #3: research `grab` frames
-frame	display::Draw(true) when no UI pass ran	modules/subtitles/src/impl/impl.cpp:957	Subtitles	DRAW-PRESENT (D3D Present, subtitles host only) #4: cutscenes / movies; then g_drawnInUi = false
-frame	++g_frames; TrackMenu	modules/subtitles/src/impl/impl.cpp:167	Subtitles	FRAME-SUBTITLES ImplOnFrame #1: game -> menu clears mixcues + display
-frame	TrackGameLoad	modules/subtitles/src/impl/impl.cpp:176	Subtitles	FRAME-SUBTITLES ImplOnFrame #2: HostApi GameLoads changed -> mixcues::Stop + display::Clear
-frame	TrackBarConversation	modules/subtitles/src/impl/impl.cpp:345	Subtitles	FRAME-SUBTITLES ImplOnFrame #3: room characters -> bar speaker
-frame	mixcues::Tick	modules/subtitles/src/impl/impl.cpp:921	Subtitles	FRAME-SUBTITLES ImplOnFrame #4: scene mix cues
-frame	display::Update	modules/subtitles/src/impl/impl.cpp:922	Subtitles	FRAME-SUBTITLES ImplOnFrame #5: stack, pages, placement; reads the HudBus published by HUD 2 in the SAME frame's earlier controller OnFrame (hud2::Update) if the controller hook is outermost
+frame	display::Draw(false)	modules/subtitles/src/impl/impl.cpp:966	Subtitles	DRAW-OVERLAY (game CursorUpdate) #21: modules/subtitles/src/impl/impl.cpp ImplOnRenderUi; sets g_drawnInUi
+frame	PresentHook -> GuardedPresent -> ImplApi::OnPresent	modules/subtitles/src/host/main.cpp:396	Subtitles	DRAW-PRESENT (D3D Present, subtitles host only) #1: only for the game's device
+frame	display::CapturePortrait	modules/subtitles/src/impl/impl.cpp:1004	Subtitles	DRAW-PRESENT (D3D Present, subtitles host only) #2:
+frame	grab capture block	modules/subtitles/src/impl/impl.cpp:31	core	DRAW-PRESENT (D3D Present, subtitles host only) #3: research `grab` frames
+frame	display::Draw(true) when no UI pass ran	modules/subtitles/src/impl/impl.cpp:966	Subtitles	DRAW-PRESENT (D3D Present, subtitles host only) #4: cutscenes / movies; then g_drawnInUi = false
+frame	++g_frames; TrackMenu	modules/subtitles/src/impl/impl.cpp:168	Subtitles	FRAME-SUBTITLES ImplOnFrame #1: game -> menu clears mixcues + display
+frame	TrackGameLoad	modules/subtitles/src/impl/impl.cpp:177	Subtitles	FRAME-SUBTITLES ImplOnFrame #2: HostApi GameLoads changed -> mixcues::Stop + display::Clear
+frame	TrackBarConversation	modules/subtitles/src/impl/impl.cpp:346	Subtitles	FRAME-SUBTITLES ImplOnFrame #3: room characters -> bar speaker
+frame	mixcues::Tick	modules/subtitles/src/impl/impl.cpp:930	Subtitles	FRAME-SUBTITLES ImplOnFrame #4: scene mix cues
+frame	display::Update	modules/subtitles/src/impl/impl.cpp:931	Subtitles	FRAME-SUBTITLES ImplOnFrame #5: stack, pages, placement; reads the HudBus published by HUD 2 in the SAME frame's earlier controller OnFrame (hud2::Update) if the controller hook is outermost
 frame	WinKeyHook -> ImplApi::OnRawKey chain	core/host/input.cpp	core	EVENT-ROUTES (not per-frame) #1: order: flufaware::HoldsKeys (stand down), options_page::OnRawKey, goals::OnRawKey (Autopilot), barbutton::OnKey (Autopilot, the autopilot key); true = key swallowed before the game sees it
-frame	HandleKeyHook -> ImplApi::OnKeyCmd	core/game/coreframe.cpp:65	HUD	EVENT-ROUTES (not per-frame) #2: after the game handled the command (not USER_MOVE): ctl::OnKeyCmd -> lock notice + hud2::NoteAction
-frame	UiButtonClicked -> ImplApi::OnUiButton	core/game/coreframe.cpp:582	core	EVENT-ROUTES (not per-frame) #3: kUiBtnBar -> barbutton::OnClick; kUiBtnHud2..+31 -> goals::OnHotspot if goals::OwnsHotspots else hud2::OnHotspot; else options_page::OnUiButton
+frame	HandleKeyHook -> ImplApi::OnKeyCmd	core/game/coreframe.cpp:67	HUD	EVENT-ROUTES (not per-frame) #2: after the game handled the command (not USER_MOVE): ctl::OnKeyCmd -> lock notice + hud2::NoteAction
+frame	UiButtonClicked -> ImplApi::OnUiButton	core/game/coreframe.cpp:644	core	EVENT-ROUTES (not per-frame) #3: kUiBtnBar -> barbutton::OnClick; kUiBtnHud2..+31 -> goals::OnHotspot if goals::OwnsHotspots else hud2::OnHotspot; else options_page::OnUiButton
 frame	Reset: OnDeviceLost (controller logic)	modules/controller/src/impl/controller.cpp:17	core	EVENT-ROUTES (not per-frame) #4: ctl::OnDeviceLost: hud2::OnDeviceLost + render::OnDeviceLost; the subtitles host's ResetHook (modules/subtitles/src/host/main.cpp:668) runs its own display/render OnDeviceLost; core\game\render.cpp state is compiled into BOTH logics (two copies)
 frame	ImplApi::Init order (controller)	modules/controller/src/impl/controller.cpp:2	core	EVENT-ROUTES (not per-frame) #5: SetCharacterSource, uiclick::SetDeferral, exe::ResolveAll, ctl::RegisterBus, ctl::Init (pad, ai::SetEvadeGuard, LoadConfig, padmenus/newgame/livesplit/runtimer Init), options_page::Init
-frame	ImplApi::Init order (subtitles)	modules/subtitles/src/impl/impl.cpp:22	core	EVENT-ROUTES (not per-frame) #6: SetCharacterSource, ResolveAll, RegisterBus, display::LoadSettings, movie::ApplyIntro, LoadData, movie::Load, display::SeedGlyphs, render::SetDevice
+frame	ImplApi::Init order (subtitles)	modules/subtitles/src/impl/impl.cpp:23	core	EVENT-ROUTES (not per-frame) #6: SetCharacterSource, ResolveAll, RegisterBus, display::LoadSettings, movie::Attach, LoadData, movie::Load, display::SeedGlyphs, render::SetDevice
 file	loader.h	core/loader.h	core	the one owner of the logic's load, unload, reload (P1); FLvibed.dll side
 file	loader.cpp	core/loader.cpp	core	compiled plain beside flvibed.cpp
 file	entry.cpp	core/logic/entry.cpp	core	the logic's entry: every module's ImplApi table; P2's router replaces it
@@ -1010,7 +1009,8 @@ file	navview_rules.h	core/game/navview_rules.h	core	the nav map's zoom, pan and 
 file	coreframe.h	core/game/coreframe.h	core	core's work in a frame, at its two places in the frame order
 file	coreframe.cpp	core/game/coreframe.cpp	core	the game clock, the server's word, the player ship's AI state
 file	enabled_gate.h	core/enabled_gate.h	core	[Controller] enabled per module, pure
-file	views.h	core/ui/views.h	core	what core's UI reads of a module that may be off: DeviceView, SkinView, AutopilotView; null = absent
+file	views.h	core/ui/views.h	core	what core's UI reads of a module that may be off: DeviceView, SkinView, AutopilotView; null = absent. views::DevicePromptPlates: the controller's prompt pills as the last overlay pass drew them, for what places itself around them (the map's names, issue 72)
+file	settings.h	core/settings.h	core	the settings registry (Def, Load / Save, Describe, the commented ini); Carry rows + the section's settings_rev (kRevKey): a changed default reaches files saved before it (first row: the subtitles' font, 0.4.6)
 file	prompts.h	core/ui/prompts.h	core	one prompt of the prompt bar
 file	ui_buttons.h	core/ui_buttons.h	core	the native buttons' ids, HUD 2's hotspot record
 file	attitude.h	core/game/attitude.h	core	the attitude the HUD calls hostile
@@ -1034,8 +1034,8 @@ file	moviescreen.cpp	core/game/moviescreen.cpp	core	identity from the file, the 
 file	commwin.h	core/game/commwin.h	core	the game's comm window placed by its live fields: what the subtitles and HUD 2 share
 file	commwin.cpp	core/game/commwin.cpp	core	the window, its icon and its caption into a screen square and back
 file	api.h	modules/movies/src/api.h	Movies	the host part's and the logic's tables
-file	main.cpp	modules/movies/src/host/main.cpp	Movies	the host part: movie event client, intro override
-file	movies.cpp	modules/movies/src/impl/movies.cpp	Movies	picture areas, fit, graph log, skip, intro, the Sleep import
+file	main.cpp	modules/movies/src/host/main.cpp	Movies	the host part: movie event client
+file	movies.cpp	modules/movies/src/impl/movies.cpp	Movies	picture areas, fit, graph log, skip, the Sleep import
 file	input_rules.h	core/game/input_rules.h	core	who owns the input in flight, pure; goes where the pad frame goes at P8
 file	flightio.h	core/game/flightio.h	core	held commands with owners, steering, the flight math's options
 file	flightio.cpp	core/game/flightio.cpp	core	held commands with owners, steering
@@ -1105,6 +1105,7 @@ file	indicators.h	core/game/indicators.h	core	the game's target indicators as da
 file	indicators.cpp	core/game/indicators.cpp	core	reads the indicators' records
 file	hud2_cue.h	modules/hud/src/hud2_cue.h	HUD	the weapon group cue's rules, pure (UI_HUD2_GROUP_CUE.md)
 file	hud2_cue.cpp	modules/hud/src/hud2_cue.cpp	HUD	the weapon group cue drawn
+file	hud2_notice.h	modules/hud/src/hud2_notice.h	HUD	the flight notice's rules, pure (UI_HUD2.md 5.43)
 file	hud2_comm.h	modules/hud/src/hud2_comm.h	HUD	the comm window under HUD 2 with no subtitles to hold it
 file	hud2_comm.cpp	modules/hud/src/hud2_comm.cpp	HUD	its place below the nav, the speaker's name under it
 file	nntabs.h	core/game/nntabs.h	core	the NeuroNet's tabs, pure: order, step, the press held through a slide (UI_HUD2_SKIN.md 6.1)
@@ -1113,7 +1114,7 @@ file	nnwin.cpp	core/game/nnwin.cpp	core	the manager's reads, the game's commands
 file	navmap_layout.h	modules/hud/src/navmap_layout.h	HUD	the strip's place and the map's solver, pure (UI_HUD2_SKIN.md 6.1)
 file	skinchip.h	modules/hud/src/skinchip.h	HUD	the skin's words as chips and their clicks: moves to skinkit when that lands
 file	skinchip.cpp	modules/hud/src/skinchip.cpp	HUD	the chips drawn, the click box held while a NeuroNet window stands
-file	nnstrip.h	modules/hud/src/nnstrip.h	HUD	the strip of words on the NeuroNet windows
+file	nnstrip.h	modules/hud/src/nnstrip.h	HUD	the strip of words on the NeuroNet windows; as the last pass drew them: WordAt (the game control a word stands for: hover help, issue 71), LastAreas (the strip and the mouse's CLOSE: the map's names, issue 72)
 file	nnstrip.cpp	modules/hud/src/nnstrip.cpp	HUD	the strip drawn, its keep-out, its clicks, its verb
 command	nnstrip	modules/hud/src/hud_module.cpp	HUD	
 file	nnpage.h	modules/hud/src/nnpage.h	HUD	the NeuroNet windows as full screens

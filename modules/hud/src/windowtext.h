@@ -21,7 +21,10 @@ void DrawMarquees();
 // R8's frame: the NeuroNet windows stand on one top line and left edge. The log, status and info windows always; NN_Inventory only with this, until probe 18
 // has shown its hit boxes follow (debug `gametext frame 0|1`).
 void SetInventoryFrame(bool on);
-// A text control's centre to this height in pixels, through its position property (the mission briefing's title over the full-screen map: navskin).
+// Whether a text box of the open window stands laid out where it stays: after the window's one frame (R8), the boxes' placing and the opening's fit of the
+// rich text's size. Until then the box is still on its way from the game's place (the window's own title passed where it will stand) or its text is still
+// to be wrapped again: the pages' holes, and what they lay out by the text, wait for it. True for a box not placed here.
+bool TextReady(u32 ctl);// A text control's centre to this height in pixels, through its position property (the mission briefing's title over the full-screen map: navskin).
 void StandText(const char* name, float centreY);
 // Debug `gametext window`: what the open window has now.
 std::string Status();

@@ -14,6 +14,8 @@ void Draw();
 void DrawAfter();
 // Under the game's UI: what stands behind the game's own icons in the page.
 void DrawUnder();
+// After the game's update, before its UI pass: the lists' rows get their item models (nnpage_kit.h RowIcons).
+void IconsUnder();
 bool On();
 // The game's window stands off the screen under a page: its plates and its text have nothing to do.
 bool Hides();
