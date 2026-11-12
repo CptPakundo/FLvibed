@@ -202,7 +202,7 @@ the re-based "Where it stands" below holds.
   item is the moving-ship stall (M04 Benford, M06 Hood: A24). Disruptor waves: afterburner fallbacks built, the
   charge_cm / jumpin_burn variants no gain (A26). The money layer (A1, A2, A5, A28) has had no work since 22 Oct: the FT
   legs have no autopilot leg yet.]*
-- **Legitimacy line:** only save/load abuse and the vanilla autosave cutscene skip are outside the project's rules;
+- **Legitimacy line:** only save/load use (allowed by the board) and the vanilla autosave cutscene skip are outside the project's rules;
   everything else is game-native. The runners lose ~1,900-2,170 s per run to room scenes vanilla cannot skip; HDE's Esc
   does (FREELANCER_RE: Benford docked in 2.5 s instead of ~200 s), so a board-comparable golden run on HDE starts
   ~30 min ahead on that alone - **a board comparison must say so** (A10).
@@ -215,7 +215,7 @@ with a notes file (runner's comment, YouTube questions and answers). Three agent
 then two agents compared the runs by topic (22 fights x 3 runs from the HUD read every 0.5 s with the project's
 game-font OCR, 10 fps strips at decisive moments; 619 dock / gate / hole / lane entries from a 2 fps speed read; every
 mission leg in sections against our autopilot's best leg runs). Everything ran CPU-only at idle priority for the last
-hours (the user was gaming). All numbers below are seconds; v = video time, r = run time.
+hours. All numbers below are seconds; v = video time, r = run time.
 
 ### V1 Start, end, method (how to count legs reproducibly)
 | Run | Official | Start (New Game click) | End (final cutscene's first frame) | Measured | Overlay | False starts |
@@ -475,6 +475,7 @@ Rules found (frame-backed; the autopilot side: `modules\autopilot\docs\AUTOPILOT
 ## Findings (agent report of 21 Oct 2026)
 
 ### 1 Summary
+*[21 Oct 2026; superseded by V1-V12 and the first bullet]*
 - One board: speedrun.com/freelancer (6 players, 28 verified runs, moderator SydMontague). Full-game `any%` WR
   **4:02:48 by TM4S13, 18 Sep 2026** (real time, New Game -> last generator's cutscene); second 4:05:06 OldOak 2019,
   third 4:06:11 SydMontague 2019. Save/load is allowed; no rule mentions mods or HD Edition; "adoxa's HUDShift" is the
@@ -486,13 +487,13 @@ Rules found (frame-backed; the autopilot side: `modules\autopilot\docs\AUTOPILOT
   Diamonds Cambridge -> Leeds, Mining Machinery Leeds -> Hood, Gold Hood -> New Tokyo, Light Arms New Tokyo -> Kyoto).
   Job-board missions are never used.
 - Time is saved by: never waiting for wingmen (take lanes / gates the instant the script allows), **engine kill at
-  ~4.5-5.5 km to shed Juni before docking** (so the companion does not take the single bay first), attacking neutral
+  ~4.5-5.5 km to shed Juni before docking** *(V10: measured 3-4.5 km at cruise, or just holding cruise)* (so the companion does not take the single bay first), attacking neutral
   ambushers before they turn hostile, skipping every base cinematic (vanilla: Esc -> load the latest autosave; HDE:
   Esc skips directly), and not shopping mid-mission. Space cutscenes cannot be skipped by anyone.
 - Known softlocks runners route around: M03 Willard (killing all Rheinlanders before the bombers spawn), M10 Osiris
-  (dock only after the purple waypoint appears), M13 Osiris (unexplained, cost the WR ~2 min), M04 "Van Pelt" save.
+  (dock only after the purple waypoint appears), M13 Osiris (unexplained; 36 s in the WR run by V9), M04 "Van Pelt" save.
 - Against FLvibed: the one comparable number (M03 IL 836 s vs the objective mode's 881-950 s from the same point)
-  says the autopilot is already within ~10 % of a casual IL; the WR pace (~14,570 s for 13 missions + 8 free times +
+  says the autopilot is already within ~5-14 % of the one IL on the board (a practice run by its runner's note); the WR pace (~14,570 s for 13 missions + 8 free times +
   all base time) is roughly 1.5-2x faster than the current sweep pace extrapolated. The biggest gaps are the
   between-missions layer (not built), companion-shedding before docks, and fighting only what the script requires.
 
@@ -521,9 +522,10 @@ cutscene skip). Not found anywhere else: no GameFAQs / Reddit / The Starport spe
 
 ### 3 Per-mission route table (M01a..M13)
 "Route" = what SydMontague's notes `[page oeyn3]` and HotSliceOfJesus's guide `[page cq15x]` do (paraphrased).
+Condensed from the two guides with credit; read the originals for the full route (links in section 8).
 "Class" for the autopilot: **N** = game-native and automatable with what FLvibed already has (goto / dock / lane /
 formation / objective mode), **H** = relies on human aim, reflex or risk judgement (the fight matrix / duel logic
-must cover it), **G** = glitch, save abuse or outside the project's rules. Times: only the M03 IL exists; everything
+must cover it), **G** = glitch, save/load use or otherwise outside the project's rules. Times: only the M03 IL exists; everything
 else is the project's own measurement (`[repo]` AUTOPILOT.md sweep state, 21 Oct 2026) or unknown.
 
 | Mission | Best known time | Runner route and tactics | Dangers / softlocks | Class |
@@ -602,7 +604,7 @@ purchases as 1:1 into net worth `[repo]`; the resale ratio is not verified by th
 - **Startup movies:** commented out in freelancer.ini `[page the-starport]`; HDE "Made intro skips optional" `[data]`.
 - **"Load autosave" as a state trigger (not a skip):** "Undock, load Autosave, accept Mission 4" and "load Autosave
   after jumping" use a load to make the story object re-evaluate the net-worth gate / spawn state without flying back
-  in `[page oeyn3]`. Allowed by the board, but save abuse under the project's rules; the native equivalent is to fire
+  in `[page oeyn3]`. Allowed by the board, but outside the project's rules; the native equivalent is to fire
   the same evaluation event (section 7, item 2).
 - **Frame rate:** "Full screen and higher framerate improved speed" `[api]` (HotSlice, 4:36:42 comment). The runners
   treat fps as a speed factor.
@@ -610,12 +612,12 @@ purchases as 1:1 into net worth `[repo]`; the resale ratio is not verified by th
 ### 6 Comparison with FLvibed's numbers and runbooks
 | Item | FLvibed today `[repo]` | Speedrun knowledge | Verdict |
 |---|---|---|---|
-| M03 whole mission from the accept | objective mode 881-950 s from Save1e7d (step 5, docked at CA Minor after the accept) | IL **836 s** from the accept autosave to Juni's payment, on a "not optimal ship", with a Willard shop stop inside the time | the autopilot is 5-14 % behind a casual human IL; the runner also steals the artifact pods on the way |
+| M03 whole mission from the accept | objective mode 881-950 s from Save1e7d (step 5, docked at CA Minor after the accept) | IL **836 s** from the accept autosave to Juni's payment, on a "not optimal ship", with a Willard shop stop inside the time | the autopilot is 5-14 % behind the board's only IL (a practice run); the runner also steals the artifact pods on the way |
 | M04 | 1002-1059 s (survival stance) vs the user's 1359 s scene-accounted | no split; route = lanes the instant they open, EK to shed Juni at the Magellan gate, no Mactan shopping, Tobias skip | the stance matches the route ("do whatever you want except dying"); the EK shed is missing |
 | M05 | 1225-1304 s | route: never fight the endless wings; "only this one ring works" at Leeds | matches the kb page; nothing new except "resupply missiles at Baxter if low" |
 | Full campaign | sweep M01a..M05 ~5,315 s of mission time, between-missions layer not built, P6 not started | WR 14,568 s for everything incl. 8 free times and all base / load time | extrapolated the current pace is ~1.5-2x the WR pace (estimate; the sweep starts from fixtures, not New Game) |
 | Money gates (`AUTOPILOT.md` "P5 F: jobs, purchases") | plan: job board + purchases | runners: **free loot (depot pods, convoy artifact pods, wrecks) + one trade per hop**, never jobs | contradicts the plan's default; the loot route is both faster and game-native (tractor, sell) |
-| Docking with a companion (kb: "mission companions dock at the same moment as the player (M03 Willard: Juni first, ... docked after ~35 s)") | "a companion could be let in first" | runners **engine-kill at 4.5-5.5 km so the companion drops out of formation / falls behind and the player gets the bay first** | contradicts "let in first": shed, do not yield |
+| Docking with a companion (kb: "mission companions dock at the same moment as the player (M03 Willard: Juni first, ... docked after ~35 s)") | "a companion could be let in first" | runners **engine-kill at 4.5-5.5 km so the companion drops out of formation / falls behind and the player gets the bay first** *(V10: 3-4.5 km at cruise, or just holding cruise)* | contradicts "let in first": shed, do not yield |
 | Neutral ambushers (M04 bounty hunters, M02 Fort Bush Rogues) | engage by attitude | runners attack them **before they turn hostile** (no penalty, one free kill) | beats the attitude-only rule when the script marks them |
 | M01b | platforms only (kb) | same, plus "turn ~120 deg left at Beta-4" to face the base spawn | same |
 | M10 wrecks, M03 artifact pods, M02 depot | not in any runbook or kb page | the main income of the route | gap |
@@ -721,7 +723,7 @@ campaign number is not), 2 answered by the videos; the rest open.]*
   **Battleship Norfolk** sells the Crusader in vanilla: HDE data lists `bf_package` at Planet Leeds, New London,
   Cambridge and the Hood, not at Norfolk (Br03); the runners buy it at Norfolk, so vanilla markets may differ or they
   mean another dealer. SydMontague's Barracuda "at New Tokyo" likewise (HDE sells `bhf_package` in Bretonia only).
-- **M13 Osiris softlock** cause (the WR holder does not know either).
+- **M13 Osiris softlock** cause (unknown; the WR run's comment calls it a softlock).
 - **Frame rate as a speed factor** (one runner's observation; not measured).
 - fandom "Single Player Campaign" / "Trade Routes" and GameSpot pages (402/403 to WebFetch, not opened in the browser
   to limit scope); nothing in them contradicts the game data used here.

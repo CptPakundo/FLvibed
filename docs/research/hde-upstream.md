@@ -94,11 +94,10 @@ its next release (v0.8), which is when players move.** The reasons:
    names both the release and the repository as compatibility targets.
 4. **Players are on 0.7.1 and will move on a release, not on a commit.** HDE's cadence: 0.6 (Aug 2022), 0.7 (Jun
    2025), 0.7.1 (Jul 2025); 153 commits since, no changelog section for them, the v0.8 milestone at 8 closed / 5 open
-   (the open ones: reputation softlocks, nebula and station textures, pilot voices, a licence), the repository quiet
-   since 30 Aug 2026. A v0.8 within months is plausible, not scheduled. Switching the primary at that release aligns
+   (the open ones: reputation softlocks, nebula and station textures, pilot voices, a licence), no date
+   on the milestone (21 Oct 2026; superseded below). Switching the primary at that release aligns
    the benchmark baseline with what players run and costs the re-measure once.
-   *30 Oct 2026:* now scheduled: milestone due 19 Dec 2026 (`starport.md`
-   section 10).
+   *30 Oct 2026:* now scheduled: milestone due 19 Dec 2026 (`starport.md` section 10).
 5. **An upstream install is not a download away.** No installer exists for the repository state; the installer repo
    documents the build (clone, 7-Zip the mod files under 2.05 GB, compile `setup.iss` with Inno Setup, which is not on
    this machine). `tools\install-hde.ps1` then drives that installer unattended with the project's options. The test
@@ -126,7 +125,7 @@ its next release (v0.8), which is when players move.** The reasons:
 - Releases: 0.4.1, 0.5 (Jan 2022), 0.6 (Aug 2022), 0.7 (14 Jun 2025), 0.7.1 (15 Jul 2025); installer v0.7.1-1 on
   25 Aug 2025. Milestones: v0.8 open (8 closed, 5 open), v1.0 open (6 closed, 12 open), Backlog (26 closed, 62 open).
   97 open issues and PRs. Last push 30 Aug 2026 (repository), 22 Aug 2026 (installer: an M13 OpenSP warning, "general
-  fixes"). No announced date.
+  fixes"). No announced date (21 Oct 2026; superseded below).
   *30 Oct 2026 (re-fetched):* v0.8 is due 19 Dec 2026 (milestone updated 30 Oct; the same 5 open / 8 closed: #337,
   #285, #280, #116, #90), with no release since 0.7.1. v1.0 has 12 open / 6 closed; Backlog 62 / 26. Pushed 30 Oct 2026
   on `feature/new-solar-textures`; main's last commit 25 Aug 2026; wiki edited 27 and 30 Oct.

@@ -509,5 +509,8 @@ controller backend (`pad_backend = 1`). SDL is © 1997-2026 Sam Lantinga and is 
 🧪 **Playtesting:** **Shockwave** ([Shockwave508](https://github.com/Shockwave508)) did the majority of FLvibed's playtesting
 and bug reporting, most of it on a Steam Deck. Many of the fixes in the changelog started as one of Shockwave's reports.
 
+💾 **Test saves:** **BC46** ([BC46](https://github.com/BC46)) made the all-missions save set (48 single-player saves
+through the whole story) that FLvibed's tests use.
+
 🙏 **Thanks** to Jason Hood (adoxa) for his Freelancer plugins and their sources, the Freelancer: HD Edition team, The
 Starport (FLUF, FLSubs) and the Freelancer community's documentation and transcripts.

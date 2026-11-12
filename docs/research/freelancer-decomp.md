@@ -135,7 +135,7 @@ Repository state: commit of 20 Oct 2026, 15 commits. The symbol cross-reference 
   `re/common_physys.md`, `re/content.md` (controllers, Server -> Content messages, the 65-TU map of Content.dll),
   `re/content_mission_script.md` + `re/content_mission_opcodes.md` (all 44 `Cnd_*` and 85 `Act_*` with argument
   semantics), `re/server.md`, `re/cross_dll_protocol.md`, `re/audio.md`, `re/movie.md`, `hd_edition.md` (a catalogue
-  of every HDE byte patch and plugin, planned as C++ switches, unimplemented), and `ini/*.md`: every INI section and
+  of every HDE byte patch and plugin, planned as C++ switches, unimplemented except Hor+ widescreen by 30 Oct 2026), and `ini/*.md`: every INI section and
   key the code reads, with type, default and the reading source file.
 
 ## How far it is, and what to trust

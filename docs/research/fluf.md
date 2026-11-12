@@ -36,9 +36,9 @@ Edition ships FLHDE/FLHook (plugin API 4.0) and FLvibed's server plugin (20ac2bb
 line: for HDE servers FLHook is the live host. **The LAN list:** FLUF's `ClientPatches` writes the same 13-byte
 IPv4-only fix at Freelancer.exe 0x5ACF6A that HDE's exe carries; FLvibed's own fix (0689c29) writes only over vanilla's
 bytes, so beside FLUF it leaves FLUF's alone. FLUF's `MiscFixes::StopIPV6` writes those bytes at **Common.dll** +
-0x1ACF6A too (a slip: `FREELANCER_RE.md` "The LAN list and IPv6") - a candidate for the upstream report the owner holds
+0x1ACF6A too (looks unintended: `FREELANCER_RE.md` "The LAN list and IPv6") - a candidate for the upstream report the owner holds
 (handoff decision c; IDEAS M12). The open owner checks (order B's palette run, FLUF alone with Alt+Enter) stand.
-- **FLUF is alive; JFLP and FLHook are not where development happens.** FLUF: 1,325 commits, nightly builds every few
+- **FLUF is actively developed; JFLP is a finished patch and TheStarport's FLHook is archived.** FLUF: 1,325 commits, nightly builds every few
   days (last 16 Oct 2026), stable 2.0.0 (28 Mar 2026), three active developers. TheStarport's FLHook is archived (16 Jul
   2026, "FLUF is intended to be a replacement"); JFLP (adoxa: JFLP 1.25, jflp.dll 1.27) is a finished patch whose
   site was last updated 25 Apr 2026 (no repository or commit history to measure). FLUF is
@@ -50,8 +50,8 @@ bytes, so beside FLUF it leaves FLUF's alone. FLUF's `MiscFixes::StopIPV6` write
 - **The target build is FLUF nightly-2026-10-16-03-03 (owner, 25 Oct 2026: "the very latest tagged version").** What
   it changes for players, for FLvibed and for our tests is the section "FLUF in play" below - from source / docs,
   **run in game in Phase A3 (26 Oct 2026): FLvibed works beside it in both load orders** (two FLvibed fixes, 3b4bb4a /
-  2394c05; `research\experience\runs\fluf_nightly_2026-10-25\TABLE.md`), but the nightly itself does not start on the
-  game's own data (F, "found by A3"). The 2.0.0 run (history, section 9) is no verdict for the nightly.
+  2394c05; `research\experience\runs\fluf_nightly_2026-10-25\TABLE.md`), but in this project's run the nightly did not
+  start on unmodified vanilla data (F, "seen in A3"). The 2.0.0 run (history, section 9) is no verdict for the nightly.
 - **FLvibed's co-residency code (da1363f / 5cd02b9 / e2611cd, 25 Oct 2026) is an unverified draft** (the owner, 26 Oct
   2026: "assume nothing concrete related to FLUF happened"): its design hooks FLUF's handlers, not over FLUF's jump
   (section 8). For the nightly the six shared sites are plain restore-style `FunctionDetour`s whose handler starts
@@ -115,8 +115,8 @@ boot-loader form on vanilla 1.1 against the same game without FLUF, release buil
 `research\experience\runs\fluf_nightly_2026-10-25\TABLE.md` (per item and order; summary in `docs\MOD_COMPATIBILITY.md`
 FLUF). Confirmed in game: B's windows, names and rectangles (palette 0.35-0.65 W x 400 px, options 0.933 H x 0.7 H at
 the top left, the map with its two side windows, the Debug Window at (60, 60)), C's handler hooks in both orders, the
-Evade slot owned by FLUF, the expected fail-closed items of E. New from A3: FLUF does not start on the game's own data
-(F, "found by A3"); its first run sets the resolution to the screen size; the chase camera follows more loosely (its
+Evade slot owned by FLUF, the expected fail-closed items of E. New from A3: in this project's run FLUF did not start on
+unmodified vanilla data (F, "seen in A3"); its first run sets the resolution to the screen size; the chase camera follows more loosely (its
 camera fixes); in an unfocused (background) game its palette never gets keyboard focus. Build: tag nightly-2026-10-16-03-03 =
 FLUF 627ea2c (15 Oct 2026; the clone `research\repos\FLUF`), FLSDK ae8c857 and imcp (the command palette library)
 d1afcd6 = the submodule pins (`research\repos\FLSDK`, `research\repos\imcp`); package `FLUF.tar.xz` SHA-256 74a8147d...
@@ -391,7 +391,7 @@ failure, after checking it also happens without FLvibed in the chain when cheap 
 Open - what a player / FLvibed would see, and the effect on our tests:
 | # | Title (labels) | What a player / FLvibed sees | A2 / A3 |
 |---|---|---|---|
-| - | **found by A3, not in FLUF's tracker** (not filed: the owner decides) | at the first start on the game's own data an endless chain of modal "ERROR" boxes "header [system] value pos missing parameter 2" (then `[zone] value size missing parameter 1` ...): `UniverseCache::Initialize` (`Source\Common\UniverseCache.cpp` 161 universe.ini `[system] pos`, 232 / 308 / 316 / 317 the system files' `[Object] pos`, `[Zone] pos` / `size` / `property_fog_color`) reads with FLSDK `INI_Reader::GetVector` (`source\FLCore\Common\INI_Reader.cpp` 180-191: get_value_float(p), (p+1), (p+2) unconditionally); the game's `[system] pos` has 2 values, a sphere zone's `size` 1; every missing parameter = one box from Common.dll's reader: 6,758 on vanilla 1.1 data by source (53 universe + the system files, Li01 493), 956 answered in 60 s in A3 without an end - the game never reaches its menu | A3 ran with a test-only text copy of universe.ini and the 53 system files, those vectors padded to 3 values (`research\experience\runs\fluf_nightly_2026-10-25\tools\bini_universe.py`); attributed by source (a FLUF-only start would take the screen and play sound) |
+| - | **seen in this project's A3 run, not yet reported to FLUF's authors** | on unmodified vanilla 1.1 data the first start in that run showed an endless chain of modal "ERROR" boxes "header [system] value pos missing parameter 2" (then `[zone] value size missing parameter 1` ...): `UniverseCache::Initialize` (`Source\Common\UniverseCache.cpp` 161 universe.ini `[system] pos`, 232 / 308 / 316 / 317 the system files' `[Object] pos`, `[Zone] pos` / `size` / `property_fog_color`) reads with FLSDK `INI_Reader::GetVector` (`source\FLCore\Common\INI_Reader.cpp` 180-191: get_value_float(p), (p+1), (p+2) unconditionally); the game's `[system] pos` has 2 values, a sphere zone's `size` 1; every missing parameter = one box from Common.dll's reader: 6,758 on vanilla 1.1 data by source (53 universe + the system files, Li01 493), 956 answered in 60 s in A3 without an end, and that run did not reach the menu | A3 ran with a test-only text copy of universe.ini and the 53 system files, those vectors padded to 3 values (`research\experience\runs\fluf_nightly_2026-10-25\tools\bini_universe.py`); attributed by source (a FLUF-only start would take the screen and play sound) |
 | 111 | Minor UI/Resolution Bugs (bug, client) | open: Thorn (in-engine) scenes very zoomed in at high resolutions; changing the resolution in FLUF's options window crashes or misbehaves; no way to pick a resolution other than the screen size. Done: the cursor scale (9c0736d), Screen Control moved into core | A3: scenes at 4K look zoomed with FLUF - FLUF's, not FLvibed's subtitles / movie handling (compare the frame without FLvibed if in doubt); never pick a resolution in FLUF's options (B: the Display tab) - a crash there is FLUF's |
 | 131 | Override game settings window (client, UI) | planned: the vanilla Game Settings screen re-implemented in ImGui (from the QoL patcher) | **steer clear:** FLvibed's options page / pad screens must not assume the vanilla options screens' layout when FLUF is present; A2 detects FLUF's windows by name, not by the vanilla screen |
 | 73 | Character Select / New Character screen overhaul | planned: both screens in ImGui (an early character select exists - B's MP `Character Select`) | **steer clear:** FLvibed's New Game prompt and pad screens on those menus; today SP still uses the vanilla screens |
