@@ -314,7 +314,7 @@ static float Floor(const Fonts& f)
 // The value's colour: the focus's yellow, the row's grey, or the label blue.
 static u32 ValueColor(const RowStyle& s) { return s.lit ? uidraw::kSelected : s.enabled ? uidraw::kText : uidraw::kDisabled; }
 
-void RowLabel(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::wstring& label)
+float RowLabel(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::wstring& label)
 {
     const u32 col = ValueColor(s);
     if (s.focused)
@@ -332,8 +332,9 @@ void RowLabel(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::ws
                 c = static_cast<wchar_t>(c - L'a' + L'A');
     // fitted to the room left of the control column (the fit rule)
     const float room = g.controlLeft > x ? g.controlLeft - x - g.sh * 0.01f : 1e9f;
-    uidraw::TextShadowFit(x, TextY(f.label, g), f.label, uidraw::FitText(f.label, upper, room, Floor(f)), col,
-                          std::max(1.0f, g.sh * 0.001f));
+    const textfit::Result r = uidraw::FitText(f.label, upper, room, Floor(f));
+    uidraw::TextShadowFit(x, TextY(f.label, g), f.label, r, col, std::max(1.0f, g.sh * 0.001f));
+    return x + r.width;
 }
 
 static void Note(const Fonts& f, const RowGeom& g, const RowStyle& s, float rightOfControlText)
@@ -341,9 +342,13 @@ static void Note(const Fonts& f, const RowGeom& g, const RowStyle& s, float righ
     if (!s.note)
         return;
     render::SetFont(f.body);
-    const std::wstring n = s.note;
-    const float w = static_cast<float>(render::TextWidth(f.body, n));
-    render::Text(rightOfControlText - w, TextY(f.body, g), n, uidraw::Fade(uidraw::kText, 0.7f));
+    // right-aligned before the value; with the label's end known it is fitted to the room after the label (the fit rule),
+    // so a long label and a long note never overlap (the hosted page's BORDERLESS WINDOW / BY THE GAME (HDE))
+    const float room = s.labelRight > 0 ? rightOfControlText - s.labelRight - g.sh * 0.02f : 1e9f;
+    if (room <= 0)
+        return;
+    const textfit::Result r = uidraw::FitText(f.body, s.note, room, Floor(f));
+    uidraw::TextShadowFit(rightOfControlText - r.width, TextY(f.body, g), f.body, r, uidraw::Fade(uidraw::kText, 0.7f), 0);
 }
 
 void RowToggle(const Fonts& f, const RowGeom& g, const RowStyle& s, bool on)

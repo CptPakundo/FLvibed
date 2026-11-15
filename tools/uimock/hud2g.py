@@ -1,4 +1,4 @@
-"""hud2g.py - HUD 2's overhaul mocked on REAL game frames (the P11f gate, docs\\MODULES_PLAN.md; modules\\hud\\docs\\UI_HUD2_SKIN.md 9, 12).
+"""hud2g.py - HUD 2's overhaul mocked on REAL game frames (the P11f gate of the module split plan, private; modules\\hud\\docs\\UI_HUD2_SKIN.md 9, 12).
 
     research\\tools\\ocr\\.venv\\Scripts\\python.exe -I tools\\uimock\\hud2g.py [recipe ...]
 
@@ -403,7 +403,7 @@ def layout_of(size):
 
 
 def lean_real(scene, size, deck):
-    """UI_HUD2_SIZE_AUDIT.md on a real frame: the old card and plates replaced by the scene's own pixels (hud2 sim combat on a still ship), the new forms drawn."""
+    """The HUD 2 size audit (private) on a real frame: the old card and plates replaced by the scene's own pixels (hud2 sim combat on a still ship), the new forms drawn."""
     src = frame(size, f'{scene}__kbm')
     im = Image.open(src).convert('RGBA')
     sc = Image.open(frame(size, f'{scene}__scene')).convert('RGBA')

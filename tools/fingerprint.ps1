@@ -1,4 +1,4 @@
-# The refactor's freeze (docs\MODULES_PLAN.md section 3): what must not change while the code is split into modules,
+# The refactor's freeze (the module split plan, section 3; private, docs\ARCHITECTURE.md is the public view): what must not change while the code is split into modules,
 # written to tests\fingerprints\<label>\ as plain text, so a difference reads as a diff.
 #   settings.txt   docs\SETTINGS.md regenerated from the registries: every key, default and help
 #   ui_meta.txt    the hash of core\ui_meta.h: the options page's rows

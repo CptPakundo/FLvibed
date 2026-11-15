@@ -216,11 +216,14 @@ static bool NotifyFrontSelection(u32 screen, u32 list, u32 row, int index)
         return false;
     }
 }
-static bool WriteU32(u32 addr, u32 v)
+// The in-game window's row click: vt[0x5C](0xF001, 0, row), what its list sends. The game's handler (0x486CA0) writes the
+// selection +0xE88 / +0x1744 and fills the info panel and DELETE's enabled byte +0x5D6 (0x487CB0); a write of +0xE88 alone
+// left DELETE grey, so its click did nothing (audit 139_ A).
+static bool NotifyGameSelection(u32 screen, int index)
 {
     __try
     {
-        Mem<u32>(addr) = v;
+        reinterpret_cast<ScreenMsgFn>((*reinterpret_cast<void***>(screen))[0x5C / 4])(screen, 0xF001, 0, static_cast<u32>(index));
         return true;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
@@ -229,8 +232,8 @@ static bool WriteU32(u32 addr, u32 v)
     }
 }
 // Selects a row the way the list's own click does (menu.cpp CharSelectLoad's first half): the front list's selected
-// index +0x8AC and the screen's 0xF001 notification with the row object's item id; the in-game screen keeps its selected
-// row at +0xE88 (what LoadSave_LoadGame / Delete act on). False when the row is out of range.
+// index +0x8AC and the screen's 0xF001 notification with the row object's item id; the in-game window (load or save
+// mode) the same notification with the row (its rows held: +0xE80). False when the row is out of range.
 static bool SelectRow(bool front, int index)
 {
     if (front)
@@ -248,8 +251,8 @@ static bool SelectRow(bool front, int index)
             return false;
         return NotifyFrontSelection(screen, list, row, index);
     }
-    const u32 screen = menu::LoadScreen();
-    return screen && index >= 0 && WriteU32(screen + 0xE88, static_cast<u32>(index));
+    const u32 screen = menu::LoadSaveScreen();
+    return screen && index >= 0 && index < static_cast<int>(RdOr<u32>(screen + 0xE80, 0u)) && NotifyGameSelection(screen, index);
 }
 
 static bool ClickNamed(const char* name, const char* what)
@@ -929,6 +932,23 @@ void Draw()
     padbases::Overlay(); // the pad screens' arrow decision, or their stand-down when no pad frame ran (every pass)
     newgame::Draw(); // the prompt and the load screens' tags
     osk::Draw();     // (the prompt bar is drawn by OnRenderOverlay itself, after every pad screen)
+}
+
+bool OutsideModalBox(uintptr_t ctl)
+{
+    // NN_Confirm is a child of NN_Pause (FREELANCER_RE "The pause menu"), so its YES / NO share their top-level window with the pause menu's boxes and the
+    // root filter keeps both: the D-pad's Up / Down walked from the question onto RESUME, SAVE ... behind it (item 4 of audit 133_, measured 14 Nov 2026)
+    if (g_screen != Screen::Confirm)
+        return false;
+    const u32 yes = uiclick::FindVisible("Confirm_delBtnYes");
+    const u32 box = yes ? RdOr<u32>(yes + 4, 0u) : 0; // (the button's parent: the question's own window)
+    if (!box)
+        return false;
+    u32 c = static_cast<u32>(ctl);
+    for (int i = 0; c && i < 8; ++i, c = RdOr<u32>(c + 4, 0u))
+        if (c == box)
+            return false;
+    return true;
 }
 
 uintptr_t ModalRoot()

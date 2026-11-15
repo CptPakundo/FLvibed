@@ -2,9 +2,10 @@
 #   pause    game time stands still under the pause (the game's own dt runs on)
 #   rear     the autopilot turns with the rear view held on the pad (the steering update skips on +0x5BA)
 #   load     a load from the pause menu stops the objective mode and any running mode, and reads the save's mode (no Mode::Menu on that way)
-#   rs       the right stick moves the dealer's list, a pad player's only way down a long text as well
-# Frames: runs\state_fixes. Usage (PowerShell tool): tests\state_fixes.ps1 [-Row pause,rear,load,rs] [-Instance 1]    build\release. Exit 1 = a check failed.
-param([string[]]$Row = @('pause', 'rear', 'load', 'rs'), [string]$Instance = 1)
+#   rs       the right stick moves the dealer's list, a pad player's only way down a long text as well (the classic HUD's game window, hud_style 0)
+#   rscard   the right stick moves HUD 2's dealer page's item card (hud_style 2)
+# Frames: runs\state_fixes. Usage (PowerShell tool): tests\state_fixes.ps1 [-Row pause,rear,load,rs,rscard] [-Instance 1]    build\release. Exit 1 = a check failed.
+param([string[]]$Row = @('pause', 'rear', 'load', 'rs', 'rscard'), [string]$Instance = 1)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $env:FLVIBED_INSTANCE = "$Instance"
@@ -78,6 +79,11 @@ try {
     }
     if ('rs' -in $Row) {
         '--- rs'
+        # The game's own dealer window under the pad's layer (padbases.cpp, be13337c, passed 6 Nov 2026) is the classic HUD's (hud_style 0). Under HUD 2,
+        # the default, the dealer is HUD 2's page since 7 Nov 2026 (04f3efa8): the D-pad walks its list, the right stick walks the item's card
+        # (pages\dealers\market_page.cpp), and the game's window stands parked with its Inventory_Scroll unmoved, so this row read 0 -> 0 -> 0 there
+        # (audit 137_). Back to HUD 2 after the row.
+        "  $(Send-FL 'set hud_style 0')"
         "load: " + (Load-FLSave 'SaveC701.fl')
         Settle 60
         if ((Send-FL 'hotspots') -notmatch "(?m)^IDS_HOTSPOT_EQUIPMENTDEALER\s") { $null = Goto-FLRoom 'Equipment' }
@@ -95,8 +101,40 @@ try {
         $null = Save-FLShot -Name 'dealer_down' -Dir $dir
         Set-FLPad -RY 1; Start-Sleep -Milliseconds 500; Clear-FLPad; Settle
         $c = BarPos
-        Check ($c -lt $b) "RS up brings it back ($b -> $c)"
+        # (held longer than the way down, so it must come back at least half of the way: any small decrease is no pass; no way down, no pass)
+        Check ($b -gt $a -and ($b - $c) -ge ($b - $a) / 2) "RS up brings it back at least half of the way ($a -> $b -> $c)"
         $null = Save-FLShot -Name 'dealer' -Dir $dir
+        $null = Send-FL 'set hud_style 2'
+    }
+    if ('rscard' -in $Row) {
+        '--- rscard'
+        # HUD 2's dealer page (pages\dealers\market_page.cpp, 04f3efa8): the right stick walks the focused item's card. The D-pad walks the
+        # list to the first item whose card is longer than its room (only such a card can move); `basepage card` reads where it stands.
+        "  $(Send-FL 'set hud_style 2')"
+        "load: " + (Load-FLSave 'SaveC701.fl')
+        Settle 60
+        if ((Send-FL 'hotspots') -notmatch "(?m)^IDS_HOTSPOT_EQUIPMENTDEALER\s") { $null = Goto-FLRoom 'Equipment' }
+        $null = Wait-FLRoomReady
+        $null = Wait-FLUntil { $x = Send-FL 'goto IDS_HOTSPOT_EQUIPMENTDEALER'; if ($x -notmatch 'busy') { $x } } 'dealer click' 15
+        $null = Wait-FLUntil { if ((Send-FL 'basepage') -match '^basepage kind=2 ') { 1 } } 'the equipment page' 25
+        Settle 120
+        function Card { $m = [regex]::Match((Send-FL 'basepage card'), 'first=(-?\d+) lines=(\d+) room=(\d+)'); if ($m.Success) { [pscustomobject]@{ First = [int]$m.Groups[1].Value; Lines = [int]$m.Groups[2].Value; Room = [int]$m.Groups[3].Value } } }
+        # (the virtual pad's own D-pad, as a pad player walks. The card's room is the pad form's: 7 lines where the keyboard form had 5 at 3840x2160,
+        # so the pad is the device in use, by a first press, before any card is judged; a probe saw room 5 -> 7 at the first stick input)
+        Set-FLPad -Buttons Down; Settle 4; Clear-FLPad; Settle 30
+        $k = Card
+        for ($i = 0; $i -lt 30 -and $k -and $k.Lines -le $k.Room; $i++) { Set-FLPad -Buttons Down; Settle 4; Clear-FLPad; Settle; $k = Card }
+        Check ($k -and $k.Lines -gt $k.Room) "an item whose card overflows is focused ($(if ($k) { "$($k.Lines) lines, room $($k.Room)" } else { Send-FL 'basepage card' }))"
+        if ($k -and $k.Lines -gt $k.Room) {
+            $a = $k.First
+            Set-FLPad -RY -1; $null = Wait-FLFramesPassed 30; Clear-FLPad; Settle
+            $b = (Card).First
+            Check ($b -gt $a) "RS down moves the card's text on ($a -> $b of $($k.Lines - $k.Room))"
+            $null = Save-FLShot -Name 'card_down' -Dir $dir
+            Set-FLPad -RY 1; $null = Wait-FLFramesPassed 60; Clear-FLPad; Settle
+            $c = (Card).First
+            Check ($b -gt $a -and $c -lt $b) "RS up brings it back ($a -> $b -> $c)"
+        }
     }
 } finally {
     Clear-FLPad

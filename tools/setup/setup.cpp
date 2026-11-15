@@ -53,7 +53,7 @@ static const wchar_t* kSettings[] = {L"FLvibed.ini", L"FLController.ini", L"FLSu
                                      L"FLvibed\\splits_best.ini", L"FLvibed\\ranges.tsv", L"FLvibed.ini.before-0.2.0",
                                      L"FLController.ini.before-0.2.0", L"FLSubtitles.ini.before-0.2.0"};
 static const wchar_t* kLogs[] = {L"FLController.log", L"FLSubtitles.log", L"FLMotion.tsv", L"FLController_ui.txt",
-                                 L"FLvibed_npc_stalls.log"};
+                                 L"FLvibed_npc_stalls.log", L"FLvibed_crash.log", L"FLvibed_crash.dmp"};
 
 static bool g_quiet = false;
 static FILE* g_log = nullptr;

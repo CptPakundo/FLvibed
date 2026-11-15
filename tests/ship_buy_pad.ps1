@@ -4,7 +4,8 @@
 # Background games on a numbered instance, muted (deploy.ps1 -Background), driven by game state and events; frames and logs in research\experience\runs\ship_buy_<Label>\
 # (git-ignored). Never run while another session holds a test game: it starts its own.
 # Usage (PowerShell tool, from the worktree, only when the driver says the games are free):
-#   tests\ship_buy_pad.ps1 -Label <name> [-Only hold,buy,stick,kinds] [-Sizes '3840, 2160','1280, 800'] [-Skins 1,0] [-Instance 7]
+#   tests\ship_buy_pad.ps1 -Label <name> -Instance <n> [-Only hold,buy,stick,kinds] [-Sizes '3840, 2160','1280, 800'] [-Skins 0]
+#   (-Skins: 0 the classic HUD's game windows; 1, the game's windows in HUD 2's skin with base_pages 0, is gone with that setting: see Play)
 # Sections, in the order they run in a game:
 #   hold   a held A across a screen change acts on nothing, a fresh hold there acts: equipment dealer (window -> room -> window), first ship stage -> final stage (the game's own
 #          change, under the hold that caused it), job board (room -> window). First size and skin only: the rule has no size or skin branch. It buys and takes a job.
@@ -14,14 +15,15 @@
 #   kinds  step 1 and 2 again on a PlayStation test pad through SDL (the hold has no pad-kind branch: the md asks no more). First size and skin only.
 #   kbm    the page's keyboard and mouse section by native clicks: the final stage, a transfer, BUY SHIP, with no pad prompt. The wheel has no harness verb: not driven.
 # Each result is PASS / FAIL / NOT RUN / LOOK (a frame a person or run-judge reads). NOT RUN is a fixture that could not be made, never a pass.
-# A step that throws is a FAIL and the run goes on. Exit 1 = a FAIL, 2 = no FAIL but a NOT RUN.
+# A step that throws is a FAIL and the run goes on. Exit 1 = a FAIL, 2 = no FAIL but a NOT RUN. N/A (step 19: the save has no row whose description overflows) is listed, not an exit code.
 # Not here: the md's regression scripts (tests\dealer_focus.ps1, window_prompts.ps1, docked_text.ps1, state_fixes.ps1 -Row rs), each its own run.
 # How full the A pill stands is no debug output: judge it from the frames.
 param([string]$Label = 'run', [string[]]$Only = @('hold', 'buy', 'stick', 'kinds', 'kbm'),
-      [string[]]$Sizes = @('3840, 2160', '1280, 800'), [int[]]$Skins = @(1, 0), [int]$Instance = 7, [string]$Save = 'SaveC701.fl',
+      [string[]]$Sizes = @('3840, 2160', '1280, 800'), [int[]]$Skins = @(0), [string]$Instance = '', [string]$Save = 'SaveC701.fl',
       [int]$Rank = 4)   # written into the copies' [Player] rank: SaveC701 has 0, Manhattan's ships want 1, 4, 1 (FREELANCER_RE "The ship dealer"), so every row is refused without it
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+if (-not $Instance) { throw 'name the game instance: -Instance <n> (no default: a default instance belongs to no checkout - docs\TESTING.md "Parallel lanes")' }
 $env:FLVIBED_INSTANCE = "$Instance"
 . (Join-Path $root 'tools\harness\flctl.ps1')
 . (Join-Path $root 'tools\harness\flsub.ps1')
@@ -30,6 +32,8 @@ $dir = Join-Path $root "research\experience\runs\ship_buy_$Label"
 New-Item -ItemType Directory -Force $dir | Out-Null
 $bad = [Collections.Generic.List[string]]::new()
 $notRun = [Collections.Generic.List[string]]::new()
+$noRow = [Collections.Generic.List[string]]::new()   # N/A: the fixture has no such row (see NoRow); listed, never an exit code
+$crashSince = Get-Date   # (a crash recorder block written after this is the run's: Get-FLCrashBlocks at the end)
 $home_ = Get-FLDisplaySize
 $script:Tag = ''
 $script:Kind = 'dev'     # the pad in the hands: 'dev' the device-layer test pad, 'sdl' the SDL test pad
@@ -52,6 +56,9 @@ function Result([string]$kind, [string]$what) { Write-Host ("{0,-7} {1}" -f $kin
 function Check([bool]$ok, [string]$what) { Result $(if ($ok) { 'PASS' } else { 'FAIL' }) $what }
 function NotRun([string]$step, [string]$why) { Write-Host ("{0,-7} step {1}: {2}" -f 'NOT RUN', $step, $why); $notRun.Add("$($script:Tag) step ${step}: $why") }
 function Skip([string]$why) { throw "NOTRUN: $why" }
+# A fixture fact, not a defect of the run: the saved game has no such row at this size (step 19: no row whose description overflows). Printed and listed at the end, but no
+# exit code: a run that can never reach the row would otherwise always end in 2. It is still no PASS; the step proves nothing where it says N/A.
+function NoRow([string]$why) { throw "NOROW: $why" }
 function Tag([string]$size) { $size -replace '[ ,]+', 'x' }
 function Shot([string]$name) {
     $n = "$($script:Tag)_$name"
@@ -66,7 +73,9 @@ function Step([string]$id, [string]$what, [scriptblock]$body, [int]$sec = 90) {
     try { $null = & $body }
     catch {
         $m = $_.Exception.Message
-        if ($m -like 'NOTRUN: *') { NotRun $id $m.Substring(8) } else { Result 'FAIL' "step ${id}: $m" }
+        if ($m -like 'NOTRUN: *') { NotRun $id $m.Substring(8) }
+        elseif ($m -like 'NOROW: *') { Write-Host ("{0,-7} step {1}: {2}" -f 'N/A', $id, $m.Substring(7)); $noRow.Add("$($script:Tag) step ${id}: $($m.Substring(7))") }
+        else { Result 'FAIL' "step ${id}: $m" }
     } finally {
         Set-FLDeadline 0
         try { Pad; $null = Wait-FLFramesPassed 4 } catch { }
@@ -178,15 +187,37 @@ function Open-Spot([string]$room, [string]$spot, [string]$ready) {
 # (a debug click dropped by the game during a slide is no pad press: the harness's Close-Spot retries it the same way)
 function Close-Window([string]$button) { $null = Wait-FLUntil { $null = Send-FL "click $button"; if ((Field 'screen') -eq 'room') { 1 } } "$button closed" 15; Wait-Still }
 # A NeuroNet window by its key, then its box's button (one path in the game, UI_HUD2_SKIN.md). A press during a slide is lost, so a miss is tried again; only after 3 s, as a second press on an open window closes it.
-# The game's own hit test at the moved controls: a click by position must find them where they are drawn (fractions of H from the screen's middle, and from the top)
+# The game's own hit test at the window's controls: a click where a control stands must find it, not something drawn over it (a HUD 2 hotspot,
+# another window). Where it stands is the control's own projected rectangle (`ctlrect`: the skin moves native controls through their setters,
+# UI_HUD2_SKIN.md "Layout", so the rectangle is where it is drawn on either style); its centre is clicked by `hit`. A hit on a child of it (a
+# caption) counts. Until 13 Nov 2026 the points were fixed fractions of H read from 6 Nov's skinned frames: wrong on the classic HUD (skin 0) and
+# stale on the skin's later window layout (audit 101_ "Batch 2" B).
 function Hits([string]$screen) {
     $null = Wait-FLFramesPassed 40
     $wh = $script:HitSize -split ',\s*'; $w = [double]$wh[0]; $h = [double]$wh[1]
-    $points = @{ ship = @(,@('X', 0.611, 0.259, 'ShipTraderCancelButton')); missionlog = @(@('X', 0.4075, 0.225, 'StoryStarCloseButton'), @('MISSION', -0.204, 0.826, 'MissionButton'), @('LOG', 0.2025, 0.826, 'LogButton'));
-                 help = @(,@('X', 0.40, 0.225, 'PlayerInfoCloseButton')); inventory = @(@('X', 0.404, 0.3025, 'Inventory_Close'), @('row', -0.1875, 0.48, 'Item')) }
+    $points = @{ ship = @(,@('X', 'ShipTraderCancelButton')); missionlog = @(@('X', 'StoryStarCloseButton'), @('MISSION', 'MissionButton'), @('LOG', 'LogButton'))
+                 help = @(,@('X', 'PlayerInfoCloseButton')); inventory = @(@('X', 'Inventory_Close'), @('row', '')) }
     foreach ($p in $points[$screen]) {
-        $r = "$(Send-FL ("hit {0:F0} {1:F0}" -f ($w / 2 + $p[1] * $h), ($p[2] * $h)))"
-        Check ($r -match $p[3]) "hit ${screen} $($p[0]): wanted $($p[3]): $r"
+        $name = $p[1]
+        if (-not $name) { $name = [regex]::Match("$(Send-FL 'uiitems')", '(?m)^(Item(?:View|Button)\d+)\s+ctl=').Groups[1].Value; if (-not $name) { Check $false "hit ${screen} $($p[0]): no row shown"; continue } }
+        $r = "$(Send-FL "ctlrect $name")"
+        $m = [regex]::Match($r, ' ctl=([0-9A-F]{8}) .* left=(-?[\d.]+) top=(-?[\d.]+) right=(-?[\d.]+) bottom=(-?[\d.]+)')
+        if (-not $m.Success) { Check $false "hit ${screen} $($p[0]): $name has no rectangle: $r"; continue }
+        $l = [double]$m.Groups[2].Value; $t = [double]$m.Groups[3].Value; $rr = [double]$m.Groups[4].Value; $b = [double]$m.Groups[5].Value
+        if ($rr -le 0 -or $b -le 0 -or $l -ge $w -or $t -ge $h) {
+            # (under HUD 2 a NeuroNet window is parked off the screen beneath HUD 2's own page, which takes its clicks: those are nn_pages.ps1's)
+            $nn = "$(Send-FL 'nnpage')"
+            if ($nn -match '\bpage=[1-9]') { Result 'LOOK' "hit ${screen} $($p[0]): $name parked under HUD 2's NeuroNet page ($nn): its clicks are the page's"; continue }
+            Check $false "hit ${screen} $($p[0]): $name stands off the screen ($l,$t)-($rr,$b) with no page over it ($nn)"; continue
+        }
+        $x = [Math]::Max(0, [Math]::Min($w - 1, ($l + $rr) / 2)); $y = [Math]::Max(0, [Math]::Min($h - 1, ($t + $b) / 2))
+        $hr = "$(Send-FL ("hit {0:F0} {1:F0}" -f $x, $y))"
+        $ok = $hr -match "\b$([regex]::Escape($name))\b"
+        if (-not $ok) {   # (a child of it: its parent chain, as Side-Of reads it)
+            $hm = [regex]::Match($hr, '= ([0-9A-F]{8}) '); $want = [Convert]::ToUInt32($m.Groups[1].Value, 16)
+            if ($hm.Success) { $c = [Convert]::ToUInt32($hm.Groups[1].Value, 16); for ($i = 0; $i -lt 12 -and $c -and -not $ok; $i++) { if ($c -eq $want) { $ok = $true } else { $c = Get-FLPeek32 ($c + 4) } } }
+        }
+        Check $ok (("hit ${screen} $($p[0]): $name's centre ({0:F0},{1:F0}) finds it: " -f $x, $y) + $hr)
     }
 }
 function Open-NN([string]$cmd, [string]$button, [string]$screen) {
@@ -204,13 +235,17 @@ function Walk-Focus([string]$rx, [string[]]$keys) {
     (Focus) -match $rx
 }
 # The list on that side (1 dealer, 2 the player's) under the focus, by the side keys. At the final stage the ring has BUY SHIP as a third stop.
+# The key toward that side: the player's list stands left, the dealer's right, and a plain dealer's side keys do not wrap (dealer_rules.h NextStop, the owner 7 Nov 2026),
+# so RB alone never reaches the player's list from the dealer's.
 function Side-To([int]$side) {
+    $key = if ($side -eq 2) { 'LB' } else { 'RB' }
     foreach ($i in 1..4) {
         $s = "$(Send-FL 'bases')"
         if ((Field 'side' $s) -eq "$side" -and (Field 'focused' $s) -match $rxRow) { return }
-        Tap 'RB'
+        Tap $key
     }
-    Skip "no row on side $side by RB (side=$(Field 'side') focused=$(Focus))"
+    # a FAIL, not a NOT RUN: the fixture stands (a dealer with rows on both sides), so a side key that cannot reach a list is the defect under test
+    throw "no row on side $side by $key (side=$(Field 'side') focused=$(Focus))"
 }
 # A ship row the game will sell, reached by the D-pad; the md's +0x3FC: a refusal is closed and reopened, never reported as a pass.
 function Find-Row {
@@ -460,7 +495,14 @@ function Section-buy {
     }
     Step 8 'back: BackToShipDealer by the D-pad, tap A' {
         Ensure-Final
-        if (-not (Walk-Focus '^BackToShipDealer' (@('Down') * 10 + @('Up') * 14))) { Skip "BackToShipDealer not reached by a D-pad walk (focused=$(Focus)); the stick's way is not driven here" }
+        if (-not (Walk-Focus '^BackToShipDealer' (@('Down') * 10 + @('Up') * 14))) {
+            $at = Focus
+            $null = Walk-Focus $rxBuyShip (@('Down') * 4)   # (back into the window for the steps after)
+            if (-not (Vis 'BackToShipDealer')) { Skip "BackToShipDealer is not shown (focused=$at)" }
+            # a FAIL, not a NOT RUN: the control stands and the game's hit test finds it; the pad cannot reach it (on skin 1 Up leaves for HUD 2's
+            # room strip: audit 101_ "Step 3", 13 Nov 2026). The stick's way is not driven here.
+            throw "BackToShipDealer stands but no D-pad walk reaches it (the walk ended on $at)"
+        }
         $m = Mark
         Tap 'A'
         Wait-Screen 'shipdealer'
@@ -476,6 +518,8 @@ function Section-buy {
         Ensure-Final
         Side-To 2
         $ship0 = Ship-Name; $c = Cash
+        # (a row with something to transfer, as step 6 finds one: the player's first row can be an empty slot)
+        foreach ($i in 1..6) { if (Vis 'BuySellTradeButton') { break }; Tap 'Down'; $null = Wait-FLFramesPassed 10 }
         try { $null = Wait-FLUntil { if (Vis 'BuySellTradeButton') { 1 } } 'the transfer panel' 3 } catch { Skip "no transfer panel on focused=$(Focus)" }
         $null = Fresh-Hold 'pad transfer: clicked BuySellTradeButton'
         $null = Wait-FLFramesPassed 60
@@ -487,6 +531,8 @@ function Section-buy {
     }
     Step 9 'a real purchase, nothing transferred' {
         Ensure-Final
+        # (BUY SHIP by the side keys, the ring's third stop, from wherever the step before left the focus)
+        $null = Walk-Focus $rxBuyShip @('LB', 'LB', 'RB', 'RB')
         if (-not ((Focus) -match $rxBuyShip)) { Skip "focused=$(Focus), not BUY SHIP" }
         $ship0 = Ship-Name; $c = Cash
         $sum = Sum-Fields $script:Offer.Price
@@ -695,7 +741,7 @@ function Stick-Dealer([string]$k, [string]$what, [string]$room, [string]$spot, [
             if ($x -and $x.Name -notmatch '^(Inventory_Scroll|-)?$') { $t = $x; break }
             Tap 'Down'; $null = Wait-FLFramesPassed 15
         }
-        if (-not $t) { Skip 'no row with an overflowing description in 30 rows at this size' }
+        if (-not $t) { NoRow 'no row with an overflowing description in 30 rows at this size (the save has none: not a defect)' }
         Bars-Top
         $null = Wait-FLFramesPassed 15
         $b0 = Bars; $t = Stick-Bar
@@ -845,7 +891,15 @@ function Play([string]$size, [int]$skin, [string[]]$sections) {
         Start-FLEventLog | Out-Null
         Dev-Pads-On
         Wake-Pad
-        Write-Host "        $(Send-FL "set ui_style $skin")"
+        # Every step here reads and drives the GAME's dealer windows (ShipTraderShipName*, Continue, ItemView, the hit tests on their controls). Under
+        # HUD 2 (hud_style 2, the default) with its base pages (base_pages 1, the default) those windows stand parked off the screen under HUD 2's
+        # pages, so the steps found no rows, no refusal and no hits (audits 58_, 97_, 101_: the same failures on old and new code). The two games:
+        #   skin 0 = the classic HUD (hud_style 0): the game's own windows and look with the pad's layer on them, the path issues 34 and 36 came from.
+        #           (Until 13 Nov 2026 this was ui_style 0 under HUD 2: the same windows and look, but in a mixed state, audit 102_ M4, decision 77.)
+        #   skin 1 = the game's windows in HUD 2's skin (hud_style 2, ui_style 1, base_pages 0, audit 102_ M5) is gone: base_pages and ui_style
+        #           were retired on 13 Nov 2026 (the owner's answer to card Q2), so under HUD 2 the dealers are always its pages.
+        # The pages' own purchase is base_pages.ps1's. The instance's settings file is the main install's again at the next deploy.
+        Write-Host "        $(Send-FL 'set hud_style 0')"
         $null = Wait-FLFramesPassed 30
         foreach ($s in $sections) {
             if (-not (Get-FLGameProcess)) { Result 'FAIL' "section ${s}: the game is gone"; break }
@@ -863,6 +917,7 @@ try {
     foreach ($size in $Sizes) {
     $script:HitSize = $size
         foreach ($skin in $Skins) {
+            if ($skin -ne 0) { NotRun "skin $skin" 'retired with base_pages 0 (13 Nov 2026); only skin 0, the classic HUD, exists'; continue }
             # (hold first: a board's offers go at a second load of a docked save, and this game's first load is its own)
             $sections = @('hold', 'buy', 'stick', 'kinds', 'kbm' | Where-Object { $Only -contains $_ -and ($first -or $_ -in 'buy', 'stick', 'kbm') })
             if ($sections.Count) {
@@ -875,6 +930,9 @@ try {
     Stop-Game
     Set-FLInstanceDisplay $Instance 'borderless' $home_
 }
+$script:Tag = 'run'
+foreach ($c in @(Get-FLCrashBlocks $crashSince)) { Result 'FAIL' "a game crashed during the run (EXE\FLvibed_crash.log):`n$c" }
+if ($noRow.Count) { "ship_buy_pad: N/A, the fixture has no such row ($($noRow.Count)):"; $noRow | ForEach-Object { "  $_" } }
 if ($notRun.Count) { "ship_buy_pad: NOT RUN ($($notRun.Count)):"; $notRun | ForEach-Object { "  $_" } }
 if ($bad.Count) { "ship_buy_pad: $($bad.Count) FAILED"; $bad | ForEach-Object { "  $_" }; exit 1 }
 if ($notRun.Count) { "ship_buy_pad: no FAIL, but steps did not run; frames in $dir"; exit 2 }

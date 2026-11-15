@@ -1,8 +1,8 @@
 // `strafe_pass` - lengthwise strafing passes along a big armed hull (the battleship class) instead of any hold
-// (docs\research\runners\M13_bsdown_datapass.md "Proposal": the runners fly ~150-350 m off the Nomad battleship's hull and
+// (the M13 battleship-down escalation notes' second data pass, private: "Proposal": the runners fly ~150-350 m off the Nomad battleship's hull and
 // survive by MOTION - mean 89-128 m/s, afterburner pulses 70 <-> 200 m/s every 1-2 s, lengthwise passes along its axis,
 // turns beyond its ends, ~12 s a cycle - while every still or slow-sliding hold at a covered site died,
-// M13_bsdown_consensus.md). This is its pure half: geometry in, verdicts out - no game call, no statics - so
+// the same notes' consensus). This is its pure half: geometry in, verdicts out - no game call, no statics - so
 // tests\strafe_test.cpp runs the same code as the game. The impure adapter (the pose, the game's ray test, the turret
 // count, the outputs and the logs) is StrafeFly in autopilot_combat.cpp. No system headers here (core\pre.h / common.h).
 //

@@ -3,11 +3,11 @@
 
 namespace hud2
 {
-// hud2.cpp: the frame's state the model reads and writes
-extern Context g_ctx;
-extern Model g_m;
-extern Layout g_L;
-extern std::string g_sim; // debug: a mock-up state painted over the live data (its name: hud2_sim.h)
+// hud2.cpp: the frame's state the model reads and writes (the game's FrameState's ctx, m, L and sim: hud2_frame.h)
+extern Context& g_ctx;
+extern Model& g_m;
+extern Layout& g_L;
+extern std::string& g_sim; // debug: a mock-up state painted over the live data (its name: hud2_sim.h)
 
 // hud2_data.cpp: the model's state the frame reads, and its steps
 extern long long g_creditsTest; // debug `hud2 credits <n>`: the ship panel's number (-1: the player's)
@@ -33,8 +33,6 @@ extern SimMark g_simMark;
 std::wstring Upper(std::wstring s);
 bool FireKeyPressed();
 void Alert(const wchar_t* title, u32 col, int side = 0);
-void ClearAlerts(); // out of space: an alert's timer stands still there, and it would come back stale on the next flight
-void SlideAlerts(float dt);
 void AlertNone(const wchar_t* s);
 void AlertPrompt(presets::Action a, const wchar_t* label);
 bool AlertTractor(int reason); // core\game\tractorfail.h

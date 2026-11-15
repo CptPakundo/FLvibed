@@ -1,4 +1,4 @@
-// The row kit of FLvibed's own screens (docs\UI_PLAN.md 3.2 "The row kit", docs\UI_BUILD.md): the game's fonts as
+// The row kit of FLvibed's own screens (docs\UI_PLAN.md 3.2 "The row kit", the UI build record, private): the game's fonts as
 // fractions of the screen height, one input abstraction over the pad (views.h DeviceView), the keyboard (the host's raw keys) and
 // the game's cursor, and the row renderers of the Options screen's grammar (toggle, picker, slider, key, button) drawn
 // through core\game\uidraw.* / render.*. The options page (options_page.cpp) is its first user; the pad screens of
@@ -129,8 +129,10 @@ struct RowStyle
     bool lit = false;      // the row has the focus: label and value in the active yellow
     bool ownCase = false;  // the label as written, not in the game's capitals
     float indent = 0;      // the label moves right by this (a row under a head on MORE)
+    float labelRight = 0;  // where the drawn label ends (RowLabel's result): the note is fitted to the room after it; 0 = unknown
 };
-void RowLabel(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::wstring& label);
+// Returns the x where the drawn label ends.
+float RowLabel(const Fonts& f, const RowGeom& g, const RowStyle& s, const std::wstring& label);
 void RowToggle(const Fonts& f, const RowGeom& g, const RowStyle& s, bool on);
 // A feature's switch: the value in `argb`, right-aligned, its box unless `box` is false; `on` ticks the box.
 void RowHead(const Fonts& f, const RowGeom& g, const std::wstring& word, u32 argb, bool box, bool on);

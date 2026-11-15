@@ -1,6 +1,7 @@
 // HUD 2's dialogs - see skindialog.h. The children by class: docs\FREELANCER_RE.md "Dialogs" (decompiled; a probe per class is owed, UI_HUD2_SKIN.md 15 step 1).
 #include "skindialog.h"
 
+#include "dimouse.h"
 #include "flexe.h"
 #include "game/room.h"
 #include "skin_rules.h"
@@ -24,9 +25,24 @@ struct Open
     u32 action = 0, safe = 0; // the buttons; a single answer stands in `safe`
     std::wstring title, cost, actionWord, safeWord;
     bool amber = false, focusAction = false, verbs = false;
+    bool overFlight = false; // the cargo demand: the flight runs on under it, so its keys stay the game's (no arrows)
 };
 std::vector<Open> g_open;
 u32 g_hovered = 0; // the control under the focus at the last draw
+// An arrow key's focus move (ArrowKey): the game's cursor driven onto that answer's button, the pad's way (padmenus SnapTo), held a moment until the game's
+// next mouse reads have it there, then let go so the real mouse moves it again. 0: none running. Re-aimed at every draw of the hold: the key that hands the
+// device from the pad to the keyboard also clears the virtual mouse at the next frame (controller device.cpp), which dropped the first move.
+u32 g_snap = 0, g_snapRoot = 0;
+float g_snapX = 0, g_snapY = 0;
+ULONGLONG g_snapAt = 0;
+constexpr ULONGLONG kSnapHoldMs = 150;
+void EndSnap()
+{
+    if (!g_snap)
+        return;
+    dimouse::ReleaseTarget();
+    g_snap = g_snapRoot = 0;
+}
 
 Open* Find(u32 root)
 {
@@ -156,6 +172,7 @@ bool Prepare(const Win& w, bool mainMenuBehind, std::vector<u32>& hide)
         wchar_t demand[512];
         std::wstring who;
         ok = FormatDemand(demand, 512) && Answers(o, w.root, DialogKind::Other, demand, name, "DropCargoButton", "DCCancelButton", "DropCargoText", "DCCancelText", hide);
+        o.overFlight = true;
         if (ok)
         {
             if (Read(w.root, "MissionMessageTitle", who, hide))
@@ -182,6 +199,8 @@ bool Skinned(u32 root) { return Find(root) != nullptr; }
 
 void Forget(u32 root)
 {
+    if (root == g_snapRoot)
+        EndSnap();
     for (size_t i = g_open.size(); i-- > 0;)
         if (g_open[i].root == root)
             g_open.erase(g_open.begin() + static_cast<std::ptrdiff_t>(i));
@@ -195,18 +214,24 @@ void Prune()
         for (const Win& w : g_wins)
             live |= w.root == g_open[i].root;
         if (!live)
+        {
+            if (g_open[i].root == g_snapRoot)
+                EndSnap();
             g_open.erase(g_open.begin() + static_cast<std::ptrdiff_t>(i));
+        }
     }
 }
 
 // Enter answers with the chip in focus, not the game's YES: on a risky dialog the focus rests on the safe answer, and a word in focus that Enter ignores would lose
 // the player's progress. The game's own click, by the button's own action; the release is swallowed with the press. Off a dialog with two answers: the game's.
-void Clear() { g_open.clear(), g_hovered = 0; }
+void Clear() { EndSnap(), g_open.clear(), g_hovered = 0; }
 
-// The answer in focus: what the pointer or the pad is on, else the dialog's own start. One rule for the chip drawn lit and for Enter: a focus the player cannot see,
-// on a dialog that can exit the game, was a fault
+// The answer in focus: what the pointer or the pad is on (an arrow key's move while the cursor is still on its way), else the dialog's own start. One rule for
+// the chip drawn lit and for Enter: a focus the player cannot see, on a dialog that can exit the game, was a fault
 static u32 FocusOf(const Open& o, u32 hovered)
 {
+    if (g_snap && g_snapRoot == o.root)
+        return g_snap;
     return hovered == o.action || hovered == o.safe ? hovered : o.focusAction ? o.action : o.safe;
 }
 
@@ -230,7 +255,48 @@ bool EnterKey(int vk, bool down)
         const u32 target = FocusOf(o, g_hovered);
         if (!uiclick::Click(target))
             return false;
+        EndSnap();
         held = true;
+        return true;
+    }
+    return false;
+}
+
+// The arrow keys move the focus between the two answers (the owner, 14 Nov 2026: the quit questions could not be worked by them), the way the pad's D-pad
+// moves it: the game's cursor onto the answer's own button, so the chip drawn lit, Enter and a click all act on the same answer. Not on the cargo demand (the
+// flight's keys stay the game's). The release of a key taken here is swallowed with its press; any other key, or no two-answer dialog shown: the game's.
+bool ArrowKey(int vk, bool down)
+{
+    static unsigned heldMask = 0; // the arrows whose press was taken (bit per arrow)
+    DialogArrow a;
+    switch (vk)
+    {
+    case VK_LEFT: a = DialogArrow::Left; break;
+    case VK_RIGHT: a = DialogArrow::Right; break;
+    case VK_UP: a = DialogArrow::Up; break;
+    case VK_DOWN: a = DialogArrow::Down; break;
+    default: return false;
+    }
+    const unsigned bit = 1u << static_cast<int>(a);
+    if (!down)
+    {
+        const bool was = (heldMask & bit) != 0;
+        heldMask &= ~bit;
+        return was;
+    }
+    if (!uiskin::On())
+        return false;
+    for (const Open& o : g_open)
+    {
+        if (!o.action || !o.safe || o.overFlight || !FullyShown(o.root))
+            continue;
+        const u32 target = ArrowToAction(a, FocusOf(o, g_hovered) == o.action) ? o.action : o.safe;
+        Box b;
+        if (!RectOf(target, b) || !b.box)
+            return false;
+        dimouse::MoveTo(b.cx, b.cy);
+        g_snap = target, g_snapRoot = o.root, g_snapX = b.cx, g_snapY = b.cy, g_snapAt = GetTickCount64();
+        heldMask |= bit;
         return true;
     }
     return false;
@@ -239,6 +305,10 @@ bool EnterKey(int vk, bool down)
 bool Draw(const Win& w, u32 hovered)
 {
     g_hovered = hovered;
+    if (g_snap && GetTickCount64() - g_snapAt >= kSnapHoldMs) // (the cursor has stood on the button for the game's reads: the real mouse's again)
+        EndSnap();
+    else if (g_snap)
+        dimouse::MoveTo(g_snapX, g_snapY);
     const Open* o = Find(w.root);
     if (!o)
         return false;

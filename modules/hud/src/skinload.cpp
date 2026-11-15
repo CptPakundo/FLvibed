@@ -108,7 +108,7 @@ void Start(ULONGLONG now)
 
 void Draw()
 {
-    if (!views::SkinOn() || NativeListed(hudrows::g.skinNative, "loading") || !hostcalls::g.GetD3DDevice)
+    if (!views::SkinOn() || !hostcalls::g.GetD3DDevice)
     {
         Restore();
         return;

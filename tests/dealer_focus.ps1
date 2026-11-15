@@ -2,10 +2,11 @@
 # The equipment dealer, the player's side: a walk of the D-pad over every row, in both directions, and a tap of A at each stop, reading the focus and the server's
 # mounted list. Judged: no stop on a mount box; the mounted list unchanged by the walk and the taps; the rows and the filters still reached; LS click still mounts or
 # unmounts the focused row, and the prompt says MOUNT. Frames at each size.
-# Usage (PowerShell tool): tests\dealer_focus.ps1 [-Sizes '1280, 800','3840, 2160'] [-Instance 1]    build\release. Exit 1 on a failure.
-param([string[]]$Sizes = @('1280, 800', '3840, 2160'), [string]$Instance = 1, [string]$Save = 'Save1148.fl')
+# Usage (PowerShell tool): tests\dealer_focus.ps1 [-Sizes '1280, 800','3840, 2160'] -Instance <n>    build\release. Exit 1 on a failure.
+param([string[]]$Sizes = @('1280, 800', '3840, 2160'), [string]$Instance = '', [string]$Save = 'Save1148.fl')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+if (-not $Instance) { throw 'name the game instance: -Instance <n> (no default: a default instance belongs to no checkout - docs\TESTING.md "Parallel lanes")' }
 $env:FLVIBED_INSTANCE = "$Instance"
 . (Join-Path $root 'tools\harness\flctl.ps1')
 . (Join-Path $root 'tools\harness\flsub.ps1')
@@ -14,6 +15,7 @@ $dir = Join-Path $root 'research\experience\runs\dealer_focus'
 New-Item -ItemType Directory -Force $dir | Out-Null
 $home_ = Get-FLDisplaySize
 $bad = [Collections.Generic.List[string]]::new()
+$crashSince = Get-Date   # (a crash recorder block written after this is the run's: Get-FLCrashBlocks at the end)
 function Check($ok, [string]$what) { $ok = [bool]@($ok | Where-Object { $_ }).Count; "{0,-4} {1}" -f $(if ($ok) { 'ok' } else { 'FAIL' }), $what; if (-not $ok) { $bad.Add($what) } }
 function Focus { [regex]::Match("$(Send-FL 'bases')", 'focused=(\S*)').Groups[1].Value }
 function Mounted { @([regex]::Matches("$(Send-FL 'equipment')", 'arch=(\d+) id=\d+ count=\d+ mounted=1') | ForEach-Object { $_.Groups[1].Value } | Sort-Object) -join ' ' }
@@ -34,6 +36,13 @@ try {
         & (Join-Path $root 'tools\deploy.ps1') -Background -NoBuild -Release -Instance $Instance -Modules subtitles,controller -Save $Save | Select-Object -Last 1
         $null = Wait-FLFramesPassed 200
         Set-FLPad -RY 0.6; $null = Wait-FLFramesPassed 30; Clear-FLPad; $null = Wait-FLFramesPassed 30
+        # The mount boxes are the GAME's window's (EquipToggleN): under HUD 2 (hud_style 2, the default) with its base pages (base_pages 1, the
+        # default) the dealer is HUD 2's page and the game's window stands parked off the screen, so this walk found no window ("the dealer window"
+        # timed out on old and new code alike: audits 58_, 97_, 101_). The game's window under the pad is the classic HUD's (hud_style 0: the game's
+        # own windows and look, the pad's layer on them), the path issue 10 was reported on. Not base_pages 0 under HUD 2: that is the game's window in
+        # HUD 2's skin, a mixed state (audit 102_ M5, decision 77) whose future is the owner's open question. The page's own mount (LS) is
+        # base_pages.ps1's. The instance's settings file is the main install's again at the next deploy.
+        "  $(Send-FL 'set hud_style 0')"
         $null = Goto-FLRoom 'Equipment'
         $null = Wait-FLRoomReady
         "  dealer: $(Send-FL 'goto IDS_HOTSPOT_EQUIPMENT')"
@@ -86,5 +95,6 @@ try {
     Get-FLGameProcess | Stop-Process -Force -ErrorAction SilentlyContinue
     Set-FLInstanceDisplay $Instance 'borderless' $home_
 }
+foreach ($c in @(Get-FLCrashBlocks $crashSince)) { Check $false "a game crashed during the run (EXE\FLvibed_crash.log):`n$c" }
 if ($bad.Count) { "FAILED: $($bad -join '; ')"; exit 1 }
 'the mount boxes out of the pad''s focus: PASS'

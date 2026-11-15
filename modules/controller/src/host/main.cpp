@@ -123,7 +123,7 @@ static void OnMoviePoll()
 // ------------------------------------------------------------------ v18: FLvibed's native buttons (uibtn.cpp) -> the logic
 static void OnUiButton(int id)
 {
-    if (!g_impl || g_faulted || g_impl->version < 3 || !g_impl->OnUiButton)
+    if (!g_impl || g_faulted || !g_impl->OnUiButton)
     {
         Log("ui button %d clicked: no logic to take it", id);
         return;
@@ -143,7 +143,7 @@ static bool GuardedRawKey(int vk, bool down, bool textField);
 
 static bool OnRawKey(int vk, bool down, bool textField)
 {
-    return g_impl && !g_faulted && g_impl->version >= 3 && g_impl->OnRawKey && GuardedRawKey(vk, down, textField);
+    return g_impl && !g_faulted && g_impl->OnRawKey && GuardedRawKey(vk, down, textField);
 }
 
 static void GuardedKeyCmd(int cmd, bool down)
@@ -161,7 +161,7 @@ static void GuardedKeyCmd(int cmd, bool down)
 
 static void KeyCmd(int cmd, bool down)
 {
-    if (g_impl && !g_faulted && g_impl->version >= 4 && g_impl->OnKeyCmd)
+    if (g_impl && !g_faulted && g_impl->OnKeyCmd)
         GuardedKeyCmd(cmd, down);
 }
 
@@ -603,7 +603,6 @@ void Start(HMODULE)
         cmd::Add(g_channel, "d3dreset", false, D3dResetVerb);
     }
 
-    g_host.version = kHostApiVersion;
     g_host.dllDir = DllDir().c_str();
     g_host.shm = shm::Get();
     g_host.LogWrite = HostLogWrite;
@@ -686,11 +685,11 @@ void Start(HMODULE)
     g_host.MissionSave = events::MissionSave;            // v35: the story's checkpoint saves (speedrun save:<ids> splits)
     g_host.SetSteerLift = input::SetSteerLift;           // v37: what the autopilot's steering may lift
     g_host.SetLoadDraw = router::SetLoadDraw;            // v40: the load's frame
+    g_host.InstallHud2Hooks = router::InstallHud2Hooks;  // v47: HUD 2's own hooks at its first selection (the target label's mute among them)
+    g_host.SetRawMouse = dimouse::SetRaw;                // v48: the raw mouse (mouse_raw)
     // DmgIndSource: sub esp,88h (6 bytes); DmgIndContact: sub esp,3Ch; push esi; mov esi,ecx (6 bytes)
     if (router::ModuleOn(modules::kHud) || router::ModuleOn(modules::kAutopilot))
         uihooks::InstallHits();
-    if (router::ModuleOn(modules::kHud))
-        uihooks::InstallTargetMute();
     uihooks::Install(KeyCmd);
     input::Install();
     // FrameTimer: push ebp; mov ebp,esp; and esp,-8 (6 bytes). Passes through unless the debug `fixeddt` is on.

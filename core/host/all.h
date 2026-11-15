@@ -20,6 +20,7 @@
 
 #include "chatlines.h"
 #include "commands.h"
+#include "crashlog.h"
 #include "deferred.h"
 #include "fixes.h"
 #include "focus.h"

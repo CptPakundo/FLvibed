@@ -44,7 +44,7 @@ LOCAL_POOL = ("research", "subtitles/review/FLSubtitles", "docs/kb/generated", "
 # naming files that do not exist yet
 SKIP_DOCS = ("docs/research/", "subtitles/review/docs/SUBTITLE_WORKFLOW.md", "modules/autopilot/docs/A37_PLAN.md",
              "modules/hud/docs/UI_HUD2_SKIN.md")
-SKIP_TOKEN = re.compile(r"[<>{}|=]|YYYY|Mxx|nnn|%|\$|afk\.flag|\w\.\.\w|^R\d[\\/]|^https?:|://|^[A-Z]:\\|\.\.\.|^_|^\.\w|^/|(^|[\\/])EXE[\\/]")
+SKIP_TOKEN = re.compile(r"[<>{}|=]|YYYY|Mxx|nnn|%|\$|afk\.flag|\w\.\.\w|^R\d[\\/]|^https?:|://|^[A-Z]:\\|\.\.\.|^_|^\.\w|^/|^(calm|combat|reticle)\.\w+\.|(^|[\\/])EXE[\\/]")
 GAME = re.compile(r"^(DATA|EQUIPMENT|SHIPS|MISSIONS|UNIVERSE|AUDIO|FX|AI|SAVE|FLDOCS|AppData|Interface"
                   r"|MaterialAnim|VMesh\w*|Cons|Cmpnd)[\\/]", re.I)
 MODULES = ("subtitles/review/",) + tuple(f"modules/{m}/" for m in sorted(os.listdir(os.path.join(ROOT, "modules"))))
@@ -160,6 +160,11 @@ def main():
                 first = p0.split("/", 1)[0]
                 name = p0.rstrip("/").rsplit("/", 1)[-1]
                 ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+                # (runs\ is two things since 12 Nov 2026: the tracked unattended-run files runs\<date>.json / .start /
+                # .end, and the docs' older shorthand for the git-ignored test evidence research\experience\runs\<name>;
+                # only the first kind is a repository path)
+                if first == "runs" and not re.search(r"\.(json|start|end|md)$", p0):
+                    continue
                 rooted = "/" in p0 and first in roots or p0 in roots
                 if not rooted and not (ext in EXTS or p0.endswith("/")):
                     continue

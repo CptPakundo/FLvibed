@@ -1,4 +1,4 @@
-// The situation snapshot's adapter (situation.h SnapshotNow, A37_PLAN S1): the only impure part of the assessor. It
+// The situation snapshot's adapter (situation.h SnapshotNow, the A37 plan's S1, private): the only impure part of the assessor. It
 // reads what the objective mode reads - the host's objective, marks, title, spawns and dock reply, the contacts (with
 // the pre-aggro overlay), the pilot, mission.cpp's derived goals (AdvanceGoalsPeek: its memory read, never written),
 // the live trigger table, the job table - and writes nothing: no autopilot state, no mission.cpp memory, no game call

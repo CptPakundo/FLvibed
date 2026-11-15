@@ -117,13 +117,13 @@ bool ReadDockedSubs(HudDockedSubs* out)
 
 u32 DockedSubsFrame() { return g_dsubsFrame; }
 
-// version 4: FLUF's windows from the one probe in FLvibed.dll (core\fluf.*), refreshed lazily by whoever asks first
+// FLUF's windows from the one probe in FLvibed.dll (core\fluf.*), refreshed lazily by whoever asks first
 bool ReadFluf(HudFluf* out) { return fluf::Read(out); }
 void SetFlufPolicy(int policy) { fluf::SetPolicy(policy); }
-// version 5: the same snapshot's per-window extras
+// the same snapshot's per-window extras
 bool ReadFlufExtra(HudFlufExtra* out) { return fluf::ReadExtra(out); }
 
-// version 6: the tractor's last refusal, kept here so a logic reload loses nothing
+// the tractor's last refusal, kept here so a logic reload loses nothing
 u32 g_tractorSerial = 0;
 int g_tractorReason = 0;
 DWORD g_tractorTick = 0;
@@ -142,7 +142,7 @@ u32 ReadTractorFail(int* reason, u32* ageMs)
     return g_tractorSerial;
 }
 
-// version 7: the loot tractored in, the last kHudLootKept records by serial
+// the loot tractored in, the last kHudLootKept records by serial
 HudLoot g_loot[kHudLootKept] = {};
 u32 g_lootSerial = 0;
 void NoteLoot(u32 loot, u32 ship, u32 units)
@@ -160,7 +160,7 @@ bool ReadLoot(u32 serial, HudLoot* out)
     return true;
 }
 
-const HudBus g_bus = {7,          PublishLayout, ReadLayout,        PublishSubtitles, ReadSubtitles,
+const HudBus g_bus = {PublishLayout, ReadLayout,        PublishSubtitles, ReadSubtitles,
                       Frame,       PublishLane,   ReadLane,          LaneFrame,        PublishFloor,
                       ReadFloor,   FloorFrame,    PublishDockedSubs, ReadDockedSubs,   DockedSubsFrame,
                       ReadFluf,    SetFlufPolicy, ReadFlufExtra,     NoteTractorFail,  ReadTractorFail,

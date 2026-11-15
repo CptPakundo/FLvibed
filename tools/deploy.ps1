@@ -22,15 +22,36 @@
 #   deploy.ps1 -GameArgs <s>   test-only: Freelancer.exe's command line, e.g. `-s127.0.0.1:2302` (the game's own direct
 #                              connect to a server - the vanilla 1.1 client lists LAN servers by IPv6 link-local only);
 #                              needs a fresh pwsh (the FLVWin type of an older deploy has no arguments overload)
+#   deploy.ps1 -NoTestSwitch   start the game as a player's start: without FLVIBED_TEST=1 (the test switch every other start
+#                              gets, for that process only), so it opens no debug channel; the start's wait then stops at
+#                              once with "the debug channel is closed" (the check that a player's game has no channel)
+#   deploy.ps1 -Instance <n> -Set 'hud_style=0'
+#                              test-only: start values in the numbered instance's FLController.ini [Controller], written after
+#                              the copy of the main install's file (below), so this start reads them; the next start without
+#                              -Set copies the main install's file back. For what no verb can set before the start (a cold
+#                              start's hud_style, or any row with the controller off: its channel has no `set`)
 param([switch]$Impl, [switch]$Release, [switch]$Restart, [switch]$NoStart, [switch]$Intro, [string]$Save = '',
       [string[]]$Modules = @('subtitles', 'controller'), [switch]$Background, [switch]$ReplaceSave, [switch]$NoBuild,
-      [string]$Instance = '', [string]$GameArgs = '')
+      [string]$Instance = '', [string]$GameArgs = '', [switch]$NoTestSwitch, [string]$BootLabel = '', [string[]]$Set = @())
 $ErrorActionPreference = 'Stop'
 # -Instance: a number (a hard-linked mirror, made when missing) or the name of a prepared instance folder
 # (Install\instances\vanilla11c: its own install, e.g. vanilla 1.1; 29 Oct 2026). '' / 0 = the main install.
 $hasInst = $Instance -and $Instance -ne '0'
 
 $root = Split-Path $PSScriptRoot -Parent                       # FLvibed
+# Parallel lanes (tools\lane.ps1, 12 Nov 2026): a lane reserves one game instance in ..\.claude\lanes.json. A lane deploys
+# only there, and no other checkout deploys there - a game started through a lane's Install junction reports the lane's
+# path, so another checkout's Get-FLGameProcess would not see it and would start a second game on the same instance.
+$lanesFile = Join-Path (Split-Path $root -Parent) '.claude\lanes.json'
+if (Test-Path -LiteralPath $lanesFile) {
+    $lanes = @((Get-Content -LiteralPath $lanesFile -Raw | ConvertFrom-Json).lanes | Where-Object { $_ })
+    $here = [IO.Path]::GetFullPath($root).TrimEnd('\')
+    $myLane = $lanes | Where-Object { [IO.Path]::GetFullPath($_.path).TrimEnd('\') -ieq $here } | Select-Object -First 1
+    $want = if ($hasInst) { "$Instance" } else { '' }
+    if ($myLane -and $want -ne "$($myLane.instance)") { throw "this checkout is lane $($myLane.name): it deploys only to its instance $($myLane.instance) (-Instance $($myLane.instance); tools\lane.ps1 status)" }
+    $owner = $lanes | Where-Object { $want -and "$($_.instance)" -eq $want } | Select-Object -First 1
+    if ($owner -and -not $myLane) { throw "instance $want is reserved by lane $($owner.name) ($($owner.path)): deploy from that lane, or use another instance (tools\lane.ps1 status)" }
+}
 # Parse every harness script first: one syntax slip ("$name:" in a string, twice on 20 Oct 2026) broke the whole
 # dot-sourced harness and surfaced only as "Get-FLGameProcess is not recognized" inside a test.
 foreach ($ps in Get-ChildItem (Join-Path $root 'tools') -Filter *.ps1 -Recurse) {
@@ -123,6 +144,32 @@ if ($hasInst -and $Instance -match '^\d+$') {
         $iniSynced = $true
     }
 }
+# -Set: start values written over the copy above (a numbered instance only: the main install's file is the one every instance copies)
+if ($Set.Count) {
+    if (-not ($hasInst -and $Instance -match '^\d+$')) { throw '-Set: a numbered test instance only (-Instance <n>)' }
+    $file = Join-Path $exeDir 'FLController.ini'
+    $text = if (Test-Path $file) { [IO.File]::ReadAllText($file) } else { '' }
+    foreach ($kv in ($Set -split ',')) {
+        $k, $v = $kv -split '=', 2
+        $k = $k.Trim(); if (-not $k -or $null -eq $v) { throw "-Set: '$kv' is not key=value" }
+        $line = "$k = $($v.Trim())"
+        $rx = "(?m)^[ \t]*$([regex]::Escape($k))[ \t]*=[^\r\n]*"
+        if ($text -match '(?m)^\[Controller\][ \t]*\r?$') {
+            # the key's line inside [Controller] replaced, or added right after the section's head
+            $head = [regex]::Match($text, '(?m)^\[Controller\][ \t]*\r?$')
+            $rest = $text.Substring($head.Index + $head.Length)
+            $next = [regex]::Match($rest, '(?m)^\[')
+            $body = if ($next.Success) { $rest.Substring(0, $next.Index) } else { $rest }
+            $body = if ($body -match $rx) { [regex]::Replace($body, $rx, $line) } else { "`r`n$line" + $body }
+            $text = $text.Substring(0, $head.Index + $head.Length) + $body + $(if ($next.Success) { $rest.Substring($next.Index) } else { '' })
+        } else { $text = $text.TrimEnd() + $(if ($text.Trim()) { "`r`n" } else { '' }) + "[Controller]`r`n$line`r`n" }
+    }
+    # (a new file, never written through: the instance is a hard-linked mirror, and a link would carry the values into the main install)
+    if (Test-Path $file) { [IO.File]::Delete($file) }
+    [IO.File]::WriteAllText($file, $text)
+    "instance ${Instance}: FLController.ini start values $($Set -join ', ') (this start only)"
+    $iniSynced = $true
+}
 
 # ---------------------------------------------------------------- restart decision
 $running = Get-FLGameProcess | Where-Object { -not $_.HasExited }   # this instance's game only; a game being killed is not running
@@ -134,6 +181,25 @@ if (-not $Impl) {
 # (-Impl never restarts for the ini files: the hot reload is the point, and the running game keeps its settings in memory. On 7 Nov 2026 every
 # -Impl restarted: the game itself adds `settings_moved=2` to FLvibed.ini, so the file never matched, and a written FLController.ini was put
 # back. A change of [Modules] needs a start: -Restart)
+# The unattended-run boot ledger (tools\claude\afk_run.js boot; the AFK rebuild R5, 12 Nov 2026): during a run every
+# game start counts against the package in progress and is refused past its boot budget, a run cap or a tamper stop -
+# counted here, at the boot, because a detached flset / flgate starts many games no hook sees. Checked BEFORE the
+# restart below, so a refused start kills no game (the R4/R5 check); only when this call will start a game. With no run
+# the call returns at once; without tools\claude (the public export) and no run flag it is skipped. The label is the
+# caller's (-BootLabel: flleg.ps1 passes the leg's label, which its legs.tsv row carries when the leg ends; such a boot
+# holds its worker until then) or deploy-i<instance> with --no-hold (no leg row will end it: counted only).
+$willRestart = $Restart -or (($hostChanged -or (($iniChanged -or $iniSynced) -and -not $Impl)) -and $running)
+if (-not $NoStart -and ($willRestart -or -not $running)) {
+    $afkRun = Join-Path $PSScriptRoot 'claude\afk_run.js'
+    $afkFlag = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) '.claude\afk.flag'
+    $bootArgs = if ($BootLabel) { @('--label', $BootLabel) } else { @('--label', ('deploy-i' + $(if ($hasInst) { $Instance } else { 'main' })), '--no-hold') }
+    if ((Test-Path -LiteralPath $afkRun) -and (Get-Command node -ErrorAction SilentlyContinue)) {
+        $bootOut = @(& node $afkRun boot @bootArgs 2>&1 | ForEach-Object { "$_" })
+        if ($LASTEXITCODE) { throw "the unattended run refuses this game start ($($bootArgs[1])): $($bootOut -join ' ')" }
+    } elseif (Test-Path -LiteralPath $afkFlag) {
+        throw 'an unattended run flag exists but tools\claude\afk_run.js or node is missing: the boot ledger cannot count this game start'
+    }
+}
 if ($Restart -or (($hostChanged -or (($iniChanged -or $iniSynced) -and -not $Impl)) -and $running)) {
     if ($running) {
         $running | Stop-Process -Force
@@ -315,12 +381,16 @@ $evidence = @($logDir, (Join-Path $root 'research\experience\runs'), (Join-Path 
 $evidenceGB = (($evidence | ForEach-Object { Get-ChildItem $_ -Recurse -File -ErrorAction SilentlyContinue } |
                 Measure-Object Length -Sum).Sum) / 1GB
 if ($evidenceGB -gt $warnGB) { "WARNING: test evidence (logs, runs, shots) is {0:N1} GB (> {1} GB): ask the user about pruning" -f $evidenceGB, $warnGB }
+# The test switch (core\common.h TestSwitch): FLVIBED_TEST=1 opens the debug channels, in the game's environment only
+# (taken out of this process again in the same statement's finally: never stored, the player's own starts never have it).
+$testSwitch = if ($NoTestSwitch) { $null } else { '1' }
 if ($Background) {
     # A background test start: FLVIBED_BACKGROUND=1 in the game's environment only (never stored, the user's own starts
     # are unaffected): the host (core\host\focus.cpp, any module) keeps it running out of focus, keeps its window from taking the focus and
     # mutes its sound in the Windows mixer (inside the game all sound runs as always). Plus an inactive first window.
-    $env:FLVIBED_BACKGROUND = '1'
-    try { $proc = Get-Process -Id ($(if ($GameArgs) { [FLVWin]::StartInactive($flExe, $exeDir, $GameArgs) } else { [FLVWin]::StartInactive($flExe, $exeDir) })) } finally { Remove-Item Env:FLVIBED_BACKGROUND }
+    $env:FLVIBED_BACKGROUND = '1'; $env:FLVIBED_TEST = $testSwitch
+    try { $proc = Get-Process -Id ($(if ($GameArgs) { [FLVWin]::StartInactive($flExe, $exeDir, $GameArgs) } else { [FLVWin]::StartInactive($flExe, $exeDir) })) }
+    finally { Remove-Item Env:FLVIBED_BACKGROUND; Remove-Item Env:FLVIBED_TEST -ErrorAction SilentlyContinue }
     # Standing order (user, 19 Oct 2026): every unattended test runs the screenshot sampler (tools\flshots.ps1), one per
     # game session (a sampler left from the last session is stopped: two captured the same window), into
     # research\experience\shots\<time>; kept, frames and videos (user, 20 Oct 2026: no pruning for now - size warning above).
@@ -347,9 +417,53 @@ if ($Background) {
     Start-Process pwsh -WindowStyle Hidden -ArgumentList (@('-NoProfile', '-File', ('"' + (Join-Path $PSScriptRoot 'flshots.ps1') + '"'),
         '-Dir', ('"' + $shotDir + '"')) + $(if ($hasInst) { @('-Instance', "$Instance") } else { @() })) # quoted: spaces
 } else {
-    $proc = if ($GameArgs) { Start-Process -FilePath $flExe -WorkingDirectory $exeDir -ArgumentList $GameArgs -PassThru }
-            else { Start-Process -FilePath $flExe -WorkingDirectory $exeDir -PassThru }
+    $env:FLVIBED_TEST = $testSwitch
+    try {
+        $proc = if ($GameArgs) { Start-Process -FilePath $flExe -WorkingDirectory $exeDir -ArgumentList $GameArgs -PassThru }
+                else { Start-Process -FilePath $flExe -WorkingDirectory $exeDir -PassThru }
+    } finally { Remove-Item Env:FLVIBED_TEST -ErrorAction SilentlyContinue }
 }
+# The game's exit code is recorded (13 Nov 2026; audit 95_silent_exits.md: a crash of this game leaves no Windows event
+# and no dump, and nothing kept the code): tools\flexitwatch.ps1 holds a handle on the game, appends one line to
+# EXE\logs\game_exits.log when it ends (time, instance, pid, build, exit code, how long it lived) and ends itself. Started
+# hidden and broken away from this process's job where Windows allows it (a stopped Claude task ends the game with
+# code 1: the watcher must outlive it to say so). Never blocks this start: a watcher that cannot start is a warning.
+$exitLog = Join-Path $logDir 'game_exits.log'
+try {
+    if (-not ('FLVDetach' -as [type])) {
+        Add-Type @'
+using System; using System.Runtime.InteropServices;
+public static class FLVDetach {
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] struct STARTUPINFO {
+    public int cb; public string r, d, t; public int x, y, w, h, cx, cy, fill, flags; public short show, r2;
+    public IntPtr r3, i, o, e; }
+  [StructLayout(LayoutKind.Sequential)] struct PROCESS_INFORMATION { public IntPtr hp, ht; public int pid, tid; }
+  [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool CreateProcess(
+    string app, string cmd, IntPtr pa, IntPtr ta, bool inherit, int flags, IntPtr env, string dir,
+    ref STARTUPINFO si, out PROCESS_INFORMATION pi);
+  [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+  // Starts a windowless process outside the caller's job when the job allows it (CREATE_BREAKAWAY_FROM_JOB), else in it.
+  public static int Start(string exe, string cmd) {
+    var si = new STARTUPINFO(); si.cb = Marshal.SizeOf(si);
+    PROCESS_INFORMATION pi;
+    const int NoWindow = 0x08000000, Breakaway = 0x01000000;
+    if (!CreateProcess(exe, cmd, IntPtr.Zero, IntPtr.Zero, false, NoWindow | Breakaway, IntPtr.Zero, null, ref si, out pi) &&
+        !CreateProcess(exe, cmd, IntPtr.Zero, IntPtr.Zero, false, NoWindow, IntPtr.Zero, null, ref si, out pi))
+      throw new System.ComponentModel.Win32Exception();
+    CloseHandle(pi.hp); CloseHandle(pi.ht); return pi.pid;
+  }
+}
+'@
+    }
+    $buildTxt = Join-Path $exeDir 'FLvibed.build.txt'
+    $buildId = if (Test-Path -LiteralPath $buildTxt) { "$(Get-Content -LiteralPath $buildTxt -TotalCount 1)".Trim() } else { '?' }
+    $pwshExe = (Get-Process -Id $PID).Path
+    $q = { param($s) '"' + ($s -replace '"', '') + '"' }   # (no argument here holds a quote; any would be dropped)
+    $watchCmd = (& $q $pwshExe) + ' -NoProfile -NonInteractive -File ' + (& $q (Join-Path $PSScriptRoot 'flexitwatch.ps1')) +
+        " -GamePid $($proc.Id) -StartUtcTicks $($proc.StartTime.ToUniversalTime().Ticks) -Log " + (& $q $exitLog) +
+        ' -Instance ' + (& $q $(if ($hasInst) { "$Instance" } else { 'main' })) + ' -Build ' + (& $q $buildId) + ' -Session ' + (& $q $stamp)
+    $null = [FLVDetach]::Start($pwshExe, $watchCmd)
+} catch { Write-Warning "the exit-code watcher did not start ($($_.Exception.Message)): this game's exit code will not be in $exitLog" }
 # Skips the playing startup movie natively: the subtitles host reports it finished to the game's movie loop
 # (`movieskip`; no key input, works out of focus). Without the subtitles module (no movie hooks): one Escape message.
 function Skip-Movie {
@@ -378,9 +492,15 @@ while ($sw.Elapsed.TotalSeconds -lt 300) {
         if ($Intro -and $on.subtitles -and (Send-FLS 'ping' 300) -eq 'pong') { "game started, subtitles responding after {0:n1}s" -f $sw.Elapsed.TotalSeconds; $ready = $true; break }
         if ($on.subtitles -and (Get-Frames) -gt 0) { "main menu after {0:n1}s ($escaped movies skipped)" -f $sw.Elapsed.TotalSeconds; $ready = $true; break }
         if (-not $on.subtitles -and $on.controller -and (Send-FL 'ping' 300) -eq 'pong') { "main menu after {0:n1}s ($escaped movies skipped)" -f $sw.Elapsed.TotalSeconds; $ready = $true; break }
-    } catch {}
+    } catch {
+        # a game without the test switch never opens its channels: stop now, not after the 300 s below
+        if ($closed = Get-FLChannelClosed) { throw $closed }
+    }
     $proc.Refresh()
-    if ($proc.HasExited) { throw "the game exited during its start (exit code $(try { $proc.ExitCode } catch { '?' })) - see EXE\FLSubtitles.log / FLController.log" }
+    if ($proc.HasExited) {
+        $exitLine = Get-FLExitLine -GamePid $proc.Id
+        if ($exitLine) { Write-Host "game exit: $exitLine" }
+        throw "the game exited during its start (exit code $(try { $proc.ExitCode } catch { '?' })) - see EXE\FLSubtitles.log / FLController.log" }
     if (-not $Intro -and $proc.MainWindowHandle -ne [IntPtr]::Zero -and [FLVWin]::MoviePlaying($proc.MainWindowHandle)) {
         Skip-Movie; $escaped++
         while ([FLVWin]::MoviePlaying($proc.MainWindowHandle) -and $sw.Elapsed.TotalSeconds -lt 300) { Start-Sleep -Milliseconds 50 }

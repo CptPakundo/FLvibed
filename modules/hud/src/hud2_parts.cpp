@@ -1,13 +1,8 @@
 // HUD 2's components, drawn as tools\uimock\hud2_states.py draws them (iteration 3): the same fractions of H, sizes,
 // colours and behaviours; deviations are noted where they are (modules\hud\docs\UI_HUD2.md). Every text >= 0.024 H at scale 100.
 #include "hud2_impl.h"
+#include "hud2_frame.h"
 #include "hud2_layout.h"
-#include "ui/hud_rows.h"
-#include "ui/views.h"
-#include "safemem.h"
-#include "shieldcue.h"
-#include "ui/ui.h"
-#include "ui/uiopt.h"
 
 #include <cmath>
 
@@ -16,9 +11,35 @@ namespace hud2
 {
 using namespace hud2kit;
 
-static float Now() { return GetTickCount() / 1000.0f; }
+// The host, the settings and the state the parts read from (hud2_frame.h; none bound: the clocks stand at 0, nobody
+// types, the settings' defaults, a state of their own)
+static FrameHost g_host;
+static const PartsIn kNoIn;
+static const PartsIn* g_in = &kNoIn;
+static PartsState g_noState;
+static PartsState* g_state = &g_noState;
+static double NoSeconds() { return 0; }
+void BindParts(const FrameHost& host, const PartsIn& in, PartsState& state)
+{
+    g_host = host, g_in = &in, g_state = &state;
+    hud2kit::SetClock(host.seconds ? host.seconds : NoSeconds);
+    hud2kit::SetMarquees(&state.marquees);
+}
+PartsState& BoundParts() { return *g_state; }
+float PartsSeconds() { return (g_host.tickMs ? g_host.tickMs() : 0u) / 1000.0f; }
+hud2kit::GlyphStyle PartsGlyphs() { return {g_in->family, g_in->opt.glyphLook}; }
+void HotRect(int slot, float x0, float y0, float x1, float y1)
+{
+    if (g_host.hotRect)
+        g_host.hotRect(slot, x0, y0, x1, y1);
+}
+int HotHovered() { return g_host.hotHovered ? g_host.hotHovered() : -1; }
+static const uiopt::UiOptions& Opt() { return g_in->opt; }
+static const hudrows::Values& Rows() { return g_in->rows; }
+
+static float Now() { return PartsSeconds(); }
 // A cue's pulse, 0..1 about its rest: under skin_motion's fades and none nothing breathes (UI_HUD2_SKIN.md 6.10), the cue stands at its rest
-static float Pulse(float rate) { return hudrows::g.skinMotion ? 0.0f : sinf(Now() * rate); }
+static float Pulse(float rate) { return Rows().skinMotion ? 0.0f : sinf(Now() * rate); }
 
 float DrawPrompt(const Prompt& p, float cx, float cy, float h, u32 argb, bool measure, bool tight)
 {
@@ -26,88 +47,81 @@ float DrawPrompt(const Prompt& p, float cx, float cy, float h, u32 argb, bool me
         return Keycap(p.key, cx, cy, h, argb, measure, tight);
     if (p.btn == glyphs::COUNT)
         return 0;
+    const hud2kit::GlyphStyle style = PartsGlyphs();
     if (!measure)
-        Glyph(p.btn, cx, cy, h, argb, p.hold);
-    return GlyphWidth(p.btn, h);
+        Glyph(style, p.btn, cx, cy, h, argb, p.hold);
+    return GlyphWidth(style, p.btn, h);
 }
 
 // The bars' low states (UI_HUD2_SKIN.md 6.11; the rules: hud2_bars.h): under 3 Hz, never colour alone, the number and the alert card carry the state too; `shield_cue`
-// and `hull_cue` are their off switches. A bar never changes colour: the glow and the bloom stay in its own.
-static hud2bars::Breath g_brShield, g_brHull, g_brBoost, g_brTShield, g_brTHull, g_brEscort[3];
-static hud2bars::Bloom g_blShield, g_blHull, g_blBoost, g_blCruise, g_blTShield, g_blTHull;
-static float g_beat = 0;
-
+// and `hull_cue` are their off switches. A bar never changes colour: the glow and the bloom stay in its own. Their state:
+// PartsState (hud2_frame.h).
 void StepBars(Model& m, float dt, int motion)
 {
     using namespace hud2bars;
-    static bool upWas = true;
-    static float hullWas = 1, boostWas = 1, tShieldWas = -1, tHullWas = -1;
-    static u32 targetWas = 0;
+    PartsState& s = *g_state;
     BarFx& x = m.fx;
-    const bool cueS = shieldcue::Get().on, cueH = shieldcue::Get().hull;
-    x.glowShield = cueS ? g_brShield.Step(dt, m.shield, !m.shieldUp, motion) : 0;
-    x.glowHull = cueH ? g_brHull.Step(dt, m.hull, false, motion) : 0;
-    x.glowBoost = cueH && m.boost >= 0 ? g_brBoost.Step(dt, m.boost, false, motion) : 0; // (the hull's logic exactly, the owner, 6 Nov 2026: its breath, and its bloom at nothing)
+    const bool cueS = Rows().shield.on, cueH = Rows().shield.hull;
+    x.glowShield = cueS ? s.brShield.Step(dt, m.shield, !m.shieldUp, motion) : 0;
+    x.glowHull = cueH ? s.brHull.Step(dt, m.hull, false, motion) : 0;
+    x.glowBoost = cueH && m.boost >= 0 ? s.brBoost.Step(dt, m.boost, false, motion) : 0; // (the hull's logic exactly, the owner, 6 Nov 2026: its breath, and its bloom at nothing)
     const bool tgt = m.target && m.tBars;
-    x.glowTShield = cueS && tgt ? g_brTShield.Step(dt, m.tShield, m.tShield <= 0, motion) : 0;
-    x.glowTHull = cueH && tgt ? g_brTHull.Step(dt, m.tHull, false, motion) : 0;
+    x.glowTShield = cueS && tgt ? s.brTShield.Step(dt, m.tShield, m.tShield <= 0, motion) : 0;
+    x.glowTHull = cueH && tgt ? s.brTHull.Step(dt, m.tHull, false, motion) : 0;
     for (int i = 0; i < 3; ++i)
-        x.glowEscort[i] = cueH && i < m.nEscorts ? kEscortDepth * g_brEscort[i].Step(dt, m.escorts[i].hull, false, motion) : 0;
+        x.glowEscort[i] = cueH && i < m.nEscorts ? kEscortDepth * s.brEscort[i].Step(dt, m.escorts[i].hull, false, motion) : 0;
     // the breaks: a shield by its flag falling, not its value; a hull at nothing
-    const Bloom* all[5] = {&g_blShield, &g_blHull, &g_blBoost, &g_blTShield, &g_blTHull};
-    if (upWas && !m.shieldUp && cueS && BloomFree(all, 5))
-        g_blShield.Start();
-    if (hullWas > 0 && m.hull == 0 && cueH && BloomFree(all, 5))
-        g_blHull.Start();
-    if (boostWas > 0 && m.boost == 0 && cueH && BloomFree(all, 5))
-        g_blBoost.Start();
-    boostWas = m.boost;
-    if (m.targetId != targetWas)
-        tShieldWas = tHullWas = -1, targetWas = m.targetId;
-    if (tgt && tShieldWas > 0 && m.tShield == 0 && cueS && BloomFree(all, 5))
-        g_blTShield.Start(kTargetDelay);
-    if (tgt && tHullWas > 0 && m.tHull <= 0 && cueH && BloomFree(all, 5))
-        g_blTHull.Start(kTargetDelay);
-    upWas = m.shieldUp, hullWas = m.hull >= 0 ? m.hull : hullWas, tShieldWas = tgt ? m.tShield : -1, tHullWas = tgt ? m.tHull : -1;
+    const Bloom* all[5] = {&s.blShield, &s.blHull, &s.blBoost, &s.blTShield, &s.blTHull};
+    if (s.upWas && !m.shieldUp && cueS && BloomFree(all, 5))
+        s.blShield.Start();
+    if (s.hullWas > 0 && m.hull == 0 && cueH && BloomFree(all, 5))
+        s.blHull.Start();
+    if (s.boostWas > 0 && m.boost == 0 && cueH && BloomFree(all, 5))
+        s.blBoost.Start();
+    s.boostWas = m.boost;
+    if (m.targetId != s.targetWas)
+        s.tShieldWas = s.tHullWas = -1, s.targetWas = m.targetId;
+    if (tgt && s.tShieldWas > 0 && m.tShield == 0 && cueS && BloomFree(all, 5))
+        s.blTShield.Start(kTargetDelay);
+    if (tgt && s.tHullWas > 0 && m.tHull <= 0 && cueH && BloomFree(all, 5))
+        s.blTHull.Start(kTargetDelay);
+    s.upWas = m.shieldUp, s.hullWas = m.hull >= 0 ? m.hull : s.hullWas, s.tShieldWas = tgt ? m.tShield : -1, s.tHullWas = tgt ? m.tHull : -1;
     // the cruise arc: full while it works. A disruption blooms out as a breaking bar does and runs it down on the game's own clock, reaching nothing the moment the engine
     // can charge again; any other end leaves the engine free at once (EngageCruise: the clock to 0), so it just fades (Shockwave, 7 Nov 2026: only a disruption blows out)
     {
-        static int cruiseWas = 0;
-        static float fill = 0;
-        if (cruiseWas != 0 && m.cruise == 0 && m.cruiseWait > 0)
-            g_blCruise.Start();
+        float& fill = s.cruiseFill;
+        if (s.cruiseWas != 0 && m.cruise == 0 && m.cruiseWait > 0)
+            s.blCruise.Start();
         if (m.cruise != 0)
             fill = m.cruise == 1 ? std::max(0.0f, m.charge) : 1.0f;
         else if (m.cruiseWait > 0)
             fill = m.cruiseWait;
         else
             fill = motion == 2 ? 0.0f : std::max(0.0f, fill - dt / 0.2f);
-        cruiseWas = m.cruise, x.cruiseFill = fill;
+        s.cruiseWas = m.cruise, x.cruiseFill = fill;
     }
-    for (Bloom* b : {&g_blShield, &g_blHull, &g_blBoost, &g_blCruise, &g_blTShield, &g_blTHull})
+    for (Bloom* b : {&s.blShield, &s.blHull, &s.blBoost, &s.blCruise, &s.blTShield, &s.blTHull})
         b->Step(dt);
-    x.bloomShield = g_blShield.Now(motion), x.bloomHull = g_blHull.Now(motion), x.bloomBoost = g_blBoost.Now(motion), x.bloomCruise = g_blCruise.Now(motion), x.bloomTShield = g_blTShield.Now(motion), x.bloomTHull = g_blTHull.Now(motion);
+    x.bloomShield = s.blShield.Now(motion), x.bloomHull = s.blHull.Now(motion), x.bloomBoost = s.blBoost.Now(motion), x.bloomCruise = s.blCruise.Now(motion), x.bloomTShield = s.blTShield.Now(motion), x.bloomTHull = s.blTHull.Now(motion);
     // the shield down (Shockwave: the hull stands bare until it is back, and the meter only looked low): from the game's own fail flag to its return, a slow
     // pulse over the whole arc in its own colour, 1 Hz (well under 3); FADES and NONE hold it steady
     {
-        static float downPhase = 0, wordPhase = 0;
         if (m.shieldUp || m.shield < -1)
-            x.shieldDown = 0, x.downMix = 0, downPhase = wordPhase = 0;
+            x.shieldDown = 0, x.downMix = 0, s.downPhase = s.wordPhase = 0;
         else
         {
-            downPhase += dt;
-            downPhase -= floorf(downPhase);
-            x.shieldDown = motion == 0 ? 0.3f + 0.7f * (0.5f - 0.5f * cosf(2 * kPi * downPhase)) : 0.7f;
+            s.downPhase += dt;
+            s.downPhase -= floorf(s.downPhase);
+            x.shieldDown = motion == 0 ? 0.3f + 0.7f * (0.5f - 0.5f * cosf(2 * kPi * s.downPhase)) : 0.7f;
             // SHIELDS DOWN between blue and red as fast as the flash rule allows (the owner: "max frequency"; kRateMax 2.9 Hz, under 3); red under FADES / NONE
-            wordPhase += kRateMax * dt;
-            wordPhase -= floorf(wordPhase);
-            x.downMix = motion == 0 ? 0.5f - 0.5f * cosf(2 * kPi * wordPhase) : 1.0f;
+            s.wordPhase += kRateMax * dt;
+            s.wordPhase -= floorf(s.wordPhase);
+            x.downMix = motion == 0 ? 0.5f - 0.5f * cosf(2 * kPi * s.wordPhase) : 1.0f;
         }
     }
     // the alert cards' glow follows the worst bar's beat, else the slowest rate's
-    static Breath own;
-    const float g = std::max(g_brShield.on ? x.glowShield : 0.0f, g_brHull.on ? x.glowHull : 0.0f);
-    x.beat = g_beat = g_brShield.on || g_brHull.on ? g : own.Step(dt, kOnAt, false, motion);
+    const float g = std::max(s.brShield.on ? x.glowShield : 0.0f, s.brHull.on ? x.glowHull : 0.0f);
+    x.beat = s.beat = s.brShield.on || s.brHull.on ? g : s.beatOwn.Step(dt, kOnAt, false, motion);
 }
 
 // The glow over a bar's lit part [lo, hi] of the span a0..a1: tight, full over what is left, the same short roll-off at both ends, in two wide layers under the arc.
@@ -193,7 +207,7 @@ void DrawRing(const Model& m, const Layout& L, float a, float dim)
 {
     const float H = L.H, k = L.k, cx = L.cx, cy = L.cy, R = L.R;
     const float w = hud2layout::kRingArcW * H * k, T = 0.024f * H * k;
-    const int numbers = uiopt::Get().hudNumbers;
+    const int numbers = Opt().hudNumbers;
     SetAlpha(a * dim);
     const ArcKeyScope key(H);
     // (the lint's recorder, hud2_kit.h Record: each element of the centre stack its own tag - a number belongs to its arc)
@@ -654,7 +668,7 @@ static float ClearRoom(const std::wstring& s, float size, float track, float x, 
 
 float CardColumn(const Model& m, const Layout& L)
 {
-    return (m.tViewOk && uiopt::Get().hudWireframes ? hud2layout::std_ov::kCardColView : hud2layout::std_ov::kCardColIcon) * L.H * L.k;
+    return (m.tViewOk && Opt().hudWireframes ? hud2layout::std_ov::kCardColView : hud2layout::std_ov::kCardColIcon) * L.H * L.k;
 }
 
 void DrawTarget(const Model& m, const Layout& L, float a)
@@ -692,7 +706,7 @@ void DrawTarget(const Model& m, const Layout& L, float a)
     // the pad's clear-target prompt, only on the card (= only with a target): [RS] x2 CLEAR in the card's footer row
     // (the pad card is a row taller for it, as the keyboard form's is for its icons - hud2_click.cpp DrawCardIcons;
     // was the top row's right end, which cut the class to "F..." beside a HOSTILE chip: the spec recapture)
-    // (the 0.17 card has no foot row beside the bars: the prompt shows where there are none, UI_HUD2_BUILD_040.md Q2)
+    // (the 0.17 card has no foot row beside the bars: the prompt shows where there are none, the 0.4.0 HUD 2 build record Q2, private)
     if (!m.kbm && m.clearBtn.btn != glyphs::COUNT && !m.tBars)
     {
         const float gh = T * 1.2f, gw = DrawPrompt(m.clearBtn, 0, 0, gh, 0, true), fy = y1 - CardFootUp(L);
@@ -703,7 +717,9 @@ void DrawTarget(const Model& m, const Layout& L, float a)
         Text(right, fy, lbl, T, Argb(kDim, 1), Right, 0.06f);
     }
     // cut to the card ("FIGHTER - LEVEL 1" ran past its edge beside a wide chip): the short level form first, then cut
-    const float clsRoom = right - (tx + cw + 0.012f * H * k);
+    // (a pixel of slack: CardContentWidth sizes the card to this very line and its edges land on whole pixels, so a line
+    // that fits exactly read as a tie lost by a fraction - "LV 3" at hud_scale 130 once the layout measured in HUD 2's size)
+    const float clsRoom = right - (tx + cw + 0.012f * H * k) + 1.0f;
     if (m.tLevel >= 0 && TextWidth(cls, T, 0.06f) > clsRoom)
     {
         wchar_t lv[24];
@@ -809,7 +825,7 @@ void DrawShip(const Model& m, const Layout& L, float a)
     const float H = L.H, k = L.k, T = 0.024f * H * k;
     const float x0 = L.shipX0, y0 = L.shipY0, x1 = L.shipX1, y1 = L.shipY1;
     const float right = x1 - 0.014f * H * k;
-    // the escorts' rows: a slim plate sized to them, the names and bars with no silhouette column (UI_HUD2_SIZE_AUDIT.md 3.4), the rows at a 0.042 pitch from
+    // the escorts' rows: a slim plate sized to them, the names and bars with no silhouette column (the HUD 2 size audit 3.4, private), the rows at a 0.042 pitch from
     // 0.026, each bar 0.018 under its name
     if (m.nEscorts > 0)
     {
@@ -938,11 +954,9 @@ static void Slot(const Model& m, int i, int count, float px, float py, float sz,
 
 // The loadout's drawn gun lines (Standard): the first unused line's offset from the panel's top in H x k units (wraps
 // included), and whether the taller pitch is in use (the keyboard form's group keys, or a trigger per group) -
-// LoadoutContentHeight reads them (one frame late).
-static float g_loGunEnd = 0;
-static float g_loPadV = 0.028f; // the air over the first row and under the last, in H x k, as drawn
+// LoadoutContentHeight reads them (one frame late): PartsState loGunEnd, loPadV (the air over the first row and under
+// the last, in H x k, as drawn), loRowP (the rows' pitch in H x k, as drawn).
 constexpr float kLoadPadX = 0.018f; // the inset at both ends of the rows
-static float g_loRowP = 0.03f; // the rows' pitch in H x k, as drawn
 
 // weapon_groups 2 on the pad: the groups fire from a button each, so a row carries its own glyph.
 static bool TwoTriggers(const Model& m) { return !m.kbm && m.fireBtn2.btn != glyphs::COUNT; }
@@ -962,7 +976,7 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
     // the consumables' cross in its own plate stacked on the base panel's right end (
     // "LOADOUT too wide because of the consumables" - the base holds the weapons only), the cross itself unchanged,
     // centred in its plate (hud2_layout.h std_ov::kConsW / kConsH)
-    // (no plate of its own: each item keeps a small dark cell, which holds over a bright planet where bare marks washed out: UI_HUD2_SIZE_AUDIT.md 3.3)
+    // (no plate of its own: each item keeps a small dark cell, which holds over a bright planet where bare marks washed out: the HUD 2 size audit 3.3)
     const float qx0 = L.consX0, qy0 = L.consY0, qx1 = L.consX1, qy1 = L.consY1;
     const float d = 0.050f * H * k, sz = hud2layout::kConsCell * H * k;
     const float cx = (qx0 + qx1) / 2, cy = (qy0 + qy1) / 2;
@@ -971,7 +985,7 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
         const float c = hud2layout::kConsCrossCell * 0.5f * H * k;
         Plate(cx - c, cy - c, cx + c, cy + c, 0.008f * H * k, kTL | kTR | kBR | kBL, 200 / 255.0f, kChrome, 0.43f);
         RecordTag("crossmark"); // (the cross's centre is its mark, not an element of the panel: it stands among its slots by design)
-        Glyph(glyphs::COUNT, cx, cy, 0.028f * H * k, Argb(kChrome, 220 / 255.0f));
+        Glyph(PartsGlyphs(), glyphs::COUNT, cx, cy, 0.028f * H * k, Argb(kChrome, 220 / 255.0f));
         RecordTag("loadout");
     }
     static const float kDir[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}}; // nanobots up, batteries down, CM left, mines right
@@ -1144,7 +1158,7 @@ void DrawLoadout(const Model& m, const Layout& L, float a)
     {
         yy = std::min(yy, y1 - padV * H * k);
         // (the height the rows need: the launcher's line where there is one, not one more pitch: that overran S1, p2n)
-        g_loGunEnd = ((m.ammo >= 0 || !m.launcher.empty() ? launchNeed : freeY) - y0) / (H * k), g_loPadV = padV, g_loRowP = rowP / (H * k);
+        g_state->loGunEnd = ((m.ammo >= 0 || !m.launcher.empty() ? launchNeed : freeY) - y0) / (H * k), g_state->loPadV = padV, g_state->loRowP = rowP / (H * k);
     }
     // the gun line above the launcher row is the panel's spare height when the rows did not use it (0.2.1 round 5)
     const bool lineAbove = freeY <= yy - rowP + 0.5f;
@@ -1252,7 +1266,7 @@ float ShipContentWidth(const Model& m, const Layout& L)
 // The panels' content heights (0.2.1 round 6, the owner: "a loadout with one gun row and no launcher has a big empty
 // area below"; UI_HUD2.md 5.29), pixels, floored at hud2layout::kShipMinH / kLoadMinH; the layout caps them at the full
 // 0.15 H. The ship panel: its rows' fixed places (DrawShip) + 0.015 H under the last; the loadout: its drawn gun lines
-// (DrawLoadout's g_loGunEnd), the launcher row one pitch under the last + its pad, else the last row + the pad.
+// (DrawLoadout's PartsState::loGunEnd), the launcher row one pitch under the last + its pad, else the last row + the pad.
 float CardFootUp(const Layout& L) { return hud2layout::kCardAir * L.H * L.k + 0.0145f * (L.k > 1 ? L.H * L.k : L.H); }
 
 // DrawTarget's rows: the chip 0.030, the name 0.070, the faction 0.106, then the bars, each row only if it shows
@@ -1279,11 +1293,12 @@ float ShipContentHeight(const Model& m, const Layout& L)
 
 float LoadoutContentHeight(const Model& m, const Layout& L)
 {
-    if (g_loGunEnd <= 0)
+    const float gunEnd = g_state->loGunEnd;
+    if (gunEnd <= 0)
         return 0; // not drawn yet: the maximum
-    const float pad = g_loPadV, rowP = g_loRowP;
+    const float pad = g_state->loPadV, rowP = g_state->loRowP;
     const bool launcher = m.ammo >= 0 || !m.launcher.empty();
-    const float h = launcher ? g_loGunEnd + pad : (m.nGroups > 0 || !m.ungrouped.empty() ? g_loGunEnd - rowP + pad : 0.0f);
+    const float h = launcher ? gunEnd + pad : (m.nGroups > 0 || !m.ungrouped.empty() ? gunEnd - rowP + pad : 0.0f);
     return std::max(h, hud2layout::kLoadMinH) * L.H * L.k;
 }
 
@@ -1330,25 +1345,9 @@ float LoadoutContentWidth(const Model& m, const Layout& L)
 }
 
 // ---------------------------------------------------------------- the context line under the player's ship
-// The line steps aside while the player types: the game's chat input `CTID` is open (it exists only then; its state
-// bit 1 = drawn - hudvis reads it the same way) or FLvibed's on-screen keyboard is up - the line sat on the Console
-// field and under the OSK's prompt bar (Extended HUD 2 verify). CTID looked up at 4 Hz.
-static bool Typing()
-{
-    if (views::OskOpen())
-        return true;
-    static bool cache = false;
-    static DWORD at = 0;
-    const DWORD now = GetTickCount();
-    if (now - at >= 250)
-    {
-        at = now;
-        u8 st = 0;
-        const uintptr_t c = ui::FindControl("CTID");
-        cache = c && safemem::Read(c + 0x6C, &st, 1) && (st & 2);
-    }
-    return cache;
-}
+// The line steps aside while the player types (the host's read: the game's, hud2.cpp GameTyping) - the line sat on
+// the Console field and under the OSK's prompt bar (Extended HUD 2 verify).
+static bool Typing() { return g_host.typing && g_host.typing(); }
 
 // The line's sizes (fractions of H x k): glyph 0.036, label 0.026, the HOLD word 0.024 (the kit clamps every text to
 // the 0.024 H floor), 0.03 between prompts.
@@ -1495,10 +1494,10 @@ float DrawCard(const AlertCard& c, float x0, float y0, const Layout& L, float a,
         Poly(p, 8, argb);
     };
     float burst = 0;
-    if (stacked && shieldcue::Get().on)
+    if (stacked && Rows().shield.on)
     {
         burst = std::clamp(1 - (kAlertCardSec - c.left) / 0.4f, 0.0f, 1.0f);
-        const float glow = std::max(burst, 0.3f + 0.7f * g_beat);
+        const float glow = std::max(burst, 0.3f + 0.7f * g_state->beat);
         for (int i = kAlertBloomLayers; i >= 1; --i) // (many faint layers: three read as hard bands)
         {
             const float d = kAlertBloomReach * H * k * i / kAlertBloomLayers;
@@ -1543,12 +1542,13 @@ float DrawAlert(const Model& m, const Layout& L, float a, bool measure)
 // ---------------------------------------------------------------- the flight notice (hud2_notice.h; GitHub issues 70, 69)
 // The bottom-left panels' card (the ship panel's plate and corners) with the docked strip's grammar (uistrip.cpp DrawStrip):
 // a label in chrome, its value in ink, what is new in the game's active yellow. Lines, top to bottom: CREDITS $50,000
-// +$16,000; one line per item kind, SHIELD BATTERY x5 (the count merged while the card shows); +n MORE past four kinds;
+// +$16,000; one line per item kind, SHIELD BATTERY x5 (the count merged while the card shows; "x7 (dot) FULL" when that kind's
+// latest take filled the ship to its limit for it, issue 87); +n MORE past four kinds;
 // CARGO 12 / 45 under loot (the INVENTORY page's and the strip's words; amber when full). Text at the 0.024 H x k floor,
 // the values 0.026 (the ship name's size): as small as it can read, it is not the flight's business. Rows 0.038 apart:
 // the lint's 0.01 H between the lines' texts (panel.overlap).
 constexpr float kNoticeLabel = 0.024f, kNoticeValue = 0.026f, kNoticePitch = 0.038f, kNoticePadX = 0.014f, kNoticePadY = 0.008f;
-void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bool measure, float* outW, float* outH)
+void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bool measure, float* outW, float* outH, float wrapW)
 {
     const hud2notice::Notice& n = m.notice;
     if (outW)
@@ -1565,6 +1565,7 @@ void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bo
         float size, track;
         u32 col;
         float before;
+        bool glue = false; // stays on the line of the segment before it (a wrapped line never parts FULL from its count)
     };
     std::vector<std::vector<Seg>> rows;
     if (n.credits)
@@ -1572,14 +1573,73 @@ void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bo
                         {hud2notice::Money(n.cash), V, 0, kInk, gapIn},
                         {L"+" + hud2notice::Money(n.gain), V, 0, kActive, gapNew}});
     for (int i = 0; i < n.nItems; ++i)
+    {
         rows.push_back({{n.items[i].name.empty() ? std::wstring(L"ITEM") : n.items[i].name, T, 0.04f, kInk, 0},
                         {L"x" + std::to_wstring(n.items[i].count), V, 0, kActive, gapIn}});
+        if (n.items[i].full) // the take filled the ship to its limit for it (issue 87): "SHIELD BATTERY x7 (dot) FULL", news too
+            rows.back().push_back({L"\x00B7 FULL", T, 0.06f, kActive, gapIn, true});
+    }
     if (n.nExtra > 0)
         rows.push_back({{L"+" + std::to_wstring(n.nExtra) + L" MORE", T, 0.06f, kChrome, 0}});
     if (n.Loot() && m.holdUsed >= 0 && m.holdCap > 0)
         rows.push_back({{L"CARGO", T, 0.06f, kChrome, 0},
                         {std::to_wstring(m.holdUsed) + L" / " + std::to_wstring(m.holdCap), V, 0,
                          m.holdUsed >= m.holdCap ? kWarn : kInk, gapIn}});
+    // the wrapped form (wrapW: the one-line card had no place, hud2_layout.h PlaceNotice): a line wider than the room
+    // breaks between the words of its label and before its count (FULL stays with the count), the rest on the next line,
+    // indented
+    if (wrapW > 0)
+    {
+        const float room = wrapW - 2 * padX;
+        std::vector<std::vector<Seg>> out;
+        for (const auto& r : rows)
+        {
+            std::vector<Seg> line;
+            float lw = 0, lead = 0; // the line's width so far; its indent (a continuation's)
+            auto add = [&](Seg s) {
+                if (line.empty())
+                    s.before = lead;
+                lw += s.before + TextWidth(s.s, s.size, s.track);
+                line.push_back(s);
+            };
+            auto next = [&] { out.push_back(line), line.clear(), lw = 0, lead = gapNew; };
+            for (size_t j = 0; j < r.size(); ++j)
+            {
+                Seg s = r[j];
+                if (j == 0) // the label, word by word
+                {
+                    std::wstring cur;
+                    for (size_t from = 0; from < s.s.size();)
+                    {
+                        const size_t sp = std::min(s.s.find(L' ', from), s.s.size());
+                        const std::wstring word = s.s.substr(from, sp - from), longer = cur.empty() ? word : cur + L' ' + word;
+                        from = sp + 1;
+                        if (!cur.empty() && lead + TextWidth(longer, s.size, s.track) > room)
+                        {
+                            Seg piece = s;
+                            piece.s = cur;
+                            add(piece), next(), cur = word;
+                        }
+                        else
+                            cur = longer;
+                    }
+                    s.s = cur;
+                }
+                else if (!s.glue) // a segment and the ones glued to it go to the next line together
+                {
+                    float need = s.before + TextWidth(s.s, s.size, s.track);
+                    for (size_t g = j + 1; g < r.size() && r[g].glue; ++g)
+                        need += r[g].before + TextWidth(r[g].s, r[g].size, r[g].track);
+                    if (!line.empty() && lw + need > room)
+                        next();
+                }
+                add(s);
+            }
+            if (!line.empty())
+                out.push_back(line);
+        }
+        rows.swap(out);
+    }
     float w = 0;
     for (const auto& r : rows)
     {
@@ -1617,7 +1677,7 @@ void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bo
 // reticle's numbers from the data (ui_meta.h "reticle" rows), visibility from its reveal (hud2_layout.h Reveal).
 namespace
 {
-const uimeta::hud2p::Preset& FocusData() { return uimeta::hud2p::kPresets[hud2preset::Focus]; }
+const uimeta::hud2p::Preset& FocusData() { return PresetOf(g_host, hud2preset::Focus); } // (the bound host's: hud2_frame.h)
 float FocusNum(const char* elem, const char* key, float fallback)
 {
     return uimeta::hud2p::Num(FocusData(), "reticle", elem, key, fallback);
@@ -1637,7 +1697,7 @@ void DrawSplitArcs(const Model& m, const Layout& L, float a, const FocusVis& v)
     const float H = L.H, k = L.k, cx = L.cx, cy = L.cy, R = L.R;
     const float w = hud2layout::kRingArcW * H * k, T = 0.024f * H * k;
     const float half = FocusNum("reticle", "arc_deg", 50.0f) * 0.5f;
-    const int numbers = uiopt::Get().hudNumbers;
+    const int numbers = Opt().hudNumbers;
     auto show = [&](float x) { return x >= 0 && (numbers == 1 || (numbers == 0 && x < 0.4f)); };
     wchar_t buf[40];
     const float shield = std::max(0.0f, m.shield);
@@ -1932,7 +1992,7 @@ void DrawFireStrip(const Model& m, const Layout& L, float a, bool countHere)
     const float cell = 0.044f * H * k, sz = 0.042f * H * k, pad = 0.014f * H * k;
     const float cx = (qx0 + qx1) / 2, cy = (qy0 + qy1) / 2;
     if (!m.kbm)
-        Glyph(glyphs::COUNT, cx, cy, 0.022f * H * k, Argb(kChrome, 220 / 255.0f));
+        Glyph(PartsGlyphs(), glyphs::COUNT, cx, cy, 0.022f * H * k, Argb(kChrome, 220 / 255.0f));
     static const float kDir[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}}; // nanobots up, batteries down, CM left, mines right
     const int counts[4] = {m.nano, m.batt, m.cm, m.mines};
     const float keyW = SlotKeyWidth(m, L, true);

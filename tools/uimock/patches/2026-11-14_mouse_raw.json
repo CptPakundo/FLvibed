@@ -1,0 +1,10 @@
+{
+  "_about": "Raw mouse input (14 Nov 2026; setting mouse_raw from 497d794e, the owner's order: on by default, a must-have option): a Player-tier row first in MORE / SYSTEM beside the other core rows (fluf_windows, maneuver_watchdog), so it shows whatever modules are on; Player tier because MORE's simple view is full at the Large size (docs\\UI_OPTIONS.md 1). Apply with specpatch.py to part2_data.js and docs/UI_SPEC.json (and the artifact's ui/spec, pinned set, after reading). Registry: core\\ui\\shared_rows.h FLV_ROW_MOUSE_RAW; the listener: core\\host\\dimouse.cpp.",
+  "add_rows": {
+    "more/SYSTEM": {"first": true, "rows": [
+      {"key": "mouse_raw", "label": "Raw mouse input", "kind": "toggle", "def": true,
+       "help": "The cursor moves the same distance for the same hand movement at any mouse speed: Windows' pointer acceleration does not reach the game.",
+       "tier": "player", "needs": "live"}
+    ]}
+  }
+}

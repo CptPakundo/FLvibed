@@ -1,7 +1,7 @@
 # M03 by the autopilot's objective mode (`ap start objective`): it flies every space part alone (lane 42 -> 43, the
 # convoy escort and its ambush, Willard, the Valkyries, CA Minor, Walker, the Battle of Willard); the harness only does
 # the rooms (launch from Willard; the CA Minor bar scene, launch). Verified 19 Oct 2026: "Mission Result: Success".
-# Start: docked at California Minor with the M03 offer accepted (campaign save Save1e7d.fl, docs\missions\SAVES.md).
+# Start: docked at California Minor with the M03 offer accepted (campaign save Save1e7d.fl, the scene-save catalogue, private).
 # Runbook: docs\missions\M03.md. Prints SUCCESS / FAILED and a total.
 param([int]$TimeoutSec = 2400)
 . (Join-Path $PSScriptRoot '..\flctl.ps1')

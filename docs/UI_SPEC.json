@@ -1,5 +1,5 @@
 {
- "_about": "The player-facing UI as decided (artifact 4v4dXbB5GTVt1URowFtSvN, the owner's edits + the design round of 25 Oct 2026) and as BUILT (25 Oct 2026; HUD 2 approved and in build the same day, modules/hud/docs/UI_HUD2.md: the 'Built' notes per screen state and decision, docs/UI_BUILD.md section 5). Source for the registry UI metadata (core/ui_meta.h via tools/ui_meta.py), the bindings presets, every screen's pad layout (prompts, focus, badges, legend), the decisions. 'value' = what was left set in the mock-up, not a setting. Regenerate by reading the artifact's ui/spec document (ArtifactData get ui/spec); patch both halves with tools/uimock/specpatch.py.",
+ "_about": "The player-facing UI as decided (artifact 4v4dXbB5GTVt1URowFtSvN, the owner's edits + the design round of 25 Oct 2026) and as BUILT (25 Oct 2026; HUD 2 approved and in build the same day, modules/hud/docs/UI_HUD2.md: the 'Built' notes per screen state and decision, the UI build record (private) section 5). Source for the registry UI metadata (core/ui_meta.h via tools/ui_meta.py), the bindings presets, every screen's pad layout (prompts, focus, badges, legend), the decisions. 'value' = what was left set in the mock-up, not a setting. Regenerate by reading the artifact's ui/spec document (ArtifactData get ui/spec); patch both halves with tools/uimock/specpatch.py.",
  "bar": {
   "enabled": true,
   "glyph": "ring",
@@ -3957,7 +3957,7 @@
      "rows": [
       {
        "def": "ENABLED",
-       "help": "The new flight display and menu look. On the pad: keyboard and mouse keep the game's HUD. Disabled: the game's own HUD.",
+       "help": "The new flight display and menu look, on the pad and on keyboard and mouse. Disabled: the game's own HUD.",
        "id": "hud_style",
        "key": "hud_style",
        "kind": "picker",
@@ -3965,7 +3965,6 @@
        "needs": "live",
        "options": [
         "ENABLED",
-        "ON THE PAD",
         "DISABLED"
        ],
        "parent": null,
@@ -3990,24 +3989,6 @@
        ],
        "parent": null,
        "tier": "simple",
-       "value": "AUTOMATIC"
-      },
-      {
-       "id": "game_text_size",
-       "key": "game_text_size",
-       "label": "Window text size",
-       "kind": "picker",
-       "help": "The game's text in dealers, job boards and the Neural Net. Automatic follows HUD size. Applies at the main menu.",
-       "needs": "live",
-       "tier": "simple",
-       "parent": null,
-       "options": [
-        "AUTOMATIC",
-        "NORMAL",
-        "LARGE",
-        "EXTRA LARGE"
-       ],
-       "def": "AUTOMATIC",
        "value": "AUTOMATIC"
       },
       {
@@ -4061,59 +4042,12 @@
        "def": "WHEN USEFUL",
        "bundle": "button_hints",
        "value": "WHEN USEFUL"
-      },
-      {
-       "id": "hit_effects",
-       "key": "hit_effects",
-       "label": "Hit effects",
-       "kind": "picker",
-       "help": "Flashes at the screen's edge when your ship is hit. Choose Soft or Off if flashes bother you.",
-       "needs": "live",
-       "tier": "simple",
-       "parent": null,
-       "options": [
-        "FULL",
-        "SOFT",
-        "OFF",
-        "CUSTOM"
-       ],
-       "def": "FULL",
-       "bundle": "hit_effects",
-       "value": "FULL"
       }
      ]
     },
     {
      "label": "HUD",
      "rows": [
-      {
-       "def": true,
-       "help": "HUD 2, the Extended HUD 2 look and the shield and reticle cues, with keyboard and mouse or a controller. Off: the game's own HUD. It needs the Subtitles or the Controller module on. Takes effect after the game restarts.",
-       "id": "mod_hud",
-       "key": "mod_hud",
-       "kind": "toggle",
-       "label": "HUD module",
-       "needs": "restart",
-       "parent": null,
-       "tier": "advanced",
-       "value": true
-      },
-      {
-       "def": "HUD 2",
-       "help": "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game's controls stay as they are); Classic = the game's own look in the menus. With the HUD row set to Classic, everything keeps the game's look whatever this says.",
-       "id": "ui_style",
-       "key": "ui_style",
-       "kind": "picker",
-       "label": "Menus and rooms look",
-       "needs": "live",
-       "options": [
-        "CLASSIC",
-        "HUD 2"
-       ],
-       "parent": null,
-       "tier": "advanced",
-       "value": "HUD 2"
-      },
       {
        "id": "hud_preset",
        "key": "hud_preset",
@@ -4238,6 +4172,18 @@
        "value": true
       },
       {
+       "id": "group_cue",
+       "key": "group_cue",
+       "label": "Weapon group cue",
+       "kind": "toggle",
+       "help": "The weapon groups above the ring, filled when the target is in the centre and in reach.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "def": true,
+       "value": true
+      },
+      {
        "def": true,
        "help": "Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers.",
        "id": "hud_info",
@@ -4263,7 +4209,7 @@
       },
       {
        "def": 120,
-       "help": "How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse.",
+       "help": "How long HUD 2 takes to fade in when flight starts, and out and in as a NeuroNet window in space opens and closes.",
        "id": "hud_transition",
        "key": "hud_transition",
        "kind": "slider",
@@ -4318,27 +4264,47 @@
        "parent": null,
        "def": true,
        "value": true
-      },
-      {
-       "id": "base_pages",
-       "key": "base_pages",
-       "label": "Dealers and job board as pages",
-       "kind": "toggle",
-       "help": "The commodity, equipment and ship dealers, the job board and the news are HUD 2 pages in the room, with the game's windows doing the work underneath. Off gives the game's own windows with HUD 2's skin.",
-       "needs": "live",
-       "tier": "player",
-       "parent": null,
-       "def": true,
-       "value": true
       }
      ]
     },
     {
-     "label": "CUES",
+     "label": "CUES AND TEXT",
+     "head": null,
      "rows": [
       {
+       "id": "classic_cues",
+       "key": "classic_cues",
+       "label": "Cues on the classic HUD",
+       "kind": "toggle",
+       "help": "The hit effects and the reticle cue on the game's own HUD too, when HUD 2 is disabled. Off by default, so the classic HUD stays the game's own. HUD 2 shows them by the rows below.",
+       "needs": "live",
+       "tier": "simple",
+       "parent": null,
+       "def": false,
+       "value": false
+      },
+      {
+       "id": "hit_effects",
+       "key": "hit_effects",
+       "label": "Hit effects",
+       "kind": "picker",
+       "help": "Flashes at the screen's edge when your ship is hit. Choose Soft or Off if flashes bother you. On the classic HUD only with Cues on the classic HUD.",
+       "needs": "live",
+       "tier": "simple",
+       "parent": null,
+       "options": [
+        "FULL",
+        "SOFT",
+        "OFF",
+        "CUSTOM"
+       ],
+       "def": "FULL",
+       "bundle": "hit_effects",
+       "value": "FULL"
+      },
+      {
        "def": true,
-       "help": "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2's danger alerts.",
+       "help": "A screen-edge cue made of your shield's own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2's danger alerts. On the classic HUD only with Cues on the classic HUD.",
        "id": "shield_cue",
        "key": "shield_cue",
        "kind": "toggle",
@@ -4378,8 +4344,25 @@
        "value": true
       },
       {
+       "id": "hull_cue_pattern",
+       "key": "hull_cue_pattern",
+       "label": "Hull damage pattern",
+       "kind": "picker",
+       "help": "The pattern on the hull damage edge, so it never reads as a shield hit.",
+       "needs": "live",
+       "tier": "player",
+       "parent": "hull_cue",
+       "options": [
+        "NONE",
+        "PLATES",
+        "HEXAGONS"
+       ],
+       "def": "HEXAGONS",
+       "value": "HEXAGONS"
+      },
+      {
        "def": true,
-       "help": "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue).",
+       "help": "A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue). On the classic HUD only with Cues on the classic HUD.",
        "id": "reticle_cue",
        "key": "reticle_cue",
        "kind": "toggle",
@@ -4387,6 +4370,48 @@
        "needs": "live",
        "parent": null,
        "tier": "player",
+       "value": true
+      },
+      {
+       "id": "game_text_size",
+       "key": "game_text_size",
+       "label": "Window text size",
+       "kind": "picker",
+       "help": "The game's text in dealers, job boards and the Neural Net. Automatic: the game's own size on the classic HUD, with HUD 2 it follows HUD size. A size you choose applies to both. Applies at the main menu.",
+       "needs": "live",
+       "tier": "simple",
+       "parent": null,
+       "options": [
+        "AUTOMATIC",
+        "NORMAL",
+        "LARGE",
+        "EXTRA LARGE"
+       ],
+       "def": "AUTOMATIC",
+       "value": "AUTOMATIC"
+      },
+      {
+       "id": "idle_cursor",
+       "key": "idle_cursor",
+       "label": "Hide the idle cursor",
+       "kind": "toggle",
+       "help": "The mouse cursor hides after 3 seconds without the mouse in calm flight, and comes back when you move it. On both HUDs; with HUD 2 only while HUD in calm flight is Fades.",
+       "needs": "live",
+       "tier": "simple",
+       "parent": null,
+       "def": true,
+       "value": true
+      },
+      {
+       "def": true,
+       "help": "HUD 2 and its menu look, the cues and the window text size. Off: all of them (HUD 2 alone: the HUD 2 row). It needs the Subtitles or the Controller module on. Takes effect after the game restarts.",
+       "id": "mod_hud",
+       "key": "mod_hud",
+       "kind": "toggle",
+       "label": "HUD module",
+       "needs": "restart",
+       "parent": null,
+       "tier": "advanced",
        "value": true
       }
      ]
@@ -4911,6 +4936,42 @@
        "unit": " s",
        "value": 0.06,
        "words": []
+      },
+      {
+       "id": "aim_assist",
+       "key": "aim_assist",
+       "label": "Aim assist strength",
+       "kind": "slider",
+       "help": "Reticle aim only: how strongly the reticle is pulled onto a hostile's lead cross.",
+       "needs": "live",
+       "tier": "player",
+       "parent": "aim_mode",
+       "unit": "%",
+       "words": [],
+       "min": 0,
+       "max": 100,
+       "step": 5,
+       "def": 75,
+       "parent_on": "RETICLE",
+       "value": 75
+      },
+      {
+       "id": "aim_slowdown",
+       "key": "aim_slowdown",
+       "label": "Slowdown on target",
+       "kind": "slider",
+       "help": "Reticle aim only: how much the steering slows while the reticle is over a hostile's lead cross.",
+       "needs": "live",
+       "tier": "player",
+       "parent": "aim_mode",
+       "unit": "%",
+       "words": [],
+       "min": 0,
+       "max": 100,
+       "step": 5,
+       "def": 35,
+       "parent_on": "RETICLE",
+       "value": 35
       }
      ]
     },
@@ -5468,7 +5529,7 @@
      "rows": [
       {
        "def": "TOP PANEL",
-       "help": "A HUD panel at the top centre (the maneuver bar moves left), the top third, or between the bottom panels. The bar moves at the next load.",
+       "help": "A HUD panel at the top centre (the maneuver bar moves left, the objective below the panel), the top third, or between the bottom panels. The bar moves at the next load.",
        "id": "space_position",
        "key": "space_position",
        "kind": "picker",
@@ -5485,7 +5546,7 @@
       },
       {
        "def": true,
-       "help": "In flight the game's comm window sits in a slot inside the subtitle panel.",
+       "help": "In flight the game's comm window sits in a slot inside the subtitle panel. Off: its own place, below the bar if the bar moved.",
        "id": "comm_portrait",
        "key": "comm_portrait",
        "kind": "toggle",
@@ -5759,6 +5820,23 @@
        "parent": null,
        "tier": "simple",
        "value": true
+      },
+      {
+       "id": "mp_autopilot",
+       "key": "mp_autopilot",
+       "label": "Autopilot on servers",
+       "kind": "picker",
+       "help": "On a server that says nothing about FLvibed: no autopilot, travel only (no combat), or everything. A server's own word always wins.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "options": [
+        "OFF",
+        "TRAVEL ONLY",
+        "EVERYTHING"
+       ],
+       "def": "TRAVEL ONLY",
+       "value": "TRAVEL ONLY"
       }
      ]
     },
@@ -5866,6 +5944,26 @@
        "parent": null,
        "tier": "player",
        "value": true
+      },
+      {
+       "id": "loot_min_value",
+       "key": "loot_min_value",
+       "label": "Leave loot worth less than",
+       "kind": "picker",
+       "help": "The autopilot leaves loot worth less than this, at the item's base price.",
+       "needs": "live",
+       "tier": "player",
+       "parent": "loot",
+       "options": [
+        "0 CREDITS",
+        "100 CREDITS",
+        "500 CREDITS",
+        "1,000 CREDITS",
+        "5,000 CREDITS",
+        "10,000 CREDITS"
+       ],
+       "def": "0 CREDITS",
+       "value": "0 CREDITS"
       },
       {
        "def": "WHEN OUTMATCHED",
@@ -6182,6 +6280,18 @@
      "label": "SYSTEM",
      "rows": [
       {
+       "id": "mouse_raw",
+       "key": "mouse_raw",
+       "label": "Raw mouse input",
+       "kind": "toggle",
+       "help": "The cursor moves the same distance for the same hand movement at any mouse speed: Windows' pointer acceleration does not reach the game.",
+       "needs": "live",
+       "tier": "player",
+       "parent": null,
+       "def": true,
+       "value": true
+      },
+      {
        "def": "ALL",
        "help": "Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF's windows stay on top: FLvibed's HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command's or a module's window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed's layout as without FLUF. While FLUF's command palette is open (typing or not) FLvibed's keys all pass to FLUF, like a chat box.",
        "id": "fluf_windows",
@@ -6217,7 +6327,7 @@
      "rows": [
       {
        "def": false,
-       "help": "Every tab also lists the rest of its settings, as they were before this page. Advanced mode replaces this later.",
+       "help": "Every tab also lists its less used settings. Tuning keys with no row here are set in the ini files.",
        "id": "show_advanced",
        "key": "show_advanced",
        "kind": "toggle",
@@ -8831,7 +8941,6 @@
     "glyph_style",
     "glyph_look",
     "hud_style",
-    "ui_style",
     "aim_*",
     "fluf_windows",
     "speedrun_timer",

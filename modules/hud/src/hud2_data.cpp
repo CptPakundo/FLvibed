@@ -22,10 +22,12 @@
 #include "game/promptshow.h"
 #include "game/hudwake.h"
 #include "hudhost.h"
+#include "hud2_click.h"
 #include "hud2_impl.h"
 #include "hud2_layout.h"
 #include "hud2_sim.h"
 #include "hud2_data.h"
+#include "keycap_name.h"
 #include "hud_bus.h"
 #include "hudvis.h"
 #include "log.h"
@@ -105,30 +107,19 @@ static std::wstring VkName(int vk, u32 mods)
     case VK_RIGHT: return s + L"RIGHT";
     default: break;
     }
+    // a punctuation key by the player's default layout, the same in every start (keycap_name.h: by the thread's layout
+    // the game's free flight read "~" in one start and ";" in another)
+    const std::wstring oem = keycapname::OemName(vk, keycapname::DefaultLayout());
+    if (!oem.empty())
+        return s + oem;
     wchar_t name[32] = {};
     const UINT sc = MapVirtualKeyW(static_cast<UINT>(vk), 0 /*MAPVK_VK_TO_VSC*/);
     if (sc && GetKeyNameTextW(static_cast<LONG>(sc << 16), name, 32) > 0)
     {
-        // a key whose name is a lone small mark reads as an EMPTY keycap at the HUD's size: the game's free flight
-        // (USER_MANEUVER_FREE_FLIGHT, key 192 = VK_OEM_3 in SAVE\UserKeyMap.ini) is "`" on a US layout - ABORT DOCK /
-        // STOP / the K&M maneuver row's first key showed a ~0.004 H tick in an empty cap (the owner's frames, 31 Oct
-        // 2026). The grave key shows its larger mark "~" (the same 1-character cap: "TILDE" widened LEAVE FORMATION's
-        // pill to 0.28 H, past the K&M loadout's edge - the context line fell back above the panels into zone S1);
-        // the rarer marks get their word; a letter-like name (a German layout's "\x00D6") stays as it is.
+        // (a lone small mark reads as an empty keycap: its word, keycap_name.h MarkWord)
         if (!name[1])
-            switch (name[0])
-            {
-            case L'`':
-            case L'~': return s + L"~";
-            case 0x00B4: return s + L"ACUTE";
-            case L'^': return s + L"CARET";
-            case L'\'': return s + L"QUOTE";
-            case L',': return s + L"COMMA";
-            case L'.': return s + L"PERIOD";
-            case L'-': return s + L"MINUS";
-            case 0x00A8: return s + L"DIAERESIS";
-            default: break;
-            }
+            if (const wchar_t* w = keycapname::MarkWord(name[0]))
+                return s + w;
         return s + Upper(name);
     }
     return L"";
@@ -213,7 +204,7 @@ static std::wstring KeyOf(int cmd)
 }
 static std::wstring AutopilotKey()
 {
-    const SettingsBus* bus = HostAtLeast(18) && g_host->GetSettingsBus ? g_host->GetSettingsBus() : nullptr;
+    const SettingsBus* bus = g_host->GetSettingsBus ? g_host->GetSettingsBus() : nullptr;
     char v[32] = {};
     if (!bus || !bus->Get || !bus->Get("Controller", "autopilot_key", v, sizeof(v)) || !v[0])
         strcpy_s(v, *views::ApKeyName() ? views::ApKeyName() : "K"); // (the controller off: the row is in its file, read by the bar button)
@@ -512,13 +503,6 @@ static float g_prevShield = 1, g_prevHull = 1, g_prevFree = 1;
 static int g_prevMissiles = 0;
 double g_spaceSince = 0; // when the ship last entered space (a load, a launch): the alerts arm after it
 
-void ClearAlerts()
-{
-    g_m.alertLeft = 0;
-    for (AlertCard& h : g_m.held)
-        h.left = 0;
-}
-
 // A running card beside the ring stays when a new alert comes: the dangers are independent, and an alert fires once at its
 // edge, so a replaced card never came back. The newest takes the top of its side's stack, the
 // others go down a place (hud2_layout.h); the same alert again replaces its old card.
@@ -552,18 +536,6 @@ void Alert(const wchar_t* title, u32 col, int side)
     g_m.alertSide = side, g_m.alertYNow = -1;
 }
 
-// The stacks slide (continuous motion, never a step): each card eases to the place the layout gives it.
-void SlideAlerts(float dt)
-{
-    // (skin_motion's fades and none: no travel, a card stands at its place at once)
-    const bool still = hudrows::g.skinMotion != 0;
-    auto slide = [dt, still](float& y, float to) { y = y < 0 || still ? to : y + (to - y) * std::min(1.0f, dt / 0.08f); };
-    if (g_m.alertSide)
-        slide(g_m.alertYNow, g_L.alertY);
-    for (int i = 0; i < 2; ++i)
-        if (g_m.held[i].left > 0 && g_L.heldShow[i])
-            slide(g_m.held[i].yNow, g_L.heldY[i]);
-}
 // The maneuver lock's answer (0.2.1; a player report: in M01 the mission's Act_LockManeuvers made B / free flight do
 // nothing, which read as a malfunction): the card in the warning amber, glyph-free, 2.5 s - not gated by hud_alerts,
 // since it answers the player's own press
@@ -605,7 +577,7 @@ static void TractorCard()
 {
     static u32 seen = 0;
     const HudBus* bus = g_host->GetHudBus ? g_host->GetHudBus() : nullptr;
-    if (!bus || bus->version < 6 || !bus->ReadTractorFail)
+    if (!bus || !bus->ReadTractorFail)
         return;
     int reason = 0;
     u32 age = 0;
@@ -850,7 +822,7 @@ static u32 g_lootSerial = 0;   // the last loot record read
 static void NoteLootIn(Model& m, const std::vector<space::Contact>& all)
 {
     const HudBus* bus = g_host->GetHudBus ? g_host->GetHudBus() : nullptr;
-    if (bus && bus->version >= 7 && bus->LootSerial && bus->ReadLoot)
+    if (bus && bus->LootSerial && bus->ReadLoot)
     {
         const u32 newest = bus->LootSerial(), me = space::PlayerShipId();
         if (!g_lootPrimed)
@@ -866,9 +838,15 @@ static void NoteLootIn(Model& m, const std::vector<space::Contact>& all)
             for (const LootSeen& l : g_lootSeen)
                 if (l.id == r.loot)
                     seen = &l;
-            m.notice.Add(seen ? seen->good : 0, seen ? seen->name : std::wstring(), static_cast<int>(r.units));
-            Log("hud2: notice LOOT %ls x%u (loot %u, good %u)", seen ? seen->name.c_str() : L"?", r.units, r.loot,
-                seen ? seen->good : 0);
+            // did this take bring the good to its limit (GitHub issue 87)? The server sends the hold's change before this
+            // record and the client applies it as it comes (docs\FREELANCER_RE.md "Loot into the hold"), so the room read
+            // now is the room after the take: none left for one more unit = FULL (ai::CargoRoom, the game's own answer)
+            int room = -1;
+            const bool known = seen && ai::CargoRoom(seen->good, room);
+            const bool full = hud2notice::AtLimit(known, room);
+            m.notice.Add(seen ? seen->good : 0, seen ? seen->name : std::wstring(), static_cast<int>(r.units), full);
+            Log("hud2: notice LOOT %ls x%u (loot %u, good %u) room=%d known=%d full=%d", seen ? seen->name.c_str() : L"?",
+                r.units, r.loot, seen ? seen->good : 0, room, known ? 1 : 0, full ? 1 : 0);
         }
         g_lootSerial = newest;
     }

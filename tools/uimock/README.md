@@ -1,15 +1,17 @@
-# The Feature Tour of FLvibed (standing order, the owner, 25 Oct 2026)
+# The Feature Tour of FLvibed (the owner, 25 Oct 2026; up for a redesign since 12 Nov 2026)
 
 The page (claude.ai artifact `4v4dXbB5GTVt1URowFtSvN`) is **the Feature Tour of FLvibed as a whole**: every feature
 FLvibed adds, how a player installs and uses it, and what is not implemented yet. It is also **the source of the UI
-spec**: every UI change (a row, a binding, a screen's prompts or badges, a glyph, a state) is made here first or at the
-latest in the same commit, and `docs\UI_SPEC.json` is regenerated from it.
+spec**: `docs\UI_SPEC.json` (and from it `core\ui_meta.h`) is regenerated from it, so a UI change that the build needs
+from the spec (a row, a binding, a screen's prompts or badges, a glyph, a state) goes through it; the rest of the
+page follows by the reminder below (since 12 Nov 2026 no longer in the same commit by rule).
 
-**Standing rules (the owner, 25 Oct 2026):**
-- **Every user-visible change updates the page in the same work package** (a feature, a setting, a default, a fix that
-  changes what the player sees or can do, a status change): its section's text, captures and tables, and the "Not
-  implemented yet" list (an item built or closed leaves it in the same change). Never let the page drift from what is
-  built; no text may describe a superseded state.
+**Standing rules (the owner, 25 Oct 2026; the first one changed on 12 Nov 2026):**
+- **A user-visible change should reach the page** (a feature, a setting, a default, a fix that changes what the player
+  sees or can do, a status change): its section's text, captures and tables, and the "Not implemented yet" list. Since
+  12 Nov 2026 (audit decision 18) this is a reminder, not a same-package rule: the commit guard reminds when a CHANGELOG
+  line comes without a spec change, and the redesigned Tour (the audit's wave 2) sets its own rule. No text may
+  describe a superseded state once the page is updated.
 - **The install / requirements section is updated whenever a requirement or compatibility fact changes** (supported
   exe / HDE version, plugin dependencies, shipped files, install steps, a compatibility test), each line marked
   verified or not with its source.

@@ -43,7 +43,7 @@ if ($Save -eq 'newgame') {
     # the campaign run from the main menu (the golden run's start, LEGS.md L00): New Game, its intro movie skipped
     # natively, the Freeport 7 prologue (a 68.5 s space cutscene, unskippable) waited out, the landing at Manhattan
     $path = 'newgame'
-    $null = & (Join-Path $fl 'tools\deploy.ps1') -Background -Restart -NoBuild -Instance $Instance 2>&1
+    $null = & (Join-Path $fl 'tools\deploy.ps1') -Background -Restart -NoBuild -Instance $Instance -BootLabel $Label 2>&1
     . (Join-Path $fl 'tools\harness\flsub.ps1')   # Send-FLS movieskip
     $r = Send-FL 'menu new'; "menu new: $r"
     $null = Wait-FLUntil { $null = Close-FLBlocker; $null = Send-FLS 'movieskip'; (Get-FLMode) -eq 'docked' } 'docked at Manhattan' 600
@@ -62,8 +62,10 @@ if ($Save -eq 'newgame') {
     # harness call threw "shared memory not found" and ended the whole set / gate queue)
     for ($try = 1; $try -le 2; $try++) {
         # (deploy throws when the game does not come up - its own Stop preference: caught here, else the retry never ran)
-        $dep = try { & (Join-Path $fl 'tools\deploy.ps1') -Background -Restart -NoBuild -Instance $Instance -Save $path -ReplaceSave 2>&1 }
+        $dep = try { & (Join-Path $fl 'tools\deploy.ps1') -Background -Restart -NoBuild -Instance $Instance -Save $path -ReplaceSave -BootLabel $Label 2>&1 }
                catch { "deploy threw: $_" }
+        # (an unattended run's boot ledger refused the start - budget, cap or tamper: no retry, no wait, the reason up front)
+        if ("$dep" -match 'the unattended run refuses this game start|boot ledger cannot count') { throw "leg ${Label}: $(@($dep) -join ' ')" }
         $up = $false
         $tUp = Get-Date
         while (-not $up -and ((Get-Date) - $tUp).TotalSeconds -lt 60) {

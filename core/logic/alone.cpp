@@ -14,6 +14,7 @@
 #include "log.h"
 #include "modules_rules.h"
 #include "settings_bus.h"
+#include "ui/hud_door.h"
 #include "ui/hud_rows.h"
 #include "ui/shared_rows.h"
 #include "ui/uiopt.h"
@@ -35,7 +36,7 @@ static void AppliedAutopilot(void*, const settings::Def* d)
     if (views::autopilot.SettingApplied)
         views::autopilot.SettingApplied(d);
 }
-static void AppliedHud(void*, const settings::Def*) {} // `set` has no reactions beyond the value itself
+static void AppliedHud(void*, const settings::Def*) { hudrows::Settle(); } // (hud_style 1, retired, becomes 2 at once)
 
 static void SaveRows(const char* section, const settings::Def* defs, size_t n)
 {
@@ -69,7 +70,8 @@ template <size_t N> static void AddRows(const settings::Def (&rows)[N]) { g_defs
 // Who uses a row owns it here: core's first, each module's with the module.
 static void BuildRows()
 {
-    const settings::Def core[] = {FLV_ROW_MANEUVER_WATCHDOG(g_rows) FLV_ROW_FLUF_WINDOWS FLV_ROW_TEXT_SIZE FLV_ROW_HUD_SIZE FLV_ROW_SHOW_ADVANCED(g_rows)};
+    const settings::Def core[] = {FLV_ROW_MANEUVER_WATCHDOG(g_rows) FLV_ROW_FLUF_WINDOWS FLV_ROW_TEXT_SIZE FLV_ROW_HUD_SIZE FLV_ROW_SHOW_ADVANCED(g_rows)
+                                  FLV_ROW_MOUSE_RAW};
     AddRows(core);
     const auto on = [](int row) { return hostcalls::g.ModuleOn && hostcalls::g.ModuleOn(row); };
     if (on(modules::kDisplay))
@@ -97,7 +99,7 @@ static void BuildRows()
 
 void Init(const char* dllDir)
 {
-    const bool autopilot = views::ApPresent(), hud = views::HudPresent();
+    const bool autopilot = views::ApPresent(), hud = huddoor::Present();
     g_on = autopilot || hud || (hostcalls::g.ModuleOn && hostcalls::g.ModuleOn(modules::kSpeedrun));
     g_ini = std::string(dllDir) + "FLController.ini";
     const SettingsBus* bus = Bus();
@@ -140,6 +142,7 @@ void Init(const char* dllDir)
                 Log("hud: its rows are not on the settings bus");
         }
         settings::Load("Controller", g_ini, hudrows::kRows, hudrows::kRowCount);
+        hudrows::Settle(); // (an older release's hud_style 1 reads as 2)
         Log("hud: alone, on keyboard and mouse (%u rows)", static_cast<unsigned>(hudrows::kRowCount));
     }
 }
@@ -186,7 +189,16 @@ bool Command(const std::string& op, std::istream& in, std::string& reply)
     {
         std::string rest;
         std::getline(in >> std::ws, rest);
-        reply = debug::Execute(rest);
+        std::istringstream verb(rest);
+        std::string sub, key, value;
+        verb >> sub >> key >> value;
+        const SettingsBus* bus = Bus();
+        if (sub == "set") // core set <key> <value>: a [Controller] row on the bus, live only (as the controller's `set`; `ui` saves)
+            reply = bus && !key.empty() && !value.empty() && bus->Set("Controller", key.c_str(), value.c_str())
+                        ? "ok " + key + "=" + value + " (live)"
+                        : "set: no such [Controller] row on the bus or a bad value: " + key;
+        else
+            reply = debug::Execute(rest);
     }
     else if (op == "mode")
         reply = gamemode::Name(coreframe::g_mode);

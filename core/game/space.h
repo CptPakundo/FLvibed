@@ -399,7 +399,7 @@ bool ShieldOf(u32 id, float& current, float& max, bool& up);
 bool AtInvincibleFloor(u32 id, float health);
 // The game's own invincibility state of a space object (server.dll pub::SpaceObj::GetInvincible(id, bool&, bool&,
 // float&) - what a mission's Act_Invulnerable = <ship>, a, b, f set): both flags as the game returns them and the float
-// (FLvibed reads it as the hull floor; LOOK_PLAN 4a: not verified for M02's Ashcroft). False when unreadable (no server.dll
+// (FLvibed reads it as the hull floor; the look-ahead plan 4a: not verified for M02's Ashcroft). False when unreadable (no server.dll
 // export, not in space, the call failed or faulted).
 bool Invincible(u32 id, bool& invincible, bool& second, float& floor);
 // Test aid: take the object's shield offline (the game's pub::SpaceObj::DrainShields).

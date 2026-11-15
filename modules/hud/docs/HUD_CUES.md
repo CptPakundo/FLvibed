@@ -1,6 +1,9 @@
 # HUD cues: pre-attentive signals (design, 19 Oct 2026)
 
 Status: built; the shield, hull and reticle cues and the pad's haptics are in the HUD and Controller modules.
+Where they run (the owner's answer of 13 Nov 2026 to card Q4 of the audit's un-mixing inventory, `102_`: "Keep, off by default"): with
+HUD 2 by their own switches; on the classic HUD only with `classic_cues` (off by default; the options page's "Cues on the classic HUD"),
+then by the same switches. `cue status` ends with an `extras` line: `hud=`, `classic_cues=`, `cues=run|off`, `game_text=` (percent).
 
 User principles: know where the eyes are, minimise eye travel, keep the HUD spaced and
 logical; brief flashes / colour changes of specific form, size and duration signal state without reading. One cue =
@@ -48,7 +51,7 @@ type; the stronger the burst of damage, the stronger the vignette; a unique flas
   [dmg] | shield <arch> [dmg] | munition <arch> | attackers <id>`.
 - `core\game\render`: `Image`, `Sprite` (rotated, tinted, additive like the game's effects, linear filtering),
   `BeginPlain`.
-- `modules\hud\src\shieldcue.*`, drawn in OnRenderUnderHud (start of the UI pass: under the HUD): shield points / the game's
+- `modules\hud\src\extras\shieldcue.*`, drawn in OnRenderUnderHud (start of the UI pass: under the HUD): shield points / the game's
   up flag each frame -> per hit a group of edge sprites from the fitted shield's layers (colour / alpha / size keys,
   lifespans clamped to 0.35-1.0 s, the 2 s hotspot to 0.6 s), placed where the nearest attacker is (the ship's right /
   up axes), tinted 35 % toward the attacker's first gun's impact colour, strength by the damage burst (decay 0.5 s);

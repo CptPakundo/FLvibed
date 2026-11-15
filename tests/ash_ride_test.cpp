@@ -1,5 +1,5 @@
-// `ash_ride`'s pure half (modules\autopilot\src\ash_ride.h; docs\research\runners\M02_ashcroft_datapass.md "The ONE
-// proposal", adapted to the HDE P0 fact and the owner's correction of 31 Oct 2026: a coast is a straight line, cruise
+// `ash_ride`'s pure half (modules\autopilot\src\ash_ride.h; the M02 Ashcroft escalation notes' second data pass,
+// private: "The ONE proposal", adapted to the HDE P0 fact and the owner's correction of 31 Oct 2026: a coast is a straight line, cruise
 // lost): the leave rule and its fallback, the loop's radius (the measured turn rate) and geometry inside the leashes, the
 // carrot, his / our charge profiles, the intercept verdicts, the coast gate - then a closed-loop run of M02's geometry
 // (Ashcroft's spawn and run point, King's 5 km nag): the loop flown at cruise, his ramp by the profile, our steering

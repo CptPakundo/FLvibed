@@ -70,7 +70,7 @@ Options g_opt;
 Gamepad g_pad;
 // The menus' view of the pad: g_pad, with A and B exchanged when confirm_button is 1 (the right button accepts). Every
 // menu-grammar consumer reads it (the free cursor, FLUF's windows, padbases / padmap, the flight modals' copy); the
-// flight bindings read g_pad, positional (UI_BUILD.md 5, 29 Oct 2026). Refreshed right after g_pad.Update.
+// flight bindings read g_pad, positional (the UI build record 5, private, 29 Oct 2026). Refreshed right after g_pad.Update.
 Gamepad g_menuPad;
 static u32 g_lastPadTick = 0;
 
@@ -354,6 +354,14 @@ static void PadRest(float dt)
             padbases::DockedView(); // the NeuroNet, as in flight
         break;
     case Mode::Space:
+        // a NeuroNet window the game has open while the mode still reads flight (gamemode's window test is cached 100 ms, then the 3-frame debounce): View
+        // closes it as in space-ui. The flight dispatch is not called this frame, so the press gate keeps this View from it until the release (no map).
+        if (g_pad.Pressed(XINPUT_GAMEPAD_BACK) && nnwin::OpenCommand() != 0)
+        {
+            ReleaseSteer();
+            events::Push("pad view: close the NeuroNet window before the mode read it %s", nnwin::Close() ? "ok" : "refused");
+            break;
+        }
         // between two NeuroNet windows (a bumper's tab waits to open, or a window still slides): no ship control - the owner, 7 Nov 2026: RB fired
         // missiles as the next tab loaded. The bumpers go on stepping the tabs
         if (nnwin::Held() || room::NNWindowBusy())
@@ -442,7 +450,7 @@ std::string DescribeState()
         o << b << "\n";
     o << "dimouse: " << dimouse::Stats() << "\n";
     o << "foreground=" << (GetForegroundWindow() == fl::MainWindow())
-      << " background_run=" << ((coreframe::opts.runInBackground || BackgroundTestStart()) && HostAtLeast(7))
+      << " background_run=" << ((coreframe::opts.runInBackground || BackgroundTestStart()))
       << " lastPad=" << g_lastPadTick << " lastMouse=" << dimouse::LastRealTick() << "\n";
     o << device::Status() << "\n";
     o << "preset=" << presets::PresetName(uiopt::Get().padPreset) << " group=" << g_weaponGroup

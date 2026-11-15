@@ -71,7 +71,7 @@ from the decomp. `FREELANCER_RE.md` gained the window-mode path (38d411c), the g
   `RemoveWaypoint` 0x4C46E0, `PendingLoadId`. All were found in game by the build (no commit of the build cites the decomp;
   `FREELANCER_RE.md` +264 lines, `docs\kb\hud-controls.md` / `menu-screens.md`). The cross-reference (109 of 123) is 28
   symbols behind (K1); the decomp's `nn_*.cpp` / `wincontrol_base.cpp` (U7) are where their names are, and the native row
-  controls the build left as replicas (ToggleButtonControl / ScrollControl, `UI_BUILD.md` 5) are the next reading.
+  controls the build left as replicas (ToggleButtonControl / ScrollControl, the UI build record 5, private) are the next reading.
   *Check-up 25 Oct 2026 (073a665):* HUD 2 added **8 more (151 -> 159; the cross-reference now 36 behind, K1)**: the
   weapon-group manager and its current group (0x674C0C, 0x4F6170), the mouse wheel (0x616848), the arrival line
   `NN_ArrivalText` (0x66D398) and its house table (0x45B1A0), the target panel's 3D view draw (0x4E3C90), the "Unknown

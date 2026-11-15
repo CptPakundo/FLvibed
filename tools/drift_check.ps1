@@ -14,18 +14,21 @@
 #   tools       every script in tools\ is listed in tools\README.md
 #   doc-refs    every backticked repository path in the tracked .md files exists (tools\docrefs.py)
 #   doc-export  no public doc names an export-ignored file (tools\docrefs.py --export): tools\package.ps1 stops on it
+#   private     the export of HEAD and the index holds nothing of the design bench's private material (its private
+#               folders, recorded states and lists, atlases, the private marker: tools\private_check.py); package.ps1 stops on it
 #   modules     every source has one owner, in its owner's folder, and no include crosses a module (tools\module_lint.py --enforce)
 #   paths       no tracked script names a repository path that is not there (tools\path_check.py): a move's silent skip
 #   doc-graph   every tracked .md is referred to by another doc (tools\docindex.py --orphans; the maps excepted)
 #   handoff     HANDOFF.txt under 8,000 characters
 #   claude-env  the Claude Code harness is installed as versioned (tools\claude\install.ps1 -Check) and its hook tests
-#               pass (tools\claude\hooks\test_hooks.js)
+#               pass (tools\claude\hooks\test_hooks.js, tools\claude\archive\legs\test_legs.js)
 #   ghidra      the Ghidra project's seed is today's core\flexe.h (tools\ghidra\ghidra.ps1 -Check; OK when not set up)
 #   testlint    every harness call of the test scripts resolves (tools\test_lint.ps1)
 #   win7        the built release DLL, setup and server plugin import nothing Windows 7 lacks (tools\win7_check.ps1)
 #   git         nothing uncommitted (else: a change not committed after it was finished)
 #   backup      the newest bundle in the backup folder (tools\backup.ps1 -ShowDest) is under 4 h old
-#   research    docs\research notes with watched changes since their last check-up (tools\research_check.ps1; a count), and headers grown a '; before:' chain
+#   research    dead Watch lines and headers grown a '; before:' chain (tools\research_check.ps1); the count of notes with
+#               watched changes since their check-up is information only (12 Nov 2026: re-checked when work touches them)
 #   saves       no new run from an unfit checkpoint save after its verdict (docs\missions\scene_saves.tsv fit / fit_date,
 #               the runs by the save's file name in research\experience\legs\legs.tsv; docs\TESTING.md "The test loop" 4):
 #               ATTENTION for runs started since the previous review (else the last 24 h) - the slip is seen once and
@@ -69,6 +72,25 @@ function Report([string]$name, [bool]$ok, [string]$detail, [string]$state = '', 
 # one isolated check: an error inside it is that check's ERROR row (counted), never the end of the review
 function Invoke-Check([string]$name, [scriptblock]$body, [string]$key = '') {
     try { & $body } catch { Report $name $false "check failed: $($_.Exception.Message)" 'ERROR' $key }
+}
+# A private file of a public clone (12 Nov 2026, the public set: "tool-read files stay ... so contributors can run the
+# tools"): git does not track the path here AND .gitattributes marks it export-ignore - the published export leaves it
+# out. In the development repository every such file is tracked, so a missing one still counts as missing there.
+function Test-FLPrivatePath([string]$rel) {
+    $p = $rel -replace '\\', '/'
+    $null = git -C $root ls-files --error-unmatch -- $p 2>$null
+    if ($LASTEXITCODE -eq 0) { return $false }
+    $ga = Join-Path $root '.gitattributes'
+    if (-not (Test-Path $ga)) { return $false }
+    foreach ($l in Get-Content $ga) {
+        if ($l -notmatch '^\s*([^#\s]\S*)\s.*(?<![-!\w])export-ignore\b') { continue }
+        $pat = $Matches[1].Trim('/')
+        # a pattern with a slash is anchored at the root (a folder pattern covers what is under it); one without matches
+        # any path segment, as git's attribute patterns do
+        if ($pat.Contains('/')) { if ($p -like $pat -or $p.StartsWith("$pat/")) { return $true } }
+        elseif (@($p -split '/' | Where-Object { $_ -like $pat }).Count) { return $true }
+    }
+    $false
 }
 # the previous review's time (the overrides and saves windows)
 $prevReview = $null
@@ -149,6 +171,11 @@ try {
         $de = "$(& $py -I (Join-Path $here 'docrefs.py') --export 2>&1 | Select-Object -Last 1)"
         Report 'doc-export' ($LASTEXITCODE -eq 0) $de.Trim()
     }
+    Invoke-Check 'private' {
+        # the design bench's guard (audit 71b section 6): seen here, a staged private file is not found on release day
+        $pv = @(& $py -I (Join-Path $here 'private_check.py') 2>&1 | ForEach-Object { "$_" })
+        Report 'private' ($LASTEXITCODE -eq 0) (($pv | Select-Object -Last 1) + $(if ($pv.Count -gt 1) { '; ' + (($pv | Select-Object -First 3) -join '; ') }))
+    }
     Invoke-Check 'modules' {
         $ml = "$(& $py -I (Join-Path $here 'module_lint.py') --enforce 2>&1 | Select-Object -Last 1)"
         Report 'modules' ($LASTEXITCODE -eq 0) $ml.Trim()
@@ -176,7 +203,11 @@ try {
         $ce = "$(& (Join-Path $here 'claude\install.ps1') -Check 2>&1 | Select-Object -Last 1)"
         $ceOk = $LASTEXITCODE -eq 0
         $ht = @(& node (Join-Path $here 'claude\hooks\test_hooks.js') 2>&1 | ForEach-Object { "$_" })
-        Report 'claude-env' ($ceOk -and $LASTEXITCODE -eq 0) ("$($ce.Trim()); " + (($ht | Where-Object { $_ -match 'cases:' }) -join ', '))
+        $htOk = $LASTEXITCODE -eq 0
+        # (the archived leg-run rules' own tests too, so the archive cannot rot unseen while it is off - 12 Nov 2026)
+        $lt = @(& node (Join-Path $here 'claude\archive\legs\test_legs.js') 2>&1 | ForEach-Object { "$_" })
+        $ltOk = $LASTEXITCODE -eq 0
+        Report 'claude-env' ($ceOk -and $htOk -and $ltOk) ("$($ce.Trim()); " + ((@($ht) + @($lt) | Where-Object { $_ -match 'cases:' }) -join ', '))
     }
     Invoke-Check 'ghidra' {
         # the Ghidra project (tools\ghidra\README.md; optional): seeded with today's core\flexe.h
@@ -210,7 +241,9 @@ try {
         $stale = @($rc | Where-Object { $_ -match 'watched paths changed in' }).Count
         $chain = @($rc | Where-Object { $_ -match '^\s+HEADER CHAIN:' }).Count # (the flag line itself, not a listed commit subject)
         $deadWatch = @($rc | Where-Object { $_ -match '^\s+WATCH DEAD:' }).Count
-        Report 'research' ($stale -eq 0 -and $chain -eq 0 -and $deadWatch -eq 0) "$stale research note(s) with watched changes since their check-up, $deadWatch dead Watch line(s), $chain header(s) with a '; before:' chain (tools\research_check.ps1)"
+        # (notes with watched changes are information, not a failure, since 12 Nov 2026: the owner lifted the "never
+        # stale" order - a note is re-checked when work touches its area. A broken Watch line or a header chain still is)
+        Report 'research' ($chain -eq 0 -and $deadWatch -eq 0) "$stale research note(s) with watched changes since their check-up (information: re-checked when work touches them), $deadWatch dead Watch line(s), $chain header(s) with a '; before:' chain (tools\research_check.ps1)"
     }
     Invoke-Check 'saves' {
         # a run counts when it started (its legs.tsv end time - secs - boot) over 2 min after the verdict: not the run that
@@ -252,8 +285,13 @@ try {
         $now = Get-Date
         $thu = $now.Date.AddDays(3 - (([int]$now.DayOfWeek + 6) % 7))                 # the ISO week's Thursday decides it
         $thisWeek = '{0}-W{1:00}' -f $thu.Year, ([math]::Floor(($thu.DayOfYear - 1) / 7) + 1)
-        $head = $ho | Where-Object { $_ -match '^\| week \|' } | Select-Object -First 1
-        $weeks = @($ho | Where-Object { $_ -match '^\| \d{4}-W\d\d \|' } | Where-Object { ($_ -split '\|')[1].Trim() -lt $thisWeek })
+        # (only the FIRST "| week |" table is the health table: health.js --md used to append the in-game testing table
+        # with the same header and row form - removed 12 Nov 2026 - and its rows were read here under the health
+        # table's column names, audit report 12_ (f). The table ends at its first line that is not a table row)
+        $hi = [array]::FindIndex([string[]]$ho, [Predicate[string]] { param($l) $l -match '^\| week \|' })
+        $head = if ($hi -ge 0) { $ho[$hi] } else { $null }
+        $table = @(if ($hi -ge 0) { for ($i = $hi + 1; $i -lt $ho.Count -and $ho[$i] -match '^\|'; $i++) { $ho[$i] } })
+        $weeks = @($table | Where-Object { $_ -match '^\| \d{4}-W\d\d \|' } | Where-Object { ($_ -split '\|')[1].Trim() -lt $thisWeek })
         $hSecs = [math]::Round(((Get-Date) - $hT).TotalSeconds, 1)
         if (-not $head -or $hx -notin 0, 2) {
             Report 'health' $true "not measured: health.js exit $hx$(if (-not $head) { ', no week table' }) ($hSecs s)" 'ERROR'
@@ -296,8 +334,10 @@ try {
                 default { $null }
             }
             if ($null -eq $now) {
-                # a doc that moved would disarm its row in silence; the DLL is simply not built yet
-                if ($r.name -like 'doc_bytes:*') { $okAll = $false; $msgs += "$($r.name): no such file, fix the row" } else { $msgs += "$($r.name): not measured" }
+                # a doc that moved would disarm its row in silence; the DLL is simply not built yet; a public clone has
+                # no private files (Test-FLPrivatePath: untracked here and export-ignored), so their rows are skipped
+                if ($r.name -match '^doc_bytes:(.+)$' -and (Test-FLPrivatePath $Matches[1])) { $msgs += "$($Matches[1]): not in this tree (a private file)" }
+                elseif ($r.name -like 'doc_bytes:*') { $okAll = $false; $msgs += "$($r.name): no such file, fix the row" } else { $msgs += "$($r.name): not measured" }
                 continue
             }
             $lim = [double]$r.value * (1 + [double]$r.max_growth)
@@ -307,21 +347,6 @@ try {
             else { $msgs += ("{0} {1:N0} ({2:+0.0;-0.0} %)" -f $r.name, $now, $pct) }
         }
         Report 'ratchets' $okAll (($msgs -join '; ') + ' (docs\ratchets.tsv)')
-    }
-    Invoke-Check 'testing' {
-        # the in-game testing method's own trend (WORK_QUEUE H15, 30 Oct 2026): docs\test_budget.tsv's latest ISO week
-        # through health.js's testingTrend - ATTENTION when the runs used exceed 1.5x the stated budgets or more than one
-        # harness bug per package was met (Working method 23: as much testing as needed, no more)
-        $hj = Join-Path $root 'tools\claude\health\health.js'
-        $bt = Join-Path $root 'docs\test_budget.tsv'
-        $js = "const H=require(process.argv[1]);const r=H.testingRows(require('fs').readFileSync(process.argv[2],'utf8'));" +
-              "console.log(H.testingTrend(r).filter(l=>/^\| \d{4}-W/.test(l)).pop()||'')"
-        $w = "$(& node -e $js $hj $bt 2>&1)".Trim()
-        if ($w -notmatch '^\|') { Report 'testing' $true "no package rows in docs\test_budget.tsv" ; return }
-        $c = @(($w -split '\|') | ForEach-Object { $_.Trim() })
-        $ratio = [double](($c[5] -split ' ')[0] -replace '^-$', '0'); $bugs = [double](($c[6] -split ' ')[0])
-        Report 'testing' ($ratio -le 1.5 -and $bugs -le 1) ("$($c[1]): $($c[2]) package(s), used / budget $($c[5]), harness bugs / package " +
-            "$($c[6]), wasted runs / package $($c[8]) (docs\test_budget.tsv, H15)")
     }
     Invoke-Check 'overrides' {
         # guard-ok overrides per rule over the last 24 h, or since the previous review when that is longer ago (a re-run

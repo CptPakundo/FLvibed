@@ -46,7 +46,11 @@ Three limits of the fixture, read in the run of 6 Nov 2026 (p7a, p7b; `godmode o
 | 5 | Normal loot | room for it: a commodity, and a nanobot with n < max | none | none; the item arrives: hold or count goes up; the game's own voice as ever |
 | 6 | Hold full | hold free < the item's volume | `reason=3` | YOU DON'T HAVE ENOUGH CARGO SPACE |
 | 7 | Out of range | loot beyond the tractor's reach | none | none: the game's `target_out_of_range` only |
-| 8 | Tractor all | nanobots at max beside a commodity with room | `reason=5` before the pull, as the game orders it | the commodity still arrives; card as case 1 |
+| 8 | Tractor all | nanobots at max beside other loot with room | in the game's order (volume-0 items first, then by value): `reason=5` only when the kit comes before every item that is taken; none when another item is taken first | the other loot still arrives; card as case 1 only with the event, else none |
+
+Case 8 follows USER_COLLECT_LOOT (`docs\FREELANCER_RE.md` "Tractor failure codes": it notifies each refusal before the first success, none after). Seen in game: a kit at
+the maximum beside a dearer volume-0 item (6 Nov 2026) and a Falcon at 43/43 batteries and kits (13 Nov 2026, audit 98, issue 87, in the environment folder's audit_2026-11-12, run `2026-11-13_issue87_sp2`): the other
+item arrived, no refusal. The missing refusal there is the game's order, not a failure of the design.
 
 Case 4 is expected from the code: the limit is the stack's, whatever is mounted. If the game refuses the item below 50, or the issue's "currently-equipped" distinction shows
 in play, that reading is wrong: stop and go back to the disassembly.

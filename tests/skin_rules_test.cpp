@@ -26,9 +26,6 @@ void Test_skin_rules()
     CHECK(ClampMotion(7) == MotionFull && ClampMotion(2) == MotionNone);
     CHECK(fabsf(EaseStep(0, true, 0.075f, MotionFull) - 0.5f) < 0.001f && EaseStep(0, true, 0.5f, MotionFades) == 1 && EaseStep(1, false, 0.5f, MotionFull) == 0);
     CHECK(EaseStep(0, true, 0, MotionNone) == 1 && EaseStep(1, false, 0, MotionNone) == 0);
-    // skin_native
-    CHECK(NativeListed("navmap", "navmap") && NativeListed(" pause , NavMap ", "navmap") && !NativeListed("navmapx", "navmap") && !NativeListed("", "navmap"));
-    CHECK(!NativeListed("navmap", "") && !NativeListed(",,", "pause"));
     // dialogs: the verbs of 6.2, the game's words for any other text
     std::wstring name;
     CHECK(ConfirmKind(L"QUIT TO MAIN MENU", nullptr) == DialogKind::Quit);
@@ -36,7 +33,9 @@ void Test_skin_rules()
     CHECK(ConfirmKind(L"Do you want to leave this server and choose another?", nullptr) == DialogKind::Other);
     CHECK(ConfirmKind(L"SPIEL BEENDEN", nullptr) == DialogKind::Other && ConfirmKind(nullptr, nullptr) == DialogKind::Other);
     CHECK(ExitKind(L"EXIT GAME?", true) == DialogKind::ExitMenu && ExitKind(L"EXIT GAME?", false) == DialogKind::ExitInGame && ExitKind(L"x", true) == DialogKind::Other);
-    CHECK(Row(DialogKind::Quit)->amber && !Row(DialogKind::Quit)->focusAction && !wcscmp(Row(DialogKind::Quit)->safe, L"KEEP PLAYING"));
+    CHECK(ArrowToAction(DialogArrow::Left, false) && ArrowToAction(DialogArrow::Left, true) && !ArrowToAction(DialogArrow::Right, true) && !ArrowToAction(DialogArrow::Right, false));
+    CHECK(ArrowToAction(DialogArrow::Up, false) && !ArrowToAction(DialogArrow::Up, true) && ArrowToAction(DialogArrow::Down, false) && !ArrowToAction(DialogArrow::Down, true));
+    CHECK(Row(DialogKind::Quit)->amber &&!Row(DialogKind::Quit)->focusAction && !wcscmp(Row(DialogKind::Quit)->safe, L"KEEP PLAYING"));
     CHECK(!Row(DialogKind::ExitMenu)->amber && Row(DialogKind::ExitMenu)->focusAction);
     CHECK(Row(DialogKind::Delete)->amber && !Row(DialogKind::Delete)->cost && Row(DialogKind::Other) == nullptr);
     // the plate holds its chips and words, on the screen, or the dialog stays the game's
@@ -95,4 +94,10 @@ void Test_skin_rules()
     CHECK(MenuSlotY(100, 600, 0) == 100 && MenuSlotY(100, 600, 5) == 600 && MenuSlotY(100, 600, 1) == 200);
     // base text: one rung at 800, none at the ship dealer's pitch
     CHECK(NameRungs(800, 0.068f) == 1 && NameRungs(2160, 0.068f) == 0 && NameRungs(800, 0.065f) == 0);
+    // the save lists: whole lines in the box, the game's count at most, one at least
+    CHECK(RowsThatFit(400.0f, 20, 20) == 20 && RowsThatFit(399.5f, 20, 20) == 20); // the game's own font: its 20 (rounding)
+    CHECK(RowsThatFit(400.0f, 26, 20) == 15 && RowsThatFit(400.0f, 26, 16) == 15);
+    CHECK(RowsThatFit(400.0f, 10, 20) == 20 && RowsThatFit(10.0f, 26, 20) == 1);
+    CHECK(RowsThatFit(400.0f, 0, 20) == 20 && RowsThatFit(0.0f, 26, 20) == 20 && RowsThatFit(400.0f, 26, 0) == 0);
+    CHECK(LastFirstRow(30, 15) == 15 && LastFirstRow(10, 15) == 0);
 }

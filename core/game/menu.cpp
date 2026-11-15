@@ -4,8 +4,10 @@
 #include "flexe.h"
 #include "game/room.h"
 #include "str.h"
+#include "ui/ui.h"
 
 #include <cctype>
+#include <cmath>
 #include <sstream>
 
 namespace menu
@@ -102,6 +104,113 @@ u32 LoadScreen()
     const u32 button = uiclick::FindVisible("LoadSave_LoadGame");
     const u32 screen = button ? OwnerWindow(button) : 0;
     return IsClass(screen, exe::VtGameLoadScreen) ? screen : 0;
+}
+
+u32 LoadSaveScreen()
+{
+    if (const u32 screen = LoadScreen())
+        return screen;
+    const u32 button = uiclick::FindVisible("LoadSave_SaveGame");
+    const u32 screen = button ? OwnerWindow(button) : 0;
+    return IsClass(screen, exe::VtGameLoadScreen) ? screen : 0;
+}
+
+template <typename T> static T RdOr(u32 addr, T def)
+{
+    __try
+    {
+        return addr ? Mem<T>(addr) : def;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return def;
+    }
+}
+
+// A column's fields (ListBox, Freelancer-Decomp list_box.h, confirmed in game 15 Nov 2026): the box is projected as
+// ListBox::Draw does (FUN_004176c0: height x the UI camera's y scale / |z| of its position +0x60, 1 when |z| < 0.001), the
+// line height is the font's (+0x84, IFont vt[0x18]), the pitch the draw steps by and the hover divides by.
+static bool ReadColumn(u32 list, hk::Sym& vt, SaveColumn& c)
+{
+    typedef int(__thiscall * LineFn)(u32);
+    __try
+    {
+        if (!IsClass(list, vt))
+            return false;
+        c.list = list;
+        c.count = Mem<int>(list + 0x8A4);
+        c.rows = Mem<int>(list + 0x8A8);
+        c.first = Mem<int>(list + 0x88C);
+        c.height = Mem<float>(list + 0x89C);
+        const float z = fabsf(Mem<float>(list + 0x68));
+        const u32 font = Mem<u32>(list + 0x84);
+        if (!font)
+            return false;
+        c.linePx = reinterpret_cast<LineFn>((*reinterpret_cast<void***>(font))[0x18 / 4])(font);
+        float sx, y0, y1;
+        const float d = z < 0.001f ? -1.0f : -z;
+        if (!ui::Project(0, 0, d, sx, y0) || !ui::Project(0, c.height, d, sx, y1))
+            return false;
+        c.boxPx = fabsf(y1 - y0);
+        return c.linePx > 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+}
+
+// The bar is the game's UIScroll (its input slot vt[0x4C] = exe::ScrollBarClick), else 0.
+static u32 ScrollOf(u32 bar)
+{
+    __try
+    {
+        return bar && exe::ScrollBarClick.is(reinterpret_cast<u32>((*reinterpret_cast<void***>(bar))[0x4C / 4])) ? bar : 0;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return 0;
+    }
+}
+
+// The bar's height in pixels: its size +0x338 (UIScroll, Freelancer-Decomp ui_scroll.h) at the depth of its rectangle.
+static float ScrollPx(u32 bar)
+{
+    ui::Item it;
+    const float h = RdOr<float>(bar + 0x338, 0.0f);
+    float sx, y0, y1;
+    if (!bar || !(h > 0) || !ui::ControlRect(bar, it) || !(it.depth > 0.001f) || !ui::Project(0, 0, -it.depth, sx, y0) ||
+        !ui::Project(0, h, -it.depth, sx, y1))
+        return 0;
+    return fabsf(y1 - y0);
+}
+
+bool OpenSaveLists(SaveLists& out)
+{
+    out = SaveLists();
+    // the front-end character select (one static page): CharScroll +0xD4, CharSelDesc +0xD8, CharSelTime +0xDC, 20 rows
+    // (PageCharacterSelectSingle, its refill writes 0x14 to both lists)
+    const u32 button = uiclick::FindVisible("LoadCharacter");
+    const u32 front = button ? RdOr<u32>(button + 4, 0u) : 0;
+    if (IsClass(front, exe::VtLoadScreen))
+    {
+        out.front = true;
+        out.screen = front;
+        out.gameRows = 20;
+        out.scroll = ScrollOf(RdOr<u32>(front + 0xD4, 0u)); // (its +0x338 is not its drawn height: 6161 px read at 1280x800; the box is the room)
+        return ReadColumn(RdOr<u32>(front + 0xD8, 0u), exe::VtFrontList, out.names) &&
+               ReadColumn(RdOr<u32>(front + 0xDC, 0u), exe::VtFrontList, out.dates);
+    }
+    // NN_LoadSave: its two ListBoxes embedded at +0x5DC (names) and +0xE98 (dates), the rows +0x1754, LoadSave_Scroll +0x1758
+    const u32 screen = LoadSaveScreen();
+    if (!screen)
+        return false;
+    out.screen = screen;
+    out.gameRows = static_cast<int>(RdOr<u32>(screen + 0x1754, 0u));
+    out.scroll = ScrollOf(RdOr<u32>(screen + 0x1758, 0u));
+    out.scrollPx = ScrollPx(out.scroll);
+    return out.gameRows > 0 && ReadColumn(screen + 0x5DC, exe::VtGameList, out.names) &&
+           ReadColumn(screen + 0xE98, exe::VtGameList, out.dates);
 }
 
 static bool ReadPendingId(char* id, size_t n)

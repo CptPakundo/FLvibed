@@ -215,8 +215,16 @@ std::string LintCommand(std::istream& in)
             li.areas.push_back({hud2layout::AreaPart(a), hud2layout::AreaName(a), r.x0, r.y0, r.x1, r.y1});
         }
     // (`m.list`: a contact list the player opened stands in S2 on the pad as it does on the keyboard; the pad's automatic list keeps the 1.3 rule)
+    // (the bottom panels that draw: a field ends where a grown one starts - the lower band's sheet Q4)
+    std::vector<hud2lint::Area> panels;
+    for (int a : {hud2layout::AShip, hud2layout::ALoadout, hud2layout::ACons})
+        if (L.res.Placed(a) && !((L.res.quiet >> a) & 1))
+        {
+            const hud2layout::Rect& r = L.res.at[a];
+            panels.push_back({hud2layout::AreaPart(a), hud2layout::AreaName(a), r.x0, r.y0, r.x1, r.y1});
+        }
     li.zones = hud2lint::ZonesOf(preset, L.W, L.H, L.tgtX0, L.tgtX1, m.kbm || m.list, L.consY1 > L.consY0 ? L.consX0 : 0,
-                                 L.consY1 > L.consY0 ? L.consY0 : 0, L.clearY0);
+                                 L.consY1 > L.consY0 ? L.consY0 : 0, L.clearY0, &panels);
     const hud2lint::Limits lim = hud2lint::LimitsOf(preset, m.state == State::Combat, m.kbm);
     li.budget = lim.budget, li.pillCap = lim.pills, li.pairCap = lim.pairs, li.air = true;
 

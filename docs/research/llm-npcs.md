@@ -50,7 +50,7 @@ reasoning, in order of weight:
    calls FLvibed can already make, with eligibility from the same state the autopilot reads (IDEAS N4).
 3. **Freelancer ships a better "world knowledge" base than Skyrim does, and the project has already catalogued it.**
    News, rumours, bar KNOW offers, infocards per base/system/faction, `faction_prop.ini` attitudes, `mbases.ini`
-   NPC rosters, the story in full (the subtitle TSV) and `docs\kb\world` (ranked lore by source) are exactly the
+   NPC rosters, the story in full (the subtitle TSV) and the world-lore pages (ranked lore by source; private, kept for research) are exactly the
    scoped-knowledge entries SkyrimNet builds by hand (IDEAS N5). What Freelancer lacks are persistent named NPCs:
    outside the ~30 story characters, pilots are faction + formation designation + a generated name, base NPCs are
    roles (bartender, dealer, random patron). Identity would be ours to define (base + role, or ship nickname), which
@@ -195,7 +195,7 @@ reasoning, in order of weight:
 | Voice input | - | - | STT in a sidecar; push-to-talk on a pad button |
 | Who can hear | comm attenuation by distance (`COMM_PLAYER_FAR_DIST`, chatter and walla cut-offs), scanner range and interference, line of sight (`PhySys::FindRayCollisions`, FLvibed uses it) | reads targets, contacts, attitudes | a perception filter is a few lines over data FLvibed has |
 | NPC actions | `pub::AI` directives (goto, follow, formation, dock, trail, strafe, face, evade, idle, delay), `SpaceObj` create / destroy / dock / launch / drain shields / set health / invincible, `Player` AdjustCash / AddCargo / RemoveCargo, `Reputation` SetAttitude / SetReputation / SetAffiliation, bar offers (`Act_SetOffer` mechanics), jobs | `core\game\ai.*` directives on any ship; `spawn.*`; `AdjustCash`, `DisplayMissionMessage`, `Reputation::Alloc` | an action registry with eligibility, cooldowns and an LLM-facing schema |
-| Character data | story characters (the subtitle TSV holds every line and speaker), `specific_npc.ini`, `mbases.ini` rosters (role, faction, voice, head), `faction_prop.ini`, `initialworld.ini` attitudes, infocards, costumes | `docs\kb\story` (arc, characters, beats), `docs\kb\world` (news, rumours, offers by source), `names::Lookup` for senders | bios generated from this data; persistent identities for generic NPCs |
+| Character data | story characters (the subtitle TSV holds every line and speaker), `specific_npc.ini`, `mbases.ini` rosters (role, faction, voice, head), `faction_prop.ini`, `initialworld.ini` attitudes, infocards, costumes | `docs\kb\story` (arc, characters, beats), the private world-lore pages (news, rumours, offers by source), `names::Lookup` for senders | bios generated from this data; persistent identities for generic NPCs |
 | World knowledge with conditions | news and rumours are already scoped by base, system, faction and story level in the data; mission state machine known (`Act_*`/`Cnd_*`) | the kb's ranked lore pages; the harness reads objectives, marks, comms and story worth | a conditions language over those (system, base, faction, mission number) |
 | Memory | - (the game remembers reputation and visited flags) | - | a store in the sidecar; first-person memories, importance, decay |
 | Events for memory and reactions | the host's event log already carries objectives, popups, messages, comms, failures (Content.dll import hooks), hits and damage (damage indicator hooks), docking and lane events | `OnComm`, `worth-target`, hit sources, dock / lane state | an event bus into the sidecar |

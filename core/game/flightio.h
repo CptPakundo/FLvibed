@@ -1,6 +1,6 @@
 // FLvibed - what flies the ship goes through here: the held commands with their owners, the steering override, and the options the
 // flight's own math reads. The pad's flight, the test bot and the autopilot all use it, so none of them needs the others. Who may do what:
-// input_rules.h and docs\MODULES_PLAN.md "P7's priority table".
+// input_rules.h and the module split plan's "P7's priority table" (private).
 #pragma once
 #include "common.h"
 #include "game/input_rules.h"

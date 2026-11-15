@@ -16,6 +16,11 @@ void Reset() { hostcalls::g.MouseReset(); }
 bool IsCaptured() { return hostcalls::g.MouseIsCaptured(); }
 void Capture() { hostcalls::g.MouseCapture(); }
 u32 LastRealTick() { return hostcalls::g.LastRealMouseTick ? hostcalls::g.LastRealMouseTick() : 0; }
+void SetRaw(bool on)
+{
+    if (hostcalls::g.SetRawMouse)
+        hostcalls::g.SetRawMouse(on);
+}
 std::string Stats()
 {
     char buf[512];

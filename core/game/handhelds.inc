@@ -1,5 +1,5 @@
 // FLvibed - which machines are handhelds: data for core\game\handheld.h, one row per model. Written from the kernel's and
-// InputPlumber's tables (modules\hud\docs\UI_HUD2_INPUTS.md 7; evidence inputs_handheld_detection.md); nothing here ran on the hardware.
+// InputPlumber's tables (the HUD 2 inputs record 7, private; evidence inputs_handheld_detection.md); nothing here ran on the hardware.
 // Row: where the name is read (System = SMBIOS type 1 product, Board = type 2 product, Either), how it is matched
 // (Exact, Prefix), the name, the maker it must come from ("" = any: a name no other maker uses; a prefix, either case),
 // and what it decides (NotHandheld, Handheld; Deck = a Steam Deck, whose docked rule differs).

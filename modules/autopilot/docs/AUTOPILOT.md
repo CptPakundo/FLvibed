@@ -14,7 +14,7 @@ economy and geometry), `autopilot_combat.cpp`, `autopilot_dock.cpp` (fast dock, 
 
 Priority (user, 21 Oct 2026): capability first (speedrun-grade); every behaviour gets its own `ap set` setting with a
 sensible default and stays separable, so the player UI stays cheap (the owner's standing direction). That UI was built on 25
-Oct 2026 (the options page's AUTOPILOT tab and its presets: `docs\UI_BUILD.md`); new behaviours still come as settings.
+Oct 2026 (the options page's AUTOPILOT tab and its presets: the UI build record, private); new behaviours still come as settings.
 
 **Windows (the owner, 5 Nov 2026, GitHub issue 25): the autopilot keeps working if the game isn't paused.** No window, menu or page stops it, the
 options page included; each gate is checked against the pause, never against what is on screen (`..\..\..\docs\ARCHITECTURE.md`). The pad's input
@@ -214,7 +214,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
     friendly, the scenario's spawns: rogues-2, rogues-3, police-4, elite-1, mixed-3), `Invoke-FLBenchRun
     -UntilSpawnsDead` (ends when our spawns are gone; natural encounters that wander in count as Extra),
     `Invoke-FLScenarioAB` (whole fights A / B alternating, paired; stops once Lost or Secs differ with |t| >= 2.5
-    after 3 pairs, else at 8). Other player ships: the campaign saves (`..\..\docs\missions\SAVES.md`). **Fight matrix**
+    after 3 pairs, else at 8). Other player ships: the campaign saves (the scene-save catalogue, private; `..\..\docs\missions\scene_saves.tsv`). **Fight matrix**
     (`tools\harness\flfights.ps1`, sweep section `fight-matrix`, since 19-20 Oct 2026): 15 enemy kinds on the starter ship
     (SaveC705) and a strong one (SaveC706); FAIL on a retreat from a winnable kind, a hopeless kind not left, or a spawn
     failure; 30 / 32 won on 21 Oct 2026 (heavy_d12_x4 / _far are hopeless for the starter ship; heavy_d12_x2 varies).
@@ -272,10 +272,10 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
     (`lost` includes damage taken between targets and while fleeing since 18 Oct: older `lost` numbers read low).
     Big-hit evidence event (a loss > 20 % of shield + hull in one frame names the nearest hostiles). Per-second `self`
     events (hull, shield, nanobots, batteries, CMs) are the runs' track for `research\tools\section_cost.py`.
-  - **Audit 18 Oct 2026 (bugs fixed, verified out of focus, dev + release):** (history: AUTOPILOT_LOG.md "Audit 18 Oct 2026")
+  - **Audit 18 Oct 2026 (bugs fixed, verified out of focus, dev + release):** (history: the autopilot session log (private), "Audit 18 Oct 2026")
     Open: the flee stops 3 km from hostiles, but escort missions fail at 3-5 km from the escorted ship
     (`..\..\docs\missions` M01a/M01b/M03/M06 nags) - the engagement policy must keep a mission's distance rules.
-  - Tuning, 17 Oct 2026: 43 runs of weave / evasion / dodge / evade_scale and the throttle profile (history: AUTOPILOT_LOG.md "Tuning 17 Oct 2026")
+  - Tuning, 17 Oct 2026: 43 runs of weave / evasion / dodge / evade_scale and the throttle profile (history: the autopilot session log (private), "Tuning 17 Oct 2026")
   - **Combat study of the user's play** (playlist "Freelancer: A 2020 playthrough in 4K", downloaded video-only to
     `..\..\research\videos`; `..\..\tools\vidhud.js` bracket / hostile red / shield-hull-power bars, `vidspeed.js` speed
     readout by trained digit templates (0 wrong in 240 checked frames), `vidstudy.js` fights + throttle / aim / damage
@@ -288,7 +288,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
     to ~30 m/s to hold a firing position on big targets. After a kill the next target is locked within ~2 s.
     PvP tutorials (Discovery, Chills' "Snub PvP Basics"): engine kill + reverse for anchor turns, strafing opposite
     the turn, early turning vs jousting - PvP techniques; jousting does not apply to NPCs (user). Consumables and
-    ordnance across the playlist: `..\..\docs\kb\consumables.md`; HUD list scans: `footage_scans.md`.
+    ordnance across the playlist: `..\..\docs\kb\consumables.md`; HUD list scans: the footage scan notes (private).
   - **Predictive layer** (`ai::ReadSelf`, `Assess`): own hull / shield / power / gun range / nanobots / batteries
     from the game's objects; the threat in fighter units (class weight x attacker x hull); repairs (above);
     leaves the fight below the flee threshold or when outmatched and losing
@@ -373,7 +373,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
     the line of fire (stations too: the game's hull ray test, `space::SightBlocker`). The ship's own behaviours never
     launch consumables (personality launch fields zeroed). Events: missile-run, missile-launch, missile-round-left,
     line-of-fire. Fixture: SaveC705.
-- **Situation assessor** (30 Oct 2026, `A37_PLAN.md`; IDEAS A37 / A40 / A41): **nothing
+- **Situation assessor** (30 Oct 2026, the A37 plan, private; IDEAS A37 / A40 / A41): **nothing
   behavioural - no decision reads it yet** (the arbiter is S3-S7, behind a switch). A pure `situation::Assess(Snapshot)`
   (`..\src\impl\situation.{h,cpp}`) over one snapshot of the facts the objective mode reads (`situation_snap.cpp`, the
   only impure part: reads only - mission.cpp's goals through `mission::AdvanceGoalsPeek`, which leaves its memory of the
@@ -387,7 +387,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   constraints (leashes - armed known from the live table, S2 -, the step's nag, a job's never-kill), the script goals with their live
   trigger row and achieved, affordances, a hash. Debug `ap situation [snap|hash]` (HARNESS.md); unit tests situation /
   situation_io / objective_kinds / jobs over a synthetic snapshot and six recorded fixtures (`..\..\tests\fixtures\
-  situation\`). Cost in game: the snapshot 0.1-1 ms, the live table 0.05-2 ms (S1 results in `A37_PLAN.md`).
+  situation\`). Cost in game: the snapshot 0.1-1 ms, the live table 0.05-2 ms (S1 results in the A37 plan, private).
   **The assessor's story source (S2, 30 Oct 2026; still nothing behavioural - `ObjectiveDecide` and the autopilot's
   `mission::AdvanceGoals` / `Leashes` path unchanged, `tools\decision_baseline.txt` unchanged):** when the live trigger
   table answers with a script (`mission::LiveTriggers`, single player) the snapshot's goals are `mission::GoalsOfLive`
@@ -421,7 +421,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   every ObjectiveDecide exit is shadowed, `Decide` always proposes something. `snap v5` adds what they read (the route's
   step-1 position, lane neighbours' positions, a planet's docking ring, follow_distance, `queue ... mission_leader=
   via_next= arrive_retries= tr_pass=`); a shadowed decision reads the waypoint list as the decision began. The shadow gate
-  (every leg with the switch on) measures the differences (`A37_PLAN.md`). **The switch (S7, 30 Oct 2026; built, in-game
+  (every leg with the switch on) measures the differences (the A37 plan, private). **The switch (S7, 30 Oct 2026; built, in-game
   pending): `situation_arbiter`** (bool, **default 0 = today's decisions exactly**; experimental, not player-visible).
   With it on the objective mode's decision is the arbiter's: ObjectiveDecide's body runs in *plan mode* (it still decides
   - the oracle - and plans the trip's geometry and its memory, but starts nothing), then `Decide` over the goal queue
@@ -441,7 +441,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   step entry starts `arrived` when the ship is within its arrival reach (1 km of the target's ring / object for a step
   that does not dock, 600 m of a navmarker not on a way through). ObjectiveSupervise (its holds, the leash trip back, the
   dock waits, the formation retries) stays on the old path. `ap situation queue` prints the queue and its pause.
-- **LOOK L0 - the look-ahead, logged only (30 Oct 2026; plan and results `LOOK_PLAN.md`):** **`look_log`** (bool,
+- **LOOK L0 - the look-ahead, logged only (30 Oct 2026; plan and results: the look-ahead plan, private):** **`look_log`** (bool,
   default 0; a measurement switch like `situation_shadow`: with it off nothing runs, and with it on the decision path
   is the same code - the adapter starts nothing and writes no `g_obj` field). At each objective decision (DecideBody, after
   the `decide` event; a decision that returns before it - the leash trip, marked loot, the tractor exit - logs none) the
@@ -464,8 +464,8 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   script's Act_Invulnerable `autopilot look invincible <ship>=<id> trigger= script=<trigger>:true,<b>,<floor>
   game=<inv>,<b>,<floor>|unread|no-contact hull= gate=` - the game's own `space::Invincible` (GetInvincible) against the
   script (the M02 fact, answered 30 Oct 2026: no 0.5 floor against the player). `ap look` prints the verdict and every
-  fact. Not acting: L1, L3, L4 (`LOOK_PLAN.md` 3). L2 (`look_ships`, acting on the kill verdict) was not built
-  (`LOOK_PLAN.md` 8): no case reaches a detectable effect (M02's follow is a chase at equal cruise speed), and a
+  fact. Not acting: L1, L3, L4 (the look-ahead plan 3). L2 (`look_ships`, acting on the kill verdict) was not built
+  (the look-ahead plan 8): no case reaches a detectable effect (M02's follow is a chase at equal cruise speed), and a
   `src=chain` kill (M02.rogues' escort2) must never be acted on before its trigger is armed.
 - **ASH-START - the chase and the spawn stage (31 Oct 2026, not flown; `..\..\docs\research\runners\M02.md` "## Plan" 1):**
   two switches, both bool, default 0 until their verdict. **`chase_kill`** (Source::Hidden + Meta) acts on LOOK's kill
@@ -502,52 +502,13 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   (`mission::ArmedLeashes`); without the table, every listed leash as before. Why: M02's `need_to_dock` (3 km from King,
   m02.ini 2207-2211) is armed only by comm_1330_king at the mission's end but was kept through the Ashcroft step - as3 /
   as4's stage trips turned back at 2.4-2.5 km (06:43:38), and spawn_charge's point clamps to it ("far 2395 m").
-  **Flown 31 Oct 2026 ~15:35, probe sc1 (n=1, f12b1dca+dirty with leash_live; chase_kill + spawn_stage + spawn_charge +
-  leash_live) - run-judged BAD / FURTHER [M]:** ashcroft + pod 197.1 s (as4 177.8 / 184.0, PB 146.8, par 68). leash_live
-  PASSED (the point free: clamp=free, anchor_d 2622; as3 / as4 turned back at 2.4 km). The decisive cause: not in cruise
-  at his spawn - the stage trip switched to hold with 1305 m to go (15:45:33), the keep crawled at 24-33 m/s 24 s and
-  never got within 400 m of P, the last escort (530-780 m off) died only 35 s after the third; cruise pressed +1.5 s
-  from 26 m/s at 493 m (expect_lock 290 - outside the coast window); no coast; the gap then froze at equal 300 m/s
-  until his run point (~t+91). Extra: a self-made "no enemies left" stop at 2,012 m (target-given-up), four 300 -> 97
-  m/s drops with shield hits and no attackers (wing 80-83 nearby, unconfirmed), and two logging faults - the `bump`
-  lines there were our own cruise-charge slowdowns, turn-evades with attackers=0. Fixed after sc1 (built, not flown): a
-  charge stage's trip ends 150 m from P (`kChargeArrive`; spawn_stage's 1500 made the "arrival" 1305 m short), and the
-  keep flies to its station at full throttle / burner beyond 300 m (`kChargeKeepFly`) instead of the crawl. Open: the
-  target-given-up at 2 km in a chase (fixed 090bb269), the impacts' source. **Probe sc3 (2 runs, 8ed2e45c clean)
-  run-judged BAD for the kill [M]:** 785.0 (= PB 784.4; ashcroft + pod 161.2 - CLOSER than sc1 197.1 / as4 177.8, PB
-  146.8) and 817.6 (189.2). The stage ended 116 / 134 m from P, no give-up; i2 = the first coast ever: 111 m at 270 m/s
-  vs his 268, he reached 300 and opened 34-48 m/s, the coast ended at 540 m after 10.2 s - his shield down at 9.4 s (~87
-  HP/s; a kill needs ~4,421 HP: guns alone ~50 s), no Javelin (the missile run abandoned at 354 m); i1: the press 1.16 s
-  late while fighting the escort at P, gap 265 at our 259 m/s - no coast. Kill still at his run point in both. Changed
-  5e4e5078: the fleeing coast starts at 295 m/s (`kChargeCoastSpeed`, was 270). Open: missiles inside the coast (the
-  1.5 s flight gate vs a target at 300 m/s), the escort left at full hull (the runners leave it at ~0.09 for the NPCs),
-  "no way" for a 250 m point (i1), an unlogged cruise cut. **Probe sc4 (3 runs, c0f77a43: the coast at 295) run-judged
-  BAD [M]:** no coast in any run, the kill at his run point in all 3 (+94..124 s after his spawn; runners 18-21 s). i3's
-  771.7 is a new M02 leg PB (was 784.4) from the rogues (-25.4) and pod segments - spawn_charge contributed nothing (at
-  his spawn 2.9 km off at rest). At his spawn: i1 1935 m at 96 m/s (the stage timed out, the last escort dragged us
-  1.4 km + 1.1 km up), i2 255 m at 14 m/s (a head-on delayed the press to +1.75 s; at 295 m/s the gap was 464 > the
-  window's 250), i3 2858 m at rest. **The one cause across sc1 / sc3 / sc4 (6 runs, 0 chase kills): we are never at
-  cruise speed when he spawns** - the runners leave the last escort at ~0.09 hull to the NPCs and are already cruising
-  near his spawn; 295 only made the coast start later. **spawn_charge PARKED (default 0)**; escalation step 2 (a data
-  pass on the recordings: `..\..\docs\research\runners\M02_ashcroft_datapass.md`); the judge's next idea: the cruise
-  charge on the "1/4 alive" verdict and the last escort left to the NPCs below ~0.1 hull.
-  **Probe ar1 (ash_ride's first flight, 2 runs, 06f9f68a; driver read, not yet run-judged) [M]:** 763.5 (NEW M02 PB,
-  was 771.7) and 783 s. ar1-i1: the escort left at shield 0 / hull 0.58, the NPCs killed it 9 s later; at Ashcroft's
-  spawn we were IN CRUISE at 300 m/s 1.86 km off (the first time in any probe - the runners' state); the intercept
-  closed to 189 m by +6 s (go / overrun "beside" while he was at 77-112 m/s), overran him, and the gap then held at
-  702 m at equal 300 m/s for 80 s - outside the coast window (90-220), no coast, the kill at his run point. Next: once
-  he is at cruise behind him at equal speed no gap closes - the station must be taken while he still ramps (arrive
-  behind, not beside), or the overrun's turn must end inside the window. **Run-judged BAD [M]** (no coast in either run,
-  both kills after his run point): i1 - the "overrun (beside)" fired at +1.2 s with lat 1468 m and path 1809 < need 2483
-  (674 m early), we flew at him and crossed his course at 112-137 deg while he was at ~112 m/s (gap 1454 -> 141 m), an S
-  cruise turn ended 703 m behind him at equal 300; i2 - the loop worked (463 m from its centre at 300 m/s), but the
-  escort died 1.77 s before his spawn and the restart into Hold dropped cruise (me=0 at his spawn), gap 569 m held 80 s.
-  i1's PB 763.5 is not from ash_ride (scan / cosmodone / marked faster; Ashcroft +17.4). Runners: R1 the same head-on
-  start but its U-turn ended behind him while he still ramped (284 -> 213 m), R2 from behind. Next (the judge): gate
-  overrun / beside on his line (lat < ~200-300 m) and wait / loop while path < need - 150; the Hold restart on the last
-  escort's death must keep cruise. Proof: 2-3 runs, pass = a coast line + a kill < 30 s after the Follow banner.
+  The probes of 31 Oct 2026 (sc1, sc3, sc4: run-judged BAD, 6 runs, 0 chase kills; ar1, ash_ride's first flight) and
+  what they changed (a charge stage's trip ends 150 m from P, `kChargeArrive`; the keep flies to its station at full
+  throttle / burner beyond 300 m, `kChargeKeepFly`; the fleeing coast starts at 295 m/s, `kChargeCoastSpeed`, was 270;
+  **spawn_charge PARKED (default 0)**; leash_live passed in sc1): (history: `AUTOPILOT_LOG.md` "ASH-START probes sc1,
+  sc3, sc4 and ar1, 31 Oct 2026")
   **`spawn_charge`** (built 31 Oct 2026, **not flown** before sc1; bool, default 0; Source::Hidden; acts only with `chase_kill` 1 and
-  `spawn_stage` 1; the design: `..\..\docs\research\runners\M02_ashcroft_consensus.md` "The ONE design") changes the
+  `spawn_stage` 1; the design: the M02 Ashcroft escalation notes' consensus, private, "The ONE design") changes the
   stage three ways. (1) The point (`lookahead.h` StagePoint over a leash list): 250 m behind the spawn on his line and
   70 m aside, on the side that needs the least pull, inside 0.8 x every leaving nag this kill switches off and 0.75 x
   every armed ship leash - the supervisor's own (`g_obj.leashShip`, the 3 km one that turned the as3 / as4 trips back)
@@ -567,7 +528,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   spawn d= his= me= engine= from_spawn= bearing= expect_lock= min= target=`. The predictor (`ChargeGap`, the note's
   profiles) puts the lock at ~58 m for a press with his from 260 m, +150 m per 0.5 s of lag (tests\spawn_charge_test.cpp).
   **`ash_ride`** (built 31 Oct 2026; flown once, probe ar1, run-judged BAD: no coast - above; bool, default 0; Source::Hidden; acts only with `spawn_charge`,
-  `spawn_stage` and `chase_kill` 1; the data pass's proposal `..\..\docs\research\runners\M02_ashcroft_datapass.md` adapted
+  `spawn_stage` and `chase_kill` 1; the data pass's proposal (the M02 Ashcroft escalation notes, private) adapted
   to its P0 (HDE: engine back on after an engine kill at cruise -> ~90 m/s, a new 8.5 s charge) and the owner's correction
   of 31 Oct 2026 (an engine kill out of cruise coasts straight on the velocity, cruise lost: no taps, a coast is a straight
   line, every turn under the cruise engine); pure half `..\..\modules\autopilot\src\ash_ride.h`, adapter `autopilot_ashride.cpp`,
@@ -709,7 +670,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   (+ `bs_approach_gap` 100 m; 4c, the owner's battleship approach) - the run to a blind spot at afterburner speed down to
   the braking distance (the rush, launches kept - the set runs `launch_site_check 1`, margin 55: our torpedo cost us its
   2,424 bursting 80-95 m away), and BlindSpot's 8 best spots pay 6 a metre their line to the target's centre falls short of
-  the gap (a round holds the whole target and bursts at the first hull it meets). (history: AUTOPILOT_LOG.md "Sets ab1-ab4")
+  the gap (a round holds the whole target and bursts at the first hull it meets). (history: the autopilot session log (private), "Sets ab1-ab4")
   **62c0730** - past the share a failing shield gets 3 units (back online, not a full bar); **f85b9d8** - the big fight in
   window A counts only within 2 km of our target (run-judge on ab2: 29 spent on interceptors 2-5 km out);
   **`big_cruise_in`** (f85b9d8, default 0) - the cruise in to a huge static (radius >= 500 m) goes on under fire (ab4-b_i1
@@ -717,12 +678,12 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   s after the banner, yet the kill at +43.7 - the hold's launch gating sets the kill (11 torpedoes / 13 missile taps in
   44 s vs a refire ceiling of 22 / 22; ceiling ~4.5k hp/s, measured ~3.2k); **`bay_request_lined`** (8d07573, default 0) -
   a bay's request only within 40 m of its axis (mm9-b_i2 requested 300 m off it at the Osiris, the game's dock flew the
-  rest in 10 s; ab4-b_i3 sat 3 s at rest 460 m from p2 side-on, orillion 50.3). (history: AUTOPILOT_LOG.md "Sets ab4-ab8") **32410f6** - off the axis the brake keys on the way to p2. (history: AUTOPILOT_LOG.md "Sets ab4-ab8") **`blind_site_check`** (0982383,
+  rest in 10 s; ab4-b_i3 sat 3 s at rest 460 m from p2 side-on, orillion 50.3). (history: the autopilot session log (private), "Sets ab4-ab8") **32410f6** - off the axis the brake keys on the way to p2. (history: the autopilot session log (private), "Sets ab4-ab8") **`blind_site_check`** (0982383,
   default 0): its probe bsc0 died at +38 s - a torpedo that passed the simulated check (need 57 m) burst 94 m from us, inside
   our measured 80-95 m reach; 4ab7c12 keeps only the torpedo hull-beside hold (unverified). The next package's first test
   (the judge): ~8 runs S415 -> M13.bsdown with no torpedo whose burst can come within ~100 m of us, vs mm9.
   **Package AFK2 (02:30-):** **`torp_reach`** (d91c2cb, default 0; m) - no torpedo at a big or static target unless the hull
-  along the line and the nose is at least this far. (history: AUTOPILOT_LOG.md "Sets ab9-ab11")
+  along the line and the nose is at least this far. (history: the autopilot session log (private), "Sets ab9-ab11")
   **`missile_reach`** (default 0; m) - the same for missiles; both now log `launch-held target=<id>: torpedo|missile reach
   <m> m, hull gap <g> / nose <n>` when a refired round is held. From the driver's M13 log analysis (ab3-ab8, 31 Oct;
   ..\..\..\AUDIT_2026-10-31.md "M13 analysis"; all default 0): **`self_burst_near`** - self_burst learns only from rounds
@@ -732,8 +693,8 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   torpedoes with a hull 31 / 51 m off). Checked and not built: `kill_ahead_stage` (the wait branch already travels to 600
   m short of generator 1; it arms 30 s in with 7.7 km to go), `dock_alt_bay` (whether a re-request near Toledo's other dock
   point gets it is unverified: probe first), the airlock kill order (the analysis: no effect; two slow runs bumped one solid).
-  (history: AUTOPILOT_LOG.md "Sets ab9-ab11") So **battery_budget's rhythm now holds at every big fight** (no top-ups above the offline threshold, bursts on failure),
-  not only while fights lie ahead - the runners' 9 / 10 / 8 at the hull. (history: AUTOPILOT_LOG.md "Sets ab9-ab11")
+  (history: the autopilot session log (private), "Sets ab9-ab11") So **battery_budget's rhythm now holds at every big fight** (no top-ups above the offline threshold, bursts on failure),
+  not only while fights lie ahead - the runners' 9 / 10 / 8 at the hull. (history: the autopilot session log (private), "Sets ab9-ab11")
   **`city_hold_side`** (31 Oct 2026, default 0, **probed ch1, set pending**; pure half `..\..\modules\autopilot\src\city_hold.h`, test
   `..\..\tests\city_hold_test.cpp`) - why: ab11's deaths above (31-67 m off the outward face, 100-163 deg from the city
   centre, in front of the platforms; the runners stay inside the model or ~200 m out). What: at a static hold the guards
@@ -750,7 +711,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   band-cover= deep= dy= deep-cover=a/b`, `city-hold off target= platforms=0`, `city-hold re-anchor refused ...`,
   `city-hold launch-held target= kind=torpedo|missile|mine impact= hull= need=100`. [I] the cover score's real reach
   (CanPointAt ignores the turrets' current aim; SightBlocker sees real hulls only) is unmeasured at the city.
-  (history: AUTOPILOT_LOG.md "Probe ch1 and set ab12") So **the
+  (history: the autopilot session log (private), "Probe ch1 and set ab12") So **the
   transit** (31 Oct 2026, under the same switch): near the target (centre distance < the point's + 400 m) and off its
   point, the station keeping carries the ship to the point with the nose on the target - straight when the line is
   clear, else round the centre in 35 deg steps at the point's distance (`cityhold::TransitStep`, unit-tested on this
@@ -770,7 +731,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   look-ahead (`mission::FightsAhead`, the kills of the big fights still ahead incl. the current one, published 1 Hz as
   `g.combat.fightsAheadW`) holds any, a small ship gets no free-use missile - only the need path (the odds) fires at it;
   big ships and static targets keep free use. Event `missile-keep target= w= stock=` (5 s).
-  (history: AUTOPILOT_LOG.md "Probe ch1 and set ab12") **Probe kb1** (8 runs from S415, standoff_hold at
+  (history: the autopilot session log (private), "Probe ch1 and set ab12") **Probe kb1** (8 runs from S415, standoff_hold at
   120, arms still / sliding) BAD [M]: kills +47..+96 (goal +32), the site never held - every run picked local 0,0,233,
   "gap 214", a point inside the battleship's envelope that the centre ray read as clear; the ship stalled 7-50 m off the
   hull. Fixed (31 Oct 2026): a fire site needs a ray from well outside to reach it and its six stand-off rays clear (event
@@ -781,7 +742,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   The gate battleship's 20-23 batteries (ab11) are not waste [M]: each 3-press revived the failed shield (0.08 -> 0.39
   at hull 1.00; Common.dll CEShield::ShieldBatteryBoost clears the offline timer, disasm) - the lever there is the
   exposure, not the battery rule.
-  **`strafe_pass`** (31 Oct 2026, built, NOT flown yet; escalation step 2, `..\..\docs\research\runners\M13_bsdown_datapass.md`
+  **`strafe_pass`** (31 Oct 2026, built, NOT flown yet; escalation step 2, the M13 battleship-down escalation notes' data pass, private
   "Proposal"; Source Hidden + Meta; pure half `..\..\modules\autopilot\src\strafe.h` + `tests\strafe_test.cpp`, adapter `StrafeFly` in
   `autopilot_combat.cpp`) - at a big armed hull (4+ guns by `space::GunsCovering`, not dockable, still, and by the game's
   ray test >= 600 m along its longest local axis and >= 1.8 x its width; the M13 battleship is a solar, so "ship" means
@@ -1222,12 +1183,12 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
       136-146 m/s, then a crawl; mpb22b failed the 58 s checkpoint) - lined up on a bay the arrival is braked to 2 s of
       the hull ahead of p2 along its axis (ray test, 1 km), at least 1.25 x the engine's top speed (event
       `fast-dock bay-arrive cap=`). Verified mpb22c: Benford landing 11.1 s (gold; par 12.5, the last runs 23-58 s), arrival 130 m/s.
-    - Gate mpb24's M13 death, the M13 burst probe, the runners' approach and the `blind_rush` test, 29 Oct 2026 (history: AUTOPILOT_LOG.md "29 Oct 2026: M13 burst probe and blind_rush")
+    - Gate mpb24's M13 death, the M13 burst probe, the runners' approach and the `blind_rush` test, 29 Oct 2026 (history: the autopilot session log (private), "29 Oct 2026: M13 burst probe and blind_rush")
     - **The shape switches, as registered** (eb30dcb; `autopilot_settings.cpp`; all OFF until gated): `rush_hold_fire`
       (no missile or torpedo launch while `blind_rush` closes on the spot), `self_burst_damage` (`self_burst` learns
       only from a round end that cost us >= 70 % of its damage), `blind_contact` (blind spots at hull contact too, 0 m;
       a held spot kept unless it costs 5 % a second), `blind_contact_gap` (55 m since d7807f1), `battery_reserve`.
-    - The shape switches: an interrupted batch, and the runs after "their times are the minimum goal", 29 Oct 2026 (history: AUTOPILOT_LOG.md "29 Oct 2026: the shape switches and the owner's decision lead-up")
+    - The shape switches: an interrupted batch, and the runs after "their times are the minimum goal", 29 Oct 2026 (history: the autopilot session log (private), "29 Oct 2026: the shape switches and the owner's decision lead-up")
       - **DECISION (the owner, 29 Oct 2026 ~21:45): combine A and B - "You must achieve full DPS, and if that means that
         when splash damage radius is a problem - avoid that radius. You MUST maintain full DPS while surviving as
         efficiently as possible."** The design rule this sets, for every big target (not only M13's battleship):
@@ -1269,8 +1230,8 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
         round the round; it does not explain the 55 m hold's muzzle bursts - the launch-site log's `cause` and `det`
         and big-hit's `own-end` are the probes. To arm all six: `ap set launch_site_check 1`, `ap set ordnance_keepout 1`,
         `ap set ordnance_site 1`, `ap set blind_no_pass 1` (margin 20 / standoff 150 are the defaults).
-        (history: AUTOPILOT_LOG.md "Q4 slice 1 and 2, judged 30 Oct 2026")
-      - **Q4 slice 2, built 30 Oct 2026 (`static_volley` (deleted 31 Oct 2026, AUD-A1-5), off until an sprt KEEP):** (history: AUTOPILOT_LOG.md "Q4 slice 1 and 2, judged 30 Oct 2026")
+        (history: the autopilot session log (private), "Q4 slice 1 and 2, judged 30 Oct 2026")
+      - **Q4 slice 2, built 30 Oct 2026 (`static_volley` (deleted 31 Oct 2026, AUD-A1-5), off until an sprt KEEP):** (history: the autopilot session log (private), "Q4 slice 1 and 2, judged 30 Oct 2026")
     - *Open (the owner, 29 Oct 2026)*: M04's opening does not need the fight at Manhattan - the script waits for
       Walker's wing to kill the Unity (`Cnd_Destroyed battleship_unity`) and its comms (M04.unity at par, 56.7 vs 56.6),
       so the escort's fight there only risks hull; M04.lane3 is +25 s over par from lane-ring entries bumping Juni
@@ -1384,7 +1345,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   Oct) and the rush cost +91 s over its own ETA on gate s7arb3 (17 rushes, 13 at holes; `..\..\docs\research\
   gap_decomposition.md` 4) - A/B pending, the default unchanged until it is judged.
   `skip_dock_scene`: the autopilot's own docks skip their docking / landing cutscene (0.4 s): rings and stations, which
-  reach the docking camera differently (`..\..\..\docs\kb\navigation-and-hazards.md`); never in multiplayer. Lane
+  reach the docking camera differently (`..\..\..\docs\kb\navigation-and-hazards.md`); never in multiplayer; its owed game test `..\..\..\tests\dock_skip_game.md`. Lane
   speed learned per lane; `eta`, `worth`.
 - **Settings** `[Autopilot]` in FLController.ini (`ap set <name> <v>` live; `config save`): pilot, engage, auto_fire,
   missiles, countermeasures, evade, fire_cone, follow_distance, follow_offset, escort_radius, hold_radius (hold mode:
@@ -1418,7 +1379,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   frame dt, advanced in `OnFrame`; still while paused, 1/fps per frame under the test-only `fixeddt`), and so do the
   rate estimates (missile closing speed, the player's velocity, the rounds' hit times in `space_rounds.cpp`); UI / HUD
   animation, profiling, `fpscap`, the logs' stamps and the host's stamps (comm heard, player hit) stay on wall time.
-- Verified 17-19 Oct 2026 (combat, dock, escort, formation, the predictive layer, background starts) and the sweep state of 21 Oct 2026 (the current per-leg state is `docs\SPLITS.md`) (history: AUTOPILOT_LOG.md "Verified 17 Oct and sweep state 21 Oct 2026")
+- Verified 17-19 Oct 2026 (combat, dock, escort, formation, the predictive layer, background starts) and the sweep state of 21 Oct 2026 (the current per-leg state is `docs\SPLITS.md`) (history: the autopilot session log (private), "Verified 17 Oct and sweep state 21 Oct 2026")
 - Direction (user, details in `AUTOPILOT_UX.md`): success is contextual -
   mission kill objectives = targets destroyed with least damage taken; vs overwhelming forces still win, scaling
   defense with the odds (threat vs strength); an ambush during another goal may be evaded or ignored (engagement
@@ -1434,7 +1395,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   game-data replacement).
 
 ## HUD cues (19 Oct 2026; design + status `HUD_CUES.md`)
-- `..\..\modules\hud\src\shieldcue.cpp`: screen-edge sprites from the fitted shield's own hit effect (`..\..\core\game\hitlook`: shield /
+- `..\..\modules\hud\src\extras\shieldcue.cpp`: screen-edge sprites from the fitted shield's own hit effect (`..\..\core\game\hitlook`: shield /
   munition hit looks from the game data, C++ .ale reader), tinted by the attacker's weapon impact, strength by the damage
   burst, a flash when the shield fails; the edge glow is brighter toward the hit (direction from the point the game
   feeds its own HUD damage indicator: host API v12 PlayerHit); hull hits in the ship's own hull hit look and, below the
@@ -1442,7 +1403,7 @@ User goal: full harness abilities + the player ship with full NPC-AI abilities, 
   hull damage carries its own pattern (bold hexagons by default / plates) and reddens with the hull lost, breathing below the game's
   hull-critical point; options `shield_cue`, `shield_cue_intensity`, `hull_cue`, `hull_cue_pattern`; debug `cue` (`cue dir <deg>|off` pins the direction, `cue
   hullpts <hp>|off` fakes the hull for the damage edge), `hitlook` (`hull`, `stages`).
-- `..\..\modules\hud\src\reticlecue.cpp`: ring pulses at the crosshair (autopilot engage / hand-back, nanobots / batteries used); option
+- `..\..\modules\hud\src\extras\reticlecue.cpp`: ring pulses at the crosshair (autopilot engage / hand-back, nanobots / batteries used); option
   `reticle_cue`; debug `cue ring 0..3`. The shield cue draws in `OnRenderUnderHud` (under the HUD, user's choice; the
   overlay as fallback), the rings in `OnRenderOverlay` (over the HUD), both through `..\..\core\game\render`
   (`Sprite`, `BeginPlain`).

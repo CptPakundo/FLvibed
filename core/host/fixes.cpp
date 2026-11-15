@@ -1,4 +1,4 @@
-// FLvibed - the game fixes that belong to no feature (docs\MODULES_PLAN.md: core): the LAN list and the message pump.
+// FLvibed - the game fixes that belong to no feature (the module split plan: core): the LAN list and the message pump.
 #include "all.h"
 
 #include "fixes.h"

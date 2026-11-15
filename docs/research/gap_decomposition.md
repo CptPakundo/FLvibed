@@ -291,7 +291,7 @@ first trace row in gun range in a fight mode; M13 the first missile); M13 has 3 
   later step names as the destroy target; fight on the way to the next destination) - ~155-220 s over M02 / M04, more
   than any kill-speed rule; companion tethers are the known blocker (dossier M04). Runner-up: reach firing distance at
   cruise and brake there (M13.bsdown / .sphere, M09.tekagi: 24-39 s to the first shot).
-  *[Contradicted in part 30 Oct 2026, 5d21d21 / 1e71507 (LOOK L2 closed unbuilt, `modules\autopilot\docs\LOOK_PLAN.md` 8): for
+  *[Contradicted in part 30 Oct 2026, 5d21d21 / 1e71507 (LOOK L2 closed unbuilt, the look-ahead plan 8, private): for
   M02 the follow is a tail chase at equal cruise speed from 4.6-6.2 km behind, so attacking Ashcroft during "Follow
   Ashcroft" wins ~0-3 s; M02.pod's ~90 s is the start geometry (the runners are cruising near his spawn when the 4th
   escort dies) - re-targeted as ASH-START (IDEAS A22). The M04 half not tried.]*

@@ -449,7 +449,7 @@ static void StepRoom(int dir)
 static std::vector<void*> HostChars()
 {
     std::vector<void*> out;
-    if (!HostAtLeast(5) || !g_host->GetRoomCharacters)
+    if (!g_host || !g_host->GetRoomCharacters)
         return out;
     void* objs[128];
     const int n = g_host->GetRoomCharacters(objs, 128);
@@ -665,6 +665,40 @@ static bool PanelFocus(const char* focusName)
            (Starts(focusName, "BuySell") || Starts(focusName, "QuantitySlider"));
 }
 
+// ---------------------------------------------------------------- the hand-off to a HUD 2 page
+// While HUD 2 draws a page over the window (modules\hud\src\nnpage.*, basepage.*: LOG, INVENTORY, STATUS, INFO, the dealers,
+// the ship dealer, the job board, the news), the presses, the prompts and the stick are the page's (views::HudPagePad,
+// HudPagePrompts); the pad keeps only what the page leaves it, PageBinds below: the stick's walk through the game's text bar
+// under the page, the triggers on a dealer's quantity, and B on the window's close when the page did not take it (UpdatePage).
+// What each window's page leaves is one table, by the pad's own screen, not asked of the page: the page knows its stand every
+// frame, the pad its screen at 10 Hz, and as one window gives way to the next the two disagree for a few frames (audit 97_,
+// F5). When the pages move onto the page runtime (audit 70b F3, F4), they declare these in their descriptions and the
+// table goes.
+
+// A page stands this frame (the one place the pad asks HUD 2).
+static bool PageOn() { return views::HudPageOn(); }
+// ... and the pad gives it the frame: not while the jettison panel stands over INVENTORY (the pad works the panel: UpdateWindow).
+static bool PageStands() { return PageOn() && !(g_screen == Screen::NnInventory && JettisonOpen()); }
+
+// What the standing page leaves the pad, by the window under it (today's values).
+struct PageBinds
+{
+    bool stickScrolls;    // the right stick scrolls the game's text bar under the page (not the job board's or the news' page: it
+                          // steps its list or scrolls its text by the stick itself, by side: issue 45)
+    const char* triggers; // the slider the triggers set (a dealer's quantity), null none
+};
+static PageBinds PageBindsNow()
+{
+    PageBinds b = {};
+    b.stickScrolls = g_screen != Screen::Jobs && g_screen != Screen::News;
+    b.triggers = g_screen == Screen::Commodity || g_screen == Screen::Equipment ? "QuantitySlider" : nullptr;
+    return b;
+}
+// The D-pad's walk through the game's text bar under a page: a step a press, and on while held, 0.3 s, then a step each
+// 0.07 s (about 14 a second; modules\hud\src\pages\pageinput.h kTextBarRepeat holds the same numbers for the pages); a
+// step is 0.11 of the screen's height.
+constexpr float kTextBarDelay = 0.3f, kTextBarStep = 0.07f, kTextBarScroll = 0.11f;
+
 static void Prompts(const Gamepad& pad)
 {
     using promptbar::Prompt;
@@ -677,16 +711,15 @@ static void Prompts(const Gamepad& pad)
     };
     bool decision = false;
     const float aProgress = dealerrules::Progress(g_aHeld, g_aFired);
-    if (views::HudPageOn() && !(g_screen == Screen::NnInventory && JettisonOpen())) // (the page says what a press does now)
+    if (PageStands()) // (the page says what a press does now)
     {
         views::PagePrompt page[8];
-        const int m = views::HudPagePrompts(page, 7);
+        const int m = views::HudPagePrompts(page, 7); // (7: B CLOSE keeps the eighth place when the page has none)
         bool back = false;
         for (int i = 0; i < m; ++i)
-        {
-            add(static_cast<Id>(page[i].id), page[i].word, page[i].hold, page[i].id2 < 0 ? Id::COUNT : static_cast<Id>(page[i].id2), page[i].progress);
             back |= page[i].id == Id::B;
-        }
+        for (int i = 0; i < m; ++i)
+            add(static_cast<Id>(page[i].id), page[i].word, page[i].hold, page[i].id2 < 0 ? Id::COUNT : static_cast<Id>(page[i].id2), page[i].progress);
         if (!back)
             add(Id::B, L"CLOSE");
         promptbar::Set(ScreenName(g_screen), p, n, false);
@@ -875,7 +908,7 @@ static const char* CloseName()
     case Screen::News: return "NewsCloseButton";
     case Screen::Commodity:
     case Screen::Equipment:
-        if (ShipFinal() && Vis("BackToShipDealer") && views::HudPageOn()) // (the page's B steps back to the offers; a second B there closes)
+        if (ShipFinal() && Vis("BackToShipDealer") && PageOn()) // (the page's B steps back to the offers; a second B there closes)
             return "BackToShipDealer";
         return "Inventory_Close";
     case Screen::NnInventory: return "Inventory_Close";
@@ -990,7 +1023,14 @@ static void SwitchSide(int dir)
         events::Push("pad dealer: side -> %s", from == Stop::Dealers ? "dealer" : "yours");
         return;
     }
-    events::Push("pad dealer: no rows on the %s side", from == Stop::Dealers ? "your" : "dealer");
+    // what stopped the move, as it was (was "no rows on the your side": it named a side that was never looked at - a key toward no
+    // list, the sides not wrapping, read as an empty list, 13 Nov 2026)
+    auto name = [](Stop s) { return s == Stop::BuyShip ? "buy ship" : s == Stop::Dealers ? "dealer" : "yours"; };
+    if (to != from)
+        events::Push("pad dealer: side key %s from %s: the %s stop did not take the focus", dir < 0 ? "left" : "right", name(from), name(to));
+    else
+        events::Push("pad dealer: side key %s from %s: no stop that way (rows: yours %d, dealer %d)", dir < 0 ? "left" : "right", name(from),
+                     yours != 0 ? 1 : 0, dealers != 0 ? 1 : 0);
 }
 
 // Where the focus opens at the final stage: on BUY SHIP, whose hold needs a fresh press; while the player cannot pay on the rows that can pay for it.
@@ -1016,6 +1056,11 @@ bool EntryFocus() { return g_enterSnap > 0 || g_entryHold > 0; }
 
 bool SkipsFocus(const char* name)
 {
+    // HUD 2's click boxes (FLvibedHud2Hot*: the room strip's words, the pages' chips) are the mouse's: while a window or a page owns the pad the D-pad walk
+    // stays out of them. Under the skin over the game's windows (base_pages 0) Up from the ship dealer's final stage went to the strip's TRADER, with no focus
+    // mark and A there leaving the room, and BackToShipDealer beside the X could not be reached (audit 109_ 2f).
+    if (Starts(name, "FLvibedHud2Hot") && g_screen != Screen::None && g_screen != Screen::Room && g_screen != Screen::NavMap)
+        return true;
     if (g_screen != Screen::Equipment && g_screen != Screen::Commodity)
         return false;
     if (Starts(name, "ButtonControl") || Starts(name, "RoomControl") || (Starts(name, "NN") && strstr(name, "Button")))
@@ -1381,11 +1426,11 @@ static void StickScroll(const PadState& s)
     }
 }
 
-// A NeuroNet page HUD 2 draws (modules\hud\src\nnpage.*, docs\NEURONET_PLAN.md): the presses are the page's, the stick and the D-pad scroll the game's text in it, B closes what the page left open.
-static bool PageStands() { return views::HudPageOn() && !(g_screen == Screen::NnInventory && JettisonOpen()); }
+// A page HUD 2 draws (the hand-off above; docs\NEURONET_PLAN.md): the presses are the page's, the stick and the D-pad scroll the game's text in it, B closes what the page left open.
 static void UpdatePage(const Gamepad& pad)
 {
-    if (g_screen != Screen::Jobs && g_screen != Screen::News) // (the board's page steps its list or scrolls its text by the stick itself, by side: issue 45)
+    const PageBinds binds = PageBindsNow();
+    if (binds.stickScrolls)
         StickScroll(pad.Cur());
     u32 pressed = 0, held = 0;
     for (const u32 b : {XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y, XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT})
@@ -1405,14 +1450,14 @@ static void UpdatePage(const Gamepad& pad)
         held |= views::kPagePadRsUp;
     else if (pad.Cur().ry < -0.3f)
         held |= views::kPagePadRsDown;
-    if (g_screen == Screen::Commodity || g_screen == Screen::Equipment)
-        TriggerQuantity(pad, "QuantitySlider");
+    if (binds.triggers)
+        TriggerQuantity(pad, binds.triggers);
     const u32 took = views::HudPagePad(pressed, held, g_dt);
     // the stick is the page's (its card, the game's bars above): the wheel it would also send reached the ship dealer's 3D view, which zoomed as the
     // description scrolled (Shockwave, issue 41); the page turns and zooms it itself (basepage ShipTurn / ShipZoom). (A flag of its own: the page's stick bits are PAD_LT / PAD_RT's)
     g_pageStick = true;
     g_owned |= took | XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
-    // the digital way through a text: a few lines a press, and on while held - 0.35 s, then ten steps a second (a held D-pad gave one step: LOG and INFO sluggish, issue 68)
+    // the digital way through a text: a few lines a press, and on while held (kTextBarDelay / kTextBarStep: a held D-pad gave one step, LOG and INFO sluggish, issue 68)
     {
         static float textHeld = 0;
         const u32 walk = XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_DOWN;
@@ -1420,14 +1465,14 @@ static void UpdatePage(const Gamepad& pad)
         if ((held & walk) && !(took & XINPUT_GAMEPAD_DPAD_UP))
         {
             textHeld += g_dt;
-            if (textHeld > 0.3f) // (0.3 s, then 14 steps a second)
-                step |= held & walk, textHeld -= 0.07f;
+            if (textHeld > kTextBarDelay)
+                step |= held & walk, textHeld -= kTextBarStep;
         }
         else
             textHeld = 0;
         if (!(took & XINPUT_GAMEPAD_DPAD_UP) && step)
             if (const u32 bar = StickBar())
-                uiclick::Scroll(bar, static_cast<float>(fl::ScreenHeight()) * ((step & XINPUT_GAMEPAD_DPAD_UP) ? -0.11f : 0.11f), false, nullptr, nullptr);
+                uiclick::Scroll(bar, static_cast<float>(fl::ScreenHeight()) * ((step & XINPUT_GAMEPAD_DPAD_UP) ? -kTextBarScroll : kTextBarScroll), false, nullptr, nullptr);
     }
     if (took & XINPUT_GAMEPAD_B)
         return;
@@ -1744,7 +1789,7 @@ static bool StepTabs(const Gamepad& pad)
 // is what acts on the page itself before its window is up: the bumpers (StepTabs), B and View close the NeuroNet. The window that will stand, by its command.
 static const char* PageGapScreen()
 {
-    if (!views::HudNNStrip() || views::HudPageOn())
+    if (!views::HudNNStrip() || PageOn())
         return nullptr;
     switch (nnwin::OpenCommand())
     {
@@ -1933,6 +1978,13 @@ void DockedView()
         events::Push("pad view: close the NeuroNet %s", nnwin::Close() ? "ok" : "refused");
         break;
     default: // the room, a dealer, a board: the map, the NeuroNet's first window (the box's button, as a click on MAP)
+        // while the map slides open the screen still reads the room, and the game drops a second MAP press then: the close is held to the slide's
+        // end instead (by the map's own command only: a dealer reports the inventory's)
+        if (nnwin::OpenCommand() == nntabs::kCmdMap)
+        {
+            events::Push("pad view: close the NeuroNet map %s", nnwin::Close() ? "ok" : "refused");
+            break;
+        }
         nnwin::Press(nntabs::kCmdMap);
         events::Push("pad view: the NeuroNet's map");
         break;
@@ -2108,11 +2160,13 @@ static void DrawOfferLabel(void* device, int sw, int sh)
     const float k = std::min(1.3f, std::max(0.8f, uiopt::Get().textSize / 100.0f));
     const float size = H * 0.020f * k, padX = H * 0.008f, h = H * 0.030f * k;
     const float starW = story ? h * 0.8f : 0;
-    const float tw = word ? hud2kit::TextWidth(word, size, 0.08f) : 0;
-    const float w = padX * 2 + starW + (word && story ? padX * 0.6f : 0) + tw;
     const float x0 = std::max(H * 0.01f, cx), y1 = cy - H * 0.004f, y0 = y1 - h;
     if (y0 < 0 || !hud2kit::Begin(device, sw, sh, std::max(8, static_cast<int>(size + 0.5f))))
         return;
+    // measured inside its own pass: TextWidth uses the kit's current font set, which only Begin selects (before it, the
+    // last pass's - HUD 2's, the options page's - or none at all on the first frame)
+    const float tw = word ? hud2kit::TextWidth(word, size, 0.08f) : 0;
+    const float w = padX * 2 + starW + (word && story ? padX * 0.6f : 0) + tw;
     hud2kit::SetAlpha(1), hud2kit::SetOffset(0, 0);
     hud2kit::Plate(x0, y0, x0 + w, y1, H * 0.006f, hud2kit::kTL | hud2kit::kBR, 0.85f);
     float x = x0 + padX;

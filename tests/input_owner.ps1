@@ -1,4 +1,4 @@
-# Who owns the input in flight (docs\MODULES_PLAN.md P7's table): one background game walks the table's rows and prints each answer as a
+# Who owns the input in flight (the module split plan's P7 table, private; its rules: core\game\input_rules.h): one background game walks the table's rows and prints each answer as a
 # line with no time in it, so two builds are compared with a plain diff. Rows: the pad's holds while the autopilot flies, the hand-back by
 # a stick, a keyboard start handed back by the pad, the options page's gate and the `enabled` gate.
 # Usage (PowerShell tool): tests\input_owner.ps1 -Label <name> [-Instance 1] [-Against <name>]   build\release; lines in runs\input_owner\<name>.txt

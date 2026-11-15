@@ -1,4 +1,4 @@
-# [Modules] `safe = 1` and both switches at 0 install nothing (docs\MODULES_PLAN.md P2). A game started that way has no focus
+# [Modules] `safe = 1` and both switches at 0 install nothing (the module split plan's P2, private). A game started that way has no focus
 # guard and no silence, so this needs no game: the release DLL is loaded into a 32-bit PowerShell from a folder of its own with
 # each ini. Nothing started = no log file, no debug channel; a module started would open its log first thing.
 # Usage (PowerShell tool): tests\modules_nothing.ps1    exit 1 on a failure. Run after a release build.

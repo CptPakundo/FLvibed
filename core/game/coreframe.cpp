@@ -1,6 +1,6 @@
 // The logic's frame and draw passes (coreframe.h). The order is the one docs\module_map.tsv's frame rows record: nothing here may move without the
-// fingerprint's frame order saying so. A module's place is a view (core\ui\views.h); with the pad off, the frame is docs\MODULES_PLAN.md
-// "P7's priority table" with no pad rows: the page's gate, then the flight or the device's row.
+// fingerprint's frame order saying so. A module's place is a view (core\ui\views.h); with the pad off, the frame is the module split plan's
+// "P7's priority table" (private; input_rules.h holds its rules) with no pad rows: the page's gate, then the flight or the device's row.
 #include "coreframe.h"
 
 #include "ai.h"
@@ -14,6 +14,7 @@
 #include "events.h"
 #include "fl.h"
 #include "flexe.h"
+#include "flicons.h"
 #include "flight.h"
 #include "flightio.h"
 #include "gameclock.h"
@@ -25,12 +26,15 @@
 #include "mission.h"
 #include "modslots.h"
 #include "mprules.h"
+#include "nnwin.h"
 #include "render.h"
 #include "session.h"
 #include "room.h"
 #include "space.h"
 #include "spawn.h"
 #include "ui/flufaware.h"
+#include "ui/hud2_kit.h"
+#include "ui/hud_door.h"
 #include "ui/hud_rows.h"
 #include "ui/options_page.h"
 #include "ui/ui.h"
@@ -57,9 +61,9 @@ bool LockAnswer(const char* what)
     static DWORD lastAt = 0;
     const DWORD now = GetTickCount();
     if (what != lastWhat || now - lastAt > 1000)
-        events::Push("maneuvers locked: %s refused%s", what, views::HudLockNotice() ? "" : " (HUD 2 not shown)");
+        events::Push("maneuvers locked: %s refused%s", what, huddoor::LockNotice() ? "" : " (HUD 2 not shown)");
     else
-        views::HudLockNotice();
+        huddoor::LockNotice();
     lastWhat = what, lastAt = now;
     return true;
 }
@@ -77,11 +81,11 @@ void OnKeyCmd(int cmd, bool down)
         LockAnswer(what);
     // (hud_prompts: the lanes show after the player acts; hud_fade CONTEXTUAL: what the action touches wakes)
     if (what)
-        views::HudNoteAction(hudwake::Maneuver);
+        huddoor::NoteAction(hudwake::Maneuver);
     else if (cmd == fl::USER_CRUISE || cmd == fl::USER_MANEUVER_ENGINEKILL)
-        views::HudNoteAction(hudwake::Cruise);
+        huddoor::NoteAction(hudwake::Cruise);
     else if (cmd == fl::USER_CLEAR_TARGET || cmd == fl::USER_NEXT_ENEMY || cmd == fl::USER_CLOSEST_ENEMY)
-        views::HudNoteAction(hudwake::TargetChg);
+        huddoor::NoteAction(hudwake::TargetChg);
 }
 
 // The player ship's state once a second, as an event when it changed (hull to 0.1 %, shield to 1 %, consumables): the run's own track, comparable
@@ -175,7 +179,14 @@ static void SetHudSuppression(bool on)
     aim::SetHudTransparent(on && !g_hudRoots.empty());
 }
 
-void Stop() { SetHudSuppression(false); }
+// The shared draw kit's fonts, state block and icon sheets go with core's frame: the kit draws for the pad and the options page with the HUD
+// module off too (audit 65e F2). Their one caller (both are idempotent).
+void Stop()
+{
+    SetHudSuppression(false);
+    hud2kit::Shutdown();
+    flicons::Shutdown();
+}
 
 // The frame of the last under-HUD pass: the shield cue draws there (screen-edge effects under the HUD, as Destiny and Apex Legends layer theirs);
 // without that pass (hook refused) it falls back to the overlay.
@@ -198,14 +209,11 @@ void OnRenderUnderHud()
     void* device = Device();
     // Extended HUD 2's modal menus in space (ui_style 1: pause, save / load, Options, confirm): the whole flight HUD - the game's, HUD 2, the pad HUD
     // layer, the cues - goes under the scrim, back the frame the menu closes. False under ui_style 0 and without the HUD
-    g_menuOver = views::HudUnderBegin(device, opts.enabled && InFlight());
+    g_menuOver = huddoor::UnderBegin(device, opts.enabled && InFlight(), g_mode == Mode::Space, g_padOwns);
     // the hosted FLVIBED options page's opaque base under the Options window (before its glass / art)
     options_page::RenderUnder(device);
-    // Extended HUD 2: the windows' art hidden / restored and their glass under the UI pass (any mode: restores); without it the prompt lane's geometry
-    if (views::hud.UnderEnd)
-        views::hud.UnderEnd(device, opts.enabled && InFlight() && !g_menuOver);
-    else
-        winplates::ClassicPass(device, opts.enabled, g_padOwns, true);
+    // Extended HUD 2: the windows' art hidden / restored and their glass under the UI pass (any mode: restores); on the classic HUD the prompt lane's geometry
+    huddoor::UnderEnd(device, opts.enabled && InFlight() && !g_menuOver, opts.enabled, g_padOwns);
 }
 
 static void FaultNow(int where);
@@ -223,8 +231,7 @@ void OnRenderOverlay()
         void* device = Device();
         // (under an Extended HUD 2 modal menu: the cues, HUD 2 (its own gate) and the pad HUD layer stay under the scrim)
         const bool menuOver = g_menuOver && g_frame - g_underHudFrame <= 2;
-        if (views::hud.Overlay)
-            views::hud.Overlay(device, menuOver, g_frame - g_underHudFrame > 2);
+        huddoor::Overlay(device, menuOver, g_frame - g_underHudFrame > 2);
         if (pad.DrawFlight)
             pad.DrawFlight(device, menuOver); // the pad HUD layer over the HUD, then the flight modals (one open at a time by their buttons)
         views::PanelRender(device);
@@ -236,22 +243,21 @@ void OnRenderOverlay()
     if (pad.DrawMenus)
         pad.DrawMenus(); // the New Game prompt, the load screens' tags, the OSK over the game's menu screens
     modslots::Draw(modslots::kSpeedrun); // speedrun mode's HUD timer (pad and keyboard alike)
-    if (views::hud.Strip)
-        views::hud.Strip(Device()); // Extended HUD 2's docked overlay
+    huddoor::Strip(Device()); // Extended HUD 2's docked overlay
     if (pad.DrawPrompts)
         pad.DrawPrompts(); // the shared prompt bar (every pad screen sets it per frame)
     options_page::Draw(); // the FLVIBED OPTIONS page over everything while it is open
     views::BarDraw();     // the bar's autopilot button glyph
-    if (views::hud.Top)
-        views::hud.Top(Device()); // HUD 2's cursor and tooltips, over all of it
+    huddoor::Top(Device()); // HUD 2's cursor and tooltips, over all of it
 }
 
-// Before every device Reset (the host's Reset hook): every state block this logic holds goes - HUD 2's batcher's and the shared renderer's. Under
+// Before every device Reset (the host's Reset hook): every state block this logic holds goes - the draw kit's and the shared renderer's. Under
 // d3d8to9 (HDE) a D3D9 state block left alive makes Reset fail D3DERR_INVALIDCALL. Textures are MANAGED (they survive), no DEFAULT pool objects.
+// The kit's block is core's to delete, whichever interface or modules: the pad's prompt label and the options page draw with the kit too (audit 65e
+// F2: with the HUD module off the game's Reset failed every second, the screen frozen). HUD 2 holds no block of its own.
 void OnDeviceLost()
 {
-    if (views::hud.DeviceLost)
-        views::hud.DeviceLost();
+    hud2kit::OnDeviceLost();
     render::OnDeviceLost();
 }
 
@@ -354,6 +360,7 @@ void OnFrame(double dtd)
         ~EndMemo() { space::EndFrame(); }
     } endMemo;
     ++g_frame;
+    huddoor::Frame(); // the door's counter of HUD 2's calls under the classic HUD
     // A new game (a save load, New Game, the load after a death - each loads a fresh Content.dll): mission.cpp's memory of the last script / objective
     // and the shown objectives was the game before's. Before anything this frame asks it. A logic (re)start forgets nothing: its memory starts empty.
     {
@@ -386,14 +393,15 @@ void OnFrame(double dtd)
     debug::Frame();
     options_page::Update(dt); // the options page's input and hosting state, before the pad flight / menu code
     flufaware::Update(dt, opts.flufWindows); // FLUF's windows from the HUD bus (no FLUF: nothing), before every reader
-    if (views::hud.Cues)
-        views::hud.Cues(dt, InFlight(), views::ApActive());
+    huddoor::Cues(dt, InFlight(), views::ApActive());
     if (pad.Feel)
         pad.Feel(); // the pad's vibration: before the enabled check below, so turning the module off silences it
     if (InFlight())
         space::TrackRounds(); // learns which incoming rounds hit (the damage model's hit chance)
     if (hostcalls::g.SetKeepRunning)
         hostcalls::g.SetKeepRunning(opts.runInBackground);
+    if (hostcalls::g.SetRawMouse)
+        hostcalls::g.SetRawMouse(opts.mouseRaw);
     if (!enabled_gate::AnyRuns(enabled_gate::Read(opts.enabled)))
     {
         hostcalls::CursorHide(hostcalls::kCursorHideIdle, false); // (the idle cursor's fail-safe: a disabled logic never leaves it hidden)
@@ -407,10 +415,9 @@ void OnFrame(double dtd)
             pad.Options();
         uiopt::UiOptions& u = uiopt::Get();
         u.textSize = ApplySize(); // (hud_size; the player's own text_size stays theirs)
-        if (views::hud.GameText)
-            views::hud.GameText(g_mode == Mode::Menu);
+        huddoor::GameText(g_mode == Mode::Menu);
         const hudrows::Values& h = hudrows::g;
-        u.hudStyle = h.hudStyle, u.hudFade = h.hudFade, u.hudOpacity = h.hudOpacity;
+        u.hudStyle = huddoor::Style(), u.hudFade = h.hudFade, u.hudOpacity = h.hudOpacity;
         u.hudScale = h.hudScale, u.hudNumbers = h.hudNumbers, u.hudThreats = h.hudThreats;
         u.hudContext = h.hudContext, u.hudPrompts = h.hudPrompts, u.hudAlerts = h.hudAlerts;
         u.hudInfo = h.hudInfo;
@@ -513,17 +520,17 @@ void OnFrame(double dtd)
         if (pad.FillHud)
             pad.FillHud(hc); // (sets modal from the pad's own windows)
         hc.modal |= flightBox;
-        if (views::hud.Flight)
-            views::hud.Flight(dt, hc);
-        if (views::hud.Cursor)
-            views::hud.Cursor(dt, padOwns, opts.enabled && g_mode == Mode::Space && detected == Mode::Space && !fl::GamePaused() && !hc.modal, OnlyHudOpen);
+        huddoor::Flight(dt, hc);
+        huddoor::Cursor(dt, padOwns, opts.enabled && g_mode == Mode::Space && detected == Mode::Space && !fl::GamePaused() && !hc.modal, OnlyHudOpen);
     }
     // The goal panel, every device (its keyboard + mouse form's keys, clicks and click box; after HUD 2, which stood its own click box down while the
     // panel is open)
     views::PanelTick(dt);
+    // The NeuroNet press held through a slide (the pad's bumpers, HUD 2's strip) is sent here, once a frame whatever the modules: with only HUD 2's strip ticking
+    // it, a bumper in a slide with the HUD module off held a press nothing sent, and the pad's flight stood down for good (audit 65e F1). Before the pad reads it.
+    nnwin::Frame(dt);
     // HUD 2 over the menus and rooms: the skin's switch and the docked overlay's - every frame. Classic (hud_style 0) is classic everywhere.
-    if (views::hud.Skin)
-        views::hud.Skin(dt, padOwns, opts.enabled, g_mode == Mode::Docked || detected == Mode::Docked); // (the raw signal too: the docked strip came 3 frames late)
+    huddoor::Skin(dt, padOwns, opts.enabled, g_mode == Mode::Docked || detected == Mode::Docked); // (the raw signal too: the docked strip came 3 frames late)
     // The open options page owns the pad and the keys: no flight / menu pad dispatch. Its ownership outlasts its close until every button is up: the
     // press that closed it reached the menu and base code in the same frame and again as a fresh edge of padmenus' own pad reader.
     static bool pageLatch = false;
@@ -653,7 +660,7 @@ bool OnUiButton(int id)
         if (views::PanelOwnsHotspots()) // the open goal panel's keyboard + mouse form holds the click box (HUD 2's set is off)
             views::PanelHotspot(id - kUiBtnHud2);
         else
-            views::HudHotspot(id - kUiBtnHud2);
+            huddoor::Hotspot(id - kUiBtnHud2);
         return true;
     }
     return false;

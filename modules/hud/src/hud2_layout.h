@@ -130,6 +130,9 @@ struct Measures
     // std_ov::kShipH / the preset's loadout h their maxima, kShipMinH / kLoadMinH their floors. 0 = unmeasured.
     float shipH = 0, loadH = 0;
     float noticeW = 0, noticeH = 0; // the flight notice's card (pixels; hud2_parts.cpp DrawNotice measures), 0 = none shows
+    // ... its lines wrapped to the widths kNoticeWrapH (a long name, its "(dot) FULL": issue 87), tried in turn where the
+    // wider forms find no place; 0 = not measured (the one-line card is no wider than that)
+    float noticeWrapW[3] = {}, noticeWrapH[3] = {};
 };
 // The subtitles' dialogue panel as the HUD bus last published it (fractions of the screen; hud2.cpp reads the bus).
 struct Dialogue
@@ -142,7 +145,10 @@ struct Dialogue
 struct Frame
 {
     float W = 0, H = 0;
-    int hudScale = 100, textSize = 100; // hud_scale, text_size (promptfit::Hud2Scale)
+    int hudScale = 100, textSize = 100; // hud_scale, text_size (promptfit::Hud2ScaleOn)
+    // hud_size as it resolved (core\game\hudsize.h Apply; the frame's copies): Large's margins, the scale's base, the text floor
+    bool deck = false;
+    float baseK = 1.0f, floorH = 0.024f;
     bool kbm = false;                   // the keyboard-and-mouse form
     bool combat = false;               // the fight forms' context (the budget's case)
     bool letterbox = false;             // the game's cinematic bars are up
@@ -166,6 +172,9 @@ struct Frame
     // (not quiet) until it has faded out - the notice stood over a ship panel still fading (0.4.6). 0 = none known: what
     // is held back or suppressed is quiet at once
     u32 drawn = 0;
+    // the context prompts can be seen (their fade above Draw's threshold, fading in counts): false = faded out
+    // (hud_prompts ON CHANGE after its 4 s): their areas are quiet, so they hold no room against the flight notice
+    bool ctxSeen = true;
     Measures m;
     Dialogue dlg;
 };
@@ -284,6 +293,7 @@ struct Out
     float clearY0 = 0;
     Rect notice;              // the flight notice's card (PlaceNotice)
     bool noticeShow = false;  // ... it has a place this frame (false: none free, or no notice)
+    float noticeWrapAt = 0;   // ... in a wrapped form: the width its lines wrap to (pixels; 0 = one line each)
 };
 
 // ---- Standard's overrides: today's literals the spec cannot express without moving Standard (the owner's rule:
@@ -291,7 +301,7 @@ struct Out
 // UI_SPEC.json "hud2_presets" Standard; step 8 retires them into the spec's compact / fight forms (UI_HUD2_PRESETS.md 2.1).
 namespace std_ov
 {
-constexpr float kCardW = 0.36f;     // the card to its spec (UI_HUD2_SIZE_AUDIT.md 3.2)
+constexpr float kCardW = 0.36f;     // the card to its spec (the HUD 2 size audit 3.2, private)
 constexpr float kCardH = 0.17f, kCardHKbm = 0.21f; // its height, the keyboard form's with its click row
 constexpr float kCardColView = 0.13f, kCardColIcon = 0.085f; // its left column: a wireframe view's, or the flat icon's
 constexpr float kNavMinW = 0.25f;   // nav width rule: the spec's w_max 0.38 (calm); today's nav takes 0.25..0.62 H x k
@@ -362,7 +372,7 @@ constexpr float kAlertStackH = 0.094f; // the two-line alert card beside the rin
 constexpr float kAlertSideR = 0.205f;  // its inner edge from the ring's centre: outside the missile chevrons (they end at 0.20)
 constexpr float kAlertStackGap = 0.008f; // between two stacked cards
 constexpr float kAlertDlgGap = 0.012f;   // a side's top card under the subtitles' dialogue (fractions of H)
-// The bottom of the reticle, form C (UI_HUD2_INPUTS.md 7b): the throttle inside the ring, centred, filling from the middle out; the meter on the ring; the speed
+// The bottom of the reticle, form C (the HUD 2 inputs record 7b, private): the throttle inside the ring, centred, filling from the middle out; the meter on the ring; the speed
 // under it. Fractions of H x k about the ring's radius.
 constexpr float kThrottleDR = -0.020f; // the throttle arc's radius against the ring's
 constexpr float kThrottleW = 0.75f;    //   and its width, of the arcs'
@@ -417,7 +427,7 @@ constexpr float kConsHKbm = 0.11f;    //   form's grid (2 x 0.042 + 0.008) 0.11 
 // The scale k (hud_scale x text_size x the aspect factor, capped to what fits): promptfit::Hud2Scale, the formula the
 // HUD has used (its aspect factor = the spec's 1.8: 16:9 and wider 1, 16:10 0.9, 4:3 / 5:4 0.8 - the
 // test checks it against hp::kAspectK*). The impure half measures its texts with this k before calling Compute.
-inline float Scale(const Frame& f) { return promptfit::Hud2Scale(f.W, f.H, f.hudScale, f.textSize, f.kbm); }
+inline float Scale(const Frame& f) { return promptfit::Hud2ScaleOn(f.W, f.H, f.hudScale, f.textSize, f.kbm, f.baseK); }
 
 // The boxed-budget cap for the frame's case (PRESETS 2.1 Budgets: calm no target / target, combat steady = target on
 // screen / peak = off screen + an alert): the exact cap, else the largest the preset names for the context on the device
@@ -494,7 +504,7 @@ inline u32 BudgetSuppress(const Rules& r, const Frame& f, const Out& o, u32 alre
 inline void FocusCorners(const Frame& f, const hp::Preset& p, const Rules& rules, Out& L)
 {
     const float W = f.W, H = f.H, k = L.k;
-    const float myBottom = deckmode::FlightTopBottom(hp::kMarginBottom) * H;
+    const float myBottom = deckmode::FlightTopBottomOf(f.deck, hp::kMarginBottom) * H;
     const bool off = f.targetOff || rules.cardOffForm;
     // the card: the calm compact form .. the fight form, eased by the caller (Reveal: the form's ease and its 6 s linger)
     const float cw = hp::Num(p, "calm", "card", "w", 0.34f);
@@ -673,7 +683,7 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
         promptfit::ContextLanes(W, H, k, L.ship.x1, L.loadout.x0, lineY, kBottomBandX0W, kBottomBandX1W);
     FitLanes(g, L.res, H, k); // (the subtitles' panel over a row: its prompts take the other lane)
     L.ctxTall = g.tall;
-    const float floorPx = textfit::MinSize(H); // (the labels' floor)
+    const float floorPx = textfit::MinSizeAt(H, f.floorH); // (the labels' floor)
     // the narrowest a prompt is squeezed to: its label whole on two lines at the floor (0.2.1, the owner: prompts never
     // marquee - promptfit FitLabel); unmeasured, the old two floor-sized ems
     float minW[3] = {};
@@ -683,6 +693,15 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
     promptfit::LanesPlaced c;
     promptfit::HoldPlan plan;
     float w[3] = {};
+    // what keeps its place over the lanes (the subtitles' panel, their comm feed, a box): a raised HOLD word keeps off it too
+    float keep[4 * kAreaCount];
+    int nKeep = 0;
+    for (int a = 0; a < kAreaCount; ++a)
+        if (L.res.Placed(a) && (kAreasCloseRows & (1u << a)))
+        {
+            const Rect& r = L.res.at[a];
+            keep[4 * nKeep] = r.x0, keep[4 * nKeep + 1] = r.y0, keep[4 * nKeep + 2] = r.x1, keep[4 * nKeep + 3] = r.y1, ++nKeep;
+        }
     auto place = [&](const promptfit::LaneGeom& lanes)
     {
         plan = promptfit::HoldPlan();
@@ -690,7 +709,7 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
         {
             const promptfit::LanesHold h = promptfit::PlaceLanesHold(f.m.base, minW, f.m.glyph, f.m.label, f.m.hold,
                                                                      f.m.side, n, f.m.dims, f.m.ctxGap, lanes, H, k,
-                                                                     f.m.ctxWord);
+                                                                     f.m.ctxWord, keep, nKeep);
             c = h.c, plan = h.plan;
             for (int i = 0; i < 3; ++i)
                 w[i] = h.w[i];
@@ -699,9 +718,91 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
             c = promptfit::PlaceLanes(nullptr, nullptr, f.m.side, n, f.m.ctxGap, lanes, H, k);
     };
     place(g);
-    // both lanes closed: the lanes above the panels (promptfit.h LanesAbove) - the old centred line above the panels
-    // crossed the lower centre (5.23) - fitted to what stands there (the consumables' cross over the right lane's end,
-    // the subtitles' panel: FitLanes, issue 78); where even they have no room, no prompt (never one in the lower centre)
+    // The room below the comm feed (decision 75, 13 Nov 2026, the owner on the frames of the rows above the panels: "I see
+    // some empty room below the side chat, why not make use of that?"): the prompts that found no place beside the panels
+    // first take the bottom-left corner where the ship panel stands, while that panel does not show (Standard's calm
+    // ship panel held back, Focus's escort rows held: Frame::held, and no longer fading: Frame::drawn) - the left lane's
+    // rows carried to the side margin, ending f.m.ctxGap left of the left lane's start (as two prompts in a row), fitted
+    // as the lanes are (the comm feed's cards, the subtitles' panel, a box close the rows they meet: FitLanes); a plate
+    // that still meets anything that stands (a wrapped label or a raised word reaching up) ends the corner's prompts there.
+    // The panel waking (a fight, a formation) closes the corner at once: its prompt moves to the next place. Before the
+    // rows above the panels, both the fallback's (no prompt fitted beside the panels) and the prompt rule's (below).
+    // Reading order (the owner, 13 Nov 2026, the lower band's sheet Q3 "swap them"): the corner is left of the left lane,
+    // so when a prompt takes it the FIRST prompt takes it and the rest stand in the lanes beside the panels - left to right
+    // = first to second. Only where that order keeps fewer prompts (the first too wide for the corner) does the corner
+    // take the first prompt that found no place beside the panels, as before.
+    if (c.n < n && f.m.ctxMeasured && (f.held & Bit(Ship)) && !(f.drawn & Bit(Ship)))
+    {
+        const float pad = 0.012f * H * k, half = 0.026f * H * k;
+        Reserved open = L.res; // what stands, the held ship panel's area aside
+        open.at[AShip] = Rect();
+        promptfit::LaneGeom room = g; // the baseline, the pitch, a wrapped plate's growth: the lanes'
+        room.lx0 = L.mx + pad, room.lx1 = g.lx0 - f.m.ctxGap;
+        room.rx0 = room.rx1 = 0, room.rightRows = 0, room.leftRows = room.rows;
+        FitLanes(room, open, H, k);
+        // `at` = the first prompt the corner tries (0: the corner takes only the first; the rest then try the lanes beside
+        // the panels, still empty, before anything stacks over it); cc / cw / cp: the placement it adds to
+        auto corner = [&](int at, promptfit::LanesPlaced& cc, float* cw, promptfit::HoldPlan& cp)
+        {
+            const promptfit::LanesHold h =
+                promptfit::PlaceLanesHold(f.m.base + at, minW + at, f.m.glyph + at, f.m.label + at, f.m.hold + at,
+                                          f.m.side + at, at == 0 ? 1 : n - at, f.m.dims, f.m.ctxGap, room, H, k, f.m.ctxWord);
+            int kept = 0;
+            for (int j = 0; j < h.c.n && at + j < 3; ++j, ++kept)
+            {
+                const float tall = h.c.wrap[j] ? room.tall : 0.0f;
+                const float top = promptfit::Raised(h.plan.at[j]) ? h.c.y[j] - half - tall - 0.001f * H - f.m.ctxWord
+                                                                   : h.c.y[j] - half - tall;
+                if (!open.Free({h.c.x[j] - pad, top, h.c.x[j] + h.w[j] + pad, h.c.y[j] + half}, kAreasAll))
+                    break;
+                const int i = at + j;
+                cc.x[i] = h.c.x[j], cc.y[i] = h.c.y[j], cc.w[i] = h.c.w[j], cc.asked[i] = h.c.asked[j], cc.side[i] = h.c.side[j];
+                cc.row[i] = h.c.row[j], cc.moved[i] = h.c.moved[j], cc.wrap[i] = h.c.wrap[j], cw[i] = h.w[j], cp.at[i] = h.plan.at[j];
+                const float x0 = h.c.x[j] - 0.015f * H * k, x1 = h.c.x[j] + h.c.w[j] + 0.015f * H * k; // (the line's margin)
+                cc.x0 = i ? std::min(cc.x0, x0) : x0, cc.x1 = i ? std::max(cc.x1, x1) : x1;
+            }
+            cc.n = std::min(at + kept, 3);
+            cc.none = cc.n == 0;
+            if (at == 0 && kept > 0 && cc.n < n)
+            {
+                const int from = cc.n;
+                const promptfit::LanesHold b =
+                    promptfit::PlaceLanesHold(f.m.base + from, minW + from, f.m.glyph + from, f.m.label + from, f.m.hold + from,
+                                              f.m.side + from, n - from, f.m.dims, f.m.ctxGap, g, H, k, f.m.ctxWord, keep, nKeep);
+                for (int j = 0; j < b.c.n && from + j < 3; ++j)
+                {
+                    const int i = from + j;
+                    cc.x[i] = b.c.x[j], cc.y[i] = b.c.y[j], cc.w[i] = b.c.w[j], cc.asked[i] = b.c.asked[j], cc.side[i] = b.c.side[j];
+                    cc.row[i] = b.c.row[j], cc.moved[i] = b.c.moved[j], cc.wrap[i] = b.c.wrap[j], cw[i] = b.w[j], cp.at[i] = b.plan.at[j];
+                }
+                if (b.c.n > 0)
+                    cc.x0 = std::min(cc.x0, b.c.x0), cc.x1 = std::max(cc.x1, b.c.x1), cc.n = std::min(from + b.c.n, 3);
+            }
+        };
+        const int at = c.n; // the first prompt without a place beside the panels
+        if (at == 0)
+            corner(0, c, w, plan);
+        else
+        {
+            // the first prompt in the corner, the rest beside the panels (Q3), against the old order: the first that keeps more
+            promptfit::LanesPlaced first;
+            promptfit::HoldPlan firstPlan = plan;
+            float firstW[3] = {};
+            corner(0, first, firstW, firstPlan);
+            corner(at, c, w, plan);
+            // (only when a prompt past those beside the panels found its place: else the first keeps its lane, as before)
+            if (first.n > at && first.n >= c.n)
+            {
+                c = first, plan = firstPlan;
+                for (int i = 0; i < 3; ++i)
+                    w[i] = firstW[i];
+            }
+        }
+    }
+    // no prompt has a place beside the panels nor in the corner: the lanes above the panels (promptfit.h LanesAbove) -
+    // the old centred line above the panels crossed the lower centre (5.23) - fitted to what stands there (the
+    // consumables' cross over the right lane's end, the subtitles' panel: FitLanes, issue 78); where even they have no
+    // room, no prompt (never one in the lower centre)
     if (c.none)
     {
         L.ctxFallback = true;
@@ -710,6 +811,39 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
         FitLanes(up, L.res, H, k);
         L.ctxY = up.y0;
         place(up);
+    }
+    // The owner's prompt rule (decision 55, 13 Nov 2026: "Use free width, then try for a second row if that's possible,
+    // rule 2 is an absolute last resort"; rule 2 = a prompt gives way; the pages' form of it: pages\promptlane.h): the
+    // prompts that found no place beside the panels (both rows of both lanes) nor in the corner above take the lanes
+    // above the panels - the fallback's rows, fitted the same way - above everything placed, in order; only one that
+    // finds no place there either gives way. (Since F4 at 1280x800, keyboard and mouse, hud_scale 100: the loot state's
+    // TRACTOR ALL had a 96 px lane beside the loadout and the left lane's upper row under the comm feed, and was dropped.)
+    if (!c.none && !L.ctxFallback && c.n < n && f.m.ctxMeasured)
+    {
+        const int at = c.n; // the first prompt without a place
+        const float half = 0.026f * H * k;
+        float top = L.ctxY - half; // the top of what stands beside the panels (a wrapped plate and a raised word rise)
+        for (int i = 0; i < at; ++i)
+        {
+            const float tall = c.wrap[i] ? g.tall : 0.0f;
+            top = std::min(top, promptfit::Raised(plan.at[i]) ? c.y[i] - half - tall - 0.001f * H - f.m.ctxWord
+                                                               : c.y[i] - half - tall);
+        }
+        promptfit::LaneGeom up = promptfit::LanesAbove(W, H, k, L.mx, std::min(L.ship.y0, L.loadout.y0),
+                                                       kBottomBandX0W, kBottomBandX1W);
+        up.y0 = std::min(up.y0, top - 0.008f * H * k - half); // (the rows' air: the lanes' pitch 0.06 less the plate's 0.052)
+        FitLanes(up, L.res, H, k);
+        const promptfit::LanesHold h =
+            promptfit::PlaceLanesHold(f.m.base + at, minW + at, f.m.glyph + at, f.m.label + at, f.m.hold + at,
+                                      f.m.side + at, n - at, f.m.dims, f.m.ctxGap, up, H, k, f.m.ctxWord, keep, nKeep);
+        for (int j = 0; j < h.c.n && at + j < 3; ++j)
+        {
+            const int i = at + j;
+            c.x[i] = h.c.x[j], c.y[i] = h.c.y[j], c.w[i] = h.c.w[j], c.asked[i] = h.c.asked[j], c.side[i] = h.c.side[j];
+            c.row[i] = h.c.row[j], c.moved[i] = h.c.moved[j], c.wrap[i] = h.c.wrap[j], w[i] = h.w[j], plan.at[i] = h.plan.at[j];
+        }
+        if (h.c.n > 0)
+            c.x0 = std::min(c.x0, h.c.x0), c.x1 = std::max(c.x1, h.c.x1), c.n = std::min(at + h.c.n, 3);
     }
     if (!c.none)
     {
@@ -732,17 +866,29 @@ inline void PlaceContextLanes(const Frame& f, int n, float lineY, Out& L)
 // should it wake, the next frame's place moves the notice), the subtitles' panel, the preset's clear fields
 // (the lint's CentreToCard zones, S1) and the lower centre. The places it tries, the first free one wins: the bottom-left
 // corner (where the ship panel stands when it shows); above that panel; beside it in the left prompt lane; then up the
-// left column a step at a time to the nav. None free: it waits unplaced (its time runs). Registers its own area (ANotice).
+// left column a step at a time to the nav - never above the comm feed's cards' top (the owner, 13 Nov 2026, the lower
+// band's sheet Q1 "wait below the cards": it may not climb above the side chat). None free for the one-line card: the
+// same places for its wrapped forms, widest first (its lines broken between words to kNoticeWrapH: a long name with its
+// FULL, issue 87; the panels grow first, a second line before any shortening). None free for any: it waits unplaced and
+// its time waits with it (NoticeWaits below; Q1 and card N12), so it shows when the corner or the place beside the ship
+// panel frees. Registers its own area (ANotice).
 constexpr float kNoticeGap = 0.012f; // from what it stands beside, H x k (the lanes' and the alert cards' clearance)
+// The widths the notice's lines wrap to, widest first, x H (the screen's, not the HUD's scale: the room beside the panels
+// does not grow with the text; the widest card 0.16 H tall with a place in Standard's frame of tests\hud2_notice_test.cpp:
+// 0.32 H at 1280x800, 0.40 H at 4K, the ship panel up or held back)
+constexpr float kNoticeWrapH[3] = {0.40f, 0.31f, 0.25f};
 inline void PlaceNotice(const Frame& f, const hp::Preset& p, Out& L)
 {
-    L.notice = Rect(), L.noticeShow = false;
+    L.notice = Rect(), L.noticeShow = false, L.noticeWrapAt = 0;
     L.res.at[ANotice] = Rect();
-    const float W = L.W, H = L.H, k = L.k, w = f.m.noticeW, h = f.m.noticeH;
+    const float W = L.W, H = L.H, k = L.k;
+    float w = f.m.noticeW, h = f.m.noticeH;
     if (w <= 0 || h <= 0 || f.letterbox)
         return;
-    const float gap = kNoticeGap * H * k, bottom = H - deckmode::FlightTopBottom(hp::kMarginBottom) * H;
+    const float gap = kNoticeGap * H * k, bottom = H - deckmode::FlightTopBottomOf(f.deck, hp::kMarginBottom) * H;
     const u32 standing = kAreasAll & ~L.res.quiet & ~(1u << ANotice);
+    // the comm feed's cards' top: no place above it (Q1); none show, no limit
+    const float cardsTop = L.res.Placed(AChat) && ((standing >> AChat) & 1) ? L.res.at[AChat].y0 : -1.0f;
     // the keep-outs beside the reserved areas: the clear fields (as hud2_lint.h ZonesOf places them), the lower centre, the chat
     Rect keep[8];
     int nKeep = 0;
@@ -758,6 +904,8 @@ inline void PlaceNotice(const Frame& f, const hp::Preset& p, Out& L)
     auto isFree = [&](const Rect& q) {
         if (q.x0 < L.mx * 0.5f || q.x1 > W - L.mx * 0.5f || q.y0 < L.my || q.y1 > bottom + 0.5f)
             return false;
+        if (cardsTop >= 0 && q.y0 < cardsTop - 0.5f)
+            return false;
         for (int i = 0; i < nKeep; ++i)
             if (keep[i].x1 > keep[i].x0 && q.x0 - gap < keep[i].x1 && q.x1 + gap > keep[i].x0 && q.y0 - gap < keep[i].y1 &&
                 q.y1 + gap > keep[i].y0)
@@ -766,25 +914,42 @@ inline void PlaceNotice(const Frame& f, const hp::Preset& p, Out& L)
     };
     const bool shipUp = L.res.Placed(AShip) && !((L.res.quiet >> AShip) & 1);
     const float shipY0 = L.res.Placed(AShip) ? L.res.at[AShip].y0 : L.ship.y0; // (its area's top: Focus's escort rows)
-    Rect tries[3] = {{L.mx, bottom - h, L.mx + w, bottom}, // the corner
-                     {L.mx, shipY0 - gap - h, L.mx + w, shipY0 - gap}, // above the ship panel
-                     {L.ship.x1 + 2 * gap, bottom - h, L.ship.x1 + 2 * gap + w, bottom}}; // beside it
-    for (int i = 0; i < 3; ++i)
-        if ((i == 0 || shipUp) && isFree(tries[i]))
-        {
-            L.notice = tries[i], L.noticeShow = true;
-            break;
-        }
-    // up the left column, a step at a time, to the nav
-    for (float y1 = tries[1].y1 - 0.02f * H; !L.noticeShow && y1 - h > L.nav.y1 + gap; y1 -= 0.02f * H)
+    for (int form = 0; form < 4 && !L.noticeShow; ++form)
     {
-        const Rect q = {L.mx, y1 - h, L.mx + w, y1};
-        if (isFree(q))
-            L.notice = q, L.noticeShow = true;
+        if (form > 0) // a wrapped form, when it is narrower than the form before it
+        {
+            const float ww = f.m.noticeWrapW[form - 1], wh = f.m.noticeWrapH[form - 1];
+            if (ww <= 0 || wh <= 0 || ww >= w - 0.5f)
+                continue;
+            w = ww, h = wh, L.noticeWrapAt = kNoticeWrapH[form - 1] * H;
+        }
+        Rect tries[3] = {{L.mx, bottom - h, L.mx + w, bottom},                                 // the corner
+                         {L.mx, shipY0 - gap - h, L.mx + w, shipY0 - gap},                     // above the ship panel
+                         {L.ship.x1 + 2 * gap, bottom - h, L.ship.x1 + 2 * gap + w, bottom}}; // beside it
+        for (int i = 0; i < 3; ++i)
+            if ((i == 0 || shipUp) && isFree(tries[i]))
+            {
+                L.notice = tries[i], L.noticeShow = true;
+                break;
+            }
+        // up the left column, a step at a time, to the nav
+        for (float y1 = tries[1].y1 - 0.02f * H; !L.noticeShow && y1 - h > L.nav.y1 + gap; y1 -= 0.02f * H)
+        {
+            const Rect q = {L.mx, y1 - h, L.mx + w, y1};
+            if (isFree(q))
+                L.notice = q, L.noticeShow = true;
+        }
     }
+    if (!L.noticeShow)
+        L.noticeWrapAt = 0;
     if (L.noticeShow)
         L.res.at[ANotice] = L.notice;
 }
+// Whether the notice's time stands still this frame (hud2_notice.h Notice::Step `wait`): a card is up, the last layout
+// ran (`laidOut`) and found it no place (`placed` false), and not because the letterbox was up (PlaceNotice places
+// nothing there: its time runs as it always did). A card the last layout had not measured yet (its first frame) waits
+// that one frame.
+inline bool NoticeWaits(bool up, bool laidOut, bool placed, bool letterbox) { return up && laidOut && !placed && !letterbox; }
 
 // ---- the panels sized to their content (0.2.1 round 3): the spec's width is the maximum, a measured (eased) content
 // width below it wins; 0 = unmeasured (the maximum: the tests' and the old frames' geometry)
@@ -852,10 +1017,10 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     L.k = Scale(f);
     const float k = L.k;
     // the margins (PRESETS 1.1: 5 % W at the sides, 0.05 H top and bottom) and the ring (the preset's reticle radius)
-    L.mx = deckmode::FlightSide(hp::kMarginSideW) * W, L.my = deckmode::FlightTopBottom(hp::kMarginTop) * H, L.cx = W / 2,
-    L.cy = H / 2, L.R = p.reticleR * H * k;
+    L.mx = deckmode::FlightSideOf(f.deck, hp::kMarginSideW) * W, L.my = deckmode::FlightTopBottomOf(f.deck, hp::kMarginTop) * H,
+    L.cx = W / 2, L.cy = H / 2, L.R = p.reticleR * H * k;
     L.clearY0 = L.cy + RingBottom(rules.corners == 1, L.R, H, k) + hp::kCentreGap * H; // (5.23: Focus draws split arcs)
-    const float myBottom = deckmode::FlightTopBottom(hp::kMarginBottom) * H;
+    const float myBottom = deckmode::FlightTopBottomOf(f.deck, hp::kMarginBottom) * H;
     if (rules.corners == 1)
         FocusCorners(f, p, rules, L);
     else
@@ -898,7 +1063,7 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
                               : std_ov::kConsW * H * k;
     L.cons.x1 = L.loadout.x1, L.cons.x0 = L.cons.x1 - consW, L.cons.y1 = L.loadout.y0 - std_ov::kConsGap * H * k,
     L.cons.y0 = L.cons.y1 - (f.kbm ? std_ov::kConsHKbm : std_ov::kConsH) * H * k;
-    // no plate: four small dark cells, and the pad's cross in one of its own (UI_HUD2_SIZE_AUDIT.md 3.3)
+    // no plate: four small dark cells, and the pad's cross in one of its own (the HUD 2 size audit 3.3, private)
     {
         const float cell = kConsCell * H * k, cross = kConsCrossCell * H * k;
         L.consCells = 4 * cell * cell + (f.kbm ? 0.0f : cross * cross);
@@ -1050,6 +1215,11 @@ inline Out ComputeWith(const Frame& f, const hp::Preset& p, const Rules& rules)
     L.suppressed = ctxOff | L.budgetOff;
     L.boxed = Boxed(f, L, L.suppressed | L.held);
     ReserveQuiet((L.suppressed | L.held) & ~f.drawn, L); // (a part still fading out keeps its area until it is gone)
+    // prompts faded out (hud_prompts ON CHANGE after its 4 s) are quiet too: only a prompt the player can see holds room
+    // against the notice (it takes the corner; the prompt back, the notice waits or moves on - the lead's rule of 13 Nov
+    // 2026 on the owner's "the prompt keeps the corner"), and the lint and the notice's travel read them as not drawn
+    if (!f.ctxSeen)
+        L.res.quiet |= kAreasContext;
     PlaceNotice(f, p, L); // (last: it keeps off what stands, nothing moves for it)
     return L;
 }

@@ -38,7 +38,7 @@ Today: 9.7 % boxed in calm, 18.6 % in combat [C].
 - **Exemptions by name**: the subtitles' dialogue panel and name-tab body; the alert card (≤ 3 s); a peek; the K&M click-pinned contact list (S2 only). The same for a list the player opened on the pad, by input parity: S2 only, at most 10 rows; the automatic combat list keeps the rule (the driver's decision of 6 Nov 2026, for the owner to review).
 - **Native S1 occupants**: the bracket label and the objective banner. They are no longer debt: §1.7 makes them the only home of what they show (the bracket label's part replaced 6 Nov 2026: §1.7 pair 1).
 - **Centre stack, every preset** [D]:
-  - Inside r 0.045 only native markers. The speed stood at (+0.058, 0.030) [C] until 0.4.0, which moves it under the meter (R + 0.0285, built on `build-040`), and the lower centre's start with it (`UI_HUD2_INPUTS.md` 7b).
+  - Inside r 0.045 only native markers. The speed stood at (+0.058, 0.030) [C] until 0.4.0, which moves it under the meter (R + 0.0285, built on `build-040`), and the lower centre's start with it (the HUD 2 inputs record 7b, private).
   - The 6 o'clock sector (±55°) is the ship's; the ship starts at 0.667-0.685 H in the release captures [C]. Where chevrons cross the reticle lane or the throttle word, the chevrons draw on top and the text dims to 30 %. The hit flash draws above the throttle arc.
   - **Ship keep-out** for new text: x 0.40-0.60 W, y 0.63-0.92 (WARN; frames of a light fighter, a Defender, a freighter).
     Since the owner's 31 Oct 2026 rule (§7, `UI_HUD2.md` 5.23) the stricter **lower centre** holds: in those columns, from
@@ -136,7 +136,7 @@ The rule [O, answer 4]: **one value, one place at a time.** A value may move (ha
 | Ship, compact | x 0.089-0.389, y 0.83-0.95 | 0.30 × 0.12, thumbnail 0.10 (formation 0.16) |
 | Loadout, compact | x 1.329-1.689, y 0.82-0.95 | 0.36 × 0.13, cross 0.11 |
 
-Zones: S1 x 0.469-1.309, y 0.20-0.80 (0.20 allows the dialogue panel). S2, the right rail, x 1.309-1.689, y 0.40-0.78: empty.
+Zones: S1 x 0.469-1.309, y 0.20-0.80 (0.20 allows the dialogue panel). S2, the right rail, x 1.309-1.689, y 0.40-0.78: empty except for the prompt rows the prompt rule places there ("free width, then a second row": `UI_HUD2.md` 5.20; the lint exempts the prompts, `context`, in S2). A bottom panel grown to fit its words ends a field where it starts: S1 and S2 lose the drawn panel's rectangle and what lies below it (the owner, 13 Nov 2026, the lower band's design sheet Q4 "the panel grows" and Q5; `hud2_lint.h` `CutByPanel`, the live lint passes the ship panel, the loadout and the cross as they draw).
 
 **Combat** (morph, §1.2):
 - **Card**: full form 0.36 × 0.165 on screen / 0.215 off screen, same left edge, growing down only.

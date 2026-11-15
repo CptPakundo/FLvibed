@@ -1,4 +1,4 @@
-// What the flight modals of phase D share (docs\UI_SPEC.json `hud` states picker / wheel / goals; docs\UI_BUILD.md):
+// What the flight modals of phase D share (docs\UI_SPEC.json `hud` states picker / wheel / goals; the UI build record, private):
 // the pad's button edges with D-pad repeat, the game commands as taps, the names and distances of contacts, the colours
 // (the HUD's red / white / green attitudes, its chrome), the prompt bar bottom right (confirm first, at most five
 // glyphs, `prompt_bar`: the shared promptbar.* draws it since the integration of 25 Oct 2026), and the fonts

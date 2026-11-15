@@ -1,6 +1,6 @@
-// LOOK - act on the next step's goal while the current step only waits (modules\autopilot\docs\LOOK_PLAN.md; slice L0: log
+// LOOK - act on the next step's goal while the current step only waits (the look-ahead plan, private; slice L0: log
 // only, switch `look_log`, default 0). This is LOOK's pure half: facts in, verdict out - no game call, no statics - so
-// tests\look_test.cpp drives it over synthetic and real scripts. The rule (LOOK_PLAN 1): (a) kill - a Cnd_Destroyed on a
+// tests\look_test.cpp drives it over synthetic and real scripts. The rule (the look-ahead plan 1): (a) kill - a Cnd_Destroyed on a
 // mission SHIP (Goal kind 4) armed now or about to be armed by the current step's chain, the ship alive, hostile to the
 // player and a visible contact: fight it now (M02 "Follow Ashcroft"); (b) fly - else the least-cost armed / next-step
 // distance goal instead of the nearest (M05: player_near_br04_01 vs dst_to_br04_tradelane). Every safety predicate that
@@ -77,7 +77,7 @@ struct Nag
     bool has = false, placed = false;
     std::string name;
     float pos[3] = {};
-    float radius = 0; // its distance, else 4000 (Content.dll's default, LOOK_PLAN 4a)
+    float radius = 0; // its distance, else 4000 (Content.dll's default, the look-ahead plan 4a)
 };
 struct TetherFact
 {
@@ -132,15 +132,15 @@ struct LookResult
     std::string key; // what makes the verdict: step, kind, target, trigger, the blockers' codes (the log's dedupe key)
 };
 
-// Policy numbers of L0 (named, each with its source; LOOK_PLAN 1):
+// Policy numbers of L0 (named, each with its source; the look-ahead plan 1):
 constexpr float kHostile = -0.6f;    // the autopilot's hostile attitude (HostileContact)
 constexpr float kLeashFrac = 0.85f;  // a trip's near side beyond 85 % of a leash from its anchor is refused (the decision's)
-constexpr float kNagDefault = 4000;  // Act_NagDistTowards' default distance (Content.dll, LOOK_PLAN 4a)
+constexpr float kNagDefault = 4000;  // Act_NagDistTowards' default distance (Content.dll, the look-ahead plan 4a)
 // PSN's keep-out round a destroy objective's place / an unspawned hostile's spawn: an L0 choice, not measured (the M13
 // Cap2 death: the ship staged at the spawn point itself); the slices that act on it tune it
 constexpr float kPsnRadius = 3000;
 
-// PSN (WORK_QUEUE "PSN", LOOK_PLAN 1): may the autopilot go to `p` ahead of the script? False (with `why`) within
+// PSN (WORK_QUEUE "PSN", the look-ahead plan 1): may the autopilot go to `p` ahead of the script? False (with `why`) within
 // kPsnRadius of a kill goal ship's spawn while that ship has no contact (unspawned or not visible), or of the declared
 // next objective's point when that objective is a destruction (its object's place - M13 NomadCap2).
 bool StageablePlace(const float p[3], const LookFacts& f, std::string* why = nullptr);
@@ -154,7 +154,7 @@ LookResult LookTarget(const LookFacts& f);
 std::string Line(const LookResult& r, const LookFacts& f);
 std::string Describe(const LookResult& r, const LookFacts& f);
 // One line per kill goal ship under the script's Act_Invulnerable (after "autopilot look "): the script's flags and floor
-// against the game's own GetInvincible and the ship's hull - the open M02 fact (LOOK_PLAN 4a, Ashcroft).
+// against the game's own GetInvincible and the ship's hull - the open M02 fact (the look-ahead plan 4a, Ashcroft).
 std::vector<std::string> InvincibleLines(const LookFacts& f);
 
 // ---- TIMER-DESTROY (docs\WORK_QUEUE.md, switch `timer_destroy`): a "Destroy ..." step the
@@ -297,8 +297,8 @@ struct StageResult
 // `leash` of it (leash <= 0: no pull).
 StageResult StagePoint(const float spawn[3], const float runTo[3], const float* anchor, float leash);
 
-// ---- SPAWN-CHARGE (switch `spawn_charge`, with `spawn_stage` and `chase_kill`; docs\research\runners\
-// M02_ashcroft_consensus.md "The ONE design"): the stage point close behind the spawn ON his line, inside EVERY leash, so
+// ---- SPAWN-CHARGE (switch `spawn_charge`, with `spawn_stage` and `chase_kill`; the M02 Ashcroft
+// escalation notes' consensus, private: "The ONE design"): the stage point close behind the spawn ON his line, inside EVERY leash, so
 // the cruise charge pressed at his spawn locks ~150-300 m behind him (both charges take ~8.5-9 s) - the coast's window.
 // One leash (or leaving nag) the point must keep inside: within frac x radius of the anchor.
 struct StageLeash
@@ -339,7 +339,7 @@ constexpr float kChargeNoMissileBeyond = 600;
 // 34-48 m/s and the coast ended at 540 m after 10.2 s; the runners kill the engine at his top speed, ~296-297
 constexpr float kChargeCoastSpeed = 295;
 // The charge's speed profile (the note's design, "Pure half": his - 75 m/s for ~5.5 s, the ramp to 300 m/s at ~9.5 s
-// (LOOK probe: 75 m/s at 0.8 s, 294 m/s at 9 s, LOOK_PLAN 138-146); ours - the engine's 80 m/s for 5 s, 300 m/s at 8.5 s
+// (LOOK probe: 75 m/s at 0.8 s, 294 m/s at 9 s, the look-ahead plan's lines 138-146); ours - the engine's 80 m/s for 5 s, 300 m/s at 8.5 s
 // (FREELANCER_RE.md 467-476; FLMotion as2-as4: 7.5-8.5 s)); linear in the ramp.
 struct ChargeProfile
 {

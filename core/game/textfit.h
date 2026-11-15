@@ -23,11 +23,13 @@ constexpr wchar_t kEllipsis = 0x2026;
 // one-pixel outline - the smallest size it stays readable at (judged on the 720p / 4:3 frames of fix_text_2026-10-25).
 constexpr float kMinPx = 14.0f;
 inline float g_floorH = 0.024f; // the floor in force: `hud_size` Small lowers it (core\game\hudsize.h)
-inline float MinSize(float screenH)
+// `floorH` = the floor in force as a caller hands it in (HUD 2's frame: its copy of g_floorH); MinSize reads the global.
+inline float MinSizeAt(float screenH, float floorH)
 {
-    const float h = g_floorH * screenH;
+    const float h = floorH * screenH;
     return h > kMinPx ? h : kMinPx;
 }
+inline float MinSize(float screenH) { return MinSizeAt(screenH, g_floorH); }
 
 struct Result
 {

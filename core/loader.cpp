@@ -27,12 +27,11 @@ void Say(const char* fmt, ...)
     vsnprintf(line, sizeof(line), fmt, args);
     va_end(args);
     line[sizeof(line) - 1] = 0;
+    // every registered module's log: a refused logic stops them all, so each log says why (a log two modules share, the
+    // subtitles' with the movies', gets the line twice)
     for (const LogicClient* c : g_clients)
         if (c && c->log)
-        {
             c->log(line);
-            return;
-        }
 }
 
 #ifdef FLV_STATIC
@@ -75,6 +74,8 @@ const LogicApi* LoadApi()
         return nullptr;
     }
     auto get = reinterpret_cast<GetLogicApiFn>(GetProcAddress(g_module, "GetLogicApi"));
+    if (!get)
+        Say("logic: not loaded: %s has no GetLogicApi", g_name);
     return get ? get() : nullptr;
 }
 
@@ -93,7 +94,9 @@ bool Load()
     const LogicApi* api = LoadApi();
     if (!api || api->version != kLogicApiVersion)
     {
-        Say("logic: incompatible (%s)", g_name);
+        if (api) // (no api: LoadApi said why)
+            Say("logic: not loaded: %s was built for interface %u, this FLvibed.dll has %u (restart the game to load it)", g_name,
+                api->version, kLogicApiVersion);
         FreeApi();
         return false;
     }

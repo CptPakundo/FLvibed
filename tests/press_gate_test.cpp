@@ -114,4 +114,27 @@ void Test_press_gate()
         CHECK(!d[B]);
         CHECK(flight.Hidden(B));
     }
+    // 6. A press acted on outside the dispatch on its own frame (View closing a NeuroNet window while the mode still reads flight,
+    // controller.cpp PadRest: the dispatch is not called that frame): the dispatch never sees it, held or released, so its tap
+    // (the map) cannot follow; the next press is the dispatch's again.
+    {
+        PressGate<N> flight;
+        const bool none[N] = {}, b[N] = {false, true, false};
+        flight.Observe(none);
+        bool d0[N] = {};
+        flight.Take(d0);
+        flight.Observe(b); // the press frame: nobody takes
+        bool d[N] = {false, true, false};
+        flight.Observe(b);
+        flight.Take(d);
+        CHECK(!d[B]);
+        flight.Observe(none);
+        bool r[N] = {};
+        flight.Take(r);
+        CHECK(!r[B] && !flight.Hidden(B));
+        flight.Observe(b);
+        bool n[N] = {false, true, false};
+        flight.Take(n);
+        CHECK(n[B]);
+    }
 }

@@ -11,6 +11,7 @@
 #include "game/render.h"
 #include "game/room.h"
 #include "ui/gamecard.h"
+#include "ui/hud_door.h"
 #include "ui/ui.h"
 #include "ui/views.h"
 #include "ui/winfit.h"
@@ -336,6 +337,7 @@ bool g_modalOpen = false, g_dockedFrame = false, g_dockedLane = false;
 float g_nnRight = 0, g_nnBottom = 0;
 std::vector<KeepOut> g_keep;
 size_t g_keepUnder = 0;
+float g_pageFloor = 0;
 bool g_paint = false;
 static bool g_laneTrim = false; // the prompt lane is in use this frame: plates with a `trim` end there
 int g_sw = 0, g_sh = 0;
@@ -1193,7 +1195,7 @@ void DockedPlates(const Win& bar, const Win* nn, bool draw)
             Keep(x0 - Hf(0.050f), y0, x1 + Hf(0.050f), y1);
         // one glyph, one meaning not while an open window binds the bumpers itself - the dealers
         // (SIDE), the NeuroNet log (MISSION / LOG), the nav map (SYSTEM / UNIVERSE)
-        bool bumpers = views::HudNNStrip(); // (the strip's tabs)
+        bool bumpers = huddoor::NNStrip(); // (the strip's tabs)
         for (const Win& w : g_wins)
             if ((w.fam == kFamDealer || w.fam == kFamLog || w.fam == kFamNavMap) && Shown(w.root))
                 bumpers = true;
@@ -1243,6 +1245,7 @@ void Geometry(void* device)
     g_docked = DockedGeo();
     g_keep.clear();
     g_keepUnder = 0;
+    g_pageFloor = 0;
     g_paint = false;
     struct Under // (whatever way the pass ends: what it collected is the under pass's)
     {
@@ -1286,7 +1289,7 @@ void Geometry(void* device)
             const size_t kept = g_keep.size();
             WindowPass pass;
             WindowPlates(w, pass);
-            if (w.fam == kFamLog && views::HudPageOn())
+            if (w.fam == kFamLog && huddoor::PageOn())
                 for (size_t i = kept; i < g_keep.size(); ++i)
                     g_keep[i].y1 = std::min(g_keep[i].y1, deckmode::LaneTopH() * g_H - Hf(0.008f));
         }
@@ -1301,9 +1304,10 @@ void ClassicPass(void* device, bool enabled, bool pad, bool classic)
         g_wins.clear();
         g_keep.clear();
         g_keepUnder = 0;
+        g_pageFloor = 0;
         g_scene = false, g_modalOpen = g_dockedLane = g_dockedFrame = false, g_nnBottom = g_lowestModalY1 = 0;
-        if (enabled && classic)
-            gamecard::NativeCard(LetterboxNow() > 0.001f); // the game's name card off the character (mouse)
+        // (keyboard and mouse: the game's name card stays where the game puts it - the owner's answer of 13 Nov 2026 to card Q6 of audit 102_,
+        // decision 77; the pad moves it below, clear of its prompts)
         return;
     }
     g_scene = LetterboxNow() > 0.001f;
@@ -1358,7 +1362,7 @@ float LaneLeft(float W, float H, float y0, float y1, float right)
     for (const KeepOut& k : g_keep) // (both ui_style values: the geometry pass)
         block(k.x0, k.y0, k.x1, k.y1);
     // the strip (drawn in the overlay before the pills: this frame's)
-    const float sr = views::HudStripRight(), sb = views::HudStripBottom();
+    const float sr = huddoor::StripRight(), sb = huddoor::StripBottom();
     if (sr > 0 && sb > 0)
         block(0, 0, sr, sb * H);
     return std::min(left, right);

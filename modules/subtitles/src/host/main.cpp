@@ -559,7 +559,6 @@ void Start(HMODULE)
         cmd::Add(g_channel, "ping", false, PingVerb);
         cmd::Add(g_channel, "movieskip", false, moviehooks::SkipVerb);
     }
-    g_host.version = kHostApiVersion;
     g_host.dllDir = DllDir().c_str();
     g_host.LogWrite = HostLogWrite;
     g_host.GetD3DDevice = router::D3DDevice;

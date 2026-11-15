@@ -22,18 +22,38 @@ struct Values
 {
     ShieldCue shield;
     ReticleCue reticle;
-    int gameTextSize = 0;   // the game's own text, percent (100..150; gametext.h), 0 automatic: it follows hud_size
+    int gameTextSize = 0;   // the game's own text, percent (100..150; gametext.h), 0 automatic: the game's own on the classic HUD, else it follows hud_size
     bool windowText = true; // the game's windows' text by role, HUD 2 only (windowtext.h)
     // HUD 2 (modules\hud\docs\UI_HUD2.md 5.3; the codings: the rows' help)
-    int nnPause = 1, basePages = 1, hudStyle = 2, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0, hudPrompts = 1;
+    int nnPause = 1, hudStyle = 2, hudFade = 1, hudOpacity = 100, hudScale = 100, hudNumbers = 0, hudContext = 0, hudPrompts = 1;
     bool hudThreats = true, hudAlerts = true, hudInfo = true, hudWireframes = true, groupCue = true;
     int hudTransition = 120;
     int hudPreset = 0; // hud_preset: HUD 2's layout preset (UI_HUD2_PRESETS.md 6 step 4)
-    int uiStyle = 1;   // ui_style: the non-flight windows' look, 0 CLASSIC, 1 HUD 2 (uiskin.*, uistrip.*); only with HUD 2 on
-    int skinMotion = 0;     // skin_motion: the skin's own motion, 0 full, 1 fades, 2 none
-    std::string skinNative; // skin_native: family labels that stay the game's (hidden; troubleshooting and reports)
+    // RETIRED 13 Nov 2026 (the owner's answer to card Q2 of audit 102_, "Retire now"): ui_style 0 (HUD 2 with the game's own menus), base_pages 0 (the
+    // game's dealer windows under HUD 2's skin) and skin_native (windows kept the game's inside HUD 2); their rows went then, their fields with
+    // their last reads (audit 113_ B6). Older comments that say "ui_style 0" mean the skin off, which now is the classic HUD; "ui_style 1" (or
+    // "HUD 2") the skin on, which now is HUD 2.
+    int skinMotion = 0; // skin_motion: the skin's own motion, 0 full, 1 fades, 2 none
 };
 inline Values g;
+// classic_cues: the shield, hull and reticle cues on the classic HUD too (each by its own switch); off by default, so the classic HUD stays the game's
+// own (the owner's answer of 13 Nov 2026 to card Q4 of audit 102_: "Keep, off by default"). Outside Values: HUD 2 never reads it, so HUD 2's state
+// as text (hud2_state_io.h) does not carry it.
+inline bool classicCues = false;
+// idle_cursor: the game's mouse cursor hides after 3 s without the mouse in calm flight (modules\hud\src\extras\extras.cpp Cursor). Its own row in
+// CUES AND TEXT, reachable on the classic HUD (the owner, 14 Nov 2026, card "idle-cursor hide": before, only hud_fade - a HUD 2 row, greyed with HUD 2
+// disabled - turned it off). With HUD 2 it hides only while hud_fade lets the flight HUD rest, as before. Outside Values, as classic_cues.
+inline bool idleCursorHide = true;
+
+// hud_style has two states (the owner's decision 77, 13 Nov 2026: the classic HUD and HUD 2 are not mixed): 0 the classic HUD, 2 HUD 2.
+// The row keeps its range 0..2 so that every file of an older release loads: 1 (HUD 2 on the pad with keyboard and mouse on the game's HUD,
+// retired) reads as 2, as does anything else above 0; 0 and below stay the classic HUD.
+inline int StyleOf(int stored) { return stored <= 0 ? 0 : 2; }
+// After every load and every set of the rows: the stored value becomes one of the two at once, so the options row, `config` and every save show
+// it and no file is ever written with 1. Called by the rows' owners, never by the shared settings code: the loaders (the controller's LoadConfig,
+// core\logic\alone.cpp Init), the controller's `set` (SetOption) and the owners' `applied` hooks on the settings bus (the options page's and the
+// bus's sets).
+inline void Settle() { g.hudStyle = StyleOf(g.hudStyle); }
 } // namespace hudrows
 
 #define FLV_HUD_ROWS_CUES \
@@ -51,12 +71,18 @@ inline Values g;
      "(default)"}, \
     {"reticle_cue", settings::Bool, &hudrows::g.reticle.on, 0, 1, \
      "a ring pulse at the crosshair: autopilot on (cyan, outward), handed back (amber, inward), nanobots (green) / " \
-     "batteries (blue) used (double ring)"},
+     "batteries (blue) used (double ring)"}, \
+    {"classic_cues", settings::Bool, &hudrows::classicCues, 0, 1, \
+     "the classic HUD: the shield, hull and reticle cues on the game's HUD too, each by its own switch (default off: the " \
+     "classic HUD stays the game's own); HUD 2 shows them by their own switches"}, \
+    {"idle_cursor", settings::Bool, &hudrows::idleCursorHide, 0, 1, \
+     "the mouse cursor hides after 3 s without the mouse in calm flight (default on), on both HUDs; with HUD 2 only while " \
+     "hud_fade 1 lets the HUD rest"},
 
 #define FLV_HUD_ROWS_TEXT \
     {"game_text_size", settings::Int, &hudrows::g.gameTextSize, 0, 150, \
-     "size of the game's own text in every window: 0 automatic (follows hud_size), else 100 to 150 percent; takes " \
-     "effect at the main menu"}, \
+     "size of the game's own text in every window: 0 automatic (the game's own size on the classic HUD; with HUD 2 it " \
+     "follows hud_size), else 100 to 150 percent on both; takes effect at the main menu"}, \
     {"window_text", settings::Bool, &hudrows::g.windowText, 0, 1, \
      "HUD 2: the text in the game's windows takes the room it has, the prices most, labels less, headings and buttons not at all"},
 
@@ -66,13 +92,11 @@ inline Values g;
 // Standard; raise the cap as each preset's layout lands (hud2_preset.h keeps their ids)
 #define FLV_HUD_ROWS_HUD \
     {"hud_style", settings::Int, &hudrows::g.hudStyle, 0, 2, \
-     "the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 1 HUD 2 on the " \
-     "pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always (default); HUD 2 includes its look over the menus " \
-     "and rooms (ui_style)"}, \
+     "the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 2 HUD 2 (default; " \
+     "on the pad and on keyboard and mouse); HUD 2 includes its look over the menus and rooms; an older " \
+     "release's 1 (HUD 2 on the pad only) reads as 2"}, \
     {"nn_pause", settings::Int, &hudrows::g.nnPause, 0, 1, \
      "the NeuroNet windows in single player, in space: 1 the world stops while one is open (default; the autopilot flying keeps it going), 0 the game goes on behind them"}, \
-    {"base_pages", settings::Int, &hudrows::g.basePages, 0, 1, \
-     "the dealers, the ship dealer, the job board and the news: 1 HUD 2's pages (default), 0 the game's windows with HUD 2's skin"}, \
     {"hud_fade", settings::Int, &hudrows::g.hudFade, 0, 1, \
      "HUD 2 in flight: 0 full (always shown), 1 contextual (fades out in calm flying; each part comes back for 4 s when " \
      "it matters: steering, boost, a target, firing, a maneuver, a new objective; alerts, low shield / hull, missiles " \
@@ -97,21 +121,17 @@ inline Values g;
     {"hud_wireframes", settings::Bool, &hudrows::g.hudWireframes, 0, 1, \
      "the game's wireframe views in the target card and the ship panel where they can be kept (else flat icons)"}, \
     {"hud_transition", settings::Int, &hudrows::g.hudTransition, 0, 400, \
-     "advanced: how long HUD 2 takes to fade in when you switch to the controller, in milliseconds"}, \
+     "advanced: how long HUD 2 takes to fade in when flight starts, and out and in as a NeuroNet window in space opens " \
+     "and closes, in milliseconds"}, \
     {"hud_preset", settings::Int, &hudrows::g.hudPreset, 0, 1, \
      "experimental: HUD 2's layout preset - 0 Standard (default: today's HUD 2), 1 Focus (a calmer HUD that shows less " \
      "until it matters); Speedrun and Guided are planned"},
 
-// HUD 2 over the menus (formerly Extended HUD 2, modules\hud\docs\UI_HUD2_EXTENDED.md 9-10; folded into HUD 2 in 0.2.0): 1 HUD 2
-// (default), 0 CLASSIC; applies only while hud_style is not 0
+// HUD 2 over the menus (formerly Extended HUD 2, modules\hud\docs\UI_HUD2_EXTENDED.md 9-10; folded into HUD 2 in 0.2.0): its motion. (ui_style and
+// skin_native stood here until their retirement, 13 Nov 2026: HUD 2 always has its look over the menus.)
 #define FLV_HUD_ROWS_STYLE \
-    {"ui_style", settings::Int, &hudrows::g.uiStyle, 0, 1, \
-     "The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (default; the " \
-     "game's controls stay as they are); Classic = the game's own"}, \
     {"skin_motion", settings::Int, &hudrows::g.skinMotion, 0, 2, \
-     "HUD 2's motion, in flight and in the menus and dialogs: 0 full, 1 fades (no breathing or travel, a change fades in place), 2 none (a change cuts)"}, \
-    {"skin_native", settings::String, &hudrows::g.skinNative, 0, 0, \
-     "advanced, for troubleshooting: a comma list of window names that keep the game's look (pause, navmap, cursor ...); empty by default"},
+     "HUD 2's motion, in flight and in the menus and dialogs: 0 full, 1 fades (no breathing or travel, a change fades in place), 2 none (a change cuts)"},
 
 namespace hudrows
 {

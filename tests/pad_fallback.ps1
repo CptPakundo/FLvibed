@@ -4,9 +4,10 @@
 # the physical one (its own input takes over, prompts and rumble with the hands), `pad_sdl_fallback` 0, `none` no such pad in the HID list (SDL never starts).
 # `page` the options page's reader follows the hands, `injected` real injected input through the hooks (F24 and a mouse move of one pixel and back).
 # Usage (PowerShell tool): tests\pad_fallback.ps1 [-Row real,ps5,switchpro,mapper,page,injected,none] [-Instance 5]   build\release. Exit 1 = a failure.
-param([string[]]$Row = @('real', 'ps5', 'switchpro', 'mapper', 'page', 'injected', 'none'), [string]$Instance = 5)
+param([string[]]$Row = @('real', 'ps5', 'switchpro', 'mapper', 'page', 'injected', 'none'), [string]$Instance = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+if (-not $Instance) { throw 'name the game instance: -Instance <n> (no default: a default instance belongs to no checkout - docs\TESTING.md "Parallel lanes")' }
 $env:FLVIBED_INSTANCE = "$Instance"
 . (Join-Path $root 'tools\harness\flctl.ps1')
 $bad = [Collections.Generic.List[string]]::new()

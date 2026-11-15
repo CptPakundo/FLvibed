@@ -2,6 +2,7 @@
 // the lint, and this row adds nothing to the boxed budget.
 #include "hud2_impl.h"
 #include "hud2_cue.h"
+#include "hud2_frame.h"
 
 #include <cmath>
 
@@ -38,7 +39,7 @@ void DrawCue(const Model& m, const Layout& L, float a, int motion)
     const float y = L.cy - L.R - hc::kAboveRing * s;
     float xs[hc::kMaxMarks] = {};
     hc::Layout(m.cueDigits, m.nCue - m.cueDigits, s, xs);
-    const float breath = hc::Breath(GetTickCount() / 1000.0f, motion);
+    const float breath = hc::Breath(PartsSeconds(), motion);
     const float fadeUntilLit = m.presetDrawn == hud2preset::Focus && !m.cueAnyLit ? 0.45f : 1.0f;
     RecordTag("ring.groups");
     const RecUnit unit; // (one row of cells, 0.003 apart by design: the lint's gap is for separate elements, and the row cannot widen, UI_HUD2_GROUP_CUE.md)

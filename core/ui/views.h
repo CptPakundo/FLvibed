@@ -13,6 +13,7 @@
 #include "game/render.h"
 #include "game/space.h"
 #include "settings.h"
+#include "ui/hud_context.h"
 #include "ui/presets.h"
 #include "ui/uikit.h"
 
@@ -114,23 +115,7 @@ struct PadFlightView
 };
 inline PadFlightView padflight = {};
 
-// What HUD 2 is told each frame.
-struct HudContext
-{
-    bool space = false;     // Mode::Space (flying, the HUD up)
-    bool spaceUi = false;   // Mode::SpaceUi (a NeuroNet window over the HUD)
-    bool cutscene = false;  // Mode::Cutscene (an in-flight cutscene: a docking, a mission's scene)
-    bool pad = false;       // the pad is the input device
-    bool bot = false;       // the test bot flies
-    presets::Table table;   // the effective bindings (flight or flight_ap)
-    bool autopilot = false; // the Advanced Autopilot flies
-    bool turret = false;    // turret view (the pad's toggle)
-    int weaponGroup = 1;    // the active group as the pad last set it (1..3)
-    bool apKnown = false;   // the autopilot's prompts may show (used once / ap_hints)
-    bool modal = false;     // the picker / wheel / goal panel is open (its prompt bar: the context line steps aside)
-    float steer = 0;        // the pad's steering this frame (0..~1.4: |x, y|): CONTEXTUAL's steer trigger (hudwake.h)
-    bool firing = false;    // the pad holds fire / a launcher: CONTEXTUAL's fire trigger
-};
+// What HUD 2 is told each frame (HudContext) is in ui\hud_context.h, a header with no game include.
 // What uistrip drew this frame (pixels): the prompt lane's keep-outs.
 struct HudRect
 {
@@ -174,17 +159,13 @@ struct HudView
     const std::vector<HudRect>* (*StripDrawn)();
     void (*DrawOver)(void* device); // the skin's marks over the game's UI, from the prompt bar's pass
     // the frame
-    void (*Cues)(float dt, bool flying, bool autopilot);
-    void (*GameText)(bool menu);
     void (*Flight)(float dt, const HudContext& c);
-    void (*Cursor)(float dt, bool padOwns, bool flyingFree, bool (*onlyHudOpen)());
     void (*Skin)(float dt, bool padOwns, bool enabled, bool docked);
     // the passes
     bool (*UnderBegin)(void* device, bool flying); // true: a modal menu holds the flight HUD under its scrim
-    void (*UnderEnd)(void* device, bool shieldCue);
-    void (*Overlay)(void* device, bool menuOver, bool noUnderPass);
+    void (*UnderEnd)(void* device);
+    void (*Overlay)(void* device);
     void (*Strip)(void* device);
-    void (*DeviceLost)();
     void (*Top)(void* device); // last of the overlay: over the options page and the prompts (the cursor, a tooltip)
     // the strip of words on the NeuroNet windows: its rectangle this frame, pixels x0 y0 x1 y1; false while it does not stand
     bool (*NNStrip)(float* rect);
@@ -202,6 +183,20 @@ struct HudView
     bool (*FlightAnswers)();
 };
 inline HudView hud = {};
+
+// The HUD module's extras (modules\hud\src\extras\): the shield and hull cue, the reticle cue, game_text_size, the idle cursor's hide and the hover
+// help's rule, kept on both interfaces. Their places in core's frame and passes, called through core's door (core\ui\hud_door.h). Null with the HUD
+// module off.
+struct ExtrasView
+{
+    void (*Cues)(float dt, bool flying, bool autopilot);
+    void (*GameText)(bool menu);
+    void (*Cursor)(float dt, bool padOwns, bool flyingFree, bool (*onlyHudOpen)());
+    void (*HoverHelp)(bool space, bool menuOver); // at the UI pass's entry on the classic HUD (HUD 2's own pass calls the same rule)
+    void (*Under)(void* device, bool shieldCue);               // under the game's UI pass, after HUD 2's glass
+    void (*Over)(void* device, bool menuOver, bool noUnderPass); // over the flight, before HUD 2's panels
+};
+inline ExtrasView extras = {};
 
 // The pad's places in core's frame and passes (the Controller module: controller.cpp). All null with the module off.
 struct PadFrameView
@@ -264,8 +259,6 @@ inline void HudDrawOver(void* device)
     if (hud.DrawOver)
         hud.DrawOver(device);
 }
-inline bool HudUnderBegin(void* device, bool flying) { return hud.UnderBegin && hud.UnderBegin(device, flying); }
-inline bool HudPresent() { return hud.Flight != nullptr; }
 inline bool DeviceRearView() { return device.RearView && device.RearView(); }
 inline bool DevicePromptVisible() { return device.PromptVisible && device.PromptVisible(); }
 // The prompt lane's pills from the last overlay pass (4 floats each); 0 without the controller or with the lane hidden.

@@ -231,7 +231,7 @@ Our personal bests (full leg): 1134 (10-22 08:54) -> 1128 (10-28 23:05) -> 1109 
 4. No hold-short at the Colorado gate (+30 s): request at once when no NPC is locked in (A23); King must still follow.
 
 **Per segment: M02.ashcroft -> M02.pod (the Rogues fight's end and the follow; 30 Oct 2026, `ref.py M02`, LOOK L2's
-probe, `modules\autopilot\docs\LOOK_PLAN.md` 8)** - our pod segment 114-131 s (sd 5.6) vs par 22; our Rogues gold 26 s UNDER
+probe, the look-ahead plan 8, private)** - our pod segment 114-131 s (sd 5.6) vs par 22; our Rogues gold 26 s UNDER
 par - the runners spend those seconds placing themselves.
 - WHAT: the runners do not kill the 4th escort themselves. They bring it low (r1 Dowling and r3 Harrison left at 0.09
   hull; HUD kills 1 / 2 / 1 in the section) and leave it to King and the police. **12-17 s before "Follow Ashcroft" they are
@@ -1311,7 +1311,7 @@ design: the runners' 0 m + every launcher works only where our blasts cannot rea
   the batteries left on reaching 300 m (>= 7: 15 / 15 lived) - our 16-27 s crawl through the cover drains them where
   the runners cross it in ~7 s; and bsdown's sigma 26.6 s hides any effect under ~27 s at 12 runs a side. Next: cut the
   variance first (Q3 fixed dt + seeds), then the runners' shape as ONE switch set (cruise in, 0 m, batteries on each
-  failure), not one switch at a time (AUTOPILOT_LOG.md "Q4 slice 1 and 2, judged 30 Oct 2026").
+  failure), not one switch at a time (the autopilot session log, private, "Q4 slice 1 and 2, judged 30 Oct 2026").
 - 2026-10-29 (the owner, after gate mpb22 / run mpb22b): **the ship eats too many hits at the generators** - unlike M12
   the Nomads keep aggro on the player; maneuvers are needed that keep time on the generators. mpb22b: after the sphere
   3 attackers took hull 0.79 -> 0.42 and nanobots 6 -> 1 at a still hold 52-60 m off (static-hold's "exposed" wide orbit

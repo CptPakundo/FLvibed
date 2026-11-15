@@ -10,6 +10,11 @@ static ShmBlock* g_block = nullptr;
 
 bool Init()
 {
+    if (!TestSwitch()) // a player's game: no channel (the harness reads this line to fail at once, tools\fldata.ps1)
+    {
+        Log("debug channel: closed (FLVIBED_TEST is not 1)");
+        return false;
+    }
     // per game instance (parallel test games): FLVIBED_INSTANCE=<n> in the game's environment appends
     // "_<n>"; unset = the one classic name the harness opens by default
     std::string name = "Local\\FLControllerShm";

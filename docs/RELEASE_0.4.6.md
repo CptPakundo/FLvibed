@@ -1,6 +1,6 @@
 # FLvibed 0.4.6: release notes
 
-Released 11 Nov 2026. The release before it: [0.4.5.8](RELEASE_0.4.5.md). Every change, in the player's words: `CHANGELOG.md`, section 0.4.6.
+Released 11 Nov 2026. The release before it: 0.4.5.8 (its changes: `CHANGELOG.md`, section 0.4.5). Every change, in the player's words: `CHANGELOG.md`, section 0.4.6.
 
 ## What it is
 A sweep over the open GitHub reports: every open issue labelled bug, the two critical ones (80, 79) first, then the smaller requests that needed no new design, and two requests of the owner. A cause shared by several issues was fixed once as one mechanism, otherwise with the smallest change; what the player sees changed only where an issue asked for it. Every fix was seen in a game; layout fixes at 3840x2160 and 1280x800. Playtesting and reports: Shockwave (Shockwave508).

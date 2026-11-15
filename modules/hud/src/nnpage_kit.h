@@ -1,7 +1,11 @@
-// What the pages over the game's windows share (nnpage.*, basepage.*): the holes the game's text shows through, the frame, the compare block. docs\NEURONET_PLAN.md.
+// What the pages over the game's windows share (nnpage.*, basepage.*): the holes round the game's text, the frame's place, the game's icons in the rows,
+// the compare block's numbers: the half that reads and works the game. The draw-only half, included here, is pages\page_kit.h. docs\NEURONET_PLAN.md.
 #pragma once
 #include "game/baseinfo.h"
 #include "game/deckmode.h"
+#include "game/screens/compare_screen.h"
+#include "game/screens/parked.h"
+#include "game/screens/slot_order.h"
 #include "game/equip_rules.h"
 #include "game/gamedata.h"
 #include "game/hudinfo.h"
@@ -14,6 +18,7 @@
 #include "skinchip.h"
 #include "skinkit.h"
 #include "windowtext.h"
+#include "pages/page_kit.h"
 #include "ui/hud2_kit.h"
 #include "ui/ui.h"
 #include "ui/winplates.h"
@@ -23,6 +28,19 @@
 namespace nnkit
 {
 using namespace hud2kit;
+// the draw-only half (pages\page_kit.h): the ground, the frame, words, the compare block; Box and ChipAt are this file's own, on the kit's
+using pagekit::CompareBlock;
+using pagekit::CompareRow;
+using pagekit::Cover;
+using pagekit::DrawCompare;
+using pagekit::Frame;
+using pagekit::Ground;
+using pagekit::GroundBut;
+using pagekit::Holes;
+using pagekit::Money;
+using pagekit::Title;
+using pagekit::Upper;
+using pagekit::Wrap;
 
 inline u32 R32(u32 a)
 {
@@ -42,51 +60,16 @@ inline void W32(u32 a, u32 v)
         safemem::Write(a + i, static_cast<u8>(v >> (8 * i)));
 }
 
-// An EquipDesc's hardpoint, lower case ("" in the hold): its name through the pointer at +8 (baseinfo's WalkEquipment reads the same, node +0x10).
-inline std::string DescHardpoint(u32 desc)
-{
-    char hp[33] = {};
-    const u32 p = R32(desc + 8);
-    if (!p || !safemem::Read(p, hp, 32))
-        return std::string();
-    return equiprules::Lower(hp);
-}
+// An item's hardpoint, the ship's items in its slots' order, the game's list window moved over the shown rows: core's since
+// audit 70b F3b (core\game\screens\slot_order.h, parked.h: the dealer's screen reads and moves them); their names here as before.
+using screens::DescHardpoint;
+using screens::InSlotOrder;
+using screens::SyncList;
 
-// A list of the ship's items in its slots' fixed order (issue 52, the owner: a slot's place is part of the ship): every hardpoint of the filter where it stands, what is
-// mounted there or an EMPTY row; then the rest (the hold, a hardpoint not read) in the game's order. `hpOf(row)` the row's hardpoint, `empty(i)` the EMPTY row of free[i];
-// `free` comes back holding the empty slots in that order.
-template <class R, class HpOf, class Empty>
-std::vector<R> InSlotOrder(const std::vector<R>& rows, int filter, std::vector<equiprules::Hp>& free, HpOf hpOf, Empty empty)
+// ---- the holes: the game's text shows through (the ground and its holes are drawn by the kit: pages\page_kit.h)
+// A hole round the game's controls: each added control's rectangle on the screen.
+struct Box : pagekit::Box
 {
-    std::vector<R> out;
-    std::vector<bool> used(rows.size(), false);
-    free.clear();
-    for (const equiprules::Hp& h : gamedata::ShipSlots(filter))
-    {
-        size_t at = rows.size();
-        for (size_t i = 0; i < rows.size() && at == rows.size(); ++i)
-            if (!used[i] && hpOf(rows[i]) == h.name)
-                at = i;
-        if (at < rows.size())
-        {
-            used[at] = true;
-            out.push_back(rows[at]);
-            continue;
-        }
-        free.push_back(h);
-        out.push_back(empty(static_cast<int>(free.size()) - 1));
-    }
-    for (size_t i = 0; i < rows.size(); ++i)
-        if (!used[i])
-            out.push_back(rows[i]);
-    return out;
-}
-
-// ---- the holes: the game's text shows through
-struct Box
-{
-    float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
-    bool ok = false;
     void Add(u32 ctl, float grow = 0) { Add(ctl, grow, grow); }
     // grown by `grow` but at the top, by `top` there (less than 0: cut in)
     void Add(u32 ctl, float grow, float top)
@@ -99,8 +82,7 @@ struct Box
             a = it.x - grow, b = it.y - top, c = it.x + static_cast<float>(R32(ctl + 0x358)) + grow * 3, d = it.y + static_cast<float>(R32(ctl + 0x35C)) + grow;
         else if (it.hw <= 1)
             return;
-        x0 = ok ? std::min(x0, a) : a, y0 = ok ? std::min(y0, b) : b, x1 = ok ? std::max(x1, c) : c, y1 = ok ? std::max(y1, d) : d;
-        ok = true;
+        AddRect(a, b, c, d);
     }
 };
 // The hole to cut for the game's text `ctl`: only once that text stands laid out where it stays (windowtext::TextReady). A newly opened window arrives at the
@@ -108,63 +90,6 @@ struct Box
 // shut, the page without its text. What a page lays out by the text (INFO's and LOG's columns) waits for the same frame: an element shows from the frame it
 // is right, not before.
 inline Box OpenHole(const Box& hole, u32 ctl) { return windowtext::TextReady(ctl) ? hole : Box(); }
-inline void Ground(float x0, float y0, float x1, float y1, float alpha = 1)
-{
-    if (x1 > x0 && y1 > y0)
-        Rect(x0, y0, x1 - x0, y1 - y0, Argb(0x060716, alpha));
-}
-// The page's ground, but for `hole`.
-inline void Cover(float W, float H, const Box& hole, float alpha = 1)
-{
-    if (!hole.ok)
-    {
-        Ground(0, 0, W, H, alpha);
-        return;
-    }
-    Ground(0, 0, W, hole.y0, alpha);
-    Ground(0, hole.y1, W, H, alpha);
-    Ground(0, hole.y0, hole.x0, hole.y1, alpha);
-    Ground(hole.x1, hole.y0, W, hole.y1, alpha);
-}
-
-// Several holes in one ground: the game's 3D icons stand in them.
-struct Holes
-{
-    float r[16][4];
-    int n = 0;
-    void Add(float x0, float y0, float x1, float y1)
-    {
-        if (n < 16)
-            r[n][0] = x0, r[n][1] = y0, r[n][2] = x1, r[n][3] = y1, ++n;
-    }
-};
-inline void GroundBut(float x0, float y0, float x1, float y1, const Holes& h)
-{
-    float ys[34];
-    int m = 0;
-    ys[m++] = y0, ys[m++] = y1;
-    for (int i = 0; i < h.n; ++i)
-        ys[m++] = std::max(y0, std::min(y1, h.r[i][1])), ys[m++] = std::max(y0, std::min(y1, h.r[i][3]));
-    std::sort(ys, ys + m);
-    for (int b = 0; b + 1 < m; ++b)
-    {
-        const float a = ys[b], c = ys[b + 1];
-        if (c <= a)
-            continue;
-        int order[16], k = 0;
-        for (int i = 0; i < h.n; ++i)
-            if (h.r[i][1] <= a && h.r[i][3] >= c)
-                order[k++] = i;
-        std::sort(order, order + k, [&](int p, int q) { return h.r[p][0] < h.r[q][0]; });
-        float x = x0;
-        for (int i = 0; i < k; ++i)
-        {
-            Ground(x, a, h.r[order[i]][0], c);
-            x = std::max(x, h.r[order[i]][2]);
-        }
-        Ground(x, a, x1, c);
-    }
-}
 
 // A control of the game's, centred on (cx, cy): its local position through its position property, as windowtext moves a text. A window off the screen keeps it where the page wants it.
 using SetProp = void(__thiscall*)(u32, int, const float*, int);
@@ -193,19 +118,18 @@ inline void PlaceAt(u32 ctl, float cx, float cy)
     pos[0] += (cx - it.x) / H, pos[1] += (it.y - cy) / H;
     SetPosition(ctl, pos);
 }
-// A row's icon: where the game's mesh of that row stands, or off the page.
-struct Icon
-{
-    float cx = 0, cy = 0;
-    bool on = false;
-};
-// The five meshes of a list (`format` by 1..5 or 0..), the `nth` of that name on the screen.
+// A row's icon: where the game's mesh of that row stands, or off the page (pages\page_view.h: a view records its icons).
+using page::Icon;
+// The five meshes of a list (`format` by 1..5 or 0..; a format with no number: that one control), the `nth` of that name on the screen.
 inline void PlaceIcons(const char* format, int base, int count, int nth, const Icon* icons)
 {
     for (int i = 0; i < count; ++i)
     {
         char name[40];
-        sprintf_s(name, format, base + i);
+        if (strchr(format, '%'))
+            sprintf_s(name, format, base + i);
+        else
+            strcpy_s(name, format);
         PlaceAt(baseinfo::Find(name, nth), icons[i].on ? icons[i].cx : -winplates::g_W, icons[i].on ? icons[i].cy : 0);
     }
 }
@@ -472,22 +396,7 @@ struct ListIcons
     }
 };
 
-// The list of a window whose rows show: the game's own scrolled to `first`, so its five meshes are the page's.
-inline void SyncList(u32 window, int first)
-{
-    const int now = static_cast<int>(R32(window + kListFirst));
-    if (first >= 0 && first != now)
-        if (const u32 bar = R32(window + 0x3D0))
-            uiclick::Scroll(bar, static_cast<float>(first - now), false, nullptr, nullptr);
-}
-// The same for the page's shown rows (their game rows, -1 none): the start whose five show the most of them (nnrules::BestWindowStart), so
-// the fewest borrow a mesh (RowIcons).
-inline void SyncList(u32 window, const int* gameRow, int n) { SyncList(window, nnrules::BestWindowStart(gameRow, n)); }
-
-struct Frame
-{
-    float W, H, left, right, top, bottom, titleY;
-};
+// This screen's page frame (pages\page_kit.h Frame): the deck's side columns, the title on the strip's line.
 inline Frame Bounds()
 {
     Frame f;
@@ -498,116 +407,38 @@ inline Frame Bounds()
     f.top = 0.135f * f.H, f.bottom = 0.865f * f.H;
     return f;
 }
-inline void Title(const Frame& f, const std::wstring& word) { Text(f.left, f.titleY, word, 0.044f * f.H, Argb(kInk, 1)); }
 
-inline std::wstring Money(long long v)
+// A page stands this frame: what the pad's prompt lane must know of it (core\ui\winplates.h). The pad's B CLOSE stands at
+// the right edge, where the page's prompts end: a mark at the lane's left keeps the row there (as on the map); `content`
+// = the page's content box stands (not in the gap between two windows' slides): its bottom edge is the floor a second row
+// of prompts keeps under.
+inline void PageLane(const Frame& f, bool content = true)
 {
-    std::wstring s = std::to_wstring(v < 0 ? -v : v);
-    for (int i = static_cast<int>(s.size()) - 3; i > 0; i -= 3)
-        s.insert(static_cast<size_t>(i), L",");
-    return (v < 0 ? L"-$" : L"$") + s;
+    const float lane = deckmode::LaneTopH() * f.H;
+    winplates::g_keep.push_back({f.left, lane, f.left + 0.02f * f.H, lane + 0.02f * f.H});
+    if (content)
+        winplates::g_pageFloor = f.bottom;
 }
 
 // The mouse's chips stand in the prompts' lane, level with CLOSE.
 inline float LaneY() { return deckmode::LaneTopH() * winplates::g_H; }
 inline float LaneChipH() { return (deckmode::LaneBottomH() - deckmode::LaneTopH()) * winplates::g_H; }
 
-// One chip at (x, y), its click; the x after it.
+// One chip at (x, y), its click to the skin's click box; the x after it. The kit's chip, its box handed on at once.
 inline float ChipAt(float x, float y, float h, const std::wstring& word, skinchip::Action act, int arg, bool on = true)
 {
-    const float size = skinrules::kChipWord * h / skinrules::kChipLow;
-    const navlayout::Rect r{x, y, x + TextWidth(word, size) + 0.03f * winplates::g_H, y + h};
-    const int slot = on ? skinchip::Hot(r, act, arg) : -1;
-    skinchip::Chip(r, word, size, !on ? skinchip::Look::Disabled : slot >= 0 && slot == skinchip::Hovered() ? skinchip::Look::Hover : skinchip::Look::Plain);
-    return r.x1 + 0.012f * winplates::g_H;
+    page::ViewIn in{winplates::g_W, winplates::g_H, 0, 0, 0, 0};
+    in.hover = skinchip::Hovered() >= 0 && skinchip::Hovered() == skinchip::Count() ? 0 : -1; // (the box's next rectangle is this chip's)
+    page::ViewOut out;
+    const float next = pagekit::ChipAt(in, out, x, y, h, word, 0, arg, on);
+    if (out.nHits > 0)
+        skinchip::Hot({out.hits[0].x0, out.hits[0].y0, out.hits[0].x1, out.hits[0].y1}, act, arg);
+    return next;
 }
 
-// `text` in lines that fit `width`: its own newlines kept, by whole words.
-inline std::vector<std::wstring> Wrap(const std::wstring& text, float size, float width)
-{
-    std::vector<std::wstring> lines;
-    size_t i = 0;
-    while (i <= text.size())
-    {
-        size_t e = text.find(L'\n', i);
-        if (e == std::wstring::npos)
-            e = text.size();
-        std::wstring line;
-        size_t w = i;
-        while (w < e)
-        {
-            size_t sp = text.find(L' ', w);
-            if (sp == std::wstring::npos || sp > e)
-                sp = e;
-            const std::wstring word = text.substr(w, sp - w);
-            const std::wstring next = line.empty() ? word : line + L" " + word;
-            if (!line.empty() && TextWidth(next, size) > width)
-            {
-                lines.push_back(line);
-                line = word;
-            }
-            else
-                line = next;
-            w = sp + 1;
-        }
-        lines.push_back(line);
-        i = e + 1;
-    }
-    return lines;
-}
-
-inline std::wstring Upper(std::wstring s)
-{
-    for (wchar_t& c : s)
-        c = towupper(c);
-    return s;
-}
-
-// An item against what the ship carries: a heading, then its numbers, each beside the mounted item's difference. The y after it.
-inline float Compare(float x0, float x1, float y, u32 arch, bool mounted, float H)
-{
-    const equiprules::Spec* me = gamedata::Equip(arch);
-    if (!me || me->stats.empty())
-        return y;
-    using namespace equiprules;
-    // a mounted item compares only with the tagged one, where that sits on a hardpoint this one could go on (Shockwave, 7 Nov: with an empty hold the tag showed nothing)
-    gamedata::Versus v = gamedata::Against(arch);
-    if (mounted && (!v.tagged || v.arch == arch))
-        v = gamedata::Versus();
-    const Spec* other = v.arch ? gamedata::Equip(v.arch) : nullptr;
-    std::wstring head;
-    u32 rgb = kChrome;
-    if (mounted && !(v.tagged && other))
-        head = L"MOUNTED"; // (else VS ITS NAME (TAGGED) below: the row says MOUNTED, and the middle column is narrow at 1280x800)
-    else if (v.hasSlot && !v.fits)
-        head = L"NO HARDPOINT ON THIS SHIP TAKES IT", rgb = kAmber;
-    else if (v.tagged && other) // (the player's choice first, a free hardpoint or not)
-        head = L"VS " + Upper(hudinfo::EquipName(v.arch)) + L" (TAGGED)", rgb = kActive;
-    else if (v.freeHp)
-        head = L"FITS A FREE HARDPOINT", rgb = kFriend;
-    else if (other)
-        head = L"VS " + Upper(hudinfo::EquipName(v.arch));
-    else
-        head = L"NUMBERS";
-    const std::wstring slot = SlotWord(SlotOf(me->type));
-    const float sw = slot.empty() ? 0 : TextWidth(slot, 0.022f * H) + 0.012f * H;
-    TextMarquee(x0, y + 0.014f * H, head, 0.026f * H, x1 - x0 - sw, Argb(rgb, 1));
-    if (!slot.empty())
-        Text(x1, y + 0.014f * H, slot, 0.022f * H, Argb(kChrome, 0.8f), Right);
-    y += 0.034f * H;
-    const float pitch = 0.032f * H, c1 = other ? x0 + (x1 - x0) * 0.68f : x1; // (no difference to show: the value stands at the column's edge)
-    for (const Stat& s : me->stats)
-    {
-        Text(x0, y + pitch / 2, s.label, 0.024f * H, Argb(kChrome, 1));
-        Text(c1, y + pitch / 2, ValueWord(s.value) + L" " + s.unit, 0.026f * H, Argb(kInk, 1), Right);
-        float theirs = 0;
-        if (other && Find(other->stats, s.label, theirs))
-        {
-            const Verdict j = Judge(s, theirs);
-            Text(x1, y + pitch / 2, DeltaWord(s.value, theirs), 0.026f * H, Argb(j == Verdict::Better ? kFriend : j == Verdict::Worse ? kHostile : kChrome, 1), Right);
-        }
-        y += pitch;
-    }
-    return y + 0.008f * H;
-}
+// What the compare block shows of an item against what the ship carries (drawn by pages\page_kit.h DrawCompare).
+// (the read is core's since audit 70b F3a, so a screen's model can hold the block: core\game\screens\compare_screen.cpp)
+inline pagekit::CompareBlock ReadCompare(u32 arch, bool mounted) { return screens::ReadCompare(arch, mounted); }
+// An item against what the ship carries, read and drawn. The y after it.
+inline float Compare(float x0, float x1, float y, u32 arch, bool mounted, float H) { return DrawCompare(x0, x1, y, ReadCompare(arch, mounted), H); }
 } // namespace nnkit

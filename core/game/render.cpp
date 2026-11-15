@@ -1,7 +1,6 @@
 // Minimal Direct3D 8 overlay renderer: glyph atlas fonts, text, images, quads and screen region readback.
 #include "render.h"
 
-#include "glyphset.h"
 #include "hook.h"
 #include "log.h"
 
@@ -45,8 +44,12 @@ static int g_grabW = 0, g_grabH = 0;
 // Before every device Reset: the state block, and GrabRegion's staging surface (CreateImageSurface; kept between grabs,
 // recreated on the next one) - nothing of FLvibed's but MANAGED textures outlives a Reset (the Alt+Enter
 // freeze audit; the surface is system memory, released anyway so no wrapper's pool mapping can make it count).
+static u32 g_resets = 0;
+u32 DeviceResets() { return g_resets; }
+
 void OnDeviceLost()
 {
+    ++g_resets;
     if (g_dev && g_stateBlock)
         VCall<HRESULT>(g_dev, dev::DeleteStateBlock, g_stateBlock);
     g_stateBlock = 0;
@@ -185,10 +188,20 @@ void FreeFont(Font& font)
         VCall<ULONG>(font.texture, Release);
     font.texture = nullptr;
     font.glyphs.clear();
+    // the CPU copy too: a font is "built" by its texture or its coverage (the software target, the subtitles' name font
+    // choice), so a rebuild that failed after this must not leave the old copy standing for an empty glyph table
+    font.coverage.clear();
+    font.texW = font.texH = 0;
 }
+
+// Every font object BuildFont was asked to fill (FontDump's list; each caller's fonts are statics, so the pointers stay
+// valid for the module's life). Only a pointer comparison per build.
+static std::vector<const Font*> g_built;
 
 bool BuildFont(Font& font, const wchar_t* face, int px, int weight, const std::wstring& chars)
 {
+    if (std::find(g_built.begin(), g_built.end(), &font) == g_built.end())
+        g_built.push_back(&font);
     FreeFont(font);
     if (!g_dev || px < 4)
         return false;
@@ -196,144 +209,14 @@ bool BuildFont(Font& font, const wchar_t* face, int px, int weight, const std::w
     font.px = px;
     font.weight = weight;
 
-    HDC dc = CreateCompatibleDC(nullptr);
-    HFONT hf = CreateFontW(-px, 0, 0, 0, weight, 0, 0, 0, DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-                           ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_SWISS, face);
-    if (!dc || !hf)
-    {
-        if (dc)
-            DeleteDC(dc);
+    // the device-free half: GDI raster and packing (fontraster.cpp); the metrics count once the face resolved
+    Raster ras;
+    const bool rasterised = RasterizeFont(ras, face, px, weight, chars);
+    if (ras.metrics)
+        font.ascent = ras.ascent, font.lineHeight = ras.lineHeight;
+    if (!rasterised)
         return false;
-    }
-    TEXTMETRICW tm = {};
-    HGDIOBJ oldFont = SelectObject(dc, hf);
-    // GDI substitutes a missing face silently: refuse it, so the caller can fall back on purpose
-    wchar_t got[LF_FACESIZE] = {};
-    GetTextFaceW(dc, LF_FACESIZE, got);
-    if (_wcsicmp(got, face) != 0)
-    {
-        Log("render: font %ls not available (GDI gave %ls)", face, got);
-        SelectObject(dc, oldFont);
-        DeleteObject(hf);
-        DeleteDC(dc);
-        return false;
-    }
-    GetTextMetricsW(dc, &tm);
-    font.ascent = tm.tmAscent;
-    font.lineHeight = tm.tmHeight;
-
-    // One glyph cell, rendered white on black; coverage = red channel.
-    const int pad = px, cellW = px * 4, cellH = tm.tmHeight + 4;
-    BITMAPINFO bi = {};
-    bi.bmiHeader.biSize = sizeof(bi.bmiHeader);
-    bi.bmiHeader.biWidth = cellW;
-    bi.bmiHeader.biHeight = -cellH;
-    bi.bmiHeader.biPlanes = 1;
-    bi.bmiHeader.biBitCount = 32;
-    void* bits = nullptr;
-    HBITMAP bmp = CreateDIBSection(dc, &bi, DIB_RGB_COLORS, &bits, nullptr, 0);
-    if (!bmp || !bits) // GDI out of resources (or a huge px): no font rather than a write through null
-    {
-        Log("render: font %ls: no glyph bitmap (CreateDIBSection failed, px %d)", face, px);
-        if (bmp)
-            DeleteObject(bmp);
-        SelectObject(dc, oldFont);
-        DeleteObject(hf);
-        DeleteDC(dc);
-        return false;
-    }
-    HGDIOBJ oldBmp = SelectObject(dc, bmp);
-    SetTextColor(dc, RGB(255, 255, 255));
-    SetBkColor(dc, RGB(0, 0, 0));
-    SetBkMode(dc, OPAQUE);
-
-    struct Raster
-    {
-        wchar_t c;
-        Glyph g;
-        std::vector<u8> a;
-    };
-    std::vector<Raster> rs;
-    std::wstring set = chars;
-    set += L'?';
-    // The box the face draws for a character neither it nor GDI's fallback holds (U+FFFF: no font's): such a character
-    // stays out of the atlas, so GlyphFor gives its stand-in. A character the face lacks but GDI found elsewhere stays.
-    const size_t cellBytes = static_cast<size_t>(cellW) * cellH * 4;
-    const wchar_t noChar = 0xFFFF;
-    memset(bits, 0, cellBytes);
-    TextOutW(dc, pad, 0, &noChar, 1);
-    GdiFlush();
-    const std::vector<u8> box(static_cast<const u8*>(bits), static_cast<const u8*>(bits) + cellBytes);
-    std::vector<WORD> index(set.size());
-    const bool indexed = GetGlyphIndicesW(dc, set.c_str(), static_cast<int>(set.size()), index.data(),
-                                          GGI_MARK_NONEXISTING_GLYPHS) == set.size();
-    for (size_t i = 0; i < set.size(); ++i)
-    {
-        const wchar_t c = set[i];
-        bool dup = false;
-        for (const Raster& r : rs)
-            dup |= r.c == c;
-        if (dup)
-            continue;
-        memset(bits, 0, cellBytes);
-        TextOutW(dc, pad, 0, &c, 1);
-        GdiFlush();
-        if (indexed && index[i] == 0xFFFF && c != L'?' && memcmp(bits, box.data(), cellBytes) == 0)
-            continue;
-        SIZE sz = {};
-        GetTextExtentPoint32W(dc, &c, 1, &sz);
-        int x0 = cellW, y0 = cellH, x1 = -1, y1 = -1;
-        const u32* px32 = static_cast<const u32*>(bits);
-        for (int y = 0; y < cellH; ++y)
-            for (int x = 0; x < cellW; ++x)
-                if (px32[y * cellW + x] & 0xFF)
-                {
-                    x0 = std::min(x0, x), x1 = std::max(x1, x);
-                    y0 = std::min(y0, y), y1 = std::max(y1, y);
-                }
-        Raster r;
-        r.c = c;
-        r.g = {};
-        r.g.advance = sz.cx;
-        if (x1 >= x0)
-        {
-            r.g.w = x1 - x0 + 1;
-            r.g.h = y1 - y0 + 1;
-            r.g.ox = x0 - pad;
-            r.g.oy = y0;
-            r.a.resize(static_cast<size_t>(r.g.w) * r.g.h);
-            for (int y = 0; y < r.g.h; ++y)
-                for (int x = 0; x < r.g.w; ++x)
-                    r.a[y * r.g.w + x] = static_cast<u8>(px32[(y0 + y) * cellW + x0 + x] & 0xFF);
-        }
-        rs.push_back(std::move(r));
-    }
-    SelectObject(dc, oldBmp);
-    SelectObject(dc, oldFont);
-    DeleteObject(bmp);
-    DeleteObject(hf);
-    DeleteDC(dc);
-
-    // Shelf packing; a 4x4 white block first (solid boxes use it).
-    const int texW = px > 100 ? 4096 : px > 40 ? 2048 : 1024;
-    int x = 6, y = 0, rowH = 4;
-    for (Raster& r : rs)
-    {
-        if (x + r.g.w + 2 > texW)
-            x = 0, y += rowH + 2, rowH = 0;
-        r.g.u0 = static_cast<float>(x); // pixel coordinates for now
-        r.g.v0 = static_cast<float>(y);
-        x += r.g.w + 2;
-        rowH = std::max(rowH, r.g.h);
-    }
-    int texH = 64;
-    while (texH < y + rowH + 2)
-        texH *= 2;
-    if (texH > 4096)
-    {
-        Log("render: font %d px does not fit the atlas", px);
-        return false;
-    }
+    const int texW = ras.texW, texH = ras.texH;
 
     void* tex = nullptr;
     HRESULT hr = VCall<HRESULT>(g_dev, dev::CreateTexture, static_cast<UINT>(texW), static_cast<UINT>(texH), 1u, 0u,
@@ -353,69 +236,57 @@ bool BuildFont(Font& font, const wchar_t* face, int px, int weight, const std::w
         VCall<ULONG>(tex, Release);
         return false;
     }
-    for (int row = 0; row < texH; ++row)
-        memset(lr.bits + static_cast<size_t>(row) * lr.pitch, 0, static_cast<size_t>(texW) * 4);
-    for (int yy = 0; yy < 4; ++yy)
-        for (int xx = 0; xx < 4; ++xx)
-            reinterpret_cast<u32*>(lr.bits + static_cast<size_t>(yy) * lr.pitch)[xx] = 0xFFFFFFFF;
-    font.coverage.assign(static_cast<size_t>(texW) * texH, 0); // CPU copy for the software target
-    for (Raster& r : rs)
-    {
-        const int gx = static_cast<int>(r.g.u0), gy = static_cast<int>(r.g.v0);
-        for (int yy = 0; yy < r.g.h; ++yy)
-        {
-            u32* dst = reinterpret_cast<u32*>(lr.bits + static_cast<size_t>(gy + yy) * lr.pitch) + gx;
-            for (int xx = 0; xx < r.g.w; ++xx)
-            {
-                const u8 a = r.a[yy * r.g.w + xx];
-                dst[xx] = (static_cast<u32>(a) << 24) | 0x00FFFFFF;
-                font.coverage[static_cast<size_t>(gy + yy) * texW + gx + xx] = a;
-            }
-        }
-        r.g.u0 = gx / static_cast<float>(texW);
-        r.g.v0 = gy / static_cast<float>(texH);
-        r.g.u1 = (gx + r.g.w) / static_cast<float>(texW);
-        r.g.v1 = (gy + r.g.h) / static_cast<float>(texH);
-        font.glyphs[r.c] = r.g;
-    }
+    AtlasArgb(ras, reinterpret_cast<u32*>(lr.bits), static_cast<size_t>(lr.pitch) / 4); // (fontraster: the bench's image too)
+    FillFont(font, ras);
     VCall<HRESULT>(tex, Tex_UnlockRect, 0u);
     font.texture = tex;
-    font.texW = texW;
-    font.texH = texH;
-    font.whiteU = 2.0f / texW;
-    font.whiteV = 2.0f / texH;
     Log("render: font %ls %d px (weight %d), %zu glyphs, atlas %dx%d", face, px, weight, font.glyphs.size(), texW,
         texH);
     return true;
 }
 
-static std::wstring g_unmet;
-
-const std::wstring& Unmet() { return g_unmet; }
-
-const Glyph* GlyphFor(const Font& f, wchar_t c)
+const Font* FontOfTexture(const void* texture)
 {
-    const auto own = f.glyphs.find(c);
-    if (own != f.glyphs.end())
-        return &own->second;
-    if (f.glyphs.empty())
-        return nullptr;
-    if (c >= 32 && g_unmet.size() < 256 && g_unmet.find(c) == std::wstring::npos)
-    {
-        g_unmet += c;
-        Log("render: U+%04X not in the atlas of %ls - added at the next build", static_cast<unsigned>(c), f.face.c_str());
-    }
-    const wchar_t drawn = glyphset::Resolve(c, [&](wchar_t ch) { return f.glyphs.count(ch) != 0; });
-    return drawn ? &f.glyphs.find(drawn)->second : nullptr;
+    for (const Font* f : g_built)
+        if (texture && f->texture == texture)
+            return f;
+    return nullptr;
 }
 
-int TextWidth(const Font& font, const std::wstring& s)
+std::string FontPrintOf(const Font& font)
 {
-    int w = 0;
-    for (wchar_t c : s)
-        if (const Glyph* g = GlyphFor(font, c))
-            w += g->advance;
-    return w;
+    // the texture as uploaded (a managed texture: locked read-only, its system copy)
+    unsigned long long texHash = 0;
+    struct
+    {
+        int pitch;
+        u8* bits;
+    } lr = {};
+    if (font.texture && SUCCEEDED(VCall<HRESULT>(font.texture, Tex_LockRect, 0u, static_cast<void*>(&lr),
+                                                 static_cast<const RECT*>(nullptr), 0x10u /*READONLY*/)))
+    {
+        texHash = 1469598103934665603ull;
+        for (int row = 0; row < font.texH; ++row)
+            texHash = Fnv(lr.bits + static_cast<size_t>(row) * lr.pitch, static_cast<size_t>(font.texW) * 4, texHash);
+        VCall<HRESULT>(font.texture, Tex_UnlockRect, 0u);
+    }
+    return FontPrint(font, texHash); // (fontraster: the bench prints its fonts the same way)
+}
+
+std::string FontDump(const std::string& path)
+{
+    std::vector<std::string> blocks;
+    for (const Font* f : g_built)
+        if (f->texture)
+            blocks.push_back(FontPrintOf(*f));
+    std::sort(blocks.begin(), blocks.end()); // (independent of which object holds which font)
+    FILE* out = nullptr;
+    if (fopen_s(&out, path.c_str(), "wb") != 0 || !out)
+        return "fontdump: cannot write " + path;
+    for (const std::string& s : blocks)
+        fwrite(s.data(), 1, s.size(), out);
+    fclose(out);
+    return "fontdump: " + std::to_string(blocks.size()) + " fonts -> " + path;
 }
 
 // Software target: premultiplied BGRA pixels (for UpdateLayeredWindow), drawn directly by Box/Text.

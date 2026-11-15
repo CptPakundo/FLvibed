@@ -4,10 +4,12 @@
 // the ship panel, the loadout (the D-pad cross, the weapon groups, the launcher), the context line under the ship and a
 // transient alert card - drawn in one pass over the game's (hidden) HUD, the game's comm window, objective banner,
 // target indicators and damage arcs kept native. Visual reference: tools\uimock\hud2*.py (iteration 3). Files:
-// hud2.cpp (state, data at its rate, the settings, the transition, the HUD bus), hud2_parts.cpp (the components),
+// hud2.cpp (the game's side: its reads, the settings, the HUD bus), hud2_data.cpp (the model at its rate), hud2_frame.*
+// (the frame: the state machine, the transition, the layout, the pass), hud2_parts.cpp (the components),
 // hud2_kit.* (the drawing kit), hudvis.* (the native HUD switch), core\game\flicons.* (the game's flat icons).
 #pragma once
 #include "common.h"
+#include "ui/hud_context.h"
 #include "ui/presets.h"
 #include "game/hudwake.h" // NoteAction's wake bits (pure, no system headers)
 
@@ -65,6 +67,7 @@ bool LockNotice();
 bool FlightAnswers();
 // Debug: hud2 on|off|auto|state|sim <state>|perf|hot|click <slot>|list [on|off|0..4]|lint [off]
 std::string Command(std::istream& in);
-void OnDeviceLost();
-void Shutdown();
+// HUD 2 leaving (hud2_entry.cpp GiveBack: the door's Leave, the module's stop, a fault's second phase): the game's panels, chat and target bracket
+// back, the click box empty, one layout with no HUD 2 on the HUD bus and the comm window the game's, its own state as at a fresh start.
+void GiveBack();
 } // namespace hud2

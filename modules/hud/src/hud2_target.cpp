@@ -2,7 +2,9 @@
 // of the other ships. Draw only, pad and keyboard alike: clicks stay the game's records. All or nothing with hudvis::TargetFormOn: while the game's bracket stands,
 // nothing here draws.
 #include "hud2_impl.h"
+#include "hud2_frame.h"
 #include "hud2_target.h"
+#include "log.h"
 #include "ui/hud_rows.h"
 
 #include <cmath>
@@ -13,11 +15,9 @@ namespace hud2
 using namespace hud2kit;
 namespace ht = hud2target;
 
+// (the step's state and what it gave live in the bound PartsState: form, formOut; hud2_frame.h)
 namespace
 {
-ht::State g_state;
-ht::Out g_out;
-
 // The caret over the ship, its shape says the attitude as well as its colour: hostile solid, neutral hollow, friendly open.
 // A caret's navy keyline width (under its line): its lines reach half of it past the shape's points - the box the draw kit
 // records for a line (hud2_kit Line), the lint's
@@ -140,22 +140,21 @@ void StepTargetForm(const Model& m, const Layout& L, float dt, int motion, bool 
     words += m.tDist;
     in.wordsW = TextWidth(words, 0.024f * L.H * L.k);
     in.cardW = std::max(ht::kCardW * L.H * L.k, in.wordsW + 0.024f * L.H * L.k);
-    g_out = g_state.Step(in);
+    PartsState& s = BoundParts();
+    s.formOut = s.form.Step(in);
+    const ht::Out& out = s.formOut;
     // T8's record: the seat and its side, on a change only
-    static bool seat = false;
-    static int side = 0;
-    static unsigned id = 0;
-    if (g_out.show && (g_out.seat != seat || g_out.side != side || in.id != id))
+    if (out.show && (out.seat != s.formSeat || out.side != s.formSide || in.id != s.formId))
     {
-        seat = g_out.seat, side = g_out.side, id = in.id;
-        Log("hud2 form: seat %d side %d target %u at (%.0f, %.0f), R %.0f", seat ? 1 : 0, side, in.id, in.x, in.y, in.R);
+        s.formSeat = out.seat, s.formSide = out.side, s.formId = in.id;
+        Log("hud2 form: seat %d side %d target %u at (%.0f, %.0f), R %.0f", s.formSeat ? 1 : 0, s.formSide, in.id, in.x, in.y, in.R);
     }
 }
 
 // debug `hud2 form`: what the step gave, and the panels it read
 std::string TargetFormState()
 {
-    const ht::Out& o = g_out;
+    const ht::Out& o = BoundParts().formOut;
     char line[200];
     snprintf(line, sizeof(line), "show=%d seat=%d side=%d settle=%.2f wordsA=%.2f plateA=%.2f block=(%.0f,%.0f) caret=(%.0f,%.0f) cardX=%.0f", o.show ? 1 : 0, o.seat ? 1 : 0, o.side, o.settle,
              o.wordsA, o.plateA, o.blockX, o.blockY, o.caretX, o.caretY, o.cardX0);
@@ -164,7 +163,7 @@ std::string TargetFormState()
 
 void DrawTargetForm(const Model& m, const Layout& L, float a, int motion)
 {
-    const ht::Out& o = g_out;
+    const ht::Out& o = BoundParts().formOut;
     if (!m.target || !o.show || a <= 0.01f)
         return;
     const float H = L.H, k = L.k, T = 0.024f * H * k;
@@ -223,7 +222,7 @@ void DrawTargetForm(const Model& m, const Layout& L, float a, int motion)
             const float d = ht::kDiamondHalf * H * k, lw = std::max(2.0f, ht::kDiamondLine * H * k);
             cy = std::min(cy, m.tMark.y - o.mark / 2 - ht::QuadReach(o.mark, H, k) - ht::kDiamondClear * H * k - d);
             const float dia[8] = {o.caretX, cy - d, o.caretX + d, cy, o.caretX, cy + d, o.caretX - d, cy};
-            const float br = motion == ht::MotionFull ? ht::Breathe(GetTickCount() / 1000.0f, ht::kWaypointHz, motion) : 0.6f;
+            const float br = motion == ht::MotionFull ? ht::Breathe(PartsSeconds(), ht::kWaypointHz, motion) : 0.6f;
             for (const float g : {3.0f, 2.0f})
                 Outline(dia, 4, lw * g, Argb(kChrome, 0.10f * br));
             Outline(dia, 4, lw + 2, Argb(kNavy, 0.6f));

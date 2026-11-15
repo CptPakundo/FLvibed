@@ -1,4 +1,4 @@
-// The registry of the game's flight roots (modules\hud\docs\UI_HUD2_SKIN.md 3.1, UI_HUD2_INPUTS.md 3): one row per native root, so nothing
+// The registry of the game's flight roots (modules\hud\docs\UI_HUD2_SKIN.md 3.1, the HUD 2 inputs record 3, private): one row per native root, so nothing
 // native reaches the screen by default and nothing wanted goes by accident. Each row says hide, keep, keep the root with its art gone, or
 // hidden with a home that says the same thing in HUD 2. A root with no row stays visible and is logged: a true deny would blank
 // brackets, the banner and waypoints. Pure: hudvis.cpp walks the game's roots against it, tests\hud2_roots_test.cpp holds the rules.

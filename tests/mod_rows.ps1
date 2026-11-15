@@ -1,4 +1,4 @@
-# What a mod's install must also do, in one game each (docs\MODULES_PLAN.md "The per-module flight plan"): -Case rooms: a New Game's room scene, its subtitle and frame.
+# What a mod's install must also do, in one game each (the module split plan's "The per-module flight plan", private): -Case rooms: a New Game's room scene, its subtitle and frame.
 # fight: HUD 2's ring with enemies on the player, its state and a frame. lane: the autopilot rides a trade lane: it enters, rides at the lane's speed, leaves in flight.
 # Usage (PowerShell tool): tests\mod_rows.ps1 -Case rooms|fight|lane [-Instance 1] [-Label x]   build\release. Exit 1 = a failure. Frames: runs\mod_rows\<label>.
 param([ValidateSet('rooms', 'fight', 'lane')][string]$Case = 'lane', [string]$Instance = '1', [string]$Label = 'run')
@@ -36,7 +36,7 @@ try {
         'fight' {
             & $deploy -Background -NoBuild -Release -Instance $Instance -Save SaveC701.fl | Select-Object -Last 1
             "launch: $(Start-FLLaunch)"
-            "style: $(Send-FL 'set hud_style 1'); $(Send-FL 'set input_mode 1')"   # (HUD 2 on the pad: an earlier test's saved options must not decide this)
+            "style: $(Send-FL 'set hud_style 2'); $(Send-FL 'set input_mode 1')"   # (HUD 2 with the pad: an earlier test's saved options must not decide this; 1, the mixed style, is retired: decision 77)
             Set-FLPad -LX 0.02; $null = Wait-FLFramesPassed 20; Clear-FLPad; $null = Wait-FLFramesPassed 20
             "spawn: $(Send-FL "spawn $(Resolve-FLNpc 'fc_lr_pi_fighter_d1') player 3 700")"
             $hit = $false; $t = [Diagnostics.Stopwatch]::StartNew()

@@ -62,7 +62,7 @@ to the built presets - the binds themselves: `docs\BINDINGS.md`, `..\..\docs\UI_
 ## Open ideas
 - (done) Firm stick input cancels the autopilot (`autopilot_cancel`, 0.35 of full deflection).
 - (done) "Nearest to the reticle" selection: the target button reads the objects natively (`..\..\core\game\space.*`).
-- The HUD's own next / previous target commands still walk the contact list under its filter (controller CLAUDE.md
+- The HUD's own next / previous target commands still walk the contact list under its filter (`RE_NOTES.md`
   "Gotchas"); native, filter-independent targeting exists for the pad UX to build on.
 - Physical-mouse handback: the device service reads one mouse report as jitter, a second within 150 ms as a move
   (`device.cpp`); the 8-10 px threshold of `..\..\docs\UI_PLAN.md` 6.2 needs the host to report the motion's size.

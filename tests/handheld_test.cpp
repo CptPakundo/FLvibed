@@ -80,11 +80,14 @@ void Test_handheld()
     Apply(Small, 800, 100);
     CHECK_NEAR(textfit::MinSize(800), 0.024 * 800, 1e-3);
     Apply(Normal, 2160, 100); // (what every other test expects)
-    // the game's text follows the size only under Automatic
-    CHECK(GameTextPercent(0, Large) == 125);
-    CHECK(GameTextPercent(0, Normal) == 100);
-    CHECK(GameTextPercent(0, Small) == 100);
-    CHECK(GameTextPercent(150, Normal) == 150);
+    // the game's text follows the size only under Automatic, and only with HUD 2: the classic HUD keeps the game's size (audit 102_ Q4)
+    CHECK(GameTextPercent(0, Large, false) == 125);
+    CHECK(GameTextPercent(0, Normal, false) == 100);
+    CHECK(GameTextPercent(0, Small, false) == 100);
+    CHECK(GameTextPercent(150, Normal, false) == 150);
+    CHECK(GameTextPercent(0, Large, true) == 100);
+    CHECK(GameTextPercent(125, Large, true) == 125);
+    CHECK(GameTextPercent(150, Normal, true) == 150);
 
     // the SMBIOS reader
     {

@@ -116,35 +116,6 @@ inline float EaseStep(float level, bool open, float dt, int motion)
     return open ? std::min(1.0f, level + step) : std::max(0.0f, level - step);
 }
 
-// ---- skin_native (section 8): a comma list of family labels that stay native. Blanks around a name are ignored, case counts for nothing.
-inline bool NativeListed(const std::string& list, const char* label)
-{
-    if (!label || !*label)
-        return false;
-    size_t at = 0;
-    while (at <= list.size())
-    {
-        size_t end = list.find(',', at);
-        if (end == std::string::npos)
-            end = list.size();
-        size_t a = at, b = end;
-        while (a < b && (list[a] == ' ' || list[a] == '\t'))
-            ++a;
-        while (b > a && (list[b - 1] == ' ' || list[b - 1] == '\t'))
-            --b;
-        if (b > a && b - a == strlen(label))
-        {
-            bool same = true;
-            for (size_t i = 0; i < b - a; ++i)
-                same = same && tolower(static_cast<unsigned char>(list[a + i])) == tolower(static_cast<unsigned char>(label[i]));
-            if (same)
-                return true;
-        }
-        at = end + 1;
-    }
-    return false;
-}
-
 // ---- dialogs (6.2)
 enum class DialogKind
 {
@@ -202,6 +173,19 @@ inline DialogKind ExitKind(const wchar_t* text, bool mainMenuBehind)
     if (!text || wcscmp(text, L"EXIT GAME?") != 0)
         return DialogKind::Other;
     return mainMenuBehind ? DialogKind::ExitMenu : DialogKind::ExitInGame;
+}
+// An arrow key on a two-answer dialog (the owner, 14 Nov 2026): the answer it puts the focus on, in the game's order (action left, safe right). Left the action,
+// Right the safe answer, Up and Down the other one than the focus (the two stand in one row). True: the action.
+enum class DialogArrow
+{
+    Left,
+    Right,
+    Up,
+    Down
+};
+inline bool ArrowToAction(DialogArrow a, bool focusOnAction)
+{
+    return a == DialogArrow::Left ? true : a == DialogArrow::Right ? false : !focusOnAction;
 }
 
 // A dialog's plate around the native hit boxes: the verbs stand on those boxes, so the chips decide the height and the plate grows round them and
@@ -457,4 +441,20 @@ inline int NameRungs(float screenH, float rowPitch)
 constexpr float kFrameTop = 0.115f;
 constexpr float kFrameCentreY = 0.54f; // a NeuroNet window's centre: midway from the docked strip's tabs to the prompts
 inline float FrameLeft(float sideW) { return sideW; }
+
+// ---- the save lists (audit 139_ B): the game draws a fixed count of rows (20; 16 in save mode) at its font's line height into a
+// box of fixed height, so HUD 2's larger text ran the rows past the box. The rows that fit: whole lines in the box, at least
+// one, at most the game's own count (a box with room for more keeps the game's count). The small allowance absorbs the
+// projection's rounding (the game's box at its own font holds its 20 lines to the pixel).
+inline int RowsThatFit(float boxPx, int linePx, int gameRows)
+{
+    if (gameRows <= 0)
+        return 0;
+    if (linePx <= 0 || !(boxPx > 0))
+        return gameRows;
+    const int fit = static_cast<int>(std::floor(boxPx / static_cast<float>(linePx) + 0.05f));
+    return std::max(1, std::min(fit, gameRows));
+}
+// The shared bar of a list showing `rows` of `count`: the first row it may stand on (the game's own UIScroll keeps value <= max - page).
+inline int LastFirstRow(int count, int rows) { return std::max(0, count - rows); }
 } // namespace skinrules

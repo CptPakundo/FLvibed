@@ -20,38 +20,84 @@ static void ImplInit(const HostApi* host)
     g_host = host;
     LogSetSink(host->LogWrite, host->dllDir);
     ::LogClaimPlain(host->LogWrite); // core\game's lines stay here, whichever logic starts last
-    // what core's logic reaches the host for, until core has its own table (a part's HostApi is its module's)
-    hostcalls::g = {host->SetHeld, host->ClearAllHeld, host->PushEvent, host->ChatLineAt, host->ServerTag,
-                    host->GetSettingsBus, host->GetHudBus, host->GetD3DDevice, host->OptionsPageState, host->ShowOptionsPage,
-                    host->UiButtonRect, host->SetUiButton, host->RealMouseWheel, host->SetHudHitSuppression, host->WindowMode,
-                    host->version >= 36 ? host->ModuleOn : nullptr, host->version >= 24 ? host->ObjectiveText : nullptr,
-                    host->version >= 11 ? host->ObjectiveNow : nullptr, host->version >= 11 ? host->MissionMarks : nullptr,
-                    host->version >= 20 ? host->MissionResult : nullptr, host->version >= 35 ? host->MissionSave : nullptr, host->LogWrite,
-                    host->version >= 2 ? host->SetSteer : nullptr, host->MouseMoveBy, host->MouseMoveTo, host->MouseReleaseTarget,
-                    host->MouseWheel, host->MouseButton, host->MouseButtonDown, host->MouseReset, host->MouseStats,
-                    host->MouseIsCaptured, host->MouseCapture, host->version >= 2 ? host->LastRealMouseTick : nullptr,
-                    host->version >= 13 ? host->ObjectiveTitle : nullptr, host->version >= 11 ? host->ObjectiveRefs : nullptr,
-                    host->version >= 15 ? host->ObjectiveSteps : nullptr, host->version >= 10 ? host->MissionObjects : nullptr,
-                    host->version >= 14 ? host->DockReply : nullptr, host->version >= 8 ? host->JumpInCount : nullptr,
-                    host->version >= 12 ? host->PlayerHit : nullptr, host->version >= 16 ? host->CommHeardAt : nullptr,
-                    host->version >= 17 ? host->SpawnedShips : nullptr, host->version >= 6 ? host->GuardEvade : nullptr,
-                    host->version >= 28 ? host->SetGunAim : nullptr, host->version >= 22 ? host->SetHudHotspots : nullptr,
-                    host->version >= 22 ? host->HudHotspotHovered : nullptr, host->version >= 34 ? host->GameLoads : nullptr,
-                    host->version >= 25 ? host->ObjectiveReread : nullptr,
-                    host->version >= 23 ? host->UiGeneration : nullptr, host->version >= 5 ? host->GetRoomCharacters : nullptr,
-                    host->version >= 7 ? host->SetKeepRunning : nullptr, host->version >= 20 ? host->SetCursorHidden : nullptr,
-                    host->version >= 32 ? host->FixedDt : nullptr, host->version >= 9 ? host->CommPlayer : nullptr, host->SetKeyTrace,
-                    nullptr, host->version >= 37 ? host->SetSteerLift : nullptr, host->version >= 39 ? host->SetTargetMute : nullptr,
-                    host->version >= 39 ? host->TargetMuteReady : nullptr, host->version >= 40 ? host->SetLoadDraw : nullptr,
-                    host->version >= 44 ? host->SetWorldPause : nullptr, host->version >= 43 ? host->SetFlightLock : nullptr,
-                    host->version >= 45 ? host->OfferDifficulties : nullptr, host->version >= 45 ? host->WorldCommand : nullptr,
-                    host->version >= 46 ? host->HoldRealWheel : nullptr};
+    // what core's logic reaches the host for, until core has its own table (a part's HostApi is its module's); set by name, so
+    // a field added to hostcalls::Table cannot shift the pointers after it onto the wrong services (several share one type)
+    hostcalls::Table calls = {};
+    calls.SetHeld = host->SetHeld;
+    calls.ClearAllHeld = host->ClearAllHeld;
+    calls.PushEvent = host->PushEvent;
+    calls.ChatLineAt = host->ChatLineAt;
+    calls.ServerTag = host->ServerTag;
+    calls.GetSettingsBus = host->GetSettingsBus;
+    calls.GetHudBus = host->GetHudBus;
+    calls.GetD3DDevice = host->GetD3DDevice;
+    calls.OptionsPageState = host->OptionsPageState;
+    calls.ShowOptionsPage = host->ShowOptionsPage;
+    calls.UiButtonRect = host->UiButtonRect;
+    calls.SetUiButton = host->SetUiButton;
+    calls.RealMouseWheel = host->RealMouseWheel;
+    calls.SetHudHitSuppression = host->SetHudHitSuppression;
+    calls.WindowMode = host->WindowMode;
+    calls.ModuleOn = host->ModuleOn;
+    calls.ObjectiveText = host->ObjectiveText;
+    calls.ObjectiveNow = host->ObjectiveNow;
+    calls.MissionMarks = host->MissionMarks;
+    calls.MissionResult = host->MissionResult;
+    calls.MissionSave = host->MissionSave;
+    calls.LogWrite = host->LogWrite;
+    calls.SetSteer = host->SetSteer;
+    calls.MouseMoveBy = host->MouseMoveBy;
+    calls.MouseMoveTo = host->MouseMoveTo;
+    calls.MouseReleaseTarget = host->MouseReleaseTarget;
+    calls.MouseWheel = host->MouseWheel;
+    calls.MouseButton = host->MouseButton;
+    calls.MouseButtonDown = host->MouseButtonDown;
+    calls.MouseReset = host->MouseReset;
+    calls.MouseStats = host->MouseStats;
+    calls.MouseIsCaptured = host->MouseIsCaptured;
+    calls.MouseCapture = host->MouseCapture;
+    calls.LastRealMouseTick = host->LastRealMouseTick;
+    calls.ObjectiveTitle = host->ObjectiveTitle;
+    calls.ObjectiveRefs = host->ObjectiveRefs;
+    calls.ObjectiveSteps = host->ObjectiveSteps;
+    calls.MissionObjects = host->MissionObjects;
+    calls.DockReply = host->DockReply;
+    calls.JumpInCount = host->JumpInCount;
+    calls.PlayerHit = host->PlayerHit;
+    calls.CommHeardAt = host->CommHeardAt;
+    calls.SpawnedShips = host->SpawnedShips;
+    calls.GuardEvade = host->GuardEvade;
+    calls.SetGunAim = host->SetGunAim;
+    calls.SetHudHotspots = host->SetHudHotspots;
+    calls.HudHotspotHovered = host->HudHotspotHovered;
+    calls.GameLoads = host->GameLoads;
+    calls.ObjectiveReread = host->ObjectiveReread;
+    calls.UiGeneration = host->UiGeneration;
+    calls.GetRoomCharacters = host->GetRoomCharacters;
+    calls.SetKeepRunning = host->SetKeepRunning;
+    calls.SetCursorHidden = host->SetCursorHidden;
+    calls.FixedDt = host->FixedDt;
+    calls.CommPlayer = host->CommPlayer;
+    calls.SetKeyTrace = host->SetKeyTrace;
+    // calls.DeferToFrameEnd stays null: core's page host only (this entry sets it by uiclick::SetDeferral)
+    calls.SetSteerLift = host->SetSteerLift;
+    calls.SetTargetMute = host->SetTargetMute;
+    calls.TargetMuteReady = host->TargetMuteReady;
+    calls.SetLoadDraw = host->SetLoadDraw;
+    calls.SetWorldPause = host->SetWorldPause;
+    calls.SetFlightLock = host->SetFlightLock;
+    calls.OfferDifficulties = host->OfferDifficulties;
+    calls.WorldCommand = host->WorldCommand;
+    calls.HoldRealWheel = host->HoldRealWheel;
+    calls.InstallHud2Hooks = host->InstallHud2Hooks;
+    calls.SetRawMouse = host->SetRawMouse;
+    hostcalls::g = calls;
     device_view::Publish();
     ctl::PublishPadFlight();
     ctl::PublishFrame();
-    room::SetCharacterSource(HostAtLeast(5) ? host->GetRoomCharacters : nullptr);
+    room::SetCharacterSource(host->GetRoomCharacters);
     // the front end's clicks run at the frame's end: a dialog's modal loop then keeps the pad and the harness alive
-    uiclick::SetDeferral(HostAtLeast(29) ? host->DeferToFrameEnd : nullptr);
+    uiclick::SetDeferral(host->DeferToFrameEnd);
     Log("Logic DLL init (build %s %s)", __DATE__, __TIME__);
     exe::ResolveAll("controller logic");
     modslots::Start();

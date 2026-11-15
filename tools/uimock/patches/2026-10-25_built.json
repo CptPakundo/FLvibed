@@ -1,5 +1,5 @@
 {
- "_about": "What the build of 25 Oct 2026 changed against the proposal (docs\\UI_BUILD.md section 5): applied to part2_data.js and to the artifact's ui/spec by tools\\uimock\\specpatch.py.",
+ "_about": "What the build of 25 Oct 2026 changed against the proposal (the UI build record, private, section 5): applied to part2_data.js and to the artifact's ui/spec by tools\\uimock\\specpatch.py.",
  "rows": {
   "pad_cursor": {"def": "EVERYWHERE", "value": "EVERYWHERE", "help": "FLvibed's own cursor on the left stick, on every screen by default: moving the stick shows it and the game reacts as to the mouse (a bar character lights up, a button highlights, a row focuses); it slows over and pulls toward targets; a D-pad or bumper press hides it and focus navigation carries on from there. A = click either way. Off = focus navigation only."}
  },

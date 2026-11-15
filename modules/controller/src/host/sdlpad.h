@@ -23,7 +23,7 @@ void Touch(SdlPadTouch* out);
 bool Path(char* out, int len);
 // SDL's name of the open pad (the waveform's endpoint by name where no ContainerId says it: Wine). False with none open.
 bool Name(char* out, int len);
-// HostApi v38 SdlPadFilter: a mapper's injected keys and mouse dropped while the pad has input.
+// HostApi v38 SdlPadFilter: a mapper's injected keys and mouse dropped while the pad has input. `on`: padbackend::FilterFlags (the mouse hook only with kFilterMouse).
 void Filter(int on, float stickDeadzone, float triggerThreshold);
 // The host-side debug command `sdlpad [status] | attach <xbox|ps5|switchpro> [slot] | detach [slot|all] | send ... | touch ...`
 // (WORK_QUEUE Q5 slice 2; TEST ONLY: refused in multiplayer and while SDL is not running): SDL virtual test pads on

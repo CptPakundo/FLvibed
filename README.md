@@ -9,13 +9,13 @@
 A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller support, subtitles for every line of dialogue, a clear modern HUD and tidier movies. One installer, nothing else to set up.
 
 <p>
-<a href="../../releases/download/v0.4.6/FLvibed-0.4.6-Setup.exe"><img alt="Download FLvibed 0.4.6 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.4.6-5865f2?style=for-the-badge"></a>
+<a href="../../releases/download/v0.4.7/FLvibed-0.4.7-Setup.exe"><img alt="Download FLvibed 0.4.7 (installer)" src="https://img.shields.io/badge/%E2%AC%87_Download_FLvibed_0.4.7-5865f2?style=for-the-badge"></a>
 </p>
 
-<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.4.6/FLvibed-0.4.6.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.4.6">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
+<sub>One-click installer and uninstaller · <a href="../../releases/download/v0.4.7/FLvibed-0.4.7.zip">the zip, to install by hand</a> · <a href="../../releases/tag/v0.4.7">Release notes</a> · <a href="CHANGELOG.md">Changelog</a></sub>
 
 <p>
-<img alt="Version 0.4.6" src="https://img.shields.io/badge/version-0.4.6-5865f2?style=for-the-badge">
+<img alt="Version 0.4.7" src="https://img.shields.io/badge/version-0.4.7-5865f2?style=for-the-badge">
 <img alt="Freelancer: HD Edition 0.7.1" src="https://img.shields.io/badge/Freelancer_HD_Edition-0.7.1-2b6cb0?style=for-the-badge">
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10_%7C_11-444?style=for-the-badge">
 </p>
@@ -28,22 +28,38 @@ A free mod for Freelancer (2003) and Freelancer: HD Edition. Full controller sup
 
 > Made with AI: written by Claude, by Anthropic, under the author's direction and tested in game. Free, with no warranty.
 
-## 🆕 New in 0.4.6
-
-This release works through the players' reports: the bugs first, then the smaller requests.
-
-<div align="center">
-<img src="docs/spec/img/cap/x_demand.webp" width="820" alt="A pirate's cargo demand as HUD 2's dialog in flight: the ship's name, its words, DROP CARGO and CANCEL, with A and B in the flight HUD's prompt lanes">
-</div>
-
-- **Two critical fixes:** mounting and unmounting weapons works only while docked, as in the game, and the Intro option is gone (on a Steam Deck it could leave the game on a black screen).
-- **Cargo demands in HUD 2's look:** a pirate's or the police's demand is a clear dialog, A drops and B cancels, and the flight HUD stays up under it.
-- **A tidier flight HUD:** a small card shows a mission payout or the loot you just took in, then fades; nothing covers the weapons display any more.
-- **Smoother Neural Net pages:** clean switches between tabs, every item's icon, a Total Time that counts, and map names and hover hints in HUD 2's look.
-- **Subtitles in HUD 2's font** everywhere, by default (the game's font is one setting away).
-- **Controller:** hold the right stick's click for the rear view, X tractors loot in every layout, and Autopilot Goals is on the action wheel.
-
-Everything else, with the reports' issue numbers: [CHANGELOG.md](CHANGELOG.md).
+- **A controller button and a mouse button held together no longer slow the game:**
+- **The loot and payout card waits for room in HUD 2:**
+- **View closes a Neural Net window pressed right away:**
+- **A long item name's price stays under it:**
+- **No radio card over the options page:**
+- **A refused job keeps its reason on screen:**
+- **Switching to the classic HUD at a dealer:**
+- **A screen mode change works with the HUD module off:**
+- **The pad keeps steering after a Neural Net window with the HUD module off:**
+- **HUD 2's panels fit their text at every HUD size:**
+- **HUD 2's context prompts find another place before one is dropped:**
+- **The Linux script runs straight from the zip:**
+- **No speaker's head through a Neural Net page:**
+- **Every prompt of a HUD 2 page shows:**
+- **Goal panel buttons on the classic HUD:**
+- **INFO's bold lines are bold:**
+- **Raw mouse input, on by default:**
+- **The loot notice says when a take filled you up:**
+- **INFO is HUD 2's own page:**
+- **A crash leaves a note:**
+- **No mouse hook for a controller mapper by default:**
+- **HUD 2 is on or off, the same on every device:**
+- **HUD 2 always comes with its look over the menus and dealer pages:**
+- **Turning HUD 2 off on the options page turns off HUD 2 only:**
+- **The classic HUD starts without FLvibed's hit effects and crosshair pulses:**
+- **The classic HUD keeps the game's name card in rooms with keyboard and mouse:**
+- **The classic HUD shows the game's tooltips in flight with keyboard and mouse:**
+- **The idle mouse cursor hides on the classic HUD too:**
+- **A switch to the classic HUD during a load is classic at once:**
+- **The test tools' channel is closed in a player's game:**
+- **Six settings get a row on the options page**
+- **The options page shows only real rows only real rows:**
 
 ## ✨ What you get
 
@@ -161,7 +177,7 @@ It still fails some runs: docking at moving ships, the mines in mission 11 (abou
 
 ## 🧪 An early preview
 
-0.4.6 is an early preview, so expect rough edges and change. The autopilot is a work in progress, a few screens and
+0.4.7 is an early preview, so expect rough edges and change. The autopilot is a work in progress, a few screens and
 controls are not built yet, and button layouts, HUD 2's look and setting names may still change.
 
 Every change is tested in game, mostly by an automatic test harness with a virtual pad. This release's changes have not
@@ -250,7 +266,7 @@ so it is expected to work without VxKex; this is not yet confirmed on a real Win
 
 **2. Install FLvibed** (one click)
 
-1. ⬇️ Download **[FLvibed-0.4.6-Setup.exe](../../releases/download/v0.4.6/FLvibed-0.4.6-Setup.exe)** and run it.
+1. ⬇️ Download **[FLvibed-0.4.7-Setup.exe](../../releases/download/v0.4.7/FLvibed-0.4.7-Setup.exe)** and run it.
    Windows SmartScreen may warn, because the setup isn't code-signed: choose *More info > Run anyway*.
 2. It finds your game (HD Edition's installer, the original game's, or the usual folders; else you pick the folder).
    Choose **Install or update FLvibed**. No administrator rights are needed unless the game folder is protected.
@@ -261,7 +277,7 @@ on an update. No game file is changed.
 <details>
 <summary>🔧 Install by hand instead (the zip)</summary>
 
-1. Download **[FLvibed-0.4.6.zip](../../releases/download/v0.4.6/FLvibed-0.4.6.zip)** and unpack it.
+1. Download **[FLvibed-0.4.7.zip](../../releases/download/v0.4.7/FLvibed-0.4.7.zip)** and unpack it.
 2. Copy its `EXE` folder into your Freelancer folder (the one that holds `EXE\Freelancer.exe`) and let it merge:
    `FLvibed.dll`, `FLSubtitles\` and `FLvibed\` land in `EXE\`. An update this way keeps your settings.
 3. Open `EXE\dacom.ini` in a text editor and add the line `FLvibed.dll` to the `[Libraries]` section, after the plugins
@@ -269,7 +285,7 @@ on an update. No game file is changed.
 
 To remove it by hand: take the `FLvibed.dll` line out of `EXE\dacom.ini`. Then delete `EXE\FLvibed.dll`, `FLvibed.ini`,
 `FLController.ini`, `FLSubtitles.ini`, any `*.before-0.2.0` backups of them, the logs `FLController.log`,
-`FLSubtitles.log` and `FLvibed_npc_stalls.log`, and the folders `EXE\FLSubtitles\` and `EXE\FLvibed\`.
+`FLSubtitles.log`, `FLvibed_npc_stalls.log` and `FLvibed_crash.log`, and the folders `EXE\FLSubtitles\` and `EXE\FLvibed\`.
 
 </details>
 
@@ -279,12 +295,12 @@ To remove it by hand: take the `FLvibed.dll` line out of `EXE\dacom.ini`. Then d
 The game runs under Wine or Proton, so FLvibed goes into the game's folder inside your prefix. This route is new and has
 not been tried on a real Linux machine yet: reports are welcome.
 
-1. Download **[FLvibed-0.4.6.zip](../../releases/download/v0.4.6/FLvibed-0.4.6.zip)** and unpack it.
-2. In the unpacked folder: `./flvibed-linux.sh install "<game folder>"`, the folder that holds `EXE/Freelancer.exe`.
-3. For a USB DualSense's full haptics: `./flvibed-linux.sh haptics` sets its speaker to Surround 4.0 with `pactl`. Run it
+1. Download **[FLvibed-0.4.7.zip](../../releases/download/v0.4.7/FLvibed-0.4.7.zip)** and unpack it.
+2. In the unpacked folder: `bash flvibed-linux.sh install "<game folder>"`, the folder that holds `EXE/Freelancer.exe`.
+3. For a USB DualSense's full haptics: `bash flvibed-linux.sh haptics` sets its speaker to Surround 4.0 with `pactl`. Run it
    again after a replug.
 
-To remove it: `./flvibed-linux.sh uninstall "<game folder>"`, with `--keep-settings` to keep your settings.
+To remove it: `bash flvibed-linux.sh uninstall "<game folder>"`, with `--keep-settings` to keep your settings.
 
 </details>
 
@@ -353,7 +369,7 @@ layouts: [modules/controller/docs/BINDINGS.md](modules/controller/docs/BINDINGS.
 ## ⚙️ Settings
 
 Change settings in game on the **FLVIBED** page of the Options screen. Its five tabs show the settings most players
-need; **Show all settings** on the MORE tab lists the rest. Every key with its range, default and help:
+need; **Show all settings** on the MORE tab lists the less used ones. Tuning keys with no row are set in the ini files. Every key with its range, default and help:
 [docs/SETTINGS.md](docs/SETTINGS.md).
 
 <details>
@@ -366,13 +382,12 @@ They are stored in the game's `EXE\` folder: `FLvibed.ini` `[Modules]`, `FLContr
 |---|---|---|
 | `pad_preset` | 0 | flight layout: 0 Freelancer, 1 Ace (left stick steers, triggers throttle), 2 Assisted |
 | `aim_mode` | 1 | 1 gimbal (reticle locks onto the target's lead), 0 the reticle follows the right stick |
-| `hud_style` | 2 | 0 classic HUD and screens, 1 HUD 2 on the pad, 2 HUD 2 always (flight, menus and bases) |
+| `hud_style` | 2 | 0 classic HUD and screens, 2 HUD 2 (flight, menus and bases), the same on every device; an older release's 1 reads as 2 |
 | `hud_fade` | 1 | 0 full (HUD 2 always shown), 1 contextual (fades in calm flight, wakes per action) |
 | `hud_prompts` | 1 | 1 context prompts show on change and fade, 0 always shown |
 | `hud_size` | 0 | 0 automatic (large on a handheld), 1 small, 2 normal, 3 large |
 | `chat_size` | 0 | side chat text: 0 Normal, 1 Large |
 | `maneuver_watchdog` | 1 | restart a formation / goto / dock that stalls |
-| `ui_style` | 1 | menus and rooms while HUD 2 is on: 1 HUD 2's look, 0 the game's look |
 | `glyph_style` | 0 | button prompts: 0 automatic, 1 Xbox, 2 PlayStation, 3 Nintendo, 4 Steam |
 | `input_mode` | 0 | 0 automatic (the last device used wins), 1 controller, 2 keyboard and mouse |
 | `shield_cue` | 1 | hit effects at the screen edges (`reticle_cue`: the crosshair pulses, also on) |

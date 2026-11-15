@@ -22,7 +22,10 @@ function Send-FLS([string]$Command, [int]$TimeoutMs = 5000) {
 }
 function Send-FLSUnlocked([string]$Command, [int]$TimeoutMs, [string]$name) {
     try { $mmf = [System.IO.MemoryMappedFiles.MemoryMappedFile]::OpenExisting($name) }
-    catch { throw "FLSubtitles shared memory not found (is the game running with FLvibed.dll and the subtitles module on? FLvibed.ini [Modules])" }
+    catch {
+        if ($closed = Get-FLChannelClosed) { throw $closed }
+        $x = if (-not (Get-FLGameProcess)) { Get-FLExitLine -WaitMs 1000 } else { '' }   # (+ the exit line of the latest start)
+        throw "FLSubtitles shared memory not found (is the game running with FLvibed.dll and the subtitles module on? FLvibed.ini [Modules])$(if ($x) { "; game exit: $x" })" }
     $v = $mmf.CreateViewAccessor()
     try {
         if ($v.ReadUInt32(0) -ne 0x42534C46) { throw "bad magic" }
@@ -35,7 +38,7 @@ function Send-FLSUnlocked([string]$Command, [int]$TimeoutMs, [string]$name) {
             if ($sw.ElapsedMilliseconds -gt $TimeoutMs) {
                 # The game exited (ends every wait), or did not process a frame in time (TimeoutException: loading, a
                 # stall). Was: "<timeout: ...>" returned as if it were the answer, 18 Oct 2026.
-                if (-not (Get-FLGameProcess)) { throw "Freelancer exited (no answer to '$Command')" }
+                if (-not (Get-FLGameProcess)) { $x = Get-FLExitLine -WaitMs 2000; throw "Freelancer exited (no answer to '$Command')$(if ($x) { "; game exit: $x" })" }
                 throw [System.TimeoutException]::new("no answer to '$Command' within $TimeoutMs ms (game loading, stalled or hung)")
             }
             Start-Sleep -Milliseconds 5
@@ -164,14 +167,9 @@ function Set-FLSIntro([string]$Intro = '', [switch]$NoLogos, [switch]$Restore) {
 
 function Get-FLSLog([int]$Tail = 40) { Get-Content (Join-Path $script:FLSExe 'FLSubtitles.log') -Tail $Tail }
 
-# Captures the game window (client area, physical pixels) to a PNG; works while it is not in front
-# only if it is not covered. Returns the file path.
-function Save-FLShot([string]$Name = 'shot', [string]$Dir = $env:FLS_SHOTS) {
-    if (-not $Dir) { $Dir = Join-Path $env:TEMP 'flsub-shots' }
-    New-Item -ItemType Directory -Force $Dir | Out-Null
-    Add-Type -AssemblyName System.Drawing
-    if (-not ('FLSWin' -as [type])) {
-        Add-Type @'
+function Add-FLSWinType {
+    if ('FLSWin' -as [type]) { return }
+    Add-Type @'
 using System; using System.Runtime.InteropServices;
 public static class FLSWin {
   [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr v);
@@ -179,13 +177,59 @@ public static class FLSWin {
   [DllImport("user32.dll")] public static extern IntPtr GetWindowDpiAwarenessContext(IntPtr h);
   [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
   [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
+  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr h, int cmd);
   public struct RECT { public int L, T, R, B; }
 }
 '@
-    }
+}
+
+# A minimised game window has no client area (0 x 0 at -16000,-16000), so PrintWindow has nothing to draw: the
+# owner's show-desktop (Win+D) minimises every background test game at once (13 Nov 2026: base_pages lost 29 walks
+# to "game window has no client area"). The game keeps running minimised (measured: about 30 frames a second), so
+# only the captures need the window back. This restores it with SW_SHOWNOACTIVATE (4): shown at its last size and
+# place, NOT activated, so the focus and the owner's foreground window stay where they are (measured 13 Nov 2026:
+# restored in about 60 ms, the client area back at its full size, the foreground window unchanged). Each restore is
+# written to <-Log> (the run's folder: window.log) and to the host. Returns $true when it restored the window.
+function Restore-FLWindow([IntPtr]$Hwnd, [string]$Log = '') {
+    Add-FLSWinType
+    if ($Hwnd -eq [IntPtr]::Zero -or -not [FLSWin]::IsIconic($Hwnd)) { return $false }
+    [void][FLSWin]::ShowWindowAsync($Hwnd, 4)   # (async: a busy game thread never blocks the harness)
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ([FLSWin]::IsIconic($Hwnd) -and $sw.ElapsedMilliseconds -lt 5000) { Start-Sleep -Milliseconds 50 }
+    $ok = -not [FLSWin]::IsIconic($Hwnd)
+    # a few game frames so the next capture shows a frame drawn at the restored size
+    if ($ok -and (Get-Command Wait-FLFramesPassed -ErrorAction SilentlyContinue)) { try { $null = Wait-FLFramesPassed 5 } catch { } }
+    $line = '{0:HH:mm:ss.fff} game window 0x{1:X} was minimised: {2} after {3} ms (SW_SHOWNOACTIVATE, not activated)' -f (Get-Date), [int64]$Hwnd, $(if ($ok) { 'restored' } else { 'STILL MINIMISED' }), $sw.ElapsedMilliseconds
+    Write-Host "  $line"
+    if ($Log) { try { Add-Content -LiteralPath $Log $line } catch { } }
+    $ok
+}
+
+# Captures the game window (client area, physical pixels) to a PNG; works while it is not in front
+# only if it is not covered. A minimised window is restored first, without activating it (Restore-FLWindow); a window
+# that still has no client area is tried once more after a second, then the capture fails loudly. Returns the file path.
+function Save-FLShot([string]$Name = 'shot', [string]$Dir = $env:FLS_SHOTS) {
+    if (-not $Dir) { $Dir = Join-Path $env:TEMP 'flsub-shots' }
+    New-Item -ItemType Directory -Force $Dir | Out-Null
+    Add-Type -AssemblyName System.Drawing
+    Add-FLSWinType
     [void][FLSWin]::SetProcessDpiAwarenessContext([IntPtr](-4))
     $p = Get-FLGameProcess; if (-not $p) { throw 'Freelancer is not running' }
     $h = $p.MainWindowHandle
+    $log = Join-Path $Dir 'window.log'
+    $null = Restore-FLWindow $h $log
+    $r0 = New-Object FLSWin+RECT
+    if (-not [FLSWin]::GetClientRect($h, [ref]$r0) -or $r0.R -le $r0.L -or $r0.B -le $r0.T) {
+        # once more: the window may be between states (a display switch, a minimise that came during the restore)
+        $line = '{0:HH:mm:ss.fff} game window 0x{1:X} had no client area (iconic={2} visible={3}): retrying once in 1 s' -f (Get-Date), [int64]$h, [FLSWin]::IsIconic($h), [FLSWin]::IsWindowVisible($h)
+        Write-Host "  $line"; try { Add-Content -LiteralPath $log $line } catch { }
+        Start-Sleep -Seconds 1
+        $p = Get-FLGameProcess; if (-not $p) { throw 'Freelancer is not running' }
+        $h = $p.MainWindowHandle
+        $null = Restore-FLWindow $h $log
+    }
     # The game window's own content (PrintWindow, PW_CLIENTONLY | PW_RENDERFULLCONTENT: DirectX content through the
     # compositor), never the screen area: the game may be behind the user's windows (background tests), and a screen
     # copy would capture the user's desktop. No capture rather than the wrong one.
@@ -195,7 +239,11 @@ public static class FLSWin {
     $old = [FLSWin]::SetThreadDpiAwarenessContext([FLSWin]::GetWindowDpiAwarenessContext($h))
     try {
         $r = New-Object FLSWin+RECT
-        if (-not [FLSWin]::GetClientRect($h, [ref]$r) -or $r.R -le $r.L -or $r.B -le $r.T) { throw 'game window has no client area' }
+        if (-not [FLSWin]::GetClientRect($h, [ref]$r) -or $r.R -le $r.L -or $r.B -le $r.T) {
+            $why = "game window has no client area (after a restore and one retry; hwnd 0x{0:X} iconic={1} visible={2})" -f [int64]$h, [FLSWin]::IsIconic($h), [FLSWin]::IsWindowVisible($h)
+            try { Add-Content -LiteralPath $log ('{0:HH:mm:ss.fff} {1}' -f (Get-Date), $why) } catch { }
+            throw $why
+        }
         $bmp = New-Object Drawing.Bitmap ($r.R - $r.L), ($r.B - $r.T)
         $g = [Drawing.Graphics]::FromImage($bmp)
         $hdc = $g.GetHdc()

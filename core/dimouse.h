@@ -47,6 +47,10 @@ void BackgroundCursor();
 // is safe. A button pressed by injection stays masked until its injected release.
 void NoteMotion(bool injected);
 void MaskInjectedButton(int index, bool down);
+// The raw mouse (setting `mouse_raw`, default on; hostcalls SetRawMouse every frame): on starts the host's Raw Input listener, and the
+// reads that carry motion take the mouse's own counts in place of DirectInput's (core\host\rawmouse_rules.h); off stops it. A listener that
+// cannot start, or a mouse whose raw input another part of the process holds, leaves the game's own mouse for the run.
+void SetRaw(bool on);
 
 std::string Stats();
 } // namespace dimouse

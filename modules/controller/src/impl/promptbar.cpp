@@ -14,6 +14,10 @@
 // free band above the lane) - never below the 0.95 H safe margin. The chat's Console field and the subtitles' docked block
 // (bus v3) are keep-outs like the rest. On a docked non-modal screen the lane in use is published on the HUD bus (v2) for
 // the subtitles, whether the pills show or have faded, and (v3) the open windows' floor per slice of the width.
+// A HUD 2 page (the dealers, the ship dealer, repair, jobs, news, LOG, INVENTORY, STATUS, INFO) has a rule of its own, the
+// owner's of 12 Nov 2026 (promptfit::PageRule): every prompt it sets, the free width first, then a second row clear of its
+// content, a prompt giving way only last - the D-pad's hints first, never B. Every other screen shows its first five, as
+// before.
 #include "promptbar.h"
 
 #include "device.h"
@@ -59,6 +63,7 @@ static std::wstring g_timedWords;
 static bool g_visible = false;
 static int g_drawn = 0;
 static int g_rows = 0, g_dropped = 0; // rows drawn, pills dropped (this frame)
+static bool g_pageNow = false;        // this frame's prompts are a HUD 2 page's: all of them, by promptfit's PageRule
 static float g_plates[kMax][4] = {};  // each pill drawn this pass, its word above it included (pixels x0 y0 x1 y1): Plates
 static int g_nPlates = 0;
 
@@ -164,8 +169,8 @@ static void CollectExtra(float W, float H, int priority)
                         { static_cast<std::vector<KeepRect>*>(v)->push_back({a, b, c, d}); }, &g_extra);
     // the subtitles' block on a docked screen (bus v3): where they cannot sit between a window and the lane, the lane
     // yields to them (the pills never under the subtitles; modules\subtitles\src\impl\display.cpp Place)
-    if (baseinfo::Docked() && HostAtLeast(21) && g_host->GetHudBus)
-        if (const HudBus* bus = g_host->GetHudBus(); bus && bus->version >= 3 && bus->DockedSubsFrame && bus->ReadDockedSubs)
+    if (baseinfo::Docked() && g_host && g_host->GetHudBus)
+        if (const HudBus* bus = g_host->GetHudBus(); bus && bus->DockedSubsFrame && bus->ReadDockedSubs)
         {
             static u32 seen = 0;
             static ULONGLONG movedAt = 0;
@@ -191,7 +196,7 @@ static void CollectExtra(float W, float H, int priority)
             if (heldAt && now - heldAt < 500)
                 g_extra.push_back(held);
         }
-    if (priority >= 10 && g_screen != "chat" && HostAtLeast(21) && g_host->GetHudBus)
+    if (priority >= 10 && g_screen != "chat" && g_host && g_host->GetHudBus)
         if (const HudBus* bus = g_host->GetHudBus())
         {
             static u32 seen = 0;
@@ -224,19 +229,37 @@ static float Left(float W, float H, float y0, float y1, float right)
 // between pills in a row (pixels). The confirm = the A pill wherever the owner listed it (the dealers put their bumpers
 // first: BUY stays), else the first; BACK = the last.
 static const float* g_stackW = nullptr; // HUD 2's pills can stack (promptfit LaneLayout's wS); the classic look's cannot
-static void Layout(float W, float H, const float* wN, const float* wF, float ph, float pitch, Placed& out)
+// A HUD 2 page's rule this frame (promptfit::PageRule; null on every other screen): its content's floor and the prompts' order
+// of giving way - the owner's last resort, `67_` rule 2 (12 Nov 2026): the D-pad's hints first (the list's highlight and the
+// two panels already show what they walk), then the page's own actions, never B (it closes or goes back) nor the confirm.
+static const promptfit::PageRule* g_pageRule = nullptr;
+static int Confirm()
 {
-    int confirm = 0;
     for (int i = 0; i < g_count; ++i)
         if (g_items[i].btn == glyphs::A)
-        {
-            confirm = i;
-            break;
-        }
+            return i;
+    return 0;
+}
+static void PageRuleFor(promptfit::PageRule& rule, int* giveWay)
+{
+    const int confirm = Confirm();
+    for (int i = 0; i < g_count; ++i)
+    {
+        const glyphs::Id b = g_items[i].btn;
+        giveWay[i] = b == glyphs::B || i == confirm ? promptfit::kNeverGivesWay
+                     : b == glyphs::DU || b == glyphs::DD || b == glyphs::DL || b == glyphs::DR ? 0
+                                                                                                  : 1;
+    }
+    rule.floor = winplates::g_pageFloor, rule.giveWay = giveWay;
+}
+
+static void Layout(float W, float H, const float* wN, const float* wF, float ph, float pitch, Placed& out)
+{
     promptfit::LaneLayout(
-        W, H, g_count, confirm, wN, wF, ph, pitch, winplates::NeuroNetBottom(),
+        W, H, g_count, Confirm(), wN, wF, ph, pitch, winplates::NeuroNetBottom(),
         [&](float y0, float y1, float right) { return Left(W, H, y0, y1, right); },
-        [](float x0, float x1, float below) { return winplates::LowestKeepOut(x0, x1, below); }, out, g_dropped, g_stackW, g_stackW ? W - H * 0.012f : 0.0f);
+        [](float x0, float x1, float below) { return winplates::LowestKeepOut(x0, x1, below); }, out, g_dropped, g_stackW, g_stackW ? W - H * 0.012f : 0.0f,
+        g_pageRule);
 }
 
 // Symmetry (the owner, 6 Nov 2026): a row of pills stands centred on the screen where its band leaves the room, else where the lane put it; a column stands centred between
@@ -303,15 +326,15 @@ static promptfit::HoldPlan g_plan;
 struct HoldCache
 {
     bool ok = false;
-    float W = 0, H = 0, bN[kMax] = {}, bF[kMax] = {}, rx0 = 0, ry0 = 0, aboveLeft = 0;
-    bool hold[kMax] = {}, use[kMax] = {};
+    float W = 0, H = 0, bN[kMax] = {}, bF[kMax] = {}, rx0 = 0, ry0 = 0, aboveLeft = 0, floor = 0;
+    bool hold[kMax] = {}, use[kMax] = {}, page = false;
     int n = 0;
     Mode mode = Mode::None;
     promptfit::HoldPlan plan;
     bool Same(const HoldCache& o) const
     {
         if (!ok || !o.ok || W != o.W || H != o.H || n != o.n || mode != o.mode || rx0 != o.rx0 || ry0 != o.ry0 ||
-            aboveLeft != o.aboveLeft)
+            aboveLeft != o.aboveLeft || page != o.page || floor != o.floor)
             return false;
         for (int i = 0; i < n; ++i)
             if (bN[i] != o.bN[i] || bF[i] != o.bF[i] || hold[i] != o.hold[i] || use[i] != o.use[i])
@@ -339,13 +362,7 @@ static void LayoutHold(float W, float H, const float* bN, const float* bF, const
             wN[i] = bN[i], wF[i] = bF[i];
         return;
     }
-    int confirm = 0;
-    for (int i = 0; i < g_count; ++i)
-        if (g_items[i].btn == glyphs::A)
-        {
-            confirm = i;
-            break;
-        }
+    const int confirm = Confirm();
     promptfit::g_rowsFirst = views::HudNNStrip();
     auto left = [&](float y0, float y1, float right) { return Left(W, H, y0, y1, right); };
     auto lowest = [](float x0, float x1, float below) { return winplates::LowestKeepOut(x0, x1, below); };
@@ -354,8 +371,10 @@ static void LayoutHold(float W, float H, const float* bN, const float* bF, const
     {
         Placed none;
         int dr = 0;
-        promptfit::LaneLayout(W, H, g_count, confirm, bN, bF, ph, pitch, winplates::NeuroNetBottom(), left, lowest, none, dr);
+        promptfit::LaneLayout(W, H, g_count, confirm, bN, bF, ph, pitch, winplates::NeuroNetBottom(), left, lowest, none, dr, nullptr, 0,
+                              g_pageRule);
         key.ok = true, key.W = W, key.H = H, key.n = g_count, key.mode = none.mode, key.rx0 = none.rx0, key.ry0 = none.ry0;
+        key.page = g_pageRule != nullptr, key.floor = g_pageRule ? g_pageRule->floor : 0.0f;
         const float by0 = H * deckmode::LaneTopH();
         key.aboveLeft = left(by0 - wordH - H * 0.002f, by0, W * (1.0f - deckmode::SideW()));
         for (int i = 0; i < g_count; ++i)
@@ -374,7 +393,7 @@ static void LayoutHold(float W, float H, const float* bN, const float* bF, const
     }
     ++g_holdRuns;
     g_plan = promptfit::LaneHold(W, H, g_count, confirm, bN, bF, gls, lbl, hold, d, ph, pitch, wordH, winplates::NeuroNetBottom(),
-                                 left, lowest, g_last, g_dropped, wN, wF);
+                                 left, lowest, g_last, g_dropped, wN, wF, g_pageRule);
     key.plan = g_plan;
     g_holdCache = key;
 }
@@ -382,10 +401,10 @@ static void LayoutHold(float W, float H, const float* bN, const float* bF, const
 // The lane on the HUD bus (v2) for the subtitles: a docked non-modal screen with the pills at the bottom.
 static void PublishLane(const Placed* p, float W, float H)
 {
-    if (!HostAtLeast(21) || !g_host->GetHudBus)
+    if (!g_host || !g_host->GetHudBus)
         return;
     const HudBus* bus = g_host->GetHudBus();
-    if (!bus || bus->version < 2 || !bus->PublishLane)
+    if (!bus || !bus->PublishLane)
         return;
     HudLane l{};
     l.frame = ++g_lanePublished;
@@ -403,10 +422,10 @@ static void PublishLane(const Placed* p, float W, float H)
 // uiskin's keep-outs this frame (pixels -> fractions); `have` false = nothing known (count 0).
 static void PublishFloor(bool have, float W, float H)
 {
-    if (!HostAtLeast(21) || !g_host->GetHudBus)
+    if (!g_host || !g_host->GetHudBus)
         return;
     const HudBus* bus = g_host->GetHudBus();
-    if (!bus || bus->version < 3 || !bus->PublishFloor)
+    if (!bus || !bus->PublishFloor)
         return;
     static u32 frame = 0;
     HudFloor f{};
@@ -451,8 +470,8 @@ static void HoldLane(const Placed& before, const promptfit::HoldPlan& planBefore
 }
 
 // Extended HUD 2's look (modules\hud\docs\UI_HUD2_EXTENDED.md 10; the mock tools\uimock\hud2x.py `pills`): one glass pill per prompt
-// (glyph 0.032 H + the verb in Agency FB 0.026 H), 0.040 H tall.
-static void DrawHud2(void* device, int sw, int sh, bool visible)
+// (glyph 0.032 H + the verb in Agency FB 0.026 H), 0.040 H tall. `page`: a HUD 2 page's prompts, every one of them, by its rule.
+static void DrawHud2(void* device, int sw, int sh, bool visible, bool page)
 {
     const float H = static_cast<float>(sh), W = static_cast<float>(sw);
     const uiopt::UiOptions& o = uiopt::Get();
@@ -481,10 +500,15 @@ static void DrawHud2(void* device, int sw, int sh, bool visible)
         bS[i] = p.hold ? 0 : H * 0.024f + std::max(gls[i], hud2kit::TextWidth(p.label ? p.label : L"", size));
     }
     g_stackW = bS;
+    promptfit::PageRule rule; // (a HUD 2 page: its own order, promptfit PageRule)
+    int giveWay[kMax] = {};
+    if (page)
+        PageRuleFor(rule, giveWay);
+    g_pageRule = page ? &rule : nullptr;
     const Placed before = g_last;
     const promptfit::HoldPlan planBefore = g_plan;
     LayoutHold(W, H, bN, bF, gls, lbl, hold, d, 2 * half, pitch, floorSize, wN, wF);
-    g_stackW = nullptr;
+    g_stackW = nullptr, g_pageRule = nullptr;
     CentreLane(W, H, g_last);
     HoldLane(before, planBefore, W, H, bN);
     for (int i = 0; i < g_count; ++i) // (a word above its pill belongs to the lane's area: the subtitles keep clear of it)
@@ -749,6 +773,12 @@ static void DrawFrame()
     }
     g_fresh = false;
     g_priority = 0;
+    // A HUD 2 page (its prompts at the base priority while a page stands: winplates::g_pageFloor) keeps every prompt it set;
+    // every other screen its first five, as before (promptfit kScreenMax)
+    const bool page = priority == 0 && winplates::g_pageFloor > 0;
+    if (!page && g_count > promptfit::kScreenMax)
+        g_count = promptfit::kScreenMax;
+    g_pageNow = page;
     const uiopt::UiOptions& o = uiopt::Get();
     const ULONGLONG now = GetTickCount64();
     // CONTEXTUAL in a room: shown while the player moves and acts, gone a few seconds after the last of it (the owner, 7 Nov 2026, as the HUD's contextual
@@ -788,9 +818,12 @@ static void DrawFrame()
     PublishFloor(true, static_cast<float>(sw), static_cast<float>(sh));
     CollectExtra(static_cast<float>(sw), static_cast<float>(sh), priority);
     if (views::SkinOn()) // ui_style HUD 2: the glass pills
-        DrawHud2(device, sw, sh, g_visible);
+        DrawHud2(device, sw, sh, g_visible, page);
     else
+    {
+        g_count = std::min(g_count, promptfit::kScreenMax); // (the classic look: its five and its order, whatever stands)
         DrawClassic(sw, sh, g_visible);
+    }
 }
 
 void Shutdown() {}
@@ -804,7 +837,8 @@ std::string Status()
       << " widest=" << static_cast<int>(g_last.widest) << " column=" << static_cast<int>(g_last.column)
       << " area=" << static_cast<int>(g_last.rx0) << "," << static_cast<int>(g_last.ry0) << ".."
       << static_cast<int>(g_last.rx1) << "," << static_cast<int>(g_last.ry1);
-    o << " atFloor=" << g_last.atFloor << " hold=" << promptfit::HoldStepName(g_plan.step) << " holdRuns=" << g_holdRuns;
+    o << " atFloor=" << g_last.atFloor << " hold=" << promptfit::HoldStepName(g_plan.step) << " holdRuns=" << g_holdRuns
+      << " page=" << g_pageNow;
     // the prompts themselves ("Y LAUNCH, LB+RB ROOM"): what the screen offers, for the tests
     o << " items='";
     for (int i = 0; i < g_count; ++i)

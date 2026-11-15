@@ -1,4 +1,4 @@
-// FLvibed - input injection: core\host\input.cpp. Held commands get an owner per module in P7 (docs\MODULES_PLAN.md).
+// FLvibed - input injection: core\host\input.cpp. Held commands get an owner per module in P7 (the module split plan, private).
 #pragma once
 
 namespace input

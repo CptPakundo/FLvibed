@@ -1,144 +1,54 @@
-// The NeuroNet pages' rules, pure (docs\NEURONET_PLAN.md): the game's five standings, the filter of the reputation list, a list's window, a number out of the game's text.
+// The NeuroNet pages' rules, pure (docs\NEURONET_PLAN.md): the game's five standings, the filter of the reputation list, a list's window, a number out of the game's text
+// (the first two, a list's window and the number are core's now, named here), the item meshes of a list window.
 // Host-free: tests\nnpage_test.cpp holds them.
 #pragma once
+#include "game/screens/prices_rules.h"
+#include "game/screens/screen_rules.h"
+#include "game/screens/status_rules.h"
+
 #include <algorithm>
 #include <string>
 #include <vector>
 
 namespace nnrules
 {
-// The game's own five steps (0x45A6E0): at or under -0.6, at or under -0.2, up to 0.2, under 0.6, from 0.6.
-enum Band
-{
-    Hostile,
-    Unfriendly,
-    Neutral,
-    Warm,
-    Friendly
-};
-inline Band BandOf(float v) { return v <= -0.6f ? Hostile : v <= -0.2f ? Unfriendly : v >= 0.6f ? Friendly : v > 0.2f ? Warm : Neutral; }
+// The five standings, the reputation list's filter, the share of the next level and a heading without its colon are the
+// STATUS page's model's (core\game\screens\status_rules.h: audit 70b F4b); their names here as before.
+using statusrules::Band;
+using statusrules::BandOf;
+using statusrules::Hostile;
+using statusrules::Unfriendly;
+using statusrules::Neutral;
+using statusrules::Warm;
+using statusrules::Friendly;
+using statusrules::Filter;
+using statusrules::Passes;
+using statusrules::All;
+using statusrules::Enemies;
+using statusrules::Indifferent;
+using statusrules::Friends;
+using statusrules::kFilters;
+using statusrules::Share;
+using statusrules::Heading;
 
-// The reputation list's filter, one press each: all, then who shoots, who does not care, who likes the player.
-enum Filter
-{
-    All,
-    Enemies,
-    Indifferent,
-    Friends,
-    kFilters
-};
-inline bool Passes(Filter f, float v)
-{
-    const Band b = BandOf(v);
-    return f == All || (f == Enemies && b <= Unfriendly) || (f == Indifferent && b == Neutral) || (f == Friends && b >= Warm);
-}
+// A list's window, a number out of the game's text, the commodity list by base's rows and answers: the screens' models need
+// them, so they are core's (core\game\screens\screen_rules.h, prices_rules.h: audit 70b F3a); their names here as before.
+using screens::List;
+using screens::Number;
+using screens::Pick;
+using screens::Picks;
+using screens::Quote;
+using screens::SortQuotes;
 
-// A list's window on `count` rows: `sel` the row in focus, `first` the first shown, `rows` how many stand. The focus keeps a row of lead, so the next one is always seen.
-struct List
-{
-    int count = 0, sel = 0, first = 0, rows = 1;
-    void Fit()
-    {
-        sel = count > 0 ? std::max(0, std::min(sel, count - 1)) : 0;
-        const int lead = rows > 2 ? 1 : 0;
-        if (sel - lead < first)
-            first = sel - lead;
-        if (sel + lead >= first + rows)
-            first = sel + lead - rows + 1;
-        first = std::max(0, std::min(first, std::max(0, count - rows)));
-    }
-    // The focus moves; the ends stop it. True when it moved.
-    bool Step(int by)
-    {
-        const int was = sel;
-        sel += by;
-        Fit();
-        return sel != was;
-    }
-    // The wheel: the window moves, the focus stays inside it - inside Fit's lead too, or the next Fit pulls the window back
-    // (Shockwave, 7 Nov 2026: BEST PRICES scrolled once, then stuck both ways).
-    void Scroll(int by)
-    {
-        first = std::max(0, std::min(first + by, std::max(0, count - rows)));
-        const int lead = rows > 2 ? 1 : 0;
-        const int lo = first > 0 ? first + lead : 0, hi = first + rows < count ? first + rows - 1 - lead : count - 1;
-        sel = std::max(lo, std::min(sel, hi));
-        sel = count > 0 ? std::max(0, std::min(sel, count - 1)) : 0;
-    }
-};
-
-// The digits of the game's text: "$1,250,000" is 1250000, "" and words are 0.
-inline long long Number(const std::wstring& s)
-{
-    long long n = 0;
-    for (wchar_t c : s)
-        if (c >= L'0' && c <= L'9' && n < 100000000000000LL)
-            n = n * 10 + (c - L'0');
-    return n;
-}
-// A row of the game's commodity list by base: its price there, and whether the base sells the good (its own word beside it).
-struct Quote
-{
-    long long price = 0;
-    bool buyHere = false;
-    std::wstring sells, base, system;
-};
-// Highest price first, the game's order among equals.
-inline void SortQuotes(std::vector<Quote>& q)
-{
-    std::stable_sort(q.begin(), q.end(), [](const Quote& a, const Quote& b) { return a.price > b.price; });
-}
-// The two answers, as rows of a sorted list: where to sell (the highest price, any base buys), where to buy (the lowest of those that sell it); -1 none.
-struct Picks
-{
-    int sell = -1, buy = -1;
-};
-inline Picks Pick(const std::vector<Quote>& q)
-{
-    Picks p;
-    for (int i = 0; i < static_cast<int>(q.size()); ++i)
-    {
-        if (p.sell < 0 && q[i].price > 0)
-            p.sell = i;
-        if (q[i].buyHere && q[i].price > 0 && (p.buy < 0 || q[i].price <= q[p.buy].price))
-            p.buy = i;
-    }
-    return p;
-}
-
-// How far the player's worth is on the way to the next level: 0 .. 1; 0 when the game names no next level.
-inline float Share(long long worth, long long next) { return next <= 0 ? 0 : std::max(0.0f, std::min(1.0f, static_cast<float>(worth) / static_cast<float>(next))); }
-
-// A heading of the game's without its colon.
-inline std::wstring Heading(std::wstring s)
-{
-    while (!s.empty() && (s.back() == L':' || s.back() == L' '))
-        s.pop_back();
-    return s;
-}
+// The five meshes and the best start of the game's window over the shown rows are core's (core\game\screens\screen_rules.h,
+// audit 70b F3b: the dealer's screen moves the window); their names here as before.
+using screens::kMeshes;
+using screens::BestWindowStart;
 
 // Which of a list window's five item meshes shows each of the page's `n` shown rows (nnpage_kit.h RowIcons). The game's mesh k shows its row
 // first + k; a shown row inside that window keeps its own mesh. A row outside it that has an item (`wants`) borrows a mesh no shown row keeps:
 // first one that holds the row's model already (`holds(row, mesh)`: no load), else the lowest free. meshOf -1: no icon (an EMPTY slot, no item,
-// no mesh left); borrowed: the mesh is sent the row's item.
-constexpr int kMeshes = 5;
-// Where the game's window of five should start so its own meshes show the most of the page's shown rows (game rows, -1 none): the first row of
-// the best start; -1 when no shown row has a game row. (Every row it misses borrows a mesh, which the game's fill undoes each frame: a load each.)
-inline int BestWindowStart(const int* gameRow, int n)
-{
-    int best = -1, most = 0;
-    for (int i = 0; i < n; ++i)
-    {
-        if (gameRow[i] < 0)
-            continue;
-        int covered = 0;
-        for (int j = 0; j < n; ++j)
-            covered += gameRow[j] >= gameRow[i] && gameRow[j] < gameRow[i] + kMeshes;
-        if (covered > most || (covered == most && gameRow[i] < best))
-            best = gameRow[i], most = covered;
-    }
-    return best;
-}
+// no mesh left); borrowed: the mesh is sent the row's item;
 // ... and among the rest one that `keeps(mesh)` (its own row's model is one the game sends: the lent model can stay under that name, no load a
 // frame), before one whose own row the game blanks every frame.
 template <class Holds, class Keeps>

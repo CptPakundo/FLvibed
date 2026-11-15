@@ -15,7 +15,8 @@ void GenerationReply(char* reply, size_t len); // the `uigen` verb
 void InstallHits();
 u32 PlayerHit(float pos[3], u32* kind, u32* tick); // sequence, 0 = none yet
 // The game's target label and bars left out of its indicator draw while HUD 2's targeting display stands (UI_HUD2_SKIN.md 6.10). Both the vertex gate and the
-// text gate or neither: TargetMuteReady says whether the mute can hold. Idempotent; an unsigned symbol leaves the game's drawing as it is.
+// text gate or neither: TargetMuteReady says whether the mute can hold. Idempotent; an unsigned symbol leaves the game's drawing as it is. HUD 2's alone:
+// installed at its first selection (router::InstallHud2Hooks), never at the start.
 void InstallTargetMute();
 void SetTargetMute(bool on);
 bool TargetMuteReady();

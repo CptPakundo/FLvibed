@@ -1,6 +1,6 @@
 // The shared prompt bar of the controller UI (docs\UI_PLAN.md 6.5, docs\UI_SPEC.json: every screen's `prompts`): the
 // bottom-right row of glyph + label pairs (placement: promptbar.cpp's header, modules\hud\docs\UI_HUD2_EXTENDED.md 13), confirm
-// first, at most five, "HOLD" marked - drawn by FLvibed in
+// first, at most five (a HUD 2 page: all it sets, by its own rule: promptbar.cpp's header), "HOLD" marked - drawn by FLvibed in
 // OnRenderOverlay while the pad is the device. `prompt_bar` (CONTEXTUAL / ALWAYS / OFF): contextual = shown for ~3 s
 // when a screen first appears this session, and for as long as a decision is pending (the owner says so). The owner of
 // the current screen calls Set every frame it is up (the last caller of a frame wins; nothing set = nothing drawn).

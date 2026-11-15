@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The design bench's window (served by `flbench serve` on 127.0.0.1 only; started by the shortcut `HUD 2 Bench`,
+     tools\hudbench\app\). Every request goes to that one local program. Never published: the private bench. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<title>HUD 2 Bench</title>
+<link rel="stylesheet" href="replay.css">
+<link rel="stylesheet" href="bench.css">
+</head>
+<body>
+<header>
+  <h1>HUD 2 Bench</h1>
+  <span class="note">HUD 2's flight HUD drawn from frames the game recorded, with no game running. Private: never publish what it shows.</span>
+  <span id="status" class="note"></span>
+</header>
+<div id="gone" class="banner" hidden>The bench program has stopped. Close this window and start <b>HUD 2 Bench</b> again.</div>
+<main>
+<aside id="controls">
+  <section>
+    <h2>Recorded state</h2>
+    <div class="row"><select id="run" aria-label="recording"></select></div>
+    <div id="states" class="statelist"></div>
+  </section>
+  <section>
+    <h2>Picture</h2>
+    <div class="row"><span class="lbl">HUD size</span>
+      <label><input type="radio" name="hudsize" value="80"> 80 %</label>
+      <label><input type="radio" name="hudsize" value="100"> 100 %</label>
+      <label><input type="radio" name="hudsize" value="130"> 130 %</label></div>
+    <div class="row"><span class="lbl">Preset</span>
+      <label><input type="radio" name="preset" value="0"> Standard</label>
+      <label><input type="radio" name="preset" value="1"> Focus</label></div>
+    <div class="row"><span class="lbl">Input</span>
+      <label><input type="radio" name="input" value="pad"> Pad</label>
+      <label><input type="radio" name="input" value="kbm"> Keyboard and mouse</label></div>
+    <div class="row"><span class="lbl">Screen</span>
+      <label><input type="radio" name="screen" value="1280x800"> 1280 x 800</label>
+      <label><input type="radio" name="screen" value="3840x2160"> 3840 x 2160</label></div>
+  </section>
+  <section>
+    <h2>Settings <span id="setCount" class="count"></span></h2>
+    <div class="row"><input type="search" id="setFind" placeholder="Find a setting" aria-label="find a setting">
+      <button type="button" id="setReset">Reset all</button></div>
+    <div id="settings" class="numlist"></div>
+  </section>
+  <section>
+    <h2>Layout numbers <span id="layCount" class="count"></span></h2>
+    <div class="row"><input type="search" id="layFind" placeholder="Find a number, e.g. loadout" aria-label="find a layout number">
+      <button type="button" id="layReset">Reset all</button></div>
+    <div class="small">Where a panel sits and how big it is, as a share of the screen. Many are read only in one preset or state: a change that moves nothing says so under the picture.</div>
+    <div id="layout" class="numlist"></div>
+  </section>
+  <section>
+    <h2>Saved variants</h2>
+    <div class="row"><input type="text" id="varName" placeholder="Name this variant" aria-label="variant name" maxlength="80">
+      <button type="button" id="varSave">Save this variant</button></div>
+    <div id="variants"></div>
+  </section>
+</aside>
+<div id="stage">
+  <div class="row toolbar">
+    <label><input type="radio" name="view" value="A" checked> Before</label>
+    <label><input type="radio" name="view" value="B"> After</label>
+    <label><input type="radio" name="view" value="AB"> Side by side</label>
+    <label><input type="radio" name="view" value="diff"> Difference</label>
+    <button type="button" id="flip" title="the F key">Flip before / after (F)</button>
+  </div>
+  <div id="truth" class="truth"></div>
+  <div id="views">
+    <figure class="view" id="viewA"><figcaption>Before: the recorded state as it is</figcaption><div class="frame"><canvas class="gl"></canvas><canvas class="ov"></canvas></div></figure>
+    <figure class="view" id="viewB"><figcaption>After: with your changes</figcaption><div class="frame"><canvas class="gl"></canvas><canvas class="ov"></canvas></div></figure>
+    <figure class="view" id="viewD"><figcaption>Difference: what moved between before and after</figcaption><div class="frame"><canvas class="d2"></canvas></div></figure>
+  </div>
+  <div id="report"></div>
+</div>
+</main>
+<script src="fldl.js"></script>
+<script src="gl.js"></script>
+<script src="bench.js"></script>
+</body>
+</html>

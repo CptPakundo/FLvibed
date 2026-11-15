@@ -1,11 +1,11 @@
-// What hud2.cpp (state, data) and hud2_parts.cpp (drawing) share: the model of one frame and the layout. Internal.
+// What hud2.cpp (state, data) and hud2_parts.cpp (drawing) share: the model of one frame and the layout. Internal; part of
+// HUD 2's game-free core (hud2_frame.h): no game header.
 #pragma once
 #include "common.h"
 #include "game/flicons.h"
 #include "game/promptfit.h"
 #include "ui/glyphs.h"
 #include "hud2.h"
-#include "game/space.h"
 #include "ui/hud2_kit.h"
 #include "hud2_bars.h"
 #include "hud2_layout.h"
@@ -302,6 +302,7 @@ struct Layout
     float clearY0 = 0;          // the lower centre's clear zone's top (hud2_layout.h Out::clearY0; UI_HUD2.md 5.23)
     float ntX0 = 0, ntY0 = 0, ntX1 = 0, ntY1 = 0; // the flight notice's place (hud2_layout.h PlaceNotice), as placed
     bool ntShow = false;                          // ... it has one this frame
+    float ntWrapW = 0;                            // ... in its wrapped form: the width its lines wrap to (0: one line each)
     hud2layout::Reserved res;   // the reserved areas (hud2_layout.h Reserved): what the targeting display keeps off, the lint's part.over
 };
 
@@ -325,7 +326,7 @@ void DrawTailMark(const Model& m, const Layout& L, float a);
 // Returns the right edge of what it drew (the HUD bus publishes the nav rectangle from it); `bottom` = its last line's.
 float DrawNav(const Model& m, const Layout& L, float a, const NavStyle& ns = NavStyle(), float* bottom = nullptr);
 void DrawTarget(const Model& m, const Layout& L, float a);
-// The card's left column, pixels: the wireframe's where the target has one, the flat icon's where it has none (UI_HUD2_SIZE_AUDIT.md 3.2).
+// The card's left column, pixels: the wireframe's where the target has one, the flat icon's where it has none (the HUD 2 size audit 3.2, private).
 float CardColumn(const Model& m, const Layout& L);
 // `textH` = the hints' text size (H x k): Standard 0.024, Focus 0.026 (PRESETS 2.2 Calm).
 void DrawCalmHints(const Model& m, const Layout& L, float a, float textH = 0.024f);
@@ -376,11 +377,12 @@ float CardContentHeight(const Model& m, const Layout& L);    // (the owner, 6 No
 float CardFootUp(const Layout& L);
 float ShipContentHeight(const Model& m, const Layout& L);    // (0.2.1 round 6: the heights to content)
 float LoadoutContentHeight(const Model& m, const Layout& L); //   0 = not drawn yet (the maximum)
-float ListContentWidth(const Model& m, const Layout& L);   // hud2_click.cpp: the threat / contact list under the card
-float CardIconsContentWidth(const Model& m, const Layout& L); // hud2_click.cpp: the K&M card's click row (short form)
+float ListContentWidth(const Model& m, const Layout& L);   // hud2_click_draw.cpp: the threat / contact list under the card
+float CardIconsContentWidth(const Model& m, const Layout& L); // hud2_click_draw.cpp: the K&M card's click row (short form)
 // The flight notice (hud2_notice.h) at the layout's place: measure = its card's width and height (pixels; 0 when it holds
-// nothing), else drawn at (x0, y0).
-void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bool measure, float* w = nullptr, float* h = nullptr);
+// nothing), else drawn at (x0, y0). wrapW > 0: its lines break between words to that width (hud2_layout.h NoticeWrapWidth).
+void DrawNotice(const Model& m, const Layout& L, float x0, float y0, float a, bool measure, float* w = nullptr, float* h = nullptr,
+                float wrapW = 0);
 // The alert card; returns its width (measure).
 float DrawAlert(const Model& m, const Layout& L, float a, bool measure);
 float DrawCard(const AlertCard& c, float x0, float y0, const Layout& L, float a, bool measure); // (returns its width)
@@ -388,7 +390,8 @@ float DrawCard(const AlertCard& c, float x0, float y0, const Layout& L, float a,
 // (hud2kit::Keycap; a glyph is unchanged).
 float DrawPrompt(const Prompt& p, float cx, float cy, float h, u32 argb, bool measure = false, bool tight = false);
 
-// ---- hud2_click.cpp: the keyboard-and-mouse form's clicks (HostApi v22 hotspots; modules\hud\docs\UI_HUD2.md 5.4)
+// ---- the keyboard-and-mouse form's clicks (HostApi v22 hotspots; modules\hud\docs\UI_HUD2.md 5.4): drawn in
+// hud2_click_draw.cpp, run by the game's side hud2_click.h
 // The hotspot slots (api.h kUiBtnHud2 + slot).
 enum Hot : int
 {
@@ -403,29 +406,17 @@ enum Hot : int
     kHotNextEnemy = 30, // the target card: the next enemy
     kHotCount = 31
 };
-// Inside the draw pass: the parts record where their clickable things are (pixels, without the transition's slide);
-// cleared at each pass's start (HotStart).
+// The contact list's filters' words, by m.listFilter (important, ships, stations, loot, all).
+constexpr const wchar_t* kListFilters[5] = {L"IMPORTANT", L"SHIPS", L"STATIONS", L"LOOT", L"ALL"};
+// Inside the draw pass: the parts record where their clickable things are (pixels, without the transition's slide),
+// to the bound host (hud2_frame.h FrameHost hotRect; the set emptied at each pass's start).
 void HotRect(int slot, float x0, float y0, float x1, float y1);
-// The slot under the game's cursor (last frame), -1 none - a part brightens what would be clicked.
+// The slot under the game's cursor (last frame), -1 none - a part brightens what would be clicked (FrameHost hotHovered).
 int HotHovered();
-// From Update: hands the recorded set to the host (every frame while on; `on` false hides them) and runs the clicks
-// queued since the last frame.
-void HotUpdate(Model& m, bool on);
-// A click (or the wheel) changed what the model shows: true once, then Update refreshes the 10 Hz data at once.
-bool HotRefreshWanted();
-// The pass's start (hud2.cpp Render): the set cleared; recording only when `on` (the keyboard form, flying).
-void HotStart(bool on);
-// ImplApi OnUiButton for kUiBtnHud2 .. + kHotCount: queued, run in the next Update (outside the game's mouse dispatch).
-void OnHotClick(int slot);
-// The contact list mode (Slow at 10 Hz): fills m.threats from the contacts under the list's filter; false when the mode
-// is off (the threat list as before).
-bool FillList(Model& m, const std::vector<space::Contact>& all, u32 targetId);
 // The keyboard form's extra parts: the maneuver row under the nav's chips (returns the height it took), the threat /
 // contact list (from DrawTarget), the card's close / next-enemy icons.
 float DrawManeuverRow(const Model& m, const Layout& L, float x, float y, float a, float& right);
 void DrawList(const Model& m, const Layout& L, float a);
-// `compact` = Focus's card: its 0.040 click row, tight keycaps (hud2_click.cpp).
+// `compact` = Focus's card: its 0.040 click row, tight keycaps (hud2_click_draw.cpp).
 void DrawCardIcons(const Model& m, const Layout& L, float a, bool compact = false);
-// Debug: hud2 hot | hud2 click <slot> | hud2 list [on|off|<filter>]
-std::string HotCommand(const std::string& what, std::istream& in);
 } // namespace hud2

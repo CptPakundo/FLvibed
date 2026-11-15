@@ -92,6 +92,9 @@ static const settings::Def kOptions[] = {
     {"pad_sdl_fallback", settings::Bool, &g_pad.sdlFallback, 0, 1,
      "read a PlayStation or Switch pad natively, through SDL3, with Steam Input's or another mapper's output for that pad dropped; off hands the pad to "
      "Steam Input or the mapper: FLvibed then reads XInput alone. Steam Deck and Steam Controller are not touched: Steam Input is their native route"},
+    {"pad_mapper_mouse", settings::Bool, &g_pad.mapperMouse, 0, 1,
+     "with a pad read natively, also drop a mapper's mouse input for that pad (a low-level mouse hook); off by default: nothing needs the hook unless a "
+     "mapper also sends mouse input for the pad. The mapper's keys are dropped either way"},
     {"throttle_rate", settings::Float, &g_opt.throttleRate, 0.1f, 5,
      "throttle lever change per second at full left stick"},
     {"cursor_speed", settings::Float, &g_opt.cursorSpeed, 0.1f, 5, "menu cursor speed, screen heights per second"},
@@ -109,6 +112,7 @@ static const settings::Def kOptions[] = {
      "game comes back is ignored until it is released)"},
     FLV_ROW_MANEUVER_WATCHDOG(g_opt)
     FLV_ROW_RUN_IN_BACKGROUND
+    FLV_ROW_MOUSE_RAW
     FLV_ROW_NPC_STALL_LOG
     FLV_HUD_ROWS_CUES
     FLV_ROW_AUTOPILOT_CANCEL(g_opt)
@@ -210,7 +214,7 @@ static_assert(sizeof(kOptions) / sizeof(kOptions[0]) <= kSettingsBusMaxRows, "th
 static void SaveConfig();
 static int g_busController = 0, g_busAutopilot = 0;
 static void BusSave(void*) { SaveConfig(); }
-static void BusAppliedController(void*, const settings::Def*) {} // `set` has no reactions beyond the value itself
+static void BusAppliedController(void*, const settings::Def*) { hudrows::Settle(); } // (hud_style 1, retired, becomes 2 at once)
 static void BusAppliedAutopilot(void*, const settings::Def* d)
 {
     if (views::autopilot.SettingApplied)
@@ -221,7 +225,7 @@ static const SettingsBus* g_bus = nullptr; // the host's, or the page's local on
 
 void RegisterBus()
 {
-    const SettingsBus* bus = HostAtLeast(18) && g_host->GetSettingsBus ? g_host->GetSettingsBus() : nullptr;
+    const SettingsBus* bus = g_host && g_host->GetSettingsBus ? g_host->GetSettingsBus() : nullptr;
     if (!bus)
         bus = options_page::LocalBus();
     g_bus = bus;
@@ -297,6 +301,7 @@ void LoadConfig()
         return;
     }
     settings::Load("Controller", path, kOptions, kOptionCount);
+    hudrows::Settle(); // (an older release's hud_style 1 reads as 2)
     if (views::autopilot.Load)
         views::autopilot.Load(path);
     Log("config: loaded %s", path.c_str());
@@ -320,6 +325,7 @@ std::string SetOption(std::istream& in)
         return name + "=" + settings::Value(*d);
     if (!settings::Apply(*d, value))
         return "bad value for " + name + ": " + value + " (kept " + settings::Value(*d) + ")";
+    hudrows::Settle(); // (hud_style 1, retired, becomes 2 at once: the reply below says so)
     return "ok " + name + "=" + settings::Value(*d) + " (live; 'config save' to keep)";
 }
 

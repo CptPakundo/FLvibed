@@ -1,6 +1,6 @@
 // The pad's flight bindings as data (docs\UI_SPEC.json `bindings`: the presets FREELANCER / ACE / ASSISTED and the
 // shared `flight_ap` situation), in the spec's own action vocabulary, and the dispatcher that turns button states into
-// tap / hold / double-tap actions (UI_PLAN.md 6.4; UI_BUILD.md HUD track). The tables are read from the spec's
+// tap / hold / double-tap actions (UI_PLAN.md 6.4; the UI build record's HUD track, private). The tables are read from the spec's
 // generated core\ui_meta.h (since 29 Oct 2026; tests\presets_test.cpp). What each action does in the game is controller.cpp's
 // (RunPreset): this file knows buttons, timing and the action names only.
 #pragma once

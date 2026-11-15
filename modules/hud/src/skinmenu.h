@@ -2,7 +2,7 @@
 // the game's five buttons close up to the five places under it. The list is the save manager's, read at the menu; no save, no chip, and the five stay put.
 // The load runs through the game's own load screen (the quick load 0x5B2C70 brings rooms up without characters), so it costs that screen's slide; a load that
 // has not started after six seconds gives up and leaves the load screen open. A save of another mode says so beside the chip. Button moves are remembered and
-// put back while they still hold FLvibed's value; `continue` in skin_native keeps the menu as the game's.
+// put back while they still hold FLvibed's value.
 #pragma once
 #include "common.h"
 
@@ -23,5 +23,8 @@ void Focus(bool on); // the pad's
 void Go();
 // The buttons back at the game's places.
 void GiveBack();
+// HUD 2 left (hud2_entry.cpp GiveBack): a CONTINUE still waiting for the game's load screen goes (the player has the game's own Load Game screen; a
+// load already under way is the game's and goes on), and the chip's hover and focus.
+void Drop();
 std::string Status();
 } // namespace skinmenu

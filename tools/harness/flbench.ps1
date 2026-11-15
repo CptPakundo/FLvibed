@@ -24,7 +24,7 @@ $script:FLScenarios = [ordered]@{
 }
 
 # The player's ship of a scenario: a save with that ship, free roam (no mission), near Manhattan (police friendly).
-# Docked saves launch first. or_elite: the campaign set's post-story save (..\docs\missions\SAVES.md; copied into the
+# Docked saves launch first. or_elite: the campaign set's post-story save (the scene-save catalogue, private; copied into the
 # save folder once, the game lists saves at startup: deploy.ps1 -Save <path> does both).
 $script:FLScenarioShips = [ordered]@{
     'starter'  = 'SaveC702.fl'   # ge_fighter (Starflier), rank 0, in space near Manhattan

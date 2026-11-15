@@ -1,4 +1,4 @@
-// Who owns the input in flight, pure: the rules of docs\MODULES_PLAN.md "P7's priority table". tests\input_rules_test.cpp holds each
+// Who owns the input in flight, pure: the rules of the module split plan's "P7's priority table" (private). tests\input_rules_test.cpp holds each
 // against the expression the frame used. The table's quirks are kept on purpose. `sqrtf` comes with core\pre.h.
 #pragma once
 

@@ -970,7 +970,8 @@ public static class FLDispWin {
             # the pad flies, a subtitle shows
             $null = Send-FL 'ai dir idle'; $null = Wait-FLFramesPassed 30
             $v0 = Speed; Set-FLPad -LY 1; $null = Wait-FLFramesPassed 90; Set-FLPad; $v1 = Speed
-            # HUD 2 (modules\hud\docs\UI_HUD2.md): with the pad the device and hud_style 1 / 2 it replaces the game's panels
+            # HUD 2 (modules\hud\docs\UI_HUD2.md): with hud_style 2 it replaces the game's panels on every device (1, the mixed
+            # style, is retired and reads as 2: decision 77)
             $hs = (Send-FL 'hud2 state') -split "`n"
             $hudStyle = if (($hs -join ' ') -match 'settings style=(\d)') { [int]$Matches[1] } else { -1 }
             $hud2On = ($hs[0] -match 'hud2 active=1')
@@ -997,7 +998,7 @@ public static class FLDispWin {
             }
             if ($n -lt 5) { $bad.Add("$($c.name): only $n HUD items") } elseif ($outside -gt $n / 5) { $bad.Add("$($c.name): $outside of $n HUD items outside the screen") }
             if ($v1 -lt 20) { $bad.Add("$($c.name): pad throttle $([int]$v0) -> $([int]$v1)") }
-            if ($hudStyle -ge 1 -and -not $hud2On) { $bad.Add("$($c.name): HUD 2 did not come on with the pad (hud_style $hudStyle)") }
+            if ($hudStyle -eq 2 -and -not $hud2On) { $bad.Add("$($c.name): HUD 2 did not come on with the pad (hud_style $hudStyle)") }
             if (-not $shown) { $bad.Add("$($c.name): subtitle not shown") }
         }
     } finally {
@@ -1012,7 +1013,7 @@ public static class FLDispWin {
 } -budget 600
 
 Section 'modules-matrix' {
-    # The cut modules' switches (docs\MODULES_PLAN.md P5): each one off with the rest on, each one on with the controller off, all on; core
+    # The cut modules' switches (the module split plan's P5, private; docs\ARCHITECTURE.md is the public view): each one off with the rest on, each one on with the controller off, all on; core
     # only and `safe` by tests\modules_nothing.ps1, which needs no game. A module that is off leaves no hook and no verb: every row's hook
     # table is judged against the all-on game's. The release build, one fresh game per row. SetAppActive stays in every row: a background
     # test start hooks it for the focus guard, whatever the display row says. `coreVerbs`: verbs of core's page host, through its `core` verb, with no channel of the
@@ -1140,7 +1141,7 @@ Section 'display-subtitles' {
         }
         $bn = [regex]::Match($t, 'banner x=([\d.-]+) y=([\d.-]+)')
         $banner = if ($bn.Success) { @{ y = [double]$bn.Groups[2].Value } }
-        # HUD 2 (hud_style 1 / 2, the default since 0.2.0, on with K&M too): it hides the game's bar and NeuroNet box and
+        # HUD 2 (hud_style 2, the default since 0.2.0, on every device): it hides the game's bar and NeuroNet box and
         # gives the dialogue a free band at the top (hud2-place band=L..R px)
         $h2 = $t -match 'hud2 bus=1 on=1'
         $hb = [regex]::Match($t, 'hud2-place band=([\d.-]+)\.\.([\d.-]+)')

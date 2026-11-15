@@ -142,7 +142,7 @@ Until then a runbook's harness lines are hints, not instructions.
   pos=`) to the mission ini's [MsnShip] / formation ships and their labels by exact spawn position (verified M01a:
   King = `escort`, the Donau formation, the Order `badboys` with `lbl_order`); Id, Nickname, Labels, Formation, Alive.
   This closes "killing groups by label": `Start-FLCombat -Target <id>` per labelled ship.
-- Scene saves (start a re-test right before its scene; every mission, docs\missions\SAVES.md): mission scripts take
+- Scene saves (start a re-test right before its scene; every mission, catalogued in the private scene-save catalogue and `docs\missions\scene_saves.tsv`): mission scripts take
   `-SceneSaves` (native saves at their `Scene <step> '<label>'` points + the mission's own checkpoints, catalogued in
   `scene_saves.tsv`) and `-From <step>`; `Start-FLScene <mission> <step> [label]` loads one and checks it (objective,
   game build). Events `mission-save ids=` (Act_Save checkpoints); debug `save [ids]` (native save now).

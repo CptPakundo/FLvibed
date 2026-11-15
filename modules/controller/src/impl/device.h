@@ -1,10 +1,11 @@
-// The input-device service (docs\UI_PLAN.md 6.2, UI_BUILD.md 1): which device the player used last, Pad or keyboard
+// The input-device service (docs\UI_PLAN.md 6.2, the UI build record 1, private): which device the player used last, Pad or keyboard
 // and mouse, so the whole controller UI swaps in one frame and the game's own UI returns on a mouse move or a key.
 // Last valid input wins: pad = any button, the D-pad, a trigger past 0.5, a stick past its dead zone (the Gamepad's
 // values are dead-zoned, so drift never counts; the harness's virtual pad counts as the pad); keyboard and mouse = a
 // key (the host's LastRealKeyTick: the game's own key handler, FLvibed's injected keys excluded), the physical mouse
-// (dimouse::LastRealTick: motion, wheel, buttons; RealMouseDown for the buttons). After a switch the other device's
-// axis-only signals are ignored for kAxisGrace; buttons and keys switch at once. `input_mode` locks it.
+// (dimouse::LastRealTick: motion, wheel, buttons; RealMouseDown for the buttons). Only a new input takes the device: a
+// button, trigger or mouse button going down, never one held (device_rules.h). After a switch the other device's
+// axis-only signals are ignored for kAxisGrace; presses and keys switch at once. `input_mode` locks it.
 #pragma once
 #include "common.h"
 

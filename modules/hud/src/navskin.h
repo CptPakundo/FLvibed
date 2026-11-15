@@ -1,6 +1,6 @@
 // The nav map's frame and words (modules\hud\docs\UI_HUD2_SKIN.md 6.1, the first step): the frame off (+0x84 = -1, bit 1 of the two side windows), the game's icons
 // hidden and replaced by words, each a chip calling the native button by its own action (uiclick::Click), around the native map at its own size. The game keeps
-// its art, lanes, zones, pan, zoom and selection. Fails closed: a read that does not hold, or `skin_native = navmap`, gives back the old map for the session.
+// its art, lanes, zones, pan, zoom and selection. Fails closed: a read that does not hold, or the test aid `navskin native on`, gives back the old map for the session.
 //
 // The chips reach both devices: the mouse through skinchip's click box, the pad's panel zone through the view (core\ui\views.h MapChip).
 #pragma once
@@ -39,7 +39,7 @@ void ChipPress(int id);
 void ChipStep(int id, int dir);
 void ChipFocus(int id);
 
-// `skin_native` (hidden, a comma list of family labels). Another package adds the row: this is the one place it is read.
+// The old map was asked for this session (`navskin native on`, a test aid; the setting skin_native was retired 13 Nov 2026).
 bool NativeAsked();
 
 // Debug: navskin [state] | native on|off | press <id>

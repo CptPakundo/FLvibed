@@ -71,12 +71,14 @@ struct HeadPlan
     bool setLive = false, live = false;
     bool setModule = false, module = false;
     bool subtitlesStayLoaded = false; // the other side of the rule below: the Subtitles row on, `enabled` off
+    bool moduleStays = false;         // HUD 2 going off: its live key alone, the module row is not written
 };
 
 enum class Feature : int
 {
     Subtitles,
     Controller,
+    Hud2, // the HUD module's head, HUD 2 (hud_style beside [Modules] hud)
     Other
 };
 
@@ -94,6 +96,10 @@ inline HeadPlan PlanHead(Feature feature, bool twoKeys, bool turnOn, bool otherW
     p.live = turnOn;
     p.setModule = true;
     p.module = turnOn;
+    // HUD 2's head switches HUD 2 only (the owner's answer of 13 Nov 2026, card N11): its off writes hud_style 0 and leaves the HUD module running,
+    // so the classic HUD's extras it keeps stay live; its on also turns the module on, which HUD 2 needs. The module itself has its own row.
+    if (feature == Feature::Hud2 && !turnOn)
+        p.setModule = false, p.moduleStays = true;
     if (!turnOn && !otherWant)
     {
         if (feature == Feature::Subtitles)
@@ -108,9 +114,18 @@ inline HeadPlan PlanHead(Feature feature, bool twoKeys, bool turnOn, bool otherW
 // A hidden row away from its default comes back on its tab. A member of a preset or bundle that reads a named word stays out: the player chose the word, and its row says so.
 inline bool ListChanged(bool hidden, bool differs, bool namedByPreset) { return hidden && differs && !namedByPreset; }
 
+// A row under a parent (the spec's `parent`) is greyed while the parent is off: with `parentOn` (a registry value) while
+// the parent holds any other value, else while the parent is zero.
+inline bool ParentOff(const std::string& parentValue, const char* parentOn)
+{
+    const double v = atof(parentValue.c_str());
+    return parentOn ? v != atof(parentOn) : v == 0;
+}
+
 // ------------------------------------------------------------------ presets and bundles
 // The option a preset row reads: the first preset whose every member holds its value, else `custom`. `chosen` >= 0: a real row names its preset, only that one can match.
-// A member no module owns right now cannot be set, so it does not decide; a preset with no member left does not match. get(member) -> the value, has(member) -> owned.
+// A member no module owns right now cannot be set, so it does not decide. A preset with no member owned at all (its modules off) reads the file's values, as
+// every row of a module that is off does: CUSTOM there named no choice the player made (audit 109_ 2b). get(member) -> the value, has(member) -> owned.
 template <class Preset, class Get, class Has>
 int PresetWord(const Preset* presets, int count, int custom, int chosen, Get get, Has has)
 {
@@ -126,7 +141,9 @@ int PresetWord(const Preset* presets, int count, int custom, int chosen, Get get
             any = true;
             all = SameValue(get(presets[i].values[m]), presets[i].values[m].value);
         }
-        if (any && all)
+        for (int m = 0; !any && m < presets[i].count && all; ++m)
+            all = SameValue(get(presets[i].values[m]), presets[i].values[m].value);
+        if (all && presets[i].count > 0)
             return i;
     }
     return custom;

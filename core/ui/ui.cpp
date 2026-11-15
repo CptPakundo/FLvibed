@@ -276,18 +276,21 @@ struct QuietHelp
 };
 
 // The game's hide (0x4BE390): state bit 1 off, the showing flag 0, so the hover timer starts over. Called before the UI draws.
-void HideHoverHelp()
+int HideHoverHelp(u8 bits)
 {
+    int hidden = 0;
     for (const char* name : {"ToolTip", "Rollover"})
     {
         const u32 ctl = static_cast<u32>(FindControl(name));
         u8 state = 0;
         if (!ctl || !safemem::Read(ctl + QuietHelp::kHelpState, &state, 1) || !(state & 2))
             continue;
-        safemem::Write(ctl + QuietHelp::kHelpState, static_cast<u8>(state & ~2));
-        if (name[0] == 'T')
+        if (safemem::Write(ctl + QuietHelp::kHelpState, static_cast<u8>(state & ~bits)))
+            ++hidden;
+        if (name[0] == 'T') // its showing flag, as the game's hide (0x4BE390) clears it
             safemem::Write(ctl + 0x159, static_cast<u8>(0));
     }
+    return hidden;
 }
 
 uintptr_t HitTest(float x, float y, bool quiet)

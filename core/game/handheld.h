@@ -1,4 +1,4 @@
-// FLvibed - is this machine a handheld (modules\hud\docs\UI_HUD2_INPUTS.md 7)? `hud_size` Automatic asks once. The chain, ranked: the
+// FLvibed - is this machine a handheld (the HUD 2 inputs record 7, private)? `hud_size` Automatic asks once. The chain, ranked: the
 // SMBIOS model table (a Deck under Proton reads its name from any launcher, because Wine builds the table from the machine's own), the
 // Windows device form with a small integrated panel, a small panel alone, Steam's variable under Wine, then exactly 1280x800.
 // Rejected on purpose: the chassis type, tablet flags, a maker alone (`handhelds.inc` says which names need the maker).

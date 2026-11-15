@@ -44,7 +44,7 @@ class Gamepad
     Gamepad SwappedAB() const;
 
     void Rumble(float low, float high, float seconds);
-    // Both triggers' effects (11 bytes each, haptics::StanceBytes), through the host's SDL thread; nothing on an older host or with no SDL running.
+    // Both triggers' effects (11 bytes each, haptics::StanceBytes), through the host's SDL thread; nothing with no SDL running.
     void TriggerEffects(const u8* left, const u8* right);
     // An Xbox pad's trigger motors, as Rumble.
     void RumbleTriggers(float left, float right, float seconds);
@@ -73,7 +73,7 @@ class Gamepad
     u32 Vendor() const;
     // The SDL backend reads the pad this frame (pad_backend 1 and SDL running: pad_backend.h ReadFromSdl).
     bool FromSdl() const { return sdlSource_; }
-    // The pad's touchpad, through the same gate as its buttons: nothing from a real pad in a background game, with an older host, or with SDL not reading. False: no fingers to read.
+    // The pad's touchpad, through the same gate as its buttons: nothing from a real pad in a background game or with SDL not reading. False: no fingers to read.
     bool Touch(SdlPadTouch& out) const;
     // One line for `state` while pad_backend is not 0 or SDL still runs ("" otherwise: the default's output unchanged).
     std::string BackendStatus() const;
@@ -85,6 +85,7 @@ class Gamepad
     int padBackend = 0;
     bool primary = false; // the flight's reader: only it runs the fallback (PadBackend tells the others)
     bool sdlFallback = true; // `pad_sdl_fallback`: read PlayStation and Switch pads natively; off = the player asks for Steam Input or a mapper
+    bool mapperMouse = false; // `pad_mapper_mouse` (hidden): also filter a mapper's mouse input (the host's mouse hook, padbackend::kFilterMouse)
     bool HandsOnFallback() const { return primary && handsOnSdl_ && padBackend != 1; }
     // Drop the physical pad's input (the game in the background, focus_gate.h); the virtual pad still works. An input
     // held when the gate opens stays dropped until it is released.
@@ -110,7 +111,7 @@ class Gamepad
     bool impulseOn_ = false, impulseReady_ = false, xboxSeen_ = false;
     float impulseLook_ = 0, hidTimerXbox_ = 0;
     bool handsOnSdl_ = false, xinputBeside_ = false; // the fallback's reader this frame; XInput's pad read while SDL holds a pad at rest
-    bool filterOn_ = false;
+    int filterOn_ = 0; // the flags last sent (padbackend::FilterFlags)
     bool candidate_ = false;
     float hidTimer_ = 0;
     int candidateForced_ = -1; // debug `padfallback`: -1 the HID list, else that answer

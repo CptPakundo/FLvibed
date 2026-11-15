@@ -11,16 +11,12 @@ const B = (key, label, o) => R(key, label, 'button', Object.assign({ def: null, 
 const TABS = [
   { id: 'hud', label: 'HUD', head: 'hud_style', sections: [
     { label: '', rows: [
-      P('hud_style', 'HUD 2', ['ENABLED', 'ON THE PAD', 'DISABLED'], 'ENABLED', { help: 'The new flight display and menu look. On the pad: keyboard and mouse keep the game\'s HUD. Disabled: the game\'s own HUD.', tier: 'simple', head: 'hud', off_help: 'HUD 2 is disabled, so this has no effect. Your setting is kept.' }),
+      P('hud_style', 'HUD 2', ['ENABLED', 'DISABLED'], 'ENABLED', { help: 'The new flight display and menu look, on the pad and on keyboard and mouse. Disabled: the game\'s own HUD.', tier: 'simple', head: 'hud', off_help: 'HUD 2 is disabled, so this has no effect. Your setting is kept.' }),
       P('hud_size', 'HUD size', ['AUTOMATIC', 'SMALL', 'NORMAL', 'LARGE'], 'AUTOMATIC', { help: 'Automatic: Large on a handheld, Normal elsewhere. Small is close to the game\'s own HUD. This page follows it.', tier: 'simple' }),
-      P('game_text_size', 'Window text size', ['AUTOMATIC', 'NORMAL', 'LARGE', 'EXTRA LARGE'], 'AUTOMATIC', { help: 'The game\'s text in dealers, job boards and the Neural Net. Automatic follows HUD size. Applies at the main menu.', tier: 'simple' }),
       P('hud_fade', 'HUD in calm flight', ['FADES', 'ALWAYS'], 'FADES', { help: 'Fades: parts of the HUD fade out in calm flight and return when they matter. Always: everything stays.', tier: 'simple' }),
       P('hud_numbers', 'Numbers on the ring', ['WHEN LOW', 'ALWAYS', 'NEVER'], 'WHEN LOW', { help: 'Your shield and hull as numbers beside the ring round the crosshair: when low, always, or never.', tier: 'simple' }),
-      P('button_hints', 'Button hints', ['WHEN USEFUL', 'ALWAYS', 'OFF', 'CUSTOM'], 'WHEN USEFUL', { help: 'Which button does what. When useful: only when something new is possible. If unsure, leave this.', tier: 'simple', bundle: 'button_hints' }),
-      P('hit_effects', 'Hit effects', ['FULL', 'SOFT', 'OFF', 'CUSTOM'], 'FULL', { help: 'Flashes at the screen\'s edge when your ship is hit. Choose Soft or Off if flashes bother you.', tier: 'simple', bundle: 'hit_effects' }) ] },
+      P('button_hints', 'Button hints', ['WHEN USEFUL', 'ALWAYS', 'OFF', 'CUSTOM'], 'WHEN USEFUL', { help: 'Which button does what. When useful: only when something new is possible. If unsure, leave this.', tier: 'simple', bundle: 'button_hints' }) ] },
     { label: 'HUD', rows: [
-      T('mod_hud', 'HUD module', true, { help: 'HUD 2, the Extended HUD 2 look and the shield and reticle cues, with keyboard and mouse or a controller. Off: the game\'s own HUD. It needs the Subtitles or the Controller module on. Takes effect after the game restarts.', tier: 'advanced', needs: 'restart' }),
-      P('ui_style', 'Menus and rooms look', ['CLASSIC', 'HUD 2'], 'HUD 2', { help: 'The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (the game\'s controls stay as they are); Classic = the game\'s own look in the menus. With the HUD row set to Classic, everything keeps the game\'s look whatever this says.', tier: 'advanced' }),
       P('hud_preset', 'HUD 2 layout', ['STANDARD', 'FOCUS (EXPERIMENTAL)'], 'STANDARD', { help: 'Experimental: HUD 2\'s layout. Standard is today\'s HUD 2. Focus is calmer: in calm flight no ring, two thin shield and hull arcs and the instruments at the screen\'s edges. The Speedrun and Guided layouts are planned and cannot be chosen yet.', tier: 'advanced' }),
       P('skin_motion', 'HUD motion', ['FULL', 'FADES', 'NONE'], 'FULL', { help: 'Full: bars breathe and panels travel. Fades: changes fade in place. None: everything cuts. Input never waits for it.' }),
       S('hud_opacity', 'HUD opacity', 40, 100, 10, 100, { help: 'How opaque HUD 2 is overall.', unit: '%' }),
@@ -29,18 +25,24 @@ const TABS = [
       P('hud_context', 'Context prompts', ['CONTEXTUAL', 'OFF'], 'CONTEXTUAL', { help: 'Beside the bottom panels, up to three actions that make sense right now (dock, cruise, reverse...), with their buttons: moving the ship on the left, firing and using on the right.' }),
       P('hud_prompts', 'Show context prompts', ['ALWAYS', 'ON CHANGE'], 'ON CHANGE', { help: 'When the context prompts show in flight. On change: they appear when they change or right after you act (dock, cruise, a target, a maneuver), stay four seconds, then fade out. Always: they stay on screen.' }),
       T('hud_alerts', 'Alerts', true, { help: 'A short card when something needs you now (shield failing, missile incoming, cruise disrupted, hold full, loot the tractor refused and why), naming the button that helps; that slot lights up.' }),
+      T('group_cue', 'Weapon group cue', true, { help: 'The weapon groups above the ring, filled when the target is in the centre and in reach.' }),
       T('hud_info', 'Situation details', true, { help: 'Extra information when it is useful: trade lane rings and arrival time, the jump and docking approach, loot in tractor reach, scans, your formation, mission timers.' }),
       T('hud_wireframes', 'Wireframe views', true, { help: 'The game\'s wireframe pictures of your target and your ship in HUD 2\'s panels (else their icons).' }),
-      S('hud_transition', 'HUD switch fade', 0, 400, 20, 120, { help: 'How long HUD 2 takes to fade in or out when you switch between the controller and keyboard and mouse.', tier: 'advanced', unit: ' ms' }),
+      S('hud_transition', 'HUD switch fade', 0, 400, 20, 120, { help: 'How long HUD 2 takes to fade in when flight starts, and out and in as a NeuroNet window in space opens and closes.', tier: 'advanced', unit: ' ms' }),
       S('text_size', 'Text size', 80, 150, 10, 100, { help: 'Size of FLvibed\'s own UI text (prompts, panels, the status strip). The subtitles have their own size.', unit: '%' }),
       T('window_text', 'Larger window text', true, { help: 'HUD 2: the text in the game\'s windows takes the room it has. Prices and other numbers that decide a deal grow most, labels less, headings and buttons not at all.' }),
-      T('nn_pause', 'NeuroNet pauses the game', true, { help: 'In single player, in space, the world stops while a NeuroNet window (log, map, inventory, status, info) is open, and PAUSED shows. Off keeps the game going behind the windows. The autopilot flying keeps it going either way.' }),
-      T('base_pages', 'Dealers and job board as pages', true, { help: 'The commodity, equipment and ship dealers, the job board and the news are HUD 2 pages in the room, with the game\'s windows doing the work underneath. Off gives the game\'s own windows with HUD 2\'s skin.' }) ] },
-    { label: 'CUES', rows: [
-      T('shield_cue', 'Shield hit cue', true, { help: 'A screen-edge cue made of your shield\'s own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2\'s danger alerts.' }),
+      T('nn_pause', 'NeuroNet pauses the game', true, { help: 'In single player, in space, the world stops while a NeuroNet window (log, map, inventory, status, info) is open, and PAUSED shows. Off keeps the game going behind the windows. The autopilot flying keeps it going either way.' }) ] },
+    { label: 'CUES AND TEXT', head: null, rows: [
+      T('classic_cues', 'Cues on the classic HUD', false, { help: 'The hit effects and the reticle cue on the game\'s own HUD too, when HUD 2 is disabled. Off by default, so the classic HUD stays the game\'s own. HUD 2 shows them by the rows below.', tier: 'simple' }),
+      P('hit_effects', 'Hit effects', ['FULL', 'SOFT', 'OFF', 'CUSTOM'], 'FULL', { help: 'Flashes at the screen\'s edge when your ship is hit. Choose Soft or Off if flashes bother you. On the classic HUD only with Cues on the classic HUD.', tier: 'simple', bundle: 'hit_effects' }),
+      T('shield_cue', 'Shield hit cue', true, { help: 'A screen-edge cue made of your shield\'s own hit effect when it is hit, and a flash when it fails. Also switches the glow and pulse of HUD 2\'s danger alerts. On the classic HUD only with Cues on the classic HUD.' }),
       S('shield_cue_intensity', 'Shield cue intensity', 0, 2, 0.05, 1.0, { help: 'Strength of the shield cue.', parent: 'shield_cue' }),
       T('hull_cue', 'Hull hit cue', true, { help: 'With the shield cue: hull hits show your ship\'s own hull hit effect at the screen edge.', parent: 'shield_cue' }),
-      T('reticle_cue', 'Reticle cue', true, { help: 'A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue).' }) ] } ] },
+      P('hull_cue_pattern', 'Hull damage pattern', ['NONE', 'PLATES', 'HEXAGONS'], 'HEXAGONS', { help: 'The pattern on the hull damage edge, so it never reads as a shield hit.', parent: 'hull_cue' }),
+      T('reticle_cue', 'Reticle cue', true, { help: 'A ring pulse at the crosshair: autopilot on (cyan), handed back (amber), nanobots (green), batteries (blue). On the classic HUD only with Cues on the classic HUD.' }),
+      P('game_text_size', 'Window text size', ['AUTOMATIC', 'NORMAL', 'LARGE', 'EXTRA LARGE'], 'AUTOMATIC', { help: 'The game\'s text in dealers, job boards and the Neural Net. Automatic: the game\'s own size on the classic HUD, with HUD 2 it follows HUD size. A size you choose applies to both. Applies at the main menu.', tier: 'simple' }),
+      T('idle_cursor', 'Hide the idle cursor', true, { help: 'The mouse cursor hides after 3 seconds without the mouse in calm flight, and comes back when you move it. On both HUDs; with HUD 2 only while HUD in calm flight is Fades.', tier: 'simple' }),
+      T('mod_hud', 'HUD module', true, { help: 'HUD 2 and its menu look, the cues and the window text size. Off: all of them (HUD 2 alone: the HUD 2 row). It needs the Subtitles or the Controller module on. Takes effect after the game restarts.', tier: 'advanced', needs: 'restart' }) ] } ] },
   { id: 'controller', label: 'CONTROLLER', presetKey: 'pad_preset', head: 'mod_controller', sections: [
     { label: '', rows: [
       T('mod_controller', 'Controller', true, { help: 'The whole game on a controller: prompts, screens, on-screen keyboard. Takes effect at the next start.', tier: 'simple', needs: 'restart', head: 'controller', off_help: 'The controller is disabled, so this has no effect. Your setting is kept.' }),
@@ -75,7 +77,9 @@ const TABS = [
       S('aim_cone', 'Lock-on cone', 0, 90, 5, 90, { help: 'Gimbal: how far from the screen centre a hostile\'s lead cross may be for the reticle to lock on. 90 = the whole screen.', unit: '°' }),
       S('steer_curve', 'Steering curve', 1, 4, 0.1, 1.5, { help: 'The steering response as a number: the curve\'s exponent, 1 = linear.' }),
       S('steer_scale', 'Full-stick turn rate', 0.1, 1, 0.01, 0.77, { help: 'Full stick = this mouse-flight offset; 0.77 is the ship\'s maximum turn rate (a measured constant).', tier: 'advanced' }),
-      S('aim_smooth', 'Reticle smoothing', 0, 1, 0.01, 0.06, { help: 'Reticle smoothing time constant in seconds (0 = off).', tier: 'advanced', unit: ' s' }) ] },
+      S('aim_smooth', 'Reticle smoothing', 0, 1, 0.01, 0.06, { help: 'Reticle smoothing time constant in seconds (0 = off).', tier: 'advanced', unit: ' s' }),
+      S('aim_assist', 'Aim assist strength', 0, 100, 5, 75, { help: 'Reticle aim only: how strongly the reticle is pulled onto a hostile\'s lead cross.', unit: '%', parent: 'aim_mode', parent_on: 'RETICLE' }),
+      S('aim_slowdown', 'Slowdown on target', 0, 100, 5, 35, { help: 'Reticle aim only: how much the steering slows while the reticle is over a hostile\'s lead cross.', unit: '%', parent: 'aim_mode', parent_on: 'RETICLE' }) ] },
     { label: 'STICKS', rows: [
       S('trigger_threshold', 'Trigger deadzone', 0, 0.9, 0.01, 0.12, { help: 'How far a trigger must be pulled before it counts.' }),
       S('throttle_rate', 'Throttle rate', 0.1, 5, 0.1, 0.9, { help: 'Throttle lever change per second at full left stick.' }) ] },
@@ -121,8 +125,8 @@ const TABS = [
       P('chat_size', 'Side chat size', ['NORMAL', 'LARGE'], 'NORMAL', { help: 'The text size of HUD 2\'s side chat (the comm feed beside the HUD): Normal is a little larger than the game\'s own chat text, Large the bigger size of earlier versions.', parent: 'enabled' }),
       T('movie_subtitles', 'Movie subtitles', true, { help: 'Subtitles over the intros and startup movies.' }) ] },
     { label: 'PLACEMENT', rows: [
-      P('space_position', 'In flight', ['TOP PANEL', 'TOP THIRD', 'BOTTOM'], 'TOP PANEL', { help: 'A HUD panel at the top centre (the maneuver bar moves left), the top third, or between the bottom panels. The bar moves at the next load.', parent: 'enabled', needs: 'load' }),
-      T('comm_portrait', 'Comm portrait in the panel', true, { help: 'In flight the game\'s comm window sits in a slot inside the subtitle panel.', parent: 'enabled' }),
+      P('space_position', 'In flight', ['TOP PANEL', 'TOP THIRD', 'BOTTOM'], 'TOP PANEL', { help: 'A HUD panel at the top centre (the maneuver bar moves left, the objective below the panel), the top third, or between the bottom panels. The bar moves at the next load.', parent: 'enabled', needs: 'load' }),
+      T('comm_portrait', 'Comm portrait in the panel', true, { help: 'In flight the game\'s comm window sits in a slot inside the subtitle panel. Off: its own place, below the bar if the bar moved.', parent: 'enabled' }),
       T('hud_arrows', 'Keep the HUD arrows clear', true, { help: 'The off-screen target arrows are kept clear of the HUD panels and the subtitles.', parent: 'enabled' }),
       P('letterbox_mode', 'Cutscenes', ['IN THE BLACK BAR', 'ON THE PICTURE'], 'IN THE BLACK BAR', { help: 'Letterboxed scenes: inside the lower bar (inline name, no backing), or on the bar\'s top edge in the picture.', parent: 'enabled' }),
       T('cinematic_single_speaker', 'One speaker at a time in cutscenes', true, { help: 'Letterboxed scenes show one speaker at a time.', parent: 'enabled' }) ] },
@@ -142,7 +146,8 @@ const TABS = [
       S('autopilot_cancel', 'Stick takes over', 0, 100, 5, 35, { help: 'How far to push the stick to take the ship back. Zero: only the autopilot button does.', tier: 'simple', unit: '%' }),
       T('skip_dock_scene', 'Skip docking scenes', true, { help: 'When the autopilot docks, skip the docking scene.', tier: 'simple' }),
       K('autopilot_key', 'Autopilot key', 'K', { help: 'The keyboard key that starts and stops the autopilot. A key the game already uses is refused.', tier: 'simple' }),
-      T('ap_hints', 'Autopilot hints', true, { help: 'Show the autopilot\'s prompts before you first use it. Disabled: nothing about it shows until you start it once.', tier: 'simple' }) ] },
+      T('ap_hints', 'Autopilot hints', true, { help: 'Show the autopilot\'s prompts before you first use it. Disabled: nothing about it shows until you start it once.', tier: 'simple' }),
+      P('mp_autopilot', 'Autopilot on servers', ['OFF', 'TRAVEL ONLY', 'EVERYTHING'], 'TRAVEL ONLY', { help: 'On a server that says nothing about FLvibed: no autopilot, travel only (no combat), or everything. A server\'s own word always wins.' }) ] },
     { label: 'STYLE', rows: [
       P('knowledge', 'Knowledge', ['WHAT YOU HAVE SEEN', 'EVERYTHING'], 'WHAT YOU HAVE SEEN', { help: 'What the autopilot may know: only what you have seen in this game (bases, routes, enemies), or everything the game data tells.' }),
       P('engage', 'Combat', ['THE TARGET ONLY', 'TARGET, THEN NEAREST'], 'TARGET, THEN NEAREST', { help: 'Fight only the chosen target, or then the closest enemy until none is left.' }),
@@ -151,6 +156,7 @@ const TABS = [
       P('countermeasures', 'Countermeasures', ['NEVER', 'WHEN IT MATTERS', 'EVERY MISSILE'], 'WHEN IT MATTERS', { help: 'Never; cruise disruptors outside a fight and missiles whose damage matters; or every missile homing on you.' }),
       P('repair', 'Nanobots and batteries', ['NEVER', 'WHEN NEEDED', 'AS THE PILOT WOULD'], 'WHEN NEEDED', { help: 'Never; only when needed (the player\'s way); or at the pilot personality\'s thresholds.' }),
       T('loot', 'Loot after a fight', true, { help: 'Collect the loot near the fight once no enemy is left, the most valuable first.' }),
+      P('loot_min_value', 'Leave loot worth less than', ['0 CREDITS', '100 CREDITS', '500 CREDITS', '1,000 CREDITS', '5,000 CREDITS', '10,000 CREDITS'], '0 CREDITS', { help: 'The autopilot leaves loot worth less than this, at the item\'s base price.', parent: 'loot' }),
       P('caution', 'Caution', ['NEVER LEAVE', 'WHEN OUTMATCHED', 'EARLY'], 'WHEN OUTMATCHED', { help: 'Never leave a fight early; leave when clearly outmatched below 60 % hull; or leave sooner.' }),
       T('avoid', 'Avoid hazards', true, { help: 'The autopilot\'s own obstacle and hazard avoidance on its runs (minefields, radiation, structures).' }),
       T('fast_dock', 'Fast docking', false, { help: 'Player-style docks: full speed to the bay\'s approach point, the request just before it.' }),
@@ -176,6 +182,7 @@ const TABS = [
     { label: '', head: 'mod_npc', indent: true, rows: [
       T('mod_npc', 'Bug recorder', true, { help: 'Writes a log when a ship near you stalls, for bug reports. Changes nothing in the game. Takes effect at the next start.', tier: 'simple', needs: 'restart', head: 'npc', off_help: 'The bug recorder is disabled, so this has no effect. Your setting is kept.' }) ] },
     { label: 'SYSTEM', rows: [
+      T('mouse_raw', 'Raw mouse input', true, { help: 'The cursor moves the same distance for the same hand movement at any mouse speed: Windows\' pointer acceleration does not reach the game.' }),
       P('fluf_windows', 'FLUF windows', ['IGNORE', 'PLAYER WINDOWS', 'ALL'], 'ALL', { help: 'Only with FLUF installed (the row says FLUF DETECTED or NO FLUF INSTALLED). FLUF\'s windows stay on top: FLvibed\'s HUD parts and the docked strip / card fade under the one that covers them, prompts and subtitles step aside, and the controller drives every FLUF window that takes input - the palette, the options window, the map, a palette command\'s or a module\'s window (B closes the focused one). All (default): every FLUF window counts, its Debug Window too; Player windows: not its developer windows; Ignore: FLvibed\'s layout as without FLUF. While FLUF\'s command palette is open (typing or not) FLvibed\'s keys all pass to FLUF, like a chat box.' }),
       T('maneuver_watchdog', 'Restart stalled maneuvers', true, { help: 'If your ship stalls during a formation, goto or dock (nearly stopped for 3 seconds, its goal more than 150 m away and not getting closer, and you are not steering), FLvibed leaves the maneuver and starts it again, up to 3 times, and logs what happened.' }) ] },
     { label: '', rows: [

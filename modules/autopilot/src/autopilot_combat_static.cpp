@@ -1023,7 +1023,7 @@ void StrafePassLog(const char* end)
     s.gapMin = s.speedMin = 1e9f;
 }
 
-// `strafe_pass` (docs\research\runners\M13_bsdown_datapass.md "Proposal", escalation step 2; the pure half strafe.h,
+// `strafe_pass` (the M13 battleship-down escalation notes' second data pass, private: "Proposal", escalation step 2; the pure half strafe.h,
 // tests\strafe_test.cpp; Source::Hidden + Meta: the turret count is game data a player never sees, the passes the
 // runners' way): at a big armed hull - 4+ guns by the game's own turret test (space::GunsCovering), not dockable, still,
 // long and elongated by the game's ray test (strafe::Measure: the long local axis, its ends, the width per side) - no

@@ -14,5 +14,48 @@ HANDOFF_history.txt export-ignore
 docs/WORK_QUEUE.md export-ignore
 # the Claude Code harness of the development environment (hooks, agents, rules, skills): private like the maps
 tools/claude/ export-ignore
+# the unattended runs' run files (12 Nov 2026): the development environment's, private like the harness
+runs/ export-ignore
 # the module split's stored fingerprints: development evidence, and their `config` replies hold this machine's folder
 tests/fingerprints/ export-ignore
+# the design bench's private folders (audit 71b section 6, the bench design; tools/private_check.py refuses an export
+# that holds any of them): the unit fixtures and placeholder maps, the re-created font and icon drafts (until the
+# owner's decision 47 card), the recorded sim fixtures (game names, the instance's bindings)
+tools/hudbench/private/ export-ignore
+tools/hudbench/tour/fallback/ export-ignore
+tests/bench/ export-ignore
+# the recorded frames are compared byte for byte by the unit test (tests/hud2_state_test.cpp): their LF line ends kept
+tests/bench/*.flstate.json -text
+# the public set (the owner's decision of 12 Nov 2026, audit 41 as amended): development process documents (AFK and
+# leg-run machinery, ledgers, session logs, AI-method notes), plans and working records, the older release notes and
+# the world-lore pages stay in the private development history; the files public tools read stay public
+docs/AFK_PLAYBOOK.md export-ignore
+docs/MODULES_PLAN.md export-ignore
+docs/UI_BUILD.md export-ignore
+docs/RELEASE_0.3.0.md export-ignore
+docs/RELEASE_0.3.5rc.md export-ignore
+docs/RELEASE_0.4.0.md export-ignore
+docs/RELEASE_0.4.5.md export-ignore
+docs/history/ export-ignore
+docs/test_budget.tsv export-ignore
+docs/kb/footage_scans.md export-ignore
+docs/kb/world/ export-ignore
+docs/missions/SAVES.md export-ignore
+docs/research/CHECKUP_HISTORY.md export-ignore
+docs/research/afk-autonomy.md export-ignore
+docs/research/claude-harness.md export-ignore
+docs/research/m13_runner_study.md export-ignore
+docs/research/model-policy.md export-ignore
+docs/research/runners/M02_ashcroft_consensus.md export-ignore
+docs/research/runners/M02_ashcroft_datapass.md export-ignore
+docs/research/runners/M13_bsdown_consensus.md export-ignore
+docs/research/runners/M13_bsdown_datapass.md export-ignore
+docs/research/runners/M13_city_hold.md export-ignore
+modules/autopilot/docs/A37_PLAN.md export-ignore
+modules/autopilot/docs/A37_RESULTS.md export-ignore
+modules/autopilot/docs/AUTOPILOT_LOG.md export-ignore
+modules/autopilot/docs/LOOK_PLAN.md export-ignore
+modules/controller/docs/TESTPLAN_AIM.md export-ignore
+modules/hud/docs/UI_HUD2_BUILD_040.md export-ignore
+modules/hud/docs/UI_HUD2_INPUTS.md export-ignore
+modules/hud/docs/UI_HUD2_SIZE_AUDIT.md export-ignore

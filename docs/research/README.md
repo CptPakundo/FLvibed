@@ -9,8 +9,10 @@ with a status and the project state it was last checked against. Timestamps stay
 1. **Structured for use.** One note per topic (not per session), the same sections in every note, one deduplicated
    backlog (`IDEAS.md`) that the notes feed. A reader must find "what does this mean for FLvibed now" in the first
    screen of every note.
-2. **Never stale.** When the project changes, the ideas touching that area are re-checked and their statuses fixed.
-   When new research is done, the whole set goes through the check-up round (below), not only the new part.
+2. **Re-checked when work touches its area** (the owner lifted the 21 Oct "never stale" order on 12 Nov 2026, audit
+   decision 18): a package that changes an area a note watches re-checks that note (the short form below); there is no
+   scheduled round over the whole set, and notes listed "due" by `tools\research_check.ps1` are no failure. A full
+   round only when new research is done in that topic or the owner asks.
 3. **Concurrency-safe.** Research runs alongside sessions that change the project. Every note and every idea
    records the FLvibed commit it was checked against; conclusions are checked against the *committed* state, and the
    uncommitted paths present at check time are listed so a later reader knows what was in flight. Research sessions
@@ -25,7 +27,7 @@ with a status and the project state it was last checked against. Timestamps stay
 | `docs\research\README.md` | this index and the process |
 | `docs\research\IDEAS.md` | **the backlog**: every actionable or theoretical idea from any research, deduplicated, with id, area, status, source, checked-against |
 | `docs\research\<topic>.md` | one note per topic: header (status, checked against, evidence), "What it means for FLvibed" (links to idea ids), then the findings in full |
-| `docs\research\CHECKUP_HISTORY.md` | every note's earlier check-ups (header and index entries), newest first per note |
+| the check-up history (private, not in the public repository) | every note's earlier check-ups (header and index entries), newest first per note |
 | `research\evidence\<topic>\` | git-ignored raw material the notes cite: downloaded files, extracted inis, manifests, exes for signature regressions, data tables, scripts |
 | `tools\research_check.ps1` | prints HEAD, the dirty paths, and for every note the commits since its checked-against commit that touch its watched paths |
 
@@ -52,9 +54,7 @@ with a status and the project state it was last checked against. Timestamps stay
 | `autopilot-planning.md` | The general autopilot: HTN / GOAP / utility / teleo-reactive in shipped games, re-orientation at every activation, natural-language orders to a validated goal schema, the game's goal vocabulary, toggle fuzz (A37-A43) | 3c9c1390 (6 Nov 2026, short form: 49 watched-path commits: the module split P0-P11e (moves, comments, map rows) and the autopilot_objective / combat splits; lock_trap d3814fd1 (default 0, not flown), the direct fallback (fx3 3 / 3), 37639266 stop / new-game fixes; the 31 Oct wait_for_trent inference refuted (marked in place); situation_arbiter still 0) | current |
 | `test-automation.md` | Automating tests at the lowest token cost: a focus-graph crawler, layout lint and golden dumps, real-input tiers, attended check cards, token practices, test impact, ratchets; two real-pad path gaps in the code (T7-T13, U38) | 3c9c1390 (6 Nov 2026, short form: 47 watched-path commits: the module split P0-P11e (moves, comments, map rows); new: fingerprint.ps1, sweep modules-matrix, test_lint, path_check, win7_check against real export tables; the lint at 0 FAIL; T7, T9-T12 unchanged) | current |
 | `hud-presets.md` | HUD 2 overhaul and layout presets: what shows in what context, at what size, in what flow; the element x context x preset matrix, budgets, dynamic rules, owner questions (U39-U41) | 3c9c1390 (6 Nov 2026, short form: 50 watched-path commits: the module split P0-P11e (moves, comments, map rows), the hud2.cpp split; Q7 steps 1-6 built: U39 built in part (plumbing, Focus; Speedrun and Guided not), lint 0 FAIL in 6 contexts, the layout rounds 5.16-5.23) | current |
-| `model-policy.md` | Which model, effort and orchestration per task, measured from this project's transcripts (context costs most; fast mode; inherited models) and Anthropic's guidance; the routing table and triggers (T23-T27, T35) | 3c9c1390 (6 Nov 2026, short form: 17 watched-path commits: the module split P0-P11e (moves, comments, map rows); 5251ff09 policy.json takes modules\ (T25); the table unchanged; T23, T26 open; `../.claude/settings.local.json` outside the repository, not checked) | current |
-| `afk-autonomy.md` | AFK runs: failure modes from the history and the mechanisms against drift, regression and stalls; the progress verdict's blind spots, the queue, review-due, judge-immutable (T28-T35) | 3c9c1390 (6 Nov 2026, short form: 29 watched-path commits: the module split P0-P11e (moves, comments, map rows); 64ad2dd5 launch-check counts own launches only; 45344164 fs-root-search, faed4bba heredoc-script-backslash, ca7fd127 test_lint, d0e79b14 path_check; rollover still suspended; T28 rest, T32-T34 open) | current |
-| `claude-harness.md` | Ten outside Claude Code skill / agent repositories (superpowers, anthropics/skills, agent-skills, ...): none installed, about fifteen patterns as hooks, checks and agent criteria (T14-T22) | 3c9c1390 (6 Nov 2026, short form: 22 watched-path commits: the module split P0-P11e (moves, comments, map rows); 5251ff09 guards and routing see modules\; guards fs-root-search, heredoc-script-backslash, the HDE = vanilla edit check (ea92edc3); T16 by hand again, T20 in part) | current |
+| three private process notes (not in the public repository) | The Claude Code environment: which model, effort and orchestration per task, measured from this project's transcripts; AFK runs' failure modes and the mechanisms against drift, regression and stalls; ten outside Claude Code skill / agent repositories and the patterns taken from them as hooks, checks and agent criteria. Their ideas (T11, T14-T35) moved with them on 12 Nov 2026 | 3c9c1390 (6 Nov 2026) | private |
 | `gap_decomposition.md` | The gap to the runners by kind of segment (`tools\gapreport.py decompose`): fights 48 % of +2,518 s, jumps 25 %, lanes 12 %; per kind the runners' way, ours (logs of gate s7arb3) and one mechanism: the objective kill cycle (fight phases measured: kill speed ~35 %, placement / exits ~37 %), enter at speed (tested and parked: the hole's occupant decides, the "91 s a gate" counted occupancy), trigger-route planning (the LOOK plan) | 3c9c1390 (6 Nov 2026, short form: 1 watched-path commit: 01ad1f4d (paths only); no figure changed; `gapreport.py decompose` still not re-run) | current |
 | `hud-skin.md` | HUD 2 as a complete skin: total-conversion UI skins, map screens in space games, menu / dialog / loading / handheld standards, the same screens in Freelancer's mods; four readers, four verifiers; feeds `modules\hud\docs\UI_HUD2_SKIN.md` (U42-U46) | 3c9c1390 (6 Nov 2026, short form: 7 watched-path commits: b6f3be60 and 0fdfdc9f the design, 8d8243b3 and 5eac39f7 the probes in the design, 3c9c1390 the rulings and build order, 10998491 and 8292a7c5 fixes on the hidden HUD; U42-U46 stay adopted, nothing of the skin built) | current |
 | `hud-critique.md` | The HUD 2 overhaul's critique round: Freelancer's way, modern AAA, FLvibed's flavour, attacks and verifiers; points to `modules\hud\docs\UI_HUD2_CRITIQUE.md` (U49-U56) | 3c9c1390 (6 Nov 2026, short form: 1 watched-path commit, landed during the round: 3c9c1390, the owner's rulings on D1, D2, D4-D7 (UI_HUD2_CRITIQUE.md 7); U47, U48, U50, U52 updated; no overhaul code yet) | current |
@@ -71,27 +71,28 @@ with a status and the project state it was last checked against. Timestamps stay
 
 | File | What |
 |---|---|
-3c9c1390 (6 Nov 2026, short form: 1 watched-path commit: 01ad1f4d (paths only in `runners\M13.md`); history, no effect) | M13 (Into the Dyson Sphere): what the top-3 runs do segment by segment, one runner shape for us (30 Oct 2026); no template header |
-| `runners\M13.md` | M13 runner study per checkpoint segment; links the four notes below |
+| `runners\M13.md` | M13 runner study per checkpoint segment; links the notes below. An older M13 study (what the top-3 runs do segment by segment, one runner shape for us, 30 Oct 2026) is superseded by it and private |
 | `runners\M02.md` | M02 (The Unity, Cosmo, Ashcroft): the runners vs the pod (+93 vs par 22); ASH-START (chase_kill / spawn_stage) result |
-| `runners\M02_ashcroft_consensus.md` | M02 Ashcroft, escalation step 1 of AFK_PLAYBOOK 13a: the autopilot's view (spawn geometry, the frozen 1.4-1.5 km cruise gap, King's 3 km leash) and the proposed `spawn_charge` (31 Oct 2026, f8e1dd31) |
-| `runners\M02_ashcroft_datapass.md` | M02 Ashcroft, escalation step 2: the second data pass (14177992; two lines withdrawn by the owner, 7851745c); feeds `ash_ride` |
-| `runners\M13_bsdown_consensus.md` | Battleship (battleship -> bsdown), escalation step 1 of AFK_PLAYBOOK 13a: the runner-view + autopilot-view consensus |
-| `runners\M13_bsdown_datapass.md` | bsdown, escalation step 2: the second data pass on the recordings |
 | `runners\M13_gate_allykill.md` | The gate battleship: the `ally_kill` design (runner R2 does not fight it) |
-| `runners\M13_city_hold.md` | The city hold (generators, city deaths): the stage-1 study |
+
+Private working studies (not in the public repository): the escalation steps of the unattended runs' playbook (step
+13a) for M02 Ashcroft (step 1: the autopilot's view - spawn geometry, the frozen 1.4-1.5 km cruise gap, King's 3 km
+leash - and the proposed `spawn_charge`, 31 Oct 2026, f8e1dd31; step 2: the second data pass, 14177992, two lines
+withdrawn by the owner, 7851745c, which feeds `ash_ride`) and for the M13 battleship (battleship -> bsdown; step 1: the
+runner-view + autopilot-view consensus; step 2: the second data pass on the recordings, which feeds `strafe_pass`), and
+the M13 city hold's stage-1 study (generators, city deaths).
 
 Status values: **current** (checked against the commit shown; nothing contradicts it), **partly stale** (some
 conclusions overtaken; the note says which), **superseded** (kept for history; see the newer note), **retired**.
 
-## The check-up round (every research session ends with it; every project update triggers the short form)
+## The check-up round (for the notes a piece of work touches, or new research in a topic; on demand since 12 Nov 2026)
 
 1. `tools\research_check.ps1`: HEAD, dirty paths, and per note the commits since its check that touch its watched
    paths (declared in the note header as `watch:`).
 2. For each touched note: re-read the "What it means for FLvibed" section against the commits; fix statuses in
    `IDEAS.md` (done / superseded / still open), update the note's header (`checked against`, `dirty paths`), and
    mark contradicted findings in place rather than deleting them. The header and this index keep **only the latest
-   check**: the entry it replaces goes, verbatim, to the top of the note's section in `CHECKUP_HISTORY.md` (never a
+   check**: the entry it replaces goes, verbatim, to the top of the note's section in the check-up history (private; never a
    "; before: ..." chain in the header - by 31 Oct 2026 those chains were ~100 KB, re-read at every check-up).
 3. New research: add or extend the topic note (never a per-session file), merge its ideas into `IDEAS.md`
    (deduplicate: one idea, several sources), update this index.

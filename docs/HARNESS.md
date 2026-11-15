@@ -105,7 +105,7 @@ part of their topic; `deploy.ps1` parse-checks every `*.ps1` in the tool folders
   / `Wait-FLAutopilot` / `Stop-FLAutopilot` / `Get-FLAutopilot`, `Start-FLCombat` (real kills), `Start-FLMissionCombat`
   / `Invoke-FLMissionFight` (reach to the nearest hostile, no fleeing in mission battles), `Start-FLCombatTest`,
   `Update-FLIdlePark` (the harness parks the ship with the autopilot's hold mode while it waits), `Resolve-FLObjectiveTarget`.
-- **The situation snapshot** (30 Oct 2026, `A37_PLAN.md`): `Save-FLSituation -Path <file> [-Expect
+- **The situation snapshot** (30 Oct 2026, the A37 plan, private): `Save-FLSituation -Path <file> [-Expect
   'placeholder=.. standin=.. kind=.. source=.. subject=.. held=.. verb=..'] [-Note <text>]` writes `ap situation snap`
   (reads only) to a file and returns Path, Hash, Step, SnapMs, Bytes and the snapshot's contact ids; it throws on a cut
   reply. The file is the `snap v2` text (`modules\autopilot\src\situation_io.h`; v2 since A37 S2: `script ... source_live=` - the
@@ -202,7 +202,7 @@ part of their topic; `deploy.ps1` parse-checks every `*.ps1` in the tool folders
   cutscene)`): wait for the answer event and press again (`research\experience\runs\autopilot_parity_2026-10-26\tools\t5.ps1` jobs, `t6.ps1` parity); mission scripts
   `tools\harness\missions\` (Campaign.ps1: New Game to M02; M01a, M01b, M02; M03objective / M04objective / M05objective:
   rooms by the harness, space by the objective mode).
-- Test aids: `fault frame|draw` (the logic's next frame or overlay pass raises an access violation), `fault <module> frame|draw` (that module's own place: npc, speedrun, autopilot, hud), `fault status` (which stopped; `tests\fault_giveback.ps1`), `watchdog test|off` (a real goto that reads as stopped: `tests\watchdog_modules.ps1`), `core <verb ...>` (with the controller off, on the subtitles' channel: the verbs of core's `debug::Execute`; the mp, speedrun and fault tests shim `Send-FL` through it), `startprompt open|close|pick <mode>|state` (the keyboard's New Game list), `godmode on|off` (debug), `cash <amount>` (TEST ONLY, single player: the player's money changed by server.dll's pub::Player::AdjustCash, the call a mission's reward makes - HUD 2's credits notice, UI_HUD2.md 5.43), `Set-FLCruiseSpeed`, `Move-FLShipNear` (pinpoint tests only; size-aware), `stall <ms>`
+- Test aids: `fault frame|draw` (the logic's next frame or overlay pass raises an access violation), `fault <module> frame|draw` (that module's own place: npc, speedrun, autopilot, hud), `fault status` (which stopped; `tests\fault_giveback.ps1`), `watchdog test|off` (a real goto that reads as stopped: `tests\watchdog_modules.ps1`), `core <verb ...>` (with the controller off and the HUD, autopilot or speedrun on, on the subtitles' channel: the verbs of core's `debug::Execute`, plus `core set <key> <value>` for a `[Controller]` row on the settings bus, live only, e.g. `core set mouse_raw 0`; the mp, speedrun and fault tests shim `Send-FL` through it), `startprompt open|close|pick <mode>|state` (the keyboard's New Game list), `godmode on|off` (debug), `cash <amount>` (TEST ONLY, single player: the player's money changed by server.dll's pub::Player::AdjustCash, the call a mission's reward makes - HUD 2's credits notice, UI_HUD2.md 5.43), `Set-FLCruiseSpeed`, `Move-FLShipNear` (pinpoint tests only; size-aware), `stall <ms>`
   (debug: the game thread spins, at most 60 s - a frozen game for the freeze watchdog `tools\flfreeze.ps1`),
   `fpscap <fps>|0` (debug: caps this game's frame rate, a high-resolution timer at the frame's start - the owner, 29 Oct
   2026: test games at no more than 60 fps; with flleg `-Cmd "fpscap 60"`; a leg's `fps=` then reads ~60, compare legs
@@ -221,7 +221,120 @@ part of their topic; `deploy.ps1` parse-checks every `*.ps1` in the tool folders
 ## tools\harness\flsub.ps1
 `Send-FLS`, `Watch-FLGame` (`-LinePattern`, `-ShotMs`), `Wait-FLSShown` + `Get-FLSLast` (for `-After`; works during
 movies and across restarts), `Close-FLModal` (native clicks), `Set-FLSIntro` (switch test intros via freelancer.ini,
-restorable), `Save-FLShot` (game window only), `Get-FLSLog`.
+restorable), `Save-FLShot` (game window only), `Get-FLSLog`. **A minimised game window** (the owner's show-desktop
+minimises every background test game; a minimised window has no client area and nothing to capture, while the game
+keeps running at about 30 frames a second): `Restore-FLWindow <hwnd> [<log>]` brings it back with SW_SHOWNOACTIVATE,
+not activated (the foreground window stays; measured 13 Nov 2026), and writes a line to the log and the host.
+`Save-FLShot` calls it before every capture (log: `window.log` in the capture's folder), tries a window that still has
+no client area once more after a second, then fails loudly naming iconic / visible; `tests\classic_frames.ps1` calls it
+before each probe and capture and takes a capture window again when it had to restore during it.
+
+## The two interfaces' nets (tests\nn_pages.ps1, tests\classic_frames.ps1)
+When to run them: `docs\TESTING.md` "The two interfaces' nets". Both run the release build on their own instance.
+- `tests\info_compare.ps1 [-Instance 5] [-Sizes ...] [-Forms ...] [-Places ...]` (audit R3) compares HUD 2's INFO page with the
+  game's own NN_Help window line by line: `nnpage info` prints the page's text ([PAGE]), a fresh composition ([HUD2]) and the
+  window's own text read from its RenderDisplayList ([GAME]; the window, parked off the screen, still builds its text when it
+  opens). Situations: SaveC706 with no target and with Manhattan, the unknown New York gate, Fort Bush, Baltimore Shipyard, a
+  lane ring, the sun, the nearest NPC ship and the player's waypoint selected before INFO opens; SaveC701 docked at Manhattan;
+  the refresh (a target selected while open switches the page, a cleared one keeps it: the classic HUD's window does so, under
+  HUD 2 the game's window does not rebuild); the park (NN_Help and its children beyond the screen's width, `uiitems`); the scroll
+  (`nnpage press up/down`, docked). Frames of INFO for the owner in both forms and sizes. It opens INFO by `tap USER_HELP`
+  (re-sent once: in space the game drops the first one after a close), targets by `settarget <id>`, clears by
+  `tap USER_CLEAR_TARGET`. KNOWN: the player's waypoint (the window: WAYPOINT / "Player Waypoint 1"; the page: UNKNOWN OBJECT).
+  The card's styles (audit decision 56): each styled paragraph's runs in every block ("~" lines) and each laid-out piece's
+  attributes, compared and checked character by character; the styled cards Missouri, West Point, the Manhattan Docking Ring;
+  underline, which the game's INFO never shows, through `nnpage info card <ids>` (test switch only: the next INFO open shows
+  that infocard alone, once) with New York's system card 66106.
+  Output `research\experience\runs\info_compare\<time>` (steps.txt, verdict.txt, frames); exit 1 on a FAIL or MISSING.
+- `tests\base_pages.ps1 -Mode check|record [-Instance 4] [-Sizes ...] [-Forms pad,kbm] [-Pages ...] [-Baseline <file>]` (audit 72_,
+  the page framework's T0 / 70b W1) walks the docked base pages and records every state as text: the job board, news, the
+  commodity trader with BEST PRICES (through the inventory), the equipment dealer (four filters, both sides, compare tag,
+  unmount / mount, buy and sell back), the bar's offer dialog, a job accepted, repair, the ship dealer with its final stage (sell
+  to the dealer and back, BACK TO SHIPS, a purchase), jettison (in space) and INVENTORY / STATUS / LOG docked; each in the pad
+  form (the virtual pad, holds for what spends) and the keyboard-and-mouse form (`uibtn click` on HUD 2's hotspots found by their
+  place), at 3840x2160 and 1280x800, and each page's opening once more on the classic HUD (`hud_style 0`, the game's windows).
+  Per state: how it was reached, the verb's line verbatim (`basepage`, `nnpage`), the game window's buttons, quantity bar and
+  texts (TransferPriceText, QuantityTotalText, ErrorHelp, RepairTotalCost, ShipBuyProblem, read through `ctlrect` + `peek`), the
+  park (the root and every child of its `dumpui` tree beyond the screen), the pad lane drawn and the page's wanted list (its
+  rules; what the verb does not print is approximated and said so in the script), HUD 2's hotspots, **what the page drew**
+  (field `texts`: every text and keycap of the pages' pass with its box and em, from the test verb `page texts` - pagerun.cpp,
+  13 Nov 2026, audit 101_: the rows' own words, the cards' text, the ship card's numbers; the script refuses a build without
+  the verb), the line after each press
+  of the verb's press map, and for each action the game's own values before and after (`worth`, `equipment`); the board and
+  news also the visit map (0x673320) before and after each row's selection. Fixtures SaveC701, SaveC706 and SaveC7BP (written
+  by the script from SaveC701: rank 10, shield / thruster / guns damaged; removed at the end); every action is undone or thrown
+  away by the next save load. `record` writes `research\experience\base_pages\baseline.txt` (git-ignored: item and ship names
+  are game text; its sha256 stands in the script, a changed baseline is refused); `check` compares field by field and FAILs
+  naming size, form, page, state and field. `-Mode slice -Pages <some> [-Sizes] [-Forms] [-From <a run's record.txt>]` (13 Nov
+  2026) re-records only those pages' fields into the baseline (walked, or from an earlier run with no game), every other line
+  byte-equal, and prints the states replaced, each field changed / added / dropped and the new sha256 for the script: for a
+  change that asks for one page's new look, on main, instead of a full record. Masked by name with the reason: the job board's offers, the accepted job, the
+  bar's characters (all drawn at random at each start), and the news's visit-map size (it holds the board's random reveals).
+  A D-pad press that a slow frame turns into two rows (the lists' 0.3 s repeat) is walked back by the verb's one-row press and
+  noted in steps.txt. About 32 minutes beside other games (25 alone), 448 states and 7,170 fields (13 Nov 2026). Output `research\experience\runs\base_pages\<time>` (record.txt, verdict.txt,
+  steps.txt, one frame per state); exit 0 PASS / recorded, 1 FAIL or a walk error, 2 no baseline or a changed one.
+- `tests\nn_pages.ps1 [-Instance 5] [-Sizes 3840x2160,1280x800] [-Forms pad,kbm] [-Places docked,space]` walks the NeuroNet
+  pages: LOG (MISSION / JOURNAL against the game's own byte at root+0x37C), MAP, INVENTORY (5 filters, row walk, docked
+  UNMOUNT / MOUNT), STATUS (filters, sort, walk, card) and INFO (SHOW ON MAP), with the strip's steps, wrap, double press and
+  close. Pad form: `set input_mode 1` and the virtual pad; mouse form: `set input_mode 2` and `uibtn click <100+slot>` on HUD 2's
+  hotspots, found by the `nnstrip rooms` rectangles. It reads `nnpage`, `nnstrip`, `nnstrip rooms`, `bases`, `uibtn`, `navnew
+  state` and `peek`. Saves SaveC701 (docked) and SaveC706 (space); one game per size, about 3.5 minutes. Output:
+  `research\experience\runs\nn_pages\<time>` (checks.txt, steps.txt, frames); exit 1 on a FAIL; KNOWN = a fault already in
+  the release. Not covered: CHAT and GROUP (multiplayer), jettison, BEST PRICES (no commodities in either save), wheel and
+  hover (none in a background game), the death page.
+- `tests\classic_frames.ps1 -Instance <n> [-Sizes ...] [-Pin] [-PinFrom <pass1>,<pass2>,<pass3>]` (no default instance since
+  13 Nov 2026; `-Pin -PinFrom` starts no game and touches no instance, so it needs none) compares the classic HUD
+  (`hud_style 0`) with a pinned set at 3840x2160 and 1280x800: flight in pad and keyboard-and-mouse form, FLvibed's page hosted
+  in the game's Options screen (two tabs), the bar with the pad's prompt bar, and the game's equipment dealer (open, scrolled,
+  the player's side). Live in its own games only: `hud_style 0`, `input_mode 1`, `glyph_style 1` (Xbox, as pinned: a real
+  pad connected to the machine would switch the glyph family), `chatter 2`, and `prompt_bar 1` in the rooms. Each frame is
+  taken at a state the verbs confirm, as a composite (the 6th-smallest of 24 captures per
+  pixel: no glow pulse, no passing traffic; the flight frames the 12th of 48, as the ship's engine glow made the 6th of 24 a
+  noisy estimate there: audit 101_), compared in 64x36 cells by `tests\pixels_compare.py`'s method (a cell counts over a
+  mean grey difference of 6), with masks learned from three fresh pin passes and the game's animated controls left out by
+  their `uiitems` rectangles. **The flight frames have no mask at all** (12 Nov 2026, F1b): the classic HUD's panels are
+  partly transparent, and near Fort Bush the traffic passing behind them had masked weapon rows, the ship-status panel's
+  edge, pad badges, the AUTOPILOT legend row and the target-filter icons (219 cells of the 4K pad frame). They are taken in
+  a still sky: `SaveC706sky.fl`, which the script writes next to the pinned set from SaveC706.fl with only its `pos` line
+  raised by 25 km (the ship stands still there, throttle 0, the same heading; no lane, zone or station in view), and each
+  flight frame's check also wants the ship at that height, throttle 0 and no ship within 10 km (`contacts`; a timeout is an
+  ERROR, never a frame). They are `-NoMask` frames (`<frame>.nomask`): the pin refuses one (PIN-FAIL, the cells named) when
+  any cell differs between its passes or a control is left out, and a run FAILs a no-mask frame whose pinned mask is not
+  empty or was pinned before the rule. The cells that move inside a frame's own capture window (3D motion, the bar's
+  characters) and the control rectangles join the mask only at the pin, and never for a no-mask frame: a run compares every
+  cell that was stable at the pin, its own moving cells and wherever its controls stand now too, and a frame whose changed
+  cells all moved inside its own window is INCONCLUSIVE, never masked (12 Nov 2026: masking each run's own motion had left
+  289 cells of a 1280x800 flight frame uncompared). An INCONCLUSIVE that comes back on the same cells in
+  the next run is a FAIL: a HUD element that flickers marks its own cells as moving. About 4
+  minutes; `-Pin` about 12. Output: `research\experience\runs\classic_frames\<time>\` (frames, `_diff.png`, `states.txt`,
+  `result.txt`; each frame's line names the cells that moved in its window and were compared); the reference:
+  `...\classic_frames\pinned\` (git-ignored, about 97 MB, kept with the evidence, never committed). Exit 0 PASS, 1 FAIL, 2
+  error, 3 INCONCLUSIVE (run it again: motion the pin never saw, or a fault under it). A FAIL line names every changed
+  cell (the first 40) as (column,row) of the 64x36 grid. Not covered: the equipment room itself (light shafts and the
+  walking dealer), the bartender's card (masked), the Options screen's page buttons (their shading moves between starts),
+  the flight HUD's transient lines (the system arrival line is waited out), and whatever the flight HUD shows only near
+  objects (a target, the left panel's 3D view of a nearby station: the sky is empty by design).
+- **Re-pinning** (only when a change to what the classic HUD draws was asked for, never to make a FAIL pass): build and commit
+  the change, `tools\buildlock.ps1 release` (a clean tree: `pinned.txt` records the build), then `tests\classic_frames.ps1 -Pin
+  -Instance <n>`. It runs three passes from fresh starts (`<time>_pin1..3`), masks the cells where pass 2 or 3 differs from pass 1
+  (dilated by one cell) plus every pass's moving cells and control rectangles, and refuses the pin (PIN-FAIL, the old set kept)
+  when a frame is missing from a pass, its size differs, the cells masked as noise (where the passes differ, not the
+  controls and moving cells left out) are over 40 % of the cells it compares, or a no-mask frame (the flight frames) would
+  mask any cell (its line names the cells: something moved in the sky or the HUD between starts - find it, never widen the
+  mask); `masks.json` lists the no-mask frames (`nomask`), and a compare against a set without that list FAILs them
+  ("pinned before the rule: re-pin"). Read each frame's `_mask.png` in
+  the last pass folder. On success the new set replaces `pinned\` and the old one is kept as `<time>_pinned_old`. `-PinFrom
+  '<pass1>','<pass2>','<pass3>'` builds the set from an earlier pin's passes without a game. `-PinFrames '<regex>'` (with or
+  without `-PinFrom`) re-pins only the frames whose file name matches: every other frame keeps the current set's image and
+  mask (its line reads KEPT), so a change to one group of frames moves no other frame's mask; `pinned.txt` names both
+  sources (12 Nov 2026: `-PinFrames 'flight_'` for the still sky from passes `2026-11-12_161442_pin1..3`, the options,
+  bar and dealer frames kept from the 5cec4009 pin, that set kept as `2026-11-12_160638_pinned_old`; a first flight pin
+  from passes older than the arrival-line wait carried the line's outline in the 1280x800 pad frame and was replaced).
+  Then run the comparison twice in a row from fresh starts: both must PASS before the pin is relied on.
+
+## tools\harness\mousegain\ (measuring tools)
+Read-only recorder and analysis of the game's cursor against the real mouse's raw counts, from outside the game; the
+steps and the 14 Nov 2026 result are in `tools\harness\mousegain\README.md`. A real mouse cannot be simulated: record a baseline first.
 
 ## Debug channels and logs
 There are two debug channels, the controller's and the subtitles' (shared memory `Local\FLControllerShm[_n]` / `Local\FLSubtitlesShm[_n]`), and two
@@ -230,6 +343,59 @@ while it is the foreground window; pad commands and every debug command work in 
 never focus-gated; the physical pad is ignored in a background game, in flight and menus alike (`focus_only`, one gate:
 `modules\controller\src\impl\focus_gate.h`, unit test `focus_gate`; 30 Oct 2026) - the device-layer test pads go through that gate as
 a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
+
+### How a game ended: its exit code (13 Nov 2026)
+Freelancer's own crash filter ends a crashed game with the exception code and no Windows event, no dump (audit
+95, silent exits, in the environment folder's audit_2026-11-12), so every game `tools\deploy.ps1` starts gets a watcher, `tools\flexitwatch.ps1`: started hidden, broken away
+from the caller's job where Windows allows it (so it outlives a stopped Claude task), it holds a handle on the game, appends ONE line
+to the instance's `EXE\logs\game_exits.log` when the game ends and ends itself. It never blocks deploy (a watcher that cannot start
+is a warning). The line, tab-separated: `<local exit time to the ms>  instance <n|main>  pid <pid>  build <FLvibed.build.txt>  exit
+0x<code>  lived <s> s  session <deploy's start stamp>` (the stamp pairs it with `EXE\logs\<stamp>_FLController.log` and the shots
+folder); `exit unknown (...)` when the game was gone before the watcher opened it. `Get-FLExitLine [-GamePid <pid>]`
+(`tools\fldata.ps1`) returns the line of that pid or of the instance's latest start; the harness appends it as `; game exit: <line>`
+to "Freelancer exited (no answer to ...)" and to "shared memory not found" when no game of the instance runs, and deploy prints
+`game exit: <line>` before "the game exited during its start". Codes: `docs\TESTING.md` "A silent exit". Self-test without a game:
+`tools\flexitwatch_selftest.ps1`.
+**Where it crashed:** an unhandled exception also leaves a block in the instance's `EXE\FLvibed_crash.log` (appended, one per
+crash, with the time and the pid of the exit line): the code, the faulting address and the stack's return addresses as
+module + offset (FLvibed.dll offsets read against that build's `build\<config>\FLvibed.map`), the thread and where it started.
+`Get-FLCrashBlocks -Since <time>` (`tools\fldata.ps1`) returns the blocks written since a time (by the blocks' own times; a
+block without a readable time counts as new). The nets (base_pages, nn_pages, classic_frames, info_compare, hud_modules,
+dealer_focus, ship_buy_pad, pad_page_moves) take the time at their start: a run during which a block was written is a FAIL
+that quotes the block (13 Nov 2026).
+A test start (FLVIBED_TEST=1) also writes `EXE\FLvibed_crash.dmp` (the last crash's minidump; open it in WinDbg or Visual
+Studio with the build's `FLvibed.pdb`). The recorder: `core\host\crashlog.cpp`; facts: `docs\FREELANCER_RE.md` "The crash
+filter". A dev build started with `FLVIBED_CRASH_TEST=thread` (a mod thread) or `=frame` (the game's main thread, in the frame)
+in the deploying shell's environment faults on purpose at the first frame: the recorder's own check (dev builds only).
+`=unwind`: a thread with an empty handler chain raises 0xC0000029 (invalid unwind target): the game ends with that code and
+no filter runs, as on a broken handler chain; the block comes from the recorder's vectored handler, which takes only the
+fatal codes (0xC0000029, 0xC00000FD, 0xC0000374, 0xC0000409) at their first chance, its header "fatal exception at its first
+chance (vectored)". Without it the same start leaves no block (control run 13 Nov 2026, audit 109_). A fail-fast (`__fastfail`,
+how a current /GS failure ends: int 0x29) reaches no handler of either kind: its exit line is all there is.
+
+### Start values: `deploy.ps1 -Set`
+A numbered instance's `FLController.ini` is the main install's copy at every start (deploy.ps1), so a value written there
+by hand or by `config save` does not survive the next start. What no verb can set before the game reads it (a cold start's
+`hud_style 0`; any row with the controller off, whose subtitles channel has no `set`) goes in as
+`tools\deploy.ps1 -Instance <n> -Set 'hud_style=0'` (several: `-Set 'a=1','b=2'`): written into the instance's `[Controller]`
+section after that copy, as a new file (the instance is a hard-linked mirror: never written through into the main install),
+for that start only; the next start without `-Set` copies the main install's file back. Used by `tests\hud_modules.ps1 -Row hooks`.
+
+### The test switch
+Both channels exist only in a game started with **`FLVIBED_TEST=1`** in its environment (`TestSwitch` in `core\common.h`; read once
+at the start, never stored). Without it neither shared block is created, so no debug command, test pad or virtual pad reaches the
+game, and each log says `debug channel: closed (FLVIBED_TEST is not 1)` near its top.
+- `tools\deploy.ps1` sets it for every game it starts (background or front) and for that process only; `-NoTestSwitch` starts a
+  game as a player's start, to check that it has no channel. The multiplayer test clients start through deploy (`tools\mptest\`);
+  the test server loads no FLvibed.dll, so it needs none.
+- A game without the switch makes the harness fail at once, not time out: `Get-FLChannelClosed` (`tools\fldata.ps1`) reads the
+  closed line from this game's log (written since its start), and `Send-FL` / `Send-FLS` throw "the debug channel is closed"
+  (not a `TimeoutException`, so no wait goes on waiting); deploy's start wait stops on it too.
+- A game started any other way (a shortcut, Steam, the installer's test) has no channel. **For a support session** a player can
+  open it: on Windows, in the game's `EXE` folder, from a command prompt `set FLVIBED_TEST=1` then `Freelancer.exe`, or from
+  PowerShell `$env:FLVIBED_TEST='1'; .\Freelancer.exe`; under Proton (Linux, Steam Deck), the launch options of the game's non-Steam
+  shortcut, `FLVIBED_TEST=1 %command%`. Any program of the same user can then drive the game through it, so it
+  is for that session only.
 
 - **Shared commands in both channels** (`core\game\`): `click <Control>` (text, icon and front-end buttons; the reply
   adds `(nn-window busy ...)` when a docked NeuroNet window was sliding - the game drops a close then, retry after the
@@ -240,9 +406,9 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   hover help, per frame, the last 256: a one-frame blink shows here, a poll misses it), `uiskin jobheight <px>` (controller
   only: the job text's height as the plate reads it, 0 = the game's), `uiskin seams` (every shown control still drawing art nobody hid or claimed: the 3.3 audit of `modules\hud\docs\UI_HUD2_SKIN.md`, walks the tree, rests on no counter), `uiskin loadplace <0|1>` (the loading screen tries the player's base and system: its probe), `uiskin cargodemand <ship id> <good id>` (TEST ONLY: the game's own cargo demand box, the mission message box's drop-cargo form, through exe::CargoDemandOpen; the ship must be near the player - a `spawn ... 1 400` - or the box closes at once; it closes by itself after 20 s), `uiskin hover <x> <y> | off` (TEST ONLY: the game's hover at that pixel each frame - a background game computes none, so its ToolTip and Rollover never start there; `uiskin state` then lists what HUD 2's help read, where the game put it and where it was drawn, and what it kept clear of: FREELANCER_RE "The hover help's fields"; on a HUD 2 word its `word` line - the word, its control, the rest, the text - and `cursor=` whether a cursor is on screen, which the words' help needs: the pad's D-pad form reads 0; `nnstrip rooms` lists every word's click box with its control and the plates, the pixels to hover), `gametext frame <0|1>` (NN_Inventory on the one frame of R8, off until probe 18), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
   only: the job text's height as the plate reads it, 0 = the game's), `nnstrip [state]` (the strip of words: standing, its tab, the manager's open and
-  held commands, its rectangle, the click box), `navskin click` (the map's own click at the cursor, after `mouse x y`), `nnpage [state]` / `nnpage press <a|b|x|y|up|down|left|right>` (the full-screen NeuroNet page: its state; a pad press into it), `nnstrip go <log|map|inventory|status|info|chat|group>` (or the tab's index 0..6; an unknown word is an error line) / `step <dir>` / `close` (what a click and the bumpers press), `nnstrip slide <seconds>` (each NeuroNet
+  held commands, its rectangle, the click box), `navskin click` (the map's own click at the cursor, after `mouse x y`), `nnpage [state]` / `nnpage press <a|b|x|y|up|down|left|right>` (the full-screen NeuroNet page: its state; a pad press into it), `page [state]` / `page model` / `page game` / `page press <button>` (the page runtime, audit 70b F2a: the standing page of the framework (INFO so far): its id, window, park, first line, room, reads, stamp, each action's may / window / route, pending, shadows, the pages registered; its model's fields; the game's own window's text; a pad press), `nnstrip go <log|map|inventory|status|info|chat|group>` (or the tab's index 0..6; an unknown word is an error line) / `step <dir>` / `close` (what a click and the bumpers press), `nnstrip slide <seconds>` (each NeuroNet
   slide, 0 the game's), `navskin [state]` (the map's frame and words: bound, failed, every chip with its rectangle, the layer, the view), `navskin native on|off` (the
-  old map from its next open: what `skin_native = navmap` will set), `navskin press <id>` (a chip's action), `navnew [state]|on|off|keep` (the full-screen map, on by default; off gives the game's size back for a comparison: grown, transform, records, labels shown and dropped; `keep` adds every keep-out the last labels kept clear of and every label box that stood), `map view [state]|zoom <z>|pan <du> <dt>|records|rings` (the map's transform; every record with its `vis`; every lane ring with the game's name and the route card's), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
+  old map from its next open, for the session: a test aid; the setting `skin_native` that did the same was retired on 13 Nov 2026), `navskin press <id>` (a chip's action), `navnew [state]|on|off|keep` (the full-screen map, on by default; off gives the game's size back for a comparison: grown, transform, records, labels shown and dropped; `keep` adds every keep-out the last labels kept clear of and every label box that stood), `map view [state]|zoom <z>|pan <du> <dt>|records|rings` (the map's transform; every record with its `vis`; every lane ring with the game's name and the route card's), `selfdestruct` (test aid: death dialog). `equipment` / `equipall` also print
   `mines=` (the mines counted by ammo, as the countermeasures).
 - **The controller's host part** (`modules\controller\src\host\main.cpp`; `uigen` in `core\host\uihooks.cpp`): `uigen` - the UI generation counter of HostApi v23 ("uigen N adds A removes
   R": the game's control list adds / removes; Extended HUD 2 finds windows by it; still in a calm room or calm flight);
@@ -283,7 +449,9 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   `navplant`; `navplant <ctl hex> | off` (TEST ONLY: that control is never a D-pad target).
 - **Controller debug** (`core\game\debugverbs.cpp`, the pad's in `modules\controller\src\impl\pad_verbs.cpp`): `state`, `ship`, `uiitems`, `set <name> <v>` (live only; `config save`
   writes `FLController.ini`), `config` (`config settings`: every [Controller] and [Autopilot] setting with its value and
-  help, from the registry `core\settings.h`; `ap settings` the autopilot's alone), `bot`, `events`, `peek` / `poke`, `snap` / `diff`, `findvt <value> [max]`
+  help, from the registry `core\settings.h`; `ap settings` the autopilot's alone), `bot`, `events`, `peek` / `poke` (`peek` answers "read failed" for the
+  whole range when any byte of it cannot be read: read a heap string no further than its page's end, then on, as `tests\base_pages.ps1` GameText does;
+  a 256-byte peek of a short string near the end of the game's committed heap read '' while the game drew it, audit 137_), `snap` / `diff`, `findvt <value> [max]`
   (objects by vtable: a scan of committed private memory), `watch <addr> [len] [w|rw] | report | stop` (a hardware data
   breakpoint on the game thread: which instructions write / read it, with two callers; removed before a hot reload),
   `tap`, `mouse`, `targetinfo`, `destroytarget`,
@@ -320,7 +488,16 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   the card's stamp `first_card = 1`, so a test start never stalls on it; `uibtn` (host-side:
   the native buttons' state, controls and placement, the raw-key counters), `uibtn click <1 bar|2 options page|3 pause>`
   (a click through the game's own release path), `uibtn mesh [<path relative to DATA>]` (the bar button's mesh for the
-  next HUD build); `device` (the input-device service: pad / keyboard-and-mouse and why); `fluf` (FLUF awareness,
+  next HUD build); `device` (the input-device service: pad / keyboard-and-mouse and why); `huddoor [reset]` (the door to
+  HUD 2, `core\ui\hud_door.h`: the selected interface, HUD 2's enters and leaves, a leave still running, whether its views
+  stand, and since the reset the calls into the HUD module made while the classic HUD was selected: all of them less the
+  extras', and the door's own per entry; `tests\hud_modules.ps1 -Row classic` requires 0. Since audit R4c-1 no HUD 2 code
+  runs on the classic HUD (the load frames drawn by HUD 2 and by the game are counted too; TEST ONLY `huddoor loadstyle <0..2>`
+  writes `hud_style` at the 3rd load frame after it, since no command reaches a load: `-Row loadswitch`), so HUD 2's test aids (`uiskin hover`, `modelprobe`, `hud2 on`) do nothing under `hud_style 0`,
+  and the debug `layout sim` draws there in space (no HUD 2 layout to yield to)); `hoverhelp [hover <x> <y> | hover off]` (the extras' hover-help rule: HUD 2 on both devices, the classic HUD with the pad only - with keyboard and mouse it reads allowed: allowed or suppressed,
+  the hides; TEST ONLY `hover`: the game's hover at that pixel each frame, which a background game never computes); `idlecursor`
+  (the idle cursor's hide as the last frame decided it: HUD 2's rule or the classic one, eligible, hidden, the game's mouse position;
+  a background game takes no mouse motion: the harness's `mouse` does not move its cursor); `fluf` (FLUF awareness,
   `docs\MOD_COMPATIBILITY.md` FLUF: present 0 / 1 co-residency / 2 aware, the build, the status line, `fluf_windows`,
   text input, the cursor over a FLUF window, whether the pad drives FLUF, `palette` / `holdsKeys` (FLvibed's keys held),
   every open keep-out with its kind and rectangle and (bus v5) its ImGui name, input rule, focus and close-button point);
@@ -331,7 +508,7 @@ a real pad does (`Enable-FLDevPads -Foreground` opens it in a background game).
   test starts only: one display setup as FLUF's Alt+Enter makes it, refused unless FLvibed's rewrite applies - never
   exclusive fullscreen; `deploy.ps1 -Background` itself refuses a game that would open fullscreen, `Assert-FLNoFullscreen`, and only `FLVIBED_ATTENDED` from `flsweep -Attended` passes);
   `ui ...` with the controller off answers on the subtitles' channel (`core\host\pagehost.cpp`); `hooks` (host-side, both modules: every detour's mode, place and where the function's own jump leads; each channel lists its module's hooks and the ones the router shares, the core's own on the controller's, `core\host\commands.cpp`); `padhud on|off|state` (the pad
-  HUD layer: badges, legend, status line; the Classic HUD); `hud2 alert shield|hull|missile|cargo|tractor <3-6>` (that alert's card on the live HUD, 3 s, for frames: UI_HUD2.md 5.40; event `tractor-fail reason=` when the game refuses loot: `core\game\tractorfail.h`; event `loot-tractored loot= ship= units=` for each item a ship's tractor took into its hold, `core\host\events.cpp`); `hud2 notice [credits <balance> <rise> | item <units> <name ...> | clear]` (the flight notice: bare = what it holds, its alpha, time left and place; the others TEST ONLY feed it as a payout / a tractored item would, for sims and frames: UI_HUD2.md 5.43); `hud2 on|off|auto|state|sim <name>[+comm]|sim list|sim off|tree
+  HUD layer: badges, legend, status line; the Classic HUD); `hud2 alert shield|hull|missile|cargo|tractor <3-6>` (that alert's card on the live HUD, 3 s, for frames: UI_HUD2.md 5.40; event `tractor-fail reason=` when the game refuses loot: `core\game\tractorfail.h`; event `loot-tractored loot= ship= units=` for each item a ship's tractor took into its hold, `core\host\events.cpp`); `hud2 notice [credits <balance> <rise> | item <units> <name ...> | full <units> <name ...> | clear]` (the flight notice: bare = what it holds, its alpha, time left, place and `wrap=` (the width its lines wrap to, 0 one line); `full` an item line that says FULL; the others TEST ONLY feed it as a payout / a tractored item would, for sims and frames: UI_HUD2.md 5.43); `hud2 on|off|auto|state|sim <name>[+comm]|sim list|sim off|tree
   <root>|hit <x> <y>` (HUD 2, `modules\hud\docs\UI_HUD2.md`: forced on / off or back to `hud_style`, its state and the published
   layout (the nav line also `event` = the dock / lane / jump answer, `comm` = the subtitles' dialogue panel shows a line,
   `cine` = the letterbox, `fight` = the threat list's rule; HUD 2 FIX2 25 Oct 2026; the `preset=` line, `modules\hud\docs\UI_HUD2_PRESETS.md` 6 step 4:

@@ -86,6 +86,8 @@ int Hot(const navlayout::Rect& r, Action act, int arg)
 
 int Hovered() { return g_hover; }
 
+int Count() { return g_count; }
+
 void Frame(bool allowed)
 {
     for (int i = 0; i < g_nQueue; ++i)

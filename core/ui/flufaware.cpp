@@ -32,7 +32,7 @@ const HudBus* Bus()
     if (!hostcalls::g.GetHudBus)
         return nullptr;
     const HudBus* bus = hostcalls::g.GetHudBus();
-    return bus && bus->version >= 4 && bus->ReadFluf && bus->SetFlufPolicy ? bus : nullptr;
+    return bus && bus->ReadFluf && bus->SetFlufPolicy ? bus : nullptr;
 }
 
 const char* KindName(u8 k)
@@ -74,7 +74,7 @@ void Update(float dt, int policy)
     HudFluf f = {};
     bus->ReadFluf(&f);
     g_state = f;
-    g_haveExtra = bus->version >= 5 && bus->ReadFlufExtra && bus->ReadFlufExtra(&g_extra);
+    g_haveExtra = bus->ReadFlufExtra && bus->ReadFlufExtra(&g_extra);
     // every window by its ImGui name once per change (which window a palette command opened, and whether it takes input)
     {
         std::string names;
@@ -186,7 +186,7 @@ std::string Describe()
 {
     std::ostringstream o;
     if (!Bus())
-        return "fluf: no bus v4 (an older host)\n";
+        return "fluf: no bus\n";
     const HudFluf& f = g_state;
     o << "present=" << int(f.present) << " build=" << (f.build[0] ? f.build : "-") << " policy=" << int(f.policy)
       << " frame=" << f.frame << " textInput=" << int(f.textInput) << " mouseOver=" << int(f.mouseOver)

@@ -1001,7 +1001,7 @@ void DecideBody(const char* reason)
     }
     // `chase_kill` (ASH-START, docs\research\runners\M02.md "## Plan" 1; Source::Hidden + Meta): a later step's kill ship
     // armed now, alive, hostile and targetable (LOOK's kill verdict) is fought now in a step that asks no fight of its own -
-    // M02 "Follow Ashcroft" (22262): the navmarker trip below never targeted him (LOOK_PLAN 7: tgt=0 until +103 s, the pod
+    // M02 "Follow Ashcroft" (22262): the navmarker trip below never targeted him (the look-ahead plan 7, private: tgt=0 until +103 s, the pod
     // segment 115 s against the runners' 18-29 s, who catch him during his ~8 s cruise charge). The combat chases a target
     // faster than our engine in cruise and the coast guard fires on him by engine-kill coasts (ChaseStep)
     if (!laneEscape)

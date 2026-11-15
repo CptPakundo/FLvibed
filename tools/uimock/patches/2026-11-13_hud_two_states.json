@@ -1,0 +1,8 @@
+{
+  "_about": "Un-mixing U3 (13 Nov 2026, the owner's decision 77: the classic HUD and HUD 2 are never mixed): the HUD 2 row has two words, ENABLED / DISABLED (hud_style 2 / 0, the same on every device; ON THE PAD retired, an older file's 1 reads as 2: core\\ui\\hud_rows.h StyleOf). hud_transition's help no longer names the device switch (it fades HUD 2 in when flight starts and out and in round a NeuroNet window in space). docs/UI_SPEC.json already carries both (U1, f43d8d33); this patch brings part2_data.js and the artifact's ui/spec to the same. Apply with specpatch.py.",
+  "rows": {
+    "hud_style": {"options": ["ENABLED", "DISABLED"],
+      "help": "The new flight display and menu look, on the pad and on keyboard and mouse. Disabled: the game's own HUD."},
+    "hud_transition": {"help": "How long HUD 2 takes to fade in when flight starts, and out and in as a NeuroNet window in space opens and closes."}
+  }
+}

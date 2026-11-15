@@ -29,6 +29,7 @@
 #include "skin_rules.h"
 #include "skindialog.h"
 #include "skinkit.h"
+#include "skinlists.h"
 #include "skinload.h"
 #include "skinmenu.h"
 #include "skinover.h"
@@ -42,8 +43,7 @@
 #include "ui/ui.h"
 #include "ui/uiopt.h"
 #include "ui/winplates.h"
-#include "nnpage.h"
-#include "basepage.h"
+#include "pages/pagerun.h"
 #include "uistrip.h"
 #include "windowtext.h"
 #include "game/deckmode.h"
@@ -257,12 +257,11 @@ void HideOwnAll(Win& w)
 }
 
 // One window fails, one window goes native (UI_HUD2_SKIN.md 3.1, 8): a window that fell keeps the game's look until it closes; it is built anew at the next
-// open, which tries again. skin_native holds the same by name, for good.
+// open, which tries again. (skin_native, the setting that held windows native by name, was retired 13 Nov 2026.)
 std::vector<u32> g_fell;
 ULONGLONG g_fellAt = 0;
 bool Fell(u32 root) { return std::find(g_fell.begin(), g_fell.end(), root) != g_fell.end(); }
-bool Listed(const char* label) { return skinrules::NativeListed(hudrows::g.skinNative, label); }
-bool Native(const Win& w) { return Fell(w.root) || Listed(kFamilies[w.fam].label); }
+bool Native(const Win& w) { return Fell(w.root); }
 
 // A window's writes, from the registry's Resolve while the skin is on.
 void WriteWindow(Win& w)
@@ -346,7 +345,7 @@ Win g_page;
 u32 g_pageGen = 0xFFFFFFFFu;
 void PageRule()
 {
-    if (g_pageGen == g_gen || Listed("page"))
+    if (g_pageGen == g_gen)
         return;
     g_pageGen = g_gen;
     u32 head = 0, node = 0;
@@ -590,18 +589,22 @@ void ApplyTip()
     g_wordCursor = cursor;
     const float cx = g_hoverAid ? g_hoverX : static_cast<float>(fl::MouseX()), cy = g_hoverAid ? g_hoverY : static_cast<float>(fl::MouseY());
     const bool onWords = !want && screen && cursor && nnstrip::WordAt(cx, cy, wordCtl, word, wordBox);
-    skinover::WordHelp(onWords ? wordCtl : 0, word, wordBox, g_dt, !Listed("tooltip"), !Listed("rollover"));
+    skinover::WordHelp(onWords ? wordCtl : 0, word, wordBox, g_dt, true, true);
+    // A HUD 2 page standing over a game window (STATUS, INVENTORY, the job board ...): the game's controls under it keep their hover help, which names
+    // what the player does not see - a resting cursor on STATUS's REPUTATION heading showed the game's faction frame's "FRIENDLY" under a row (audit 133_
+    // item 6, measured 14 Nov 2026 with the cursor moved through the device layer). The game's help is hidden there as on a word, and not drawn again.
+    const bool underPage = pagerun::Standing();
     for (int i = 0; i < 2; ++i)
     {
         g_helpHid[i] = 0;
         u8 hs = 0;
-        if (onWords) // (hidden for this pass while the game shows it; not drawn by HUD 2 either)
+        if (onWords || underPage) // (hidden for this pass while the game shows it; not drawn by HUD 2 either)
         {
             skinover::HelpClear(i);
             if (shadow[i] && R8(shadow[i] + kState, hs) && (hs & 3) == 3 && W8(shadow[i] + kState, static_cast<u8>(hs & ~2)))
                 g_helpHid[i] = shadow[i], ++g_helpHides;
         }
-        else if (!want && screen && shadow[i] && !Listed(i == 0 ? "tooltip" : "rollover") && skinover::HelpRead(i, shadow[i]) && R8(shadow[i] + kState, hs) &&
+        else if (!want && screen && shadow[i] && skinover::HelpRead(i, shadow[i]) && R8(shadow[i] + kState, hs) &&
                  W8(shadow[i] + kState, static_cast<u8>(hs & ~2)))
             g_helpHid[i] = shadow[i], ++g_helpHides;
         else
@@ -987,10 +990,7 @@ bool DrawWindow(const Win& w, u32 hov) // true: it drew the focus
 {
     if (Native(w))
         return false;
-    if (nnpage::On() && (w.fam == kFamInventory || w.fam == kFamLog || w.fam == kFamPlayerInfo || w.fam == kFamHelp)) // (the page is the window: no plate, no focus)
-        return false;
-    static const int kFamNews = winplates::FamilyIndex("news");
-    if (basepage::Hides() && (w.fam == kFamInventory || w.fam == kFamDealer || w.fam == kFamShipDealer || w.fam == kFamJobBoard || w.fam == kFamNews))
+    if (pagerun::Covers(w.fam)) // (the page is the window: no plate, no focus)
         return false;
     if (skindialog::IsDialog(w.fam, w.root)) // (their own pass; a dialog that stays the game's keeps today's mark on the confirm alone)
     {
@@ -1082,7 +1082,7 @@ void OneCurrentTab(Win& w)
 {
     if (w.fam != kFamOptions || w.tabs.size() != w.tabCaps.size())
         return;
-    const int page = HostAtLeast(18) && g_host->OptionsPageState ? g_host->OptionsPageState() : 0;
+    const int page = g_host->OptionsPageState ? g_host->OptionsPageState() : 0;
     const u32 current = CurrentTab(w, page); // (0 on FLvibed's page: none of the game's)
     if (!current && page != 2)
         return;
@@ -1150,9 +1150,8 @@ void Draw(void* device)
     neural |= nnstrip::ScrimAlpha() > 0; // (the strip knows the map)
     g_frameScrim = skinrules::EaseStep(g_frameScrim, neural && !g_scene, g_dt, hudrows::g.skinMotion);
     if (!g_modalOpen)
-        skinkit::Scrim(nnpage::On() ? 1.0f : navnew::Grown() || nnstrip::ScrimAlpha() > 0 ? skinrules::kScrimFullMap : skinrules::kScrimMap, g_frameScrim); // (one scrim from MAP to INVENTORY: R8; the map's number, the owner's)
-    if (basepage::Hides())
-        basepage::DrawUnder();
+        skinkit::Scrim(pagerun::Standing() ? 1.0f : navnew::Grown() || nnstrip::ScrimAlpha() > 0 ? skinrules::kScrimFullMap : skinrules::kScrimMap, g_frameScrim); // (one scrim from MAP to INVENTORY: R8; the map's number, the owner's)
+    pagerun::DrawUnder();
     // the docked frame while the game draws it (not under a modal menu: the NavBar is not drawn while paused)
     // (not in a NeuroNet window's close: the game hides the bar's and the box's art that frame while their controls
     // still read shown - the empty plates stood one frame, 26 Oct 2026, research\experience\runs\dealer_close_2026-10-26)
@@ -1176,7 +1175,7 @@ void Draw(void* device)
             const int drew = DrawGuarded(w, hov);
             if (drew < 0)
                 Fall(w, "a fault in its pass");
-            else if (!Native(w) && !nnpage::On() && !skindialog::Skinned(w.root) && PlateMissing(w)) // (a dialog's plate is skindialog's, over the UI pass)
+            else if (!Native(w) && !pagerun::Standing() &&!skindialog::Skinned(w.root) && PlateMissing(w)) // (a dialog's plate is skindialog's, over the UI pass)
                 Fall(w, "no plate could stand");
             focused |= drew > 0, window = true;
         }
@@ -1226,7 +1225,7 @@ void Update(float dt, const Context& c)
     g_ops = &kOps;
 }
 
-bool On() { return g_c.enabled && g_c.style == 1; }
+bool On() { return g_c.enabled && g_c.skin; }
 bool PadOwns() { return g_c.pad; }
 
 void RenderUnder(void* device)
@@ -1242,7 +1241,8 @@ void RenderUnder(void* device)
         if (g_applied || g_tip || wasOn)
             RestoreAll(), g_genSeen = 0xFFFFFFFFu;
         wasOn = false;
-        winplates::ClassicPass(device, g_c.enabled, g_c.pad, g_c.style == 0);
+        // (the skin off under HUD 2: the controller off, or a leave's frame; the classic HUD's own pass, with the game's name card, is the door's)
+        winplates::ClassicPass(device, g_c.enabled, g_c.pad, false);
         return;
     }
     if (!wasOn)
@@ -1330,11 +1330,11 @@ void DrawMap(void* device)
     SetAlpha(1), SetOffset(0, 0);
     skinkit::SetScreen(static_cast<float>(sw), static_cast<float>(sh));
     navskin::DrawOver();
-    nnpage::Draw();
+    pagerun::DrawOver();
     if (!nnstrip::Draw()) // (over the game's UI: the map's viewport runs under it)
         nnstrip::DrawRoom();
     End();
-    nnpage::DrawAfter();
+    pagerun::DrawAfter();
 }
 
 void DrawModal(void* device)
@@ -1404,7 +1404,7 @@ std::string Command(std::istream& in)
     {
         RestoreAll();
         g_genSeen = 0xFFFFFFFFu;
-        return "uiskin: restored (it re-applies next frame while ui_style is 1)";
+        return "uiskin: restored (it re-applies next frame while the skin is on)";
     }
     if (what == "scan") // every control of a known window class in the flat list now (research)
     {
@@ -1441,6 +1441,8 @@ std::string Command(std::istream& in)
         skinover::Sheet(on != 0);
         return std::string("uiskin cursorsheet ") + (on ? "1" : "0");
     }
+    if (what == "lists") // the save lists' rows that fit (skinlists.cpp)
+        return skinlists::Status();
     if (what == "loadplace") // loadplace <0|1>: the loading screen tries the player's base and system (the probe of UI_HUD2_SKIN.md 6.4)
     {
         int on = 0;
@@ -1480,8 +1482,8 @@ std::string Command(std::istream& in)
     }
     if (what == "windows" || what == "state" || what.empty())
     {
-        o << "uiskin on=" << g_on << " style=" << g_c.style << " pad=" << g_c.pad << " gen=" << g_gen
-          << (g_genHost ? " (host v23)" : " (poll 500 ms)") << " rescans=" << g_rescans << " reclears=" << g_reclears
+        o << "uiskin on=" << g_on << " style=" << (g_c.skin ? 1 : 0) << " pad=" << g_c.pad << " gen=" << g_gen
+          << (g_genHost ? " (host counter)" : " (poll 500 ms)") << " rescans=" << g_rescans << " reclears=" << g_reclears
           << " ownRefused=" << g_ownRefused << " reposed=" << g_reposed << "/" << g_reposeFaults << " reposeRefused=" << g_reposeRefused << " modal=" << g_modalOpen << " docked=" << g_dockedFrame
           << " scene=" << g_scene << " scenes=" << g_scenes << " tip=" << (g_tip ? 1 : 0) << " tipHides=" << g_tipHides << " helpHides=" << g_helpHides << " cursor=" << g_wordCursor
           << " ms=" << g_lastMs << " windows=" << g_wins.size() << " page=" << g_page.art.size() << "/" << g_page.own.size() << " fell=" << g_fell.size() << " "

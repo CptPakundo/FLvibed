@@ -1,4 +1,4 @@
-// FLvibed - the [Modules] rows of EXE\FLvibed.ini, pure (docs\MODULES_PLAN.md section 2; tests\modules_rules_test.cpp).
+// FLvibed - the [Modules] rows of EXE\FLvibed.ini, pure (the module split plan's section 2, private; tests\modules_rules_test.cpp).
 // A row that is present wins; a row that is absent inherits, so an older ini behaves as it did and "HUD without Controller"
 // is `controller = 0`, `hud = 1`. subtitles and controller are the first two rows and inherit nothing: absent = on.
 // The other rows are read and logged from P2 on and take effect when their module is cut out (P5-P9). `movies` runs beside

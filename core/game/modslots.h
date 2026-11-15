@@ -1,4 +1,4 @@
-// FLvibed - the cut modules' places in the logic (docs\MODULES_PLAN.md: a module is a namespace, a folder and a switch). The frame calls
+// FLvibed - the cut modules' places in the logic (the module split plan, private; docs\ARCHITECTURE.md is the public view: a module is a namespace, a folder and a switch). The frame calls
 // a slot at the very place it called the module before the cut, so the order is unchanged; a module that is off is an empty slot.
 // A module exports one table; core\logic\modules.cpp fills the slots from the [Modules] rows when the logic starts.
 // A fault in a module stops that module alone: from its Init on every way in, slot or view, is guarded (`Guard` below), and a stopped module is an empty slot and
@@ -201,6 +201,10 @@ inline bool Command(const std::string& op, std::istream& in, std::string& reply)
     return false;
 }
 
+// The calls made into each slot's module through its view (Guard below), whoever made them: core\ui\hud_door.cpp counts from it how much of HUD 2
+// still runs while the classic HUD is selected.
+inline u32 g_viewCalls[kSlots] = {};
+
 // A module's view publishes this in place of the function: `Guard<kHud, hud2::Update>::Call`. A stopped module answers as an absent one: the value's default.
 template <int Slot, auto Fn> struct Guard;
 template <int Slot, class R, class... A, R (*Fn)(A...)> struct Guard<Slot, Fn>
@@ -235,13 +239,13 @@ template <int Slot, class R, class... A, R (*Fn)(A...)> struct Guard<Slot, Fn>
         if constexpr (std::is_void_v<R>)
         {
             if (g[Slot])
-                Run(a...);
+                ++g_viewCalls[Slot], Run(a...);
         }
         else
         {
             R out{};
             if (g[Slot])
-                RunTo(&out, a...);
+                ++g_viewCalls[Slot], RunTo(&out, a...);
             return out;
         }
     }

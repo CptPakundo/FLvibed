@@ -110,8 +110,7 @@ void Update(float dt, bool pad)
     g_pad = pad;
     g_dt = dt;
     g_death = winplates::g_on && nnwin::OpenTab() >= 0 && !nnwin::Multiplayer() && uiclick::FindVisible("LoadAutosaveButton");
-    g_read += dt;
-    nnwin::Frame(dt);
+    g_read += dt; // (the held press is sent by core's frame, nnwin::Frame)
     skinchip::Frame(g_standing || g_roomUp);
 }
 

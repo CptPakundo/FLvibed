@@ -1,4 +1,4 @@
-# A moved draw kit can drift unseen (docs\MODULES_PLAN.md P4): the same scenes of a build, as frames, to compare with another
+# A moved draw kit can drift unseen (the module split plan's P4, private): the same scenes of a build, as frames, to compare with another
 # build's by tests\pixels_compare.py. One background game per size on a numbered instance, from a fixed save: HUD 2, the pad's
 # legend and prompts, the options page on two tabs. Frames in research\experience\runs\pixels_<label>\ (git-ignored).
 # Docked: the prompts, and a dealer under Extended HUD 2. -Dll runs another build's release DLL (build\ref_*), -Modules another row, -Classic hud_style 0.

@@ -1,4 +1,4 @@
-// LOOK's pure half (lookahead.h; modules\autopilot\docs\LOOK_PLAN.md slice L0): the kill / fly verdict over the facts, the safety
+// LOOK's pure half (lookahead.h; the look-ahead plan's slice L0, private): the kill / fly verdict over the facts, the safety
 // predicates that block a candidate, PSN's StageablePlace, the path cost, the log line. No game, no statics.
 #include "lookahead.h"
 
@@ -53,7 +53,7 @@ std::string LeashBreak(const float p[3], float r, const LookFacts& f)
 }
 
 // The towards nag a point breaks: outside the nag's radius and no nearer its target than the ship is now - going there
-// does not close on it (the game samples every 20 s and counts >= 900 m nearer as closing, LOOK_PLAN 4a: a static test
+// does not close on it (the game samples every 20 s and counts >= 900 m nearer as closing, the look-ahead plan 4a: a static test
 // here; velocity is the acting slices' business).
 bool NagBreak(const float p[3], const LookFacts& f)
 {

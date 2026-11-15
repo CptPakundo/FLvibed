@@ -76,6 +76,65 @@ void Test_hud2_notice()
         n.Clear();
         CHECK(n.Empty() && !n.Up());
     }
+    // ---- a take after which the ship cannot take one more unit of that item says FULL (GitHub issue 87, the owner's
+    // decisions 71 and 72 "any item at its limit"): one rule on the game's own answer (CShip::get_space_for_cargo_type),
+    // whatever the item; a refusal (nothing taken) leaves the line as it was; the latest take of a kind decides; no answer,
+    // no limit and a volume-0 item never say FULL
+    {
+        // the game's answer as docs\FREELANCER_RE.md "Loot value and room" reads Common.dll 0x532E0, for the cases below:
+        // a capped class (batteries, nanobots, each munition) the limit less the stack, -1 for no limit; any item with a
+        // volume the hold's free room in whole units; a volume-0 item with no limit of its own 0x7FFFFFFF
+        const auto capped = [](int held, int limit) { return limit == -1 ? -1 : (limit > held ? limit - held : 0); };
+        const auto byVolume = [](float freeRoom, float volume) {
+            return volume > 0 ? static_cast<int>(freeRoom / volume) : 0x7FFFFFFF;
+        };
+        // package 1's cases (shield batteries and nanobots, limit 43), unchanged in their answers
+        CHECK(AtLimit(true, capped(36 + 7, 43)));  // the tester's case: 36 aboard, a 7-stack taken
+        CHECK(AtLimit(true, capped(41 + 2, 43)));  // a partial take trimmed by the game to the room left
+        CHECK(!AtLimit(true, capped(30 + 7, 43))); // below the limit
+        CHECK(!AtLimit(true, capped(43, -1)));     // a ship with no limit for it (the game answers -1)
+        CHECK(!AtLimit(false, 0) && !AtLimit(false, -1)); // no answer from the game: never FULL (fails closed)
+        // munitions: each against its own limit (MAX_PLAYER_AMMO, 50 in HDE, per munition archetype)
+        CHECK(AtLimit(true, capped(43 + 7, 50)));  // a missile take to the limit
+        CHECK(!AtLimit(true, capped(30 + 7, 50))); // a missile take below it
+        // commodities: the hold's room by volume
+        CHECK(AtLimit(true, byVolume(0.0f, 1.0f)));  // the take filled the hold
+        CHECK(AtLimit(true, byVolume(1.5f, 2.0f)));  // room left, but not for one more unit of this volume
+        CHECK(!AtLimit(true, byVolume(5.0f, 1.0f))); // room for five more
+        // a volume-0 item with no limit of its own (a thruster, a gun): never FULL, a full hold or not
+        CHECK(!AtLimit(true, byVolume(0.0f, 0.0f)));
+        Notice n;
+        n.Add(7, L"SHIELD BATTERY", 7, AtLimit(true, capped(36 + 7, 43)));
+        CHECK(n.nItems == 1 && n.items[0].count == 7 && n.items[0].full);
+        n.Step(0.8f, 0);
+        const float left = n.left;
+        n.Add(7, L"SHIELD BATTERY", 0, AtLimit(true, capped(43, 43))); // the second press at 43: refused, nothing taken
+        CHECK(n.items[0].count == 7 && n.items[0].full && n.left == left);
+        Notice b;
+        b.Add(9, L"NANOBOTS", 2, AtLimit(true, capped(41 + 2, 43)));
+        CHECK(b.items[0].count == 2 && b.items[0].full);
+        b.Add(9, L"NANOBOTS", 0, AtLimit(true, capped(0, 0))); // a ship with a limit of 0 takes none: no line changes
+        CHECK(b.nItems == 1 && b.items[0].count == 2);
+        Notice c;
+        c.Add(7, L"SHIELD BATTERY", 7, AtLimit(true, capped(30 + 7, 43)));
+        CHECK(c.items[0].count == 7 && !c.items[0].full);
+        c.Add(7, L"SHIELD BATTERY", 0, AtLimit(true, capped(37, 43))); // a refusal on a line that is not FULL: still not
+        CHECK(c.items[0].count == 7 && !c.items[0].full);
+        c.Add(7, L"SHIELD BATTERY", 6, AtLimit(true, capped(37 + 6, 43))); // the next take fills it: the line now says FULL
+        CHECK(c.items[0].count == 13 && c.items[0].full);
+        c.Add(7, L"SHIELD BATTERY", 1, AtLimit(true, capped(40, 43))); // (used some, took one: the latest take decides)
+        CHECK(c.items[0].count == 14 && !c.items[0].full);
+        c.Add(0, L"NOMAD THRUSTER", 1, AtLimit(true, byVolume(0.0f, 0.0f))); // volume 0, no limit: never FULL
+        CHECK(c.nItems == 2 && !c.items[1].full);
+        // any item, one card: a missile and a commodity beside the battery, each line by its own answer
+        Notice d;
+        d.Add(21, L"JAVELIN MISSILE", 7, AtLimit(true, capped(43 + 7, 50)));
+        d.Add(22, L"WATER", 12, AtLimit(true, byVolume(0.0f, 1.0f)));
+        d.Add(23, L"MINE", 5, AtLimit(true, capped(20 + 5, 50)));
+        CHECK(d.nItems == 3 && d.items[0].full && d.items[1].full && !d.items[2].full);
+        d.Add(22, L"WATER", 0, AtLimit(true, 0)); // the hold refuses the rest: the line unchanged
+        CHECK(d.items[1].count == 12 && d.items[1].full);
+    }
     // ---- the credits watch
     {
         CashWatch w;
@@ -160,7 +219,36 @@ void Test_hud2_notice()
             // the letterbox: no place; no notice: no place
             f.letterbox = true;
             CHECK(!Compute(f, P).noticeShow);
-            f.letterbox = false, f.m.noticeW = 0;
+            f.letterbox = false;
+            // a one-line card too wide for every place (a long name with its FULL, issue 87): its wrapped form takes the
+            // place, within the corner's room; a card that fits keeps its one-line form; no wrapped form: unplaced as before
+            for (int up = 0; up < 2; ++up)
+            {
+                Frame g = f;
+                g.held = up ? 0 : Bit(Ship);
+                g.m.noticeW = g.W, g.m.noticeH = 0.11f * g.H; // (wider than the screen inside its margins)
+                CHECK(!Compute(g, P).noticeShow);
+                // the wrapped forms as DrawNotice measures them: no wider than their width, taller; the widest that finds a
+                // place wins
+                for (int i = 0; i < 3; ++i)
+                    g.m.noticeWrapW[i] = kNoticeWrapH[i] * g.H - 2.0f, g.m.noticeWrapH[i] = (0.13f + 0.03f * i) * g.H;
+                o = Compute(g, P);
+                CHECK(o.noticeShow && o.noticeWrapAt > 0);
+                for (int i = 0; i < 3; ++i)
+                    if (o.noticeWrapAt == kNoticeWrapH[i] * g.H)
+                        CHECK_NEAR(o.notice.x1 - o.notice.x0, g.m.noticeWrapW[i], 0.5f);
+                CHECK(o.res.Placed(ANotice) && o.res.Free(o.notice, kAreasAll & ~o.res.quiet & ~(1u << ANotice)));
+                g.m.noticeW = 0.30f * g.H; // (fits: the one-line form, the wrapped ones unused)
+                o = Compute(g, P);
+                CHECK(o.noticeShow && o.noticeWrapAt == 0);
+                CHECK_NEAR(o.notice.x1 - o.notice.x0, 0.30f * g.H, 0.5f);
+                g.m.noticeW = g.W; // no wrapped form narrower than the line: unplaced, as before
+                for (int i = 0; i < 3; ++i)
+                    g.m.noticeWrapW[i] = 0, g.m.noticeWrapH[i] = 0;
+                o = Compute(g, P);
+                CHECK(!o.noticeShow && o.noticeWrapAt == 0 && !o.res.Placed(ANotice));
+            }
+            f.m.noticeW = 0;
             o = Compute(f, P);
             CHECK(!o.noticeShow && !o.res.Placed(ANotice));
         }
@@ -206,5 +294,48 @@ void Test_hud2_notice()
         b.dlg.cx1 = b.dlg.cx0 = 0;
         const Out oa = Compute(a, S), ob = Compute(b, S);
         CHECK(oa.alertX0 == ob.alertX0 && oa.alertY == ob.alertY);
+    }
+
+    // ---- no place: the notice waits and its clock waits (the owner, 13 Nov 2026, the lower band's sheet Q1 "wait below the
+    // cards", card N12): a waiting card neither counts down nor fades; it runs from where it stood once a place frees
+    {
+        Notice n;
+        n.Add(7, L"SHIELD BATTERY", 7);
+        n.Step(1.0f, 0, true);
+        CHECK(n.left == kHoldS && n.alpha == 0.0f && n.Up());
+        n.Step(0.5f, 0);
+        CHECK(n.left == kHoldS - 0.5f && n.alpha == 1.0f);
+        n.Step(30.0f, 0, true); // (placed, then its place taken: frozen as it stood)
+        CHECK(n.left == kHoldS - 0.5f && n.alpha == 1.0f);
+        n.Step(30.0f, 2, true);
+        CHECK(n.left == kHoldS - 0.5f && n.alpha == 1.0f);
+    }
+    // ... N12's case: 4K, keyboard and mouse, hud_scale 130, a fight (the ship panel up), a two-item loot notice too wide for
+    // the place beside the panel, a radio card over the left column above it: no place - it waits through a long card,
+    // then shows when the card goes, its full time still ahead
+    {
+        const hp::Preset& S = hp::kPresets[0];
+        Frame f;
+        f.W = 3840.0f, f.H = 2160.0f, f.kbm = true, f.hudScale = 130, f.combat = true;
+        const Out bare = Compute(f, S);
+        f.m.noticeW = kBottomBandX0W * f.W - bare.ship.x1; // (beside the panel it would reach the lower centre)
+        f.m.noticeH = 0.15f * f.H;                        // (two item lines and the header)
+        f.dlg.cx0 = 0.03f, f.dlg.cx1 = 0.30f, f.dlg.cy0 = 0.35f, f.dlg.cy1 = (bare.ship.y0 - 0.01f * f.H) / f.H;
+        Notice n;
+        n.Add(7, L"SHIELD BATTERY", 7), n.Add(9, L"NANOBOTS", 4);
+        bool shown = false;
+        for (int frame = 0; frame < 600; ++frame) // 10 s at 60 frames a second, the card up for the first 8
+        {
+            if (frame == 480)
+                f.dlg.cx0 = f.dlg.cx1 = 0;
+            const Out o = Compute(f, S);
+            if (o.noticeShow)
+                shown = true;
+            CHECK(frame < 480 ? !o.noticeShow : o.noticeShow); // (waits under the card; shown once it goes)
+            n.Step(1.0f / 60, 0, NoticeWaits(n.Up(), true, o.noticeShow, false));
+        }
+        CHECK(shown && n.Up() && n.left > kHoldS - 2.1f && n.left < kHoldS - 1.9f); // (only the 2 s it showed ran)
+        // the letterbox places nothing and never holds the time (as before); no card up, nothing waits
+        CHECK(!NoticeWaits(true, true, false, true) && !NoticeWaits(false, true, false, false) && !NoticeWaits(true, false, false, false));
     }
 }

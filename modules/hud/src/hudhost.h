@@ -1,12 +1,9 @@
 // The HUD module's host calls, by the names its code has always used: core's table (core\game\hostcalls.h), filled by whichever entry runs. Every entry
-// a caller reads may be null, and each caller checks it, so an older host or a missing service fails closed.
+// a caller reads may be null, and each caller checks it, so a missing service fails closed.
 #pragma once
 #include "game/hostcalls.h"
 
 static const hostcalls::Table* const g_host = &hostcalls::g;
-
-// The table already holds null for what a host lacks: every version check is true here.
-inline bool HostAtLeast(u32) { return true; }
 
 inline int HostMissionObjects(u32* out, int max) { return hostcalls::g.MissionObjects ? hostcalls::g.MissionObjects(out, max) : 0; }
 inline u32 HostObjectiveNow(ObjectiveStep* out) { return hostcalls::ObjectiveNow(out); }

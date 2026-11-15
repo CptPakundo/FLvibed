@@ -152,7 +152,7 @@ def patch_js(src, patch):
 def row_js(r):
     """A spec row as the mock-up source writes it (T / P / S / K / B helpers)."""
     o = {}
-    for f in ('help', 'tier', 'unit', 'parent', 'words', 'needs', 'preset', 'btn', 'head', 'bundle', 'off_help', 'value_help'):
+    for f in ('help', 'tier', 'unit', 'parent', 'parent_on', 'words', 'needs', 'preset', 'btn', 'head', 'bundle', 'off_help', 'value_help'):
         if f in r and r[f] not in (None, '', [], {}, False, 'player', 'live'):
             o[f] = r[f]
     opts = '{ ' + ', '.join('%s: %s' % (k, js_literal(v) if not isinstance(v, list) else

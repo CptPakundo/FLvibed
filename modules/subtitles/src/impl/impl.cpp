@@ -14,6 +14,7 @@
 #include "movie.h"
 #include "names.h"
 #include "speakers.h"
+#include "game/fl.h"
 #include "game/render.h"
 #include "game/room.h"
 #include "game/space.h"
@@ -824,7 +825,7 @@ static void BusSave(void*) { display::SaveSettings(IniPath()); }
 
 static void RegisterBus()
 {
-    if (g_host->version < 6 || !g_host->GetSettingsBus)
+    if (!g_host->GetSettingsBus)
         return;
     const SettingsBus* bus = g_host->GetSettingsBus();
     if (!bus)
@@ -838,7 +839,7 @@ static void RegisterBus()
 
 static void UnregisterBus()
 {
-    if (g_busSection && g_host->version >= 6 && g_host->GetSettingsBus)
+    if (g_busSection && g_host->GetSettingsBus)
         if (const SettingsBus* bus = g_host->GetSettingsBus())
             bus->Unregister(g_busSection);
     g_busSection = 0;
@@ -849,7 +850,7 @@ static void ImplInit(const HostApi* host)
 {
     g_host = host;
     LogSetSink(host->LogWrite, host->dllDir);
-    room::SetCharacterSource(host->version >= 2 ? host->GetRoomCharacters : nullptr);
+    room::SetCharacterSource(host->GetRoomCharacters);
     Log("Logic DLL init (build %s %s)", __DATE__, __TIME__);
     exe::ResolveAll("subtitles logic");
     RegisterBus(); // before the ini loads: the bus's defaults = the struct initialisers
@@ -875,10 +876,15 @@ static void ImplShutdown()
 // of the game left behind go at once (release acceptance 25 Oct 2026: the quit game's comm lines stood in the main
 // menu over the Options screen). The startup (movies, the first menu) starts in the menu: no transition, nothing to
 // clear.
+// The player's death counts as the game left behind too: the ship's id stays set through the death camera and the death page,
+// and a launch comm's line stood over the death page's buttons (audit 133_ item 5, reported over the main menu after it; measured
+// 14 Nov 2026, lane cutsub: `pages` showed the line on the death page, while MAIN MENU's game load cleared it). Death = the game's death camera is the current one (as
+// core\game\coreframe.cpp's player-death event); a line that starts after it shows as usual.
 static void TrackMenu()
 {
     static bool inMenu = true;
-    const bool menu = !PlayerShip() && !Mem<u32>(exe::PlayerBase);
+    const bool dead = fl::CamDeath() && fl::CurrentCamera() == fl::CamDeath();
+    const bool menu = (!PlayerShip() && !Mem<u32>(exe::PlayerBase)) || dead;
     if (menu && !inMenu)
     {
         mixcues::Stop();
@@ -908,7 +914,7 @@ static void TrackDocked()
 // stacked over SaveS401's first line). Read once per frame: the count only changes at the load itself.
 static void TrackGameLoad()
 {
-    if (g_host->version < 9 || !g_host->GameLoads)
+    if (!g_host->GameLoads)
         return;
     static u32 seen = g_host->GameLoads();
     const u32 loads = g_host->GameLoads();

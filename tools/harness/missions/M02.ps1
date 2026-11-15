@@ -2,7 +2,7 @@
 # Colorado, the waypoint and the practice scan, disabling Cosmo, the lane to Pueblo and its defence, the convoy hunt,
 # Ashcroft and his pod, the jump home, the jailbreak fight, the last lane and Battleship Missouri - until "Mission
 # Result: Success". Start: Manhattan with the mission accepted (objective 22220; campaign save Save05c7.fl,
-# docs\missions\SAVES.md). -From <step> resumes at a runbook step (the mission's own saves put you at steps 3, 10, 11,
+# the scene-save catalogue, private). -From <step> resumes at a runbook step (the mission's own saves put you at steps 3, 10, 11,
 # 16). -God: the game's invincibility (test aid). Prints one line per step; stops at a failure / death.
 # -SceneSaves: save natively at the scene points below and archive the mission's own checkpoints (scene saves:
 # Start-FLScene M02 <step> then this script with -From <step>; catalogue docs\missions\scene_saves.tsv).

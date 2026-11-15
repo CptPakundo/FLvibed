@@ -38,6 +38,7 @@
 #include <istream>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <set>
 #include <sstream>
 #include <string>

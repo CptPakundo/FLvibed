@@ -1,5 +1,5 @@
-// `spawn_charge`'s pure half (modules\autopilot\src\lookahead.h, docs\research\runners\M02_ashcroft_consensus.md "The ONE
-// design"): the stage point over a list of leashes (250 m behind the spawn on his line, 70 m aside, inside every ball;
+// `spawn_charge`'s pure half (modules\autopilot\src\lookahead.h, the M02 Ashcroft escalation notes' consensus, private:
+// "The ONE design"): the stage point over a list of leashes (250 m behind the spawn on his line, 70 m aside, inside every ball;
 // the side that needs the least pull; the refusals "no-point-in-leashes" and "far"), StillFleeing, the charge profiles
 // and the gap predictor ChargeGap, ChaseStep's `fleeing` (the charge at his spawn whatever his speed, the coast at cruise
 // speed), and the keep-station rule of the fight at the point (ChargeKeep). Then M02's geometry: Ashcroft's spawn and run

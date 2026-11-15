@@ -22,6 +22,72 @@ function Get-FLGameProcess {
     Get-Process Freelancer -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path -ieq $exe } | Select-Object -First 1
 }
 
+# How this instance's game ended, as tools\flexitwatch.ps1 logged it (deploy.ps1 starts one per game; EXE\logs\
+# game_exits.log): the line of the game -GamePid, or without it the line of the instance's latest start (its session
+# stamp, EXE\logs\current-session.txt, so never an older game's); waits up to -WaitMs for the line (the watcher writes it
+# a moment after the exit). '' when there is none.
+function Get-FLExitLine([int]$GamePid = 0, [int]$WaitMs = 3000) {
+    $exe = Join-Path (Get-FLInstallDir) 'EXE'
+    $log = Join-Path $exe 'logs\game_exits.log'
+    $want = if ($GamePid) { "pid $GamePid" } else {
+        $cur = Join-Path $exe 'logs\current-session.txt'
+        if (-not [IO.File]::Exists($cur)) { return '' }
+        "session $("$(Get-Content -LiteralPath $cur -TotalCount 1)".Trim())"
+    }
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($true) {
+        if ([IO.File]::Exists($log)) {
+            $tail = @(try { Get-Content -LiteralPath $log -Tail 50 -ErrorAction Stop } catch { })
+            for ($k = $tail.Count - 1; $k -ge 0; $k--) {
+                if (@($tail[$k] -split "`t") -contains $want) { return $tail[$k] }
+            }
+        }
+        if ($sw.ElapsedMilliseconds -ge $WaitMs) { return '' }
+        Start-Sleep -Milliseconds 100
+    }
+}
+
+# The crash recorder's blocks written since -Since (core\host\crashlog.cpp: one block per unhandled exception, appended to the
+# instance's EXE\FLvibed_crash.log, each opening "==== FLvibed crash recorder: unhandled exception, <local date and time> pid <n>").
+# The nets take the time at their start and ask at their end: a run during which a game of theirs crashed is a FAIL that quotes
+# the block (audit 101_, 13 Nov 2026). Chosen by the blocks' own times, not by the file's length, so a file another tool replaced
+# cannot make old blocks look new; a block whose header has no readable time counts as new (fails closed). Each item: one block.
+function Get-FLCrashBlocks([datetime]$Since) {
+    $f = Join-Path (Get-FLInstallDir) 'EXE\FLvibed_crash.log'
+    if (-not [IO.File]::Exists($f)) { return @() }
+    $text = try {
+        $fs = [IO.File]::Open($f, 'Open', 'Read', 'ReadWrite')   # (the game may hold it open for writing)
+        try { [IO.StreamReader]::new($fs).ReadToEnd() } finally { $fs.Dispose() }
+    } catch { return @("(EXE\FLvibed_crash.log could not be read: $($_.Exception.Message))") }
+    $from = $Since.AddSeconds(-1)   # (the header's time is the game's GetLocalTime; this the script's Get-Date: one clock, rounding only)
+    foreach ($b in ($text -split '(?m)^(?===== FLvibed crash recorder:)')) {
+        if ($b -notmatch '^==== FLvibed crash recorder:') { continue }
+        $m = [regex]::Match($b, '^[^\r\n]*?(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)')
+        $t = [datetime]::MinValue
+        if (-not $m.Success -or -not [datetime]::TryParseExact($m.Groups[1].Value, 'yyyy-MM-dd HH:mm:ss', [Globalization.CultureInfo]::InvariantCulture, 'None', [ref]$t) -or $t -ge $from) { $b.TrimEnd() }
+    }
+}
+
+# The debug channels open only in a game started with FLVIBED_TEST=1 (the test switch, core\common.h TestSwitch;
+# deploy.ps1 sets it for every game it starts). A game without it writes "debug channel: closed" near the top of its
+# log, so a channel that is missing while this game runs is that, not a slow start: the message to throw, or $null.
+# The log counts only when written since this game started (the log of the session before stays until FLvibed opens it).
+function Get-FLChannelClosed {
+    $p = Get-FLGameProcess
+    if (-not $p) { return $null }
+    $t0 = try { $p.StartTime } catch { return $null }
+    foreach ($n in 'FLController.log', 'FLSubtitles.log') {
+        $f = Join-Path (Get-FLInstallDir) "EXE\$n"
+        if (-not [IO.File]::Exists($f) -or [IO.File]::GetLastWriteTime($f) -lt $t0) { continue }
+        $s = [IO.File]::Open($f, 'Open', 'Read', 'ReadWrite')
+        try { $buf = New-Object byte[] 65536; $got = $s.Read($buf, 0, $buf.Length) } finally { $s.Dispose() }
+        if ([Text.Encoding]::ASCII.GetString($buf, 0, $got).Contains('debug channel: closed')) {
+            return "the debug channel is closed: this game (pid $($p.Id)) was started without the test switch FLVIBED_TEST=1 (deploy.ps1 sets it for every start; docs\HARNESS.md `"The test switch`")"
+        }
+    }
+    $null
+}
+
 # Before every background test start: FLvibed must load, because the background start's silence and inactive window are
 # FLvibed's own (FLVIBED_BACKGROUND is read inside it). Without FLvibed.dll in EXE\ and its line in dacom.ini the game
 # comes up in front with its sound - it did on 26 Oct 2026 (a test copy uninstalled by the setup, then only the DLL
@@ -112,10 +178,17 @@ function Set-FLInstanceDisplay([string]$N, [ValidateSet('borderless', 'windowed'
         Move-Item -LiteralPath $tmp $exe
     }
     # a fresh exe copy is held briefly by the real-time scanner ("being used by another process", 21 Oct 2026): retry
+    # (40 x 250 ms was too short under load: seen twice at the 1280x800 switch, 14 Nov 2026; now 60 s, and a game of this instance still running is named, not killed)
     $fs = $null
     for ($try = 0; -not $fs; $try++) {
         try { $fs = [IO.File]::Open($exe, 'Open', 'ReadWrite') }
-        catch { if ($try -ge 40) { throw }; Start-Sleep -Milliseconds 250 }
+        catch {
+            if ($try -ge 240) {
+                $holder = @(Get-Process -Name Freelancer -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -eq $exe } catch { $false } } | ForEach-Object { "pid $($_.Id)" }) -join ', '
+                throw "Set-FLInstanceDisplay: $exe stayed locked for 60 s ($($_.Exception.Message))$(if ($holder) { "; a game of this instance still runs it ($holder): stop it first" } else { '; no game of this instance runs it, so a scanner or another tool holds it' })"
+            }
+            Start-Sleep -Milliseconds 250
+        }
     }
     try {
         $rd = { param($off, $n) $fs.Position = $off; $b = New-Object byte[] $n; [void]$fs.Read($b, 0, $n); ($b | ForEach-Object { $_.ToString('X2') }) -join '' }

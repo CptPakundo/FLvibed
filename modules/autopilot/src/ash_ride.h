@@ -1,5 +1,5 @@
-// ASH-RIDE (switch `ash_ride`, with `spawn_charge`, `spawn_stage` and `chase_kill`; docs\research\runners\
-// M02_ashcroft_datapass.md "The ONE proposal", adapted to its P0 fact: in HDE an engine kill at cruise ends cruise - the
+// ASH-RIDE (switch `ash_ride`, with `spawn_charge`, `spawn_stage` and `chase_kill`; the M02 Ashcroft
+// escalation notes' second data pass, private: "The ONE proposal", adapted to its P0 fact: in HDE an engine kill at cruise ends cruise - the
 // speed holds ~300 m/s while killed, the engine back on drops to ~90 m/s within 0.5 s and a new ~8.5 s charge is needed,
 // so the runners' short engine-kill taps do not hold cruise speed here). The pure half: facts in, verdict out - no game
 // call, no statics - so tests\ash_ride_test.cpp drives it. The impure adapter: autopilot_ashride.cpp.

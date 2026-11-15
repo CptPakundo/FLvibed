@@ -8,7 +8,7 @@ A saved ini holds every key of its section, defaults included: a changed default
 through a carry row (`core\settings.h` `Carry`; the file's `settings_rev` key, not a setting). `[Subtitles]` carries one:
 `font` 0 in a file before revision 1 (0.4.6) reads as 2.
 
-## [Controller] - EXE\FLController.ini [Controller] (92 keys; source `modules\controller\src\impl\controller_settings.cpp`)
+## [Controller] - EXE\FLController.ini [Controller] (93 keys; source `modules\controller\src\impl\controller_settings.cpp`)
 
 | Setting | Type | Range | Default | What it does |
 |---|---|---|---|---|
@@ -24,6 +24,7 @@ through a carry row (`core\settings.h` `Carry`; the file's `settings_rev` key, n
 | `trigger_threshold` | float | 0 .. 0.9f | 0.12 | trigger deadzone (0..1) |
 | `pad_backend` | int | 0 .. 1 | 0 | how the controller is read: 0 XInput (default; Xbox pads and pads that act as one), with a PlayStation or Switch pad read natively through SDL3 beside it (`pad_sdl_fallback`); 1 SDL3 always, the button prompts from the pad's type (it starts on its own thread in a few milliseconds, XInput reads the pad meanwhile and if SDL cannot start) |
 | `pad_sdl_fallback` | bool | 0 \| 1 | true | read a PlayStation or Switch pad natively, through SDL3, with Steam Input's or another mapper's output for that pad dropped; off hands the pad to Steam Input or the mapper: FLvibed then reads XInput alone. Steam Deck and Steam Controller are not touched: Steam Input is their native route |
+| `pad_mapper_mouse` | bool | 0 \| 1 | false | with a pad read natively, also drop a mapper's mouse input for that pad (a low-level mouse hook); off by default: nothing needs the hook unless a mapper also sends mouse input for the pad. The mapper's keys are dropped either way |
 | `throttle_rate` | float | 0.1f .. 5 | 0.9 | throttle lever change per second at full left stick |
 | `cursor_speed` | float | 0.1f .. 5 | 1.1 | menu cursor speed, screen heights per second |
 | `wheel_rate` | float | 1 .. 50 | 10.0 | right stick scrolling, notches per second |
@@ -37,12 +38,15 @@ through a carry row (`core\settings.h` `Carry`; the file's `settings_rev` key, n
 | `focus_only` | bool | 0 \| 1 | true | ignore the controller while the game is in the background, in flight and menus alike (a button held when the game comes back is ignored until it is released) |
 | `maneuver_watchdog` | bool | 0 \| 1 | true | 1 = if your ship stalls during a formation, goto or dock (nearly stopped for 3 s, its goal more than 150 m away and not getting closer, you not steering), FLvibed leaves it and issues it again (up to 3 times, 10 s apart) and logs what happened |
 | `run_in_background` | bool | 0 \| 1 | false | 1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back to Windows meanwhile |
+| `mouse_raw` | bool | 0 \| 1 | true | 1 = the mouse moves the game's cursor by its own raw counts, the same distance at any speed (Windows' pointer acceleration does not reach the game; the game's mouse sensitivity stays the scale); 0 = the game's own DirectInput mouse. A tablet, remote desktop or a VM's absolute mouse keeps the game's own either way |
 | `npc_stall_log` | bool | 0 \| 1 | true | writes EXE\FLvibed_npc_stalls.log when a hostile ship near you stops moving: what the game says about it, for bug reports; read only, it changes nothing in the game |
 | `shield_cue` | bool | 0 \| 1 | true | screen-edge cue made of your shield's own hit effect when it is hit (tinted by the weapon), a flash when it fails; HUD 2's shield meter flashes red when low, and its danger alerts glow and pulse |
 | `shield_cue_intensity` | float | 0 .. 2 | 1.0 | shield_cue strength (alpha and size) |
 | `hull_cue` | bool | 0 \| 1 | true | with shield_cue: hull hits show your ship's own hull hit effect at the screen edge, and while the hull is damaged the edges carry your ship's damage effects (sparks, fire, smoke) as the game lights them; HUD 2's hull meter flashes bright red when low |
 | `hull_cue_pattern` | int | 0 .. 2 | 2 | pattern of the hull damage edge, so it never reads as a shield hit: 0 none, 1 armour plates, 2 hexagons (default) |
 | `reticle_cue` | bool | 0 \| 1 | true | a ring pulse at the crosshair: autopilot on (cyan, outward), handed back (amber, inward), nanobots (green) / batteries (blue) used (double ring) |
+| `classic_cues` | bool | 0 \| 1 | false | the classic HUD: the shield, hull and reticle cues on the game's HUD too, each by its own switch (default off: the classic HUD stays the game's own); HUD 2 shows them by their own switches |
+| `idle_cursor` | bool | 0 \| 1 | true | the mouse cursor hides after 3 s without the mouse in calm flight (default on), on both HUDs; with HUD 2 only while hud_fade 1 lets the HUD rest |
 | `autopilot_cancel` | float | 0 .. 1 | 0.35 | Advanced Autopilot (the pad hold, the key or the bar button starts it): stick deflection that hands the ship back to you (0 = never). Its own settings (pilot, engage rules, weapons, personality fields p.<name>) are in the [Autopilot] section |
 | `input_mode` | int | 0 .. 2 | 0 | input device: 0 automatic (the last device used wins, the UI follows in one frame), 1 controller, 2 keyboard and mouse |
 | `glyph_style` | int | 0 .. 4 | 0 | button prompts: 0 automatic (the connected pad's family), 1 Xbox, 2 PlayStation, 3 Nintendo, 4 Steam (Steam Deck / Steam Controller: Xbox's face buttons, L1 / L2 / R1 / R2) |
@@ -73,20 +77,19 @@ through a carry row (`core\settings.h` `Carry`; the file's `settings_rev` key, n
 | `ap_hints` | bool | 0 \| 1 | true | show the autopilot's prompts and status before it was ever used; 0 = nothing about it shows until you switch it on once |
 | `text_size` | int | 80 .. 150 | 100 | size of FLvibed's own UI text (prompts, panels, the status line) in percent; the subtitles have their own |
 | `hud_size` | int | 0 .. 3 | 0 | the size of HUD 2 and FLvibed's text: 0 automatic (large on a handheld, normal elsewhere), 1 small (close to the game's own HUD), 2 normal, 3 large (larger text, no safe margins at the screen's edge) |
-| `game_text_size` | int | 0 .. 150 | 0 | size of the game's own text in every window: 0 automatic (follows hud_size), else 100 to 150 percent; takes effect at the main menu |
+| `game_text_size` | int | 0 .. 150 | 0 | size of the game's own text in every window: 0 automatic (the game's own size on the classic HUD; with HUD 2 it follows hud_size), else 100 to 150 percent on both; takes effect at the main menu |
 | `window_text` | bool | 0 \| 1 | true | HUD 2: the text in the game's windows takes the room it has, the prices most, labels less, headings and buttons not at all |
 | `hud_glyphs` | bool | 0 \| 1 | true | in pad mode the HUD's own buttons carry the glyph of the button that acts on them |
 | `button_legend` | int | 0 .. 1 | 0 | the contextual list of the actions available now with their buttons, right-middle of the screen: 0 = on, 1 = off (the row's order: ON / OFF) |
 | `ap_status_line` | bool | 0 \| 1 | true | the one line under the maneuver bar while the autopilot flies, cruise charges or turret view is on |
-| `show_advanced` | bool | 0 \| 1 | false | the options page adds the developer and tuning keys to every tab, as they are named in the ini files |
+| `show_advanced` | bool | 0 \| 1 | false | the options page adds its less used rows to every tab; a setting with no row is set in its ini file only |
 | `speedrun_timer` | bool | 0 \| 1 | true | speedrun mode: the run time, the current split and the delta against your best on the HUD |
 | `livesplit` | int | 0 .. 1 | 1 | send the timer and splits to LiveSplit on this computer: 0 off, 1 LiveSplit Server (TCP; Control > Start TCP Server in LiveSplit 1.8.29 or newer) |
 | `livesplit_port` | int | 1024 .. 65535 | 16834 | LiveSplit Server's port (default 16834) |
 | `livesplit_gametime` | bool | 0 \| 1 | true | pause LiveSplit's game time during loads (a loadless comparison); real time keeps running |
 | `autopilot_key` | string | - | K | the keyboard key that toggles the autopilot (a key name: K, F10, Insert); a key the game binds is refused |
-| `hud_style` | int | 0 .. 2 | 2 | the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 1 HUD 2 on the pad (keyboard and mouse keep the game's HUD), 2 HUD 2 always (default); HUD 2 includes its look over the menus and rooms (ui_style) |
+| `hud_style` | int | 0 .. 2 | 2 | the HUD: 0 classic (the game's HUD and screens; on the pad with the glyph badges and the legend), 2 HUD 2 (default; on the pad and on keyboard and mouse); HUD 2 includes its look over the menus and rooms; an older release's 1 (HUD 2 on the pad only) reads as 2 |
 | `nn_pause` | int | 0 .. 1 | 1 | the NeuroNet windows in single player, in space: 1 the world stops while one is open (default; the autopilot flying keeps it going), 0 the game goes on behind them |
-| `base_pages` | int | 0 .. 1 | 1 | the dealers, the ship dealer, the job board and the news: 1 HUD 2's pages (default), 0 the game's windows with HUD 2's skin |
 | `hud_fade` | int | 0 .. 1 | 1 | HUD 2 in flight: 0 full (always shown), 1 contextual (fades out in calm flying; each part comes back for 4 s when it matters: steering, boost, a target, firing, a maneuver, a new objective; alerts, low shield / hull, missiles and fights always show) |
 | `hud_opacity` | int | 40 .. 100 | 100 | HUD 2's overall opacity in percent |
 | `hud_scale` | int | 80 .. 130 | 100 | HUD 2's size in percent |
@@ -98,12 +101,10 @@ through a carry row (`core\settings.h` `Carry`; the file's `settings_rev` key, n
 | `hud_alerts` | bool | 0 \| 1 | true | short warning cards (shield failing, missile incoming, cargo hold full, loot the tractor refused and why) with the buttons that answer them |
 | `hud_info` | bool | 0 \| 1 | true | extra information when it matters: docking queue, jump countdown, mission timers, formation, tractor |
 | `hud_wireframes` | bool | 0 \| 1 | true | the game's wireframe views in the target card and the ship panel where they can be kept (else flat icons) |
-| `hud_transition` | int | 0 .. 400 | 120 | advanced: how long HUD 2 takes to fade in when you switch to the controller, in milliseconds |
+| `hud_transition` | int | 0 .. 400 | 120 | advanced: how long HUD 2 takes to fade in when flight starts, and out and in as a NeuroNet window in space opens and closes, in milliseconds |
 | `hud_preset` | int | 0 .. 1 | 0 | experimental: HUD 2's layout preset - 0 Standard (default: today's HUD 2), 1 Focus (a calmer HUD that shows less until it matters); Speedrun and Guided are planned |
 | `maneuver_button` | bool | 0 \| 1 | true | the fifth button on the maneuver bar (keyboard and mouse HUD) toggles the autopilot |
-| `ui_style` | int | 0 .. 1 | 1 | The look of the menus, rooms and dialogs while HUD 2 is on: HUD 2 = its skin over the same screens (default; the game's controls stay as they are); Classic = the game's own |
 | `skin_motion` | int | 0 .. 2 | 0 | HUD 2's motion, in flight and in the menus and dialogs: 0 full, 1 fades (no breathing or travel, a change fades in place), 2 none (a change cuts) |
-| `skin_native` | string | - | ? | advanced, for troubleshooting: a comma list of window names that keep the game's look (pause, navmap, cursor ...); empty by default |
 
 ## [Autopilot] - EXE\FLController.ini [Autopilot] (165 keys; source `modules\autopilot\src\autopilot_settings.cpp`)
 
@@ -295,7 +296,7 @@ through a carry row (`core\settings.h` `Carry`; the file's `settings_rev` key, n
 | `bottom_base` | float | 0 .. 0.9f | 0.025 | bases and menus: the lowest row's bottom edge, as a share of the screen height from the bottom |
 | `bottom_space` | float | 0 .. 0.9f | 0.305 | in space (space_position 0): the same, above the HUD's bottom panels |
 | `bottom_cutscene` | float | 0 .. 0.9f | 0.025 | cutscenes: the same, inside the lower letterbox bar |
-| `space_position` | int | 0 .. 2 | 2 | in flight: 2 a HUD panel at the top centre (the maneuver bar moves left), 1 the top third, 0 between the bottom panels |
+| `space_position` | int | 0 .. 2 | 2 | in flight: 2 a HUD panel at the top centre (the game's maneuver bar moves left, the comm window below it, the objective banner below the panel), 1 the top third, 0 between the bottom panels (1 and 0 leave the bar and the banner where the game puts them) |
 | `font` | int | 0 .. 2 | 2 | 0 the game's own fonts, 1 Segoe UI, 2 HUD 2's font (Agency FB) everywhere: cutscenes, rooms, movies and flight |
 | `motion` | bool | 0 \| 1 | true | lines fade in / out and the stack glides; 0 = instant |
 | `neural_net_severity` | bool | 0 \| 1 | true | Neural Net lines coded by severity (colour, brightness pulses) |
@@ -309,7 +310,7 @@ through a carry row (`core\settings.h` `Carry`; the file's `settings_rev` key, n
 | `hostile_marker` | bool | 0 \| 1 | true | a hostile speaker gets the HUD's red triangle before the name |
 | `hud_arrows` | bool | 0 \| 1 | true | in flight the off-screen target arrows are kept clear of the HUD panels and the subtitles |
 | `space_narrow` | int | 0 .. 5 | 5 | narrow screens (4:3, 5:4) with the top panel: 0-5 layouts, 5 = the name tab with the rows below the top HUD row |
-| `comm_portrait` | bool | 0 \| 1 | true | in flight the game's comm window sits in a slot inside the subtitle panel |
+| `comm_portrait` | bool | 0 \| 1 | true | in flight the game's comm window sits in a slot inside the subtitle panel; 0 its own place (with the top panel below the moved maneuver bar) |
 | `fade_with_channel` | bool | 0 \| 1 | true | a comm's line fades right after the game closes its comm window (never before its reading minimum) |
 | `word_pop` | bool | 0 \| 1 | true | the word being spoken grows slightly (lines with word timings) |
 | `word_timing` | bool | 0 \| 1 | true | pages turn on the speaker's words (forced alignment); 0 = spread over the time on screen |

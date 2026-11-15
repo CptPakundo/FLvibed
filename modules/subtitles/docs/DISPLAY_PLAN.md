@@ -709,7 +709,7 @@ HDE HUD.
    use them yet (its pieces play back to back - the comm path's offset sum would do). Blowoff patrons have no
    `individual_name` in mbases.ini: no name. (Neural Net: done.)
 2. (Done another way, 18 Oct 2026: campaign saves for every mission - the BC46 set - and catalogued scene saves,
-   `..\..\docs\missions\SAVES.md`.)
+   in the private scene-save catalogue.)
 3. Aspect ratios 4:3 / 21:9, fullscreen, windowed; both modules' shared screen layout (above). *21 Oct 2026: the sweep's
    `display-matrix` section shows the flight subtitle in place at 1600x1200, 2560x1080, 1280x720, 3840x2160 and in a
    DPI-unaware process (`..\..\docs\kb\display.md`); fullscreen only attended; the movie lines (since 25 Oct 2026 a child

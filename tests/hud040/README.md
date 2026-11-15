@@ -1,6 +1,6 @@
 # 0.4.0, phase 2: what a running game must show
 
-**Start only on the driver's word that the games are free.** Everything here runs one background game on one instance, muted, never the owner's screen. `run.ps1` is the driver of it; `frames.py` reads its frames. Phase 2 ran on instance 7 on 6 Nov 2026: what it showed is `docs\RELEASE_0.4.0.md`, "Checked for this build" and "Known limits".
+**Start only on the driver's word that the games are free.** Everything here runs one background game on one instance, muted, never the owner's screen. `run.ps1` is the driver of it; `frames.py` reads its frames. Phase 2 ran on instance 7 on 6 Nov 2026: what it showed is in the 0.4.0 release notes (private), "Checked for this build" and "Known limits".
 
 **First, once:** the worktree has no `Install\`. Link it as `fs-10ms`'s worktree does (a junction `FLvibed-040\Install` to `..\FLvibed\Install`, `research\saves` likewise; instance 7 unless the driver names another, never `v11nightly`). `tools\buildlock.ps1 release` builds; `tools\deploy.ps1 -NoBuild -Release -Instance 7` carries the DLL into that instance alone. `tools\deploy.ps1` needs the `first_card` stamp it now writes, or a fresh start stalls on the card.
 
@@ -18,10 +18,10 @@ Run: `tests\hud040\run.ps1 -Label p2a -Only sizes` (PowerShell tool, in the back
 | 8 | `menus` | Options' five tabs, `uiskin seams` per window | seam list empty or each line owned; no word cut at 800 | 2, 15 |
 | 8a | `dock` | A skipped dock at Baltimore, a frame a second for 8 s | The green line (`NN_ArrivalText`, a type-on) reaches its whole text and goes: if it stands cut, fix it. A space comm does not stand on in the base past its voice: if it does, end it at the dock | 1, 5 |
 | 9 | `captures` | 4K and 1280x800 for the spec and the owner | read at full resolution before anyone calls them good | 2, 5 |
-| 10 | `fingerprint` | `tools\fingerprint.ps1 -Label p40 -Live`, `-Compare p40 -Against p11e2` | every difference named in `UI_HUD2_BUILD_040.md`; perf only from a quiet machine, flight within 5 %, skinned screens under 150 us, the map under 300 us (`UI_HUD2_SKIN.md` 10) | 1, 10 |
+| 10 | `fingerprint` | `tools\fingerprint.ps1 -Label p40 -Live`, `-Compare p40 -Against p11e2` | every difference named in the 0.4.0 HUD 2 build record (private); perf only from a quiet machine, flight within 5 %, skinned screens under 150 us, the map under 300 us (`UI_HUD2_SKIN.md` 10) | 1, 10 |
 | 11 | sections | `tools\harness\flsweep.ps1 -Only` the sections that read HUD 2: on the driver's word; a full sweep is the owner's | as each section | n, 30-60 |
 | 12 | Module matrix | `tests\page_modules.ps1`, `tests\page_no_controller.ps1`, `tests\window_modules.ps1`, `[Modules]` hud 0 | off states valid, HUD 2 off frames equal classic (`tests\pixels.ps1 -Classic`, `tests\pixels_compare.py` against main's build) | 6, 20 |
 
 **Budget:** sections 1-10, 16 games, about 110 minutes of background time; 11 and 12 on the driver's word, up to 80 more. A section that fails stops there: read the evidence, fix, rerun that section alone (one retry each, then report). Moments of `UI_HUD2_SKIN.md` 3.1 not reached by these (Alt-Tab, device Reset, mission failure, a story cutscene) are a section of their own once 1-9 stand.
 
-**Not in the scripts, by hand or by another session:** T6 (other plugins on 0x4EF030, 0x421CC0: a second install pass, on the owner's word), T7 (longest names at 0.024 H), a Proton run, 4:3 and 21:9 frames (add them to `-Sizes`), a real pad on the owner's prompt. The other workers' checks are listed in `modules\hud\docs\UI_HUD2_BUILD_040.md`.
+**Not in the scripts, by hand or by another session:** T6 (other plugins on 0x4EF030, 0x421CC0: a second install pass, on the owner's word), T7 (longest names at 0.024 H), a Proton run, 4:3 and 21:9 frames (add them to `-Sizes`), a real pad on the owner's prompt. The other workers' checks are listed in the 0.4.0 HUD 2 build record (private).

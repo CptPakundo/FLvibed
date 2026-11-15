@@ -80,7 +80,7 @@ the Pyros / Kraken line instead, with the same optimizer.
 
 ## What to buy, stage by stage (lawful story path)
 
-Levels per story stage from the campaign saves (docs\missions\SAVES.md): M01 0-1, M02 3, M03 5, M04 7, M05 9, M06 11,
+Levels per story stage from the campaign saves (the scene-save catalogue, private): M01 0-1, M02 3, M03 5, M04 7, M05 9, M06 11,
 M07 12, M08 14, M09 16, M10-M13 17, after the story 21+. Free time between missions asks for more net worth (Content.dll
 story rule: +3500 after M01b, +5200, +7000, +10000, +16000, 0, +36000, +30000; docs\FREELANCER_RE.md).
 

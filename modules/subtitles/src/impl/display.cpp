@@ -17,6 +17,7 @@
 #include "game/textfit.h"
 #include "game/tractorfail.h"
 #include "game/uidraw.h"
+#include "ui/options_page.h"
 #include "linebreak.h"
 #include "stack_fit.h"
 #include "chat_size.h"
@@ -85,8 +86,9 @@ static const settings::Def kDefs[] = {
      "in space (space_position 0): the same, above the HUD's bottom panels"},
     {"bottom_cutscene", Float, &g_set.bottomCutscene, 0, 0.9f, "cutscenes: the same, inside the lower letterbox bar"},
     {"space_position", Int, &g_set.spacePosition, 0, 2,
-     "in flight: 2 a HUD panel at the top centre (the maneuver bar moves left), 1 the top third, 0 between the bottom "
-     "panels"},
+     "in flight: 2 a HUD panel at the top centre (the game's maneuver bar moves left, the comm window below it, the "
+     "objective banner below the panel), 1 the top third, 0 between the bottom panels (1 and 0 leave the bar and the "
+     "banner where the game puts them)"},
     {"font", Int, &g_set.font, 0, 2,
      "0 the game's own fonts, 1 Segoe UI, 2 HUD 2's font (Agency FB) everywhere: cutscenes, rooms, movies and flight"},
     {"motion", Bool, &g_set.motion, 0, 0, "lines fade in / out and the stack glides; 0 = instant"},
@@ -111,7 +113,8 @@ static const settings::Def kDefs[] = {
     {"space_narrow", Int, &g_set.spaceNarrow, 0, 5,
      "narrow screens (4:3, 5:4) with the top panel: 0-5 layouts, 5 = the name tab with the rows below the top HUD row"},
     {"comm_portrait", Bool, &g_set.commPortrait, 0, 0,
-     "in flight the game's comm window sits in a slot inside the subtitle panel"},
+     "in flight the game's comm window sits in a slot inside the subtitle panel; 0 its own place (with the top panel "
+     "below the moved maneuver bar)"},
     {"fade_with_channel", Bool, &g_set.fadeWithChannel, 0, 0,
      "a comm's line fades right after the game closes its comm window (never before its reading minimum)"},
     {"word_pop", Bool, &g_set.wordPop, 0, 0, "the word being spoken grows slightly (lines with word timings)"},
@@ -1156,7 +1159,7 @@ static bool NarrowScreen(int sw, int sh)
 static bool g_mbShifted = false;
 static void PlaceManeuverBar()
 {
-    if (!g_host || g_host->version < 4 || !g_host->ShiftManeuverBar)
+    if (!g_host || !g_host->ShiftManeuverBar)
         return;
     // HUD units: the flight UI camera's x scale, 1.2963 H pixels per unit (2800 at 2160; measured 21 Oct 2026: a shift
     // of -0.4982 moved the buttons 1395 px). Not the live camera: its scale differs between game states (2742 in the
@@ -1176,7 +1179,7 @@ static void PlaceManeuverBar()
     // HUD 2 (its nav block holds the top left; the bar stays shifted as configured - it is hidden, and returns with the
     // game's HUD): the comm window's native place goes below the nav, where it shows whenever the panel holds no slot
     // for it (comm_portrait 0, space_position 0 / 1, a panel too narrow). From the next comm on, as the shift always does.
-    if (g_host->version >= 5 && g_host->ShiftCommWindow && sh > 0)
+    if (g_host->ShiftCommWindow && sh > 0)
     {
         float dy = 0;
         const HudLayout* h2 = Hud2Layout();
@@ -1737,7 +1740,7 @@ static Placement PlaceBase(int sw, int sh, int maxW, int avgChar, float padX)
         HudFloor fl{};
         bool haveFloor = false;
         const HudBus* bus = Bus();
-        if (bus && bus->version >= 3 && bus->FloorFrame && bus->ReadFloor)
+        if (bus && bus->FloorFrame && bus->ReadFloor)
         {
             const u32 f = bus->FloorFrame();
             const ULONGLONG t = GetTickCount64();
@@ -1784,7 +1787,7 @@ static Placement PlaceBase(int sw, int sh, int maxW, int avgChar, float padX)
                 p.bottom);
         }
         lastHow = how;
-        if (bus && bus->version >= 3 && bus->PublishDockedSubs)
+        if (bus && bus->PublishDockedSubs)
         {
             static u32 n = 0;
             HudDockedSubs s{};
@@ -1906,8 +1909,6 @@ static void UpdateBanner()
 static struct
 {
     bool on = false;              // HUD 2 replaces the game's HUD this frame
-    bool feedOnly = false;        // an in-flight cutscene: no HUD 2, its comm feed stays (HudLayout.feed)
-    HudLayout feedL{};            // that layout (kept apart: l stays the last full one, Hud2Last)
     HudLayout l{};                // its layout (read this frame while on; the last one after)
     u32 frame = 0;                // our frame counter (Update)
     u32 busFrame = 0, seenAt = 0; // the bus's publish counter as last seen, and our frame when it last moved
@@ -1926,10 +1927,10 @@ static struct
 
 static const HudBus* Bus()
 {
-    if (!g_host || g_host->version < 8 || !g_host->GetHudBus)
+    if (!g_host || !g_host->GetHudBus)
         return nullptr;
     const HudBus* bus = g_host->GetHudBus();
-    return bus && bus->version >= 1 && bus->PublishLayout && bus->ReadLayout && bus->PublishSubtitles && bus->Frame
+    return bus && bus->PublishLayout && bus->ReadLayout && bus->PublishSubtitles && bus->Frame
                ? bus
                : nullptr;
 }
@@ -1967,7 +1968,7 @@ std::wstring TractorWhy(const std::string& id)
     if (_stricmp(id.c_str(), "nnv_tractor_failure") != 0)
         return {};
     const HudBus* bus = Bus();
-    if (!bus || bus->version < 6 || !bus->ReadTractorFail)
+    if (!bus || !bus->ReadTractorFail)
         return {};
     int reason = 0;
     u32 age = 0;
@@ -2025,17 +2026,12 @@ static void Hud2Update()
         if (f != g_hud2.busFrame)
             g_hud2.busFrame = f, g_hud2.seenAt = g_hud2.frame;
         HudLayout l;
-        g_hud2.feedOnly = false;
-        if (g_hud2.frame - g_hud2.seenAt <= 2 && bus->ReadLayout(&l))
-        {
-            if (l.active)
-                g_hud2.l = l, g_hud2.on = g_set.enabled;
-            else if (l.feed)
-                g_hud2.feedL = l, g_hud2.feedOnly = g_set.enabled;
-        }
+        // (an in-flight cutscene publishes active 0: only the subtitles show there, never the comm feed - issues 12 and 92)
+        if (g_hud2.frame - g_hud2.seenAt <= 2 && bus->ReadLayout(&l) && l.active)
+            g_hud2.l = l, g_hud2.on = g_set.enabled;
         // the prompt lane (bus v2; an older bus has none): fresh = published within our last 2 frames
         g_hud2.laneOn = false;
-        if (bus->version >= 2 && bus->LaneFrame && bus->ReadLane)
+        if (bus->LaneFrame && bus->ReadLane)
         {
             const u32 lf = bus->LaneFrame();
             if (lf != g_hud2.laneBusFrame)
@@ -2065,7 +2061,7 @@ static void FlufRead()
 {
     g_fluf.present = 0, g_fluf.count = 0;
     const HudBus* bus = Bus();
-    if (bus && bus->version >= 4 && bus->ReadFluf)
+    if (bus && bus->ReadFluf)
         bus->ReadFluf(&g_fluf);
     if (g_fluf.present && g_flufStatus != g_fluf.status)
     {
@@ -2292,8 +2288,8 @@ static u32 g_feedShown = 0, g_feedDropped = 0;
 
 bool Hud2Feed(const std::wstring& speaker, u32 rgb, const std::wstring& text, float seconds)
 {
-    const bool feedUp = g_hud2.feedOnly || (g_hud2.on && g_hud2.l.active);
-    if (!g_set.enabled || !feedUp || !Shown((g_hud2.feedOnly ? g_hud2.feedL : g_hud2.l).chatFree) || text.empty())
+    const bool feedUp = g_hud2.on && g_hud2.l.active;
+    if (!g_set.enabled || !feedUp || !Shown(g_hud2.l.chatFree) || text.empty())
         return false;
     FeedLine f;
     const size_t dot = speaker.find(L" \x00B7 ");
@@ -2312,7 +2308,7 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
     if (g_feed.empty())
         return;
     const double now = Now();
-    if ((!g_hud2.on && !g_hud2.feedOnly) || !g_set.enabled)
+    if (!g_hud2.on || !g_set.enabled)
     {
         g_feed.clear(); // HUD 2 went: the chat window takes the next lines (impl.cpp)
         return;
@@ -2327,16 +2323,13 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
     // one comm surface at a time: nothing while the top panel shows (or slides), nor outside flight / in a cutscene
     const u32 cam = Mem<u32>(exe::CurrentCamera);
     // (nor while the game's letterbox is up - a jump's tunnel: HUD 2 collapses to its nav chip and ring then, and the
-    // band would straddle the bar; the lines wait). An in-flight cutscene has its own bars and the feed is the chat there
-    // (feedOnly): its band ends inside them
-    if (g_feed.empty() || g_panel.alpha > 0.01f || g_panel.s > 0 || !cam ||
-        !hk::Call<void*(__cdecl*)()>(exe::GetPlayerIObj) ||
-        (!g_hud2.feedOnly && (exe::CamCutscene.is(cam) || LetterboxBar(sw, sh) > 0)))
+    // band would straddle the bar; the lines wait). Nor over FLvibed's options page: a full page, and the band's cards are flight's
+    if (g_feed.empty() || g_panel.alpha > 0.01f || g_panel.s > 0 || !cam || options_page::IsOpen() ||
+        !hk::Call<void*(__cdecl*)()>(exe::GetPlayerIObj) || exe::CamCutscene.is(cam) || LetterboxBar(sw, sh) > 0)
         return;
-    const HudLayout& l = g_hud2.feedOnly ? g_hud2.feedL : g_hud2.l;
+    const HudLayout& l = g_hud2.l;
     // (a line up: its size stands. The feed's own, 10 % over the top panel's, rebuilt all the fonts twice a frame, 40 ms at 4K, for as long as both showed)
     const int px = !g_blocks.empty() && g_fontsPx > 0 ? g_fontsPx : std::max(8, static_cast<int>(sh * kSizes[g_set.size] + 0.5f));
-    // (feedOnly with a line up: DrawImpl keeps its own face; asking for Agency here too rebuilt the fonts twice a frame)
     if (g_font.px < 0 || g_fontsPx != px || (!g_fontsAgency && (g_hud2.on || g_blocks.empty())) || !g_font.texture)
     {
         std::wstring chars = g_chars;
@@ -2366,10 +2359,13 @@ static void DrawHud2Feed(int sw, int sh, bool ownScene)
     // feed's lowest card): the alert is published on the bus and has the place; where it reaches into the band the feed
     // narrows to end left of it, or - too narrow then - ends above it (older lines that would rise over the band's top
     // wait). The alert never moves for the feed (one owner: no back-and-forth).
+    // (every card HUD 2 draws: the newest and the ones it pushed down a place, `held`: audit 109_ 2a)
     float bottom = l.chatFree.y1 * sh;
-    if (Shown(l.alert))
+    for (const HudRect* a : {&l.alert, &l.held[0], &l.held[1]})
     {
-        const float ax0 = l.alert.x0 * sw, ay0 = l.alert.y0 * sh, ay1 = l.alert.y1 * sh;
+        if (!Shown(*a))
+            continue;
+        const float ax0 = a->x0 * sw, ay0 = a->y0 * sh, ay1 = a->y1 * sh;
         if (ay1 > l.chatFree.y0 * sh && ay0 < bottom && ax0 < x0 + accent + 2 * pad + maxW + fe + gap)
         {
             const float room = ax0 - gap - fe - x0 - accent - 2 * pad;

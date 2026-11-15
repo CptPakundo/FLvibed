@@ -6,18 +6,14 @@
 #include "hud_bus.h"
 #include "settings_bus.h"
 
-// Host API version: v1 = initial, v2 adds GetRoomCharacters, v3 adds GetMovieGraph, v4 adds ShiftManeuverBar, v5 adds
-// ShiftCommWindow, v6 adds GetSettingsBus (the UI build, 25 Oct 2026), v7 SetIntroOverride (the movie_intro row), v8
-// GetHudBus (HUD 2: core\hud_bus.h), v9 GameLoads. A logic DLL must check `version` before using later
-// additions.
-constexpr u32 kHostApiVersion = 9;
+// The host and the logic always match exactly (core\loader.h kLogicApiVersion, bumped with any change here): a new host
+// function is simply a new field, called without a version check.
 
 // Logic DLL API version, checked by the host when loading the logic DLL (v5: OnHudPart, v6: OnManeuverLayout).
 constexpr u32 kImplApiVersion = 6;
 
 struct HostApi
 {
-    u32 version;
     const char* dllDir; // directory of FLvibed.dll (the game's EXE folder), trailing backslash
     void (*LogWrite)(const char* line);
     void* (*GetD3DDevice)(); // IDirect3DDevice8 used by Freelancer (null until created)

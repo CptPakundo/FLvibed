@@ -3,6 +3,135 @@
 Newest release first. Each release opens with a line or two on what it was about; the entries under it say what changed
 for the player, with the GitHub issue number in brackets where there is one.
 
+## 0.4.7 (15 Nov 2026)
+Bug fixes since 0.4.6 (issues 12, 87, 92 and 93 among them), raw mouse input, a calmer classic HUD, and a new page framework underneath HUD 2 that moves all its docked pages onto one
+base with no change in how they look or act. How each fix was checked: `docs/RELEASE_0.4.7.md`.
+
+### Fixed
+
+- **The pad's X deletes a save in the load and save list:** X now enables DELETE there; the game's own "DELETE THIS SAVE?" box still asks before anything goes.
+
+- **HUD 2's load and save lists fit their panel:** they show only the rows that fit (15 at 1280x800, 19 at 4K) instead of drawing rows below the panel; scrolling reaches every save. The classic HUD keeps its 20 rows.
+
+- **The equipment dealer's prices on your side no longer vanish while you scroll (HUD 2):** a row of your ship's list could show no sell price once it scrolled into view. Every row now shows its price, the game's own number. (#93)
+
+- **The controller's D-pad stays inside a confirm question:** on "quit to the main menu?" and on the delete-a-save question, up and down walked the focus off the two answers onto the pause menu or screen behind the question. The D-pad now moves only between the question's answers.
+
+- **No stray hover box on HUD 2's full-screen pages:** with the mouse resting on STATUS (on the REPUTATION heading, say) a box such as "FRIENDLY" could stand under a faction row: the help of the game's own screen hidden under the page. The game's hover help no longer shows while a HUD 2 page stands; the help of HUD 2's own words stays.
+
+- **The maneuver key's name stays the same from start to start:** the first key of the keyboard and mouse maneuver row could read ";" at one start and "~" at the next on a PC with two keyboard layouts installed, which moved the lists beside it by a few pixels. The keys are now named by the default keyboard layout.
+
+- **Only the subtitles in a cutscene (#12, #92):** with HUD 2, a launch, a docking or a mission's scene no longer shows the chat
+  log beside the subtitles: neither the game's own chat window (it came back during a launch from a loaded game) nor HUD 2's side
+  chat. The lines still go into the chat's history.
+- **No radio line over the death page:** a comm line that was showing when your ship blew up no longer stays over the death page's
+  buttons; the screen after your death starts clear.
+- **A controller button and a mouse button held together no longer slow the game:** holding, say, the afterburner trigger on the
+  controller and the left mouse button switched between controller and mouse every frame and slowed the game to a crawl. Only a
+  new press or move now switches the device in use; one held down never does.
+- **The loot and payout card waits for room in HUD 2:** when a button prompt holds the bottom-left corner and nothing else is
+  free, the card no longer climbs above the side chat to mid-screen; it waits, and its few seconds start only once it shows. A
+  prompt that has faded out (prompts shown on change) does not keep the card waiting; when it returns it takes the corner back and
+  the card waits. With a prompt in that corner, the first prompt stands there and the second beside the ship panel, so they read
+  left to right in order.
+- **View closes a Neural Net window pressed right away:** on the pad, View pressed while the map was still sliding open at a base,
+  or in the first moment after a window (STATUS, say) opened in space, left the window open or switched to the map. Both now close
+  it, with or without HUD 2.
+- **A long item name's price stays under it:** with the game's dealer windows in HUD 2's skin, a row whose name scrolls had its
+  price drawn over the name; the price now stands at the row's foot.
+- **No radio card over the options page:** with HUD 2, a radio card no longer draws over the FLVIBED options page; it waits until
+  the page closes.
+- **A refused job keeps its reason on screen:** at HUD 2's job board, "You already have a mission..." stays shown, as on the
+  classic board, instead of vanishing when the first job is chosen again.
+- **Switching to the classic HUD at a dealer:** switching to the classic HUD while one of HUD 2's dealer, ship dealer, job board,
+  news or BEST PRICES pages stood no longer leaves the game's own window off screen or its title, buttons and text broken, and long
+  item names are no longer left blank.
+- **A screen mode change works with the HUD module off:** with `hud = 0`, Alt+Enter or a new resolution could leave the game unable
+  to reset its screen with the picture frozen. FLvibed now releases its drawing state before every reset.
+- **The pad keeps steering after a Neural Net window with the HUD module off:** with `hud = 0`, a bumper pressed in flight while a
+  window slid open could leave the ship deaf to both sticks for the session. It steers again, and the stepped-to tab opens.
+- **HUD 2's panels fit their text at every HUD size:** the target card, contact list, ship panel and loadout panel are measured in
+  HUD 2's own size, so at a HUD size other than the default, or at 1280x800, they no longer come out a few pixels too narrow or wide
+  (at 1280x800 they move by 5 to 22 pixels).
+- **HUD 2's context prompts find another place before one is dropped:** a prompt with no room beside the bottom panels (the second
+  tractor or travel prompt at 1280x800, say) takes the bottom-left corner below the comm messages, or a row above the bottom panels
+  while the ship panel shows; it is left out only when neither has room.
+- **The Linux script runs straight from the zip:** `flvibed-linux.sh` keeps its execute permission; the steps say `bash flvibed-linux.sh`.
+- **No speaker's head through a Neural Net page (#89):** a comm's animated head no longer shows through INVENTORY's icons or other pages
+  in space; with subtitles on, the speaker's name and line still show.
+- **Every prompt of a HUD 2 page shows:** on the pad, pages with more than five prompts (the commodity trader with a quantity
+  slider, the ship dealer's final stage, INVENTORY with a gun selected, and others) no longer cut the last ones, B CLOSE among
+  them. It was in 0.4.6.
+- **Goal panel buttons on the classic HUD:** on the classic HUD with the pad, the goal panel's buttons (TAB, DO NOW, QUEUE, DO NEXT /
+  CHANGE, VALUE, CLOSE) stand in the panel's own foot as glyphs and words, wrapped when the width is short; HUD 2 and the keyboard
+  are unchanged here (the keyboard's foot is the next entry).
+- **The goal panel shows its keyboard and mouse keys:** with the keyboard and mouse, the panel's foot lists its keys: TAB, DO NOW (ENTER) and, under CLOSE, the panel's own keys, SHIFT plus the autopilot key and SHIFT+CLICK on the autopilot button, which were shown nowhere before (SHIFT plus the key is left out when the game's own command holds that key). The foot wraps onto a second line when the width is short.
+
+- **INFO's bold lines are bold:** in HUD 2's INFO page, the game's bold runs (headings in a card) show a synthetic emphasis over the
+  already bold body text.
+- **The arrow keys answer HUD 2's quit and confirm boxes:** on QUIT TO THE MAIN MENU?, EXIT FREELANCER? and the other two-answer
+  boxes, the arrow keys move the highlight between the answers and Enter takes the highlighted one; Escape cancels as before.
+
+### New
+
+- **Raw mouse input, on by default:** the game's mouse moved its cursor further per inch the faster the mouse moved (also without
+  FLVIBED). FLVIBED now gives the game the mouse's own raw movement, so the cursor travels the same distance for the same hand
+  movement at any speed; Windows' pointer acceleration no longer reaches the game, and the game's mouse sensitivity still sets the
+  scale. A tablet, remote desktop or a virtual machine's mouse keeps the game's own. It works with any of FLVIBED's modules on or
+  off. To turn it off: MORE > SYSTEM > **Raw mouse input** on the options page (with Show all settings), or `mouse_raw = 0` in
+  `FLController.ini`.
+- **The loot notice says when a take filled you up:** with HUD 2, `SHIELD BATTERY x7 · FULL`, `JAVELIN MISSILE x7 · FULL`, `WATER x12 · FULL`,
+  counted as the game counts (shield batteries and nanobots against the ship's limit, each missile, mine and countermeasure kind against
+  its own, everything else against the room left in the hold). An item with no room and no limit never says FULL; a press that takes
+  nothing leaves the card as it was. A line too long for the room wraps onto a second line. (issue 87)
+- **INFO is HUD 2's own page:** the Neural Net's INFO page lays out the game's text itself in HUD 2's style (the target's card, the
+  zone, or the base and its market) and the game's window no longer shows behind it. The text scrolls with the wheel, the D-pad and
+  the right stick, and follows a new target while open. D-pad SCROLL is offered only when the text is longer than the page. A
+  base's lists (ships, equipment, commodities) stand under their headings at one indent, with prices in a right-hand column. The
+  classic HUD's INFO window is unchanged.
+- **A crash leaves a note:** when the game closes by itself because of a fault, FLvibed first writes `FLvibed_crash.log` in the
+  game's EXE folder: where the fault happened, in a few lines a bug report can carry. Nothing changes while the game runs.
+
+### Changed
+
+- **The idle cursor has its own switch:** HUD > CUES AND TEXT > **Hide the idle cursor** (`idle_cursor`, on by default) turns off
+  the mouse cursor hiding after 3 seconds in calm flight, also with HUD 2 disabled, where the only switch was a greyed HUD 2 row.
+  On the game's own HUD, HUD in calm flight no longer decides it; with HUD 2 the cursor still hides only while that row is Fades.
+- **No mouse hook for a controller mapper by default:** while FLVIBED reads a PlayStation or Switch controller itself, it still
+  drops the keys a controller mapper sends for that controller, but it no longer installs a system-wide mouse hook to drop the
+  mapper's mouse movement too: nothing needs that hook unless a mapper also sends mouse input for the controller, so there is one
+  hook less in Windows' mouse chain. `pad_mapper_mouse = 1` in `FLController.ini` brings the mouse hook back.
+- **HUD 2 is on or off, the same on every device:** the HUD 2 row is ENABLED or DISABLED; ON THE PAD is gone, and nothing switches
+  between HUD 2 and the game's HUD when you change between the pad and keyboard and mouse. A file with `hud_style = 1` now starts with
+  HUD 2 on both and the next save writes 2; to keep the game's own HUD, set HUD 2 to DISABLED (`hud_style 0`).
+- **HUD 2 always comes with its look over the menus and dealer pages:** the settings Menus and rooms look CLASSIC (`ui_style 0`),
+  Dealers and job board as pages off (`base_pages 0`) and the hidden `skin_native` are gone; a file that holds one now gets HUD 2's
+  look and pages. For the game's own menus, rooms and dealer windows, set HUD 2 to DISABLED.
+- **Turning HUD 2 off on the options page turns off HUD 2 only:** HUD 2: DISABLED gives the game's HUD at once and leaves the HUD
+  module running, so the rows of CUES AND TEXT keep working on the classic HUD (before, it also turned the module off from the next
+  start). The module has its own row, HUD module (Show all), now in CUES AND TEXT. If you turned HUD 2 off with an earlier version,
+  your file still has the HUD module off; that stays (classic HUD, no cues) until you turn the HUD module row or HUD 2 on.
+- **The classic HUD starts without FLvibed's hit effects and crosshair pulses:** the screen-edge hit effects and the ring pulses
+  at the crosshair are off on the classic HUD unless you turn on **Cues on the classic HUD** (`classic_cues`) on the HUD tab; Window
+  text size AUTOMATIC keeps the game's own text size there (it was larger on a handheld). A file from before keeps its values. The cue
+  rows and the text size now sit in one section, CUES AND TEXT, that works with either HUD.
+- **The classic HUD keeps the game's name card in rooms with keyboard and mouse:** the grey name card over a character in a bar or
+  room stands where the game puts it. With the pad it still moves beside the character, clear of the prompts.
+- **The classic HUD shows the game's tooltips in flight with keyboard and mouse:** a HUD button's tooltip and description box show as
+  the game shows them, also when the mouse rests on the button (they were hidden unless the mouse moved in the last 3 seconds). With
+  the pad, and with HUD 2, that rule stays.
+- **The idle mouse cursor hides on the classic HUD too:** with **Hide the idle cursor** on, keyboard and mouse, the cursor hides after 3 seconds
+  without movement in free flight, as with HUD 2.
+- **The job board, the news and INVENTORY stand on the new page framework:** with the repair, dealer, ship dealer, BEST PRICES, LOG, death-page and STATUS pages already there, HUD 2's last Neural Net and base pages now run on the same base. Nothing changes in how they look or act; the checks that compare them field by field with the old pages found no difference.
+
+- **A switch to the classic HUD during a load is classic at once:** the game's own loading screen shows from that moment and the game
+  arrives on the classic HUD. A switch to HUD 2 during a load takes effect after it.
+- **The test tools' channel is closed in a player's game:** the two shared-memory channels the project's test tools use open only when
+  the game is started with `FLVIBED_TEST=1`, so no other program can drive your game through them.
+- **Six settings get a row on the options page** (with Show all settings): Aim assist strength and Slowdown on target (reticle aim only, greyed while aim is Gimbal), Weapon group cue (now with an off switch), Hull damage pattern (none, plates or hexagons), Autopilot on servers (off, travel only or everything, for servers that say nothing about FLvibed; a server's own word wins) and Leave loot worth less than (0 to 10,000 credits). Before, each was set only in the ini files; defaults are unchanged.
+- **The options page shows only real rows:** Show all settings no longer adds the raw list of about 170 internal keys; it adds the
+  page's less used rows. Those keys still work in the ini files (`docs/SETTINGS.md` lists them), and MORE still says when one differs.
+
 ## 0.4.6 (11 Nov 2026)
 A sweep over the players' reports: the two critical bugs first, then the other bugs, then the smaller requests. Playtesting and reports: **Shockwave** ([Shockwave508](https://github.com/Shockwave508)); every numbered issue below is one of those reports.
 How each fix was found and checked: `docs/RELEASE_0.4.6.md`.

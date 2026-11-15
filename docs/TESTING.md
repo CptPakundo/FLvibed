@@ -12,6 +12,7 @@ The testing rules the user set, and how the test install, deploy and sweeps work
   hot-reloadable as one). `build.cmd release`: `build\release\FLvibed.dll` alone.
   `build.cmd impl`: the logic DLL only. `build.cmd sigtool`: `build\sigtool\sigtool.exe` (signatures for `core\flexe.h`). `build.cmd test`: the host-free unit
   tests (`tests\`, seconds, no game; `tools\README.md`). `build.cmd setup`: the players' installer (`tools\setup\`).
+  `build.cmd bench`: flbench.exe in the build folder's bench folder (generated), the design bench (HUD 2's draw kit with no game; `tools\README.md` `hudbench\`).
 - `tools\deploy.ps1` (PowerShell tool, full path): builds, writes `dacom.ini` (FLvibed.dll) and `FLvibed.ini`,
   copies `modules\subtitles\data\*.tsv` to `EXE\FLSubtitles\`, then hot-reloads (game running, DLL unchanged) or starts the
   game, skipping each startup movie natively (`movieskip`: the game's movie loop sees it finished) while its video
@@ -104,9 +105,9 @@ The testing rules the user set, and how the test install, deploy and sweeps work
   1600x1200 (4:3) and 2560x1080 (21:9), borderless 1280x720, a DPI-unaware process - and both modules are checked (back
   buffer size, window border, DPI awareness, HUD projection, pad throttle, HUD 2 coming on with the pad, a subtitle, a
   screenshot per mode under `research\experience\runs\display_<time>`). **HUD 2 in tests** (25 Oct 2026,
-  `modules\hud\docs\UI_HUD2.md`): with `hud_style` 1 (default) HUD 2 replaces the game's panels while the pad is the device - the
+  `modules\hud\docs\UI_HUD2.md`): with `hud_style` 2 (default) HUD 2 replaces the game's panels on every device - the
   virtual pad included - so a test that reads or clicks the game's own HUD controls (`uiitems`, `visible`, `click` on a
-  maneuver / contact / status button) runs before any pad input, with `input_mode 2`, or with `hud_style 0`; the autopilot
+  maneuver / contact / status button) runs with `hud_style 0`; the autopilot
   legs and sets drive no pad and see the game's HUD. HUD 2's own state: debug `hud2 state`, `hudinfo`. Exclusive fullscreen only with `-Attended` (it takes the screen). How the
   modes are switched: `docs\kb\display.md`, `tools\fldata.ps1 Set-FLInstanceDisplay`. The `display-subtitles` section
   judges real dialogue at 4K and 720p borderless, 4:3 and 21:9 windowed (Juni's room scene, the M01a opening cutscene,
@@ -116,61 +117,55 @@ The testing rules the user set, and how the test install, deploy and sweeps work
   above 0.44 H, the objective banner's text below it (~11 min).
 - **Verify a change in game, in the release build too** before calling a stage done (`deploy.ps1 -Release`; the sweep's
   `release-build` section).
+- **A release candidate's checks** (the owner, 11 Nov 2026, after 0.4.6's four rounds): each fix is verified by an
+  agent other than its fixer as soon as it is committed, not at the end (three fixes reported as verified did not hold
+  in the release build); one full item-by-item pass per release candidate, after the branches merge; a fix that lands
+  after that pass is checked by its reach (what its files drive) and the automated nets (unit tests, lint,
+  `tests\pixels.ps1` against the last release), not by another full pass.
+- **The states to check are written at triage, before the fix, and checked by someone other than the fixer** (audit,
+  12 Nov 2026, report 12_: the three 0.4.6 fixes whose "verified" did not hold each failed on a state or a form the
+  fixer never set up - a scroll and its cost per frame, the hint of the control a word stands for rather than of the
+  hidden button under it, a load from space into a richer save - not on dev against release). Each bug or issue gets,
+  when it is triaged, its list of states: the display sizes, pad and mouse, docked and in space, the transitions and
+  loads into and out of it, moving or scrolling and the cost per frame where it draws, and the form the result must
+  take (what exactly the player sees or reads). The fix is checked against that list by an agent or person who did not
+  write it, in the release build; a fault found while checking that is older than the release goes to the next one.
+  This holds for a fix landing after the full pass too: it gets its own states checked, just no new full pass.
+- **The two interfaces' nets** (the HUD 2 rebuild, 12 Nov 2026): every HUD 2 restructure package, and any change the
+  lint names for a shared file (`tools\module_lint.py --changed <paths>`, `docs\ARCHITECTURE.md` "The two interfaces"),
+  runs them on the release build before and after the change, each on its own instance:
+  - **The NeuroNet pages:** `tests\nn_pages.ps1 -Instance <n>` walks LOG, MAP, INVENTORY, STATUS and INFO in the pad
+    and keyboard-and-mouse forms, at 3840x2160 and 1280x800, docked and in space, asserting on live values. About 3.5
+    minutes; `-Sizes` / `-Forms` / `-Places` narrow it. A KNOWN line marks a fault already in the release.
+  - **The classic HUD:** `tests\classic_frames.ps1 [-Instance <n>]` compares 8 frames of the classic HUD (`hud_style 0`)
+    at both sizes with a pinned set: flight in both forms, FLvibed's page hosted in the game's Options screen, the bar
+    with the pad's prompt bar, the game's equipment dealer walk. About 4 minutes. The flight frames are taken in a still,
+    empty sky (SaveC706 raised 25 km) and compared in every cell, no mask (12 Nov 2026). A FAIL names the frame and the
+    changed cells (read its `_diff.png`); an INCONCLUSIVE (exit 3: only cells that moved in that run's own window changed)
+    is run again, and one that comes back on the same cells is a FAIL; an ERROR (exit 2) is a state the run could not
+    reach or hold (the sky not still, a ship within 10 km) and proves nothing. Re-pin (`-Pin`, about 12 minutes; the
+    steps: `docs\HARNESS.md`) only on purpose, when a change to the classic HUD was asked for.
+  - **The INFO page against the game's window** (audit R3): `tests\info_compare.ps1 [-Instance <n>]` after any change to
+    the INFO page or its composers (`core\game\screens\nnhelp_*`, `modules\hud\src\pages\neuronet\info_*`, `pages\pagerun.*`, INFO's shell in `nnpage.cpp`). About 2.5 minutes.
+  - **The base pages' recorded baseline** (audit 72_, the page framework's T0): `tests\base_pages.ps1 -Mode check
+    [-Instance <n>]` after every change to a docked page (`basepage.*`, the dealers' and boards' parts of `padbases.cpp`,
+    `nnpage.cpp`'s INVENTORY / STATUS / LOG and jettison, and every F2-F5 package of `70b_`), on the release build. It walks
+    every base page in both forms and both sizes and compares every recorded field with the baseline (taken on a457e082, re-recorded on 13 Nov 2026 after the owner's prompt rule with the pages' drawn texts: audit 101_)
+    (before the framework moved anything); a FAIL names the size, form, page, state and field. Masked, by name in the
+    script: the job board's offers, the accepted job and the bar's characters (random at each start). Re-record (`-Mode
+    record`, then the new sha256 into the script) only when a change to what a page shows or does was asked for, never to
+    make a FAIL pass; a record with a walk error writes nothing. About 25 minutes (one game per size); `-Sizes` / `-Forms` /
+    `-Pages` narrow it (a narrowed check compares only what it walked).
+
+## Parallel lanes (the owner, 12 Nov 2026)
+C++ work runs in several **lanes** at once (at most four with games): each a git worktree `..\FLvibed-lane-<name>` on its own branch,
+with its own build folder, lock and game test instance; made and removed only with `tools\lane.ps1`. The rules (when, worktrees,
+the game limit, the shared baselines a lane never re-pins, the hooks' view of main): `docs\TESTING_DETAIL.md` "Parallel lanes". Read it before
+working in or starting a lane.
 
 ## Speedrun splits: checkpoints, par, fail limits, the test loop (the user, 24 Oct 2026)
-The user's overhaul of the testing methodology: "a set list of checkpoints throughout the game's story ... right before
-or right after a notable event ... where player interactivity is involved"; every section between checkpoints is a split
-to beat; "meet or beat the fastest times for each story mission in its whole, and ... not fall significantly behind at
-each separate checkpoint"; a catastrophic mistake or delay stops the test as a failure, judged "by both analyzing prior
-test data and also by analyzing what the speedrunners did in that segment"; the speedrun data and the test data kept
-current, tidy and regression-free; the research data referred to at every step. The model is LiveSplit's (splits,
-personal best, best segments / gold, sum of best, comparisons).
-- **The checkpoints**: `docs\checkpoints.tsv` (hand-curated; 193 over the 14 mission legs, made from the three recordings'
-  banners / events / curated section times and our logs' objective ids). Between missions a free-time leg is one
-  segment (mission end -> the next accept; not built yet). Each row: how our log shows it (`ours`: `obj:<id>` the
-  objective first shown after the previous checkpoint, or up to 5 s before it; `control` the HUD back in space after a
-  launch / its space scene; `land`, `launch`, `cutscene`, `success`; `kill:<n>` the n-th destroyed marked target;
-  `save:<ids>` the mission's checkpoint save with that description id, the log's `mission-save ids=<ids>`, 8 ms after
-  the game's GAME SAVED message 1890 - M01b.end = 32120, where the runners' split ends: CP-M01b, 30 Oct 2026; in game
-  HostApi v35 MissionSave), how the
-  recordings show it (`runner`: a banner, an event, `hud`, `end`; hand-read `r1..r3` win, `src` says from where), the room
-  scenes the runners watched inside the segment (`scene`: HDE's Esc skips them, so they come out of the runners' times)
-  and what happens in the segment. Add or move a checkpoint only with both sides' data; then `tools\splits.py build`.
-- **Par** (`docs\splits_reference.tsv`, generated by `splits.py build`): per leg the golden run = the fastest of the three
-  recordings scene-free (the user: "the golden benchmark would be the fastest speedrun"); a checkpoint its footage does
-  not show is placed by the other runs' share of the segment. The **mission target**: the whole leg at or under par.
-  **Pace** per checkpoint: AHEAD (at or under par), ok, BEHIND = over par by more than max(10 s, 5 %).
-- **Our splits** come from every leg's `FLController.log` (+ the transcript's leg start): `splits.py history` ->
-  `research\experience\legs\splits.tsv` (derived, regenerable); **PB** = the fastest full PASS leg's splits, **gold** = the
-  best time of each segment in any run (a part run's first segment is never timed: the load re-sends its objective).
-  `docs\SPLITS.md` (generated, committed with the leg results) = par, runners, gold, PB, spread, limits per checkpoint,
-  the sum of best per leg; `docs\livesplit\<leg>.lss` = LiveSplit files with those comparisons (open them in LiveSplit to
-  see a leg as the runners do; nothing of ours depends on LiveSplit).
-- **Fail limits - a catastrophic mistake or delay** (`tools\harness\missions\leg_checkpoints.tsv`, generated by
-  `splits.py limits`): a segment fails when it takes longer than max(2x the runners' slowest time for it, +45 s;
-  1.5x our gold + 20 s) - far outside both the runners' worst and our own best; a full leg also fails when a checkpoint
-  is not reached by 1.15x the PB's split + 30 s. The own-history bounds tighten by themselves as golds and PBs improve;
-  a segment limit is never below the PB run's own segment + 20 s (29 Oct 2026: the new M13 PB was over an 82 s runner
-  bound at M13.sinclair), and a good run older than the PB counts as superseded for any limit (the floor that let it
-  pass was its own while it was the PB: 30 Oct 2026, mpb23 after the gate s7arb PB); a stop-at run is no good run.
-  `kill:` checkpoints are soft (our log names only the autopilot's own target's kills): unseen at their limit, it carries
-  over to the next. So is an `obj:` checkpoint the script skipped (30 Oct 2026, M05 in gate s5shadow: 22867 posted in the
-  jump tunnel, 22870 shown): since the previous checkpoint a later checkpoint's objective showed, or one whose text id
-  lies between this checkpoint's and the next obj checkpoint's (ids are not in story order across a leg) - `Leg.ps1`
-  logs "checkpoint <cp> skipped", `splits.tsv` its `skip` column, the judge carries the limit over. `Leg.ps1` checks the limits live (SPLIT lines, `cp` rows in `phases.tsv`, `FAILED (FAIL STATE
-  (CHECKPOINT ...))`); `Leg.ps1 -Label <leg> -Full -ReplayLog <leg folder>` runs the same code over an archived log.
-  **Validation** (re-run after any change to the limit constants, the checkpoints or the matching): `splits.py replay`
-  must show `GOOD RUNS FAILED: 0` (good = a full PASS within 10 % of the PB; a good run older than the gold that now
-  bounds the segment is "superseded"), and the live code must stop the same runs at the same checkpoints (24 Oct 2026:
-  262 archived full legs, all agree; the replay stops 29 failed runs early, ~2 h of test time).
-- **After every leg** `flleg.ps1` writes `splits.txt` (this run against par / PB / gold) beside the evidence and runs
-  `splits.py update` (history, limits, SPLITS.md, LiveSplit files): the next leg runs against the new bests.
-- **Where the evidence lives** (tidied 24 Oct 2026): `research\experience\legs\` = one folder per leg run
-  (`<time>_<label>_i<n>`: transcript, phases.tsv, splits.txt, the game's logs, end clip on failure) + `legs.tsv` (the
-  history, the source of truth), `splits.tsv` (derived), `race.tsv`; `legs\sets\` = the gate / set drivers' tables and
-  logs (`gate_<tag>.tsv`, detached-pwsh logs: write new ones there); `research\experience\misc\` = loose probe logs of
-  18-23 Oct; `stalls.jsonl` / `jobs.jsonl` stay at the top (the harness appends to them); videos by
-  `tools\prune_evidence.ps1`. Name every set's runs `<leg>-<set>-<variant>` so `splits.py compare` can select them.
+The method (checkpoints, splits, par, fail limits, evidence layout) moved to `docs\TESTING_DETAIL.md` "Speedrun splits"; the test loop
+below stays here. The runners' times are the minimum goal for every leg and segment (the owner, 29 Oct 2026).
 
 ### The test loop (replaces "judge a change by three runs")
 0. **The runners' times are the minimum goal for every leg and segment** (the owner, 29 Oct 2026: "their times are your
@@ -183,7 +178,9 @@ personal best, best segments / gold, sum of best, comparisons).
    leg's dossier entry (`docs\LEG_DOSSIER.md`) and our runs of that segment (`splits.tsv`, the leg folders). Never a
    segment the runners' data does not cover without saying so. **This holds for every leg test, probes and failure
    reads included** (the owner, 29 Oct 2026: a 12-run M13 battleship probe and a Ghidra read went by without one look at
-   the runners - interceptors first, the battleship at 0 m, torpedoes from 0 m): enforced by the command guard's
+   the runners - interceptors first, the battleship at 0 m, torpedoes from 0 m). The enforcement below is ARCHIVED
+   since 12 Nov 2026 with the other leg-run guards (off until the leg work resumes and the private harness's archive
+   is switched on; the rule itself stands): the command guard's
    `speedrun-ref` (the first `flleg` / `flset` on a leg in a session is refused with the leg's runner data until the
    command states "# ref: <their approach vs ours>"; `speedrun-ref-read` does the same once for the first read of a
    leg's run evidence), the verdict nudge, which puts the same data beside every leg's RESULT line
@@ -222,14 +219,14 @@ whatever its rotated order (30 Oct 2026: the first of each instance's own -Order
    set, its smallest detectable effect** (30 Oct 2026: three M13 sets of 24 legs
 ended without a verdict): about 2.5 x sigma x sqrt(2 / cap) - M13.bsdown's sigma 26.6 s at a cap of 12 gives ~27 s; a
 change the runners' data does not put above that is not worth the set (cut the variance first: fixed dt, seeds, a
-checkpoint save closer to the change). `splits.py selftest` checks its math and arguments. Computed by `tools\reach.py`; since 31 Oct 2026 the guard `reach-short` refuses a set / arms launch whose `reach=<checkpoint>:<runs per arm>:<expected s>` lies below it (`reach=probe` for a run that judges nothing). A segment-local change
+checkpoint save closer to the change). `splits.py selftest` checks its math and arguments. Computed by `tools\reach.py`; 31 Oct - 12 Nov 2026 (archived since with the leg-run guards) the guard `reach-short` refused a set / arms launch whose `reach=<checkpoint>:<runs per arm>:<expected s>` lies below it (`reach=probe` for a run that judges nothing). A segment-local change
    may be judged on that segment's runs from the nearest checkpoint save (cheaper), the full leg after. All runs of a
    set on one commit, at once
    (`flleg.ps1 -Instance 1/2/3`), check-ins on all; no code change while they run. A set side = `tools\flset.ps1 -Instance
    n -Leg L -Set s -Variant v -Runs r -ApSet 'k v,k v'` (one pwsh per instance; switches A/B in one build); several
    arms interleaved on one instance: `tools\flarms.ps1` (rotate the arm order per instance). The set drivers (`flset`,
-   `flarms`, `flgate`) run every leg with `flleg.ps1 -NoTables` and regenerate the tables (`legtable.js` -> `docs\LEGS.md`,
-   `splits.py update`) once per set after their loop; each leg still writes its own `splits.txt`.
+   `flarms`, `flgate`) run every leg with `flleg.ps1 -NoTables` and regenerate the tables (`legtable.js` -> `docs\LEGS.md`
+   and `docs\LEG_DOSSIER.md`, `splits.py update`) once per set after their loop; each leg still writes its own `splits.txt`.
    **Before a segment A/B** (30 Oct 2026, JRS: a pair started 314 m from the hole, past every event the change acts on):
    grep a seed run's log for the change's own events (its switch's event names) and start from a save BEFORE the first
    of them, the `-SprtSeg` the segment that contains them; no such event in the window = the test cannot cover it.
@@ -365,8 +362,8 @@ one in first). Fixtures (`Install\Freelancer HD Edition\SAVE\Accts\SinglePlayer`
   fixture; the sweep's fight-matrix section builds it when missing): fights with a strong ship.
 - `Save2b9b` M01 Manhattan bar (Juni = talk_story), `Save4559` / `Save49c2` M01 Manhattan (story start; check the
   objective before use).
-- Campaign saves for every mission (a third-party set, local in `research\saves\`): `missions\SAVES.md` (catalogue, how
-  to use them safely; `tools\flsave.js` decodes and catalogues saves - use it, do not guess counts or loadouts). Never
+- Campaign saves for every mission (a third-party set, local in `research\saves\`): the scene-save catalogue (private;
+  how to use them safely; `tools\flsave.js` decodes and catalogues saves - use it, do not guess counts or loadouts). Never
   `AutoSave.fl` / `Restart.fl`. Scene saves (saved natively right before re-testable scenes): `missions\scene_saves.tsv`.
 
 **Pick (or build) the fixture that reaches the test's subject with the least unrelated time** (user, 18 Oct 2026: a
@@ -415,7 +412,7 @@ saves.
   `Act_NagDistTowards / Leaving` escalate to FAIL): no code reloads, rebuilds or long experiments during a timed phase;
   select targets explicitly (a stale test target once shot the friendly USV Brandt).
 - **Scene saves** (user, 18 Oct 2026): in long missions save natively right before each scene or fight likely to be
-  re-tested and catalogue it (`missions\SAVES.md`, `scene_saves.tsv`); re-tests start seconds before the subject
+  re-tested and catalogue it (the private scene-save catalogue, `docs\missions\scene_saves.tsv`); re-tests start seconds before the subject
   (mission scripts: `-From <step>`).
 - **Mission scripting must never stall a test**: read the mission's script (`DATA\MISSIONS\<mission>\*.ini`, the
   runbooks) for what comes next (the next room, offer, popup, briefing), use `Get-FLStoryState`, and let the waits
@@ -460,14 +457,15 @@ saves.
 
 ## Session state and the environment hooks
 - the private handoff = the current state only (mode, now / next, plan status, open issues), **under 8,000 characters** -
-  Claude Code caps hook output at 10,000 and a longer handoff arrived as a 2 KB preview (20 Oct 2026); finished items
-  move to the private handoff history (append, never delete). Both are versioned since 21 Oct 2026 (they were git-ignored).
+  Claude Code caps hook output at 10,000 and a longer handoff arrived as a 2 KB preview (20 Oct 2026); a finished item
+  is deleted from it (git keeps every version). The private handoff history is frozen since 12 Nov 2026 (the owner,
+  audit decision 18: kept and searchable, its pointers still valid, nothing appended). Both are versioned since 21 Oct 2026.
 - The environment's hooks (versioned in the private session hooks since 29 Oct 2026, installed by the private harness installer;
   all of the harness: the private Claude Code harness notes): `compact-handoff.js` injects the handoff after every compaction and
   into every new or resumed session (matchers `compact|startup|resume` since 21 Oct 2026; after a compaction or resume
   with the live git / game / set-driver state), `context-warn.js` warns near the context limit and notices a compaction
-  by the context drop, `afk-guard.js` (Stop) blocks idle turn ends while `..\..\.claude\afk.flag` exists (the user is
-  AFK on a plan; delete it when they are back), `guard.js` refuses the repeat-offender shell commands, `edit-check.js`
+  by the context drop, `afk-guard.js` (Stop) blocks the run's driver's idle turn ends while `..\..\.claude\afk.flag` exists
+  (the user is AFK on a plan; delete it when they are back; the flag's `driver=` line names the session it holds), `guard.js` refuses the repeat-offender shell commands, `edit-check.js`
   checks each written file.
 - Keep the handoff and the docs consistent both ways (user, 20 Oct 2026): a newer handoff fact goes into the docs, a
   doc fact that matters to the current work goes into the handoff; recency usually wins, correctness and the guiding
@@ -475,51 +473,25 @@ saves.
 - A fresh session per work package is preferred over compaction (audit, 21 Oct 2026): end at a clean point (commit,
   handoff current, game closed), start the next session; compaction is the fallback when a package overruns.
 
-## AFK sessions: continuous work (user, 23 Oct 2026)
-The user's AFK go-ahead covers working, iterating, fixing, testing, self-reflection and course corrections, without
-asking, **continuously until the user says otherwise** (it also allowed a child session near a full context, which an
-AFK turn cannot start: 3.). "Without asking" is not leave for what needs the owner's word (a push, tag, release or
-GitHub post; the leg gate or full sweep; deleting what the run did not make; a system-wide install; a game in front or
-with sound): that is neither done nor asked about, it is written under "WAITS ON THE OWNER" in the handoff and the run
-goes on (the afk-run skill "Never end it yourself"). **Since 31 Oct 2026 the run is one owner-started Desktop session (the owner's model and effort, or the recommended setup: the afk-run skill; Remote
-Control on) that compacts in place:** scheduled successor runs cannot switch Remote Control on (the owner's
-non-negotiable rule), so rollover is suspended (`..\..\.claude\afk.norollover`; the afk-run skill "Rollover"). **How
-the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
-1. **Start**: create `..\..\.claude\afk.flag` (one line: "AFK continuous - plan in FLvibed\HANDOFF.txt", the time). The
-   Stop hook (`afk-guard.js`) then blocks idle turn ends. Create a **session cron keep-alive** (CronCreate, every 10 min
-   off the :00 / :30 marks, recreated before its 7-day expiry - the schedule and its reason: the `afk-run` skill,
-   a private session skill; prompt: "AFK continuation: continue the next unfinished item in
-   FLvibed\HANDOFF.txt; never end idle") - a turn that
-   ends while a background task or cron is pending is allowed by the hook, and the cron (not the task's notification
-   alone) guarantees the session is re-prompted. Every turn ends with a background task running (a test, a check-in).
-2. **Work**: the handoff's AFK plan in order; record each decision taken for the user in the handoff ("AFK decisions",
-   one line each) and each result in the dossier / docs; commit after every finished change; `tools\backup.ps1` every few
-   hours and at package ends. Course-correct when stuck: after 2-3 failed attempts at one
-   thing, step back, write down why, change approach or move to the next item.
-3. **Rollover near a full context** - since 30 Oct 2026 (the owner's standing OK) by a one-shot scheduled task of the
-   app that starts a fresh successor session, with a handshake that never drops the run
-   (the private handover script: the predecessor releases only after the successor took over; the task runs every 15 min, so
-   no takeover in 35 min = abort and work on; `-Request` refuses while one of the session's subagents still works, and
-   the predecessor keeps its running work going until HANDED - 30 Oct 2026 evening, test the private handover test):
-   the afk-run skill "Rollover", the successor's prompt
-   a private session skill. Before that: not possible from an AFK turn - `start_session` is refused in a turn the cron
-   keep-alive or a task notification started ("only on the user's own words"), and the user is not there to start one
-   (session 8, 23 Oct 2026). Long runs are carried by compaction with the handoff current at every milestone (4.); only
-   the user's return ends AFK (delete the flag and the cron), then the end-of-run report `..\..\AFK_SUMMARY_<date>.md`
-   (its sections: the `afk-run` skill). A rollover from the owner's own turn lists the handing-over session in
-   `..\..\.claude\afk.released` as "<session id><TAB><ISO time>"; `afk-guard.js` honours a line for 24 h (older lines and
-   the old id-only format are ignored: 29 Oct 2026, stale ids had left sessions unguarded).
-4. **Compaction contingency** (compaction carried an AFK session for the first time on 23 Oct 2026): the handoff is the
-   only memory that survives, so it is brought current **at every set boundary** (a set started / judged, a change
-   committed) - its "RESUME HERE" block names what is running (set label, instances, start time, the switch list), what
-   was decided and the next step. After a compaction (or on any doubt): the post-compaction audit before anything else -
-   read the injected handoff; `git status` / `git log -5` in FLvibed; which games run (`Get-CimInstance
-   Win32_Process -Filter "Name='Freelancer.exe'"`) and which set drivers (`pwsh` with `flset` / `flleg` in the command
-   line); the set logs in `research\experience\legs\sets\`; the cron keep-alive exists (CronList - recreate it if not);
-   re-arm the result Monitor (it expires after 30 min). Then judge a finished set or wait for a running one - never start
-   a second driver on an instance that has one, never build while a set runs (the legs copy the DLLs at their boot) - once every leg of the set has booted (the
-   set log's last `run n/n` line on each instance), a build is safe and goes to the next set (session 12).
-5. **The improvement loop and its periodic review** (the user, 24 Oct 2026: keep improving the speedrun autopilot
+## AFK sessions: unattended runs (user, 23 Oct 2026; rebuilt 12 Nov 2026)
+An unattended run is a list of packages the owner approved before leaving: a run file per date (private, like the Claude Code harness). It
+has `main` in order, then a ranked `reserve`. Each package has 2-5 done checks, a judge that is not its worker, and a
+budget (game boots, spawns, hours). The run's token and hours caps are the owner's, set per run, with no default. One
+driver session (the owner's model pick, Remote Control on) works one package at a time in a fresh background subagent,
+has it judged by another agent, reads only the verdict file and marks the package. When main and the reserve are
+worked, or a cap is spent, it writes a report of at most 300 words (`..\..\AFK_SUMMARY_<date>.md`) and stops: no
+rollover, no successor session. Budgets are counted by hooks and at every game boot, from the start commit's copy of
+the run file; the budget hooks, the run file and the settings are hashed and locked during the run. What needs the
+owner's word (a push, tag, release or GitHub post; the leg gate or full sweep; deleting what the run did not make; a
+system-wide install; a game in front or with sound) is neither done nor asked about: it is recorded for him and listed
+in the report. A leg package runs only on a leg whose runners' study the owner signed off; its bar is the leg's par,
+and two sets without a better judged verdict (or its budget spent) end it. How a run is started, kept up and ended:
+the afk-run skill (a private session skill). The tools and hooks: the private Claude Code harness notes, UNATTENDED_RUNS.md (not exported). The lane
+and subagent lessons: the AFK playbook (a private process document). In-game tests during a run follow this page as always: background,
+muted, the given instance, judged from frames and the live log. The one unattended run ever started (13 Nov 2026) was aborted after two minutes, because its hooks are not lane-aware (a game start from a lane ran the lane's copy of the run tool and tripped the tamper stop); that is not fixed, so no run starts without the owner.
+
+**The improvement loop and its periodic review** (attended leg work - in an unattended run a leg package ends by its own
+rule above; the user, 24 Oct 2026: keep improving the speedrun autopilot
    without stopping, to meet par; "a periodic check for drifts and regressions, so that your continuous testing and
    changes doesn't just loop infinitely without meaningful improvements"). The loop is "The test loop" above, one
    target at a time from the handoff's ordered list. **Every 3 judged sets or every 2 hours**, whichever comes first:
@@ -532,7 +504,7 @@ the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
      PROGRESS): stop changing that
      target. Write down why the last attempts failed (dossier), then either change the approach (probe / research the
      mechanism first - "Probe before a fix") or move to the next target in the list. Never a fourth variation of the
-     same idea. Enforced since 29 Oct 2026: the command guard (the private command guard `set-no-progress`) refuses
+     same idea. Enforced 29 Oct - 12 Nov 2026 (archived since with the other leg-run guards; the rule stands): the command guard (the private command guard `set-no-progress`) refuses
      `flset.ps1` on such a leg unless the command names the new approach (`# guard-ok:set-no-progress <hypothesis>`,
      logged in `..\.claude\guard_fires.tsv`).
    - **UNRELIABLE** (PASS under 5 / 6 in a recent set): fail states first - read every failed run before any speed work.
@@ -541,11 +513,12 @@ the run works, binding:** `docs\AFK_PLAYBOOK.md`. The protocol:
    - after a shared change is kept: a leg gate is due - "gate due: <what changed>" into the handoff; the gate itself
      runs only when the owner names it, AFK too (test loop 6; no gate by the clock). After one: `splits.py compare
      'gate-<last>$' 'gate-<new>$'`; a leg that got WORSE is the next target.
-   - the research check-up round (docs\research\README.md) when the review shows stale notes and nothing is running.
+   - a research note's re-check only where the run's work touched its area (docs\research\README.md; the scheduled
+     round was lifted on 12 Nov 2026: stale notes in the review are information).
    The review's line goes into the handoff ("REVIEW <time>: ..."). `drift_check` (each check isolated: a broken one
    is an ERROR row, not a lost review) also writes `..\..\.claude\drift_last.txt`, the one machine-written record of the
    last review (its `health` and `overrides` lines too: the method's own trend, rules overridden 3+ times in 24 h);
-   while AFK the command guard reads it (since 29 Oct 2026, T31): `review-due` refuses a set launch or a dev build when
+   while AFK the command guard read it (29 Oct - 12 Nov 2026, T31; archived since with the leg-run guards): `review-due` refuses a set launch or a dev build when
    it is missing, over 2 h old or unfinished, `stop-the-line` refuses a set while it shows ATTENTION / ERROR on
    decisions / replay / saves (and a flleg run from an unfit save) - each refusal names the step that clears it (the
    `afk-run` skill, the private Claude Code harness notes). A kept change is turned on by default only after

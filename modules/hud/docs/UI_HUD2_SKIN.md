@@ -1,6 +1,6 @@
 # HUD 2 as a complete skin of the game (P11f design, 5 Nov 2026)
 
-**Status:** design for the owner's reading; the build's record is `UI_HUD2_BUILD_040.md`: code on `build-040`, none of it seen in game. Game facts are from the docs, the install's data and decompiled code unless marked; section 12 lists the probes that must pass before the build leans on them. Research: `docs\research\hud-skin.md`, evidence `research\evidence\hud2_skin\` (readers, verifiers, facts, frames).
+**Status:** design for the owner's reading; the build's record is the 0.4.0 HUD 2 build record (private): code on `build-040`, none of it seen in game. Game facts are from the docs, the install's data and decompiled code unless marked; section 12 lists the probes that must pass before the build leans on them. Research: `docs\research\hud-skin.md`, evidence `research\evidence\hud2_skin\` (readers, verifiers, facts, frames).
 
 **The owner, 5 Nov 2026:** "HUD 2 should actually be a complete skin replace for the game when enabled, so that should extend to things like the navmap, quit UI etc." This overrides the "Left native (decided)" list of `UI_HUD2_EXTENDED.md` (9.10, 10): the main menu, the loading screen, the nav map's drawing, the welcome texts. With HUD 2 off the game stays exactly classic. The 3D scene and rooms are no skin matter; every 2D screen, window, dialog, overlay and transition is. The tester's "not fully integrated" (the game's HUD showing briefly at every screen load) belongs here: nothing native may flash, at any load, room change, menu or mission moment.
 
@@ -42,7 +42,7 @@ Caught in game, native art reaches the screen by:
 
 The 2 Hz search and the 3-frame debounce were not what the tester saw; a load shows no 3-frame or 500 ms stand.
 
-**The rule: every root has a row: hide / keep / keep the root, hide its art / its home.** A true deny would blank what is wanted (`UI_HUD2_INPUTS.md` 3: brackets, arrows, the banner, waypoints, `NN_Scanner`, group control, briefing, the cruise countdown). **An unknown root stays visible and is logged.** Hides run at the UI pass's entry, from the raw signal, on the very first pass. Windows clear bit 1 only: bit 0 stops a window's update (`UI_HUD2_INPUTS.md` 4). The alerts go only after each has its home: `TrailAlert` is the only tail warning until the ring mark stands.
+**The rule: every root has a row: hide / keep / keep the root, hide its art / its home.** A true deny would blank what is wanted (the HUD 2 inputs record 3, private: brackets, arrows, the banner, waypoints, `NN_Scanner`, group control, briefing, the cruise countdown). **An unknown root stays visible and is logged.** Hides run at the UI pass's entry, from the raw signal, on the very first pass. Windows clear bit 1 only: bit 0 stops a window's update (the HUD 2 inputs record 4, private). The alerts go only after each has its home: `TrailAlert` is the only tail warning until the ring mark stands.
 
 **Fall to native does not exist today** (one `__except`, the whole module): build it per window, retry at the next open, since windows rebuild anyway; keep the strip independent of families; say so in one lane line, or an ornate window reads as a new bug.
 
@@ -93,7 +93,7 @@ HUD 2's as built: navy glass, light-blue hairline, chamfers top-left and bottom-
 | **Mustard focus** | one focus per screen: the block, the bar outside its left edge, the word in INK | every list and menu | every chip |
 | **The HOLD ring** | a held action shows its hold as a ring filling round the glyph | prompts | any hold, with a tap beside it where the action is a purchase or a loss (R16, 6.9) |
 
-**Floors and sizes (the owner, 6 Nov 2026, D7).** One row, `hud_size`: AUTOMATIC, SMALL, NORMAL, LARGE, on the HUD / Display tab (`UI_HUD2_INPUTS.md` 7). **Floor 0.024 H on Normal, 0.021 H only on Small, with Small keeping Normal's text at 1280x800.** Large is today's Deck mode: text 120, margins 0.0125 W. Sizes in this document are Normal's. `deck_mode` retires into the row, a saved value migrating. Valve's 9 / 12 px counts the smallest character, so lower case in a thin font is measured from frames, not from this number: the lint moves to rendered ink. Glyph letters count as text: a 0.032 H glyph's letter is about 0.023 H, so the skin's lane uses 0.034 H where the row allows.
+**Floors and sizes (the owner, 6 Nov 2026, D7).** One row, `hud_size`: AUTOMATIC, SMALL, NORMAL, LARGE, on the HUD / Display tab (the HUD 2 inputs record 7, private). **Floor 0.024 H on Normal, 0.021 H only on Small, with Small keeping Normal's text at 1280x800.** Large is today's Deck mode: text 120, margins 0.0125 W. Sizes in this document are Normal's. `deck_mode` retires into the row, a saved value migrating. Valve's 9 / 12 px counts the smallest character, so lower case in a thin font is measured from frames, not from this number: the lint moves to rendered ink. Glyph letters count as text: a 0.032 H glyph's letter is about 0.023 H, so the skin's lane uses 0.034 H where the row allows.
 
 **Density and contrast.** The skin adds no padding that costs a row: a native list keeps its pitch and its row count. Text over glass meets 4.5:1 against the worst background behind it, read from frames over the brightest rooms; 3:1 for large text and inactive items.
 
@@ -274,6 +274,7 @@ One dialog primitive for NN_Confirm, the Exit dialog, NN_Prompt, NN_Error, the M
 
 - **Words (decided, no setting):** the captions are the game's controls; the skin hides them and draws verbs on the same hit boxes (Shadow). If the dialog's text is not the one the row expects (a mod, another language), the game's own words stay in the same primitive.
 - **Order:** the game's: action left, safe right. Windows does the same.
+- **The keyboard (the owner, 14 Nov 2026):** the arrow keys move the focus between the two answers as the pad's D-pad does, by the same means: the game's cursor onto the answer's button (`skindialog::ArrowKey`; Left the action, Right the safe answer, Up / Down the other one, `skinrules::ArrowToAction`); Enter takes the focused answer (`EnterKey`, decision 2 below); Escape is the game's. Not on the cargo demand: the flight runs on under it and its keys stay the game's. The game's own dialogs take no arrow key (`docs\FREELANCER_RE.md` "Dialogs"), so on the classic look (no skin) the arrows still do nothing there.
 - **B / Escape:** the safe answer everywhere. No hold: a dialog is the friction, and XAG 115 says not to require holds for destructive actions. FLvibed's own one-second X hold to delete a save breaks that: a press of X now opens the game's confirm (section 13). Amber edge where progress can be lost; red stays with hostility, one meaning per colour.
 - **Overwrite:** the game's save-overwrite question was not located. If the seam audit finds one, XAG 115 asks that the player sees what is overwritten.
 - **Stale claim guarded:** "your last save" stays true because it says nothing of when.
@@ -355,9 +356,9 @@ Only the map's side windows and the box's icons change where a route is drawn; b
 The skin adds no wait anywhere and no motion on a path a speedrun measures.
 
 ### 6.9 Flight, windows, the dealer (the owner's rulings on the sheets, 6 Nov 2026; frames `decisions\R*.jpg`)
-- **K&M in flight (R4, all of B):** one lit chip with its key in place of the maneuver row's pictograms; the whole row in words on peek; NEXT and CLEAR in words on the target buttons; two to four threat rows at floor size while no target is held. Read them with `hud_fade` on first. The keys stand inside the K&M card's click row (`UI_HUD2_SIZE_AUDIT.md`), not over its lower edge as the sheet draws them.
+- **K&M in flight (R4, all of B):** one lit chip with its key in place of the maneuver row's pictograms; the whole row in words on peek; NEXT and CLEAR in words on the target buttons; two to four threat rows at floor size while no target is held. Read them with `hud_fade` on first. The keys stand inside the K&M card's click row (the HUD 2 size audit, private), not over its lower edge as the sheet draws them.
 - **The ring (R6):** a navy keyline of 1-2 px on every arc, no area added; in the same pass the place line goes to `kChrome`. The sheet's sun rows show the intent; its ragged outline over the planet is the mock's.
-- **The bottom of the reticle:** form C, `UI_HUD2_INPUTS.md` 7b.
+- **The bottom of the reticle:** form C, the HUD 2 inputs record 7b (private).
 - **One frame for the five windows (R8):** one top line, one left edge, one scrim from MAP to INVENTORY. Windows grow by pitch and font, not rows, by the Layout tier, Deck first: probe 18 proves `NN_Inventory`, whose hit boxes are unproven. The hook on 0x55E120 goes with the strip's work. INFO's plate ends at its content. Still to state in one line at step 6: the docked bumper hand-over (room bar, SIDE, strip).
 - **One distance (R13):** the target card and the threat rows read the game's surface value, so card, bracket and cue agree on one number. The card shows it beside the bracket: an exception to "one value, one place", written with the cue's in `UI_HUD2_PRESETS.md` 1.7. The name stands on both too, as a holding position: the bracket and its label are open (section 16).
 - **Buying and selling (R16):** the hold on the row stays. One press up from the row reaches the game's BUY or SELL, and a tap on it does the trade. The lane says which: HOLD BUY or HOLD SELL on the row, BUY or SELL on the button. On a filter A reads SELECT and a hold does nothing, whatever row stands selected behind the focus (`dealerrules::HoldAct`). One focus: the row gives up its block when the button takes it. The controller module's (`padbases.cpp`): `PanelFocus` only reads focus, the tap is blocked on purpose today, and the re-select after a trade needs care.
@@ -417,6 +418,8 @@ Both forms, the same frames; only lanes and focus differ. A = accept, B = back o
 - **JFLP, FLSharp:** change the map's content and waypoint selection; the skin calls the native paths, so both carry through. Check in a second-install pass.
 - **Discovery, Crossfire:** their own exe patches and art; signatures decide per symbol.
 - **`skin_native`** (hidden key, comma list of family labels): a window stays native by name, for troubleshooting and reports.
+  *[Retired 13 Nov 2026 with `ui_style` and `base_pages` (the owner's answer to card Q2 of audit 102_): no row; the one-window fall-back
+  for the session after a failed read stays.]*
 - **Classic:** `hud_style 0` or `ui_style 0`: no write, no draw, as today. Tested by comparing frames, not assumed.
 
 ## 9. Mock frames
@@ -456,7 +459,7 @@ Flight: unchanged by design; the gate's work is the compares of today, the 2 Hz 
 | 14 | The zone filters and any link in the map's info card | the map's route table |
 | 15 | Inventory docked | the strip docked |
 | 16 | The new-information flash on the log's button | LOG tab's mark |
-| 17 | `hud2 lint` per context (calm, travel, Focus, 21:9, 4:3): `boxed=` and prompts | `UI_HUD2_SIZE_AUDIT.md` 6 |
+| 17 | `hud2 lint` per context (calm, travel, Focus, 21:9, 4:3): `boxed=` and prompts | the HUD 2 size audit 6 (private) |
 
 ### 12a. Results (the P11f gate, 5 Nov 2026; a probe build in a throwaway worktree, no code kept; scripts, logs and frames `research\evidence\hud2_gate\probes\`)
 | # | Result | What was seen | What it changes |
@@ -470,13 +473,13 @@ Flight: unchanged by design; the gate's work is the compares of today, the 2 Hz 
 | 14 | **PARTIAL** | `NavMapAllFilter`, `HostileFilter`, `FriendlyFilter` appear under Political and Patrol, top right of the map. The map's info card links: not tried | chips as 6.1's table; add "POLITICAL, PATROLS only" |
 | 15 | **PASS** | The inventory opens docked, skin family `inventory`. `FREELANCER_RE`'s line is wrong | the word stays lit docked |
 | 16 | **NOT RUN** | The flash stays unlocated | the LOG tab's mark stays open |
-| 17 | **DONE** | `UI_HUD2_SIZE_AUDIT.md` 6. Travel contexts all over 10 %; a real fight reads 18 %, not 15.4 %. Only Standard read; 21:9 and 4:3 not | the audit's totals re-read |
+| 17 | **DONE** | The HUD 2 size audit 6 (private). Travel contexts all over 10 %; a real fight reads 18 %, not 15.4 %. Only Standard read; 21:9 and 4:3 not | the audit's totals re-read |
 | W1 | **PASS** | Fresh ship: one real group. Three assigns: three groups, stored rows carry the mask | section 3's list stands |
 | W2 | **PARTIAL** | Reach: guns muzzle x life (600 x 1.00 = 600; 600 x 0.92 = 550), LOCK seekers their seeker range (1000, 1500). `CanFire`: 0 ok, angle, refire seen. 3, 4, 6, 7 and a destroyed gun not reached: cruise read "angle" | the reach rule stands |
 | W3 | **PASS for the ring** | Turret view: ring and row's place stay (`state=turret`). The turret's aim point not read | section 7's row stands; aim point open |
 | W4 | **NOT RUN** | needs a mission weapon lock | cell state open |
 | W5 | **NOT RUN** | the test ship has no turret | open |
-| W6 | **CHANGES THE DESIGN'S PICTURE** | 16 samples, target closing in the guns' arc from 1300 m to under 500 m: M and T "ok" inside reach, `locked=0` in every sample | **A lit M or T does not mean locked.** As 4 says, but a player may read it so. Whether a lock ever forms with this ship is not shown: the autopilot flew, no missile fired. The owner's call: `UI_HUD2_INPUTS.md` 9 |
+| W6 | **CHANGES THE DESIGN'S PICTURE** | 16 samples, target closing in the guns' arc from 1300 m to under 500 m: M and T "ok" inside reach, `locked=0` in every sample | **A lit M or T does not mean locked.** As 4 says, but a player may read it so. Whether a lock ever forms with this ship is not shown: the autopilot flew, no missile fired. The owner's call: the HUD 2 inputs record 9 (private) |
 
 **The map at the owner's size:** the design's frames now hold the real map: `sheet_05.jpg`.
 
@@ -509,7 +512,7 @@ Flight: unchanged by design; the gate's work is the compares of today, the 2 Hz 
 **No fix should be spent on these; the overhaul replaces them:**
 - The HUD flash of P11e (already moved here).
 - `windowtext` row `NeuroNetNavMap`'s 0.05 H drop (`UI_HUD2.md` 5.38): replaced by 6.1. Its open reads (a three-row comm line over the map, a real mouse on the map's objects) carry to 6.1's tests.
-- `UI_BUILD.md` gap "nav map objects not controls" and `padmap.h`'s "no D-pad snapping": answered by the object list.
+- The UI build record's (private) gap "nav map objects not controls" and `padmap.h`'s "no D-pad snapping": answered by the object list.
 - `UI_HUD2_EXTENDED.md` 12's left items: the confirm's ornate frame, the job board's native tooltips, the death dialog's focus; 16's gaps: the front load buttons, the popup's title.
 - `UI_HUD2.md` 5.34's "subtitles' comm plate covers the toolbar".
 
@@ -519,7 +522,7 @@ Flight: unchanged by design; the gate's work is the compares of today, the 2 Hz 
 For release 0.4.0, after 0.3.5, on the owner's go. Each step proved at 4K and 1280x800, pad and K&M, with HUD 2 off unchanged, and committed alone.
 1. **Probes** still owed: dialog classes, **a real lock**, hit boxes under hidden map controls, probe 18 (`NN_Inventory`'s Layout), the new map's three (16), 0x55E120, Alt-Tab, device Reset, mission failure, a story cutscene, the art under a letterbox, the load's place name on each path with probe 9's two cells not run (6.4).
 2. **The registry, then each alert's home, then the hide** (3.1, 6.8): the first-frame flash, the box under windows; the seam audit.
-3. **Flight:** the lint's `boxed` split into steady and awake peak, `hud_size` with the floors of D7, the size audit's cuts, the ring's keyline with the place line in `kChrome`, the reticle's bottom in form C (issue 28; `UI_HUD2_INPUTS.md` 7b), the alerts, the card's and the threat rows' distance, K&M's chip, words and threat rows (6.9); the Neural Net column at 800.
+3. **Flight:** the lint's `boxed` split into steady and awake peak, `hud_size` with the floors of D7, the size audit's cuts, the ring's keyline with the place line in `kChrome`, the reticle's bottom in form C (issue 28; the HUD 2 inputs record 7b, private), the alerts, the card's and the threat rows' distance, K&M's chip, words and threat rows (6.9); the Neural Net column at 800.
 3a. **The targeting display** (6.10): probes T1-T8 and the diamond's art first (the note's 3.4), the core reader, then the form; a clip on real motion before the side-change and edge rules are fixed.
 3b. **Failing bars** (6.11), after the targeting display's bars stand; the alert cards' beat with them; a flash test.
 4. **Primitives** (4) with a grammar table, the focus word in INK.
@@ -536,18 +539,18 @@ For release 0.4.0, after 0.3.5, on the owner's go. Each step proved at 4K and 12
 **The owner's:** the go, after 0.3.5.
 
 **Decided (the owner, 6 Nov 2026): the targeting display, 6.10.** It replaces the native bracket, label and bars on screen, and closes what they reopened:
-- 3.1 and `UI_HUD2_INPUTS.md` 3: `Targetable_Objects` stays a kept root; below it three part rows, as 6.10.
+- 3.1 and the HUD 2 inputs record 3 (private): `Targetable_Objects` stays a kept root; below it three part rows, as 6.10.
 - The cue's dark cells stay, the owner's choice; the label they answered is gone but for a kept diamond (fallback of 6.10).
 - R13's exception stands: the card keeps name and distance (the owner).
 - Section 14's target label over the card is moot: the native label goes.
 
-**Decided (the owner, 6 Nov 2026):** R12, the grammar, in section 4. The travel budget: fix the metric, step 3 below `hud_size`: `hud2 lint` reports **steady** (after `hud_fade`) and **awake peak** apart, and the budgets are read against each. R4, R6, R8, R9, R10, R13, R16, R17 and the reticle's bottom: `UI_HUD2_CRITIQUE.md` 7, third table; written in at 4, 6.2-6.5, 6.9 and `UI_HUD2_INPUTS.md` 7b.
+**Decided (the owner, 6 Nov 2026):** R12, the grammar, in section 4. The travel budget: fix the metric, step 3 below `hud_size`: `hud2 lint` reports **steady** (after `hud_fade`) and **awake peak** apart, and the budgets are read against each. R4, R6, R8, R9, R10, R13, R16, R17 and the reticle's bottom: `UI_HUD2_CRITIQUE.md` 7, third table; written in at 4, 6.2-6.5, 6.9 and the HUD 2 inputs record 7b (private).
 
 **The game's, by probe (step 1):** whether a lock can be had at all (48 samples, none); whether hidden map controls still take clicks; the dialogs' caption routes; `NN_Inventory`'s growth; the load's place name on each path; for the new map: the label flag on every view, the overlay's transform through pan and zoom, the objects' "known" flag.
 
 **Stale here on purpose:** the design's rows of `UI_HUD2_EXTENDED.md` stand until step 12.
 
-## 17. Build state of steps 4, 6, 7, 9 (6 Nov 2026; branch `build-040-skin`; written before the games: what they showed is `docs\RELEASE_0.4.0.md`)
+## 17. Build state of steps 4, 6, 7, 9 (6 Nov 2026; branch `build-040-skin`; written before the games: what they showed is in the 0.4.0 release notes, private; `CHANGELOG.md` has the release's summary)
 Built to the unit tests and the release build only. Files: `skin_rules.h` (tested), `skinkit.*`, `skindialog.*`, `skinmenu.*`, `skinload.*`, `skinover.*`; `uiskin`, `windowtext`, `winplates`, `padmenus`, `padbases`, `router`.
 
 **What the code found against this design:**

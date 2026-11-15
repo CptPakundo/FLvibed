@@ -6,12 +6,11 @@
 // fails closed); positions from the native controls' rectangles (ui::ControlRect) and fractions of H. The readers run at
 // most 10 Hz (Update); Draw only draws the cached lines - a handful of text quads in one hud2kit pass.
 #include "uistrip.h"
-#include "basepage.h"
+#include "pages/pagerun.h"
 
 #include "ui/flufaware.h"
 #include "hudhost.h"
 #include "nnstrip.h"
-#include "nnpage.h"
 #include "navnew.h"
 #include "ui/hud2_kit.h"
 #include "ui/views.h"
@@ -415,8 +414,8 @@ void ShipLines(float H)
 
 void JobLine(float H)
 {
-    if (basepage::Hides())
-        return; // (the page says it)
+    if (pagerun::Covers(winplates::kFamJobBoard))
+        return; // (the job board's page says it)
     // the selected job's type: the detail icon's own hint (MissionVendorIcon, IDS 13050.. "Kill Ships", the word the game
     // shows on the rows' hover); under the detail's reward, right-aligned with the ACCEPT JOB button (the reward text
     // control has no extent: its anchor point gives the line). The difficulty the game writes into the detail itself.

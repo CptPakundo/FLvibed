@@ -87,7 +87,7 @@ $saves = @(
     @{ File = 'SaveC703.fl'; Desc = 'CTL free roam - space Manhattan, gates open'; Seconds = 3; GatesOpen = $true
        Place = { 'pos = 8000, 800, -50500', 'rotate = 0, 0, 0' } },
     # A second player ship for benchmark scenarios: the campaign set's post-story save (or_elite, rank 21;
-    # ..\..\docs\missions\SAVES.md), decoded by tools\flsave.js, placed like SaveC702 (in space: no launch needed).
+    # the scene-save catalogue, private), decoded by tools\flsave.js, placed like SaveC702 (in space: no launch needed).
     @{ File = 'SaveC704.fl'; Desc = 'CTL free roam - space Manhattan, or_elite'; Seconds = 4
        Template = Join-Path (Split-Path (Split-Path $PSScriptRoot)) 'research\saves\bc46-all-missions\decoded\Save0e2b.fl.ini'
        Place = { 'pos = 8000, 800, -50500', 'rotate = 0, 0, 0' } }

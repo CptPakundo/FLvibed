@@ -295,6 +295,14 @@ struct Self
     float holdFree = -1;               // free room in the hold (CShip::get_cargo_hold_remaining), -1 unknown
 };
 bool ReadSelf(Self& s); // false when not flying
+// How many more units of the good `good` (an Equipment archetype id) the player's ship can take now, as the game answers
+// it: CShip::get_space_for_cargo_type, the check the server's tractor take is trimmed to (docs\FREELANCER_RE.md "Loot
+// value and room"). The room in the hold by volume, and for a class the game caps per ship no more than the room under
+// that limit (shield batteries, nanobots: the ship's limit less the stack; munitions, mines, countermeasures:
+// MAX_PLAYER_AMMO less that archetype's stack). 0 = not one more unit; -1 = no limit (a ship with no battery or nanobot
+// limit); 0x7FFFFFFF = a volume-0 item with no limit of its own. False (room -1) when not flying or when a read does not
+// verify. HUD 2's loot notice: a take after which the room is 0 says FULL (GitHub issue 87).
+bool CargoRoom(u32 good, int& room);
 // Uses `amount` shield batteries (battery) or nanobots: the game's own IObjAffect::use_item on the player ship (what the
 // HUD's buttons call - they pass the count that fills the bar). Returns the units requested (min(amount, held)), 0 if
 // none aboard / not flying / the function did not verify (fails closed).

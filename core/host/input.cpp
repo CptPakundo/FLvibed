@@ -1,4 +1,4 @@
-// FLvibed - input (docs\MODULES_PLAN.md: core): injection (the game's held commands, the mouse-flight steering; the virtual mouse is
+// FLvibed - input (the module split plan: core): injection (the game's held commands, the mouse-flight steering; the virtual mouse is
 // its other half, dimouse.cpp), installed when a module that injects is on; and the raw keys and the UI hit test, always.
 #include "all.h"
 

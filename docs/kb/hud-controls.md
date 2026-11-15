@@ -59,3 +59,22 @@ NeuroNet window is open, whoever flies (`..\FREELANCER_RE.md` "The pad's HUD hit
 The arrival / zone line (`NN_ArrivalText`), the comm window, the scanner window, the chat, the indicators and the damage
 arcs stay native. The 3D target and ship views can be drawn without their panels (`hudvis::SetViewRect`). Facts:
 `..\FREELANCER_RE.md` "UI" > "The flight HUD's roots and hiding them".
+
+## Key names (14 Nov 2026; `modules\hud\src\keycap_name.h`)
+The game names a bound key by MapVirtualKey + GetKeyNameText (its controls screen: Freelancer-Decomp
+`menu_keymap.cpp` KeyMapFormatBindingName = 0x577F50; a lead, AI-made), so a punctuation key's name follows the keyboard
+layout the game's thread holds at that moment, and a new process takes whatever layout the user last switched to. With
+English (US) and Hebrew installed, `USER_MANEUVER_FREE_FLIGHT` (key 192 = VK_OEM_3, the grave key) reads "`" in one start
+and ";" in another (measured: `tests\keycap_name_test.cpp` names it by each loaded layout). HUD 2's K&M keycaps name the
+OEM keys (VK_OEM_1..8, VK_OEM_102, plus / comma / minus / period) by the default input layout (SPI_GETDEFAULTINPUTLANG)
+instead, so they read the same every start; letters, digits and named keys as before. The game's own screens still
+follow the moment's layout.
+
+## The contextual fade and the debug states (14 Nov 2026; `modules\hud\src\hud2_sim.h` Wake)
+Under `hud_fade 1` an element shows only after one of its triggers (`core\game\hudwake.h`), so a `hud2 sim` state whose
+model holds no trigger fades to an empty pass: `lowenergy` and `disrupt` had `wake_shown 0` in every bench record
+(`research\experience\bench\record\rc047_run1`). The real states are not empty: the energy meter falls only while guns
+fire or the afterburner burns (Fire / Boost wake the ring), and a disruption ends a cruise (the Cruise edge wakes the
+ring and the ship panel; CRUISE DISRUPTED shows). Both can outlast the 4 s linger (energy refills over seconds,
+`CRUISE_DISRUPT_TIME = 5` in constants.ini), so the ring may fade before the meter refills or the run-down ends: by
+design today, not changed. The two sims now carry their cause's trigger.

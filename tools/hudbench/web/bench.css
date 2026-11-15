@@ -1,0 +1,29 @@
+/* The design bench's window (bench.html) beside the replayer's styles (replay.css) */
+#controls { flex-basis: 380px; max-height: calc(100vh - 70px); overflow-y: auto; }
+.lbl { min-width: 70px; color: var(--muted); }
+.count { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.statelist { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.statelist button { text-align: left; padding: 3px 8px; cursor: pointer; }
+.statelist button.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.statelist .sub { color: var(--muted); font-size: 12px; }
+.numlist { max-height: 300px; overflow-y: auto; margin-top: 4px; }
+.num { display: grid; grid-template-columns: 1fr auto auto; gap: 2px 6px; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.num .name { min-width: 0; overflow-wrap: anywhere; }
+.num .name small { display: block; color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+.num.changed .name { color: var(--accent); font-weight: 600; }
+.num.changed .name::before { content: "\25CF  "; }
+.num .ctl { display: flex; gap: 2px; align-items: center; }
+.num .ctl input[type=number] { width: 78px; }
+.num .ctl select { max-width: 150px; }
+.num button.reset { visibility: hidden; }
+.num.changed button.reset { visibility: visible; }
+button { cursor: pointer; padding: 1px 8px; }
+.toolbar { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; margin: 0; }
+.truth { color: var(--warn); font-size: 13px; }
+.banner { margin: 12px 16px 0; padding: 10px; border-radius: 6px; background: var(--err); color: #fff; }
+#report { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font-size: 13px; }
+#report .verdict { font-weight: 600; }
+#report ul { margin: 4px 0; padding-left: 18px; }
+#report .err { color: var(--err); white-space: pre-wrap; }
+#variants .row { margin: 2px 0; }
+#variants .when { color: var(--muted); font-size: 12px; }

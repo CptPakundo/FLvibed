@@ -26,9 +26,11 @@
 #include "game/events.h"
 #include "ui/ui.h"
 #include "ui/flufaware.h"
+#include "ui/hud_door.h"
 #include "game/mprules.h"
 #include "game/flicons.h"
 #include "game/modslots.h"
+#include "game/nnwin.h"
 
 #include <sstream>
 
@@ -971,10 +973,23 @@ std::string Execute(const std::string& line)
     // ---- FLUF awareness (flufaware.h): fluf = the build, status, policy, text input / mouse, every open keep-out
     if (op == "fluf")
         return flufaware::Describe();
+    // ---- the door to HUD 2 (ui\hud_door.h): huddoor [reset] = the selected interface, the calls into the HUD module under the classic HUD
+    if (op == "huddoor")
+        return huddoor::Command(in);
+    // ---- the NeuroNet's tabs (nnwin.h), read only: nnwin = the open window's command, the held press, the manager's slide
+    if (op == "nnwin")
+    {
+        out << "nnwin ready=" << nnwin::Ready() << " open=0x" << std::hex << nnwin::OpenCommand() << " held=0x" << nnwin::Held() << std::dec
+            << " busy=" << room::NNWindowBusy() << " mp=" << nnwin::Multiplayer();
+        return out.str();
+    }
     // ---- multiplayer (mprules.h): mp = single / multiplayer, what the server allows the autopilot and where that came
     // from, the last chat lines with their senders
     if (op == "mp")
         return mprules::Describe();
+    if (op == "dealprobe") { std::string DealProbe(std::istream&); return DealProbe(in); } // the dealers' probe (dealers_probe.cpp)
+    if (op == "nnprobe") { std::string NNProbe(std::istream&); return NNProbe(in); }       // the NeuroNet text probe (neuronet_probe.cpp)
+    if (op == "menuprobe") { std::string MenuProbe(std::istream&); return MenuProbe(in); } // the menus' probe (menus_probe.cpp)
     if (op == "callt") // callt <this> <addr> [args...] (thiscall, up to two)
     {
         u32 self = num(), fn = num();

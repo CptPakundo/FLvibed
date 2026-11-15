@@ -44,8 +44,9 @@ uintptr_t FindControl(const char* name);
 // help of what it passes (ui.cpp QuietHelp): `quiet` takes back what this call showed; false leaves it, as the game's own
 // hover does (a test aid's stand-in for the hover a background game does not compute).
 uintptr_t HitTest(float x, float y, bool quiet = true);
-// The hover help (ToolTip, Rollover) off for this frame, the game's way: its timer starts over.
-void HideHoverHelp();
+// The hover help (ToolTip, Rollover) off for this frame, the game's way: its timer starts over. `bits`: the state bits
+// cleared, 2 its shown bit (the pad's hit test), 3 its update too (the idle rule of modules\hud\src\extras). How many were hidden.
+int HideHoverHelp(u8 bits = 2);
 
 // Discover clickable controls by probing Freelancer's own hit test on a screen grid
 // (works for every UI class, whatever its internal layout). `step` is in pixels.

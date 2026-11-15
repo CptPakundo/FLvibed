@@ -35,6 +35,10 @@ void Test_hud2_sim()
     // refused: unknown names / modifiers, a dangling +, case
     for (const char* n : {"calm", "Combat", "lane+", "lane+turret", "+comm", "comm+comm+comm", "list"})
         CHECK(!Parse(n).ok);
+    // the wake of a state whose real cause is an input or an edge (133_ item 7: these two faded to an empty pass)
+    CHECK(Wake("lowenergy") == hudwake::Fire && (hudwake::Wakes(Wake("lowenergy")) & hudwake::Ring));
+    CHECK(Wake("disrupt") == hudwake::Cruise && (hudwake::Wakes(Wake("disrupt")) & (hudwake::Ring | hudwake::Ship)) == (hudwake::Ring | hudwake::Ship));
+    CHECK(Wake("combat") == 0 && Wake("") == 0 && Wake("shielddown") == 0);
     // the list names every state
     const std::string names = Names();
     CHECK(names.compare(0, 13, "combat|travel") == 0);

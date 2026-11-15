@@ -1,36 +1,16 @@
 // Minimal Direct3D 8 text and box renderer for the overlay (called from Present).
 // Glyphs are rasterized with GDI at the exact pixel size into one atlas texture (grayscale
 // antialiasing, coverage stored as alpha), so text stays sharp at any resolution or DPI.
+// The font types, the rasteriser and the glyph lookup need no device: fontraster.h (included here).
 #pragma once
 #include "common.h"
+#include "fontraster.h"
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace render
 {
-struct Glyph
-{
-    float u0, v0, u1, v1; // atlas coordinates
-    int w, h;             // bitmap size in pixels
-    int ox, oy;           // bitmap offset from the pen position (oy from the line top)
-    int advance;
-};
-
-struct Font
-{
-    std::wstring face;
-    int px = 0; // em height in pixels
-    int weight = 0;
-    int ascent = 0, lineHeight = 0;
-    std::unordered_map<wchar_t, Glyph> glyphs;
-    void* texture = nullptr; // IDirect3DTexture8 (managed pool: survives Reset)
-    int texW = 0, texH = 0;
-    float whiteU = 0, whiteV = 0; // a fully covered texel, for solid boxes
-    std::vector<u8> coverage;     // CPU copy of the atlas alpha (software target)
-};
-
 // A texture for Sprite (managed pool: survives Reset; tied to the device it was built on).
 struct Image
 {
@@ -45,16 +25,22 @@ bool BuildImage(Image& img, const std::vector<u32>& argb, int w, int h);
 void FreeImage(Image& img);
 void OnDeviceLost();
 void OnDeviceReset();
+// The device Resets this logic has seen (OnDeviceLost calls): whoever holds something for one device generation compares it
+// (modules\hud\src\modelslot.cpp frees its model holders on a change).
+u32 DeviceResets();
 
-// (Re)builds `font` for the given characters; false if the device is missing or the font failed.
+// (Re)builds `font` for the given characters (RasterizeFont, then the atlas uploaded as a managed texture); false if
+// the device is missing or the font failed.
 bool BuildFont(Font& font, const wchar_t* face, int px, int weight, const std::wstring& chars);
 void FreeFont(Font& font);
-
-int TextWidth(const Font& font, const std::wstring& s);
-// The glyph drawn for `c`: its own, else glyphset::Resolve's stand-in; nullptr when the font holds neither. A character
-// not in the atlas joins Unmet(), the characters each font's owner adds at its next build (at most 256, each once).
-const Glyph* GlyphFor(const Font& font, wchar_t c);
-const std::wstring& Unmet();
+// Research (debug `hud2 fontdump <file>`): every font built so far that holds an atlas - face, size, metrics, each
+// glyph's box, advance and UV, hashes of the coverage copy and of the uploaded texture - sorted, to compare two builds.
+// The file holds the font's metrics: write it under a git-ignored folder only. Returns a one-line summary.
+std::string FontDump(const std::string& path);
+// Research (the design bench's recorder, `hud2 bench record`): the font BuildFont filled whose atlas is `texture`
+// (nullptr: none), and its fingerprint block as FontDump writes it (the uploaded texture read back for its hash).
+const Font* FontOfTexture(const void* texture);
+std::string FontPrintOf(const Font& font);
 
 // Back buffer size in pixels (0 if unknown).
 bool ScreenSize(int& w, int& h);

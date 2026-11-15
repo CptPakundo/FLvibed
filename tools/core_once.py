@@ -1,4 +1,4 @@
-"""core\\game is one instance (docs\\MODULES_PLAN.md P1): the proof, from the release link's map.
+"""core\\game is one instance (the module split plan's P1; private, docs\\ARCHITECTURE.md is the public view): the proof, from the release link's map.
 
 A core header that ends up inside a module's namespace gives that module its own copy of every inline variable in it, and
 nothing fails: the copy just never moves (a frozen game clock, a stale mode). So this reads build\\release\\FLvibed.map and

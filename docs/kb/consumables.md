@@ -28,9 +28,11 @@
   0.34, the count stayed 13; the server's answer, cause not known yet - the call's return value is not read). The
   effect check then locked batteries out for 10 s at once, the shield failed inside it, hull 1.00 -> 0.66. Now: a miss
   logs `repair-miss` and is retried at the next post_delay; only two misses in a row lock out for 10 s (nanobots alike).
-- **Loot refused at the limit** `[decompiled, not verified in game]` 6 Nov 2026: the tractor refuses nanobots at the ship's `nanobot_limit`, batteries at its
+- **Loot refused at the limit** `[decompiled; batteries verified in game 12 Nov 2026]` 6 Nov 2026: the tractor refuses nanobots at the ship's `nanobot_limit`, batteries at its
   `shield_battery_limit`, any ammo stack at 50 (Common.dll MAX_PLAYER_AMMO, mounted gun or not), and anything with volume in a full hold, which it asks first.
   All four play the same "Tractor Failure"; FLvibed adds the game's own reason (`..\FREELANCER_RE.md` "Tractor failure codes", `core\game\tractorfail.h`).
+  `CShip::get_space_for_cargo_type` applies the same limits, so FLvibed's loot count and prompts (`Contact::lootFits`) leave such loot out: at a battery
+  limit of 10, a battery loot read fits 0 at 10/10, 1 at 9/10, 2 at 8/10 (GitHub issue 87; `..\FREELANCER_RE.md` "Loot value and room").
 
 ## The autopilot's frugal rule (user decision 19 Oct 2026)
 Battery "near depletion" = the fitted shield's own `offline_threshold` (st_equip.ini; 0.15 for most shields; read by

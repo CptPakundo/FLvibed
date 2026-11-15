@@ -9,6 +9,11 @@ static ShmBlock* g_block = nullptr;
 
 bool Init()
 {
+    if (!TestSwitch()) // a player's game: no channel (the harness reads this line to fail at once, tools\fldata.ps1)
+    {
+        Log("debug channel: closed (FLVIBED_TEST is not 1)");
+        return false;
+    }
     // per game instance (parallel test games): FLVIBED_INSTANCE=<n> appends "_<n>"; unset = the classic name
     std::string name = "Local\\FLSubtitlesShm";
     const std::string inst = InstanceName();

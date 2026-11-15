@@ -1,0 +1,34 @@
+{
+  "_about": "Audit C5 (12 Nov 2026, the owner's decision 30: ..\\audit_2026-11-12\\43_settings_rows_proposal.md): six settings that had no options row get one, Player tier, defaults unchanged. parent_on = the parent's option word under which the row is live (the aim assists act only with RETICLE aim). loot_min_value is a picker of fixed credit values (a slider steps evenly only; tools\\ui_meta.py ALIASES gives the values). Apply with specpatch.py to part2_data.js and docs/UI_SPEC.json.",
+  "add_rows": {
+    "controller/AIM": {"after": "aim_smooth", "rows": [
+      {"key": "aim_assist", "label": "Aim assist strength", "kind": "slider", "min": 0, "max": 100, "step": 5, "def": 75, "unit": "%",
+       "help": "Reticle aim only: how strongly the reticle is pulled onto a hostile's lead cross.",
+       "tier": "player", "needs": "live", "parent": "aim_mode", "parent_on": "RETICLE"},
+      {"key": "aim_slowdown", "label": "Slowdown on target", "kind": "slider", "min": 0, "max": 100, "step": 5, "def": 35, "unit": "%",
+       "help": "Reticle aim only: how much the steering slows while the reticle is over a hostile's lead cross.",
+       "tier": "player", "needs": "live", "parent": "aim_mode", "parent_on": "RETICLE"}
+    ]},
+    "hud/HUD": {"after": "hud_alerts", "rows": [
+      {"key": "group_cue", "label": "Weapon group cue", "kind": "toggle", "def": true,
+       "help": "The weapon groups above the ring, filled when the target is in the centre and in reach.",
+       "tier": "player", "needs": "live"}
+    ]},
+    "hud/CUES": {"after": "hull_cue", "rows": [
+      {"key": "hull_cue_pattern", "label": "Hull damage pattern", "kind": "picker", "options": ["NONE", "PLATES", "HEXAGONS"], "def": "HEXAGONS",
+       "help": "The pattern on the hull damage edge, so it never reads as a shield hit.",
+       "tier": "player", "needs": "live", "parent": "hull_cue"}
+    ]},
+    "autopilot/": {"after": "ap_hints", "rows": [
+      {"key": "mp_autopilot", "label": "Autopilot on servers", "kind": "picker", "options": ["OFF", "TRAVEL ONLY", "EVERYTHING"], "def": "TRAVEL ONLY",
+       "help": "On a server that says nothing about FLvibed: no autopilot, travel only (no combat), or everything. A server's own word always wins.",
+       "tier": "player", "needs": "live"}
+    ]},
+    "autopilot/STYLE": {"after": "loot", "rows": [
+      {"key": "loot_min_value", "label": "Leave loot worth less than", "kind": "picker",
+       "options": ["0 CREDITS", "100 CREDITS", "500 CREDITS", "1,000 CREDITS", "5,000 CREDITS", "10,000 CREDITS"], "def": "0 CREDITS",
+       "help": "The autopilot leaves loot worth less than this, at the item's base price.",
+       "tier": "player", "needs": "live", "parent": "loot"}
+    ]}
+  }
+}

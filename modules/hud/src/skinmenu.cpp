@@ -176,7 +176,7 @@ void GiveBack()
 
 void Layout(u32 menuRoot, const std::vector<u32>& buttons, bool on)
 {
-    if (!on || !menuRoot || NativeListed(hudrows::g.skinNative, "continue"))
+    if (!on || !menuRoot)
     {
         if (!g_places.empty())
             GiveBack();
@@ -257,6 +257,14 @@ void Draw(u32 menuRoot)
     GameCaption((g_chip.x0 + g_chip.x1) / 2, g_chip.cy, L"CONTINUE", Argb(kChrome, 1), Center);
     if (!g_label.empty() && focused) // (the save's name only while CONTINUE is highlighted: the owner, 7 Nov 2026)
         GameCaption(g_chip.x1 + skinkit::Px(0.024f), g_chip.cy, g_label, Argb(kChrome, 1), Left, skinkit::Px(kSection));
+}
+
+void Drop()
+{
+    if (g_wait >= 0)
+        Log("skin: CONTINUE of %s dropped: HUD 2 left before the game's load screen opened (the game's own screen stays)", g_file.c_str());
+    g_wait = -1;
+    g_hover = g_padFocus = false, g_mouseWas = 0;
 }
 
 bool Offered() { return g_chipUp; }

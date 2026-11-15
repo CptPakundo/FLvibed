@@ -1,6 +1,6 @@
 # How FLvibed's code comments
 
-The standard for the source, from `docs\MODULES_PLAN.md` section 5. Each file is read once, when it is moved: the module headers, public
+The standard for the source, from section 5 of the module split plan (a private development plan; `docs\ARCHITECTURE.md` is its public view). Each file is read once, when it is moved: the module headers, public
 APIs and the 20 largest files are rewritten by hand; the rest improves when touched. A whole-tree rewrite is not worth its tokens or
 its diff noise. `tools\comment_lint.py` reports what breaks this; from a module's cut on, that module is what it counts first.
 

@@ -21,12 +21,7 @@ Id FromName(const char* name)
     return COUNT;
 }
 const char* Name(Id id) { return id >= 0 && id < COUNT ? kNames[id] : "?"; }
-Id Menu(Id id)
-{
-    if (uiopt::Get().confirmButton != 1)
-        return id;
-    return id == A ? B : id == B ? A : id;
-}
+Id Menu(Id id) { return MenuFor(uiopt::Get().confirmButton, id); }
 const char* FamilyName(Family f)
 {
     switch (f)
@@ -129,36 +124,9 @@ void Update(bool realPadConnected, u32 vendor)
 
 Family Current() { return g_current; }
 
-Look LookFor(bool hud2Surface)
-{
-    const int look = uiopt::Get().glyphLook;
-    if (look == 1)
-        return Look::Coloured;
-    if (look == 2)
-        return Look::Hud2;
-    return hud2Surface ? Look::Hud2 : Look::Coloured; // 0 automatic: each kit its own look (before glyph_look)
-}
+Look LookFor(bool hud2Surface) { return LookOf(uiopt::Get().glyphLook, hud2Surface); }
 
-bool FaceColours(Family f)
-{
-    const int look = uiopt::Get().glyphLook;
-    return look == 1 || (look == 0 && f != Family::Steam); // (Steam's buttons have no colours of their own)
-}
-
-u32 FaceRgb(Family f, Id id)
-{
-    if (id < A || id > Y)
-        return 0;
-    // Each family takes the shades of its latest generation with coloured buttons (the owner, 6 Nov 2026): the Xbox Series pad, the DualShock 4 (the DualSense is
-    // monochrome), the New Nintendo 3DS (the Switch and Switch 2 are). Sampled from photos, no maker publishes them; a shade under 4.5:1 on the glyph's plate is
-    // only brightened: docs\research\pad-face-colours.md.
-    static const u32 kXbox[4] = {0x78BE04, 0xD84830, 0x0D7CD5, 0xD3C906};
-    static const u32 kPs[4] = {0x8698BF, 0xC37162, 0xCD94B7, 0x57AB94};       // cross, circle, square, triangle
-    static const u32 kNintendo[4] = {0xD7A44C, 0xF04050, 0x268E71, 0x4075E2}; // by position: B yellow, A red, Y green, X blue
-    return f == Family::Xbox ? kXbox[id] : f == Family::PlayStation ? kPs[id] : f == Family::Nintendo ? kNintendo[id] : kPressedArm;
-}
-
-u32 OutlineRgb(Family f, Id id) { return f == Family::Steam ? 0 : FaceRgb(f, id); }
+bool FaceColours(Family f) { return FaceColoursOf(uiopt::Get().glyphLook, f); }
 
 // ---------------------------------------------------------------- rasterisation (GDI, 4x supersampled)
 // A glyph is two layers in the atlas (docs\FREELANCER_RE.md "HUD panels" for the colours, TASK_GLYPHS_HUD.md 5 for the

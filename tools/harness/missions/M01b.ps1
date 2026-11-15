@@ -1,7 +1,7 @@
 # M01b end to end (docs\missions\M01b.md) with the harness and the autopilot: launch, formation with Epsilon 1, the
 # prison ship's two Rogue waves, the waypoint, Beta 4's attackers, the scouts, the Rogue base (platforms, waves,
 # bombers), the clean-up and the flight home (no dock) - until "Mission Result: Success".
-# Start: docked at Pittsburgh in M01b (campaign save Save5f61.fl, docs\missions\SAVES.md:
+# Start: docked at Pittsburgh in M01b (campaign save Save5f61.fl, the scene-save catalogue, private:
 #   tools\deploy.ps1 -Background -Save <research\saves\bc46-all-missions\Save5f61.fl>).
 # -From 5 resumes after the prison fight (the mission's own save 32110 "Continue the Search Pattern" puts you there).
 # -God: the game's invincibility (test aid). Prints one line per step; stops at a failure / death.

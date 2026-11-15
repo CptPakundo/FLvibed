@@ -606,10 +606,99 @@ void StandardCruiseLane()
             }
         }
 }
+// A HUD 2 page's lane (the owner, 12 Nov 2026): the free width first, then a second row clear of the page's content, a
+// prompt giving way only last - the D-pad's hints first, then the page's actions - and never B or the confirm.
+void PageRuleLane()
+{
+    using namespace promptfit;
+    const bool was = deckmode::g_on;
+    const float W = 1280, H = 800, ph = 32, pitch = 8, floor = 0.865f * H; // (the pages' content box: nnpage_kit.h Bounds)
+    const auto left = [](float, float, float) { return 100.0f; };       // (the page's mark at the lane's left)
+    const auto low = [](float, float, float) { return 0.0f; };
+    // a dealer's seven: ITEM, YOUR SHIP, A SELL, LT/RT QUANTITY, Y MAX, X FILTER, B CLOSE (67_ row 5)
+    const int order7[7] = {0, 0, kNeverGivesWay, 1, 1, 1, kNeverGivesWay};
+    PageRule rule;
+    rule.floor = floor, rule.giveWay = order7;
+    { // (1) the width first: seven pills where the old cap kept five - one row, none dropped, B CLOSE last at the right edge
+        deckmode::g_on = false;
+        const float w[7] = {140, 140, 140, 140, 140, 140, 140};
+        LanePlaced p;
+        int dropped = 0;
+        LaneLayout(W, H, 7, 2, w, w, ph, pitch, 0.0f, left, low, p, dropped, nullptr, 0, &rule);
+        CHECK(kLaneMax >= 8 && p.mode == LaneMode::Row && dropped == 0);
+        for (int i = 0; i < 7; ++i)
+            CHECK(p.use[i]);
+        CHECK_NEAR(p.x0[6] + p.w[6], W - W * deckmode::SideW(), 0.5);
+    }
+    const int order8[8] = {0, 0, kNeverGivesWay, 1, 1, 1, 1, kNeverGivesWay}; // (+ RS CLICK COMPARE WITH before B CLOSE)
+    rule.giveWay = order8;
+    { // (2) too wide for one row, Large (the band lower, 0.945 H): a second row above it, clear of the content - nothing dropped
+        deckmode::g_on = true;
+        const float w[8] = {180, 180, 180, 180, 180, 180, 180, 180};
+        LanePlaced p;
+        int dropped = 0;
+        LaneLayout(W, H, 8, 2, w, w, ph, pitch, 0.0f, left, low, p, dropped, nullptr, 0, &rule);
+        CHECK(p.mode == LaneMode::Rows && dropped == 0);
+        for (int i = 0; i < 8; ++i)
+            CHECK(p.use[i]);
+        CHECK(p.cy[7] > p.cy[0]);                 // B CLOSE in the band's row, the list's start above it
+        CHECK(p.ry0 >= floor + 0.008f * H - 0.5f); // the upper row clear of the content
+        for (int i = 0; i < 8; ++i)               // no two pills over each other
+            for (int j = i + 1; j < 8; ++j)
+                CHECK(p.cy[i] != p.cy[j] || p.x0[i] + p.w[i] <= p.x0[j] || p.x0[j] + p.w[j] <= p.x0[i]);
+    }
+    { // (3) Normal: the upper row would reach 0.003 H into the content - no second row; the D-pad's hint gives way, the last first
+        deckmode::g_on = false;
+        const float w[8] = {150, 150, 150, 150, 150, 150, 150, 150};
+        LanePlaced p;
+        int dropped = 0;
+        LaneLayout(W, H, 8, 2, w, w, ph, pitch, 0.0f, left, low, p, dropped, nullptr, 0, &rule);
+        CHECK(p.mode == LaneMode::Row && dropped == 1 && p.use[0] && !p.use[1]);
+        for (int i = 2; i < 8; ++i)
+            CHECK(p.use[i]);
+        // wider still: both hints go, then the page's actions from the last (the compare click), never A or B
+        const float v[8] = {180, 180, 180, 180, 180, 180, 180, 180};
+        LanePlaced q;
+        dropped = 0;
+        LaneLayout(W, H, 8, 2, v, v, ph, pitch, 0.0f, left, low, q, dropped, nullptr, 0, &rule);
+        CHECK(q.mode == LaneMode::Row && dropped == 3 && !q.use[0] && !q.use[1] && !q.use[6]);
+        CHECK(q.use[2] && q.use[3] && q.use[4] && q.use[5] && q.use[7]);
+    }
+    { // (4) a second row blocked by a keep-out in its band: no second row, the hints give way instead
+        deckmode::g_on = true;
+        const auto blocked = [](float y0, float, float right) { return y0 < 0.94f * 800 ? right : 100.0f; };
+        const float w[8] = {180, 180, 180, 180, 180, 180, 180, 180};
+        LanePlaced p;
+        int dropped = 0;
+        LaneLayout(W, H, 8, 2, w, w, ph, pitch, 0.0f, blocked, low, p, dropped, nullptr, 0, &rule);
+        CHECK(p.mode == LaneMode::Row && dropped >= 2 && !p.use[0] && !p.use[1] && p.use[2] && p.use[7]);
+    }
+    { // (5) never the close: nothing else left to give way, B and the confirm stay in the row though it overflows
+        deckmode::g_on = false;
+        const int order3[3] = {1, kNeverGivesWay, kNeverGivesWay};
+        PageRule r3;
+        r3.floor = floor, r3.giveWay = order3;
+        const float w[3] = {600, 600, 600};
+        LanePlaced p;
+        int dropped = 0;
+        LaneLayout(W, H, 3, 1, w, w, ph, pitch, 0.0f, left, low, p, dropped, nullptr, 0, &r3);
+        CHECK(p.mode == LaneMode::Row && dropped == 1 && !p.use[0] && p.use[1] && p.use[2]);
+    }
+    { // (6) the fit rule's floor size first: a row that fits at the floor stays one row
+        deckmode::g_on = false;
+        const float wN[8] = {150, 150, 150, 150, 150, 150, 150, 150}, wF[8] = {130, 130, 130, 130, 130, 130, 130, 130};
+        LanePlaced p;
+        int dropped = 0;
+        LaneLayout(W, H, 8, 2, wN, wF, ph, pitch, 0.0f, left, low, p, dropped, nullptr, 0, &rule);
+        CHECK(p.mode == LaneMode::Row && p.atFloor && dropped == 0);
+    }
+    deckmode::g_on = was;
+}
 } // namespace
 
 void Test_promptfit()
 {
+    PageRuleLane();
     { // a pill too wide for the column stacks in two slots, the lane stays at the bottom and nothing drops
         const float W = 1280, H = 800, ph = 32, pitch = 8;
         const float wN[5] = {100, 100, 150, 100, 100}, wS[5] = {0, 0, 110, 0, 0};
@@ -782,6 +871,17 @@ void Test_promptfit()
             promptfit::LanesHold h = promptfit::PlaceLanesHold(base, nullptr, gl, lb, hold, apart, 2, d, gap, g, H, k, 24);
             CHECK(h.plan.step == HoldStep::Above); // BEFORE (+ 62.6) would squeeze it; above the glyph (+ 14) fits
             CHECK(h.c.n == 2 && h.c.w[0] == h.c.asked[0]);
+            {
+                // a card that keeps its place (HUD 2's comm feed) reaching 1 px into where the raised word stands: the word goes
+                // elsewhere (audit 109_ 2c: the HOLD word 1 px into the comm card); clear of it by a pixel, the word stays above
+                const float wordFoot = h.c.y[0] - 0.026f * H * k - 0.001f * H;
+                const float into[4] = {h.c.x[0] - 200, wordFoot - 200, h.c.x[0] + 3, wordFoot - 23};
+                const promptfit::LanesHold kept = promptfit::PlaceLanesHold(base, nullptr, gl, lb, hold, apart, 2, d, gap, g, H, k, 24, into, 1);
+                CHECK(kept.plan.at[0] != promptfit::WordAt::Above && kept.plan.at[0] != promptfit::WordAt::OverLabel);
+                CHECK(kept.c.n == 2);
+                const float clear[4] = {h.c.x[0] - 200, wordFoot - 200, h.c.x[0] - 0.012f * H * k - 1, wordFoot};
+                CHECK(promptfit::PlaceLanesHold(base, nullptr, gl, lb, hold, apart, 2, d, gap, g, H, k, 24, clear, 1).plan.step == HoldStep::Above);
+            }
             const int stacked[2] = {0, 0}; // the second on the row above it: no raised word under it
             h = promptfit::PlaceLanesHold(base, nullptr, gl, lb, hold, stacked, 2, d, gap, g, H, k, 24);
             CHECK(h.c.row[1] == 1);

@@ -1,4 +1,4 @@
-// FLvibed - the game out of focus (docs\MODULES_PLAN.md: core): keep running, and on a background test start the focus
+// FLvibed - the game out of focus (the module split plan: core): keep running, and on a background test start the focus
 // guard, the silence and the window title.
 #include "all.h"
 
@@ -40,8 +40,8 @@ static void __cdecl SetAppActiveHook(bool active)
 // No focus stealing while running in the background: Freelancer (0x4248F3: SetWindowPos HWND_TOPMOST + ShowWindow
 // SW_SHOWNORMAL) and its graphics wrappers activate the game window and put it above everything. On a background test
 // start, while the game is not the foreground window, those calls on its own windows become non-activating (no
-// activation, no z-order change). Import-table patches in every module of the process, re-applied for modules
-// loaded later (watchdog). A click on the game window still activates it the normal way.
+// activation, no z-order change). Import-table patches in every module of the process at the start, and in each module
+// loaded later as it loads (the DLL notification). A click on the game window still activates it the normal way.
 typedef BOOL(WINAPI* ShowWindowFn)(HWND, int);
 typedef BOOL(WINAPI* SetWindowPosFn)(HWND, HWND, int, int, int, int, UINT);
 typedef BOOL(WINAPI* HwndBoolFn)(HWND);
@@ -167,7 +167,11 @@ static HWND WINAPI SetActiveWindowHook(HWND h)
     return NoActivate(h, "SetActiveWindow", 0) ? GetActiveWindow() : g_setActive(h);
 }
 
-static void PatchFocusImports()
+// `only`: that module alone (a DLL just loaded); none: every module of the process. A walk over every module reads each one's
+// headers, so it must run where no module can unload meanwhile: the start (DllMain, under the loader lock). From any other
+// thread a module unloaded between the list and the read was a read of unmapped memory (shdocvw.dll is loaded and freed again
+// in one millisecond at every game load, a movie's DirectShow DLLs at its end): two background test starts died of it.
+static void PatchFocusImports(HMODULE only = nullptr)
 {
     HMODULE user32 = GetModuleHandleA("user32.dll");
     if (!user32)
@@ -190,7 +194,9 @@ static void PatchFocusImports()
         return;
     HMODULE mods[512];
     DWORD bytes = 0;
-    if (!enumModules(GetCurrentProcess(), mods, sizeof(mods), &bytes))
+    if (only)
+        mods[0] = only, bytes = sizeof(HMODULE);
+    else if (!enumModules(GetCurrentProcess(), mods, sizeof(mods), &bytes))
         return;
     const struct
     {
@@ -293,15 +299,25 @@ static void HookAllThreads()
         Log("focus guard: the backup round hooked %d thread(s) the DLL notification missed", added);
 }
 
-// Modules loaded after the start get the import patches as they load, not at the watchdog's next round (
-// the intro's DirectShow renderer, quartz.dll, loads with the first movie and raised the game window over the user's
-// fullscreen browser for a moment - the black bars of the Digital Anvil logo). The loader's DLL notification
-// (LdrRegisterDllNotification, ntdll, Vista+); the watchdog stays the backup.
+// Modules loaded after the start get the import patches as they load (the intro's DirectShow renderer, quartz.dll, loads
+// with the first movie and raised the game window over the user's fullscreen browser for a moment - the black bars of the
+// Digital Anvil logo). The loader's DLL notification (LdrRegisterDllNotification, ntdll, Vista+); without it the CBT hook
+// and the z-order backstop below still keep the window down. Only the module just loaded: it cannot unload during its own notification (its imports are bound by then: each module's
+// patch line appears once per load), while another thread may be unloading any other module.
 typedef LONG(NTAPI* LdrRegisterDllNotificationFn)(ULONG, void*, void*, void**);
-static VOID CALLBACK DllLoaded(ULONG reason, const void*, void*)
+struct LdrDllLoaded // LDR_DLL_LOADED_NOTIFICATION_DATA
 {
-    if (reason == 1 && g_forceKeepRunning) // LDR_DLL_NOTIFICATION_REASON_LOADED
-        PatchFocusImports();
+    ULONG flags;
+    const void* fullName;
+    const void* baseName;
+    void* dllBase;
+    ULONG sizeOfImage;
+};
+static VOID CALLBACK DllLoaded(ULONG reason, const void* data, void*)
+{
+    const LdrDllLoaded* loaded = static_cast<const LdrDllLoaded*>(data);
+    if (reason == 1 && g_forceKeepRunning && loaded && loaded->dllBase) // LDR_DLL_NOTIFICATION_REASON_LOADED
+        PatchFocusImports(static_cast<HMODULE>(loaded->dllBase));
 }
 
 // The backstop for any path the patches do not see: a top-level window of the game shown or moved up the z-order while
@@ -441,7 +457,8 @@ static DWORD WINAPI KeepRunningWatchdog(void*)
         }
         if (g_forceKeepRunning && tick % 10 == 0)
         {
-            PatchFocusImports(); // modules loaded since (graphics wrappers)
+            // (modules loaded since the start are patched by the DLL notification as they load, never from here: a walk on
+            // this thread read modules other threads were unloading, PatchFocusImports)
             // The window title names the test game (every instance was just "Freelancer"): the instance
             // number (FLVIBED_INSTANCE, deploy.ps1 -Instance) or the main test install; re-applied if the game resets it.
             // WM_SETTEXT with a timeout: a stalled game must not hold this thread.

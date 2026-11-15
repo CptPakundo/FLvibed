@@ -1,4 +1,4 @@
-// The arbiter's executor (IDEAS A37, modules\autopilot\docs\A37_PLAN.md slice S7; setting `situation_arbiter`, default 0): the
+// The arbiter's executor (IDEAS A37, the A37 plan's slice S7, private; setting `situation_arbiter`, default 0): the
 // decision comes from Decide(Assess(snapshot), queue) and the goal queue; the executor turns the proposal into today's
 // ObjectiveStart calls (the same mode / target / action vocabulary), every side effect checking the game first.
 // This header is the executor's pure half (host-free, tests\situation_exec_test.cpp): the side-effect gate and its event
@@ -14,7 +14,7 @@
 
 namespace situation
 {
-// ---------------------------------------------------------------- side effects check the game first (A37_PLAN 1)
+// ---------------------------------------------------------------- side effects check the game first (the A37 plan's 1)
 // What the gate reads of the game before a start (the executor fills it: autopilot_objective.cpp GateFactsNow).
 struct GateFacts
 {

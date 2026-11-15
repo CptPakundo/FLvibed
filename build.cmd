@@ -1,6 +1,6 @@
 @echo off
 rem Builds FLvibed (32-bit, static C runtime: players need no Visual C++ redistributable).
-rem Usage: build.cmd [dev|impl|release|sigtool|test|setup]
+rem Usage: build.cmd [dev|impl|release|sigtool|test|bench|setup]
 rem   dev      (default) build\dev\: FLvibed.dll (the modules' hosts: hooks, debug channels) plus the logic of every
 rem            module as FLvibedLogic.dll, which hot-reloads in the running game (tools\deploy.ps1 -Impl)
 rem   impl     only the logic DLL of the dev build
@@ -13,7 +13,8 @@ rem            never shipped
 rem   test     build\test\fltest.exe: the host-free unit tests (tests\*.cpp + the pure core sources, compiled plain with
 rem            tests\space_stub.cpp for the game), then runs them; exit code = the tests'. `build.cmd test "<install>"`
 rem            names the install for the data tests (else FLVIBED_INSTALL, else Install\Freelancer HD Edition; absent =
-rem            those tests are skipped)
+rem            those tests are skipped); also the HUD 2 draw kit's host-free files with the bench's list back end
+rem   bench    build\bench\flbench.exe: the design bench (tools\hudbench\bench.cpp; no game, no device)
 rem Each module source is compiled through a generated wrapper that puts it into its own namespace
 rem (flv_<module>_<host|impl>, core\pre.h), so the modules link into one DLL without clashing names. core\game and the
 rem core sources of the logic are compiled once, at global scope (:wraplogic); the host has one instance of them too, in
@@ -59,9 +60,10 @@ if /i "%TARGET%"=="mptest" goto mptest
 if /i "%TARGET%"=="flhook" goto flhook
 if /i "%TARGET%"=="setup" goto setup
 if /i "%TARGET%"=="test" goto test
+if /i "%TARGET%"=="bench" goto bench
 if /i "%TARGET%"=="impl" goto impl
 if /i not "%TARGET%"=="dev" (
-  echo unknown target %TARGET%: dev, impl, release, sigtool, flhook, mptest, test or setup
+  echo unknown target %TARGET%: dev, impl, release, sigtool, flhook, mptest, test, bench or setup
   exit /b 1
 )
 
@@ -133,9 +135,29 @@ cl %CFLAGS% /Fo:build\test\obj\ /Fd:build\test\obj\ tests\*.cpp core\game\flhash
    core\settings_bus.cpp core\game\utf.cpp core\game\avoid.cpp core\game\route.cpp core\game\flight.cpp core\game\jobs.cpp core\hook.cpp core\log.cpp core\fluf.cpp ^
    core\ui\presets.cpp modules\autopilot\src\situation.cpp modules\autopilot\src\situation_rules.cpp modules\autopilot\src\goalqueue.cpp modules\autopilot\src\situation_exec.cpp modules\autopilot\src\lookahead.cpp modules\autopilot\src\ash_ride.cpp ^
    modules\subtitles\src\impl\linebreak.cpp ^
+   core\ui\hud2_kit.cpp core\ui\hud2_kit_fldl.cpp core\game\fontraster.cpp core\game\gamefont.cpp core\game\flicons_decode.cpp tools\hudbench\kitlist.cpp tools\hudbench\fldl_write.cpp tools\hudbench\replay.cpp ^
+   modules\hud\src\hud2_frame.cpp modules\hud\src\hud2_parts.cpp modules\hud\src\hud2_target.cpp modules\hud\src\hud2_cue.cpp modules\hud\src\hud2_click_draw.cpp ^
    /link /DEBUG /OUT:build\test\fltest.exe /PDB:build\test\fltest.pdb %LIBS% || exit /b 1
+rem The pages' views, compiled alone (audit 70b F1b): a view builds from the draw kits and its model, nothing of the game.
+if not exist build\test\obj\views mkdir build\test\obj\views
+for /d %%d in (modules\hud\src\pages\*) do if exist "%%d\*_view.cpp" (
+  cl %CFLAGS% /c /Fo:build\test\obj\views\ /Fd:build\test\obj\views\ "%%d\*_view.cpp" || exit /b 1
+)
 build\test\fltest.exe %2
 exit /b %ERRORLEVEL%
+
+rem ---------------------------------------------------------------- bench
+:bench
+rem The design bench (tools\hudbench\bench.cpp, FORMAT.md): HUD 2's draw kit core\ui\hud2_kit.cpp with no game and no
+rem device, compiled plain like the tests, the list back end tools\hudbench\kitlist.cpp in place of hud2_kit_d3d8.cpp;
+rem the fonts by core\game\fontraster (the game's GDI path), the faces by gamefont::LoadFrom, the icons by flicons_decode.
+if not exist build\bench\obj mkdir build\bench\obj
+rem HUD 2's game-free core (B5a: `flbench replay` runs recorded frames through Step and Draw) is linked as the unit build links it.
+cl %CFLAGS% /Fo:build\bench\obj\ /Fd:build\bench\obj\ tools\hudbench\bench.cpp tools\hudbench\serve.cpp tools\hudbench\kitlist.cpp tools\hudbench\fldl_write.cpp tools\hudbench\replay.cpp ^
+   core\ui\hud2_kit.cpp core\ui\hud2_kit_fldl.cpp core\game\fontraster.cpp core\game\gamefont.cpp core\game\flicons_decode.cpp core\game\utf.cpp core\log.cpp ^
+   modules\hud\src\hud2_frame.cpp modules\hud\src\hud2_parts.cpp modules\hud\src\hud2_target.cpp modules\hud\src\hud2_cue.cpp modules\hud\src\hud2_click_draw.cpp ^
+   /link /DEBUG /OUT:build\bench\flbench.exe /PDB:build\bench\flbench.pdb %LIBS% || exit /b 1
+exit /b 0
 
 rem ---------------------------------------------------------------- helpers
 :clean <config>
@@ -193,6 +215,7 @@ rem core header included at global scope first (core_all.h, generated: a header 
 rem and an inline variable in it would be a second, silent copy: tools\core_once.py) and its own log channel.
 > build\%1\%2\core_all.h (
   for %%f in (core\*.h core\game\*.h core\ui\*.h) do echo #include "%%~ff"
+  for %%f in (core\game\screens\*.h) do echo #include "%%~ff"
 )
 call :wrapmodule %1 %2 flv_subtitles_impl "modules\subtitles\src\impl\*.cpp"
 call :wrapmodule %1 %2 flv_controller_impl "modules\controller\src\impl\*.cpp"
@@ -200,8 +223,24 @@ call :wrapmodule %1 %2 flv_npc_impl "modules\npc\src\*.cpp"
 call :wrapmodule %1 %2 flv_speedrun_impl "modules\speedrun\src\*.cpp"
 call :wrapmodule %1 %2 flv_autopilot_impl "modules\autopilot\src\*.cpp"
 call :wrapmodule %1 %2 flv_hud_impl "modules\hud\src\*.cpp"
+call :wrapmodule %1 %2 flv_hud_impl "modules\hud\src\extras\*.cpp"
+rem HUD 2's page framework (audit 70b): the runtime, then a folder per family; a family adds a page by adding files there (an empty
+rem folder compiles nothing). File names are unique across the module (tools\module_lint.py): each wrapper is named by its stem.
+call :wrapmodule %1 %2 flv_hud_impl "modules\hud\src\pages\*.cpp"
+call :wrapmodule %1 %2 flv_hud_impl "modules\hud\src\pages\dealers\*.cpp"
+call :wrapmodule %1 %2 flv_hud_impl "modules\hud\src\pages\neuronet\*.cpp"
+call :wrapmodule %1 %2 flv_hud_impl "modules\hud\src\pages\menus\*.cpp"
+call :wrapmodule %1 %2 flv_hud_impl "modules\hud\src\pages\map\*.cpp"
+call :wrapmodule %1 %2 flv_hud_impl "modules\hud\src\pages\mp\*.cpp"
 call :wrapmodule %1 %2 flv_movies_impl "modules\movies\src\impl\*.cpp"
 for %%f in (core\hook.cpp core\log.cpp core\text.cpp core\game\*.cpp core\ui\*.cpp core\logic\*.cpp) do (
+  > "build\%1\%2\flv_core_%%~nf.cpp" (
+    echo #include "../../../core/pre.h"
+    echo #include "%%~ff"
+  )
+)
+rem the screens' models, rules and actions (audit 70b 2.4: core\game\screens\, shared by both interfaces)
+for %%f in (core\game\screens\*.cpp) do (
   > "build\%1\%2\flv_core_%%~nf.cpp" (
     echo #include "../../../core/pre.h"
     echo #include "%%~ff"

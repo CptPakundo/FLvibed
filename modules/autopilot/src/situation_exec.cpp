@@ -1,4 +1,4 @@
-// The arbiter's executor, its pure half (situation_exec.h; A37_PLAN S7): the side-effect gate, the plan comparison, the
+// The arbiter's executor, its pure half (situation_exec.h; the A37 plan's S7, private): the side-effect gate, the plan comparison, the
 // ObjectiveStart arguments, the pause facts and the resume's restore. No game, no statics.
 #include "situation_exec.h"
 

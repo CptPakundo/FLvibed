@@ -1,4 +1,4 @@
-// The situation assessor (IDEAS A37, modules\autopilot\docs\A37_PLAN.md slice S1): a pure function Snapshot -> Situation.
+// The situation assessor (IDEAS A37, the A37 plan's slice S1, private): a pure function Snapshot -> Situation.
 // A Snapshot is every fact one look at the game gives the objective mode (the objective, the story script's derived
 // goals and the live trigger table, the place, the pilot, the holds, the contacts, waypoints, lanes, spawns, the
 // settings the rules read and the executor's own state) - plain values, ids and numbers, written by the one impure

@@ -1,5 +1,5 @@
 # A held strafe must end with its release, on every install. FLvibed fires commands by the game's own ids; flightio::Hold sends a key-up only when the key map says so, and
-# USER_MANEUVER_SLIDE_EVADE_UP / DOWN are in HDE's key map but not in vanilla 1.1's or a mod's built on it (docs\MODULES_PLAN.md "Design: commands the key map lacks").
+# USER_MANEUVER_SLIDE_EVADE_UP / DOWN are in HDE's key map but not in vanilla 1.1's or a mod's built on it (the module split plan's "Design: commands the key map lacks", private).
 # One background game: the pad's right stick held up, then let go, then down, with left as the control (a command every map lists). Judged: while held the ship slides,
 # and within 2 s of the release it has stopped sliding. Covers the pad's strafe through Hold; the autopilot's slide claims the same Hold.
 # Usage (PowerShell tool): tests\strafe_release.ps1 [-Instance 1] [-Save SaveC702.fl] [-Preset 1]   build\release. Exit 1 = a failure.

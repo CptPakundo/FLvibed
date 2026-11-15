@@ -15,10 +15,17 @@
 #pragma once
 #include "common.h"
 
+#include <string>
+
 namespace gamefont
 {
 // Resolves the faces once; true when the label face resolved (game files or Windows), false = the Segoe UI fallback.
+// The game's DATA folder is found from the running exe (...\EXE\..\DATA\).
 bool Load();
+// The same resolution from a DATA folder given explicitly (`dataDir` ends in a backslash: "<install>\DATA\"), each
+// call anew - a program with no game, such as the design bench, loads the font files of the install it was given. Load
+// calls it once with the game's own folder.
+bool LoadFrom(const std::wstring& dataDir);
 // The label face (Agency FB when it resolves, else Segoe UI) and its weight the game's labels read best with.
 const wchar_t* LabelFace();
 int LabelWeight();

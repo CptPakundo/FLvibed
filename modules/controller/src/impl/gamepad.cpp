@@ -126,7 +126,7 @@ bool Gamepad::Candidate(float dt)
 static ShmBlock* DevBlock()
 {
     ShmBlock* s = shm::Get();
-    return s && s->version >= 2 && s->devActive ? s : nullptr;
+    return s && s->devActive ? s : nullptr;
 }
 
 bool Gamepad::DevActive() { return DevBlock() != nullptr; }
@@ -171,10 +171,10 @@ static void SetState(DWORD slot, XINPUT_VIBRATION* v)
 // SDL runs in the host on its own thread (modules\controller\src\host\sdlpad.cpp, HostApi v33); this side keeps it running while
 // pad_backend is 1, reads its newest state into the XInput form every reader below uses (the focus gate, the virtual
 // pad's merge, the dead zones, the hold times: unchanged), and logs its changes. XInput reads the pad while SDL starts,
-// after it failed, with an older host and while the device-layer test pads are on (pad_backend.h ReadFromSdl).
+// after it failed, without the host's SDL3 backend and while the device-layer test pads are on (pad_backend.h ReadFromSdl).
 bool Gamepad::ReadSdl(XINPUT_STATE& out, bool& ok, bool fallback)
 {
-    const bool hostHas = HostAtLeast(padbackend::kHostVersion) && g_host->SdlPad;
+    const bool hostHas = g_host && g_host->SdlPad;
     if (!padbackend::WantSdl(padBackend, hostHas, fallback))
     {
         if (sdlOn_)
@@ -184,8 +184,7 @@ bool Gamepad::ReadSdl(XINPUT_STATE& out, bool& ok, bool fallback)
             Log("pad backend: SDL3 stopped (pad_backend %d) - XInput reads the pad", padBackend);
         }
         if (padBackend == 1 && !hostHas && !sdlWarned_)
-            Log("pad backend: pad_backend 1 needs host API v%u (this host: v%u) - XInput reads the pad",
-                padbackend::kHostVersion, g_host ? g_host->version : 0);
+            Log("pad backend: pad_backend 1 needs the host's SDL3 backend, which is missing - XInput reads the pad");
         sdlWarned_ = padBackend == 1 && !hostHas;
         sdlOn_ = sdlSource_ = false;
         sdlStatusWas_ = sdlConnectedWas_ = 0;
@@ -281,7 +280,7 @@ void Gamepad::ReadReal(XINPUT_STATE& out, bool& ok, float dt)
         return;
     }
     // XInput read first, every frame it would have been: with no candidate in the HID list nothing below changes what is read
-    const bool hostHas = HostAtLeast(padbackend::kHostVersion) && g_host->SdlPad;
+    const bool hostHas = g_host && g_host->SdlPad;
     const bool want = fallback_.Want(sdlFallback, hostHas, sdlFallback && hostHas && Candidate(dt),
                                      sdlOn_ && sdlStatusWas_ == padbackend::kSdlRunning && !sdl_.connected, dt);
     if (!want && !sdlOn_)
@@ -323,7 +322,7 @@ void Gamepad::ReadReal(XINPUT_STATE& out, bool& ok, float dt)
 // so this gives it way at once. A look every kImpulseLook, not a frame: the output needs no read.
 void Gamepad::Impulse(float dt, bool xinputPad, bool fallback)
 {
-    const bool hostHas = HostAtLeast(41) && g_host->SdlPad && g_host->SdlPadTriggerRumble;
+    const bool hostHas = g_host && g_host->SdlPad && g_host->SdlPadTriggerRumble;
     static const bool background = EnvVar("FLVIBED_BACKGROUND") == "1"; // a test game leaves the machine's own pad alone
     if (!impulseOn_ && (fallback || !impulseWanted || !xinputPad)) // (no pad, no cost)
         return;
@@ -367,19 +366,21 @@ void Gamepad::Impulse(float dt, bool xinputPad, bool fallback)
 
 void Gamepad::RumbleTriggers(float left, float right, float seconds)
 {
-    if (!HostAtLeast(41) || !g_host->SdlPadTriggerRumble || (ignoreReal && (left > 0 || right > 0)))
+    if (!g_host || !g_host->SdlPadTriggerRumble || (ignoreReal && (left > 0 || right > 0)))
         return;
     const u16 l = static_cast<u16>(Clampf(left, 0, 1) * 65535), r = static_cast<u16>(Clampf(right, 0, 1) * 65535);
     g_host->SdlPadTriggerRumble(l, r, (l || r) ? static_cast<u32>(Clampf(seconds, 0, 60) * 1000) + 100 : 0);
 }
 
-// A mapper's keys and mouse dropped by the host while SDL holds a pad and the game is in front (padbackend::DropInjected)
+// A mapper's keys (and with `pad_mapper_mouse` its mouse) dropped by the host while SDL holds a pad and the game is in front (padbackend::DropInjected).
+// Every frame: a live `set pad_mapper_mouse` adds or removes the mouse hook.
 void Gamepad::Filter(bool on)
 {
-    if (on == filterOn_ || !HostAtLeast(38) || !g_host->SdlPadFilter)
+    const int flags = padbackend::FilterFlags(on, mapperMouse);
+    if (flags == filterOn_ || !g_host || !g_host->SdlPadFilter)
         return;
-    filterOn_ = on;
-    g_host->SdlPadFilter(on, stickDeadzone, triggerThreshold);
+    filterOn_ = flags;
+    g_host->SdlPadFilter(flags, stickDeadzone, triggerThreshold);
 }
 
 u32 Gamepad::Vendor() const
@@ -527,14 +528,14 @@ bool Gamepad::IgnoreRealNow(bool focusOnly)
     if (const ShmBlock* s = DevBlock())
         front = front || (s->devFlags & kDevForeground) != 0; // a background test of the open gate (shm.h)
     // the same for the SDL virtual test pads (shm.h v3; pad_backend 1, the host's debug `sdlpad`) while one is attached
-    if (const ShmBlock* s = shm::Get(); s && s->version >= 3 && s->sdlAttached)
+    if (const ShmBlock* s = shm::Get(); s && s->sdlAttached)
         front = front || (s->sdlFlags & kDevForeground) != 0;
     return focusgate::IgnoreReal(focusOnly, front);
 }
 
 void Gamepad::Wave(bool want)
 {
-    if (!HostAtLeast(41) || !g_host->PadWave)
+    if (!g_host || !g_host->PadWave)
         return;
     if (!want && !waveOpen_)
         return;
@@ -559,7 +560,7 @@ void Gamepad::WaveFeed(const wavesynth::WaveFrame& f)
 
 void Gamepad::TriggerEffects(const u8* left, const u8* right)
 {
-    if (HostAtLeast(41) && g_host->SdlPadTriggers)
+    if (g_host && g_host->SdlPadTriggers)
         g_host->SdlPadTriggers(left, right);
 }
 
@@ -577,7 +578,7 @@ haptics::PadFacts Gamepad::Facts() const
 bool Gamepad::Touch(SdlPadTouch& out) const
 {
     out = {};
-    if (!HostAtLeast(42) || !g_host->SdlPadTouchRead || !sdlSource_ || (ignoreReal && OutputIsReal()))
+    if (!g_host || !g_host->SdlPadTouchRead || !sdlSource_ || (ignoreReal && OutputIsReal()))
         return false;
     g_host->SdlPadTouchRead(&out);
     return out.pads > 0;
@@ -588,7 +589,7 @@ bool Gamepad::OutputIsReal() const
     if (DevActive())
         return false;
     const ShmBlock* s = shm::Get();
-    return !(s && s->version >= 3 && s->sdlAttached);
+    return !(s && s->sdlAttached);
 }
 
 void Gamepad::Rumble(float low, float high, float seconds)

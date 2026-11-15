@@ -23,6 +23,33 @@ bool ClickMainButton(u32 id, std::string* what);
 
 // The open load screen (NN_LoadSave), or 0: the owner window of its LoadSave_LoadGame button.
 u32 LoadScreen();
+// The open NN_LoadSave in either mode (load or save), or 0.
+u32 LoadSaveScreen();
+
+// One column of a save list (the game's ListBox, FREELANCER_RE "The save lists' rows"): its rows as the game holds them and
+// what it is drawn with: the box's height in pixels (+0x89C projected at its depth, as ListBox::Draw does) and the font's
+// line height (the row pitch of the draw and the hover).
+struct SaveColumn
+{
+    u32 list = 0;
+    int count = 0, rows = 0, first = 0; // +0x8A4 rows held, +0x8A8 rows drawn, +0x88C the first drawn
+    float height = 0, boxPx = 0;        // +0x89C (UI units), projected
+    int linePx = 0;
+};
+// The open load / save screen's two columns (names, dates), the scroll bar they share (0 when not found) and the rows the
+// game gives them (20 on the front list, NN_LoadSave +0x1754 in game: 20 load, 16 save). False when none is open.
+struct SaveLists
+{
+    bool front = false;
+    u32 screen = 0, scroll = 0;
+    int gameRows = 0;
+    // In game, the bar's height in pixels (UIScroll +0x338 projected at its depth; 0 when not read, and on the front list): the
+    // panel's room for rows. The in-game ListBox's own box (0.0325 x rows) is taller than its panel (the bar, 0.465 load / 0.37
+    // save, ends where the panel's rows do); the front list's box is its panel.
+    float scrollPx = 0;
+    SaveColumn names, dates;
+};
+bool OpenSaveLists(SaveLists& out);
 struct SaveEntry
 {
     int index;

@@ -1,6 +1,6 @@
 // `city_hold_side` - the static hold at a big target that hostile weapons platforms guard (set M13-ab11-b, run-judged
 // 31 Oct 2026: every death at the city's first generator held 31-67 m off the OUTWARD face, 100-163 deg from the city
-// centre, in front of the platforms; docs\research\runners\M13_city_hold.md). This is its pure half: geometry in,
+// centre, in front of the platforms; the M13 city-hold study, private). This is its pure half: geometry in,
 // verdicts out - no game call, no statics - so tests\city_hold_test.cpp runs the same code as the game. The impure
 // adapter (the platforms from the live objects, the cover score by the game's turret test, the logs) is StaticHold and
 // the launch rules in autopilot_combat.cpp. Compiled into the controller's logic and, plain, into build\test\fltest.exe;
@@ -20,7 +20,7 @@ constexpr float kGapLo = 120.0f, kGapHi = 130.0f, kMinGap = 100.0f;
 // Ordnance only with the predicted impact and the nearest hull at least this far from us (m): above our own torpedo's
 // measured 80-95 m reach (AUTOPILOT.md "Package AFK2", FREELANCER_RE "Explosion damage").
 constexpr float kOrdnanceClear = 100.0f;
-// The generator's height band (m, either way of its centre's y): M13_city_hold.md "Proposed rule".
+// The generator's height band (m, either way of its centre's y): the M13 city-hold study's "Proposed rule".
 constexpr float kBand = 100.0f;
 
 // The horizontal direction from the platforms' centroid to the target (unit, y = 0): false with no platform, or with the

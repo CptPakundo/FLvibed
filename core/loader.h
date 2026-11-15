@@ -1,4 +1,4 @@
-// FLvibed - the one owner of the logic's life (docs\MODULES_PLAN.md P1). The logic of every module is one unit: linked into
+// FLvibed - the one owner of the logic's life (the module split plan's P1). The logic of every module is one unit: linked into
 // FLvibed.dll in the release build, FLvibedLogic.dll in the dev build, so a dev build has the release's shape. Each
 // module's host part starts its module where it always did (the subtitles at the first movie, the controller at the first
 // frame): it asks for its table here and runs its own Init. A reload or an unload is one act for all of them.
@@ -16,7 +16,12 @@ enum LogicModule : int
 };
 
 // What the logic hands the loader (core\logic\entry.cpp): each module's own ImplApi table.
-constexpr u32 kLogicApiVersion = 3;
+// kLogicApiVersion is the number of the whole interface between FLvibed.dll's host and the logic, and the loader loads only a
+// logic built with the same number (a dev build's hot reload; a release links both from one build). Bump it with every change to
+// what crosses between them: a module's HostApi or ImplApi (modules\*\src\api.h), core\logic\core_api.h, this file, the buses
+// (core\hud_bus.h, core\settings_bus.h), core\game\hostcalls.h, a shared block (modules\*\src\shm.h), or any host type the logic
+// reads. No call checks a version beyond this one; when in doubt bump it: a mismatch costs a restart, a missed bump a crash.
+constexpr u32 kLogicApiVersion = 7; // 7: hostcalls / controller HostApi v48 SetRawMouse (mouse_raw); 6: controller HostApi SdlPadFilter's `on` became flags (padbackend::kFilterKeys / kFilterMouse); 5: hostcalls / HostApi v47 InstallHud2Hooks (audit R4c-2)
 struct LogicApi
 {
     u32 version;

@@ -35,7 +35,7 @@ To add: factions and attitudes, loadouts.
 |---|---|
 | `navigation-and-hazards.md` | planets and death zones, fields, waypoints vs navmarkers, the native goto's behaviour, docking locks |
 | `consumables.md` | nanobots / shield batteries: one press fills the bar, failed-shield reboot, the user's play from the 2020 footage (18 presses), spec match; ordnance use across the playlist (missiles M01-M04, torpedoes M11-M13) |
-| `footage_scans.md` | the 2020 playlist's HUD lists read by OCR (weapon panel, contact list) at 2 fps: data files, speeds, what the contact list holds |
+| the footage scan notes (private, not in the public repository: they describe a local OCR set-up) | the 2020 playlist's HUD lists read by OCR (weapon panel, contact list) at 2 fps: data files, speeds, what the contact list holds |
 | `hit_effects.md` | generated (`tools\hitfx.js`): how every shield family's hit and every gun's impact looks (textures, colours, timing from the .ale files); a shield hit = shield effect + weapon impact, verified in game |
 | `hud-controls.md` | the flight HUD's named controls (maneuver bar order, NeuroNet box, contact list, repair / battery, weapon groups) and the pad's commands (turret view, weapon groups, free flight vs cruise, the flight cursor's names), 25 Oct 2026 |
 | `menu-screens.md` | the menu screens on the pad: lists selected natively (hovered / selected row fields), the save description edit and its WM_CHAR path, the chat field, the mode per save (saves.ini sidecar), speedrun mode (clock, splits, LiveSplit), 25 Oct 2026 |
@@ -45,7 +45,7 @@ To add: factions and attitudes, loadouts.
 | `combat-targets.md` | what can be fought (ships, platforms, destroyable stations, mission targets), shields vs missiles (offline threshold / 12 s window, the burst), our missiles' real hit rate and the run-in, duel tactics (agility, A/B of close / wide / slash), line of sight, fixed guns (mathed), key numbers |
 | `missions\M01a.md`, `M01b.md`, `M02.md`, `M03.md`, `M04.md`, `M05.md` | set pieces of each mission for the autopilot and harness; `missions\M06_race_footage.md` the M06 ring race read from the footage |
 | `story\README.md` | the story catalogue: arc, characters, per-mission beats and intent (survival / duty / raid), subtitle gaps |
-| `world\README.md` | the world lore compendium: news, rumours, bar KNOW offers ranked by source (game data + story > story news > story rumours > generic); game-data corrections (zones, planets, wrecks, weapon-vs-shield table); 12 regional pages |
+| the world-lore pages (private, not in the public repository; kept for research) | the world lore compendium: news, rumours, bar KNOW offers ranked by source (game data + story > story news > story rumours > generic); game-data corrections (zones, planets, wrecks, weapon-vs-shield table); 12 regional pages |
 
 ## Missions
 `missions\<Mxx>.md`: what each mission *does* that a pilot must understand (set pieces, special spawns, what is marked,

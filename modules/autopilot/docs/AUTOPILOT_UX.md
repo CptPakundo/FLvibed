@@ -435,7 +435,13 @@ never uses it sees nothing of it (an LB + L3 hint in the pad strip only with the
   Enter / Space DO NOW or CHANGE, Left / Right a setting's value, Tab / Shift+Tab / Page Up / Down the tabs, Esc /
   Backspace close) and clicks on the tabs, the ESC mark, the rows (DO NOW / CHANGE) and the scroll arrows through
   FLvibed's native click box (HUD 2's, HostApi v22; the game's hit test arbitrates click vs fire); the keys in the
-  panel's foot as keycaps. The plain start (5.3's toggle) is one rule on every device: objective, else waypoints, else
+  panel's foot as keycaps, from the pad's list (TAB NEXT TAB, ENTER DO NOW, UP/DOWN ROW / ENTER CHANGE, LEFT/RIGHT
+  VALUE, and CLOSE with the panel's own keys SHIFT+<autopilot key> and SHIFT+CLICK, shown nowhere before: the owner's
+  yes, audit 133_ Q5, 14 Nov 2026), wrapped as the pad's are; the settings tab keeps its help line's room above the foot.
+  On the pad its buttons (TAB, DO NOW, QUEUE, DO NEXT / CHANGE, VALUE, CLOSE) go to the shared
+  prompt bar under HUD 2; on the classic HUD (the HUD module off, or hud_style classic) the bar's place is the game's
+  weapon list, so they stand in the panel's own foot as glyphs and words, wrapped when the width is short (the owner, 13
+  Nov 2026, card N13: "Inside the panel's foot"). The plain start (5.3's toggle) is one rule on every device: objective, else waypoints, else
   the target (`start_smart`; AUTOPILOT.md "One start for every device"). The pickers keep no mouse twin: keyboard +
   mouse target through the game's contact list / HUD 2's list.
 - These are FLvibed screens drawn by the overlay, so they follow the device service: with the mouse they are

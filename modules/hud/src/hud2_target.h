@@ -255,10 +255,10 @@ public:
         if (age_ < kCardSec)
         {
             const Box card = {o.cardX0, o.cardY0, o.cardX0 + cw, o.cardY0 + ch};
-            bool touch = in.hasRing && Touch(card, in.ring); // (in the seat too: a card there covered the ring's pips at 1280x800)
-            for (int i = 0; i < in.nPanels && !touch; ++i)
-                touch = Touch(card, in.panels[i]);
-            if (touch) // (at once, also after its opening: the change from the card's place ran its 0.35 s over the panel - the lint's part.over, the cross)
+            bool cardTouch = in.hasRing && Touch(card, in.ring); // (in the seat too: a card there covered the ring's pips at 1280x800)
+            for (int i = 0; i < in.nPanels && !cardTouch; ++i)
+                cardTouch = Touch(card, in.panels[i]);
+            if (cardTouch) // (at once, also after its opening: the change from the card's place ran its 0.35 s over the panel - the lint's part.over, the cross)
                 age_ = kCardSec + kMorphSec;
         }
         // the card, then the change
@@ -274,6 +274,19 @@ public:
 
     static float BlockH(float H, float k) { return (2 * (kBarH + kBarGap) + 0.030f) * H * k; }
     static float Clamp(float v, float lo, float hi) { return lo > hi ? (lo + hi) / 2 : v < lo ? lo : v > hi ? hi : v; }
+
+    // Its members, for HUD 2's state file (hud2_state_io.h: one list for the writer, the reader and the checks; the members
+    // are private, so the list is the class's own). A member added below must be listed here.
+    template <class V> void Fields(V& v)
+    {
+        v("id", id_), v("age", age_), v("off_age", offAge_), v("hit_s", hitS_), v("hit_h", hitH_), v("was_s", wasS_);
+        v("was_h", wasH_), v("lost_s", lostS_), v("lost_h", lostH_), v("last_mark", lastMark_), v("last_x", lastX_);
+        v("last_y", lastY_), v("seat", seat_), v("was_seat", wasSeat_), v("had_block", hadBlock_), v("opened", opened_);
+        v("above", above_), v("had_card", hadCard_), v("side", side_), v("card_side", cardSide_), v("rel_x", relX_);
+        v("rel_y", relY_), v("side_age", sideAge_), v("seat_age", seatAge_), v("above_age", aboveAge_), v("move_t", moveT_);
+        v("off_x", offX_), v("off_y", offY_), v("shown_x", shownX_), v("shown_y", shownY_), v("yield", yield_);
+        v("card_t", cardT_), v("card_off", cardOff_), v("shown_card_x", shownCardX_);
+    }
 
 private:
     static float Unit(float v) { return v < 0 ? 0 : v > 1 ? 1 : v; }

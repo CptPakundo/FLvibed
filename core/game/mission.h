@@ -34,7 +34,7 @@ struct Goal
                               // 3: `count` of the mission solars `objects` destroyed;
                               // 4 (LOOK, only through a reader's `look` argument - every other reader leaves it out, the
                               // decision sweep unchanged): `count` of the mission SHIPS `ships` destroyed (Cnd_Destroyed by
-                              // an [MsnShip] label or nickname; count -1 = all of them, Content.dll: LOOK_PLAN 4a)
+                              // an [MsnShip] label or nickname; count -1 = all of them, Content.dll: the look-ahead plan 4a)
     u32 object = 0;           // kind 1: the solar's id (CreateID of its nickname)
     std::string objectName;   // kind 1: its nickname as the script writes it; kinds 3, 4: the label / nickname
     float pos[3] = {};        // kind 2
@@ -47,7 +47,7 @@ struct Goal
     std::string file;         // the script (full path)
     bool byEntry = false;     // armed only through a system-entry trigger, not the step's own objective chain (whether
                               // it is live during the step is unknown: M05 / M13 fights, session 8)
-    // ---- LOOK's extras: filled only by a reader called with `look` (modules\autopilot\docs\LOOK_PLAN.md, L0)
+    // ---- LOOK's extras: filled only by a reader called with `look` (the look-ahead plan, private, L0)
     std::vector<ShipRef> ships; // kind 4: the ships the label / nickname names (runtime ids: ShipIdsOf)
     // kind 4: the script's health gate - the highest Cnd_HealthDec fraction on one of its ships (or the label) whose
     // immediate chain (Cnd_True hops) destroys it (M02: ashcroft_health_35 -> destroy_him -> Act_Destroy = Ashcroft); 0
@@ -55,7 +55,7 @@ struct Goal
     float healthGate = 0;
     bool gateFails = false;
     // kind 4: an Act_Invulnerable = <ship | label>, true, [b], [f] anywhere in the script (the first): its second flag and
-    // its 4th field (f, read by FLvibed as a hull floor - not verified, LOOK_PLAN 4a), and the trigger that sets it
+    // its 4th field (f, read by FLvibed as a hull floor - not verified, the look-ahead plan 4a), and the trigger that sets it
     bool invulnerable = false, invSecond = false;
     float invFloor = 0;
     std::string invTrigger;
@@ -134,10 +134,10 @@ struct Leash
 // "Awaiting" -> a script goal 17.6 km off, more than 6 km from Von Claussen -> "You fled the battle"). Whether one is armed
 // is not tracked: the caller keeps to all of them.
 std::vector<Leash> Leashes(u32 system);
-// A tether (Cnd_TetherBroke = <shipA>, <shipB>, <dist>, <secs>[, <inner>]; Content.dll, LOOK_PLAN 4a - decompiled, not
+// A tether (Cnd_TetherBroke = <shipA>, <shipB>, <dist>, <secs>[, <inner>]; Content.dll, the look-ahead plan 4a - decompiled, not
 // verified in game): while shipA is outside `dist` of shipB the mission clock accrues, cumulatively (never reset on
 // rejoin); inside `inner` (0 none given) it accrues only while not closing; the trigger fires at `secs`. Kept beside the
-// leashes, never merged into them (LOOK_PLAN 2: merging would change M04 for everyone): L0 only reports them.
+// leashes, never merged into them (the look-ahead plan 2: merging would change M04 for everyone): L0 only reports them.
 struct Tether
 {
     std::string a, b;   // as the script writes them (M04: "juni", "Player")

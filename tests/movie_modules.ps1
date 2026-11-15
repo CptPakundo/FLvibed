@@ -1,4 +1,4 @@
-# Movies with Subtitles off and the reverse, and a reload during a movie (docs\MODULES_PLAN.md P6): background games that let the startup
+# Movies with Subtitles off and the reverse, and a reload during a movie (the module split plan's P6, private): background games that let the startup
 # movies play. Screenshots in research\experience\runs\movie_modules. Prints what it read; exit 1 on a failure.
 # Usage (PowerShell tool): tests\movie_modules.ps1 [-Row all|subtitles|movies|reload] [-Instance 1]
 # all, subtitles, movies: build\release. reload: build\dev (a release never frees the logic).

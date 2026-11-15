@@ -125,14 +125,14 @@ NeutralColorABXY), **>= 26 px at 1080p** (~0.024 H; the proposals use 0.040 H gl
 were rendered on 4K frames (`tools\uimock\hudmock*.py`, `research\evidence\controller_ui\hud_redesign\`): A clean (no
 badges, everything in the legend - overflows in combat), **B pad clusters (recommended, U24)**, C pad cockpit (U25).
 The owner decides; nothing is built or in the spec yet.
-**Built (check-up 25 Oct 2026, HEAD abf84ac; `docs\UI_BUILD.md` 5):** the UI build of 25 Oct 2026 realised every idea of
+**Built (check-up 25 Oct 2026, HEAD abf84ac; the UI build record 5, private):** the UI build of 25 Oct 2026 realised every idea of
 this note - device switching (U15, 3a1dcec), the glyph families (U16, 442654f; drawn by FLvibed itself, not Kenney), the
 FREELANCER / ACE / ASSISTED presets (U17, 442654f), the pad cursor everywhere with magnetism (U18, c476760 / a6f8e2f), the
 pad screens, OSK and prompt bar (U19, 13c41f0 / c476760 / d01c755), the status line and hand-back (U20, 442654f), the New
 Game prompt with the mode per save (U21, 13c41f0), the LiveSplit client with an in-game split detector (U22, 13c41f0 /
 7383675) and the informative pad HUD with badges and legend (U23, 442654f, rebuilt 3318282 after the owner's review).
 Verified in the release build across the display matrix on the virtual pad; the real Elite pad has not felt phase D
-(`UI_BUILD.md` 5 "Known gaps": no Bindings screen, native row controls are replicas, no goal queue). What the build did
+(the UI build record's 5 "Known gaps", private: no Bindings screen, native row controls are replicas, no goal queue). What the build did
 differently from the research is marked in each bullet below; the next check reads the user's Elite-pad pass.
 - **Device switching, the Ubisoft way, with the rules nobody publishes written down**: no studio publishes thresholds; the engineering rules that exist are qualitative (Burke's "5 golden rules of input": a timestamp engine, last *valid* input wins, a mouse minimum distance, an analog noise floor; Unreal CommonUI's thrashing window). Ubisoft's own auto-detect is the cautionary tale: prompt and cursor flicker with a drifting DualShock stick, L2 / R2 re-arming a switched-off auto-detect, extra joysticks flickering the menus, L3 popping the Windows touch keyboard. So: pad = any button, D-pad, trigger > 0.5 or a stick past ~0.25 (above XInput's default 0.24 dead zone); mouse = ~8-10 px at 1080p in one frame or a wheel notch; keyboard = any key; a 300-500 ms window in which the other device's axis-only signals are ignored (buttons switch at once); the HUD swaps in one frame; a sticky **Input device: Automatic / Controller / Keyboard and mouse** setting; a pad unplugged in flight pauses. (U15)
   *[Built 3a1dcec (25 Oct 2026): `device.*` - pad buttons switch at once, dead-zoned sticks and triggers past 0.5 after a
@@ -151,7 +151,7 @@ differently from the research is marked in each bullet below; the next check rea
   smart target / hold rear, LB tap picker / hold wheel, X tap tractor / hold turret, Y cruise *[changed 4-5 Nov 2026: Y tap next group, Y held cruise, 91aee7bb; A one item, X all, 6365c9ac]*, D-pad consumables, View
   hold autopilot) plus ACE and ASSISTED with tap / hold / double; every FREELANCER binding verified by the key trace;
   `pad_preset` with CUSTOM on the options page; the module's private map "Controls summary" rewritten and BINDINGS.md marked
-  superseded by the spec (e0d2963). Not built: the Bindings screen (`edit_bindings` shows a note; `UI_BUILD.md` 5).]*
+  superseded by the spec (e0d2963). Not built: the Bindings screen (`edit_bindings` shows a note; the UI build record 5, private).]*
 - **Pad cursor as an option, focus by default**: Destiny's cursor slows over items and pulls toward them, Destiny 2 aborts holds only when the cursor leaves the item; players ask for snap-to on the D-pad (Grim Dawn) and for the virtual cursor back where it was removed (MSFS). So: focus navigation everywhere, **Pad cursor: Off / Rooms and maps / Everywhere** (default the middle), ~1200 px/s with a ramp, slow to ~40 % over a target with a gentle pull, D-pad hides it. (U18)
   *[Overtaken by the owner (f1804a6) and built c476760 / a6f8e2f (25 Oct 2026): the pad cursor is **on everywhere by
   default** (`pad_cursor` registry default 2 = EVERYWHERE, 2c9e5d4), coexisting with focus on every screen; the

@@ -108,6 +108,15 @@ void HeadWrites()
     CHECK(p.setModule && !p.module && p.subtitlesStayLoaded);
     // what the next start then runs: never nothing, and the head still reads DISABLED
     CHECK(HeadState(Two(false, true, true)) == Head::Disabled);
+    // HUD 2's head switches HUD 2 only (the owner's answer to card N11, 13 Nov 2026): off writes hud_style alone, the HUD module keeps running
+    // (the classic extras live on); on writes both (HUD 2 needs the module)
+    p = PlanHead(Feature::Hud2, true, false, true, false);
+    CHECK(p.setLive && !p.live && !p.setModule && p.moduleStays && !p.ask);
+    p = PlanHead(Feature::Hud2, true, true, true, false);
+    CHECK(p.setLive && p.live && p.setModule && p.module && !p.moduleStays);
+    // ... and then reads DISABLED with the module running (the rows under it grey), ENABLED AT NEXT START from a file whose module row is off
+    CHECK(HeadState(Two(false, true, true)) == Head::Disabled);
+    CHECK(HeadState(Two(true, true, false)) == Head::EnabledAtNextStart);
 }
 
 void ChangedRows()
@@ -193,6 +202,20 @@ void Bundles()
     Values half = {{"hud_context", "1"}, {"hud_prompts", "1"}};
     CHECK(Word(hints, half, 3) == 2);
     CHECK(Word(hints, {}, 3) == 3);
+    // no member owned (the controller and the HUD module off): the file's values name the word, as on every row of a module that is off
+    const auto fileWord = [](const uimeta::PresetSet& s, const Values& file)
+    {
+        const auto get = [&file](const uimeta::PresetValue& m) { const auto i = file.find(m.key); return i == file.end() ? std::string() : i->second; };
+        return optrules::PresetWord(s.presets, s.count, 3, -1, get, [](const uimeta::PresetValue&) { return false; });
+    };
+    for (int w = 0; w < 3; ++w)
+    {
+        CHECK(fileWord(hints, Apply(hints.presets[w])) == w);
+        CHECK(fileWord(hits, Apply(hits.presets[w])) == w);
+    }
+    Values offCustom = Apply(hits.presets[0]);
+    offCustom["shield_cue_intensity"] = "0.7";
+    CHECK(fileWord(hits, offCustom) == 3);
     // a real row names its preset, only that one can match
     const uimeta::PresetSet& pads = Set("pad_preset");
     CHECK(Word(pads, Apply(pads.presets[0]), 3, 1) == 1); // FREELANCER's values on the row ACE: both hold, ACE reads
@@ -235,7 +258,7 @@ void SpecShape()
             }
         }
     CHECK(heads == 8);    // a head per module
-    CHECK(simple == 39);  // 29 settings (0.4.6, issue 80: movie_intro removed), 2 + 6 heads, the page's rows, the changed count
+    CHECK(simple == 41);  // 31 settings (0.4.6, issue 80: movie_intro removed; 13 Nov 2026: classic_cues; 14 Nov: idle_cursor), 2 + 6 heads, the page's rows, the changed count
     // the haptics' rows: Full is the default; trigger_effects is Player tier, the page shows it by pad (docs\UI_OPTIONS.md 4), so the count above stands
     const uimeta::Row* triggers = uimeta::FindRow("trigger_effects");
     CHECK(triggers && triggers->tier == uimeta::Player && triggers->optionCount == 3 && !strcmp(triggers->def, "2") && !strcmp(triggers->values[2], "0"));
@@ -243,13 +266,49 @@ void SpecShape()
     CHECK(mode && mode->tier == uimeta::Player && !strcmp(mode->def, "0"));
     // the rows that write through a word list keep their registry values
     const uimeta::Row* style = uimeta::FindRow("hud_style");
-    CHECK(style && style->values && !strcmp(style->values[0], "2") && !strcmp(style->def, "2"));
+    CHECK(style && style->values && style->optionCount == 2 && !strcmp(style->values[0], "2") && !strcmp(style->values[1], "0") && !strcmp(style->def, "2"));
     const uimeta::Row* text = uimeta::FindRow("game_text_size");
     CHECK(text && text->optionCount == 4 && !strcmp(text->values[3], "150") && !strcmp(text->def, "0"));
+    // the classic extras (audit 102_ Q4): the cues and the window text in a section with no head, so HUD 2 DISABLED leaves them live; the cues on the
+    // classic HUD off by default
+    const uimeta::Row* classicCues = uimeta::FindRow("classic_cues");
+    CHECK(classicCues && classicCues->kind == uimeta::Toggle && !strcmp(classicCues->def, "0") && !strcmp(classicCues->regKey, "classic_cues"));
+    const uimeta::Row* idle = uimeta::FindRow("idle_cursor"); // on by default: the hide as it was
+    CHECK(idle && idle->kind == uimeta::Toggle && !strcmp(idle->def, "1") && !strcmp(idle->section, "Controller"));
+    {
+        int found = 0;
+        for (int t = 0; t < uimeta::kTabCount; ++t)
+            for (int s = 0; s < uimeta::kTabs[t].count; ++s)
+                for (int r = 0; r < uimeta::kTabs[t].sections[s].count; ++r)
+                {
+                    const char* k = uimeta::kTabs[t].sections[s].rows[r].key;
+                    if (!strcmp(k, "classic_cues") || !strcmp(k, "game_text_size") || !strcmp(k, "shield_cue") || !strcmp(k, "reticle_cue") ||
+                        !strcmp(k, "hit_effects") || !strcmp(k, "idle_cursor"))
+                        found += uimeta::kTabs[t].sections[s].head == nullptr ? 1 : 100;
+                }
+        CHECK(found == 6); // (idle_cursor: the idle cursor's hide reachable on the classic HUD, 14 Nov 2026)
+    }
     const uimeta::Row* zone = uimeta::FindRow("stick_deadzone");
     CHECK(zone && zone->scale == 100.0f && !strcmp(zone->def, "0.24"));
     CHECK(uimeta::kCardRowCount == 4);
     CHECK(uimeta::FindRegistryRow("Controller", "steer_expo")->kind == uimeta::Picker); // the number row steer_curve stands behind it
+    // the six rows of audit C5 (Player tier, defaults as the registries'): the aim assists live in RETICLE aim only
+    const uimeta::Row* assist = uimeta::FindRow("aim_assist");
+    CHECK(assist && assist->tier == uimeta::Player && assist->scale == 100.0f && !strcmp(assist->def, "0.75"));
+    CHECK(assist && assist->parentOn && !strcmp(assist->parent, "aim_mode") && !strcmp(assist->parentOn, "0")); // RETICLE = 0
+    CHECK(optrules::ParentOff("1", assist ? assist->parentOn : "0"));  // GIMBAL: greyed
+    CHECK(!optrules::ParentOff("0", assist ? assist->parentOn : "0")); // RETICLE: live
+    const uimeta::Row* slow = uimeta::FindRow("aim_slowdown");
+    CHECK(slow && !strcmp(slow->def, "0.35") && slow->parentOn && !strcmp(slow->parentOn, "0"));
+    CHECK(optrules::ParentOff("0", nullptr) && !optrules::ParentOff("1", nullptr)); // a plain parent: off at zero
+    const uimeta::Row* pattern = uimeta::FindRow("hull_cue_pattern");
+    CHECK(pattern && !strcmp(pattern->parent, "hull_cue") && !pattern->parentOn && !strcmp(pattern->def, "2"));
+    const uimeta::Row* group = uimeta::FindRow("group_cue");
+    CHECK(group && group->kind == uimeta::Toggle && !strcmp(group->def, "1") && !group->parent);
+    const uimeta::Row* mp = uimeta::FindRow("mp_autopilot");
+    CHECK(mp && !strcmp(mp->section, "Autopilot") && !strcmp(mp->def, "1") && mp->optionCount == 3);
+    const uimeta::Row* loot = uimeta::FindRow("loot_min_value");
+    CHECK(loot && !strcmp(loot->parent, "loot") && loot->optionCount == 6 && loot->values && !strcmp(loot->values[5], "10000") && !strcmp(loot->def, "0"));
 }
 
 void FirstCardStamp()

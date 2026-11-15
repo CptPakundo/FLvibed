@@ -14,7 +14,7 @@ HUD 2 task is complete." Also binding from the same day: keep things light and e
 FLvibed features; never get in the way of the autopilot work and the project's workflows.
 
 ## The process (as HUD 2 was made)
-1. Read: `FLvibed\CLAUDE.md`, the module's private map, `modules\hud\docs\UI_HUD2.md`, `docs\UI_BUILD.md`, `docs\UI_PLAN.md`,
+1. Read: `FLvibed\CLAUDE.md`, the module's private map, `modules\hud\docs\UI_HUD2.md`, the UI build record (private), `docs\UI_PLAN.md`,
    `docs\UI_SPEC.json`, `docs\research\controller_ui.md` (rounds 1-3), `research\evidence\controller_ui\hud_*.md`,
    `hud2_critiques.md`, `tools\uimock\README.md` + `hud2.py` / `hud2_states.py`, `git log --grep "HUD 2"`.
 2. Research with agents (web; no audio / video pages, no downloads): modern AAA menus, base / hub rooms, conversation
@@ -29,7 +29,7 @@ FLvibed features; never get in the way of the autopilot work and the project's w
 4. Mock it up on clean captures from a BACKGROUND instance (extend `tools\uimock\` like `hud2.py`), every screen state;
    at least two independent critique passes (an agent on the frames vs the research, the principles and the native
    screens), iterating after each; record the critiques.
-5. Build with parallel agent tracks on disjoint files (UI_BUILD.md 2 / UI_HUD2.md 5.5), behind ONE new setting that keeps
+5. Build with parallel agent tracks on disjoint files (the UI build record 2, private / UI_HUD2.md 5.5), behind ONE new setting that keeps
    today's look as the default until the owner chooses (e.g. `ui_style` CLASSIC / HUD 2), in the spec (specpatch.py
    add_rows, the artifact's `ui/spec` pinned, `docs\UI_SPEC.json`, `core\ui_meta.h`).
 6. Verify on background instances only: every screen at 4K, 1280x720, 21:9, 4:3, pad and keyboard-mouse, release build;
@@ -60,6 +60,9 @@ FLvibed features; never get in the way of the autopilot work and the project's w
   swapping a window's vtable (it broke the harness's NavBar lookup).
 
 ## 9. Design (draft 1, 25 Oct 2026 ~13:45; the mock-ups and critiques follow)
+*[Retired 13 Nov 2026 (the owner's answer to card Q2 of audit 102_, "Retire now"; decision 77, the classic HUD and HUD 2 never mixed):
+`ui_style`, `base_pages` and `skin_native` have no row any more. The skin and the pages come with HUD 2; the game's own menus and windows
+are the classic HUD (`hud_style 0`). What follows is the design's history.]*
 One setting **`ui_style`** (`[Controller]`, int 0..1, default **0 CLASSIC** = today's screens exactly; 1 = **HUD 2**),
 independent of `hud_style` (flight). Both devices. Off = every write restored (the game's own later writes win).
 1. **The skin, not the screens** (research 1-2, 15): the game's windows, their positions, rows, buttons, texts and
@@ -146,7 +149,7 @@ meaning, the options tabs' art, scroll bars). What changed from draft 1 (section
 - Modal menus: 70 % scrim; one plate per panel; the bottom lane; the native rollover suppressed in pad mode.
 - `ui_style` 0 (CLASSIC, the default) changes nothing anywhere; switching restores every byte at once.
 
-### 10.2 Build tracks (parallel agents, disjoint files; docs\UI_BUILD.md 2 rules)
+### 10.2 Build tracks (parallel agents, disjoint files; the UI build record's section 2 rules, private)
 | Track | Owns | Delivers |
 |---|---|---|
 | PADFIX | `padbases.*`, `padmenus.*`, `padmap.*` | the five pad-layer bugs (9.12) |
@@ -226,6 +229,16 @@ every menu. Built in `promptbar.cpp` (placement, both `ui_style` values - only t
    0.008 H apart) when the free column at the bottom slot is as wide as the widest pill, dropping by the bar's order (A and
    B stay); else, docked, the top-right lane under the NeuroNet box (two rows, then drops), elsewhere the row just under
    the lowest obstacle - logged once per screen and size (`promptbar: ... last resort`).
+4a. **A HUD 2 page's lane** (the owner, 12 Nov 2026: "Use free width, then try for a second row if that's possible, rule 2 is
+   an absolute last resort"; `promptfit::PageRule`): on the dealers, the ship dealer, repair, jobs, news and the NeuroNet
+   pages the lane takes every prompt the page sets (before, any screen kept its first five, so a dealer's B CLOSE / BACK
+   TO SHIPS and INVENTORY's compare click were cut while half the bottom edge stood empty: `audit_2026-11-12\67_`). One
+   row as wide as the band leaves free (the labels at their size, then at the fit rule's floor); else two rows, the
+   band's and one 0.008 H above it, only where that row stays 0.008 H clear of the page's content box (Large: yes; Small
+   and Normal: no, it would reach 0.003 H into the content); else a prompt gives way, the D-pad's hints first (the list's
+   highlight and the panels show what they walk), then the page's own actions from the last, never B nor the confirm. No
+   column and no top lane on a page. The page's content floor reaches the lane through `winplates::g_pageFloor`
+   (`nnpage_kit.h` PageLane). Every other screen, and the classic look everywhere, keeps its first five and rules 1-4.
 5. **Subtitles**: on a docked non-modal screen the lane in use is published on the HUD bus (version 2: `HudLane`,
    `PublishLane` / `ReadLane` / `LaneFrame`; an older bus or controller = no lane), whether the pills show or have faded;
    `display.cpp` Place keeps the lowest row 0.010 H above it (a row always, a column only where the block reaches it; a
@@ -354,3 +367,33 @@ Commits 619dd22, c0e89fe, 33ffa96, e3fcb5d, 85fb446.
 ## 17. The docked windows as pages (7 Nov 2026)
 
 The dealers, the ship dealer, the job board and the news are HUD 2 pages (`src\basepage.*`, shared parts in `src\nnpage_kit.h`), and the inventory and INFO gain empty hardpoints, compare and base and system reads (`src\nnpage.*`). What stands, the game facts, input and what is not tried: `..\..\docs\BASE_ROOMS_PLAN.md`. Setting `base_pages` (default 1): 0 keeps the game's windows with the skin of the sections above.
+
+## 18. The model slot: a 3D model on a page (13 Nov 2026, audit 70b F7)
+
+A page that shows a ship's or an item's 3D model asks the model slot (`src\modelslot.h`) for it; the slot holds the game's
+objects and draws them (the route proved by the model probe, audit 48_; the game facts: `..\..\docs\FREELANCER_RE.md`
+"A model drawn with no game control"). No game window or control takes part.
+
+- **Asking.** Each frame the model should show, the page calls `modelslot::Show(key, model)`: `key` is
+  `modelslot::KeyOf("<page>", row)`, `model` names the file under DATA (the archetype's `DA_archetype`, as the game's ini
+  names it), the rectangle in back-buffer pixels, the page's clip (a list's area), yaw, pitch, spin (radians a second),
+  `fill` (the bounds' radius over half the rectangle's smaller side: 0.6 fits a whole ship) and, rarely, the field of view,
+  the renderer flags and the ambient light. The call may come from the view (the overlay pass): the model is drawn at the
+  next pass under the UI, so the page's own text and frames draw over it.
+- **What the page draws itself.** `modelslot::StatusOf(key)`: anything but `Ready` (not loaded yet, failed, or its
+  rectangle off the screen or out of the clip) means the page draws its flat fallback (the item's icon or its name): the
+  page never waits on a model. A rectangle partly out of the screen or the clip is not drawn at all (cutting the camera's
+  rectangle would move the model).
+- **Lifetime.** A key not asked for 0.5 s, or dropped (`modelslot::Drop(key)` when the page closes), gives its holder back
+  at the next pass. Every holder is freed when the world changes under it (a game load, a base or system change, a device
+  Reset, another back-buffer size, a 0.25 s gap between passes), when HUD 2 gives back (its leave, a fault) and at the
+  module's stop and the logic's reload; an ask still standing loads again by itself. Up to 12 models at once; a 13th ask
+  is refused (`Show` false: the flat fallback).
+- **Known limits.** The bounds' radius undershoots a ship's reach (about 1.4 x) and a gun turns about its mount: size with
+  `fill`. Some files load and draw nothing (br_railgun.cmp, ge_mine_dropper.3db, 48_ 4a): the slot cannot tell, so a page
+  that shows such a kind keeps its fallback beside the model. The nn_icons models are flat cards with culled backs: give
+  them no spin.
+- **Testing.** The `modelprobe` verb (test switch) asks the slot for up to 12 squares and prints the slot's counters
+  (holders, loads, frees, releases with their reason, the pass's cost); `perf cpu` names the pass `hud.modelslot` (absent
+  while nothing is asked). Measured 13 Nov 2026 (`research\experience\runs\f7_slot_20261113`): one item card about 13 us
+  of CPU a frame at 1280x800 and 3840x2160, a whole ship about 35 us, twelve cards 22-35 us. The pure half (`src\modelslot_rules.h`) is tested in `..\..\tests\modelslot_test.cpp`.

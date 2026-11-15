@@ -68,7 +68,7 @@ Together [inference]: a stable place beats a clever one; solve the layout rarely
 **Backing plates against outlined text.**
 - Gabbard, Swan, Hix et al., IEEE VR 2007 [text; 24 participants, outdoor AR]: **billboard was worst, by a wide margin: F(3,69) = 152 on error, a 0.711 error difference and 797 ms; drop shadow, outline and none were equivalent.** The authors trace this to their colouring, which matched plate to background and ignored text against plate: it condemns a badly coloured plate, not a dark one.
 - Gattullo 2015, a 2026 review [snippet]: billboard and outline, light text on dark, are the reliable forms.
-- No winner: a plate buys certainty and pays with area; outline costs almost nothing. **Here [measured]:** HUD 2's text outline already holds over the ship's white fin (`UI_HUD2_INPUTS.md` 7b); the native label has 1 px strokes at 1280x800, HUD 2's text a stem of 0.0033 H, 2.6 px (critique R1, R13).
+- No winner: a plate buys certainty and pays with area; outline costs almost nothing. **Here [measured]:** HUD 2's text outline already holds over the ship's white fin (the HUD 2 inputs record 7b, private); the native label has 1 px strokes at 1280x800, HUD 2's text a stem of 0.0033 H, 2.6 px (critique R1, R13).
 
 ## 3. Feasibility
 
@@ -169,10 +169,10 @@ The rows stay where they are. **While the player is choosing** (picker or wheel 
 
 ## 5. What the design must re-read (`UI_HUD2_SKIN.md` 16)
 
-1. **Kept roots (3.1, `UI_HUD2_INPUTS.md` 3).** `Targetable_Objects` stays a kept root, whatever form wins. What changes is below root level: three part rows, "corners: hide, home the tag", "label: hide, home the tag, not on a waypoint", "bars: hide on screen, home the tag"; `ReticleRangeText` keeps drawing the rest. **INPUTS 2's note:** the child list is answered (five, no more); the per-frame calls are answered but for 0x4EBF70 and 0x4F1DD0 (3.1).
+1. **Kept roots (3.1, the HUD 2 inputs record 3, private).** `Targetable_Objects` stays a kept root, whatever form wins. What changes is below root level: three part rows, "corners: hide, home the tag", "label: hide, home the tag, not on a waypoint", "bars: hide on screen, home the tag"; `ReticleRangeText` keeps drawing the rest. **INPUTS 2's note:** the child list is answered (five, no more); the per-frame calls are answered but for 0x4EBF70 and 0x4F1DD0 (3.1).
 2. **The cue's dark cells and D5.** The stated reason for the cells goes: they answered the bracket's label under the row, and no label stands there in A, B or D, but for a waypoint target's native diamond text (R3), which the cells still answer. **D5's seat, above the ring, gets stronger:** the column alternative existed to clear the label. The cells still serve over bright scenes and the owner chose them, so keep them unless a bare frame reads as well; they do not decide the form.
 3. **R13's exception and the 0.36 card.** One surface distance holds in all forms: the tag reads the value the game shows. With the tag on screen, **"one value, one place" can return:** name and distance on the tag; the card keeps wireframe, class, faction, scan, lock; off screen both go to the card's top line, by the morph `UI_HUD2_PRESETS.md` 1.7 once drew. Hold it about 0.5 s past the edge (*inference*), so a target at the edge does not swap. That undoes R13's exception and is the actual decluttering; R13's objection, a 1 px label, falls as HUD 2 draws it. The owner decides (section 6); until then name and distance stand on both.
-4. **Section 14, the target label over the card.** Moot under A, B and D: the native label is gone, and the tag keeps out of HUD 2's panels, as the arrows do (`display.cpp:2633`, `Hud2KeepOuts`). The stash's rectangle test is dropped, its mute kept. `UI_HUD2_INPUTS.md` 9 item 8 closes with it.
+4. **Section 14, the target label over the card.** Moot under A, B and D: the native label is gone, and the tag keeps out of HUD 2's panels, as the arrows do (`display.cpp:2633`, `Hud2KeepOuts`). The stash's rectangle test is dropped, its mute kept. Item 8 of the HUD 2 inputs record's (private) section 9 closes with it.
 
 `UI_HUD2_PRESETS.md` 1.3 loses the bracket label as a native S1 occupant (the tag: text only in S1, no plate); `core\ui_meta.h:1174-1176` follows the ruling.
 

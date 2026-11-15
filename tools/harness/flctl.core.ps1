@@ -6,7 +6,10 @@ function Get-FLView {
     try {
         $mmf = [System.IO.MemoryMappedFiles.MemoryMappedFile]::OpenExisting($name)
     } catch {
-        throw "FLController shared memory not found (is the game running with FLvibed.dll and the controller module on? FLvibed.ini [Modules])"
+        if ($closed = Get-FLChannelClosed) { throw $closed }
+        # (no game of this instance: + the exit line of its latest start, when tools\flexitwatch.ps1 logged it)
+        $x = if (-not (Get-FLGameProcess)) { Get-FLExitLine -WaitMs 1000 } else { '' }
+        throw "FLController shared memory not found (is the game running with FLvibed.dll and the controller module on? FLvibed.ini [Modules])$(if ($x) { "; game exit: $x" })"
     }
     return @{ Map = $mmf; View = $mmf.CreateViewAccessor() }
 }
@@ -15,7 +18,8 @@ function Get-FLView {
 # in time (a TimeoutException: loading, a stall; Wait-FLUntil treats it as "not yet"). Was: the text "<timeout: ...>"
 # returned as if it were the answer - callers parsed it as data (frame 0, "not in space", ...), 18 Oct 2026.
 function Throw-FLNoAnswer([string]$Command, [int]$TimeoutMs) {
-    if (-not (Get-FLGameProcess)) { throw "Freelancer exited (no answer to '$Command')" }
+    # (+ the exit line tools\flexitwatch.ps1 logged for it, when there is one: its exit code says how it ended)
+    if (-not (Get-FLGameProcess)) { $x = Get-FLExitLine -WaitMs 2000; throw "Freelancer exited (no answer to '$Command')$(if ($x) { "; game exit: $x" })" }
     throw [System.TimeoutException]::new("no answer to '$Command' within $TimeoutMs ms (game loading, stalled or hung)")
 }
 

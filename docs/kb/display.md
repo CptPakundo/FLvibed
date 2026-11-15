@@ -82,6 +82,21 @@ flight comms; at 1600x1200, 2560x1080, 1280x720 and 3840x2160.
   spans 0.881-0.975 H); 1 = resting on the bar's top edge in the picture with the name row and backing (Outlaws);
   `cinematic_single_speaker` = one speaker at a time in letterboxed scenes. **Default: bar mode (user, 21 Oct 2026).**
   What other games do: `..\..\modules\subtitles\docs\SUBTITLE_PRACTICES.md`.
+- **Cutscenes: only the subtitles** `[game + FLvibed, 14 Nov 2026, lane cutsub]`: the game shows its chat window (`MsgWin`)
+  during an in-flight cutscene (Mode::Cutscene). A launch from a save loaded docked is such a cutscene before any flight:
+  HUD 2 had no layout yet, its hold of the chat window was tied to one, and `MsgWin` stood visible with its bare lines
+  beside the subtitles (issue 12's frame; measured: `visible MsgWin` during the launch, `scratch\cut_before\` of the lane).
+  A docking enters the base (`exe::PlayerBase` set: Mode::Docked) about 2 s before its shots end: the current camera is
+  still `exe::CamDocking` (then 0 in the room), and `exe::LetterboxAmount` stays 1.0 in the base, so it cannot tell the
+  tail (`scratch\cut_dockend2\record.txt`); the window came back over those shots (`cut_dockend\docked3`).
+  Since 0.4.7 HUD 2 holds the window hidden in every cutscene and on through that camera's tail, and publishes no comm
+  feed (issue 92; `hud2_frame.cpp` StepStart, `hud2.cpp` Update, `hudvis::HoldChat`); the lines go to the chat's log only.
+  The classic HUD keeps the game's own window.
+- **Death keeps the ship's id** `[game, 14 Nov 2026]`: after the player's ship is destroyed (`selfdestruct`), the death camera
+  and then the death page (mode `menu`) follow while `exe::PlayerShipId` stays set, so "no ship and no base" never reads as
+  the menu there; a launch comm's subtitle stood over the death page's buttons (`pages` listed it at age 5.7 s). The
+  subtitles treat the death camera being current (`fl::CamDeath`, as core's `player-death` event) as the menu and clear
+  (`impl.cpp` TrackMenu); the death page's MAIN MENU then counts a game load, which clears too.
 
 ## Test instances
 - An instance mirror hard-links `EXE\Freelancer.exe` to the install's; `Set-FLInstanceDisplay` replaces it with a copy

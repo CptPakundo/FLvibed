@@ -226,7 +226,7 @@ The coils can be heard. The stream never opens in a background game or under `ha
 | The logic stops calling, the game hangs | The SDL thread's lease: nothing for 1 s, it sends Off and zeros by itself |
 | The process dies | Firmware holds an effect (PadForge); the pad may stay stiff until reconnected. Unproven, P4, and stated on the card |
 | The controller module off | Nothing runs. `controller = 0` installs no thread, no hook |
-| Old host, new logic | Everything new sits behind `HostAtLeast(41)` and null checks: two motors |
+| Old host, new logic | Cannot meet: the loader refuses a logic built for another interface (`docs\ARCHITECTURE.md` "Reload"); a host without the SDL backend leaves its pointers null, and the null checks keep two motors |
 
 **Cost:** `Update` returns before reading anything while no pad is connected, the pad is not the device in use, or `rumble` and `trigger_effects` are both off: one branch. The engine's work is a few dozen float operations a frame; the readers are those already read by the HUD at the same tier or memoised. Motors send on change at most every 30 ms, stances on change, a thread only for the waveform (opt-in) and for SDL where it already runs. An Xbox player pays for SDL's thread (WGI output) only with `trigger_effects` on and an Xbox pad found, and that start is unmeasured.
 

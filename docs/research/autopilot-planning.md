@@ -30,19 +30,19 @@ achieve semantics / rebuild from the live table (A39) first; cold = warm over 25
 S7, `last_real` a decided finding). S7 (08346a9) the executor: the arbiter's decision over the queue started through a
 game-first side-effect gate, D10 pause / resume (silent / ask / cold; a load forgets the queue) - **in game parity 481
 agree / 0 differ** (gate s7arb3, 4f6900d, after the fixes b63c1ad / 4eef991, both remembered-state bugs of the kind A37
-removes); `situation_arbiter` stays 0 (4ae968b) - the switch-over and the goal panel / planner (`UI_BUILD.md` 5) remain.
+removes); `situation_arbiter` stays 0 (4ae968b) - the switch-over and the goal panel / planner (the UI build record 5, private) remain.
 A42's cold / warm and pause / resume oracles now exist host-free (`tests\goalqueue_test.cpp`, `tests\situation_exec_test.cpp`);
 the toggle fuzz itself is not built. A41 gains decompiled `Cnd_` semantics (FREELANCER_RE: nag 20 s samples / 900 m
 closing / 4 strikes, tether time cumulative, Cnd_Destroyed counts; not verified in game) that the LOOK plan
-(`modules\autopilot\docs\LOOK_PLAN.md`) builds on. A43 unchanged.
+(the look-ahead plan, private) builds on. A43 unchanged.
 
 *30 Oct 2026 ~11:50 (16df8bd, short form):* **A37 is being built as this note proposed, behaviour-neutral so far**
-(WORK_QUEUE Q6, `modules\autopilot\docs\A37_PLAN.md`): S1 the pure assessor `situation::Assess` over a recorded snapshot
+(WORK_QUEUE Q6, the A37 plan, private): S1 the pure assessor `situation::Assess` over a recorded snapshot
 (4e1c8e7; host-free hash = the game's), S2 the live trigger table as its story source with the ini view as the
 fail-closed fallback (63291e3, A39), S3-S5 every `ObjectiveDecide` exit as a pure `Rule_*` in shadow behind
 `situation_shadow` (default 0; c79fc35, 16a4b63, d0715f7): in game **28 / 28 shadow events agree, 0 differ** (S3 4, S4 10,
 S5 14; a1a2d57 corrected S5's count), decisions unchanged (decision_check 95 lines); the shadow gate s5shadow runs. Nothing
-decides by the rules yet - the switch-over and the queue (`UI_BUILD.md` 5) are A37_PLAN's later slices. S1 found
+decides by the rules yet - the switch-over and the queue (the UI build record 5, private) are the A37 plan's later slices. S1 found
 exactly the kind of remembered state A37 removes: the host's objective title and marks survived a save load in one
 process (the by-title stand-in then named another mission's script); fixed at the source (d488fbd: everything kept per
 game starts over at Content.dll's loader notification, before the new mission runs; FREELANCER_RE "The load's own
@@ -59,7 +59,7 @@ them. A37-A43 unchanged (the queue not built, WORK_QUEUE Q6).
 times - also when toggled off and on at any moment - multi-stage and multi-system on the fly, and later natural-language
 orders):* the goal model is designed (`modules\autopilot\docs\AUTOPILOT_UX.md` sections 2-3: states, goal records with
 completion and failure tests, the queue, reflexes, interrupts, the auto planner) but **the queue is not built**
-(`docs\UI_BUILD.md` 5: QUEUE / DO NEXT greyed). The research says the design is the right one and adds what makes it
+(the UI build record 5, private: QUEUE / DO NEXT greyed). The research says the design is the right one and adds what makes it
 resume-proof:
 - **A stateless situation assessor (A37)**: a pure function from a game snapshot to the situation (story step, marks,
   waypoints, system, dock state, contacts, threats, affordances), run on every activation and on events (objective,

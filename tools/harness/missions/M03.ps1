@@ -1,7 +1,7 @@
 # M03 end to end (docs\missions\M03.md, docs\kb\missions\M03.md) with the harness and the autopilot: from California
 # Minor (offer accepted) - lane 42 -> 43, the convoy, the Barrera passage escort and its ambush, Willard, the
 # Valkyries, CA Minor and Walker, the Battle of Willard - until "Mission Result: Success".
-# Start: docked at California Minor with objective 22425 (campaign save Save1e7d.fl, docs\missions\SAVES.md:
+# Start: docked at California Minor with objective 22425 (campaign save Save1e7d.fl, the scene-save catalogue, private:
 #   tools\deploy.ps1 -Background -Save <research\saves\bc46-all-missions\Save1e7d.fl>).
 # Fair information: targets and destinations from the objectives' own target= / markers and the mission's marks.
 # -God: the game's invincibility (test aid). -SceneSaves: native saves at the scene points (Save-FLScene).

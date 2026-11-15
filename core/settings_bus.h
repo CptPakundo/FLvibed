@@ -2,7 +2,7 @@
 // the options page (controller logic) can list, read, change, reset and save the settings of EVERY module - the
 // subtitles, the movies, the controller, the autopilot and the module switches - without a second copy of any value.
 // One instance lives in FLvibed.dll (core\settings_bus.cpp, compiled plain with core\flvibed.cpp); the module parts
-// reach it through their HostApi (`GetSettingsBus`, controller host API v18 / subtitles host API v6). Each logic part
+// reach it through their HostApi (`GetSettingsBus`). Each logic part
 // registers its sections at Init and unregisters at Shutdown (hot reload: the pointers die with the logic DLL).
 // A section's defaults are the registry's values at registration (the struct initialisers: register BEFORE the ini
 // load) unless the module passes them. Changes go through `Set`, which applies the value with settings::Apply and

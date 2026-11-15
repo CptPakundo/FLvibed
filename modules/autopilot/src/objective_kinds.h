@@ -1,4 +1,4 @@
-// The objective-kind coverage table (IDEAS A41, modules\autopilot\docs\A37_PLAN.md 1 "A41"): every kind of task the game
+// The objective-kind coverage table (IDEAS A41, the A37 plan's 1 "A41", private): every kind of task the game
 // generates -> the goal type the autopilot treats it as, and what handles it today. Data only (pure; the situation
 // assessor names a step's kind through it, tests\objective_kinds_test.cpp checks it against the install: every Cnd_ a
 // story script uses and every vignetteparams.ini objective_text kind has a row, the uses column equals the install's

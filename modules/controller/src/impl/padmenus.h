@@ -29,6 +29,9 @@ void Draw();
 // the multiplayer LAN / INTERNET prompt - its root, else 0. The D-pad focus stays inside it (controller.cpp; found by
 // the focus crawler, tools\harness\flcrawl.ps1: the focus walked onto the main menu buttons behind).
 uintptr_t ModalRoot();
+// True for a control outside the confirm question (NN_Confirm: quit to the main menu, delete a save) while it stands: the question is a child of the
+// pause menu's window, so the root filter alone keeps the pause menu's boxes in the D-pad's reach (controller_menus.cpp drops them).
+bool OutsideModalBox(uintptr_t ctl);
 // Debug: menus state
 std::string Command(std::istream& in);
 std::string Status();

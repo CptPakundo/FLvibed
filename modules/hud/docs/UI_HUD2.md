@@ -17,6 +17,9 @@ Research: `docs\research\controller_ui.md` (rounds 2 and 3; evidence `research\e
 ## 1. Principles (each from the research and the two critiques; the build uses fractions of H)
 1. **One HUD drawn by FLvibed in pad mode, the game's HUD hidden whole** (the HUDless switch the game already has);
    the same game state, both devices live: a mouse move or key brings the native HUD back in one frame (decision 13).
+   *[As designed and built on 25 Oct 2026. Since 0.2.0 HUD 2 is on with keyboard and mouse too, and since 13 Nov 2026
+   (the owner's decision 77) the classic HUD and HUD 2 are never mixed: `hud_style` selects one of the two on every
+   device, and a device change switches only the prompts (glyphs or keycaps).]*
 2. **Status where the eye is**: shield, hull and power as thick segmented arcs on a small ring around the reticle
    (radius 0.10 H; Starfield's third-person ring, Destiny's "one glance down", the York ammo study); detail in the
    corners. Arcs >= 0.0065 H thick (Armored Core VI's thin meters were the top complaint); nothing crosses the speed.
@@ -126,7 +129,7 @@ top right; the ring shield left / hull right / power below; fading when calm) pl
 ### 5.3 Settings (`[Controller]`, the options page's CONTROLLER tab, section HUD; spec keys = registry keys)
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `hud_style` | int 0..2 | 1 | 0 CLASSIC (the game's HUD; in pad mode the badges and legend as built), 1 HUD 2 ON THE PAD (keyboard and mouse keep the game's HUD), 2 HUD 2 ALWAYS |
+| `hud_style` | int 0..2 | 2 | 0 DISABLED, the classic HUD (the game's HUD; in pad mode the badges and legend as built), 2 ENABLED, HUD 2 on the pad and on keyboard and mouse. *[Built 25 Oct 2026 with 1 HUD 2 ON THE PAD (keyboard and mouse kept the game's HUD) as the default; 2 is the default since 0.2.0; 1 retired 13 Nov 2026 (the owner's decision 77, no mixing of the two HUDs): an older file's 1 reads as 2, `core\ui\hud_rows.h` StyleOf.]* |
 | `hud_fade` | int 0..2 | 1 | 0 ALWAYS FULL, 1 CALM DIMS (ring 40 %, panels 60 %), 2 MINIMAL (calm flight hides the side panels and the ring; anything that changes brings its part back for a few seconds) |
 | `hud_opacity` | int 40..100 | 100 | HUD 2's overall opacity, % |
 | `hud_scale` | int 80..130 | 100 | HUD 2's size, % (text never below the 26 px floor at 1080p at 100 %) |
@@ -168,7 +171,7 @@ CLASSIC keeps today's rows (`hud_glyphs`, `button_legend`, `ap_status_line`, `wo
 | Shield / hull / reticle cues | FLvibed cues | as today |
 | Device switch, glyph families, presets, holds-as-toggles | built | HUD 2 follows them (glyphs per family; K&M keycaps from the keymap) |
 
-### 5.5 Tracks (parallel agents in this checkout: disjoint files; `docs\UI_BUILD.md` 2's rules apply)
+### 5.5 Tracks (parallel agents in this checkout: disjoint files; the UI build record's (private) section 2 rules apply)
 | Track | Owns | Delivers |
 |---|---|---|
 | **BUS** (done, orchestrator) | `core\hud_bus.*`, `build.cmd` :link, both hosts' `GetHudBus`, both `api.h` | the bus |
@@ -318,12 +321,16 @@ upstream HDE and vanilla 1.1 (`modules\hud\src\hudvis.cpp`, `docs\FREELANCER_RE.
 - Verified in the release build: vanilla 1280x960 windowed, HDE 3840x2160 borderless and 1600x1200 windowed, SaveC705 with
   and without a target (`hud2 status`: both views draw, 0 refused).
 - **Hover help only when intended** (the owner saw the NeuroNet tooltip flicker in a taskbar preview; refined: tooltips for
-  a real hover only): `hudvis::SetHoverHelp`, decided each frame by `hud2::RenderUnderHud` - in flight (Mode::Space) the
+  a real hover only): the extras' rule (`modules\hud\src\extras\extras.h` HoverHelp, through core's `ui::HideHoverHelp`; until
+  audit R4c-1 `hudvis::SetHoverHelp`, which HUD 2's frame decided), called by HUD 2's under pass and on the classic HUD by the door's,
+  verb `hoverhelp` (with `hoverhelp hover <x> <y>`, the hover a background game never makes) - in flight (Mode::Space) the
   game's ToolTip box and Rollover label show only after a real mouse move (the host's physical-mouse tick: motion, wheel,
   buttons) within the last 3 s; the NeuroNet windows, bases, menus, a paused game and Extended HUD 2's modal menus keep the
   game's own. Otherwise each frame at the UI pass's entry (after the game's update, before any draw) a shown one is hidden
-  the game's own way (state bit 1 off + the ToolTip's showing flag +0x159 = 0, as its hide 0x4BE390): its hover timer
-  starts over, so it never reaches the screen - in both HUD styles (was: hidden only by HUD 2's switch in the pad form).
+  the game's own way (state bits 0 and 1 off + the ToolTip's showing flag +0x159 = 0, as its hide 0x4BE390): its hover timer
+  starts over, so it never reaches the screen - with HUD 2 on both devices, on the classic HUD with the pad only (was: hidden only by
+  HUD 2's switch in the pad form; 12-13 Nov 2026 on the classic HUD with keyboard and mouse too, until the owner's answer to card Q5 of
+  audit 102_, "Remove on classic": the classic HUD keeps the game's own hover help with keyboard and mouse).
   Verified: the decision (suppressed in flight with HUD 2 on and off, allowed docked, no hide through the load menus);
   the flicker itself was not reproduced here (the game starts a tooltip only on real mouse motion, which the tests do not
   make): the owner's check - a mouse move onto the NeuroNet box shows it, a resting cursor in flight never does.
@@ -761,7 +768,28 @@ CRUISE ON text still hides the ship. We should really make sure the lower center
 - **The context line's fallback** (no lane beside the panels has room: 4:3 / 5:4 at large scales) is no longer the centred
   line above the panels (it crossed the lower centre) but the same two lanes above the panels (`promptfit.h` `LanesAbove`:
   margin .. 0.40 W and 0.60 W .. margin, baseline 0.04 H x k above the panels, two rows); where even they have no room,
-  no prompt.
+  no prompt. **The owner's prompt rule** (decision 55, 13 Nov 2026: "Use free width, then try for a second row if that's
+  possible, rule 2 is an absolute last resort"; rule 2 = dropping a prompt): a prompt that finds no place in the two rows
+  of either lane beside the panels first takes **the room below the comm feed** (decision 75, the owner on the frames of
+  the rows above the panels: "I see some empty room below the side chat, why not make use of that?"): the bottom-left
+  corner where the ship panel stands, while that panel does not show (Standard's calm ship panel, Focus's held escort
+  rows: `Frame::held`, not still fading: `Frame::drawn`) - the left lane's rows carried to the side margin, ending a
+  row's gap left of the left lane's start, closed where the comm feed's cards, the subtitles' panel or a box meet them
+  (FitLanes); the panel waking closes it at once. The corner comes before the fallback too (no prompt fitted beside
+  the panels: at 1280x800 the K&M loot state at hud_scale 80 and 130); the prompts after it then try the lanes beside
+  the panels, still empty (the first's no-fit had ended their line). **Reading order in the corner** (the owner, 13 Nov
+  2026, the lower band's sheet Q3 "swap them"; release 0.4.7): the corner is left of the left lane, so when a prompt
+  takes it the FIRST prompt takes it and the rest stand in the lanes beside the panels - left to right = first to second
+  (before, the first kept its lane and the second took the corner left of it: TRACTOR ALL read before TRACTOR SCRAP
+  METAL, CRUISE before DOCK). Only where that order keeps fewer prompts (the first too wide for the corner) does the
+  corner take the first prompt that found no place beside the panels, as before. Then these lanes above the panels, above whatever stands beside them
+  (0.008 H x k of air), in order; dropped last (`hud2_layout.h` PlaceContextLanes; `tests\hud2_layout_test.cpp` "the
+  owner's prompt rule"). The corner lies in no lint zone (S1 ends at 0.80 H and starts at the centre - 0.42 H; S2 is the
+  right rail; `bottom` is 0.40-0.60 W). The case that brought it: 1280x800, keyboard and mouse, hud_scale 100, a comm
+  feed card over the left lane's upper row, the loadout panel 96 px from the band: TRACTOR ALL was dropped (since F4);
+  it now stands in the corner left of TRACTOR SCRAP, above the loadout beside the consumables' cross while the ship
+  panel shows. A flight notice (`PlaceNotice`, placed last) whose first place, that corner, holds a prompt takes its
+  next free place.
 - **The lint zone `bottom`** (`hud2_lint.h` `ZonesOf(..., clearY0)`): x 0.40-0.60 W, from **`Out::clearY0` = cy +
   `RingBottom` + 0.01 H** (`hud2_layout.h`: Standard's family R + 0.022 + 0.75 x 0.0065 / 2 = the throttle arc's outer
   edge, **0.6344 H** at 16:9 k 1; Focus R + 0.0065 / 2, **0.6333 H**; it scales with k) to the screen's bottom (was 0.85
@@ -861,7 +889,9 @@ CRUISE ON text still hides the ship. We should really make sure the lower center
   with the keyboard and mouse the game's cursor hides after 3 s without mouse movement or a button
   (`hudwake::CursorStep`, `kCursorIdleS`; test `tests\hudwake_test.cpp`) and shows the frame either comes. Shown in
   every other context: not Mode::Space, the pad owning the input (its virtual cursor), a flight modal, HUD 2 not
-  active or a menu over it, a cinematic, any non-HUD window (`OnlyHudOpen`: the pause menu, popups, NeuroNet windows),
+  active or a menu over it (with HUD 2 selected; on the classic HUD, `hud_style 0`, the game's HUD counts as resting:
+  the owner's decision 62, 13 Nov 2026, the extras' rule with no HUD 2 feed; verb `idlecursor`, `tests\hud_modules.ps1 -Row idle`),
+  a cinematic, any non-HUD window (`OnlyHudOpen`: the pause menu, popups, NeuroNet windows),
   the options page, a FLUF input window (`flufaware::InputWindowOpen`), mouse flight engaged, an unresolved mouse
   symbol. Mechanism: the game's own cursor-shown flag through HostApi v20 `SetCursorHidden` (the pad screens' path,
   `FREELANCER_RE.md` "Hiding the arrow"), the two sources OR-ed in `impl\host.h` `HostCursorHide`. `hud2 state` prints
@@ -1030,6 +1060,9 @@ only consecutive presses should be 'next target'." / the classic NeuroNet box be
   letterbox gates, its band ends inside the bars), `hudvis::HoldChat` keeps the MsgWin hidden through Apply(false). Read in
   game on a real docking and launch: the chat root hidden in both, shown when docked, HUD 2 back in flight. **Not run:** a
   mission's story cutscene (same mode, the CamCutscene camera).
+  **Superseded 14 Nov 2026 (issues 12 and 92, the owner: "in a cutscene only the subtitles, never the chat log"):** a cutscene
+  publishes no feed (`HudLayout.feed` reserved, 0; `feedOnly` removed from `display.cpp`); `HoldChat` keeps the MsgWin hidden
+  in every cutscene and through a docking camera's tail in the base (`hud2.cpp` Update), no longer only once HUD 2 had a layout (a launch from a save loaded docked showed the MsgWin: `..\..\..\docs\kb\display.md`).
 
 ### 5.33 0.2.8, first stage: the flicker and the job board (4 Nov 2026; built; run in game: dev build, 1280x800, Save1148, background, virtual pad)
 - Issue 10's reporter plays at 1280x800 (16:10) on a Steam Deck, a size no earlier run used; it is a test size from here on.
@@ -1175,7 +1208,10 @@ The owner's scope is the whole of HUD 2, flight as the bar. 26 frames: `research
 - **Cost:** ~4 ms a try (the game rebuilds its rich fonts), 8-21 ms once per selection, never per frame.
 - **The owner, 5 Nov 2026: "Dealer looks good, keep going."** The setting is `window_text` since 5.38 (`dealer_text` / `dealertext.*` until
   then). Default on in the dev build, `game_text_size` stays 100 (it stands down under any other value). Off puts fonts back but not the
-  boxes until the next opening.
+  boxes until the next opening. **Since 13 Nov 2026 (audit 109_ group 1) the stand-down gives back everything** (window_text off, or HUD 2 -> classic
+  with the window open): every control it moved or sized goes back to the place and size the game had before the first move (`Keep` / `GiveFirstBack`),
+  each font back, the rich boxes laid out again at the game's size, and a box's scroll bar dropped for the game to make again (its place and range): every
+  text, box and button then reads as a fresh classic opening (equipment, commodity, ship dealer, job board, news; pad and mouse; 1280x800).
 
 ### 5.38 Every window by role (5 Nov 2026; built; run in game: dev build, 1280x800 + 4K, Save1148, background; `windowtext.*`, `window_text`)
 - **One table row per window** (`windowtext.cpp` `kSpecs`: its texts, row columns, rich boxes, anchors); the module is 5.37's, general. A window is found
@@ -1201,11 +1237,11 @@ The owner's scope is the whole of HUD 2, flight as the bar. 26 frames: `research
   and do not jump when the map opens. `windowtext` row `NeuroNetNavMap`, `exe::NavMapSetPosition` once the window has stood still, the native height kept so a new opening is not moved twice.
   Read: the whole toolbar clear of the panel at 1280x800 and 4K (`m3_navmap`, `m4_navmap`); the game's own hit test finds the close and universe buttons at the new height; the universe view and a second opening
   hold. Not read: a three-row comm line over the map; the map docked (the same window); a real mouse on the map's objects.
-- **The comm window in a pause in space:** `hudvis` root `CommText` (the HUD_Receiver), kept by HUD 2, hidden only while a modal menu stands over the flight (`m3_pause`, `m4_pause`); the portrait is back on resume (`m3_resumed`).
+- **The comm window in a pause in space:** `hudvis` root `CommText` (the HUD_Receiver), kept by HUD 2, hidden only while a modal menu stands over the flight (`m3_pause`, `m4_pause`) and, since 12 Nov 2026, while a NeuroNet or base page is open (`nnpage::On()`: the page's icon and text holes had let the head through at HUD 2's slot, GitHub issue 89); the portrait is back on resume (`m3_resumed`) and when the page closes.
 - **Save names into the date:** closed, as 5.34's own "Not faults" had it: long test names. The list is a table control that draws its own rows; a real save's name fits.
 - 5.34's sub-tab plate did not cross a window in these frames. Pause menu: no text role needed.
 - Evidence: `research\experience\runs\hud28_windows_2026-11-05\` (`sheet_1280_windows.png`, `sheet_4k_windows.png`, `*_texts_*.txt` the text tables).
-- **The owner, 5 Nov 2026: no 0.2.8 release;** this work goes out in 0.3.0: [RELEASE_0.3.0.md](../../../docs/RELEASE_0.3.0.md).
+- **The owner, 5 Nov 2026: no 0.2.8 release;** this work goes out in 0.3.0 (its plan is private; what shipped: `CHANGELOG.md`, section 0.3.0).
 
 ### 5.39 GitHub issues 14-20 (5 Nov 2026; built; run in game: dev + release builds, 1280x800, SaveC706 / SaveC701, background, virtual pad)
 - **Group fire (14):** `USER_FIRE_WEAPON_GROUPn` is keydown only and 0x4DCC60 fires once per keydown; `HoldFireGroup` (`controller.cpp`) sends one each frame while held, the guns' refire sets the rate.
@@ -1249,7 +1285,8 @@ The owner's rules, in the order they came. **Why:** at 16:9 the card stood at th
 - **The look:** the bottom-left panels' plate (the ship panel's corners and fill) with the docked strip's grammar (`uistrip.cpp`): a label in chrome, the value in ink, what is new in the game's yellow. Lines: `CREDITS $516,000 +$16,000` (several payouts add up while it shows). Text at the 0.024 H x k floor, values 0.026, rows 0.038 apart (the lint's 0.01 H between lines); sizes follow `hud_scale` / `text_size` (the presets) through k.
 - **The payout's trigger** (`hud2_data.cpp` Slow): a rise of the player's balance between two 10 Hz reads in flight (`hud2notice::CashWatch`), armed 1.5 s after entering space as the alerts are; docked, a load and the menu forget the balance, so a purchase, a repair, a sale or a load never shows. A load is core's count of game loads (`GameLoads`, the log's `event game-load`; `hud2notice::LoadWatch`), not the flight's end: a load from space into space never leaves the flight, and a richer save loaded from the pause menu showed its balance as a payout (`CREDITS $500,000 +$100,000`, 0.4.6's final check). At a load the card clears, the balance and the loot's first look are forgotten, and the watch arms 1.5 s after it (run in game, 1280x800 and 4K: space to space, a card standing at the load, space to docked and back, the death dialog's load: no card, log `hud2: notice forgotten at a game load`; a payout and a tractored item after it show as before). A fall shows nothing: the game has no fine in space and a bribe is paid docked. Test aid `cash <amount>` (server.dll's AdjustCash, the call a mission's reward makes).
 - **The loot's trigger** (issue 69; `hud2_data.cpp` NoteLootIn): the game's own word that an item entered a hold - the client's ITEMTRACTORED message (`exe::ClientItemTractored`, the exe's Client slot 64; `docs\FREELANCER_RE.md` "Loot into the hold"), hooked in `core\host\events.cpp` (event `loot-tractored loot= ship= units=`) and passed on the HUD bus (version 7, the last 16 records). HUD 2 keeps the player's ship's records, names each by the loot it saw last in the contacts (the game's display name, its good id as the kind), and feeds the card one line per kind: `JAVELIN MISSILE x1`, `DRAIL x2` (counts merged while it shows), past four kinds `+1 MORE`, then `CARGO 0 / 45` (the INVENTORY page's and the docked strip's words; amber when full). Nothing else sends that message, so a purchase, a mount, a mission's cargo, a jettison or a load never shows (run in game: a load, and a docked purchase of 3 consumer goods followed by the launch - no card; a mount is docked only since issue 79; a mission's cargo and a jettison not run); an NPC's tractor sends it for its own ship (seen: a police ship took a dead pirate's item) and is left out. Event-driven: no scan of the hold.
-- **The place** (`hud2_layout.h` PlaceNotice, after everything else; its area `ANotice` in the reserved list, so the targeting display and the lint read it): the first free of the bottom-left corner (where the ship panel stands, free while that panel is held back), above the ship panel when it shows, beside it in the left lane, then up the left column a step at a time to the nav; free = inside the margins, off every reserved area that draws (a held-back panel's place is free: should it wake, the next frame moves the notice), off the preset's clear fields (the lint's CentreToCard zones) and the lower centre, 0.012 H x k clear. None free: it waits unplaced, its time running. `hud2 lint` with it up: 0 FAIL in 8 sim contexts (Standard / Focus x combat, formation, loot, calm) at 1280x800; a WARN `budget.awake` while it shows (a transient plate, as an alert card's). **0.4.6's final check, a real fight in Focus at 1280x800** (hostiles, Liberty Navy escorts, payouts and comm lines; `hud2 lint` every 3 frames): two `part.over` of 2-4 px. (1) Focus's escort rows stood above their area: the bottom-left block's `kShipH` 0.12 H held three rows at 0.042 from the hold line short by 0.017 H, and the notice placed above the block touched the first row (67 of 1065 samples). The area now reaches the rows' drawn top (`Out::shipTop`, hud2_layout.h), and the notice's place above the block is the area's top. (2) Another ship's caret touched a comm card's edge: its keep-off box was the caret's points, the drawn caret has its navy keyline's half past them (the box the draw kit records for a line, the lint's); the keep-off now takes that box (`CaretKey`, hud2_target.cpp). After: none of either over the same runs, Standard and Focus, 1280x800 and 4K (Focus at 4K had one other sample: the targeting display's hull number over the card's area, `target.form`, left open). The caret case was not reproduced in these runs.
+- **The place** (`hud2_layout.h` PlaceNotice, after everything else; its area `ANotice` in the reserved list, so the targeting display and the lint read it): the first free of the bottom-left corner (where the ship panel stands, free while that panel is held back), above the ship panel when it shows, beside it in the left lane, then up the left column a step at a time to the nav; free = inside the margins, off every reserved area that draws (a held-back panel's place is free: should it wake, the next frame moves the notice), off the preset's clear fields (the lint's CentreToCard zones) and the lower centre, 0.012 H x k clear. None free for the one-line card: the same places for its **wrapped forms**, widest first (issue 87, package 2's verification: `ADV. COUNTERMEASURE FLARE x50 · FULL` had no place at 1280x800 at the default scale and the card did not show; the line without FULL had none at scale 130 either): its lines break between the words of a name and before the count, never between the count and its FULL (round 2 of the verification: a lone `· FULL` line read as a list entry), the rest on the next line indented 0.012 H x k, to 0.40 H, then 0.31 H, then 0.25 H (`hud2_layout.h` `kNoticeWrapH`, the screen's H: the room beside the panels does not grow with the text; Standard's widest place for a card 0.16 H tall reads 0.32 H at 1280x800 and 0.40 H at 4K). A line that fits keeps its one-line form; `hud2 notice` reports `wrap=<width>` (0 one line). **Never above the comm feed's cards' top, and no place = it waits with its clock stopped** (the owner, 13 Nov 2026, the flight screen's lower band design sheet, Q1 "wait below the cards", and card N12; release 0.4.7): while the side chat's cards show (`AChat`), every place whose top would stand above their top is not free (before, the climb up the left column put the card above the stack, near mid-screen); with none free in any form it waits unplaced, and while it waits its time and fade stand still (`hud2_layout.h` `NoticeWaits`, `hud2_notice.h` `Notice::Step` `wait`: the last layout found it no place, outside the letterbox, where it is never placed and its time runs as before), so it shows with its time ahead when the corner or the place beside the ship panel frees. A button prompt keeps the corner (Q2: prompts are placed first; the notice is the one that gives way) - but only a prompt the player can see holds room against the notice (the lead's rule on the owner's answers): with `hud_prompts` ON CHANGE a prompt faded out after its 4 s gives the notice its place (`Frame::ctxSeen`, the context's fade above 0.01; fading in counts as seen); when the prompt comes back it takes its place again and the notice goes to its next allowed place or waits, its time stopped. Tested: `tests\hud2_notice_test.cpp` (the waiting clock; N12's case, 4K, keyboard and mouse, hud_scale 130, a fight, a two-item card too wide for the place beside the panel under a radio card: it waits 8 s and shows when the card goes with its 4 s still ahead), `tests\hud2_layout_test.cpp` "the loot notice in the same frame". `hud2 lint` with it up: 0 FAIL in 8 sim contexts (Standard / Focus x combat, formation, loot, calm) at 1280x800; a WARN `budget.awake` while it shows (a transient plate, as an alert card's). **0.4.6's final check, a real fight in Focus at 1280x800** (hostiles, Liberty Navy escorts, payouts and comm lines; `hud2 lint` every 3 frames): two `part.over` of 2-4 px. (1) Focus's escort rows stood above their area: the bottom-left block's `kShipH` 0.12 H held three rows at 0.042 from the hold line short by 0.017 H, and the notice placed above the block touched the first row (67 of 1065 samples). The area now reaches the rows' drawn top (`Out::shipTop`, hud2_layout.h), and the notice's place above the block is the area's top. (2) Another ship's caret touched a comm card's edge: its keep-off box was the caret's points, the drawn caret has its navy keyline's half past them (the box the draw kit records for a line, the lint's); the keep-off now takes that box (`CaretKey`, hud2_target.cpp). After: none of either over the same runs, Standard and Focus, 1280x800 and 4K (Focus at 4K had one other sample: the targeting display's hull number over the card's area, `target.form`, left open). The caret case was not reproduced in these runs.
+- **A take that brings any item to its limit says FULL** (GitHub issue 87; the owner's decisions 71, 13 Nov 2026, "Say when the hold is full", and 72, "Any item at its limit"): a loot line whose latest take left the ship unable to take one more unit of that item reads `SHIELD BATTERY x7 · FULL`, `JAVELIN MISSILE x7 · FULL`, `WATER x12 · FULL`: the count, then ` · FULL` at the label's size and tracking in the count's yellow (it is news of the same take). Batteries and nanobots against the ship's limit, each munition (missiles, mines, countermeasures) against its own limit, any item with a volume when the hold has no room left for one more unit of it. The tester's view was "SHIELD BATTERY x7" beside a battery count of 43: a real take from 36 to 43 the card held for its 4 s, while a second press at 43 was refused (`98_issue87` in the audit: the counting was right). **The rule, one for every item** (`hud2_notice.h` `AtLimit`, `Item::full`, tested): the game's own answer right after the take, `CShip::get_space_for_cargo_type` (`core\game\ai.cpp` `CargoRoom`), the function the server's take is trimmed to; a room of exactly 0 is FULL; -1 (a ship with no limit for it) and 0x7FFFFFFF (a volume-0 item with no limit of its own: a gun, a thruster) are room, so never FULL; no answer from the game (not flying, the archetype not verified) is never FULL. The latest take of a kind decides its line's FULL (a later take below the limit clears it); a take of nothing (a refusal) changes nothing, so the earlier line stands as it was beside the game's TRACTOR FAILURE card. **The game's answer** (`docs\FREELANCER_RE.md` "Loot value and room"): the hold's room by volume in whole units, and for the capped classes no more than the room under the limit (`shield_battery_limit` / `nanobot_limit`, +0x144 / +0x140, less the stack; `MAX_PLAYER_AMMO`, 50 in HDE, less the hold's stack of that munition); by class, not by nickname, so a mod's items count the same. Read when the ITEMTRACTORED record is handled: the server sends the hold's change (OBJECTCARGOUPDATE, Client slot 86) before that record, and the client applies it in its handler (decompiled; seen in game for batteries and nanobots; `docs\FREELANCER_RE.md` "Loot into the hold"), so the room read is the room after the take. A commodity take that fills the hold also raises the CARGO HOLD FULL card as before (the hold's free room under 1). Test aid `hud2 notice full <units> <name>`; the log line `hud2: notice LOOT ... room= known= full=`.
 - **Not done:** no settings row (none needed to switch it off was asked); FLUF's windows do not dim it.
 
 ### 5.44 The comm feed as a reserved area (GitHub issues 77, 78, a follow-up; 0.4.6; run in game: dev build, SaveC706, background, 1280x800 and 4K, Standard and Focus)

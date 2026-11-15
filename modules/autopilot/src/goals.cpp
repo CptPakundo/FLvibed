@@ -5,6 +5,7 @@
 #include "game/events.h"
 #include "game/aim.h"
 #include "autopilot.h"
+#include "barbutton.h" // the autopilot key's name for the foot's Shift + key
 #include "ui/flightmodal.h"
 #include "log.h"
 #include "ui/options_page.h" // LocalBus: the bus over this DLL's own sections when the host has none
@@ -704,20 +705,54 @@ void Render(void* device)
     const float H = s.H, W = s.W, ts = s.ts;
     const uikit::Fonts& f = *s.f;
     const bool kbm = Kbm();
-    std::vector<Prompt> prompts;
-    prompts.push_back({GlyphToken(glyphs::LB) + GlyphToken(glyphs::RB) + L" TAB"});
+    // the pad's buttons, one list: the shared prompt bar shows them with HUD 2; on the classic HUD (the HUD module off, or
+    // hud_style classic) the bar's bottom-right place is the game's weapon list, so they stand in the panel's own foot
+    // instead (the owner, 13 Nov 2026, card N13: "Inside the panel's foot")
+    // ... and the keyboard form's keys, from the same list (the owner's yes to the K&M goal keys, audit 133_ Q5): each item's
+    // keycaps (none: the item is the pad's alone, QUEUE / DO NEXT have no key while there is no queue; no glyph: the
+    // keyboard's alone), its word on the keyboard where it reads otherwise. CLOSE carries the panel's own keys, Shift +
+    // the autopilot key and Shift + click on the bar button (barbutton.cpp TogglePanel), which were shown nowhere
+    struct PadItem
+    {
+        glyphs::Id a, b; // b: a second glyph or COUNT; a COUNT: not on the pad
+        const wchar_t* label;
+        bool enabled;
+        std::wstring k1, k2;            // the keyboard's caps ("": not on the keyboard)
+        const wchar_t* kLabel = nullptr; // the keyboard's word, when it is not the label
+    };
+    std::wstring apKey = L"SHIFT+";
+    for (const char* c = barbutton::KeyName(); c && *c; ++c)
+        apKey += static_cast<wchar_t>(toupper(static_cast<unsigned char>(*c)));
+    if (apKey.size() == 6 || barbutton::KeyRefused()) // (no key, or the game's own command has it: Shift + it opens nothing)
+        apKey.clear();
+    std::vector<PadItem> padItems;
+    padItems.push_back({glyphs::LB, glyphs::RB, L"TAB", true, L"TAB", L"", L"NEXT TAB"});
     if (g_tab == Actions)
     {
-        prompts.push_back({GlyphToken(glyphs::A) + L" DO NOW"});
-        prompts.push_back({GlyphToken(glyphs::X) + L" QUEUE", false});
-        prompts.push_back({GlyphToken(glyphs::Y) + L" DO NEXT", false});
+        padItems.push_back({glyphs::A, glyphs::COUNT, L"DO NOW", true, L"ENTER", L""});
+        padItems.push_back({glyphs::COUNT, glyphs::COUNT, L"ROW", true, L"UP/DOWN", L""});
+        padItems.push_back({glyphs::X, glyphs::COUNT, L"QUEUE", false, L"", L""});
+        padItems.push_back({glyphs::Y, glyphs::COUNT, L"DO NEXT", false, L"", L""});
     }
     else if (g_tab == Settings)
     {
-        prompts.push_back({GlyphToken(glyphs::A) + L" CHANGE"});
-        prompts.push_back({GlyphToken(glyphs::DL) + GlyphToken(glyphs::DR) + L" VALUE"});
+        padItems.push_back({glyphs::A, glyphs::COUNT, L"CHANGE", true, L"ENTER", L""});
+        padItems.push_back({glyphs::DL, glyphs::DR, L"VALUE", true, L"LEFT/RIGHT", L""});
     }
-    prompts.push_back({GlyphToken(glyphs::B) + L" CLOSE"});
+    padItems.push_back({glyphs::B, glyphs::COUNT, L"CLOSE", true, apKey.empty() ? std::wstring(L"SHIFT+CLICK") : apKey,
+                        apKey.empty() ? std::wstring() : std::wstring(L"SHIFT+CLICK")});
+    // this form's items
+    std::vector<PadItem> items;
+    for (const PadItem& p : padItems)
+        if (kbm ? !p.k1.empty() : p.a != glyphs::COUNT)
+            items.push_back(p);
+    const bool hud2 = views::HudActive();
+    const bool footPrompts = !kbm && !hud2;
+    std::vector<Prompt> prompts;
+    if (!footPrompts)
+        for (const PadItem& p : padItems) // (the bar's as before, the keyboard form's too)
+            if (p.a != glyphs::COUNT)
+                prompts.push_back({GlyphToken(p.a) + (p.b != glyphs::COUNT ? GlyphToken(p.b) : std::wstring()) + L" " + p.label, p.enabled});
     const float barTop = PromptBar(s, prompts);
     // the panel, right-middle (one column; the settings rows need the kit's control column: 0.34 H). Its bottom stays
     // above the HUD's bottom-right panel group (the consumables / weapon group row over the target panel; the strip at
@@ -749,10 +784,44 @@ void Render(void* device)
     const float settingPitch = H * 0.0454f, linePitch = f.label.lineHeight * 1.35f;
     const float hudTop = HudPanelTop();
     const float limit = std::min(barTop - H * 0.01f, hudTop > 0 ? hudTop - H * 0.012f : H);
-    const float top = H * 0.02f, room = limit - top - (headH + tabH + pad * 3.5f);
+    // the foot: the keyboard form's keys, or the pad's buttons on the classic HUD (wrapped onto more lines when the width is short)
+    const float footGlyphH = f.body.lineHeight * 1.2f;
+    auto capW = [&](const std::wstring& name) { return std::max(footGlyphH, static_cast<float>(render::TextWidth(f.body, name)) + footGlyphH * 0.6f); };
+    auto itemLabel = [&](const PadItem& p) { return kbm && p.kLabel ? p.kLabel : p.label; };
+    auto padItemW = [&](const PadItem& p)
+    {
+        float iw = 0;
+        if (kbm)
+            iw = capW(p.k1) + (p.k2.empty() ? 0 : pad * 0.2f + capW(p.k2));
+        else
+        {
+            iw = glyphs::Width(glyphs::Menu(p.a), footGlyphH);
+            if (p.b != glyphs::COUNT)
+                iw += pad * 0.2f + glyphs::Width(glyphs::Menu(p.b), footGlyphH);
+        }
+        return iw + pad * 0.4f + static_cast<float>(render::TextWidth(f.body, itemLabel(p)));
+    };
+    int footLines = 0;
+    if (footPrompts || kbm) // (the keyboard's keys wrap as the pad's buttons do)
+    {
+        float lx = 0;
+        footLines = 1;
+        for (const PadItem& p : items)
+        {
+            const float iw = padItemW(p);
+            if (lx > 0 && lx + iw > w - pad * 3.2f) // (the rows' text width: left..right below)
+                ++footLines, lx = 0;
+            lx += iw + pad * 1.4f;
+        }
+    }
+    const float footH = footLines ? f.body.lineHeight * (0.4f + 1.5f * footLines) : 0; // (one line: the keyboard's 1.9 lines as before)
+    // (the pad's foot is taken from the action rows' room; the keyboard form's foot as before)
+    const float top = H * 0.02f, room = limit - top - (headH + tabH + pad * 3.5f) - (footPrompts ? footH : 0);
     g_visibleActions = std::clamp(static_cast<int>(room / actionPitch), 3, kVisibleActions);
-    const float footH = kbm ? f.body.lineHeight * 1.9f : 0; // the keyboard form's keys
-    const float bodyH = std::max(g_visibleActions * actionPitch, std::max(kSettingCount * settingPitch, 8 * linePitch));
+    // (the settings' rows and the focused row's help line under them, with a pad's gap before the foot: at 4K the help line
+    // stood right on the pad's new foot, 119_ unasked change 5)
+    const float settingsH = kSettingCount * settingPitch + pad * 1.5f + f.body.lineHeight;
+    const float bodyH = std::max(g_visibleActions * actionPitch, std::max(settingsH, 8 * linePitch));
     const float h = headH + tabH + bodyH + footH + pad * 3.5f;
     const float x1 = W - W * 0.02f, x0 = x1 - w;
     float y0 = H * 0.5f - h * 0.5f;
@@ -768,7 +837,6 @@ void Render(void* device)
     // HUD 2 (the owner, 7 Nov 2026: "bring it up to HUD 2 style and standards"; the Options page's HUD 2 pass is the model, UI_HUD2_EXTENDED.md 10): the
     // chrome in HUD 2's kit under the texts - one chamfered glass plate, the rule under the title, tab plates with the current one's yellow underline, the
     // one focus style (28 % active yellow over the row, the bar outside its left edge); the texts after it in HUD 2's colours. Without HUD 2 the classic panel
-    const bool hud2 = views::HudActive();
     if (hud2)
     {
         render::End(false);
@@ -919,34 +987,49 @@ void Render(void* device)
                          Argb(kDim, 0.95f));
         }
     }
-    if (kbm) // the keyboard form's foot: the pad's prompts as keys (QUEUE / DO NEXT have no key: there is no queue yet)
+    if (kbm || footPrompts) // the foot, one list (above): the keyboard's keys, or the pad's buttons on the classic HUD - glyph or cap and word, as the bar draws them
     {
-        struct Item
+        const float lineH = f.body.lineHeight * 1.5f;
+        float cy = y0 + h - pad - footH + f.body.lineHeight * 0.2f + lineH * 0.5f, kx = left;
+        for (const PadItem& p : items)
         {
-            const wchar_t* key;
-            const wchar_t* label;
-        };
-        std::vector<Item> items;
-        if (g_tab == Actions)
-            items = {{L"ENTER", L"DO NOW"}, {L"UP/DOWN", L"ROW"}, {L"TAB", L"NEXT TAB"}};
-        else if (g_tab == Settings)
-            items = {{L"ENTER", L"CHANGE"}, {L"LEFT/RIGHT", L"VALUE"}, {L"TAB", L"NEXT TAB"}};
-        else
-            items = {{L"TAB", L"NEXT TAB"}};
-        const float kh = f.body.lineHeight * 1.2f, cy = y0 + h - pad - footH * 0.5f;
-        float kx = left;
-        for (const Item& it : items)
-        {
-            kx += KeyCap(f.body, kx, cy, kh, it.key, Argb(kHud, 0.9f), H) + pad * 0.5f;
+            if (kx > left && kx + padItemW(p) > right)
+                kx = left, cy += lineH;
+            const float alpha = p.enabled ? 0.9f : 0.4f;
+            if (kbm)
+                for (const std::wstring* k : {&p.k1, &p.k2})
+                {
+                    if (k->empty())
+                        continue;
+                    if (k != &p.k1)
+                        kx += pad * 0.2f;
+                    kx += KeyCap(f.body, kx, cy, footGlyphH, *k, Argb(kHud, alpha), H);
+                }
+            else
+                for (glyphs::Id id : {p.a, p.b})
+                {
+                    if (id == glyphs::COUNT)
+                        continue;
+                    if (id != p.a)
+                        kx += pad * 0.2f;
+                    const glyphs::Id shown = glyphs::Menu(id);
+                    const float gw2 = glyphs::Width(shown, footGlyphH);
+                    glyphs::Draw(shown, kx + gw2 * 0.5f, cy, footGlyphH, alpha);
+                    kx += gw2;
+                }
+            kx += pad * 0.4f;
             render::SetFont(f.body);
-            render::Text(kx, cy - f.body.lineHeight * 0.5f, it.label, Argb(kWhite, 0.85f));
-            kx += static_cast<float>(render::TextWidth(f.body, it.label)) + pad * 1.4f;
+            render::Text(kx, cy - f.body.lineHeight * 0.5f, itemLabel(p), Argb(p.enabled ? kWhite : kDim, 0.85f));
+            kx += static_cast<float>(render::TextWidth(f.body, itemLabel(p))) + pad * 1.4f;
         }
-        render::SetFont(f.body);
-        const std::wstring click = L"CLICK A ROW";
-        const float cw = static_cast<float>(render::TextWidth(f.body, click));
-        if (kx + cw < right)
-            render::Text(right - cw, cy - f.body.lineHeight * 0.5f, click, Argb(kDim, 0.9f));
+        if (kbm) // (the mouse's way, where the last line leaves room)
+        {
+            render::SetFont(f.body);
+            const std::wstring click = L"CLICK A ROW";
+            const float cw = static_cast<float>(render::TextWidth(f.body, click));
+            if (kx + cw < right)
+                render::Text(right - cw, cy - f.body.lineHeight * 0.5f, click, Argb(kDim, 0.9f));
+        }
     }
     render::End(false);
 }

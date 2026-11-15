@@ -3,7 +3,7 @@
 # Baxter, the Baxter fight, the Cambridge hole, the traitors, Wotan, the escort, the Leeds hole, Planet Leeds); the
 # harness only does the rooms (Sprague's scene chain and Baxter's bar scene: Complete-FLBaseStory; the Tobias scene at
 # Leeds).
-# Start: docked at Cambridge with the M05 offer accepted (campaign save Save1d87.fl, docs\missions\SAVES.md).
+# Start: docked at Cambridge with the M05 offer accepted (campaign save Save1d87.fl, the scene-save catalogue, private).
 # Runbook: docs\missions\M05.md. Prints SUCCESS / FAILED and a total.
 param([int]$TimeoutSec = 2400)
 . (Join-Path $PSScriptRoot '..\flctl.ps1')

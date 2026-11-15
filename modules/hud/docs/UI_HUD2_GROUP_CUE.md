@@ -1,6 +1,6 @@
 # The weapon group cue (design, 5 Nov 2026; P11f's last feature, on the owner's word)
 
-**Status:** design, ruled by the owner on 6 Nov 2026 (section 0). Built on `build-040`, not seen in game (`UI_HUD2_BUILD_040.md`). Game facts: `research\evidence\hud2_skin\09_weapon_cue_facts.md`; the source games: `08_mechwarrior_cue_reader.md`. Frames: `research\evidence\hud2_skin\mock\group_cue_4k.png`, `group_cue_1280x800.png`, `group_cue_states.png` (`tools\uimock\hud2s.py`). Build lane: after P11e, the 12 probes and the most-seen screens.
+**Status:** design, ruled by the owner on 6 Nov 2026 (section 0). Built on `build-040`, not seen in game (the 0.4.0 HUD 2 build record, private). Game facts: `research\evidence\hud2_skin\09_weapon_cue_facts.md`; the source games: `08_mechwarrior_cue_reader.md`. Frames: `research\evidence\hud2_skin\mock\group_cue_4k.png`, `group_cue_1280x800.png`, `group_cue_states.png` (`tools\uimock\hud2s.py`). Build lane: after P11e, the 12 probes and the most-seen screens.
 
 **The request, a player's, through the owner:** "Would it be possible to show weapon group icons above the crosshair, showing currently-selected group, and lighting said individual icons up once your target is in the center of the screen and reaches the furthest-maximum range of any of the three weapon groups, like MechWarrior 4 and 5 do?" The owner: "a good balance of meeting his request exactly while also fitting in with how HUD 2 should work, with its constraints and standards."
 
@@ -32,7 +32,7 @@ The glow means lock and nothing else: the "one pulse at any change" of the sheet
 
 **The triangle:** the ruling reads "invert the triangle (pointy side down)". The only triangle on that sheet is the lock's tick, so that is what turned. The loadout's yellow selection arrow is not on the cue and is untouched.
 
-**Sizes:** the text follows `hud_size`: 0.024 H on Normal and Large, 0.021 H on Small, Normal's text at 1280x800 (`UI_HUD2_INPUTS.md` 7).
+**Sizes:** the text follows `hud_size`: 0.024 H on Normal and Large, 0.021 H on Small, Normal's text at 1280x800 (the HUD 2 inputs record 7, private).
 
 ## 1. Verdict
 Yes, as asked, and small. A row in the ring's open top, at the text floor: up to three group digits, then M and T. The selected group is boxed; each mark fills when the target is in the ring and inside that weapon's reach. The ring's top is free in every preset, it is 0.09 H from the eyes, the game gives the range and the fire state natively, and the cost is a few microseconds.

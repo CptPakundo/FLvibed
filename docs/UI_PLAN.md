@@ -1,6 +1,6 @@
 # The player-facing UI: the autopilot button and the FLvibed options page (design, 25 Oct 2026)
 
-Status: decided and built 25 Oct 2026; how: `UI_BUILD.md`. The brief (user, 25 Oct 2026): (1) a new
+Status: decided and built 25 Oct 2026 (status is of that date; pages moved onto the page framework since, CHANGELOG 0.4.7: check a row against the code before acting on it); how: the UI build record (private; the structure is in `ARCHITECTURE.md`). The brief (user, 25 Oct 2026): (1) a new
 maneuver-bar button that toggles the autopilot, with a default key the game does not bind; (2) options in both the main
 menu and the in-game menu for what the mod adds or changes (subtitles and how they show, autopilot configurations,
 sensible defaults, anything else the mod changes), after a look at the whole project and at how well-regarded games do
@@ -205,9 +205,10 @@ attacker", the pad cursor everywhere, the HUD kept informative with badges and t
 mode) and the suggested defaults for the rest (6b `pilot` advanced only; 12 hold View; 13 automatic switching with a
 lock; 14 the glyph families (Steam added 5 Nov 2026), confirm = bottom with a Nintendo swap; 17 the New Game prompt locked per save; 18
 the LiveSplit client now; 19 the prompt bar contextual; 20 foundation -> flight HUD -> bases -> dealers -> map).
-**Standing order (the user, 25 Oct 2026): the mock-up is the Feature Tour and stays current through development** -
-every UI change lands in it (`tools\uimock\README.md`: the page's source, build, publish, how the owner's edits in the
-artifact's `ui/spec` document are patched, `docs\UI_SPEC.json` regenerated) in the same commit as the code.
+**The mock-up is the Feature Tour** (the user, 25 Oct 2026) - a UI change should reach it (`tools\uimock\README.md`:
+the page's source, build, publish, how the owner's edits in the artifact's `ui/spec` document are patched,
+`docs\UI_SPEC.json` regenerated). Its "same commit as the code" order was lifted on 12 Nov 2026 (the audit): a
+reminder until the redesigned Tour sets its own rule.
 
 ## 6. The controller UI (round 2, 25 Oct 2026; the owner's brief: "nothing must only work with keyboard and mouse")
 Research: `docs\research\controller_ui.md` (three rounds of sources in `research\evidence\controller_ui\`). The whole
@@ -235,7 +236,8 @@ back into `docs\UI_SPEC.json` afterwards.
 Last valid input wins on unpaused game time: pad = any button, D-pad, a trigger past 0.5, a stick past ~0.25 (above the
 XInput dead zone, so drift never counts); keyboard and mouse = any key, ~8-10 px of mouse motion at 1080p in one frame
 (scaled by DPI) or a wheel notch. After a switch the other device's axis-only signals are ignored for 300-500 ms;
-buttons and keys switch at once. The HUD and prompts swap in one frame; the cursor is hidden and hover disabled in pad
+buttons and keys switch at once. Only a new input switches: a button, trigger or mouse button going down, never one held
+(holding a pad trigger and a mouse button together swapped the device every frame and slowed the game, 14 Nov 2026). The HUD and prompts swap in one frame; the cursor is hidden and hover disabled in pad
 mode. Settings: Input device Automatic / Controller / Keyboard and mouse; a pad unplugged in flight pauses the game.
 
 ### 6.3 Glyphs (decision 14)

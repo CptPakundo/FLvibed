@@ -38,7 +38,7 @@ struct UiOptions
     int buttonLegend = 0;           // button_legend: 0 on, 1 off
     bool apStatusLine = true;       // ap_status_line
     // HUD 2 (modules\hud\docs\UI_HUD2.md 5.3)
-    int hudStyle = 2;               // hud_style: 0 CLASSIC, 1 HUD 2 on the pad, 2 HUD 2 always (default since 0.2.0)
+    int hudStyle = 2;               // hud_style: 0 CLASSIC, 2 HUD 2 (default since 0.2.0; huddoor::Style, never 1)
     int hudFade = 1;                // hud_fade: 0 full, 1 contextual (0.2.1; core\game\hudwake.h)
     int hudOpacity = 100;           // hud_opacity %
     int hudScale = 100;             // hud_scale %

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Local only: every file comes from the user's own disk (drag and drop or the picker); no request of any kind leaves
+     the page (connect-src 'none'; images only from blobs the page makes). Never published: the private bench. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file: 'unsafe-inline'; img-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>HUD bench replayer</title>
+<link rel="stylesheet" href="replay.css">
+</head>
+<body>
+<header>
+  <h1>HUD bench replayer</h1>
+  <span class="note">Display lists, format v0 (provisional until B2): <code>tools\hudbench\FORMAT.md</code>. Files stay on this machine.</span>
+  <span id="badge" class="badge" hidden></span>
+</header>
+<main>
+<aside id="controls">
+  <section>
+    <h2>Files</h2>
+    <label class="drop" id="drop">Drop display lists (.fldl.json), an atlas manifest (.json) with its PNG, here, or
+      <input type="file" id="files" multiple accept=".json,.png"></label>
+    <div class="row">Lists go to
+      <label><input type="radio" name="slot" value="A" checked> A</label>
+      <label><input type="radio" name="slot" value="B"> B</label>
+      <button id="clearB" type="button">Clear B</button></div>
+    <div class="row"><label>Background image <input type="file" id="bgfile" accept=".png,.jpg,.jpeg,.bmp"></label>
+      <button id="clearBg" type="button">None</button></div>
+    <div class="row"><label>Background colour <input type="color" id="bgcolor" value="#000000"></label></div>
+    <div id="loaded" class="small"></div>
+  </section>
+  <section>
+    <h2>Folder</h2>
+    <div class="row"><label class="button">Folder <input type="file" id="folder" webkitdirectory multiple hidden></label>
+      <button id="flip" type="button" title="the F key">Flip A / B</button></div>
+    <div class="small">Pick a folder of bench results (e.g. <code>build\bench\show</code>): every list in it, by sub-folder; A or B
+      loads that list with its own folder's atlas.</div>
+    <div id="folderList" class="small"></div>
+  </section>
+  <section>
+    <h2>Size</h2>
+    <div class="row"><select id="size">
+      <option value="list">The list's own size</option>
+      <option value="1280x800">1280 x 800</option>
+      <option value="1920x1080">1920 x 1080</option>
+      <option value="3840x2160">3840 x 2160</option>
+      <option value="custom">Other</option>
+    </select>
+    <input type="number" id="cw" min="16" max="16384" value="1280" aria-label="width"> x
+    <input type="number" id="ch" min="16" max="16384" value="800" aria-label="height"></div>
+    <div class="row"><label><input type="radio" name="map" value="exact" checked> List pixels 1:1</label>
+      <label><input type="radio" name="map" value="stretch"> Stretch the list to the size (a preview, not exact)</label></div>
+    <div class="row">Zoom
+      <label><input type="radio" name="zoom" value="fit" checked> Fit</label>
+      <label><input type="radio" name="zoom" value="1"> 100 %</label>
+      <label><input type="radio" name="zoom" value="2"> 200 %</label>
+      <label><input type="radio" name="zoom" value="0.5"> 50 %</label></div>
+    <div class="small">100 % is one list pixel per screen pixel (the display's scale taken out).</div>
+  </section>
+  <section>
+    <h2>View</h2>
+    <div class="row">
+      <label><input type="radio" name="view" value="A" checked> A</label>
+      <label><input type="radio" name="view" value="B"> B</label>
+      <label><input type="radio" name="view" value="AB"> A | B</label>
+      <label><input type="radio" name="view" value="diff"> Difference</label>
+      <label>over <input type="number" id="thresh" min="0" max="255" value="8" aria-label="difference threshold"> levels</label></div>
+    <div class="row" id="passes"></div>
+    <div class="row" id="layers"></div>
+    <div class="row" id="overlays"></div>
+  </section>
+  <section>
+    <h2>Pointer</h2>
+    <div id="hover" class="small mono">-</div>
+  </section>
+</aside>
+<div id="stage">
+  <div id="views">
+    <figure class="view" id="viewA"><figcaption>A</figcaption><div class="frame"><canvas class="gl"></canvas><canvas class="ov"></canvas></div></figure>
+    <figure class="view" id="viewB"><figcaption>B</figcaption><div class="frame"><canvas class="gl"></canvas><canvas class="ov"></canvas></div></figure>
+    <figure class="view" id="viewD"><figcaption>Difference: A against B</figcaption><div class="frame"><canvas class="d2"></canvas></div></figure>
+  </div>
+  <div id="messages"></div>
+  <div id="inspect"></div>
+</div>
+</main>
+<script src="fldl.js"></script>
+<script src="gl.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -7,6 +7,8 @@
 !/CLAUDE.md
 !/README.md
 !/CHANGELOG.md
+!/CONTRIBUTING.md
+!/.github/
 !/LICENSES/
 !/HANDOFF.txt
 !/HANDOFF_history.txt
@@ -19,6 +21,8 @@
 !/modules/
 !/tests/
 !/.clang-format
+# the unattended runs' run files (runs\README.md; the AFK rebuild R1, 12 Nov 2026): committed before each run starts
+!/runs/
 
 # the leg history (research\experience\legs\legs.tsv: the test loop's source of truth, one row per leg run) is the one
 # file tracked out of the otherwise local research\ tree - every other folder and file under it stays ignored
@@ -40,6 +44,46 @@
 *.wav
 *.mp3
 *.utf
+
+# the design bench (audit 71b section 6; tools\private_check.py is the export's check): recorded states, display lists,
+# atlases and the game's texture and font files are never tracked by accident. A state (*.flstate.json) only as a
+# recorded sim fixture in tests\bench\, a display list (*.fldl.json) only as a unit fixture in tools\hudbench\private\;
+# no image or font file under tools\hudbench\ or tests\bench\ but the image drafts in tools\hudbench\tour\fallback\.
+# The atlases live in build\bench\cache\, the recordings and captures in research\experience\bench\ (both ignored above)
+*.flstate.json
+*.fldl.json
+*.txm
+!/tests/bench/**/*.flstate.json
+!/tools/hudbench/private/**/*.fldl.json
+/tools/hudbench/**/*.png
+/tools/hudbench/**/*.bmp
+/tools/hudbench/**/*.tga
+/tools/hudbench/**/*.dds
+/tools/hudbench/**/*.jpg
+/tools/hudbench/**/*.jpeg
+/tools/hudbench/**/*.webp
+/tools/hudbench/**/*.gif
+/tools/hudbench/**/*.ttf
+/tools/hudbench/**/*.otf
+/tools/hudbench/**/*.ttc
+/tools/hudbench/**/*.fon
+/tools/hudbench/**/*.woff
+/tools/hudbench/**/*.woff2
+/tools/hudbench/**/*.svg
+!/tools/hudbench/tour/fallback/**/*.svg
+/tests/bench/**/*.png
+/tests/bench/**/*.bmp
+/tests/bench/**/*.tga
+/tests/bench/**/*.dds
+/tests/bench/**/*.jpg
+/tests/bench/**/*.jpeg
+/tests/bench/**/*.webp
+/tests/bench/**/*.gif
+/tests/bench/**/*.ttf
+/tests/bench/**/*.otf
+/tests/bench/**/*.ttc
+/tests/bench/**/*.fon
+!/tools/hudbench/tour/fallback/**/*.png
 
 # game knowledge base tables generated from the game's own data (tools\kbgen.ps1, regenerated locally in seconds)
 /docs/kb/generated/

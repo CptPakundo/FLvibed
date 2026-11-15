@@ -1,4 +1,4 @@
-// The goal queue (goalqueue.h; A37_PLAN S6): pure - a situation and records in, verdicts / records / text out.
+// The goal queue (goalqueue.h; the A37 plan's S6, private): pure - a situation and records in, verdicts / records / text out.
 #include "goalqueue.h"
 #include "situation_io.h"
 

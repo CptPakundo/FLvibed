@@ -56,4 +56,6 @@ Marquee: a text only just over its room no longer scrolls and stands whole (Shoc
 
 ## Not tried
 
+Status below is of 7 Nov 2026; pages moved onto the page framework since (CHANGELOG 0.4.7); check a row against the code before acting on it.
+
 A strip of three lines over a page (the only page without a window flag is best prices; the top's rule is read, not seen); a mod's room with more words than the bar holds; real mouse (clicks, wheel, chips, the swallow of a click on blank page: nothing is under it, the game's controls stand off the screen); real pad; multiplayer; 4:3. Best prices with more than one base (its scrolling, whether the game's list has a bar of its own); a final stage where the player cannot pay, or where items do not fit, in game (only sold by hand); mounting at the final stage (left out: the rows are the new ship's copy, a mount there unread); typing the jettison number (JettisonQuantityEdit did not answer as visible in the test, the page has no field for it); the docked ship view; a ship with the hull alone damaged. With `base_pages` set to 0 while a page stands the window comes back with its icons out of place until it is opened again. "Yes" in the prices' BASE SELLS column is read by its first letter: another language shows no place to buy.

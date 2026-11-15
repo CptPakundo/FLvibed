@@ -10,29 +10,8 @@
 
 struct ShmBlock;
 
-// Host API version: v1 = initial, v2 adds SetSteer and LastRealMouseTick, v3 adds PushEvent and
-// IdsText, v4 adds SetHudHitSuppression, v5 adds GetRoomCharacters, v6 adds GuardEvade, v7 adds SetKeepRunning, v8
-// adds JumpInCount, v9 adds CommPlayer, v10 adds MissionObjects, v11 MissionMarks + ObjectiveRefs, v12 PlayerHit, v13
-// ObjectiveTitle, v14 DockReply, v15 ObjectiveSteps, v16 CommHeardAt, v17 SpawnedShips, v18 the UI build (
-// GetSettingsBus, the host-created native buttons SetUiButton / UiButtonRect, OptionsPageState / ShowOptionsPage,
-// LastRealKeyTick, RealMouseDown), v19 RealMouseMotion (the HUD track's request: the physical mouse's motion
-// in pixels for the device switch's threshold), v20 SetCursorHidden + MissionResult (the integration of the screen
-// tracks), v21 GetHudBus (HUD 2: core\hud_bus.h), v22 SetHudHotspots + HudHotspotHovered (HUD 2's
-// keyboard-and-mouse clicks), v23 UiGeneration (Extended HUD 2: windows opened / closed without
-// polling), v24 ObjectiveText (HUD 2's objective line as the game formats it), v25 ObjectiveReread (the
-// objective a save load restores without an objective event), v26 WindowMode (who provides borderless
-// windowed: modules\controller\src\host\winmode.h), v27 RealMouseWheel (the options page's wheel), v28 SetGunAim (the autopilot's
-// gunnery decoupled from the camera and the cursor), v29 DeferToFrameEnd (the front end's clicks out of the
-// logic's stack; modal-loop frames), v30 ChatLineAt (a multiplayer server's permission), v31
-// ServerTag (the server's word kept across logic reloads), v32 FixedDt (TEST ONLY: fixed dt), v33
-// SdlPad + SdlPadRumble (the opt-in SDL3 gamepad backend, WORK_QUEUE Q5 slice 1), v34 GameLoads (what the
-// host and mission.cpp keep per game starts over at a load: the A37 S1 finding), v35 MissionSave (the story's
-// checkpoint saves for the speedrun splits' save:<ids> rows: M01b.end at GAME SAVED, CP-M01b), v37 SetSteerLift, v38 SdlPadFilter, v39 SetTargetMute + TargetMuteReady, v40 SetLoadDraw,
-// v41 SdlPadTriggers + SdlPadTriggerRumble + the grips' stream (modules\controller\docs\HAPTICS.md). A logic DLL must check `version` before using functions added in later versions.
-// v42 SdlPadTouchRead: the pad's touchpad fingers (the nav map's drag and zoom, docs\MAP_PLAN.md). v43 SetFlightLock: keys and mouse fly nothing under the full-screen map. v44 SetWorldPause: a NeuroNet window stops the world.
-// v45 OfferDifficulties: the job board's offers with the difficulty the detail prints; WorldCommand: a command under the NeuroNet pause.
-// v46 HoldRealWheel: the physical wheel kept from the game while a page scrolls by it (the ship dealer's view zoomed: issue 41).
-constexpr u32 kHostApiVersion = 46;
+// The host and the logic always match exactly (core\loader.h kLogicApiVersion, bumped with any change here): a new host
+// function is simply a new field, called without a version check.
 // Logic DLL API version, checked by the host when loading the logic DLL (exact match): v2 adds OnRenderUnderHud, v3
 // adds OnUiButton and OnRawKey (the UI build), v4 OnKeyCmd (the game's key commands after it handled them: the maneuver
 // lock's answer and hud_prompts' actions for the keyboard, 0.2.1).
@@ -60,7 +39,7 @@ struct SdlPadState
     u32 effectFails;    // v41: trigger effects SDL refused
 };
 
-// v42: the first touchpad of the pad SDL reads, as of its newest read: SDL's fingers, 0..1 across and down. Its own struct, so an older host is never read past its end.
+// v42: the first touchpad of the pad SDL reads, as of its newest read: SDL's fingers, 0..1 across and down. Its own struct.
 struct SdlPadTouch
 {
     int pads;       // the pad's touchpads (0: none, or no pad)
@@ -71,7 +50,6 @@ struct SdlPadTouch
 
 struct HostApi
 {
-    u32 version;
     const char* dllDir; // directory of FLvibed.dll (the game's EXE folder), trailing backslash
     ShmBlock* shm;      // debug/test channel (may be null)
 
@@ -300,7 +278,8 @@ struct HostApi
     // v37: what the autopilot's steering may lift this frame (core\host\input.h)
     void (*SetSteerLift)(bool underWindow, bool autopilot);
     // v38: a mapper's keys and mouse dropped while the pad SDL reads has input (padbackend::DropInjected). `on`: SDL holds a pad and the game is in front; low-level
-    // hooks exist only then, on a thread of their own. The deadzones say what "has input" is, as for the reader.
+    // hooks exist only then, on a thread of their own. The deadzones say what "has input" is, as for the reader. Since kLogicApiVersion 6 `on` holds flags
+    // (padbackend::FilterFlags): kFilterKeys the filter with its keyboard hook, kFilterMouse also the mouse hook (`pad_mapper_mouse`).
     void (*SdlPadFilter)(int on, float stickDeadzone, float triggerThreshold);
     // v39: the game's target label and bars muted (core\host\uihooks.h)
     void (*SetTargetMute)(bool on);
@@ -330,6 +309,11 @@ struct HostApi
     void (*WorldCommand)();
     // v46: the physical wheel kept from the game while a page scrolls by it (dimouse::HoldRealWheel; issue 41).
     void (*HoldRealWheel)(bool on);
+    // v47: HUD 2's own hooks (the loading screen's draw, the target label's mute), installed at its first selection, the door's Enter
+    // (core\host\router.h InstallHud2Hooks); idempotent
+    void (*InstallHud2Hooks)();
+    // v48: `mouse_raw` every frame: the host's raw mouse on or off (dimouse::SetRaw; core\host\rawmouse_rules.h)
+    void (*SetRawMouse)(bool on);
 };
 
 struct ImplApi

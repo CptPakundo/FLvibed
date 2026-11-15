@@ -1,6 +1,7 @@
 // Input-device service: which device the player used last, pad or keyboard and mouse, and the confirm and cancel masks.
 #include "device.h"
 
+#include "device_rules.h"
 #include "dimouse.h"
 #include "game/events.h"
 #include "gamepad.h"
@@ -26,6 +27,7 @@ static bool g_realPadWas = false;
 static bool g_disconnectPause = false;
 static u32 g_switches = 0;
 static const char* g_lastWhy = "start";
+static devicerule::Rule g_rule; // which new input takes the device (device_rules.h)
 
 static void Switch(Device d, const char* why)
 {
@@ -47,14 +49,15 @@ static void Switch(Device d, const char* why)
 
 static u32 HostKeyTick()
 {
-    return HostAtLeast(18) && g_host->LastRealKeyTick ? g_host->LastRealKeyTick() : 0;
+    return g_host && g_host->LastRealKeyTick ? g_host->LastRealKeyTick() : 0;
 }
 
-static bool HostMouseDown()
+// The physical mouse buttons held, as bits (left, right, middle).
+static unsigned HostMouseDown()
 {
-    if (!HostAtLeast(18) || !g_host->RealMouseDown)
-        return false;
-    return g_host->RealMouseDown(0) || g_host->RealMouseDown(1) || g_host->RealMouseDown(2);
+    if (!g_host || !g_host->RealMouseDown)
+        return 0;
+    return (g_host->RealMouseDown(0) ? 1u : 0u) | (g_host->RealMouseDown(1) ? 2u : 0u) | (g_host->RealMouseDown(2) ? 4u : 0u);
 }
 
 void Update(float dt, const Gamepad& pad, bool flying)
@@ -66,7 +69,7 @@ void Update(float dt, const Gamepad& pad, bool flying)
 
     // Pad signals: buttons (the D-pad, the stick clicks, View / Menu are buttons; PAD_LT / PAD_RT past 0.25 count as
     // buttons too but the device wants 0.5) and axes (dead-zoned sticks, triggers past 0.5).
-    const bool padButton = (p.buttons & 0xFFFF) != 0 || p.lt > 0.5f || p.rt > 0.5f;
+    const unsigned padHeld = (p.buttons & 0xFFFF) | (p.lt > 0.5f ? 0x10000u : 0u) | (p.rt > 0.5f ? 0x20000u : 0u);
     const bool padAxis = p.lx != 0 || p.ly != 0 || p.rx != 0 || p.ry != 0;
 
     // Keyboard and mouse signals: the ticks advance only on physical input (the host excludes FLvibed's own).
@@ -83,7 +86,22 @@ void Update(float dt, const Gamepad& pad, bool flying)
     const bool mouseMotion = mouseTickNow && g_lastMouseTick != 0 && mouseTick - g_lastMouseTick <= 150;
     g_lastMouseTick = mouseTick;
     g_mouseFrames = mouseTickNow ? g_mouseFrames + 1 : 0;
-    const bool mouseButton = HostMouseDown();
+    const unsigned mouseHeld = HostMouseDown();
+
+    // A held input never takes the device, only a new one (device_rules.h). The rule sees every frame, locked or not, so
+    // an input held across a switch or a lock is not a new press.
+    // A stick takes the device back by moving: a worn one, or a wheel's axis, rests past the dead zone for good, and the
+    // level alone took the device from the mouse 0.4 s after every move.
+    const float moved = (std::max)((std::max)(fabsf(p.lx - g_restAxes[0]), fabsf(p.ly - g_restAxes[1])),
+                                   (std::max)(fabsf(p.rx - g_restAxes[2]), fabsf(p.ry - g_restAxes[3])));
+    devicerule::Input in;
+    in.pad = padHeld;
+    in.stickMoved = padAxis && moved > kStickMoved;
+    in.key = key;
+    in.mouse = mouseHeld;
+    in.mouseMotion = mouseMotion;
+    in.graceOver = g_grace <= 0;
+    const devicerule::Take take = g_rule.Step(g_active == Device::Pad, in);
 
     // pause_on_disconnect: a real pad that drops out in flight while it was the device in use.
     const bool realPad = pad.HasRealController();
@@ -105,26 +123,16 @@ void Update(float dt, const Gamepad& pad, bool flying)
         return;
     }
 
-    if (g_active == Device::KbMouse)
-    {
-        // A stick takes the device back by moving: a worn one, or a wheel's axis, rests past the dead zone for good, and the
-        // level alone took the device from the mouse 0.4 s after every move.
-        const float moved = (std::max)((std::max)(fabsf(p.lx - g_restAxes[0]), fabsf(p.ly - g_restAxes[1])),
-                                       (std::max)(fabsf(p.rx - g_restAxes[2]), fabsf(p.ry - g_restAxes[3])));
-        if (padButton)
-            Switch(Device::Pad, "button");
-        else if (padAxis && moved > kStickMoved && g_grace <= 0)
-            Switch(Device::Pad, "stick");
-    }
-    else
-    {
+    if (g_active == Device::Pad)
         g_restAxes[0] = p.lx, g_restAxes[1] = p.ly, g_restAxes[2] = p.rx, g_restAxes[3] = p.ry;
-        if (key)
-            Switch(Device::KbMouse, "key");
-        else if (mouseButton)
-            Switch(Device::KbMouse, "mouse button");
-        else if (mouseMotion && g_grace <= 0)
-            Switch(Device::KbMouse, "mouse");
+    switch (take)
+    {
+    case devicerule::Take::PadButton: Switch(Device::Pad, "button"); break;
+    case devicerule::Take::PadStick: Switch(Device::Pad, "stick"); break;
+    case devicerule::Take::Key: Switch(Device::KbMouse, "key"); break;
+    case devicerule::Take::MouseButton: Switch(Device::KbMouse, "mouse button"); break;
+    case devicerule::Take::Mouse: Switch(Device::KbMouse, "mouse"); break;
+    case devicerule::Take::None: break;
     }
 }
 
@@ -148,8 +156,8 @@ std::string Status()
     std::ostringstream o;
     o << "device=" << (g_active == Device::Pad ? "pad" : "kbm") << " why=" << g_lastWhy << " switches=" << g_switches
       << " lock=" << uiopt::Get().inputMode << " keyTick=" << g_lastKeyTick << " mouseTick=" << g_lastMouseTick
-      << " hostKeys=" << (HostAtLeast(18) && g_host->LastRealKeyTick ? 1 : 0)
-      << " hostMouse=" << (HostAtLeast(18) && g_host->RealMouseDown ? 1 : 0) << " grace=" << g_grace;
+      << " hostKeys=" << (g_host && g_host->LastRealKeyTick ? 1 : 0)
+      << " hostMouse=" << (g_host && g_host->RealMouseDown ? 1 : 0) << " grace=" << g_grace;
     return o.str();
 }
 } // namespace device

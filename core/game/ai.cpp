@@ -75,6 +75,8 @@ struct Api
     void*(__fastcall* traverse)(void* mgr, void* edx, void* t) = nullptr;       // CEquipManager::Traverse
     void*(__cdecl* castCargo)(void* equip) = nullptr;                           // CECargo::cast
     u16(__fastcall* equipId)(const void* equip, void* edx) = nullptr;           // CEquip::GetID
+    const void*(__cdecl* getEquipment)(u32 id) = nullptr;                       // Archetype::GetEquipment
+    int(__fastcall* cargoRoom)(void* ship, void* edx, const void* arch) = nullptr; // CShip::get_space_for_cargo_type
     HMODULE common = nullptr;
     bool ok = false;
 };
@@ -143,6 +145,10 @@ static const Api& GetApi()
         get(a.common, "?Traverse@CEquipManager@@QAEPAVCEquip@@AAVCEquipTraverser@@@Z"));
     a.castCargo = reinterpret_cast<decltype(a.castCargo)>(get(a.common, "?cast@CECargo@@SAPAV1@PAVCEquip@@@Z"));
     a.equipId = reinterpret_cast<decltype(a.equipId)>(get(a.common, "?GetID@CEquip@@QBEGXZ"));
+    a.getEquipment =
+        reinterpret_cast<decltype(a.getEquipment)>(get(a.common, "?GetEquipment@Archetype@@YAPAUEquipment@1@I@Z"));
+    a.cargoRoom = reinterpret_cast<decltype(a.cargoRoom)>(
+        get(a.common, "?get_space_for_cargo_type@CShip@@QBEHPBUEquipment@Archetype@@@Z"));
     a.ok = a.submitDirective && a.submitState && a.graphId && a.behaviorId && a.stateGraph && a.personalityCtor &&
            a.setPersonalityCtor && a.behavior;
     return a;
@@ -189,6 +195,14 @@ static u8* Manager(const Api& a)
 static const uintptr_t kEquipManager = 0xE4, kArchNanobots = 0x140, kArchBatteries = 0x144, kArchHold = 0x100;
 static const u32 kEquipShield = 1u << 8, kEquipShieldGenerator = 1u << 9,
                  kEquipTractor = 1u << 20; // FLHookSDK EquipmentClass
+// Archetype::AClassType, as Archetype::Root::get_class_type (vtable +0x10) returns it (Common.dll 0x532E0's switch,
+// docs\FREELANCER_RE.md): the consumables the game caps per ship, whatever a mod names them.
+static const int kClassRepairKit = 26, kClassShieldBattery = 27;
+static int ClassOf(const void* arch)
+{
+    typedef int(__thiscall * ClassFn)(const void*);
+    return (*reinterpret_cast<ClassFn* const*>(arch))[4](arch);
+}
 
 // [Tractor] max_length of every tractor in DATA\EQUIPMENT\*.ini, by archetype id (CreateID of its nickname).
 static float TractorRange(const Api& a, u32 archetype)
@@ -306,6 +320,29 @@ bool ReadSelf(Self& s)
     return true;
 }
 
+bool CargoRoom(u32 good, int& room)
+{
+    room = -1;
+    const Api& a = GetApi();
+    void* ship = a.common && good ? PlayerShip() : nullptr;
+    if (!ship || !IsShip(ship) || !a.getEquipment || !a.archId || !a.cargoRoom)
+        return false;
+    __try
+    {
+        // the archetype must be the good asked for (the function reads it without a null check: never pass a stray one)
+        const void* arch = a.getEquipment(good);
+        if (!arch || a.archId(arch, nullptr) != good)
+            return false;
+        room = a.cargoRoom(ship, nullptr, arch);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        room = -1;
+        return false;
+    }
+}
+
 // The game's own use of a consumable with a chosen count ("one battery per press ... scale it based
 // on important factors"): the HUD's repair buttons end in the client ship's IObjAffect::use_item(cargo id, count, -1)
 // with the count that fills the bar (exe::UseItem, which sends IServer::SPRequestUseItem). Here the same call with our
@@ -338,7 +375,7 @@ int UseConsumable(bool battery, int amount)
         }
         alignas(8) u8 traverser[64] = {};
         a.traverserCtor(traverser, nullptr, -1); // every class
-        const int wanted = battery ? 27 : 26;
+        const int wanted = battery ? kClassShieldBattery : kClassRepairKit;
         for (int guard = 0; guard < 256; ++guard)
         {
             void* e = a.traverse(static_cast<u8*>(ship) + kEquipManager, nullptr, traverser);
@@ -348,10 +385,7 @@ int UseConsumable(bool battery, int amount)
             const void* arch = cargo ? a.equipArch(cargo, nullptr) : nullptr;
             if (!arch)
                 continue;
-            // Archetype::Root::get_class_type (vtable +0x10, as the game reads it in use_item)
-            typedef int(__thiscall * ClassFn)(const void*);
-            const int cls = (*reinterpret_cast<ClassFn* const*>(arch))[4](arch);
-            if (cls != wanted)
+            if (ClassOf(arch) != wanted) // (Archetype::Root::get_class_type, as the game reads it in use_item)
                 continue;
             const int held = *reinterpret_cast<const int*>(static_cast<const u8*>(cargo) + 0x28); // CECargo count
             const int n = std::min(amount, held);

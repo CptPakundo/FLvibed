@@ -1,6 +1,6 @@
 // HUD 2 over everything (modules\hud\docs\UI_HUD2_SKIN.md 6.6): its cursor, the set of 19 names of DATA\mouse.ini as decisions\D1b_cursor.jpg draws them, and the
 // hover help (ToolTip, Rollover) in the Shadow tier. Position, clicks and hover stay the game's: the shape comes from the game's current cursor name, at the game's own position,
-// with the game's mesh hidden; a name the table does not know (a mod's) stays the game's and is logged. Label `cursor` in skin_native keeps the game's.
+// with the game's mesh hidden; a name the table does not know (a mod's) stays the game's and is logged.
 #pragma once
 #include "common.h"
 

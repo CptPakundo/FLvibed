@@ -389,7 +389,7 @@ std::vector<TipRect> Blocks(float W, float H)
 
 void Draw(void* device, bool on, bool pad)
 {
-    const bool cursorOn = on && !skinrules::NativeListed(hudrows::g.skinNative, "cursor") && exe::CursorShown.ok();
+    const bool cursorOn = on && exe::CursorShown.ok();
     g_row = cursorOn ? CurrentRow() : nullptr;
     // (hidden the frame before it is drawn, and the game's shows at once for anything this pass cannot draw)
     hostcalls::CursorHide(hostcalls::kCursorHideSkin, g_row != nullptr);

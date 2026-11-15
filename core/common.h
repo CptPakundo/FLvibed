@@ -58,6 +58,16 @@ inline bool SimWin7()
     return on;
 }
 
+// The test switch: FLVIBED_TEST=1 in the game's environment opens the debug channels (Local\FLControllerShm and
+// Local\FLSubtitlesShm: the test tools' commands, replies and test pads). tools\deploy.ps1 sets it for every game it starts;
+// a player sets it only for a support session (docs\HARNESS.md "The test switch"). Unset, neither channel exists, so no
+// verb can be reached from outside the game.
+inline bool TestSwitch()
+{
+    static const bool on = EnvVar("FLVIBED_TEST") == "1";
+    return on;
+}
+
 // The parallel test game's instance name (deploy.ps1 -Instance, FLVIBED_INSTANCE); "" = the main install. It names
 // the debug channels ("Local\FLControllerShm_<name>") and the background window title.
 inline std::string InstanceName() { return EnvVar("FLVIBED_INSTANCE"); }

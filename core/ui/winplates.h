@@ -192,6 +192,10 @@ struct KeepOut
     float x0, y0, x1, y1;
 };
 extern std::vector<KeepOut> g_keep;
+// A HUD 2 page stands this frame (modules\hud\src\nnpage_kit.h PageLane): the bottom edge of its content (pixels; 0 = no page). The pad's
+// lane takes a page's every prompt by one rule (core\game\promptfit.h PageLane): the free width first, a second row only below this edge,
+// a prompt giving way only after both. Reset with g_keep.
+extern float g_pageFloor;
 // How many of g_keep the under pass collected (Geometry); those after it were added over the game's UI this frame (the map's panels and its lane: navskin's
 // DrawOver), so they cover what the game draws there.
 extern size_t g_keepUnder;
@@ -234,7 +238,8 @@ bool SceneSkinned(int fam);
 // The room the bar's underline stands under: the pad's pick while the bumpers step, else the room itself (a hotspot's label).
 std::string CurrentRoomKey();
 
-// The under-HUD pass without the skin: `classic` = ui_style 0, where the game's name card is placed too. Also how the skin runs while it is off.
+// The under-HUD pass without the skin: `classic` = ui_style 0, where the pad places the game's name card too (keyboard and mouse leave it where
+// the game puts it: the owner's answer to card Q6 of audit 102_). Also how the skin runs while it is off.
 void ClassicPass(void* device, bool enabled, bool pad, bool classic);
 
 // The NeuroNet box's bottom edge on a docked non-modal screen (0 = none): the last resort's top lane hangs under it.

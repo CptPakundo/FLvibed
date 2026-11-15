@@ -1,11 +1,12 @@
-# The options page with the controller off (docs\MODULES_PLAN.md P4): a background game with the subtitles alone, the page driven
+# The options page with the controller off (the module split plan's P4, private): a background game with the subtitles alone, the page driven
 # through the subtitles' channel (`ui ...`: the controller's channel does not exist then). Prints what it read; exit 1 on a failure.
 # Usage (PowerShell tool): tests\page_no_controller.ps1 [-Instance 1]   uses build\release
-param([string]$Instance = 1)
+param([string]$Instance = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 . (Join-Path $root 'tools\harness\flctl.ps1')
 . (Join-Path $root 'tools\harness\flsub.ps1')
+if (-not $Instance) { throw 'name the game instance: -Instance <n> (no default: a default instance belongs to no checkout - docs\TESTING.md "Parallel lanes")' }
 $env:FLVIBED_INSTANCE = "$Instance"
 $dir = Join-Path $root 'research\experience\runs\page_no_controller'
 $bad = [Collections.Generic.List[string]]::new()

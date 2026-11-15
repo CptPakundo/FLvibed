@@ -409,7 +409,7 @@ static std::vector<Tether> TethersOf(const Script& s, u32 system, const std::set
         const u32 tsys = LookSystemOf(s, i);
         if (tsys && tsys != system)
             continue;
-        // Cnd_TetherBroke = <shipA>, <shipB>, <dist>, <secs>[, <inner>] (Content.dll 0x06ec11c0, LOOK_PLAN 4a)
+        // Cnd_TetherBroke = <shipA>, <shipB>, <dist>, <secs>[, <inner>] (Content.dll 0x06ec11c0, the look-ahead plan 4a, private)
         const std::vector<std::string> f = ini::Fields(t.cnd[0].second);
         if (f.size() < 4)
             continue;
@@ -861,7 +861,7 @@ static bool ParseGoal(const Script& s, size_t i, const std::set<std::string>& sh
         if (g.objects.empty() && look)
         {
             // kind 4 (LOOK): the mission's ships by [MsnShip] label, else by nickname (M02 ashcroft_dead = Ashcroft, 1,
-            // ALL; M06 d_holers = holeboys, -1 - count -1 = all of them, Content.dll: LOOK_PLAN 4a)
+            // ALL; M06 d_holers = holeboys, -1 - count -1 = all of them, Content.dll: the look-ahead plan 4a)
             std::vector<std::string> nicks;
             if (const auto ls = s.labelShips.find(what); ls != s.labelShips.end())
                 nicks = ls->second;

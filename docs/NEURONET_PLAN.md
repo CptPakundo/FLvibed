@@ -10,16 +10,39 @@
 | MAP | NeuroNetNavMap | Done: `MAP_PLAN.md` |
 | INVENTORY | NN_Inventory | HUD 2's own list of every row of a filter (five rows show at a time, the list scrolls), the game's five filters as tabs in the game's words, the game's card on the right, cargo and credits under the list; A mounts, Y jettisons |
 | STATUS | NN_PlayerInfo | Rank, worth and the next level large, the game's other ten numbers as rows; every faction on one list with a bar from the middle, the game's marks at -0.6 and 0.6, its five standings in words; X filter, Y sort, A the faction's card |
-| INFO | NN_Help | Full screen, title, the game's text in a column. The window is the target's or the system's card, not help |
+| INFO | NN_Help | Full screen, title, the game's text in a column. The window is the target's or the system's card, not help. Since 12 Nov 2026 (audit R3) HUD 2's first fully standalone page: below |
 | CHAT, GROUP | ChatControl, NN_GroupControl (multiplayer) | The same ground and title round the game's window. **Not seen:** no multiplayer run was made; GROUP is an offer dialog, no member list exists in the game |
 
 ## How it works
 
 **One mechanism (`modules\hud\src\nnpage.*`, rules `nnpage_rules.h`).** The game's window stays open and does the work. HUD 2 draws an opaque page over it, with a hole where the game's text is wanted (`Cover`); nothing of the game is hidden or moved by writes, so nothing needs restoring. Where the window has to stand elsewhere, `windowtext.cpp`'s table moves it (`shift`, `grow`).
 
+**INFO, standalone (audit R3, 12 Nov 2026; first in the HUD module's infobody files; since audit 70b F2a `core\game\screens\nnhelp_*` and the page `modules\hud\src\pages\neuronet\info_*` on the page runtime `pages\pagerun.*`).** No hole: HUD 2 composes the
+window's text itself and the window stands off the screen (parked by its own position setter after its open slide, put back if
+the page goes while the window stays; nothing of it is shown, read or written by the page). The composition calls the game's own
+appenders (an infocard 0x57DA40, a string 0x57E2C0, the market 0x476080) into a RenderDisplayList the mod owns, in the order the
+window's builders call them (0x474B90: docked, the base's header, card, market, companion card; in space, system, sector and the
+zone the ship is in; 0x4754A0: a target's card), and reads it back through Common.dll's BinaryRDLWriter: the lines are the game's
+by construction (`docs\FREELANCER_RE.md` "The INFO page's composers"). When: at the page's open and when the ship takes a new
+target while it is up (the game's rule, seen on the classic HUD: a cleared target keeps the card). Laid out by HUD 2: whole words to
+the column, blank paragraphs kept, the market's headings in the page's heading colour, a bold run in full ink. The market's lists
+in HUD 2's own grid (the owner, 12 Nov 2026: "aligned, price column"; `inforules::MarketRoles` / `Layout`): every item's name at one
+indent under its heading (the game indents the first item by four spaces and the rest by five), the prices right-aligned in one
+column for every section, right of the widest priced name and never past the column; the items' words and order stay the game's
+(the comparison test checks the drawn lines against the paragraphs: `[LINES]`). The card's styles as the game draws them (the
+owner, 12 Nov 2026, audit decision 56; `docs\FREELANCER_RE.md` "Rich text"): italic as GDI's synthesized oblique of the page's own
+face (the kit's glyphs sheared, the widths unchanged, so the layout holds), underline as the face's rule under the run, bold as
+GDI's synthesized emboldening over the page's already bold face (the glyphs drawn again 0.025 em, at least 1 px, to the right,
+the widths unchanged; the owner, 13 Nov 2026: "Synthetic emphasis"), and the
+card's own colour where it sets one (in HDE 0.7.1 only red: bases' CLASSIFIED, the zones' warnings), else the colour by role; the
+comparison test compares the styles with the window's and checks every drawn character's (`~` lines, `[LINES]` attributes). An
+infocard's fonts and its centring are not shown. It scrolls by the wheel, the D-pad and the right stick; the pad's
+DU+DD SCROLL prompt shows only while the text is longer than the page (the owner, 12 Nov 2026: a prompt only where it does something). The
+comparison test `tests\info_compare.ps1` compares it with the parked window's own text, line by line.
+
 **The game's calls (`core\flexe.h`, read in Ghidra, used in game):** the list of a filter comes from the window's own answer, row by row (`InvSelected`: 0x47E790 at +0x3A4 = k), so the filter and order are the game's; the page's focus is the game's selection (`InvSelectRow`, so its card and JETTISON follow); `InvMount`, `InvSetFilter`, `StatusFactionCard`. STATUS reads `PlayerInfoHeading / Stat n` and the pairs at +0x410.
 
-**Pad:** `padbases.cpp` `UpdatePage`: while `views::HudPageOn` the presses go to `nnpage::Pad`, the lane shows `nnpage::Prompts`. RS scrolls the game's text, the D-pad too (XAG 112: never only an analogue stick). LB / RB stay the strip's, B closes or backs out. The jettison panel stays the game's and the old pad path.
+**Pad:** `padbases.cpp` `UpdatePage` (its hand-off to a page, `PageOn` / `PageStands` / `PageBinds`): while `views::HudPageOn` the presses go to `nnpage::Pad`, the lane shows `nnpage::Prompts`. RS scrolls the game's text, the D-pad too (XAG 112: never only an analogue stick). LB / RB stay the strip's, B closes or backs out. The jettison panel stays the game's and the old pad path.
 
 **Keyboard and mouse:** rows and tabs click, a second click on a faction opens its card, the wheel scrolls lists, the actions are chips in the lane, one line says what the mouse does.
 
@@ -44,6 +67,8 @@ Set against the game's own windows first: the first pass had lost the commodity 
 **The map, the same pass (the owner: "as quick as the original", Shockwave: "big McLargeHuge"):** on the mouse the selection's card opens beside the click, as the game's popup did, so SET WAYPOINT and BEST PATH are a short move away; the right button sets a waypoint in one click. The ship, waypoints and mission marks (record types 2, 3, 4) are held near the game's size at every zoom (`navnew.cpp` HoldMarks). Under the NeuroNet's tabs the prompts take two rows at the bottom sooner than a column (`promptfit::g_rowsFirst`).
 
 ## Pause (7 Nov 2026)
+
+Status below is of 7 Nov 2026; pages moved onto the page framework since (CHANGELOG 0.4.7); check a row against the code before acting on it.
 
 `core\host\input.cpp` `GamePausedHook` detours `GamePaused` and answers true to the world update and `FrameUpdate` only (by return address), so the world stops while the NeuroNet window stays open; the game's own pause would close it. Setting `nn_pause` (default 1; 0 keeps the game going). Conditions: single player, in space, not under the autopilot (it keeps flying). PAUSED shows. Verified in game: contacts freeze and resume. Not tried: multiplayer.
 

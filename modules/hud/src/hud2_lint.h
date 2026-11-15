@@ -412,8 +412,46 @@ inline float UnionArea(const std::vector<const Item*>& rs, float W, float H)
 // as before, above the cross down to its top (the owner put it there; the rail stays empty above it). Every preset gets
 // the lower centre's clear zone (kBottom*: decision 4, 5.23) from `clearY0` (pixels: the layout's Out::clearY0; <= 0 =
 // FallbackClearY0) down, a zone that fails every recorded item, not only plates.
+// The bottom panels that draw this frame (`panels`: the ship panel, the loadout, the cross; nullptr = none given): a panel
+// grown to fit its words into a field ends the field where it starts (the owner, 13 Nov 2026, the lower band's sheet Q4
+// "the panel grows": the field loses the panel's rectangle and what lies below it, the rest stays). The rail S2 is empty
+// except for the prompt rows the prompt rule places there (Q5, UI_HUD2_PRESETS.md 2.1 Zones): the prompts ("context")
+// are exempt in it.
+inline void CutByPanel(std::vector<Zone>& pieces, const Area& a)
+{
+    std::vector<Zone> keep;
+    for (Zone& z : pieces)
+    {
+        if (z.circle || a.x1 <= z.x0 || a.x0 >= z.x1 || a.y0 >= z.y1)
+        {
+            keep.push_back(std::move(z));
+            continue;
+        }
+        const float top = std::max(z.y0, a.y0);
+        if (a.y0 > z.y0) // above the panel: the whole width
+        {
+            Zone t = z;
+            t.y1 = a.y0;
+            keep.push_back(std::move(t));
+        }
+        if (a.x0 > z.x0) // beside it, left
+        {
+            Zone l = z;
+            l.y0 = top, l.x1 = a.x0;
+            keep.push_back(std::move(l));
+        }
+        if (a.x1 < z.x1) // beside it, right
+        {
+            Zone r = z;
+            r.y0 = top, r.x0 = a.x1;
+            keep.push_back(std::move(r));
+        }
+    }
+    pieces = std::move(keep);
+}
 inline std::vector<Zone> ZonesOf(const hp::Preset& p, float W, float H, float cardX0, float cardX1, bool kbm,
-                                 float consX0 = 0, float consY0 = 0, float clearY0 = 0)
+                                 float consX0 = 0, float consY0 = 0, float clearY0 = 0,
+                                 const std::vector<Area>* panels = nullptr)
 {
     const float cx = W * 0.5f, cy = H * 0.5f;
     const bool narrow = W / H < 16.0f / 9.0f - 0.01f;
@@ -429,6 +467,7 @@ inline std::vector<Zone> ZonesOf(const hp::Preset& p, float W, float H, float ca
         if (kbm)
             for (int e = 0; e < d.exemptKbmCount; ++e)
                 z.exempt.push_back(d.exemptKbm[e]);
+        std::vector<Zone> pieces; // (the rail's piece over the cross, before the zone itself)
         switch (d.anchor)
         {
         case hp::Anchor::CentreToCard:
@@ -439,13 +478,14 @@ inline std::vector<Zone> ZonesOf(const hp::Preset& p, float W, float H, float ca
             break;
         }
         case hp::Anchor::Rail:
+            z.exempt.push_back("context"); // (Q5: the prompt rule's rows)
             z.x0 = prevX1, z.x1 = std::max(prevX1, cardX1), z.y0 = d.y0 * H, z.y1 = d.y1 * H;
             if (consY0 > 0 && consX0 > z.x0 && consX0 < z.x1 && consY0 < z.y1)
             {
                 Zone above = z; // over the cross: down to its top
                 above.x0 = consX0, above.y1 = std::max(above.y0, consY0);
                 z.x1 = consX0; // left of it: as before
-                out.push_back(std::move(above));
+                pieces.push_back(std::move(above));
             }
             else if (consY0 > 0 && consX0 <= z.x0 && consY0 < z.y1) // (the cross spans the whole rail)
                 z.y1 = std::max(z.y0, consY0);
@@ -459,7 +499,12 @@ inline std::vector<Zone> ZonesOf(const hp::Preset& p, float W, float H, float ca
         }
         if (!z.circle)
             prevX1 = std::max(z.x1, d.anchor == hp::Anchor::Rail ? std::max(prevX1, cardX1) : z.x1);
-        out.push_back(std::move(z));
+        pieces.push_back(std::move(z));
+        if (panels && (d.anchor == hp::Anchor::CentreToCard || d.anchor == hp::Anchor::Rail))
+            for (const Area& a : *panels)
+                CutByPanel(pieces, a);
+        for (Zone& q : pieces)
+            out.push_back(std::move(q));
     }
     Zone b; // the lower centre's clear zone (decision 4, 5.23)
     b.name = kBottomZone, b.texts = true;

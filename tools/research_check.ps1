@@ -8,6 +8,24 @@ param([switch]$All)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $notes = Join-Path $repo 'docs\research'
+# A private file of a public clone (12 Nov 2026, the public set): git does not track the path here AND .gitattributes
+# marks it export-ignore. In the development repository every such file is tracked, so nothing changes there.
+function Test-FLPrivatePath([string]$rel) {
+    $p = $rel -replace '\\', '/'
+    $null = git -C $repo ls-files --error-unmatch -- $p 2>$null
+    if ($LASTEXITCODE -eq 0) { return $false }
+    $ga = Join-Path $repo '.gitattributes'
+    if (-not (Test-Path $ga)) { return $false }
+    foreach ($l in Get-Content $ga) {
+        if ($l -notmatch '^\s*([^#\s]\S*)\s.*(?<![-!\w])export-ignore\b') { continue }
+        $pat = $Matches[1].Trim('/')
+        if ($pat.Contains('/')) { if ($p -like $pat -or $p.StartsWith("$pat/")) { return $true } }
+        elseif (@($p -split '/' | Where-Object { $_ -like $pat }).Count) { return $true }
+    }
+    $false
+}
+$history = 'docs\research\CHECKUP_HISTORY.md'
+$historyHere = Test-Path (Join-Path $repo $history)
 Push-Location $repo
 try {
     $head = (git rev-parse --short HEAD).Trim()
@@ -33,10 +51,11 @@ try {
         # Trim: in a CRLF note the line's \r stays in the capture and the last path never matched (T39)
         $watch = [regex]::Match($text, '(?m)^Watch:\s*(?<w>.+)$').Groups['w'].Value.Trim()
         Write-Host "`n== $($_.Name)  checked against ${hash}"
-        # The header keeps only the latest check; earlier ones go to CHECKUP_HISTORY.md (README "The check-up round" 2)
+        # The header keeps only the latest check; earlier ones go to CHECKUP_HISTORY.md (README "The check-up round" 2),
+        # a private file a public clone does not have
         # [ \t], not \s: \s crosses the line end (a line ending ";" + one starting "before" read as a chain, 31 Oct)
         if ($text -match '(?m)^(Checked against|Dirty paths at check):[^\r\n]*;[ \t]*before:?[ \t]') {
-            Write-Host "   HEADER CHAIN: a '; before:' chain in the header - move the earlier entries to docs\research\CHECKUP_HISTORY.md"
+            Write-Host "   HEADER CHAIN: a '; before:' chain in the header - $(if ($historyHere) { "move the earlier entries to $history" } else { 'keep only the latest check-up in the header (the check-up history is a private file, not in this tree)' })"
         }
         if (-not $hash) { Write-Host "   no 'Checked against' header"; return }
         git cat-file -e "${hash}^{commit}" 2>$null
@@ -54,6 +73,10 @@ try {
         $dead = @($paths | ForEach-Object { ($_ -split '#')[0].TrimEnd('/') } | Where-Object {
             $entry = $_
             -not @($tracked | Where-Object { if ($entry -match '\*') { $_ -like $entry } else { $_ -eq $entry -or $_.StartsWith("$entry/") } }).Count })
+        # (a public clone: an entry naming a private file is not dead, only absent here - Test-FLPrivatePath)
+        $private = @($dead | Where-Object { Test-FLPrivatePath $_ })
+        $dead = @($dead | Where-Object { $_ -notin $private })
+        if ($private.Count) { Write-Host "   not in this tree (private files): $($private -join ', ')" }
         if ($dead.Count) { Write-Host "   WATCH DEAD: $($dead -join ', ') match no tracked file" }
         # A Watch entry `path#regex` counts a commit only when its diff of that path adds or removes a line matching
         # the (extended, case-insensitive) regex: a shared file such as docs/SETTINGS.md or FREELANCER_RE.md flagged

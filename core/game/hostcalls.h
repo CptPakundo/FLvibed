@@ -82,6 +82,8 @@ struct Table
     int (*OfferDifficulties)(u32 base, u32* rewards, int* difficulties, int max); // the job board's offers (events.h)
     void (*WorldCommand)(); // a command under the NeuroNet pause: the server answers on frames with no time (input.h)
     void (*HoldRealWheel)(bool on); // the physical wheel kept from the game, still counted (dimouse.h)
+    void (*InstallHud2Hooks)();     // HUD 2's own hooks, at its first selection (the door's Enter; core\host\router.h)
+    void (*SetRawMouse)(bool on);   // `mouse_raw` every frame: the host's raw mouse on or off (dimouse.h SetRaw)
 };
 inline Table g = {};
 

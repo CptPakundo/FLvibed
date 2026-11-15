@@ -1,15 +1,37 @@
 # Builds the player package: build\package\FLvibed-<version>.zip (the release FLvibed.dll, the shipped data, the install
 # notes, CHANGELOG.md and the licences), laid out as the game folder expects (EXE\...), and
-# prints its SHA-256. The version comes from core\version.h. Run in the PowerShell tool: tools\package.ps1 [-NoBuild]
-param([switch]$NoBuild)
+# prints its SHA-256. The version comes from core\version.h. Run in the PowerShell tool: tools\package.ps1 [-NoBuild] [-CheckSize]
+# Before it packs anything (audit 12 Nov 2026, report 12_): the host-free unit tests (buildlock test, also with -NoBuild)
+# and the release DLL's size against its row in docs\ratchets.tsv (release_dll_bytes, value x (1 + max_growth)). Either
+# failing stops the package. Over the size limit: shrink the DLL or raise the row in a commit that says why - never
+# silently. -CheckSize runs the size check alone (no build, no package) and exits 0 / 1.
+param([switch]$NoBuild, [switch]$CheckSize)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+
+function Test-DllSize([string]$dll) {
+    $row = @(Import-Csv (Join-Path $root 'docs\ratchets.tsv') -Delimiter "`t") | Where-Object { $_.name -eq 'release_dll_bytes' } | Select-Object -First 1
+    if (-not $row) { throw 'docs\ratchets.tsv has no release_dll_bytes row: the size check cannot run' }
+    $size = (Get-Item $dll).Length
+    $limit = [math]::Floor([double]$row.value * (1 + [double]$row.max_growth))
+    $msg = '{0}: {1:N0} bytes; recorded {2:N0} (docs\ratchets.tsv, {3}), limit {4:N0} (+{5:P0}); {6:+0.0;-0.0} % over the record' -f
+        $dll, $size, [double]$row.value, $row.date, $limit, [double]$row.max_growth, (100.0 * ($size - [double]$row.value) / [double]$row.value)
+    [pscustomobject]@{ Ok = ($size -le $limit); Text = $msg }
+}
+if ($CheckSize) {
+    $s = Test-DllSize (Join-Path $root 'build\release\FLvibed.dll')
+    $(if ($s.Ok) { 'size OK: ' } else { 'size OVER THE LIMIT: ' }) + $s.Text
+    exit $(if ($s.Ok) { 0 } else { 1 })
+}
 
 $version = ([regex]::Match((Get-Content (Join-Path $root 'core\version.h') -Raw), '#define FLV_VERSION "([^"]+)"')).Groups[1].Value
 if (-not $version) { throw 'FLV_VERSION not found in core\version.h' }
 # the public repository has no export-ignored file: its docs must not point at one
 $exportCheck = & (Join-Path $root 'research\tools\ocr\.venv\Scripts\python.exe') -I (Join-Path $PSScriptRoot 'docrefs.py') --export
 if ($LASTEXITCODE) { $exportCheck | Write-Host; throw 'public docs point at export-ignored files (tools\docrefs.py --export)' }
+# nothing of the design bench's private material in the export: its private folders, recordings, atlases, the marker
+$privateCheck = & (Join-Path $root 'research\tools\ocr\.venv\Scripts\python.exe') -I (Join-Path $PSScriptRoot 'private_check.py') --head-only
+if ($LASTEXITCODE) { $privateCheck | Write-Host; throw 'the export would publish private bench files (tools\private_check.py)' }
 if (-not $NoBuild) {
     & (Join-Path $PSScriptRoot 'buildlock.ps1') release
     if ($LASTEXITCODE) { throw "release build failed ($LASTEXITCODE)" }
@@ -17,6 +39,13 @@ if (-not $NoBuild) {
 $dll = Join-Path $root 'build\release\FLvibed.dll'
 $dllVersion = (Get-Item $dll).VersionInfo.ProductVersion
 if ($dllVersion -ne $version) { throw "build\release\FLvibed.dll is version '$dllVersion', core\version.h says '$version': rebuild" }
+$sz = Test-DllSize $dll
+if (-not $sz.Ok) { throw "the release DLL is over its size limit: $($sz.Text). Shrink it, or raise docs\ratchets.tsv's row in a commit that says why" }
+"size: $($sz.Text)"
+# the unit tests (build\test\fltest.exe, built and run by build.cmd test; its exit code is the tests'; the data tests
+# are skipped, not failed, when no test install is found)
+& (Join-Path $PSScriptRoot 'buildlock.ps1') test
+if ($LASTEXITCODE) { throw "the unit tests failed (buildlock test exit $LASTEXITCODE): no package" }
 
 $name = "FLvibed-$version"
 $out = Join-Path $root 'build\package'
@@ -57,14 +86,14 @@ uninstalls (Windows Settings > Apps > FLvibed). By hand, with this zip:
 
 LINUX (Wine, Proton)
 Unpack this zip and run, in a terminal, from its folder:
-    ./flvibed-linux.sh install "<the game folder in your Wine or Proton prefix>"
-It does what Setup does on Windows (uninstall: ./flvibed-linux.sh uninstall "<game folder>" [--keep-settings]). With a
+    bash flvibed-linux.sh install "<the game folder in your Wine or Proton prefix>"
+It does what Setup does on Windows (uninstall: bash flvibed-linux.sh uninstall "<game folder>" [--keep-settings]). With a
 DualSense plugged in by USB it also sets the pad's speaker to four channels (Surround 4.0), which the waveform haptics
-need, as the Sound panel step does on Windows; again after a replug: ./flvibed-linux.sh haptics
+need, as the Sound panel step does on Windows; again after a replug: bash flvibed-linux.sh haptics
 
 UNINSTALL
 Remove the FLvibed.dll line from EXE\dacom.ini, then delete EXE\FLvibed.dll, FLvibed.ini, FLController.ini,
-FLSubtitles.ini, any *.before-0.2.0 backups of them, FLController.log, FLSubtitles.log, FLvibed_npc_stalls.log and the
+FLSubtitles.ini, any *.before-0.2.0 backups of them, FLController.log, FLSubtitles.log, FLvibed_npc_stalls.log, FLvibed_crash.log and the
 folders EXE\FLSubtitles\ and EXE\FLvibed\. Saves stay valid.
 
 NEEDS
@@ -93,7 +122,12 @@ No warranty.
 
 $zip = Join-Path $out "$name.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }
-Compress-Archive -Path $stage -DestinationPath $zip
+# (not Compress-Archive: it stores no Unix mode bits, so the shipped flvibed-linux.sh was not executable after an unzip
+# on Linux or a Steam Deck - the owner's public set, 12 Nov 2026. tools\zip_package.py writes the same layout with Unix
+# modes, *.sh 0755, and checks them back from the written zip)
+$zipCheck = & (Join-Path $root 'research\tools\ocr\.venv\Scripts\python.exe') -I (Join-Path $PSScriptRoot 'zip_package.py') $stage $zip
+if ($LASTEXITCODE) { $zipCheck | Write-Host; throw 'the zip was not written with an executable flvibed-linux.sh (tools\zip_package.py)' }
+$zipCheck
 $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
 "$name.zip  $([math]::Round((Get-Item $zip).Length / 1MB, 2)) MB  sha256 $hash"
 

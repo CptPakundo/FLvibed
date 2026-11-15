@@ -1,4 +1,4 @@
-// The random missions' (jobs') objective texts (IDEAS A40, A37_PLAN S1): DATA\RANDOMMISSIONS\vignetteparams.ini's
+// The random missions' (jobs') objective texts (IDEAS A40, the A37 plan's S1, private): DATA\RANDOMMISSIONS\vignetteparams.ini's
 // `objective_text = <kind>, <text id>[, <arg> ...]` rows in its [DataNode]s (HDE 0.7.1: 33 rows). A job's objective
 // step names its kind by the text id the game shows, so a step's kind comes from the game's own data instead of the
 // objective mode's English keywords - when the id belongs to one kind only: an id several kinds share (327757 "RM

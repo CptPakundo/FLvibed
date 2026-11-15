@@ -4,12 +4,13 @@
 // whole game, so the window's size goes in while the window is open and comes out when it closes; open text is laid out again by the
 // game once its two dirty bytes are set. Fails closed: a font or class not as expected leaves that text as the game drew it.
 #include "windowtext.h"
-#include "basepage.h"
+#include "pages/pagerun.h"
 
 #include "flexe.h"
 #include "game/deckmode.h"
+#include "game/events.h"
 #include "game/roletext.h"
-#include "gametext.h"
+#include "extras/gametext.h"
 #include "navnew.h"
 #include "navskin.h"
 #include "skin_rules.h"
@@ -280,6 +281,36 @@ bool SetPos(u32 ctl, const float* pos)
     }
 }
 
+// Where the game had a control of the open window before this module first moved or sized it: the stand-down gives exactly that back (Frame(false)),
+// so a switch to the classic HUD with the window open leaves every control as a fresh classic opening has it. Kept on the first move only, so the
+// module's own later moves never count as the game's (a framed price stood 6 px high after the switch, its box kept HUD 2's size: audit 109_ group 1).
+struct First
+{
+    u32 vt = 0; // its class then: a control gone since is not written
+    float pos[3] = {};
+    bool rich = false;
+    float w = 0, h = 0; // a rich box's size in the setter's units
+};
+std::map<u32, First> g_first;
+void Keep(u32 ctl)
+{
+    if (!ctl || g_first.count(ctl))
+        return;
+    First f;
+    f.vt = R32(ctl);
+    f.rich = IsRich(ctl);
+    const bool read = f.rich ? safemem::Read(ctl + kLayoutPos, f.pos, sizeof(f.pos)) && safemem::Read(ctl + kSizeW, &f.w, 4) && safemem::Read(ctl + kSizeH, &f.h, 4)
+                             : safemem::Read(ctl + kPos, f.pos, sizeof(f.pos));
+    if (read)
+        g_first[ctl] = f;
+}
+// A move of a control of the open window (a text, a box, a button): its first place kept
+bool Move(u32 ctl, const float* pos)
+{
+    Keep(ctl);
+    return SetPos(ctl, pos);
+}
+
 // A row of a list: two lines in a frame the game draws. The game's offsets are for its own fonts: a larger price crossed the frame's foot (the owner, 6 Nov 2026). So each line is
 // placed by the frame as it stands: the first under its top, the others on its foot. One rule for every list.
 struct FramedRole
@@ -417,15 +448,15 @@ void Apply(u32 ctl, const Rung& r, float anchor, bool under = false)
     float pos[3] = {b.pos[0], b.pos[1], b.pos[2]};
     if (font != b.font)
         pos[1] += (r.height - b.height) * roletext::kInk * anchor;
-    SetPos(ctl, pos);
+    Move(ctl, pos);
 }
 
+// The game's font back (its place: GiveFirstBack)
 void PutBack(u32 ctl, Base& b)
 {
     if (!b.applied || b.applied == b.font)
         return;
-    if (SetFont(ctl, b.font))
-        SetPos(ctl, b.pos);
+    SetFont(ctl, b.font);
     b.applied = 0;
 }
 
@@ -596,7 +627,7 @@ void Collect(const Spec& s)
     if (reward != g_base.end())
     {
         reward->second.pos[0] -= kRewardLeft;
-        SetPos(g_jobReward, reward->second.pos);
+        Move(g_jobReward, reward->second.pos);
     }
 }
 
@@ -667,6 +698,19 @@ void ApplyCuts()
             SetRowText(it->first, it->second.set.c_str());
         ++it;
     }
+}
+
+// windowtext stops (window_text off, the classic HUD): each row still blanked by a cut gets the game's name back, and no cut is kept - ApplyCuts ran on and blanked
+// them on the classic look (audit 65e F3)
+static void GiveCutsBack()
+{
+    for (const auto& kv : g_cuts)
+    {
+        std::wstring now;
+        if (!kv.second.set.empty() && winplates::TextOf(kv.first, now) && now == kv.second.set)
+            SetRowText(kv.first, kv.second.from.c_str());
+    }
+    g_cuts.clear();
 }
 
 // In HUD 2's draw pass (uiskin): each blanked row name drawn whole as a marquee where the game's text stands (its anchor: the line's top left), in the
@@ -865,6 +909,10 @@ void PlaceFramed(float screenH)
     };
     const auto empty = [&](u32 ctl)
     {
+        // a cut name is blank under its marquee (CutName): the row still has its name, so its price keeps the foot (centred, it stood over the marquee, and
+        // the stand-down put it back there, over the name given back)
+        if (const auto cut = g_cuts.find(ctl); cut != g_cuts.end() && cut->second.set == L" " && !cut->second.from.empty())
+            return false;
         const Now n = Read(ctl);
         return !n.shown || !n.valid || n.lines < 1 || n.width < 0.012f * screenH; // (an empty row's name is one space)
     };
@@ -881,7 +929,7 @@ void PlaceFramed(float screenH)
             return;
         const float dy = (it.y - want) / screenH;
         pos[1] += dy;
-        SetPos(ctl, pos);
+        Move(ctl, pos);
         const auto base = g_base.find(ctl);
         if (base != g_base.end())
             base->second.pos[1] += dy; // (a later font keeps the place)
@@ -903,7 +951,7 @@ void PlaceFramed(float screenH)
             if (safemem::Read(f.top + kPos, pos, sizeof(pos)) && fabsf(pos[0] - (nameBase->second.pos[0] - over / screenH)) * screenH >= 1.0f)
             {
                 pos[0] = nameBase->second.pos[0] - over / screenH;
-                SetPos(f.top, pos);
+                Move(f.top, pos);
             }
         }
         const bool noTop = empty(f.top), noLow = (!f.low1 || empty(f.low1)) && (!f.low2 || empty(f.low2));
@@ -1033,7 +1081,7 @@ bool PlaceBoxes(const Spec& s, float screenH)
             if (fabsf(up) >= 1.5f)
             {
                 pos[1] += up / k;
-                SetPos(box, pos);
+                Move(box, pos);
                 changed = true;
             }
         }
@@ -1046,7 +1094,7 @@ bool PlaceBoxes(const Spec& s, float screenH)
             if (fabsf(dx) >= 1.5f)
             {
                 pos[0] += dx / k;
-                SetPos(box, pos);
+                Move(box, pos);
                 changed = true;
             }
             wantW = kStatsW * screenH / k;
@@ -1079,6 +1127,7 @@ bool PlaceBoxes(const Spec& s, float screenH)
             float barPos[3] = {}, barCopy[12] = {};
             const bool keepBar = bar && fabsf(wantW - w) <= 0.002f && exe::ControlSetPosition.ok() && safemem::Read(bar + 0x60, barPos, sizeof(barPos)) &&
                                  safemem::Read(bar + kBarCopy, barCopy, sizeof(barCopy));
+            Keep(box);
             hk::Call<void(__thiscall*)(u32, float, float)>(exe::RichSetSize, box, wantW, wantH);
             if (keepBar)
             {
@@ -1238,7 +1287,7 @@ void MoveButton(u32 ctl, float y, float H)
         return;
     const float was = pos[1];
     pos[1] += (it.y - y) / H;
-    if (!SetPos(ctl, pos))
+    if (!Move(ctl, pos))
         return;
     if (!ui::ControlRect(ctl, after) || fabsf(after.x - it.x) > 2.0f)
     {
@@ -1265,7 +1314,7 @@ void StandShipHead(float H)
         if (n.shown && n.valid && ui::ControlRect(ctl, v) && fabsf(v.y - want) >= 1.0f && safemem::Read(ctl + kPos, p, sizeof(p)))
         {
             p[1] += (v.y - want) / H;
-            SetPos(ctl, p);
+            Move(ctl, p);
         }
     };
     stand(g_viewName, name, top);
@@ -1288,7 +1337,7 @@ void StretchFoot(const Spec& s, float H)
     if (title && ui::ControlRect(title, t) && fabsf(t.y - titleTop) >= 1.0f && safemem::Read(title + kPos, tp, sizeof(tp)))
     {
         tp[1] += (t.y - titleTop) / H;
-        SetPos(title, tp);
+        Move(title, tp);
     }
     if (strcmp(s.window, "NeuroNetStoryStar") != 0)
         return;
@@ -1302,7 +1351,7 @@ void StretchFoot(const Spec& s, float H)
         if (text && ui::ControlRect(text, it) && fabsf(it.y - (want - kCaptionUp * H)) >= 1.0f && safemem::Read(text + kPos, pos, sizeof(pos)))
         {
             pos[1] += (it.y - (want - kCaptionUp * H)) / H;
-            SetPos(text, pos);
+            Move(text, pos);
         }
     }
     // the death / mission-failed screen's buttons stand where the log's two would (the owner, 7 Nov 2026: they stood at the game's height, over the
@@ -1322,7 +1371,7 @@ void StretchFoot(const Spec& s, float H)
         if (text && ui::ControlRect(text, it) && fabsf(it.y - (want + on)) >= 1.0f && safemem::Read(text + kPos, pos, sizeof(pos)))
         {
             pos[1] += (it.y - (want + on)) / H;
-            SetPos(text, pos);
+            Move(text, pos);
         }
     }
 }
@@ -1350,7 +1399,7 @@ float FitFoot(float H)
     if (g_fitCaption > 0 && ui::ControlRect(caption, c) && fabsf(c.y - (g_fitCaption + grow)) >= 1.0f && safemem::Read(caption + kPos, pos, sizeof(pos)))
     {
         pos[1] += (c.y - (g_fitCaption + grow)) / H;
-        SetPos(caption, pos);
+        Move(caption, pos);
     }
     return grow / H;
 }
@@ -1366,15 +1415,55 @@ void Lift(float want)
         if (!safemem::Read(l.ctl + kPos, pos, sizeof(pos)))
             continue;
         pos[1] = l.y + want;
-        SetPos(l.ctl, pos);
+        Move(l.ctl, pos);
         const auto it = g_base.find(l.ctl);
         if (it != g_base.end())
             it->second.pos[1] = pos[1];
     }
 }
 
+// A rich box's scroll bar dropped the way the box drops it when its text comes to fit (0x57A680: the bar's vt[0](1), +0x3F0 = 0), so the next layout makes
+// it again the game's way (0x579AA0: its place, its range) if the text overflows. Only for a box that makes and drops its own bar (+0x407). The size setter
+// had put the bar on the box's edge, the game makes it elsewhere (the ship dealer's: 24 px right), and its thumb kept HUD 2's range.
+bool DropBar(u32 box)
+{
+    const u32 bar = R32(box + kBar);
+    u8 own = 0;
+    if (!bar || !safemem::Read(box + 0x407, &own, 1) || !own || !exe::ScrollBarClick.is(R32(R32(bar) + 0x4C))) // (a scroll bar: its class's mouse handler)
+        return false;
+    __try
+    {
+        reinterpret_cast<void(__thiscall*)(u32, int)>(Mem<u32>(Mem<u32>(bar)))(bar, 1);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
+    return W<u32>(box + kBar, 0);
+}
+
+// The stand-down's places: every control this module moved or sized back where the game had it (Keep), a box at its size, its place, and its bar left to the
+// game's next layout (Frame(false))
+void GiveFirstBack()
+{
+    for (const auto& kv : g_first)
+    {
+        const u32 ctl = kv.first;
+        const First& f = kv.second;
+        if (!f.vt || R32(ctl) != f.vt)
+            continue;
+        if (f.rich && exe::RichSetSize.ok())
+            hk::Call<void(__thiscall*)(u32, float, float)>(exe::RichSetSize, ctl, f.w, f.h);
+        SetPos(ctl, f.pos);
+        if (f.rich)
+            DropBar(ctl);
+    }
+    g_first.clear();
+}
+
 void Closed()
 {
+    g_first.clear();
     g_lifted.clear();
     g_framed.clear();
     g_moveRefused = false;
@@ -1438,18 +1527,38 @@ const Spec* Find(u32& window)
 void Frame(bool on)
 {
     g_placing = false;
+    static bool s_wasOn = false;
     if (!on)
     {
-        Lift(0);
-        if (const auto reward = g_base.find(g_jobReward); reward != g_base.end())
-            reward->second.pos[0] += kRewardLeft;
+        // (the events' order is the evidence that this stand-down touches the window's controls before anything closes the window: hud_modules -Row dealer)
+        if (s_wasOn)
+            events::Push("windowtext off: %u cut rows, %u placed controls given back", static_cast<unsigned>(g_cuts.size()),
+                         static_cast<unsigned>(g_base.size()));
+        s_wasOn = false;
+        if (!g_cuts.empty())
+            GiveCutsBack();
         for (auto& kv : g_base)
             if (IsText(kv.first))
                 PutBack(kv.first, kv.second);
+        GiveFirstBack();
         if (g_spec)
-            Closed();
+        {
+            std::vector<u32> boxes;
+            for (u32 box : g_boxes)
+                if (IsRich(box) && Shown(box))
+                    boxes.push_back(box);
+            Closed(); // (the game's rich size back in its table)
+            // the boxes laid out again at that size and their own width, as a classic opening lays them out (they kept HUD 2's 115 % until the next filling)
+            for (u32 box : boxes)
+                if (exe::RichLayout.ok() && Relay(box))
+                {
+                    W<u8>(box + kDirty, 1);
+                    W<u8>(box + kDirty + 1, 1);
+                }
+        }
         return;
     }
+    s_wasOn = true;
     if (g_spec)
     {
         perf::Scope ps("wt.find");
@@ -1458,7 +1567,7 @@ void Frame(bool on)
         if (now != g_spec || window != g_window)
             Closed();
     }
-    if (basepage::Hides()) // (a page is the window, its controls stand off the screen: nothing here to place)
+    if (pagerun::ControlsOffScreen()) // (a page is the window, its controls stand off the screen: nothing here to place)
         return;
     if (!g_spec)
     {

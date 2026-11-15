@@ -11,6 +11,7 @@
 // the next element of its order while the plates are over the cap, and Standard's rules (none) never do.
 #include "../modules/hud/src/hud2_layout.h"
 #include "../modules/hud/src/hud2_lint.h"
+#include "../modules/hud/src/hud2_notice.h"
 
 #include "test.h"
 
@@ -109,6 +110,34 @@ RefOut Ref(const Frame& f)
             }
             L.ctxY = up.y0;
             place(up);
+        }
+        // (the owner's prompt rule, decision 55: the prompts without a place beside the panels take the lanes above them,
+        // above what stands, before one gives way)
+        if (!c.none && !L.fallback && c.n < n && f.m.ctxMeasured)
+        {
+            const int at = c.n;
+            const float half = 0.026f * H * k;
+            float top = L.ctxY - half;
+            for (int i = 0; i < at; ++i)
+                top = std::min(top, promptfit::Raised(L.ctxPlan.at[i]) ? c.y[i] - half - (c.wrap[i] ? g.tall : 0.0f) - 0.001f * H - f.m.ctxWord
+                                                                      : c.y[i] - half - (c.wrap[i] ? g.tall : 0.0f));
+            promptfit::LaneGeom up = promptfit::LanesAbove(W, H, k, L.mx, std::min(L.shipY0, L.loY0), 0.40f, 0.60f);
+            up.y0 = std::min(up.y0, top - 0.008f * H * k - half);
+            for (int row = 0; row < 2; ++row)
+            {
+                const float y = up.y0 - row * up.pitch, hh = 0.026f * H * k + 0.006f * H;
+                if (L.consY0 < y + hh && L.consY1 > y - hh && L.consX0 < up.rx1 && L.consX1 > up.rx0)
+                    up.rx1 = std::min(up.rx1, L.consX0 - (0.012f * H * k + 0.012f * H * k));
+            }
+            float mw[3] = {};
+            for (int i = 0; i < 3; ++i)
+                mw[i] = minW[i];
+            const promptfit::LanesHold h = promptfit::PlaceLanesHold(f.m.base + at, mw + at, f.m.glyph + at, f.m.label + at, f.m.hold + at,
+                                                                     f.m.side + at, n - at, f.m.dims, f.m.ctxGap, up, H, k, f.m.ctxWord);
+            for (int j = 0; j < h.c.n && at + j < 3; ++j)
+                c.x[at + j] = h.c.x[j], c.y[at + j] = h.c.y[j], c.wrap[at + j] = h.c.wrap[j], w[at + j] = h.w[j], L.ctxPlan.at[at + j] = h.plan.at[j];
+            if (h.c.n > 0)
+                c.x0 = std::min(c.x0, h.c.x0), c.x1 = std::max(c.x1, h.c.x1), c.n = std::min(at + h.c.n, 3);
         }
         if (!c.none)
         {
@@ -345,7 +374,7 @@ void Test_hud2_layout()
         CHECK_NEAR(g.pitch, 0.06 * 2160, 0.01);
         CHECK(hud2layout::kBottomBandX0W == 0.40f && hud2layout::kBottomBandX1W == 0.60f &&
               hud2lint::kBottomX0W == hud2layout::kBottomBandX0W && hud2lint::kBottomX1W == hud2layout::kBottomBandX1W);
-        // the lower centre's top (form C, UI_HUD2_INPUTS.md 7b): the speed's lower edge (R + 0.0285 + 0.030 / 2) + 0.01 H - 0.6535 H at k 1, the reticle lane's
+        // the lower centre's top (form C, the HUD 2 inputs record 7b, private): the speed's lower edge (R + 0.0285 + 0.030 / 2) + 0.01 H - 0.6535 H at k 1, the reticle lane's
         // 0.692 (CRUISE ON) far inside; it scales with the ring (k), the gap does not
         CHECK_NEAR(o.clearY0, 1080 + (0.10 + 0.0450) * 2160 + 0.01 * 2160, 0.02);
         CHECK(o.clearY0 < 0.692f * 2160 - 0.012f * 2160);
@@ -583,7 +612,7 @@ void Test_hud2_layout()
         CHECK_NEAR(CapOf(S, false, false, false, false), hp::kBudgetDefault, 1e-6); // calm names none: the default
         CHECK_NEAR(CapOf(hp::kPresets[1], false, false, true, false), 0.03, 1e-6); // Focus calm target (<= 3)
         CHECK_NEAR(CapOf(hp::kPresets[1], true, false, true, false), 0.07, 1e-6);  // Focus combat steady (<= 7)
-        // Standard itself: under the cap since the size audit (UI_HUD2_SIZE_AUDIT.md 3), nothing dropped
+        // Standard itself: under the cap since the size audit (the HUD 2 size audit 3, private), nothing dropped
         const Out std0 = Compute(f, S);
         CHECK(std0.boxed <= cap && std0.budgetOff == 0 && std0.suppressed == 0);
         // a rule that suppresses by the budget (ship, then the loadout, then the list), at a cap under what stands: the ship and the loadout go, in order,
@@ -721,6 +750,142 @@ void Test_hud2_layout()
         if (g_test.verbose)
             printf("issue 78 lanes %s: k %.2f nCtx %d first side %d x %.0f w %.0f cons.x0 %.0f\n", kbm ? "K&M" : "pad", o.k, o.nCtx,
                    o.ctxSide[0], o.ctxX[0], o.ctxW[0], o.cons.x0);
+    }
+    // ---- the owner's prompt rule (decision 55: "Use free width, then try for a second row if that's possible, rule 2 is an
+    // absolute last resort"): a prompt with no place beside the panels takes the lanes above them before it gives way.
+    // 1280x800, keyboard and mouse, 100 %: the loot state's two tractor prompts (both the right lane's: CtxSide), the comm
+    // feed's card over the left lane's upper row, the right lane too narrow for a squeezed prompt (since F4 the second gave way)
+    {
+        Frame f = Base(1280, 800, true);
+        f.target = false;
+        Prompts(f, 2, 0.26f, 0);
+        const float k = Scale(f);
+        for (int i = 0; i < 2; ++i)
+            f.m.labelMin[i] = 0.12f * 800 * k, f.m.side[i] = 1;
+        f.m.shipW = 253, f.m.loadW = 369; // (the panels' content widths read in game: ship 16..269, loadout 895..1264)
+        f.dlg.cx0 = 16 / 1280.0f, f.dlg.cy0 = 592 / 800.0f, f.dlg.cx1 = 350 / 1280.0f, f.dlg.cy1 = 679 / 800.0f;
+        const Out o = Compute(f, S);
+        // the case: beside the panels the left lane's upper row is closed and the right lane is narrower than a squeezed prompt
+        promptfit::LaneGeom g = promptfit::ContextLanes(1280, 800, o.k, o.ship.x1, o.loadout.x0, 0.915f, kBottomBandX0W, kBottomBandX1W);
+        FitLanes(g, o.res, 800, o.k);
+        CHECK(g.leftRows == 1 && g.rx1 - g.rx0 < f.m.base[1] - f.m.label[1] + f.m.labelMin[1]);
+        CHECK(o.nCtx == 2 && !o.ctxFallback);
+        CHECK(o.ctxPY[0] == o.ctxY); // (the first keeps its row beside the panels)
+        CHECK(o.ctxPY[1] < std::min(o.ship.y0, o.loadout.y0)); // (the second above them)
+        for (int i = 0; i < o.nCtx; ++i)
+        {
+            const Rect& plate = o.res.at[ACtx0 + i];
+            CHECK(o.res.Free(plate, kAreasBottom | (1u << AChat) | (1u << ANav) | (1u << ACard) | (1u << AList)));
+            CHECK(plate.x1 <= kBottomBandX0W * 1280 + 0.5f || plate.x0 >= kBottomBandX1W * 1280 - 0.5f);
+            for (int j = 0; j < i; ++j)
+            {
+                const Rect& q = o.res.at[ACtx0 + j];
+                CHECK(plate.x1 <= q.x0 || q.x1 <= plate.x0 || plate.y1 <= q.y0 || q.y1 <= plate.y0);
+            }
+        }
+        if (g_test.verbose)
+            printf("prompt rule: nCtx %d [%d %.0f+%.0f y%.0f] [%d %.0f+%.0f y%.0f] lanes beside %.0f-%.0f | %.0f-%.0f\n", o.nCtx,
+                   o.ctxSide[0], o.ctxX[0], o.ctxW[0], o.ctxPY[0], o.ctxSide[1], o.ctxX[1], o.ctxW[1], o.ctxPY[1], g.lx0, g.lx1,
+                   g.rx0, g.rx1);
+        // ---- the room below the comm feed (decision 75: "I see some empty room below the side chat, why not make use of
+        // that?"): the same frame with the calm ship panel held back (Standard's: hud2.cpp ShipPanelWanted) - a prompt
+        // takes the bottom-left corner under the comm feed's card, before the rows above the panels; reading order (the
+        // lower band's sheet Q3 "swap them"): the FIRST prompt takes the corner, the second stands beside the panel, left
+        // to right = first to second
+        Frame calm = f;
+        calm.held = Bit(Ship);
+        const Out q = Compute(calm, S);
+        CHECK(q.nCtx == 2 && !q.ctxFallback);
+        CHECK(q.ctxPY[0] == q.ctxY && q.ctxPY[1] == q.ctxY); // (both on the baseline row)
+        CHECK(q.ctxX[0] + q.ctxW[0] + calm.m.ctxGap <= q.ctxX[1] + 0.5f); // (the first left of the second, a row's gap between)
+        const Rect& corner = q.res.at[ACtx0];
+        CHECK(corner.x0 >= q.mx - 0.5f && corner.y1 <= q.ship.y1 + 0.5f && corner.y0 >= 679.0f); // (inside the corner, under the card)
+        CHECK(q.res.Free(corner, (1u << AChat) | (1u << ALoadout) | (1u << ACons) | (1u << ACtx1)));
+        // ---- the loot notice in the same frame (the sheet's Q1, Q2): the prompt keeps the corner (no prompt moves for the
+        // notice); the notice never climbs above the comm feed's cards' top - no place there: it waits (noticeWait)
+        {
+            Frame n = calm;
+            n.m.noticeW = 0.30f * 800, n.m.noticeH = 0.11f * 800;
+            const Out qn = Compute(n, S);
+            for (int i = 0; i < 2; ++i)
+                CHECK(qn.ctxX[i] == q.ctxX[i] && qn.ctxPY[i] == q.ctxPY[i]);
+            const float cardsTop = qn.res.at[AChat].y0;
+            CHECK(qn.res.Placed(AChat));
+            if (qn.noticeShow)
+                CHECK(qn.notice.y0 >= cardsTop - 0.5f && qn.res.Free(qn.notice, kAreasAll & ~qn.res.quiet & ~(1u << ANotice)));
+            // the cards' stack reaching up to the nav (three cards): every place above the corner is gone - it waits
+            Frame tall = n;
+            tall.dlg.cy0 = 0.30f;
+            const Out qt = Compute(tall, S);
+            CHECK(!qt.noticeShow && !qt.res.Placed(ANotice) && NoticeWaits(true, true, qt.noticeShow, false));
+            // ... and today's climb without the cards (none show: no limit), a place found: no wait
+            Frame bare = n;
+            bare.dlg = hud2layout::Dialogue();
+            const Out qf = Compute(bare, S);
+            CHECK(qf.noticeShow && !NoticeWaits(true, true, qf.noticeShow, false));
+            // ---- only a prompt the player can see holds room against the notice (the lead's rule on verifier finding 1):
+            // (a) hud_prompts ON CHANGE, the corner prompt faded out, the comm card up: the notice takes the corner;
+            // (b) the prompt back: it has the corner, the notice waits (or its next place, never above the cards) and
+            // keeps its remaining time
+            Frame faded = n;
+            faded.m.noticeW = 0.25f * 800, faded.m.noticeH = 0.07f * 800; // (a card that fits under the comm card)
+            faded.ctxSeen = false;
+            const Out qa = Compute(faded, S);
+            CHECK(qa.noticeShow && qa.notice.x0 == qa.mx && qa.notice.y1 >= qa.ship.y1 - 0.5f); // (the corner)
+            CHECK(qa.ctxX[0] == q.ctxX[0] && qa.ctxPY[0] == q.ctxPY[0]); // (the faded prompt keeps its place)
+            CHECK((qa.res.quiet & kAreasContext) == kAreasContext); // (quiet: the lint and the travel read them as not drawn)
+            CHECK(qa.res.Free(qa.notice, kAreasAll & ~qa.res.quiet & ~(1u << ANotice)));
+            Frame back = faded;
+            back.ctxSeen = true;
+            const Out qb = Compute(back, S);
+            CHECK(qb.ctxX[0] == q.ctxX[0] && qb.ctxPY[0] == q.ctxPY[0]); // (the prompt has the corner)
+            CHECK(!qb.noticeShow || (qb.res.Free(qb.notice, kAreasAll & ~qb.res.quiet & ~(1u << ANotice)) &&
+                                     qb.notice.y0 >= qb.res.at[AChat].y0 - 0.5f));
+            {
+                hud2notice::Notice card;
+                card.Add(7, L"SHIELD BATTERY", 7);
+                card.Step(1.0f, 0, NoticeWaits(card.Up(), true, qa.noticeShow, false)); // shown 1 s
+                for (int i = 0; i < 300; ++i)                                           // the prompt back 5 s
+                    card.Step(1.0f / 60, 0, NoticeWaits(card.Up(), true, qb.noticeShow, false));
+                CHECK(qb.noticeShow ? card.left < 0.01f : card.left == hud2notice::kHoldS - 1.0f);
+                CHECK(!qb.noticeShow); // (in this frame: no other place below the card)
+            }
+            if (g_test.verbose)
+                printf("lower band: prompts [%.0f+%.0f] [%.0f+%.0f]; notice %s at %.0f,%.0f (cards' top %.0f); 3 cards: %s\n",
+                       qn.ctxX[0], qn.ctxW[0], qn.ctxX[1], qn.ctxW[1], qn.noticeShow ? "shown" : "waits", qn.notice.x0,
+                       qn.notice.y0, cardsTop, qt.noticeShow ? "shown" : "waits");
+        }
+        // the panel showing again (a fight; still fading in counts): the corner closes, the rows above the panels as before
+        Frame waking = calm;
+        waking.drawn = Bit(Ship);
+        const Out u = Compute(waking, S);
+        CHECK(u.nCtx == 2 && u.ctxPY[1] < std::min(u.ship.y0, u.loadout.y0));
+        // a box over the flight in the corner (one that keeps its place, as the comm feed's cards) closes the corner too
+        Frame low = calm;
+        low.box = {16, 700, 250, 790}; // (the corner only: the left lane beside the panels keeps its baseline row)
+        const Out d = Compute(low, S);
+        CHECK(d.nCtx == 2 && d.ctxPY[1] < std::min(d.ship.y0, d.loadout.y0));
+        // a prompt too wide for either lane beside the panels, not squeezed (the K&M loot state at hud_scale 80 / 130 in
+        // game): the corner before the fallback's rows above the panels
+        Frame wide = calm;
+        wide.m.nCtx = 1, wide.m.base[0] = 230, wide.m.labelMin[0] = wide.m.label[0] = 180;
+        const Out e = Compute(wide, S);
+        CHECK(e.nCtx == 1 && !e.ctxFallback && e.ctxPY[0] == e.ctxY && e.ctxX[0] < e.ship.x1);
+        // ... and a second prompt that fits beside the panels then takes its row there (the first's no-fit ended that line)
+        Frame two = wide;
+        two.m.nCtx = 2, two.m.base[1] = 120, two.m.labelMin[1] = two.m.label[1] = 80;
+        const Out e3 = Compute(two, S);
+        CHECK(e3.nCtx == 2 && e3.ctxX[0] < e3.ship.x1 && e3.ctxX[1] > e3.ship.x1 && e3.ctxPY[1] == e3.ctxY);
+        two.dlg = hud2layout::Dialogue(); // (no comm card: the corner's upper row is open, the lane beside the panels still first)
+        const Out e4 = Compute(two, S);
+        CHECK(e4.nCtx == 2 && e4.ctxX[0] < e4.ship.x1 && e4.ctxX[1] > e4.ship.x1 && e4.ctxPY[1] == e4.ctxY);
+        wide.drawn = Bit(Ship);
+        const Out e2 = Compute(wide, S);
+        CHECK(e2.nCtx == 1 && e2.ctxFallback);
+        if (g_test.verbose)
+            printf("corner: nCtx %d [%d %.0f+%.0f y%.0f] [%d %.0f+%.0f y%.0f]; closed by a box: nCtx %d [%d %.0f+%.0f y%.0f]\n",
+                   q.nCtx, q.ctxSide[0], q.ctxX[0], q.ctxW[0], q.ctxPY[0], q.ctxSide[1], q.ctxX[1], q.ctxW[1], q.ctxPY[1], d.nCtx,
+                   d.ctxSide[1], d.ctxX[1], d.ctxW[1], d.ctxPY[1]);
     }
     // ---- fail closed: no screen
     {

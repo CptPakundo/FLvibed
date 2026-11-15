@@ -1,4 +1,4 @@
-// The arbiter's executor, its pure half (modules\autopilot\src\situation_exec.h, A37_PLAN S7): every refusal of the
+// The arbiter's executor, its pure half (modules\autopilot\src\situation_exec.h, the A37 plan's S7, private): every refusal of the
 // side-effect gate (side effects check the game first) and its event line; the plan comparison; the ObjectiveStart
 // arguments of a proposal = the old path's for every recorded decision (the fixtures' `decided`), each plan's kind fit
 // for its mode; the pause facts; D10's pause / resume over every fixture - the queue's carried memory (a short pause:
@@ -190,7 +190,7 @@ void Test_situation_exec()
     // load loses the story memory). The short pause (silent) and the long one (ask) must agree everywhere (the queue
     // carries the entry memory through a short pause, the story memory through both).
     const std::map<std::string, std::string> coldExpect = {
-        // FINDING (decided, A37_PLAN S7): "Awaiting" after the Tau-31 lane ride - with the queue the pause keeps lastReal
+        // FINDING (decided, the A37 plan's S7): "Awaiting" after the Tau-31 lane ride - with the queue the pause keeps lastReal
         // (warm = paused), a load forgets it and the mark fallback follows Juni (ship-target follow 16)
         {"m07_tau31_prestagenext_s208.snap", "finding:last_real"},
     };

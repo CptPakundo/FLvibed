@@ -32,3 +32,26 @@ input.cpp, dimouse.cpp, focus.cpp, fixes.cpp), each address a signed symbol in
 - Lists: load/save rows are hit by the per-class row metrics (no arrow-key support in FL lists).
 - D3D8 vtable calls: `VCall<>()` from `..\..\core\hook.h` with index constants.
 - Command ids: enum in `../core/game/fl.h`.
+
+## Gotchas
+Moved here unchanged from the module map (`..\CLAUDE.md` "Gotchas" points here; the documents diet, 13 Nov 2026).
+- Send commands with their keymap event mask (keydown-only commands toggle twice on key-up).
+- Menus react to raw keys (`fl::TapKey(VK_ESCAPE)`), not commands.
+- Windowed modes release the mouse at the window edge; the pad re-captures it.
+- A `WH_MOUSE_LL` hook of ours and the real mouse (14 Nov 2026, the owner's PC, real DualSense + mouse, the SDL backend's hooks;
+  `..\..\..\audit_2026-11-12\mouse_trace_2.csv`). **Measured:** Freelancer.exe's `SetCursorPos` warps never reached the hook as injected moves
+  (an own-warp counter stayed 0 for 80 s) and no event was dropped, the pad idle. Yet before the pad was first used Windows' pointer left the
+  centre by more than 40 px in 189 of 1,365 samples and the game's cursor crossed the screen in 60-130 ms; after the pad was used once, 1 of
+  569 at the same hand speed. **Nothing ties that to the hook:** the lead read it at the time as the hook speeding the mouse up, with no
+  measurement behind it; three later recordings (14 Nov 2026, `docs\FREELANCER_RE.md` "speed-dependent gain") found the cursor's
+  speed-dependent gain in the game's own DirectInput mouse, also with FLvibed not loaded, and raw mouse input (`mouse_raw`) now replaces
+  it. The mouse hook is installed only with `pad_mapper_mouse` 1 (`src\host\sdlpad.cpp`, `padbackend::FilterFlags`) because nothing needs
+  it unless a mapper also sends mouse input for the pad: one hook less in the system's mouse chain. The keyboard hook stays.
+- UI positions: always project through the UI camera (pixel = center + scale x xy / -z).
+- Bar characters are 3D hotspots (vtable 0x5CB930), not UI controls: the pad reaches them through `room::Hover` / `Talk` (`padbases.*`).
+- USER_NEXT / PREV_TARGET (the RS click's next-enemy fallback) walks the HUD contact list under the player's current filter: with the Important filter it can find nothing. Native, filter-independent targeting: `..\..\core\game\space.*`, `..\..\docs\FREELANCER_RE.md` "Targets, contacts, docking".
+- Events (objectives, popups, comms) come from import hooks in Content.dll, which the game reloads (after a death, say): re-applied at its load notification (`..\..\core\host\events.cpp` ContentModuleLoaded), `events::Update` as the backup.
+- Story missions have timers and nags that fail the mission: read the script before testing in one.
+- The player's maneuvers are AI directives on the ship's behaviour manager; their state is readable (`pilot`, `Get-FLPilot`; `..\..\docs\FREELANCER_RE.md` "Maneuvers, waypoints, lanes, jumps, zones"). The game's autopilots fly straight into minefields and damage zones: harness flights use `..\..\tools\harness\flroute.ps1`.
+- Do not use the quick-load routine 0x5B2C70: rooms come up without characters (`Load-FLSave` uses the menus).
+- Guns fire by their own fire slots, never fire-all (it launches missiles too); the equip "active" flag reads 0 for droppers and launchers (count them by ammo).

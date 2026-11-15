@@ -9,8 +9,7 @@
 // (Invalidate: a load, a launch, entering space). Per frame only a compare and a byte write per root. The game re-shows
 // HUD_Maneuvers and HUD_ContactList itself each frame (measured): their bytes are cleared again each frame. Kept native:
 // the comm window, the objective banner, the target indicators (brackets, arrows, lead, the target's bars), the cursor /
-// reticle (the damage arcs, the chat window, the mouse-over box and the missile warning go too since the fix round of
-// 25 Oct 2026: SetKeyboardForm below).
+// reticle (the damage arcs, the chat window and the missile warning go too since the fix round of 25 Oct 2026: below).
 // The game's own text lines that HUD 2 shows itself (polish): the cruise engine's line under the reticle
 // ("CRUISE ENGINE CHARGING - WEAPONS OFFLINE - n%") = the top-level control HUD_CruiseProgress, a seventh root found by
 // its own name - kept native while the cruise engine is disrupted ("Cruise Disrupted - n", the seconds until it can
@@ -38,14 +37,9 @@ void HoldChat(bool on);
 // frame (the line's control pointer, 0 almost always).
 void SetHideArrival(bool hide);
 // The fix round (the round 3 critique): also hidden while HUD 2 shows - the chat window MsgWin (the
-// subtitles draw the chatter in HUD 2's band; kept while the chat input CTID is open), the damage arcs
-// HUD_DamageIndicator (HUD 2's own hit flash) and, in the pad form only, the mouse-over label Rollover (it sat on the
-// ring's speed: the cursor is the aim point). The form: true = keyboard and mouse (the label kept).
-void SetKeyboardForm(bool kbm);
-// The game's hover help (the ToolTip box, the Rollover label) only for an intentional hover: false =
-// each Apply hides a shown one the game's own way before anything draws, in both HUD styles (hud2::RenderUnderHud
-// decides per frame: in flight only after a real mouse move within the last seconds; elsewhere always allowed).
-void SetHoverHelp(bool allowed);
+// subtitles draw the chatter in HUD 2's band; kept while the chat input CTID is open) and the damage arcs
+// HUD_DamageIndicator (HUD 2's own hit flash). The game's hover help (the ToolTip box, the Rollover label) is the
+// extras' rule on both interfaces (modules\hud\src\extras\extras.h HoverHelp), not a root here.
 // Extended HUD 2's modal menus in space (ui_style 1: pause, save / load, Options, the confirm dialog - modules\hud\docs\UI_HUD2_EXTENDED.md
 // 10, the MODAL track of 25 Oct 2026): while set, Apply hides every flight root whatever its keep rule and whatever
 // HUD 2 wants (the classic HUD too), the arrival line with them, and draws no 3D view - only the menus' own Rollover /

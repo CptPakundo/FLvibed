@@ -12,7 +12,7 @@
 
 | Tab | Module | Rows | Its head |
 |---|---|---|---|
-| **HUD** | HUD | 7 | HUD 2: ENABLED / ON THE PAD / DISABLED |
+| **HUD** | HUD | 7 | HUD 2: ENABLED / DISABLED |
 | **CONTROLLER** | Controller | 10, the full tab | Controller |
 | **SUBTITLES** | Subtitles | 5, around a live sample | Subtitles |
 | **AUTOPILOT** | Autopilot | 7 | Autopilot |
@@ -72,7 +72,7 @@ Underneath: **291 registry keys** (76 Controller, 165 Autopilot, 42 Subtitles, 8
 - **GENERAL leads with eight module switches** and a raw Show advanced row: the first thing seen is the mod's plumbing.
 - **The help line is small and far.** Arial at 0.0155 H: 14 px at 800, in the screen's top corner, away from the row. At 4K its 33 px is under XAG's PC 36 px (*measured*).
 - **Every restart row always says AFTER RESTART,** whether or not anything waits.
-- **`game_text_size` has no row,** though the owner's goal of 4 Nov turns on it. Neither do `mp_autopilot` or `hull_cue_pattern`.
+- **`game_text_size` has no row,** though the owner's goal of 4 Nov turns on it. Neither did `mp_autopilot` or `hull_cue_pattern` (both got a Player row on 12 Nov 2026, with `aim_assist`, `aim_slowdown`, `group_cue` and `loot_min_value`: the audit's package C5).
 - **`edit_bindings` opens nothing:** a toast says it is not built.
 - **Reset All acts at once with no question** (`ResetEverything`), against XAG 115.
 
@@ -83,13 +83,23 @@ Wording is proposed in full, because the wording is the design. Every descriptio
 ### HUD (the HUD module, with the text sizes)
 | Row | Values (default first) | Key | Says |
 |---|---|---|---|
-| **HUD 2** (head) | ENABLED / ON THE PAD / DISABLED | `hud_style` + `[Modules] hud` | The new flight display and menu look. On the pad: keyboard and mouse keep the game's HUD. Disabled: the game's own HUD. |
-| HUD size | AUTOMATIC / SMALL / NORMAL / LARGE | `hud_size`, new (`UI_HUD2_INPUTS.md` 7) | Automatic: Large on a handheld, Normal elsewhere. Small is close to the game's own HUD. This page follows it. |
-| Window text size | AUTOMATIC / NORMAL / LARGE / EXTRA LARGE | `game_text_size` (100 / 125 / 150; Automatic new) | The game's text in dealers, job boards and the Neural Net. Automatic follows HUD size. Applies at the main menu. |
+| **HUD 2** (head) | ENABLED / DISABLED | `hud_style` (+ `[Modules] hud` on ENABLED only: card N11) | The new flight display and menu look, on the pad and on keyboard and mouse. Disabled: the game's own HUD. *[ON THE PAD, the third word until 13 Nov 2026, is retired (the owner's decision 77: the classic HUD and HUD 2 are never mixed); an older file's 1 reads as 2, `docs\SETTINGS.md`.]* |
+| HUD size | AUTOMATIC / SMALL / NORMAL / LARGE | `hud_size`, new (the HUD 2 inputs record 7, private) | Automatic: Large on a handheld, Normal elsewhere. Small is close to the game's own HUD. This page follows it. |
 | HUD in calm flight | FADES / ALWAYS | `hud_fade` | Fades: parts of the HUD fade out in calm flight and return when they matter. Always: everything stays. |
 | Numbers on the ring | WHEN LOW / ALWAYS / NEVER | `hud_numbers` | Your shield and hull as numbers beside the ring round the crosshair: when low, always, or never. |
 | Button hints | WHEN USEFUL / ALWAYS / OFF | bundle, 6.2 | Which button does what. When useful: only when something new is possible. If unsure, leave this. |
-| Hit effects | FULL / SOFT / OFF | bundle, 6.2 | Flashes at the screen's edge when your ship is hit. Choose Soft or Off if flashes bother you. |
+
+**CUES AND TEXT** (13 Nov 2026, the owner's answer to card Q4 of audit 102_, "Keep, off by default" on the classic HUD): a section with no
+head, so its rows stay live whichever HUD is selected; with the HUD module off they say so (HUD MODULE OFF).
+
+| Row | Values (default first) | Key | Says |
+|---|---|---|---|
+| Cues on the classic HUD | DISABLED / ENABLED | `classic_cues` | The hit effects and the reticle cue on the game's own HUD too, when HUD 2 is disabled. Off by default, so the classic HUD stays the game's own. HUD 2 shows them by the rows below. |
+| Hit effects | FULL / SOFT / OFF | bundle, 6.2 | Flashes at the screen's edge when your ship is hit. Choose Soft or Off if flashes bother you. On the classic HUD only with Cues on the classic HUD. |
+| Window text size | AUTOMATIC / NORMAL / LARGE / EXTRA LARGE | `game_text_size` (100 / 125 / 150; Automatic new) | The game's text in dealers, job boards and the Neural Net. Automatic: the game's own size on the classic HUD, with HUD 2 it follows HUD size. A size you choose applies to both. Applies at the main menu. |
+| Hide the idle cursor | ENABLED / DISABLED | `idle_cursor` (new, 14 Nov 2026) | The mouse cursor hides after 3 seconds without the mouse in calm flight, and comes back when you move it. On both HUDs; with HUD 2 only while HUD in calm flight is Fades. (Before, only `hud_fade`, a HUD 2 row greyed with HUD 2 disabled, turned it off.) |
+
+The Player rows of the old CUES section (shield, its strength, hull, its pattern, the reticle cue) follow in this section.
 
 ### CONTROLLER (the Controller module)
 | Row | Values | Key | Says |
@@ -143,7 +153,7 @@ Each feature is a head; its rows stand under it, indented. Off greys those rows 
 | Keep running in background | DISABLED / ENABLED | `run_in_background` | The game normally pauses when you switch to another window. |
 | **Speedrun mode** (head) | ENABLED / DISABLED | `[Modules] speedrun` | The New Game choice, the timer, the splits and LiveSplit. Takes effect at the next start. |
 | **Bug recorder** (head) | ENABLED / DISABLED | `[Modules] npc` | Writes a log when a ship near you stalls, for bug reports. Changes nothing in the game. Takes effect at the next start. |
-| Show all settings | DISABLED / ENABLED | `show_advanced` | Every tab also lists the rest of its settings, as they were before this page. Advanced mode replaces this later. |
+| Show all settings | DISABLED / ENABLED | `show_advanced` | Every tab also lists its less used settings. Tuning keys with no row here are set in the ini files. |
 | Reset | RESET EVERYTHING | | Every FLvibed setting back to its default, hidden ones too. It asks first. |
 | About | VERSION AND CREDITS | | FLvibed 0.4.0, its credits and licences, and where the settings files are. |
 
@@ -181,7 +191,7 @@ By what the player gains, in order: (1) it stops them playing, reading or holdin
 ### 5.2 What stays out, and why
 **Out at the margin, first in line for advanced:** Auto-target and Swap Y (the owner, O2), HUD opacity, In-flight subtitle position, Side chat size, Subtitles in movies, Speedrun timer, Input device, Cursor speed.
 
-**Folded into a row:** Autopilot style holds 11 rows; Button hints 6; Hit effects 3; HUD holds `ui_style`; HUD size takes `text_size`, `hud_scale`, `deck_mode` (`UI_HUD2_INPUTS.md` 7).
+**Folded into a row:** Autopilot style holds 11 rows; Button hints 6; Hit effects 3; HUD held `ui_style` (retired 13 Nov 2026 with `base_pages` and `skin_native`: the owner's answer to card Q2 of audit 102_); HUD size takes `text_size`, `hud_scale`, `deck_mode` (the HUD 2 inputs record 7, private).
 
 **Not a player's:** the 170 keys with no row and the tuning rows. The autopilot's experiments are all off by default.
 
@@ -192,7 +202,7 @@ Each hidden row was read for one question: can a player who never sees it be har
 
 - **The exception was `pad_backend`.** XInput is the default, so a DualSense or Switch pad without Steam Input or a mapper was not read, with the fix behind a hidden row. The owner made the SDL3 fallback a must-have of 0.3.5 (O5), so this page adds no row for it.
 - **The trap: a changed value out of sight.** `input_mode` locked to the keyboard, say, leaves a pad dead with no visible reason. Rule 2 is the answer.
-- **`mp_autopilot`** stays travel-only by default and a server's word wins, so hidden is safe; `docs\research\options_menus.md` still holds it a player's decision (U28).
+- **`mp_autopilot`** stays travel-only by default and a server's word wins, so hidden is safe; `docs\research\options_menus.md` still holds it a player's decision (U28). Since 12 Nov 2026 (audit C5) it has a Player row, AUTOPILOT's "Autopilot on servers".
 - **`hud_alerts`, `hud_threats`, `focus_only`, `pause_on_disconnect`, `maneuver_watchdog`, `fire_target`:** on, and safe on.
 - **`npc_stall_log`** writes a local log and changes nothing; its row on MORE says so.
 
@@ -246,7 +256,7 @@ A preset or bundle row is one word over several keys. It applies its table only 
 | Head | Off | On, feature running | On, feature off since the start |
 |---|---|---|---|
 | **Subtitles** | At once: `enabled` 0, and the module row written for the next start | At once: both back; nothing waits | `AT NEXT START`, rows grey until then |
-| **HUD 2** | At once: `hud_style` 0, the game's HUD returns and the page goes classic. The module row written; Hit effects and Window text size end at the next start | At once | `AT NEXT START` |
+| **HUD 2** | At once: `hud_style` 0, the game's HUD returns and the page goes classic. The module row is NOT written (since 13 Nov 2026, the owner's answer to card N11, "HUD 2 only"): the HUD module keeps running, so CUES AND TEXT stays live; the module goes off only by its own row (HUD module, Show all) | At once (and the module row on) | `AT NEXT START` |
 | **Controller, Autopilot, Movie handling, Window handling, Speedrun mode, Bug recorder** | Rows grey at once; the feature runs until the next start. The row says so | Clears a waiting off | `AT NEXT START` |
 
 So a Subtitles or HUD 2 player meets a restart in one case only: turning back on, in a later session, a feature they turned off. **The head reads ENABLED only when both keys are on.** A saved mix reads DISABLED, and the page writes nothing until the player acts; a Classic player of today, with the module on, keeps their hit effects running that way. Keys and ini files stay as they are.
@@ -324,7 +334,11 @@ Sizes are `UI_HUD2_SKIN.md` 4's, in fractions of H, multiplied by HUD size. 1280
 
 ## 9. Show all settings, and the place kept for advanced mode
 
-Advanced mode is not designed here. The owner leaves it for later, and keeps **Show all settings** until then (O3): a row of MORE, DISABLED by default. Enabled, each tab also lists the rest of its rows, as they are today, under the tab of their owner: the 54 player rows with no row or bundle of their own, and the raw keys as Show advanced lists them now. The list scrolls. It is today's page re-homed, with no new design.
+Advanced mode is not designed here. The owner leaves it for later, and keeps **Show all settings** until then (O3): a row of MORE, DISABLED by default. Enabled, each tab also lists the rest of its rows, as they are today, under the tab of their owner: the 54 player rows with no row or bundle of their own. The list scrolls. It is today's page re-homed, with no new design. Since 12 Nov 2026 (the audit's decision 15)
+the page is curated: a key with no row of its own is no longer listed raw; it is set in its ini file and documented in `docs\SETTINGS.md`, and MORE counts the ones
+away from their default (Other changed settings, RESET THEM). Which of them get a row is the owner's call (the audit
+proposed six: aim assist strength, slowdown on target, the weapon group cue, the hull damage pattern, the autopilot on servers, the
+loot value the autopilot leaves). DEFAULT resets only the tab's rows, so a rowless key goes back only through RESET THEM.
 
 What simple mode already gives advanced mode: the tier in the metadata, every row on a tab by its owner, YOU CHANGED, the description band. Notes for that round: search belongs there (with OpenTTD's hint when a result is hidden); a sub-level needs a default pad binding.
 
@@ -334,7 +348,7 @@ What simple mode already gives advanced mode: the tier in the metadata, every ro
 
 **With HUD 2 disabled** the same page, same tabs and rows, draws in the game's look at once (`views::SkinOn()` false), as today. The rule "off means classic" holds.
 
-**`hud_size` comes first.** It is P11f's (critique section 9 step 5). This page's HUD tab and its own scaling wait for it, and `UI_HUD2_INPUTS.md` 7's migration of `deck_mode` applies.
+**`hud_size` comes first.** It is P11f's (critique section 9 step 5). This page's HUD tab and its own scaling wait for it, and the migration of `deck_mode` in the HUD 2 inputs record's (private) section 7 applies.
 
 **Old settings stay.** No `settings_version` raise: settings lost after a patch or a restart is a common complaint, more so than restarts themselves. Keys, sections and defaults stay where they are (ARCHITECTURE "Nothing player-facing moves"); only the page's grouping changes.
 
@@ -344,7 +358,7 @@ What simple mode already gives advanced mode: the tier in the metadata, every ro
 
 No build order is fixed here; it follows the owner's decisions and P11f's `hud_size`.
 
-1. `UI_SPEC.json`: new tabs, a `simple` tier, per-value help, the words above; `tools\ui_meta.py`; the Feature Tour in the same package.
+1. `UI_SPEC.json`: new tabs, a `simple` tier, per-value help, the words above; `tools\ui_meta.py`; then the Feature Tour (no longer required in the same package since 12 Nov 2026).
 2. `options_page.cpp`: the band, the chips with X / Y, tabs by owner, head rows and their two-key logic, the amber value and the tab mark, YOU CHANGED, the indented rows of MORE, the layout card (from the spec's binding tables), the two dialogs, the first-start card and its stamp, Q / E and D / C. `tools\deploy.ps1` writes the stamp.
 3. `presets.*`: two bundles. `RowOwner` for the new rows.
 4. Tests: `tests\` for bundles and the changed-row rule (pure); in game at 1280x800 and 4K, pad and K&M, hosted and from the pause menu; each feature off, waiting, coming on, stopped; both Subtitles and Controller disabled, and that the game still starts; that a feature switch still holds after the restart (the common complaint is a value lost there); `hud2 lint`; the display matrix. Fails closed: with the spec's rows missing, the page shows them greyed, as today.
@@ -383,7 +397,7 @@ Two or three real players look at the mock before the row list freezes. **The pa
 - **Doom Eternal and Elite Dangerous are thin.** PCGamingWiki refused every fetch. Elite's tab list and first run stay open.
 - **Reddit could not be reached,** so complaints come from Steam, ResetEra and articles, a few dozen voices in all. Restart without warning is one voice; a warned restart that then loses the value is the commoner report. An accidental reset-all: nothing found.
 - **Unread:** the Xbox handheld measuring method, the CVAA and EAA primary texts (neither seems to reach a mod's page; not legal advice).
-- **Handheld detection** is unverified on real hardware (`UI_HUD2_INPUTS.md` 7).
+- **Handheld detection** is unverified on real hardware (the HUD 2 inputs record 7, private).
 
 ## 14. The owner's decisions (6 Nov 2026)
 
@@ -408,7 +422,7 @@ Where it lives: the rows in `docs\UI_SPEC.json` (patch `tools\uimock\patches\202
 **Calls the design left open: each stands as built, decided in the owner's absence (6 Nov 2026, the AFK order), for the owner to overturn. Reasons in brackets:**
 1. **Members of a preset under YOU CHANGED.** Autopilot style SPEEDRUN would list five rows there, Button hints ALWAYS two. A member stays out while its preset reads a word, and lists once it reads CUSTOM. Section 6.5 does not say. (Decided: the preset's word is the visible statement of those values, so nothing is out of sight.)
 2. **SOFTER and SOFTEST.** The design names the words, not the numbers: they took the old slider words' places, exponents 3 and 4 (LINEAR 1, SOFT 1.5). The number stays as a Show all row, Steering curve. (Decided: the old slider's own words kept their numbers.)
-3. **HUD 2 off greys the whole tab,** as O4 says, HUD size and Window text size included, though both still act, and a Classic player with the module on cannot reach Hit effects. A saved value outside the words reads as the raw number. (Decided: O4's words are the owner's, "everything inside is greyed out".)
+3. **HUD 2 off greys the whole tab,** as O4 says, HUD size and Window text size included, though both still act, and a Classic player with the module on cannot reach Hit effects. A saved value outside the words reads as the raw number. (Decided: O4's words are the owner's, "everything inside is greyed out".) *[Since 13 Nov 2026 the cues and Window text size stand in the section CUES AND TEXT, which has no head: they act on the classic HUD too (the owner's answer to card Q4 of audit 102_).]*
 4. **Order of the words.** Section 4 lists the default first. Scales stay ascending in the cycle (Text size, Steering response); the other rows follow section 4. (Decided: a scale read in order is the plainer list.)
 5. **The module rows of Subtitles and the HUD** stay as Show all rows, so the mix of section 6.3 can still be made on purpose. (Decided: 6.3 needs that mix to stay valid.)
 6. **The words no section gives:** Ace, Assisted and Custom on Layout, the three other Autopilot styles, the coming-on help (*It comes on at the next start. Your setting is kept.*), the chips' descriptions. (Decided: in the page's voice, to be reworded freely; the player check of 12a covers them.)

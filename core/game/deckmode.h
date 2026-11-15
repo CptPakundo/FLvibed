@@ -14,9 +14,12 @@ inline int TextSize(bool deck, int chosen) { return deck && chosen == kTextSizeD
 // The edge gutter left at Large: no safe area, only enough that a plate's rim does not touch the bezel (fractions of W / H).
 constexpr float kGutterW = 0.0125f, kGutterH = 0.015f;
 
-// The flight HUD's margins: the spec's value, or the gutter.
-inline float FlightSide(float spec) { return g_on ? kGutterW : spec; }
-inline float FlightTopBottom(float spec) { return g_on ? kGutterH : spec; }
+// The flight HUD's margins: the spec's value, or the gutter. The ...Of forms take Large as a caller hands it in (HUD 2's
+// frame: its copy of g_on).
+inline float FlightSideOf(bool deck, float spec) { return deck ? kGutterW : spec; }
+inline float FlightTopBottomOf(bool deck, float spec) { return deck ? kGutterH : spec; }
+inline float FlightSide(float spec) { return FlightSideOf(g_on, spec); }
+inline float FlightTopBottom(float spec) { return FlightTopBottomOf(g_on, spec); }
 
 // The docked screens' safe area (the prompt lane, the strip, the character card): 0.05 W / 0.05 H, or the gutter.
 inline float SideW() { return g_on ? kGutterW : 0.05f; }

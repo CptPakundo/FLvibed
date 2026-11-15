@@ -15,6 +15,10 @@ void Test_flhash();
 void Test_ini();
 void Test_utf();
 void Test_textfit();
+void Test_hudbench();
+void Test_hudbench_replay();
+void Test_hud2_core();
+void Test_hud2_state();
 void Test_roletext();
 void Test_skin_rules();
 void Test_nnpage();
@@ -37,6 +41,21 @@ void Test_padmap_zones();
 void Test_navview();
 void Test_navmap_labels();
 void Test_movie_words();
+void Test_iserver();
+void Test_promptlane();
+void Test_pageinput();
+void Test_action_runner();
+void Test_page();
+void Test_pagelist();
+void Test_pagerun();
+void Test_pagekit();
+// the page families' tests (audit 70b F1b): each family adds its declarations under its own line
+// ---- pages: dealers
+// ---- pages: neuronet
+// ---- pages: menus
+// ---- pages: map
+// ---- pages: mp
+// ---- pages: flight
 void Test_input_rules();
 void Test_mix_cues();
 void Test_avoid();
@@ -49,18 +68,21 @@ void Test_fluf_hooks();
 void Test_fluf_probe();
 void Test_press_gate();
 void Test_focus_gate();
+void Test_device_rules();
 void Test_maneuver_watch();
 void Test_target_cycle();
 void Test_room_ring();
 void Test_dealer_rules();
 void Test_pad_slots();
 void Test_pad_backend();
+void Test_rawmouse();
 void Test_sdl_testpad();
 void Test_orig_image();
 void Test_winmode();
 void Test_promptfit();
 void Test_settings();
 void Test_settings_reset();
+void Test_hud_style();
 void Test_mprules_tag();
 void Test_tractorfail();
 void Test_presets();
@@ -70,6 +92,7 @@ void Test_universe();
 void Test_linebreak();
 void Test_stack_fit();
 void Test_chat_size();
+void Test_crashlog();
 void Test_wgroups();
 void Test_stallwatch();
 void Test_mission_live();
@@ -97,12 +120,15 @@ void Test_dock_skip();
 void Test_strafe();
 void Test_hud2_lint();
 void Test_hud2_sim();
+void Test_keycap_name();
 void Test_hud2_preset();
 void Test_hud2_layout();
 void Test_hud2_focus();
 void Test_spawn_charge();
 void Test_ash_ride();
 void Test_hud2_notice();
+void Test_infobody();
+void Test_modelslot(); // the model slot (audit 70b F7)
 
 static bool DirExists(const std::string& p)
 {
@@ -235,6 +261,10 @@ int main(int argc, char** argv)
         {"ini", Test_ini},
         {"utf", Test_utf},
         {"textfit", Test_textfit},
+        {"hudbench", Test_hudbench},
+        {"hudbench_replay", Test_hudbench_replay},
+        {"hud2_core", Test_hud2_core},
+        {"hud2_state", Test_hud2_state},
         {"roletext", Test_roletext},
         {"skin_rules", Test_skin_rules},
         {"nnpage", Test_nnpage},
@@ -257,6 +287,21 @@ int main(int argc, char** argv)
         {"navview", Test_navview},
         {"navmap_labels", Test_navmap_labels},
         {"movie_words", Test_movie_words},
+        {"iserver", Test_iserver},
+        {"promptlane", Test_promptlane},
+        {"pageinput", Test_pageinput},
+        {"action_runner", Test_action_runner},
+        {"page", Test_page},
+        {"pagelist", Test_pagelist},
+        {"pagerun", Test_pagerun},
+        {"pagekit", Test_pagekit},
+        // the page families' tests (audit 70b F1b): each family adds its rows under its own line
+        // ---- pages: dealers
+        // ---- pages: neuronet
+        // ---- pages: menus
+        // ---- pages: map
+        // ---- pages: mp
+        // ---- pages: flight
     {"input_rules", Test_input_rules},
         {"mix_cues", Test_mix_cues},
         {"avoid", Test_avoid},
@@ -269,17 +314,20 @@ int main(int argc, char** argv)
         {"fluf_probe", Test_fluf_probe},
         {"press_gate", Test_press_gate},
     {"focus_gate", Test_focus_gate},
+    {"device_rules", Test_device_rules},
     {"maneuver_watch", Test_maneuver_watch},
     {"target_cycle", Test_target_cycle},
     {"room_ring", Test_room_ring},
     {"dealer_rules", Test_dealer_rules},
     {"pad_slots", Test_pad_slots},
         {"pad_backend", Test_pad_backend},
+        {"rawmouse", Test_rawmouse},
         {"sdl_testpad", Test_sdl_testpad},
         {"orig_image", Test_orig_image},
         {"winmode", Test_winmode},
         {"settings", Test_settings},
         {"settings_reset", Test_settings_reset},
+        {"hud_style", Test_hud_style},
         {"promptfit", Test_promptfit},
         {"mprules_tag", Test_mprules_tag},
         {"tractorfail", Test_tractorfail},
@@ -290,6 +338,7 @@ int main(int argc, char** argv)
         {"linebreak", Test_linebreak},
         {"stack_fit", Test_stack_fit},
         {"chat_size", Test_chat_size},
+        {"crashlog", Test_crashlog},
         {"wgroups", Test_wgroups},
         {"stallwatch", Test_stallwatch},
         {"mission_live", Test_mission_live},
@@ -317,12 +366,15 @@ int main(int argc, char** argv)
         {"strafe", Test_strafe},
         {"hud2_lint", Test_hud2_lint},
         {"hud2_sim", Test_hud2_sim},
+        {"keycap_name", Test_keycap_name},
         {"hud2_preset", Test_hud2_preset},
         {"hud2_layout", Test_hud2_layout},
         {"hud2_focus", Test_hud2_focus},
         {"spawn_charge", Test_spawn_charge},
         {"ash_ride", Test_ash_ride},
         {"hud2_notice", Test_hud2_notice},
+        {"infobody", Test_infobody},
+        {"modelslot", Test_modelslot},
     };
     for (const Test& t : tests)
     {

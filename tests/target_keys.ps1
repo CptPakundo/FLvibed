@@ -1,4 +1,4 @@
-# The game's target keys under HUD 2 (UI_HUD2_INPUTS.md 4 row 3): USER_NEXT_TARGET / PREV_TARGET and NEXT_ENEMY walk the contact list, whose rows the
+# The game's target keys under HUD 2 (the HUD 2 inputs record 4 row 3, private): USER_NEXT_TARGET / PREV_TARGET and NEXT_ENEMY walk the contact list, whose rows the
 # game builds in the list's draw, which stops with the hidden root. One background game a row: hud2 with the pad's RS click, kbm (HUD 2, the controller
 # off), classic as the control. Judged: the keys step through distinct objects, the same on each. -Range: a target left past 10 km, the panel's drop rule.
 # Usage (PowerShell tool): tests\target_keys.ps1 [-Row hud2,kbm,classic] [-Range] [-Instance 1]   build\release. Exit 1 = a failure.

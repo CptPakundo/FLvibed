@@ -1,5 +1,6 @@
 // HUD 2's flight notice (GitHub issues 70 and 69; modules\hud\docs\UI_HUD2.md 5.43): a short card that appears on an
-// event, holds a few seconds and fades - the credits a mission paid, the loot the tractor took in. Nothing permanent: the
+// event, holds a few seconds and fades - the credits a mission paid, the loot the tractor took in (a take that filled the
+// ship to its limit for that item says FULL: issue 87). Nothing permanent: the
 // owner's B9 (31 Oct 2026) keeps credits and the hold off the flight HUD as standing elements; a notice is new
 // information that comes and goes (the owner, 11 Nov 2026). This file is the pure half: what the card holds, how a
 // second event merges into it, its time and fade, and the credits' gain watch. hud2.cpp / hud2_data.cpp feed it,
@@ -21,7 +22,15 @@ struct Item
     u32 key = 0;       // the item's kind (its good / equipment archetype id; 0 = unknown, merged by name)
     std::wstring name; // as the game names it
     int count = 0;
+    bool full = false; // the latest take of it brought the ship to its limit for it (AtLimit): the line says FULL
 };
+
+// Whether a take brought the item to its limit (GitHub issue 87, the owner's decisions 71 and 72 "any item at its limit"):
+// right after the take the ship cannot take one more unit of it, by the game's own answer at that moment (core\game\ai.h
+// CargoRoom, CShip::get_space_for_cargo_type: the hold's room by volume, and the ship's limit for batteries, nanobots and
+// each munition). One rule for every item: `known` false (the game did not answer) is never FULL, and only a room of
+// exactly 0 is: -1 (no limit) and 0x7FFFFFFF (a volume-0 item with no limit of its own) are room.
+inline bool AtLimit(bool known, int roomAfter) { return known && roomAfter == 0; }
 
 // One card. A new event while it shows (or fades) feeds the same card and restarts its time; once faded out it empties.
 struct Notice
@@ -48,8 +57,10 @@ struct Notice
         gain = credits ? gain + rise : rise;
         cash = now, credits = true, left = kHoldS;
     }
-    // `count` units of an item came into the hold: its line's count grows, or a new line (or the "+n MORE" line).
-    void Add(u32 key, const std::wstring& name, int count)
+    // `count` units of an item came into the hold: its line's count grows, or a new line (or the "+n MORE" line). `atLimit`:
+    // this take brought it to the ship's limit (AtLimit); the latest take of a kind decides its line's FULL. Nothing taken
+    // (a refusal: count 0) changes nothing, so the line from the take before stays as it was.
+    void Add(u32 key, const std::wstring& name, int count, bool atLimit = false)
     {
         if (count <= 0)
             return;
@@ -58,11 +69,12 @@ struct Notice
             if (key ? items[i].key == key : (items[i].key == 0 && items[i].name == name))
             {
                 items[i].count += count;
+                items[i].full = atLimit;
                 return;
             }
         if (nItems < kMaxItems)
         {
-            items[nItems].key = key, items[nItems].name = name, items[nItems].count = count;
+            items[nItems].key = key, items[nItems].name = name, items[nItems].count = count, items[nItems].full = atLimit;
             ++nItems;
             return;
         }
@@ -73,8 +85,12 @@ struct Notice
             extra[nExtra++] = key;
     }
     // Once a frame. `motion` = skin_motion (0 full, 1 fades, 2 none: on and off at once). An emptied card stays empty.
-    void Step(float dt, int motion)
+    // `wait`: the layout found it no place (hud2_layout.h PlaceNotice noticeWait): its time and fade stand still until a
+    // place frees (the owner, 13 Nov 2026: "it waits for room and its clock waits"; card N12).
+    void Step(float dt, int motion, bool wait = false)
     {
+        if (wait && !Empty())
+            return;
         dt = dt > 0 ? dt : 0.0f;
         left = left > dt ? left - dt : 0.0f;
         const bool on = left > 0 && !Empty();

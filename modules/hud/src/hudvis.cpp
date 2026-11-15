@@ -8,6 +8,7 @@
 #include "game/indicators.h"
 #include "hud2_roots.h"
 #include "log.h"
+#include "pages/pagerun.h"
 #include "safemem.h"
 #include "ui/ui.h"
 
@@ -125,26 +126,17 @@ static bool ChatInputOpen(const Root&)
     return cache;
 }
 
-// The game's hover help - the mouse-over label (Rollover: "Rogues - Ken Norris" beside the cursor) and the mouse-over box
-// (ToolTip: "NeuroNet", "Police Base / Fort Bush") - only for an intentional hover (SetHoverHelp,
-// decided by HUD 2's frame from the device service: in flight a real mouse move within the last seconds; menus, the
-// NeuroNet windows and the bases keep the game's own). Otherwise, in both HUD styles, each frame at the UI pass's entry
-// (after the game's update started it, before anything draws) the shown help is hidden the game's own way (0x4BE390:
-// state bit 1 off, the ToolTip's showing flag +0x159 = 0, so its hover timer starts over instead of re-showing it the
-// next frame): it never reaches the screen. They are not restored: the game shows them again on the next real hover.
-static bool g_kbmForm = false;
-static bool KeyboardForm(const Root&) { return g_kbmForm; }
-void SetKeyboardForm(bool kbm) { g_kbmForm = kbm; }
-static bool g_hoverAllowed = true;
-static u32 g_hoverHides = 0;
-void SetHoverHelp(bool allowed) { g_hoverAllowed = allowed; }
+// (The game's hover help, the mouse-over label Rollover and box ToolTip, is not a root of this switch: the extras' rule hides it on both interfaces,
+// modules\hud\src\extras\extras.h HoverHelp.)
 
-// A modal menu over the flight (SetMenuOver): every flight root hidden, the menus' mouse-over label / box (the roots
-// kept by KeyboardForm) as the game wants them
+// A modal menu over the flight (SetMenuOver): every flight root hidden (the menus' mouse-over label / box are not roots: the game's)
 static bool g_menuOver = false;
 static u32 g_menuFrames = 0;
 void SetMenuOver(bool on) { g_menuOver = on; }
-static bool AlwaysKept(const Root&) { return true; }
+// The comm window under a HUD 2 page (a NeuroNet page or a base page) goes as under a modal menu: the page's holes for the
+// game's icons and text let the speaker's head through where HUD 2's slot puts it (GitHub issue 89, INVENTORY's first
+// row); the subtitles' panel, drawn over the page, still names the speaker and shows the line
+static bool CommKept(const Root&) { return !pagerun::Standing(); }
 
 static Root g_roots[] = {
     {"ManeuverButton0", "maneuvers"},
@@ -163,10 +155,6 @@ static Root g_roots[] = {
     // the game's damage arcs (~0.22 H around the reticle; the round 3 critique: they compete with the ring): HUD 2 shows a
     // hit's side itself (the amber flash at 0.13 H from the same hit, host v12 PlayerHit)
     {"HUD_DamageIndicator", "damage"},
-    // the hover help (ApplyHoverHelp, not the HUD 2 switch): the mouse-over label (top-level Rollover, vt 0x5D5454) and
-    // the mouse-over box (top-level ToolTip, vt 0x5D5F7C)
-    {"Rollover", "rollover", KeyboardForm},
-    {"ToolTip", "tooltip", KeyboardForm},
     // the game's red missile warning (Targetable_Objects > MissileAlert, blinking at the classic target panel's corner -
     // over HUD 2's card, the known bug): HUD 2's MISSILE INCOMING card and the ring's chevrons carry it. Only this child:
     // its parent draws the brackets and arrows (kept native)
@@ -177,8 +165,8 @@ static Root g_roots[] = {
     {"TrailAlert", "tail", nullptr, true},
     {"LagAlert", "lag", nullptr, true},
     // the game's comm window (HUD_Receiver: the portrait, its outline, the caption): HUD 2 keeps it, only a modal menu over the
-    // flight hides it - its pieces stood bare around the pause menu with no plate (UI_HUD2.md 5.34)
-    {"CommText", "comm", AlwaysKept},
+    // flight hides it - its pieces stood bare around the pause menu with no plate (UI_HUD2.md 5.34) - and a page (CommKept)
+    {"CommText", "comm", CommKept},
 };
 static DWORD g_lastFind = 0, g_lastNameCheck = 0;
 static u32 g_finds = 0, g_drops = 0;
@@ -632,11 +620,8 @@ static void DrawViews(bool hide)
         DrawView(v, hide);
 }
 
-static bool HoverHelpRoot(const Root& r) { return r.keep == KeyboardForm; }
-
-// The roots still the controls they were (revalidated, rediscovered at 2 Hz while one is missing); `hoverOnly`: just the
-// hover help's two (the classic HUD: nothing else is touched).
-static void Revalidate(DWORD now, bool hoverOnly)
+// The roots still the controls they were (revalidated, rediscovered at 2 Hz while one is missing).
+static void Revalidate(DWORD now)
 {
     const bool nameCheck = now - g_lastNameCheck > 2000;
     if (nameCheck)
@@ -644,8 +629,6 @@ static void Revalidate(DWORD now, bool hoverOnly)
     bool missing = false;
     for (Root& r : g_roots)
     {
-        if (hoverOnly && !HoverHelpRoot(r))
-            continue;
         if (r.ctl && !Valid(r, nameCheck))
             Drop(r);
         if (!r.ctl)
@@ -657,34 +640,8 @@ static void Revalidate(DWORD now, bool hoverOnly)
     {
         g_lastFind = now;
         for (Root& r : g_roots)
-            if (!r.ctl && (!hoverOnly || HoverHelpRoot(r)))
+            if (!r.ctl)
                 Find(r);
-    }
-}
-
-// The hover help hidden the game's own way while it is not intentional (SetHoverHelp); never under a modal menu (the
-// menus' button help is the ToolTip).
-static void ApplyHoverHelp(bool menu)
-{
-    if (g_hoverAllowed || menu)
-        return;
-    for (Root& r : g_roots)
-    {
-        u8 st = 0;
-        if (!HoverHelpRoot(r) || !r.ctl || !ReadState(r.ctl, st) || !(st & 2))
-            continue;
-        if (WriteState(r.ctl, static_cast<u8>(st & ~3)))
-            ++g_hoverHides;
-        if (strcmp(r.name, "ToolTip") == 0) // its showing flag, as the game's hide (0x4BE390) clears it
-        {
-            __try
-            {
-                *reinterpret_cast<volatile u8*>(r.ctl + 0x159) = 0;
-            }
-            __except (EXCEPTION_EXECUTE_HANDLER)
-            {
-            }
-        }
     }
 }
 
@@ -972,27 +929,19 @@ void Apply(bool hide)
                 Restore(r);
         if (g_holdChat)
             HideChat();
-        if (!g_hoverAllowed)
-        {
-            Revalidate(now, true);
-            ApplyHoverHelp(false);
-        }
         return;
     }
-    Revalidate(now, false);
+    Revalidate(now);
     {
         const u32 gen = hostcalls::g.UiGeneration ? hostcalls::g.UiGeneration() : 0;
         if (started || gen != auditGen)
             auditGen = gen, AuditRoots();
     }
-    ApplyHoverHelp(menu);
     for (Root& r : g_roots)
     {
-        if (HoverHelpRoot(r))
-            continue; // (ApplyHoverHelp's)
-        // under a modal menu only the menus' own label / box stay (the keep rules of the flight - an open NeuroNet
-        // window, the disrupted cruise line, the chat input - go under the scrim with the rest)
-        if (r.ctl && (menu ? r.keep == KeyboardForm : r.keep && r.keep(r)))
+        // under a modal menu no keep rule of the flight holds (an open NeuroNet window, the disrupted cruise line, the chat
+        // input go under the scrim with the rest)
+        if (r.ctl && !menu && r.keep && r.keep(r))
         {
             Restore(r);
             if (r.nArt && !menu) // (a kept root loses its art all the same: 3.1's rule)
@@ -1042,7 +991,7 @@ void HoldChat(bool on)
 
 static void HideChat()
 {
-    Revalidate(GetTickCount(), false);
+    Revalidate(GetTickCount());
     Root* r = RootByLabel("chat");
     if (!r || !r->ctl)
         return;
@@ -1086,8 +1035,7 @@ int Hidden()
 std::string Status()
 {
     std::ostringstream o;
-    o << "hudvis hidden=" << Hidden() << " finds=" << g_finds << " drops=" << g_drops << " hoverHelp=" << (g_hoverAllowed ? "allowed" : "suppressed")
-      << " hoverHides=" << g_hoverHides << " menuOver=" << g_menuOver
+    o << "hudvis hidden=" << Hidden() << " finds=" << g_finds << " drops=" << g_drops << " menuOver=" << g_menuOver
       << " menuFrames=" << g_menuFrames << "\n";
     for (const Root& r : g_roots)
     {

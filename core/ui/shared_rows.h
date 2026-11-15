@@ -79,7 +79,7 @@ struct Values
 
 #define FLV_ROW_SHOW_ADVANCED(v) \
     {"show_advanced", settings::Bool, &(v).showAdvanced, 0, 1, \
-     "the options page adds the developer and tuning keys to every tab, as they are named in the ini files"},
+     "the options page adds its less used rows to every tab; a setting with no row is set in its ini file only"},
 
 #define FLV_ROW_SPEEDRUN_TIMER(v) \
     {"speedrun_timer", settings::Bool, &(v).speedrunTimer, 0, 1, \
@@ -101,6 +101,12 @@ struct Values
     {"run_in_background", settings::Bool, &coreframe::opts.runInBackground, 0, 1, \
      "1 = the game keeps running while its window is not in focus (Freelancer pauses otherwise); the mouse goes back " \
      "to Windows meanwhile"},
+
+#define FLV_ROW_MOUSE_RAW \
+    {"mouse_raw", settings::Bool, &coreframe::opts.mouseRaw, 0, 1, \
+     "1 = the mouse moves the game's cursor by its own raw counts, the same distance at any speed (Windows' pointer " \
+     "acceleration does not reach the game; the game's mouse sensitivity stays the scale); 0 = the game's own " \
+     "DirectInput mouse. A tablet, remote desktop or a VM's absolute mouse keeps the game's own either way"},
 
 #define FLV_ROW_NPC_STALL_LOG \
     {"npc_stall_log", settings::Bool, &modslots::g_npcLog, 0, 1, \

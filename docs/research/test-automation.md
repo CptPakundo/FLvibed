@@ -67,7 +67,7 @@ in game in shadow (28 / 28 agree) - the golden-dump pattern T8 proposes for layo
 rule meets its fixtures before a game. The haptics rules are pure and unit-tested the same way (1893428, `haptics` 130
 checks; sweep `pad-haptics` both backends; the real popup source and the feel on a real pad not verified, J8). **T13:**
 doc size budgets (a125547, `doc_bytes:<path>` rows for the four always-loaded maps + WORK_QUEUE.md). T14 complete
-(fa8fc40, the SubagentStart hook; `claude-harness.md`). T7 slice 2, T8, T10-T12 still open.
+(fa8fc40, the SubagentStart hook; a private harness note). T7 slice 2, T8, T10-T12 still open.
 
 ## Findings
 

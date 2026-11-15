@@ -132,6 +132,43 @@ void Test_hud2_lint()
             if (!pz.empty())
                 CHECK_NEAR(pz.back().y0, (0.5f + uimeta::hud2p::kPresets[p].reticleR + 0.01f) * kH, 0.01);
         }
+        // a bottom panel grown into S1 (the lower band's sheet Q4 "the panel grows", its 4K pad size-130 frame: the loadout
+        // 2773,1711-3724,2095 against S1's lower-right corner): the field ends where the panel starts - its plate passes,
+        // a plate in what is left of S1 still fails; the rail S2 exempts the prompt rule's rows (Q5)
+        {
+            const float W4 = 3840, H4 = 2160;
+            const std::vector<Area> panels = {{"loadout", "loadout", 2773, 1711, 3724, 2095}};
+            const std::vector<Zone> g = ZonesOf(Standard(), W4, H4, 2830, 3724, false, 3213, 1343, 0, &panels);
+            Input in;
+            in.W = W4, in.H = H4, in.zones = g;
+            Item lo;
+            lo.kind = Kind::Plate, lo.comp = "loadout", lo.alpha = 1, lo.x0 = 2773, lo.y0 = 1712, lo.x1 = 3725, lo.y1 = 2095;
+            in.items = {lo};
+            Result r = Lint(in);
+            int zoneFails = 0;
+            for (const Finding& fd : r.findings)
+                zoneFails += fd.rule == "zone";
+            CHECK(zoneFails == 0);
+            in.zones = ZonesOf(Standard(), W4, H4, 2830, 3724, false, 3213, 1343); // (no panels given: today's FAIL)
+            r = Lint(in);
+            zoneFails = 0;
+            for (const Finding& fd : r.findings)
+                zoneFails += fd.rule == "zone";
+            CHECK(zoneFails == 1);
+            Item left = lo; // a plate left of the panel, still in S1: fails
+            left.comp = "nav", left.x0 = 2600, left.x1 = 2700, left.y0 = 1650, left.y1 = 1700;
+            in.zones = g, in.items = {left};
+            r = Lint(in);
+            zoneFails = 0;
+            for (const Finding& fd : r.findings)
+                zoneFails += fd.rule == "zone";
+            CHECK(zoneFails == 1);
+            bool s2ctx = false;
+            for (const Zone& zz : g)
+                if (zz.name == "S2")
+                    s2ctx = Exempt("context", zz.exempt);
+            CHECK(s2ctx);
+        }
         // the consumables' cross stacked on the loadout (decision 3, its plate from 1.489 H, top 0.638 H): the rail splits
         // there - left of the cross as before, over it down to its top; without a cross, unchanged
         const std::vector<Zone> c = ZonesOf(Standard(), kW, kH, 1.249f * kH, 1.689f * kH, false, 1.489f * kH, 0.638f * kH);

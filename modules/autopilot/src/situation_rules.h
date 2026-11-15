@@ -1,4 +1,4 @@
-// The arbiter's rules (IDEAS A37, modules\autopilot\docs\A37_PLAN.md slices S3-S5): pure functions Situation + Queue ->
+// The arbiter's rules (IDEAS A37, the A37 plan's slices S3-S5, private): pure functions Situation + Queue ->
 // a Proposal (what to start: the sub-mode, its target, the objective mode's action), each a port of one branch of
 // autopilot_objective.cpp ObjectiveDecide with the same conditions and the same mode / target / action. S3 ports the
 // branches before the pre-stage (the hold, the leash, marked loot to destroy, the tractor's exit run, a jump, a granted

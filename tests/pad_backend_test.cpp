@@ -87,6 +87,8 @@ void Test_pad_backend()
         CHECK(!DropInjected(true, true, kInjectGraceMs)); // another tool's key with the pad at rest passes
         CHECK(!DropInjected(true, false, 0));             // a real key or mouse is never touched
         CHECK(!DropInjected(false, true, 0));             // no pad in hand, or the game behind
+        CHECK(FilterFlags(true, false) == kFilterKeys);    // the default: the keyboard hook alone
+        CHECK(FilterFlags(true, true) == (kFilterKeys | kFilterMouse) && FilterFlags(false, true) == 0);
     }
     CHECK(!ReadFromSdl(0, true, false, kSdlRunning)); // the default: XInput whatever the host does
     CHECK(ReadFromSdl(1, true, false, kSdlRunning));

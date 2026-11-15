@@ -1,13 +1,13 @@
-// HUD 2's drawing kit (hud2kit::): a Direct3D 8 batcher with four layers, shapes, icons, text and draw recording.
+// HUD 2's drawing kit (hud2kit::): six vertex lists - shapes, icons, text - built with no device, and draw recording.
+// The device, the fonts' textures and the icons are behind hud2_kit_backend.h (in the game: hud2_kit_d3d8.cpp).
 #include "hud2_kit.h"
 
-#include "game/gamefont.h"
+#include "game/fontraster.h"
 #include "game/glyphset.h"
 #include "game/marquee.h"
 #include "game/promptfit.h"
-#include "game/render.h"
 #include "game/textfit.h"
-#include "hook.h"
+#include "hud2_kit_backend.h"
 #include "log.h"
 
 #include <sstream>
@@ -16,39 +16,10 @@
 // (ASCII only: the build reads the sources as cp1252, non-ASCII text goes in as \u escapes)
 namespace hud2kit
 {
-namespace dev
-{
-constexpr int BeginScene = 34, EndScene = 35, SetViewport = 40, SetRenderState = 50, ApplyStateBlock = 54,
-              CaptureStateBlock = 55, DeleteStateBlock = 56, CreateStateBlock = 57, SetTexture = 61,
-              SetTextureStageState = 63, DrawPrimitiveUP = 72, SetVertexShader = 76, SetPixelShader = 88;
-}
-struct Vertex
-{
-    float x, y, z, rhw;
-    u32 color;
-    float u, v;
-};
-constexpr u32 kFvf = 0x004 | 0x040 | 0x100; // XYZRHW | DIFFUSE | TEX1
-
-enum LayerId
-{
-    LShape = 0,
-    LIconBig,
-    LIconSmall,
-    LTextSmall,
-    LTextBig,
-    LTextCaption,
-    LCount
-};
-struct Layer
-{
-    std::vector<Vertex> v;
-    void* tex = nullptr;
-};
 static Layer g_layers[LCount];
+static std::vector<MarkAt> g_marks; // the pass's cut marks (Mark), cleared at Begin
 
-static void* g_dev = nullptr;
-static u32 g_stateBlock = 0;
+static void* g_dev = nullptr; // the pass's device as a handle (the fonts' key; drawn on by the backend)
 static int g_sw = 0, g_sh = 0;
 static bool g_keepDestAlpha = false; // the next End writes colour only (SetKeepDestAlpha)
 static render::Font g_small, g_big;
@@ -141,11 +112,11 @@ static bool Fonts(int px)
         SwapSpare(); // keep the current set as the spare; build into the old spare's fonts
     g_extraPending = false;
     g_fontsOk = false;
-    const bool game = gamefont::Load();
+    const bool game = backend::GameFont();
     const float k = game ? 1.0f : 0.85f; // Segoe UI reads larger than Agency FB
     const int big = static_cast<int>(px * 1.25f + 0.5f);
-    if (!render::BuildFont(g_small, gamefont::LabelFace(), std::max(6, static_cast<int>(px * k)), 700, Chars()) ||
-        !render::BuildFont(g_big, gamefont::LabelFace(), std::max(6, static_cast<int>(big * k)), 700, Chars()))
+    if (!backend::BuildFont(g_small, backend::LabelFace(), std::max(6, static_cast<int>(px * k)), 700, Chars()) ||
+        !backend::BuildFont(g_big, backend::LabelFace(), std::max(6, static_cast<int>(big * k)), 700, Chars()))
         return false;
     g_textPx = px, g_fontDev = g_dev, g_fontsOk = true;
     g_widths.clear();
@@ -157,13 +128,19 @@ static bool Fonts(int px)
 
 // The marquees' clocks (TextMarquee): when each cut text first showed, by its string, size and room (a hash: no
 // allocation per frame once a text is known); a text not drawn for 30 passes starts over the next time it shows (a new
-// target, a panel that faded out and back). Pruned at a pass's start once the table grows.
-struct MarqueeClock
+// target, a panel that faded out and back). Pruned at a pass's start once the table grows. The table is its caller's
+// (SetMarquees); the kit's own until one is set.
+static Marquees g_ownMarquees;
+static Marquees* g_marqueeTable = &g_ownMarquees;
+void SetMarquees(Marquees* table)
 {
-    double t0 = 0;
-    u32 seen = 0; // the pass it was last drawn in (g_frames + 1: 0 = never)
-};
-static std::unordered_map<unsigned long long, MarqueeClock> g_marquees;
+    Marquees* next = table ? table : &g_ownMarquees;
+    // the clocks running go to an empty table that takes over (HUD 2's at its first bind): a text another caller is
+    // scrolling then (the options page, a page) goes on where it was, as on one table
+    if (next != g_marqueeTable && next->clocks.empty())
+        next->clocks.swap(g_marqueeTable->clocks);
+    g_marqueeTable = next;
+}
 static unsigned long long MarqueeKey(const std::wstring& s, float size, float room)
 {
     unsigned long long h = 1469598103934665603ull; // FNV-1a
@@ -173,10 +150,12 @@ static unsigned long long MarqueeKey(const std::wstring& s, float size, float ro
     h = (h ^ static_cast<unsigned long long>(static_cast<long long>(size * 8))) * 1099511628211ull;
     return h;
 }
+static double (*g_clock)() = perf::Now; // SetClock
+void SetClock(double (*seconds)()) { g_clock = seconds ? seconds : perf::Now; }
 static double MarqueeClockOf(const std::wstring& s, float size, float room)
 {
-    const double now = perf::Now();
-    MarqueeClock& c = g_marquees[MarqueeKey(s, size, room)];
+    const double now = g_clock();
+    MarqueeClock& c = g_marqueeTable->clocks[MarqueeKey(s, size, room)];
     if (c.seen == 0 || g_frames + 1 - c.seen > 30)
         c.t0 = now;
     c.seen = g_frames + 1;
@@ -184,10 +163,11 @@ static double MarqueeClockOf(const std::wstring& s, float size, float room)
 }
 static void PruneMarquees()
 {
-    if (g_marquees.size() < 64)
+    auto& clocks = g_marqueeTable->clocks;
+    if (clocks.size() < 64)
         return;
-    for (auto it = g_marquees.begin(); it != g_marquees.end();)
-        it = g_frames + 1 - it->second.seen > 120 ? g_marquees.erase(it) : std::next(it);
+    for (auto it = clocks.begin(); it != clocks.end();)
+        it = g_frames + 1 - it->second.seen > 120 ? clocks.erase(it) : std::next(it);
 }
 
 bool Begin(void* device, int sw, int sh, int textPx)
@@ -195,9 +175,9 @@ bool Begin(void* device, int sw, int sh, int textPx)
     if (!device || sw <= 0 || sh <= 0)
         return false;
     if (device != g_dev)
-        g_stateBlock = 0, g_fontsOk = false;
+        g_fontsOk = false;
+    backend::Bind(device); // (a new device: its saved state forgotten)
     g_dev = device;
-    render::SetDevice(device);
     g_sw = sw, g_sh = sh;
     g_minPx = textfit::MinSize(static_cast<float>(sh));
     // the atlas never under the legibility floor (text clamped up to it would be drawn magnified - soft at 720p)
@@ -207,6 +187,7 @@ bool Begin(void* device, int sw, int sh, int textPx)
     g_fit.Bound(); // (no fit result is held across passes)
     for (Layer& l : g_layers)
         l.v.clear(), l.tex = nullptr;
+    g_marks.clear();
     g_layers[LShape].tex = g_small.texture;
     g_layers[LTextSmall].tex = g_small.texture;
     g_layers[LTextBig].tex = g_big.texture;
@@ -215,6 +196,14 @@ bool Begin(void* device, int sw, int sh, int textPx)
     g_clipX0 = -1e30f, g_clipX1 = 1e30f;
     PruneMarquees();
     return true;
+}
+
+int TextPx() { return g_fontsOk ? g_textPx : 0; }
+
+bool MeasureAt(int textPx)
+{
+    // the same size as Begin's (its legibility floor), on the device the last pass bound (the fonts are managed textures)
+    return g_dev && g_sh > 0 && Fonts(std::max(textPx, static_cast<int>(ceilf(g_minPx))));
 }
 
 void SetAlpha(float a) { g_alpha = Clampf(a, 0, 1); }
@@ -530,7 +519,7 @@ bool Icon(flicons::Icon icon, float cx, float cy, float size, u32 argb, float an
 {
     void* tex = nullptr;
     float uv[4];
-    if (!flicons::Uv(icon, size, &tex, uv))
+    if (!backend::IconUv(icon, size, &tex, uv))
         return false;
     const u32 c = Mul(argb);
     if (!(c >> 24))
@@ -689,9 +678,12 @@ std::wstring Fit(const std::wstring& s, float size, float maxW, float track)
     return FitText(s, size, maxW, track, size).text; // (the floor = the size: cut only)
 }
 
+// `slant` > 0: italic (hud2_kit.h kStyleItalic): each quad sheared about the baseline, a point h px above it moved
+// slant x h px right; the advances unchanged. The clip cuts the upright box.
 static void Glyphs(Layer& l, const render::Font& f, float x, float yTop, const std::wstring& s, float k, float track,
-                   u32 c)
+                   u32 c, float slant = 0)
 {
+    const float base = yTop + f.ascent * k;
     float pen = x;
     for (wchar_t ch : s)
     {
@@ -710,18 +702,45 @@ static void Glyphs(Layer& l, const render::Font& f, float x, float yTop, const s
                     u0 = g.u0 + du * (g_clipX0 - qx0) / qw, x0 = g_clipX0;
                 if (x1 > g_clipX1)
                     u1 = g.u0 + du * (g_clipX1 - qx0) / qw, x1 = g_clipX1;
-                Push(l, x0, y0, c, u0, g.v0), Push(l, x1, y0, c, u1, g.v0), Push(l, x1, y1, c, u1, g.v1);
-                Push(l, x0, y0, c, u0, g.v0), Push(l, x1, y1, c, u1, g.v1), Push(l, x0, y1, c, u0, g.v1);
+                const float t = slant * (base - y0), b = slant * (base - y1); // (the top's and the foot's shift)
+                Push(l, x0 + t, y0, c, u0, g.v0), Push(l, x1 + t, y0, c, u1, g.v0), Push(l, x1 + b, y1, c, u1, g.v1);
+                Push(l, x0 + t, y0, c, u0, g.v0), Push(l, x1 + b, y1, c, u1, g.v1), Push(l, x0 + b, y1, c, u0, g.v1);
             }
         }
         pen += g.advance * k + track * f.px * k;
     }
 }
 
+// The underline of a run drawn at pen x .. x + w on font `f` scaled by k (hud2_kit.h kStyleUnderline): the face's rule
+// (its outline metrics; 1/8 em below the baseline and 1/16 em thick where it gives none), on the pixel grid, cut by the text
+// clip, in the shapes layer (it lies under the glyphs, which it meets only at descenders, as GDI's does); with the text's
+// navy outline when the text has one.
+static void Underline(const render::Font& f, float x, float yTop, float w, float k, u32 c, bool outline)
+{
+    const float pos = f.underSize > 0 ? static_cast<float>(f.underPos) : -f.px / 8.0f;
+    const float thick = f.underSize > 0 ? static_cast<float>(f.underSize) : f.px / 16.0f;
+    const float y0 = floorf(yTop + (f.ascent - pos) * k + 0.5f), h = std::max(1.0f, floorf(thick * k + 0.5f));
+    const float x0 = std::max(x, g_clipX0), x1 = std::min(x + w, g_clipX1);
+    if (x1 <= x0)
+        return;
+    Layer& l = g_layers[LShape];
+    auto box = [&](float a0, float b0, float a1, float b1, u32 col)
+    {
+        Push(l, a0, b0, col, g_wu, g_wv), Push(l, a1, b0, col, g_wu, g_wv), Push(l, a1, b1, col, g_wu, g_wv);
+        Push(l, a0, b0, col, g_wu, g_wv), Push(l, a1, b1, col, g_wu, g_wv), Push(l, a0, b1, col, g_wu, g_wv);
+    };
+    if (outline)
+    {
+        const float o = std::max(1.0f, f.px * k * 0.06f);
+        box(x0 - o, y0 - o, x1 + o, y0 + h + o, (static_cast<u32>((c >> 24) * 0.55f) << 24) | kNavy);
+    }
+    box(x0, y0, x1, y0 + h, c);
+}
+
 // Text without its record (Text records it; TextMarquee records its room instead); `snap` = onto the pixel grid at the
 // font's own size (a scrolling text keeps its sub-pixel place: linear filtering draws it between pixels).
 static float TextDraw(float x, float y, const std::wstring& s, float size, u32 argb, Align align, float track, bool outline,
-                      bool snap, bool record)
+                      bool snap, bool record, u32 style = 0)
 {
     if (!g_fontsOk || s.empty())
         return 0;
@@ -748,21 +767,26 @@ static float TextDraw(float x, float y, const std::wstring& s, float size, u32 a
             x = floorf(x + 0.5f);
         yTop = floorf(yTop + 0.5f);
     }
+    const float slant = (style & kStyleItalic) ? kItalicSlant : 0.0f;
+    if (style & kStyleUnderline)
+        Underline(f, x, yTop, w, k, c, outline);
     if (outline)
     {
         const float o = std::max(1.0f, size * 0.06f);
         const u32 sc = (static_cast<u32>((c >> 24) * 0.55f) << 24) | kNavy;
         static const float kOff[4][2] = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
         for (const auto& d : kOff)
-            Glyphs(l, f, x + d[0] * o, yTop + d[1] * o, s, k, track, sc);
+            Glyphs(l, f, x + d[0] * o, yTop + d[1] * o, s, k, track, sc, slant);
     }
-    Glyphs(l, f, x, yTop, s, k, track, c);
+    Glyphs(l, f, x, yTop, s, k, track, c, slant);
+    if (style & kStyleBold) // (hud2_kit.h: the ink widened to the right, the left edge kept)
+        Glyphs(l, f, x + std::max(1.0f, kBoldSmear * size), yTop, s, k, track, c, slant);
     return w;
 }
 
-float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align align, float track, bool outline)
+float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align align, float track, bool outline, u32 style)
 {
-    return TextDraw(x, y, s, size, argb, align, track, outline, true, true);
+    return TextDraw(x, y, s, size, argb, align, track, outline, true, true, style);
 }
 
 // The game's captions, measured on the Options screen's siblings at 4K (the page button's caption, options_page.cpp): Agency FB Regular, 72 px em = 0.0333 H, its capitals centred on the
@@ -775,8 +799,8 @@ static bool CaptionFont()
     const int px = std::max(8, static_cast<int>(g_sh * 0.0333f + 1.5f)); // (+1.5: the game's rasteriser rounds up at small sizes)
     if (g_caption.px == px && g_caption.texture && g_captionDev == g_dev && g_captionChars == Chars().size())
         return true;
-    const bool game = gamefont::Load();
-    if (!render::BuildFont(g_caption, game ? gamefont::LabelFace() : L"Segoe UI", px, game ? 400 : 600, Chars()))
+    const bool game = backend::GameFont();
+    if (!backend::BuildFont(g_caption, game ? backend::LabelFace() : L"Segoe UI", px, game ? 400 : 600, Chars()))
         return false;
     g_captionDev = g_dev, g_captionChars = Chars().size();
     return true;
@@ -817,11 +841,11 @@ float GameCaption(float x, float y, const std::wstring& s, u32 argb, Align align
 // draws in full, clipped to its room [bx, bx + maxW], moved by the marquee's offset at this moment (its clock: since the
 // text first showed, MarqueeClockOf), the ellipsis at the clip's edge with its alpha. Recorded for the lint as ONE text
 // whose box is the room (never the full text: nothing is drawn outside it) - the lint sees the same box at every moment.
-void TextClipped(float x, float y, const std::wstring& s, float size, float clipX0, float clipX1, u32 argb)
+void TextClipped(float x, float y, const std::wstring& s, float size, float clipX0, float clipX1, u32 argb, u32 style)
 {
     const float cx0 = g_clipX0, cx1 = g_clipX1;
     g_clipX0 = clipX0, g_clipX1 = clipX1;
-    TextDraw(x, y, s, std::max(size, g_minPx), argb, Left, 0, false, false, false);
+    TextDraw(x, y, s, std::max(size, g_minPx), argb, Left, 0, false, false, false, style);
     g_clipX0 = cx0, g_clipX1 = cx1;
 }
 
@@ -876,9 +900,8 @@ static void Mark(float cx, float cy, const wchar_t* s, float size, u32 argb)
 }
 
 // ---------------------------------------------------------------- glyphs and keycaps
-static const wchar_t* PillLabel(glyphs::Id id)
+static const wchar_t* PillLabel(glyphs::Family f, glyphs::Id id)
 {
-    const glyphs::Family f = glyphs::Current();
     const bool one = f == glyphs::Family::PlayStation || f == glyphs::Family::Steam; // (the L1 / R1 names)
     switch (id)
     {
@@ -890,7 +913,9 @@ static const wchar_t* PillLabel(glyphs::Id id)
     }
 }
 
-float GlyphWidth(glyphs::Id id, float h) { return PillLabel(id) ? h * 1.3f : h; }
+static float GlyphWidthOf(glyphs::Family f, glyphs::Id id, float h) { return PillLabel(f, id) ? h * 1.3f : h; }
+float GlyphWidth(glyphs::Id id, float h) { return GlyphWidthOf(glyphs::Current(), id, h); }
+float GlyphWidth(const GlyphStyle& style, glyphs::Id id, float h) { return GlyphWidthOf(style.family, id, h); }
 
 static void Chamfered(float cx, float cy, float w, float h, float c, float width, u32 argb, u32 fill)
 {
@@ -901,12 +926,15 @@ static void Chamfered(float cx, float cy, float w, float h, float c, float width
     Outline(pts, 8, width, argb);
 }
 
-void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
+// `fam` the pad family, `coloured` glyph_look's coloured look on HUD 2's surface, `faceColours` the face marks in the
+// family's colours (glyphs::LookOf, FaceColoursOf: the host's reads or a caller's GlyphStyle)
+static void GlyphOf(glyphs::Family fam, bool coloured, bool faceColours, glyphs::Id id, float cx, float cy, float h, u32 argb,
+                    bool hold)
 {
     const RecScope rs;
     if (rs.top)
     {
-        const float hw = std::max(GlyphWidth(id, h) * 0.5f, hold ? h * 0.65f : 0.0f), hh = hold ? h * 0.65f : h * 0.5f;
+        const float hw = std::max(GlyphWidthOf(fam, id, h) * 0.5f, hold ? h * 0.65f : 0.0f), hh = hold ? h * 0.65f : h * 0.5f;
         if (Drawn* d = Rec('G', cx - hw, cy - hh, cx + hw, cy + hh, h, AlphaOf(argb)))
             d->glyph = static_cast<int>(id);
     }
@@ -914,17 +942,15 @@ void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
     const u32 rgb = argb & 0xFFFFFF;
     const float r = h * 0.46f, lw = std::max(1.5f, h * 0.075f);
     const u32 body = Argb(0x0D0B1A, 0.75f * a);
-    const glyphs::Family fam = glyphs::Current();
-    // glyph_look: the face marks take their family colour (glyphs::FaceColours), and the coloured look (glyphs::LookFor) also gives the D-pad's
+    // glyph_look: the face marks take their family colour (faceColours), and the coloured look also gives the D-pad's
     // pressed arm the atlas's light; sizes, positions and the rest stay HUD 2's
-    const bool coloured = glyphs::LookFor(true) == glyphs::Look::Coloured;
-    const u32 mark = glyphs::FaceColours(fam) && glyphs::FaceRgb(fam, id) ? Argb(glyphs::FaceRgb(fam, id), a) : argb;
+    const u32 mark = faceColours && glyphs::FaceRgb(fam, id) ? Argb(glyphs::FaceRgb(fam, id), a) : argb;
     // the face button's ring shares its mark's colour where its family's buttons have one (glyphs::OutlineRgb), so it
     // dims with the mark; the hold ring outside stays in the caller's colour
-    const u32 ring = glyphs::FaceColours(fam) && glyphs::OutlineRgb(fam, id) ? mark : argb;
+    const u32 ring = faceColours && glyphs::OutlineRgb(fam, id) ? mark : argb;
     const u32 arm = coloured ? Argb(glyphs::kPressedArm, a) : argb;
     auto letter = [&](const wchar_t* s, float k) { Mark(cx, cy, s, h * k, argb); };
-    if (const wchar_t* pill = PillLabel(id))
+    if (const wchar_t* pill = PillLabel(fam, id))
     {
         Chamfered(cx, cy, h * 1.3f, h * 0.78f, h * 0.2f, lw, argb, body);
         letter(pill, 0.46f);
@@ -1010,6 +1036,18 @@ void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
     (void)rgb;
 }
 
+void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
+{
+    const glyphs::Family fam = glyphs::Current();
+    GlyphOf(fam, glyphs::LookFor(true) == glyphs::Look::Coloured, glyphs::FaceColours(fam), id, cx, cy, h, argb, hold);
+}
+
+void Glyph(const GlyphStyle& style, glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold)
+{
+    GlyphOf(style.family, glyphs::LookOf(style.look, true) == glyphs::Look::Coloured, glyphs::FaceColoursOf(style.look, style.family),
+            id, cx, cy, h, argb, hold);
+}
+
 float Keycap(const std::wstring& name, float cx, float cy, float h, u32 argb, bool measure, bool tight)
 {
     if (tight) // the dense panels' keycap (hud2_kit.h): the name at the floor, the cap 1.2 x the name, no lip margin
@@ -1050,13 +1088,84 @@ float Keycap(const std::wstring& name, float cx, float cy, float h, u32 argb, bo
 }
 
 // ---------------------------------------------------------------- the pass
-static void SetRS(u32 s, u32 v) { VCall<HRESULT>(g_dev, dev::SetRenderState, s, v); }
-static void SetTSS(u32 stage, u32 t, u32 v) { VCall<HRESULT>(g_dev, dev::SetTextureStageState, stage, t, v); }
 
 void SetKeepDestAlpha() { g_keepDestAlpha = true; }
 
+void Mark(const char* name)
+{
+    MarkAt m;
+    m.name = name;
+    for (int li = 0; li < LCount; ++li)
+        m.counts[li] = static_cast<u32>(g_layers[li].v.size());
+    g_marks.push_back(m);
+}
+const std::vector<MarkAt>& Marks() { return g_marks; }
+OpenPass PassNow() { return {g_layers, g_sw, g_sh, g_keepDestAlpha}; }
+const std::wstring& AddedChars() { return g_extra; }
+
+// ---------------------------------------------------------------- the pass dump (hud2_kit.h DumpPasses)
+static FILE* g_dumpTxt = nullptr;
+static FILE* g_dumpBin = nullptr;
+static int g_dumpLeft = 0, g_dumpPass = 0;
+
+static void DumpClose()
+{
+    if (g_dumpTxt)
+        fclose(g_dumpTxt);
+    if (g_dumpBin)
+        fclose(g_dumpBin);
+    g_dumpTxt = g_dumpBin = nullptr;
+    g_dumpLeft = 0;
+}
+
+std::string DumpPasses(const std::string& path, int passes)
+{
+    DumpClose();
+    if (passes <= 0)
+        return "kitdump off";
+    if (fopen_s(&g_dumpTxt, path.c_str(), "wb") != 0 || fopen_s(&g_dumpBin, (path + ".bin").c_str(), "wb") != 0)
+    {
+        DumpClose();
+        return "kitdump: cannot write " + path;
+    }
+    g_dumpLeft = passes, g_dumpPass = 0;
+    return "kitdump: the next " + std::to_string(passes) + " passes -> " + path + " (+ .bin)";
+}
+
+// One pass as End is about to submit it: per layer its vertex count, its texture by role and an FNV-1a 64 of its
+// vertices (text); the vertices themselves (binary: per layer u32 layer, role, count, then 28-byte vertices).
+static void DumpPass()
+{
+    auto role = [](const void* t) -> u32
+    {
+        return !t ? 0 : t == g_small.texture ? 1 : t == g_big.texture ? 2 : t == g_caption.texture ? 3 : 4;
+    };
+    static const char* const kRoles[] = {"none", "small", "big", "caption", "other"};
+    fprintf(g_dumpTxt, "pass %d kitpass=%u size=%dx%d keepDestAlpha=%d", g_dumpPass, g_frames, g_sw, g_sh,
+            g_keepDestAlpha ? 1 : 0);
+    for (int li = 0; li < LCount; ++li)
+    {
+        const Layer& l = g_layers[li];
+        unsigned long long h = 1469598103934665603ull;
+        const u8* b = reinterpret_cast<const u8*>(l.v.data());
+        for (size_t i = 0; i < l.v.size() * sizeof(Vertex); ++i)
+            h = (h ^ b[i]) * 1099511628211ull;
+        const u32 head[3] = {static_cast<u32>(li), role(l.tex), static_cast<u32>(l.v.size())};
+        fprintf(g_dumpTxt, " | L%d n=%u tex=%s h=%016llx", li, head[2], kRoles[head[1]], h);
+        fwrite(head, sizeof head, 1, g_dumpBin);
+        if (!l.v.empty())
+            fwrite(l.v.data(), sizeof(Vertex), l.v.size(), g_dumpBin);
+    }
+    fputc('\n', g_dumpTxt);
+    ++g_dumpPass;
+    if (--g_dumpLeft <= 0)
+        DumpClose();
+}
+
 void End()
 {
+    if (g_dumpLeft > 0)
+        DumpPass();
     u32 verts = 0;
     for (const Layer& l : g_layers)
         verts += static_cast<u32>(l.v.size());
@@ -1064,83 +1173,21 @@ void End()
     ++g_frames;
     if (!g_dev || !verts)
         return;
-    if (!g_stateBlock && FAILED(VCall<HRESULT>(g_dev, dev::CreateStateBlock, 1u /*D3DSBT_ALL*/, &g_stateBlock)))
-        g_stateBlock = 0;
-    if (g_stateBlock)
-        VCall<HRESULT>(g_dev, dev::CaptureStateBlock, g_stateBlock);
-    struct
-    {
-        u32 x, y, w, h;
-        float minZ, maxZ;
-    } vp = {0, 0, static_cast<u32>(g_sw), static_cast<u32>(g_sh), 0.0f, 1.0f};
-    VCall<HRESULT>(g_dev, dev::SetViewport, static_cast<void*>(&vp));
-    SetRS(7, 0);     // ZENABLE
-    SetRS(14, 0);    // ZWRITEENABLE
-    SetRS(8, 3);     // FILLMODE solid
-    SetRS(15, 0);    // ALPHATESTENABLE
-    SetRS(27, 1);    // ALPHABLENDENABLE
-    SetRS(19, 5);    // SRCBLEND srcalpha
-    SetRS(20, 6);    // DESTBLEND invsrcalpha
-    SetRS(171, 1);   // BLENDOP add
-    SetRS(22, 1);    // CULLMODE none
-    SetRS(28, 0);    // FOGENABLE
-    SetRS(29, 0);    // SPECULARENABLE
-    SetRS(52, 0);    // STENCILENABLE
-    SetRS(137, 0);   // LIGHTING
-    SetRS(152, 0);   // CLIPPLANEENABLE
-    SetRS(168, g_keepDestAlpha ? 0x7 : 0xF); // COLORWRITEENABLE (rgb only: the back buffer's alpha left as it was)
+    backend::Submit(g_layers, LCount, g_sw, g_sh, g_keepDestAlpha, g_lastCalls); // the six draw calls
     g_keepDestAlpha = false;
-    VCall<HRESULT>(g_dev, dev::SetPixelShader, 0u);
-    VCall<HRESULT>(g_dev, dev::SetVertexShader, kFvf);
-    VCall<HRESULT>(g_dev, dev::SetTexture, 1u, static_cast<void*>(nullptr));
-    SetTSS(0, 1, 4);  // COLOROP modulate
-    SetTSS(0, 2, 2);  // COLORARG1 texture
-    SetTSS(0, 3, 0);  // COLORARG2 diffuse
-    SetTSS(0, 4, 4);  // ALPHAOP modulate
-    SetTSS(0, 5, 2);  // ALPHAARG1 texture
-    SetTSS(0, 6, 0);  // ALPHAARG2 diffuse
-    SetTSS(0, 11, 0); // TEXCOORDINDEX
-    SetTSS(0, 24, 0); // TEXTURETRANSFORMFLAGS
-    SetTSS(0, 13, 3); // ADDRESSU clamp
-    SetTSS(0, 14, 3); // ADDRESSV clamp
-    SetTSS(0, 16, 2); // MAGFILTER linear
-    SetTSS(0, 17, 2); // MINFILTER linear
-    SetTSS(0, 18, 0); // MIPFILTER none
-    SetTSS(1, 1, 1);  // stage 1 COLOROP disable
-    SetTSS(1, 4, 1);  // stage 1 ALPHAOP disable
-    for (int li = 0; li < LCount; ++li)
-    {
-        Layer& l = g_layers[li];
-        if (l.v.empty() || !l.tex)
-            continue;
-        // the flat icons in the HUD tint (the critique, round 3: the maneuver icons read multicoloured): their colour is
-        // the vertex colour alone, the shape the texture's alpha; shapes and text modulate (the white texel / the font)
-        const bool icon = li == LIconBig || li == LIconSmall;
-        SetTSS(0, 1, icon ? 3 : 4); // COLOROP selectarg2 (diffuse) / modulate
-        VCall<HRESULT>(g_dev, dev::SetTexture, 0u, l.tex);
-        VCall<HRESULT>(g_dev, dev::DrawPrimitiveUP, 4u /*TRIANGLELIST*/, static_cast<UINT>(l.v.size() / 3),
-                       static_cast<const void*>(l.v.data()), static_cast<UINT>(sizeof(Vertex)));
-        ++g_lastCalls;
-    }
-    if (g_stateBlock)
-        VCall<HRESULT>(g_dev, dev::ApplyStateBlock, g_stateBlock);
 }
 
-void OnDeviceLost()
-{
-    if (g_dev && g_stateBlock)
-        VCall<HRESULT>(g_dev, dev::DeleteStateBlock, g_stateBlock);
-    g_stateBlock = 0;
-}
+void OnDeviceLost() { backend::DeviceLost(); }
 
 void Shutdown()
 {
+    DumpClose();
     OnDeviceLost();
-    render::FreeFont(g_small);
-    render::FreeFont(g_big);
-    render::FreeFont(g_caption);
-    render::FreeFont(g_spare.smallFont);
-    render::FreeFont(g_spare.bigFont);
+    backend::FreeFont(g_small);
+    backend::FreeFont(g_big);
+    backend::FreeFont(g_caption);
+    backend::FreeFont(g_spare.smallFont);
+    backend::FreeFont(g_spare.bigFont);
     g_fontsOk = false;
     g_spare.ok = false;
     g_spare.widths.clear();

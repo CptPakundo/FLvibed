@@ -1,9 +1,9 @@
-// The goal queue (IDEAS A37 / A38, modules\autopilot\docs\A37_PLAN.md slice S6): pure, host-free - no game, no autopilot state.
+// The goal queue (IDEAS A37 / A38, the A37 plan's slice S6, private): pure, host-free - no game, no autopilot state.
 // A GoalRecord is one thing to achieve as data (A38: `docs\research\autopilot-planning.md` "Minimum goal schema"): a
 // closed type, its origin (the story, the player, a job), its subject (an object, a point, a system), typed parameters,
 // done / fail / when conditions in a small closed condition language over the Situation (mirroring the game's Cnd_*),
 // a policy, the display string ids, the step key it stands for and the entry memory that dies with its step. The queue
-// is the only memory the arbiter keeps (A37_PLAN 1 "The queue is the only memory"): every entry is re-proven at every
+// is the only memory the arbiter keeps (the A37 plan's 1 "The queue is the only memory"): every entry is re-proven at every
 // assess (valid / achieved / failed / blocked), a head already done is popped before anything acts (achieve semantics),
 // the story entries are rebuilt from the live state alone (the A39 live table first, the ini view the fallback) and the
 // player's own entries are kept while valid; D10's re-proof on resume is a pure function of the paused queue, the
@@ -156,7 +156,7 @@ struct Display // the game's own strings (ids), rebuilt for the read-back
     u32 title = 0, detail = 0;
 };
 
-// The entry memory: what today's ObjectiveRun keeps per step (A37_PLAN 1), dying with the step
+// The entry memory: what today's ObjectiveRun keeps per step (the A37 plan's 1), dying with the step
 struct EntryMemory
 {
     u32 escortShip = 0;                 // the friendly ship the step last pointed at
@@ -323,7 +323,7 @@ bool WithinArrivalReach(const Situation& sit);
 // from mem.stepAgeMs). The pause's (D10): the queue as the player's stop leaves it.
 void CarryMemory(GoalQueue& q, const situation::Queue& mem, double clockSec);
 
-// ---------------------------------------------------------------- today's executor memory, classed (A37_PLAN 1)
+// ---------------------------------------------------------------- today's executor memory, classed (the A37 plan's 1)
 enum class MemClass
 {
     Derived,  // derived each time from the situation (seq, the leash anchor)
@@ -376,7 +376,7 @@ struct PauseFacts
     bool jobTaken = false;      // a job accepted meanwhile
     float movedM = 0;           // how far the ship is from where it was paused
 };
-// The silent-resume thresholds: PLACEHOLDERS (A37_PLAN 4: S7 defines and tests them; S9 draws the choice).
+// The silent-resume thresholds: PLACEHOLDERS (the A37 plan's 4: S7 defines and tests them; S9 draws the choice).
 struct ResumePolicy
 {
     double silentMaxMs = 30000; // kResumeSilentMs: a longer pause asks

@@ -125,6 +125,8 @@ void UpdateUiNav(float dt)
         items.erase(
             std::remove_if(items.begin(), items.end(), [modal](const ui::Item& it) { return it.root != modal; }),
             items.end());
+    // a question inside its root's window (the confirm over the pause menu): the D-pad stays on its answers
+    items.erase(std::remove_if(items.begin(), items.end(), [](const ui::Item& it) { return padmenus::OutsideModalBox(it.ctl); }), items.end());
 
     // In space, a window opened over the flight HUD (pause menu, nav map, load dialog...) takes
     // the D-pad; the HUD behind it is only navigable when nothing else is open.

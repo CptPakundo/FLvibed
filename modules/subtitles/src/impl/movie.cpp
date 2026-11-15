@@ -160,7 +160,7 @@ static void EnsureBasicVideo()
 {
     if (g_basicVideo)
         return;
-    void* graph = g_host && g_host->version >= 3 ? g_host->GetMovieGraph() : nullptr;
+    void* graph = g_host ? g_host->GetMovieGraph() : nullptr;
     static const GUID kIidBasicVideo = {0x56A868B5, 0x0AD4, 0x11CE, {0xB0, 0x3A, 0x00, 0x20, 0xAF, 0x0B, 0xA7, 0x70}};
     if (!graph || FAILED(VCall<HRESULT>(graph, 0, &kIidBasicVideo, &g_basicVideo)))
         g_basicVideo = nullptr;

@@ -114,7 +114,7 @@ constexpr int kMaxKeepOut = 24;
 static Rc g_keepOut[kMaxKeepOut], g_keepNext[kMaxKeepOut];
 static int g_nKeepOut = 0, g_nKeepNext = 0;
 
-bool NativeAsked() { return g_nativeAsked || skinrules::NativeListed(hudrows::g.skinNative, "navmap"); }
+bool NativeAsked() { return g_nativeAsked; }
 
 static void Fail(const char* why)
 {
@@ -838,7 +838,7 @@ std::string Command(std::istream& in)
     in >> what;
     if (what == "click") // the map's own click at the cursor (`mouse x y` first): a test's left button, no real mouse needed
         return g_root && uiclick::MapClick(g_root) ? "navskin: clicked" : "navskin: no map";
-    if (what == "native") // native on|off: the row `skin_native = navmap` will set; it takes effect at the map's next open
+    if (what == "native") // native on|off (test aid): the game's own map for the session; it takes effect at the map's next open
     {
         std::string v;
         in >> v;

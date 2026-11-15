@@ -13,7 +13,11 @@
 namespace promptfit
 {
 // ---------------------------------------------------------------- the bottom lane (promptbar)
-constexpr int kLaneMax = 5; // the prompts a bar takes
+// The prompts a lane holds: a HUD 2 page's whole list (the pad's base screens hand over at most eight), placed by PageRule's
+// order below. Every other screen - the classic bar, the game's windows under Extended HUD 2 - shows its first kScreenMax, as
+// it always did.
+constexpr int kLaneMax = 8;
+constexpr int kScreenMax = 5;
 
 enum class LaneMode
 {
@@ -119,9 +123,23 @@ private:
 // the column; two rows at the bottom (labels at the floor); the column at the floor; only then the last resorts.
 // Under the NeuroNet's tabs the prompts stay at the bottom: two rows sooner than a column (the owner, 7 Nov 2026: "fill out the bottom of the screen first, and add a second row at the edges").
 inline bool g_rowsFirst = false;
+// A HUD 2 page's lane (the owner, 12 Nov 2026: "Use free width, then try for a second row if that's possible, rule 2 is an
+// absolute last resort"), one rule for every page, the dealers' and the NeuroNet's: (1) one row at the bottom, as wide as
+// the band leaves free at this size and preset (its labels at their size, then at the fit rule's floor); (2) two rows, the
+// band's and one 0.008 H above it, only where that upper row stays `floor` + 0.008 H clear of the page's content (a page
+// fills the screen: no column beside a window, no lane under the NeuroNet box); (3) only then a prompt gives way, in
+// `giveWay`'s order - lowest first, the last of equals first; kNeverGivesWay never (the close / back prompt, the confirm) -
+// and (1), (2) are tried again. What still finds no room stands in one row from the right edge, never dropped.
+constexpr int kNeverGivesWay = -1;
+struct PageRule
+{
+    float floor = 0;               // the page's content bottom edge (pixels)
+    const int* giveWay = nullptr;  // per prompt: its turn to give way (0 first); null: the classic order (the one before BACK first)
+};
 template <class LeftFn, class LowFn>
 inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, const float* wF, float ph, float pitch,
-                       float nnBottom, LeftFn left, LowFn lowest, LanePlaced& out, int& dropped, const float* wS = nullptr, float columnEdge = 0)
+                       float nnBottom, LeftFn left, LowFn lowest, LanePlaced& out, int& dropped, const float* wS = nullptr, float columnEdge = 0,
+                       const PageRule* page = nullptr)
 {
     out = LanePlaced();
     n = n < 0 ? 0 : (n > kLaneMax ? kLaneMax : n);
@@ -179,6 +197,55 @@ inline void LaneLayout(float W, float H, int n, int confirm, const float* wN, co
     if (span(0, n) <= roomRow)
     {
         placeRow(0, n, cy);
+        out.mode = LaneMode::Row;
+        out.rx0 = right - span(0, n), out.ry0 = by0, out.rx1 = right, out.ry1 = by1;
+        return;
+    }
+    if (page) // a HUD 2 page: two rows clear of its content, then a prompt gives way (PageRule)
+    {
+        const float uy1 = by0 - H * 0.008f, uy0 = uy1 - ph;
+        const bool second = uy0 >= page->floor + H * 0.008f;
+        const float roomUp = second ? right - left(uy0, uy1, right) : 0.0f;
+        auto giveWay = [&]() // false when only the prompts that never give way are left
+        {
+            if (!page->giveWay)
+                return dropOne();
+            int d = -1;
+            for (int i = 0; i < n; ++i)
+                if (out.use[i] && page->giveWay[i] != kNeverGivesWay && (d < 0 || page->giveWay[i] <= page->giveWay[d]))
+                    d = i;
+            if (d < 0)
+                return false;
+            out.use[d] = false, ++dropped;
+            return true;
+        };
+        for (;;)
+        {
+            if (span(0, n) <= roomRow)
+            {
+                placeRow(0, n, cy);
+                out.mode = LaneMode::Row;
+                out.rx0 = right - span(0, n), out.ry0 = by0, out.rx1 = right, out.ry1 = by1;
+                return;
+            }
+            if (second) // the band's row takes the list's end (B and the prompts before it) as far as it goes, the row above the rest
+            {
+                int from = n;
+                while (from > 0 && span(from - 1, n) <= roomRow)
+                    --from;
+                if (from > 0 && from < n && span(0, from) <= roomUp)
+                {
+                    placeRow(from, n, cy);
+                    placeRow(0, from, (uy0 + uy1) * 0.5f);
+                    out.mode = LaneMode::Rows;
+                    out.rx0 = right - std::max(span(0, from), span(from, n)), out.ry0 = uy0, out.rx1 = right, out.ry1 = by1;
+                    return;
+                }
+            }
+            if (!giveWay())
+                break;
+        }
+        placeRow(0, n, cy); // (nothing left to give way: the kept prompts in one row from the right edge)
         out.mode = LaneMode::Row;
         out.rx0 = right - span(0, n), out.ry0 = by0, out.rx1 = right, out.ry1 = by1;
         return;
@@ -345,16 +412,21 @@ inline void CentredLit(float a0, float a1, float frac, float& lo, float& hi)
 
 // HUD 2's scale k (hud2.cpp ComputeLayout): hud_scale x text_size, never under 1, on the size preset's base (hud_size, so
 // 100 means the preset's own: core\game\hudsize.h), the aspect factor, then what the panels fit (the bottom row, the right
-// column, the centre column).
-inline float Hud2Scale(float W, float H, int hudScale, int textSize, bool kbm)
+// column, the centre column). `baseK` = the preset's base as a caller hands it in (HUD 2's frame: its copy of
+// hudsize::g_baseK); the form without it reads the global.
+inline float Hud2ScaleOn(float W, float H, int hudScale, int textSize, bool kbm, float baseK)
 {
     auto clampf = [](float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); };
     float k = clampf(hudScale / 100.0f, 0.8f, 1.3f) * clampf(textSize / 100.0f, 0.8f, 1.5f);
-    k = std::max(k, 1.0f) * hudsize::g_baseK;
+    k = std::max(k, 1.0f) * baseK;
     k *= clampf(0.9f * W / (1.6f * H), 0.8f, 1.0f);
     k = std::min(k, std::min((0.9f * W - 0.02f * H) / ((kbm ? 1.06f : 1.02f) * H), (0.88f * H) / ((kbm ? 0.662f : 0.622f) * H)));
     k = std::min(k, 0.426f / 0.36f);
     return k;
+}
+inline float Hud2Scale(float W, float H, int hudScale, int textSize, bool kbm)
+{
+    return Hud2ScaleOn(W, H, hudScale, textSize, kbm, hudsize::g_baseK);
 }
 
 struct ContextPlaced
@@ -844,7 +916,9 @@ inline LanesPlaced PlaceLanes(const float* w, const float* minW, const int* side
 }
 // The lanes with the hold cascade (as PlaceContextHold): the lanes without any word decide what must stay - the same
 // prompts in the same lanes and rows, none squeezed more than it was - and a word raised over its prompt (above the
-// glyph, over the label) needs its place free of the other prompts' plates (the row above). wordH = the word's height.
+// glyph, over the label) needs its place free of the other prompts' plates (the row above) and of `keep` (nKeep rectangles,
+// x0 y0 x1 y1 in pixels: what keeps its place over the lanes, HUD 2's comm feed - a raised HOLD word stood 1 px into its card,
+// audit 109_ 2c). wordH = the word's height.
 struct LanesHold
 {
     LanesPlaced c;
@@ -853,7 +927,7 @@ struct LanesHold
 };
 inline LanesHold PlaceLanesHold(const float* base, const float* minW, const float* glyph, const float* label,
                                 const bool* hold, const int* side, int n, const HoldDims& d, float gap,
-                                const LaneGeom& g, float H, float k, float wordH)
+                                const LaneGeom& g, float H, float k, float wordH, const float* keep = nullptr, int nKeep = 0)
 {
     LanesHold r;
     n = n < 0 ? 0 : (n > 3 ? 3 : n);
@@ -888,6 +962,12 @@ inline LanesHold PlaceLanesHold(const float* base, const float* minW, const floa
                                     if (j != i && c.x[j] - pad < x1 && c.x[j] + c.w[j] + pad > x0 &&
                                         c.y[j] - half - (c.wrap[j] ? g.tall : 0.0f) < y1 && c.y[j] + half > y0)
                                         return false;
+                                for (int q = 0; keep && q < nKeep; ++q)
+                                {
+                                    const float* a = keep + 4 * q;
+                                    if (a[2] > a[0] && a[0] < x1 && a[2] > x0 && a[1] < y1 && a[3] > y0)
+                                        return false;
+                                }
                             }
                             return true;
                         });
@@ -907,12 +987,13 @@ inline LanesHold PlaceLanesHold(const float* base, const float* minW, const floa
 template <class LeftFn, class LowFn>
 inline HoldPlan LaneHold(float W, float H, int n, int confirm, const float* baseN, const float* baseF, const float* glyph,
                          const float* label, const bool* hold, const HoldDims& d, float ph, float pitch, float wordH,
-                         float nnBottom, LeftFn left, LowFn lowest, LanePlaced& out, int& dropped, float* wN, float* wF)
+                         float nnBottom, LeftFn left, LowFn lowest, LanePlaced& out, int& dropped, float* wN, float* wF,
+                         const PageRule* page = nullptr)
 {
     n = n < 0 ? 0 : (n > kLaneMax ? kLaneMax : n);
     int dropNone = 0;
     LanePlaced none;
-    LaneLayout(W, H, n, confirm, baseN, baseF, ph, pitch, nnBottom, left, lowest, none, dropNone);
+    LaneLayout(W, H, n, confirm, baseN, baseF, ph, pitch, nnBottom, left, lowest, none, dropNone, nullptr, 0, page);
     auto widths = [&](const HoldPlan& p)
     {
         for (int i = 0; i < n; ++i)
@@ -925,7 +1006,7 @@ inline HoldPlan LaneHold(float W, float H, int n, int confirm, const float* base
     {
         widths(p);
         dr = 0;
-        LaneLayout(W, H, n, confirm, wN, wF, ph, pitch, nnBottom, left, lowest, o, dr);
+        LaneLayout(W, H, n, confirm, wN, wF, ph, pitch, nnBottom, left, lowest, o, dr, nullptr, 0, page);
     };
     const HoldPlan plan = ChooseHold(n, hold, d, [&](const HoldPlan& p)
                                      {

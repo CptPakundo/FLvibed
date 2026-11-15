@@ -1,4 +1,4 @@
-// FLvibed - what the game's own data files say about equipment, ships, the player's system and bases, for the pages of modules\hud\src\nnpage.* and dealerpage.*:
+// FLvibed - what the game's own data files say about equipment, ships, the player's system and bases, for the pages of modules\hud\src\nnpage.* and dealerpage.* and the screen models of both interfaces (zone shared, audit 78_):
 // read once through ini::Read (text or BINI, whatever the mod ships), cached, every answer failing closed (empty = unknown). Nothing here shows a place: the caller keeps the game's
 // discovery test (hudinfo::Undiscovered). Rules: core\game\equip_rules.h. Compiled into each module part that uses it (core\game).
 #pragma once

@@ -33,7 +33,7 @@ row: NO FLUF INSTALLED / FLUF DETECTED / ... CO-RESIDENCY ONLY - the "explain wh
 (90a8b7f, 0 / 1 auto / 2, the row says BY FLVIBED or which provider; help cut to the tooltip's three lines), and
 `chat_all_dialogue` reworded for the side chat (915be52). The tier / preset rules stand; U12's gap stands. Nothing
 contradicted.
-**Built (check-up 25 Oct 2026, HEAD abf84ac; `docs\UI_BUILD.md` 5):** the FLVIBED page button sits in `NN_Preferences`'
+**Built (check-up 25 Oct 2026, HEAD abf84ac; the UI build record 5, private):** the FLVIBED page button sits in `NN_Preferences`'
 free slot in both menus with a host-side page switch (dd5bce6; `PrefsInitElements` / `PrefsMessage` / `PrefsShowPage` in
 `flexe.h`), the page draws five tabs in the game's row grammar over the settings bus with instant apply, DEFAULT /
 CANCEL, rollover help from the registry, presets with CUSTOM, Show advanced listing the unnamed bus rows raw, and the
@@ -92,8 +92,9 @@ preview uses the same `gamefont` faces).
   sensitivity, separate volumes and saved settings: the controller tab's rows cover the first three.
 - **Don't overwhelm** (GoW: 70 options "needed a break"; GAG: simpler alternative): the player tier only; the ~95 dev
   keys stay in the ini and behind "Show advanced" (U11). *[Built 25 Oct 2026: the spec's rows carry a tier
-  (`core\ui_meta.h` from `UI_SPEC.json`, b097bab); `show_advanced` lists every bus row the spec does not name, raw
-  (label = key, help from the registry).]*
+  (`core\ui_meta.h` from `UI_SPEC.json`, b097bab); `show_advanced` listed every bus row the spec does not name, raw
+  (label = key, help from the registry). Since 12 Nov 2026 (audit decision 15) it lists only the spec's rows: the raw keys stay
+  in the ini and `docs\SETTINGS.md`, and MORE counts the changed ones.]*
 - **Both menus, one screen, instant apply, countdown-revert only for risky display changes** (bugnet): FLvibed has no
   display-mode change; module switches need a restart and say so in the row ("after restart").
 

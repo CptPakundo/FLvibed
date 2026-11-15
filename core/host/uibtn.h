@@ -1,4 +1,4 @@
-// FLvibed's native buttons (the host's core, docs\UI_PLAN.md 2 / 3.1, docs\UI_BUILD.md): the maneuver bar's fifth
+// FLvibed's native buttons (the host's core, docs\UI_PLAN.md 2 / 3.1, the UI build record, private): the maneuver bar's fifth
 // button, the FLVIBED page button of the game's Options screen with its page switch, and the pause menu's sixth button.
 // All are the game's own controls, created through its factories (core\flexe.h CreateIconButton / CreateTextControl /
 // CreateWireControl) and parented to the game's windows, so hit test, hover, click sound and the click-vs-fire

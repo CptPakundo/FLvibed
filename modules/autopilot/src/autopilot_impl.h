@@ -380,10 +380,10 @@ struct Settings
     // A37 S3 shadow (a measurement, decides nothing): the arbiter's ported rules run beside ObjectiveDecide at the exits
     // they cover and log `situation shadow agree|differ` (situation_snap.cpp); 0 = nothing runs
     bool situationShadow = false;
-    // A37 S7 the switch (modules\autopilot\docs\A37_PLAN.md): the objective mode's decision from the arbiter - Decide over the
+    // A37 S7 the switch (the A37 plan, private): the objective mode's decision from the arbiter - Decide over the
     // goal queue, the executor's game-first starts, the player's stop pausing the queue (D10); 0 = today's path exactly
     bool situationArbiter = false;
-    // LOOK L0 (modules\autopilot\docs\LOOK_PLAN.md; a measurement, decides nothing): at each objective decision log what the
+    // LOOK L0 (the look-ahead plan, private; a measurement, decides nothing): at each objective decision log what the
     // look-ahead would do - "autopilot look kill|fly|none ..." once per change of the verdict (lookahead.h, the adapter
     // autopilot_objective.cpp LookLog) - and the game's GetInvincible of a kill candidate under the script's Act_Invulnerable
     bool lookLog = false;
@@ -421,12 +421,12 @@ struct Settings
     // the kill: today's fight. Off until its verdict
     bool spawnStage = false;
     // ...and (with spawnStage and chaseKill; lookahead.h StagePoint(leashes) / ChaseFacts::fleeing / ChargeKeep;
-    // Source::Hidden; docs\research\runners\M02_ashcroft_consensus.md "The ONE design"): the stage point 250 m behind the
+    // Source::Hidden; the M02 Ashcroft escalation notes' consensus, private: "The ONE design"): the stage point 250 m behind the
     // spawn on his line inside every leash and nag, the last ship fought within ~400 m of it, the cruise charge pressed at
     // his spawn (no wait for him to outrun the engine), no missile at him beyond 600 m while he flees. Off until its verdict
     bool spawnCharge = false;
     // ...and (with spawnCharge, spawnStage and chaseKill; ash_ride.h, autopilot_ashride.cpp; Source::Hidden;
-    // docs\research\runners\M02_ashcroft_datapass.md "The ONE proposal" after its P0 and the owner's 31 Oct correction):
+    // the M02 Ashcroft escalation notes' second data pass, private: "The ONE proposal" after its P0 and the owner's 31 Oct correction):
     // the last ship left at shield 0 / hull <= 0.6 to the NPCs, a cruise loop near the fleeing ship's spawn until he
     // appears, a timed intercept at cruise to a station behind him, the coast only at equal cruise speed with him dead
     // ahead on our velocity line and the gap 90-220 m stable 1 s. Off until its verdict
@@ -528,7 +528,7 @@ struct Settings
     // (26 rays to 400 m: fighters move, the shelter is the structure round the point). Off until its verdict
     bool holdShelter = false;
     // `city_hold_side` (set M13-ab11-b, run-judged 31 Oct 2026: every death at the city's first generator held 31-67 m
-    // off its outward face in front of the weapons platforms; docs\research\runners\M13_city_hold.md): at a static target
+    // off its outward face in front of the weapons platforms; the M13 city-hold study, private): at a static target
     // hostile armed solars guard, the hold on the side away from their centroid (+/-45 deg) at a 120-130 m hull gap,
     // no re-anchor off that side or inside 100 m, ordnance only with the burst and the nearest hull >= 100 m off, the
     // target's height band unless a deeper point is clearly safer by the platform-cover score (city_hold.h). Off until
@@ -536,7 +536,7 @@ struct Settings
     bool cityHoldSide = false;
     float standoffSlide = 60;
     float standoffSlideSpeed = 20;
-    // `strafe_pass` (docs\research\runners\M13_bsdown_datapass.md "Proposal", escalation step 2; strafe.h; Source::Hidden
+    // `strafe_pass` (the M13 battleship-down escalation notes' second data pass, private: "Proposal", escalation step 2; strafe.h; Source::Hidden
     // + Meta): at a big armed hull (4+ guns by the game's turret test, elongated by its ray test, not dockable, still) no
     // hold - lengthwise passes along its long axis 150-250 m off the hull by real rays, afterburner pulses, the nose and
     // every launcher on the hull ahead, turns ~1 km out; anything unreadable falls back to today's fight for that

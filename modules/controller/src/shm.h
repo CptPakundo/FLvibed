@@ -25,8 +25,7 @@ struct ShmBlock
     // ---- v2 (IDEAS T36 slice 1): the device-layer test pads. While devActive != 0 the XInput slots 0-3
     // are served from devSlot instead of the system's XInput (gamepad.cpp), so a test pad takes a real pad's whole path:
     // the slot scan, unplug / replug, the focus gate, the glyph family from its vendor, rumble. The virtual pad above
-    // stays the focus-free harness hand, merged after the read. Read only when version >= 2 (a newer logic hot-reloaded
-    // into an older host maps the v1 size).
+    // stays the focus-free harness hand, merged after the read.
     u32 devActive;
     u32 devFlags; // kDevForeground: the focus gate sees the game as in front (a background test of the open gate)
     struct DevSlot
@@ -51,7 +50,6 @@ struct ShmBlock
     // the host's debug `sdlpad attach <xbox|ps5|switchpro> [slot]` / `detach`: modules\controller\src\host\sdlpad.cpp). The tool
     // writes each slot's state in the XInput form; the host's SDL thread sets it on the slot's SDL virtual device before
     // every read, so it comes back through SDL's whole gamepad layer; the host records what SDL sent to the device.
-    // Read only when version >= 3.
     u32 sdlFlags;    // tool: kDevForeground - the focus gate sees the game as in front while an SDL test pad is attached
     u32 sdlAttached; // host: bit n = slot n attached
     struct SdlSlot

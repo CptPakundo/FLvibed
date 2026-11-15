@@ -8,7 +8,9 @@
 // tint (UI_HUD2.md 1.7: the shape in the chrome; glyph_style's family decides the letters / shapes; the face marks take the family's
 // colours as the classic atlas does, glyphs::FaceColours; glyph_look 2 keeps them in the tint), and the
 // keyboard-and-mouse form's keycaps. Coordinates in back-buffer pixels; sizes by the caller (fractions of H). Nothing
-// is allocated per frame once the vertex lists have grown; nothing is drawn at alpha 0.
+// is allocated per frame once the vertex lists have grown; nothing is drawn at alpha 0. The lists are built with no
+// device (hud2_kit.cpp); the device, the fonts' textures, the faces and the icons are behind hud2_kit_backend.h, in the
+// game hud2_kit_d3d8.cpp (bench B1b, 12 Nov 2026).
 #pragma once
 #include "common.h"
 #include "game/flicons.h"
@@ -16,6 +18,7 @@
 #include "glyphs.h"
 
 #include <string>
+#include <unordered_map>
 
 namespace hud2kit
 {
@@ -45,10 +48,37 @@ inline u32 Argb(u32 rgb, float a)
 // The pass: false when there is no device / font (nothing drawn this frame). `textPx` = the small font's em (the big
 // one is 1.25 of it); fonts are rebuilt only when it or the device changes.
 bool Begin(void* device, int screenW, int screenH, int textPx);
+// The small font's em the kit measures and draws with now (the last Begin's, after its legibility floor); 0 before any.
+int TextPx();
+// Outside a pass: the fonts a Begin with `textPx` would draw with become the ones TextWidth / FitText measure with, on
+// the last pass's device (nothing drawn, no pass begun). For a caller that measures before its own pass (HUD 2's layout
+// in its Update): otherwise it measures with the size the last module's Begin left. False before the first pass.
+bool MeasureAt(int textPx);
 void End(); // the four draw calls
 // The next End writes the colour channels only, the back buffer's alpha kept (a pass under the game's 3D views: the
 // target view drew nothing over a backing that had written the alpha).
 void SetKeepDestAlpha();
+// A cut mark in the pass (`name` a string literal): the vertex count of every layer now, so the design bench's lists say
+// which ranges are whose (HUD 2's parts, the comm caption, ...). Drawing ignores them; a pass's Begin clears them.
+void Mark(const char* name);
+// The clock the marquees run on (TextMarquee: when a cut text first showed), in seconds; nullptr = perf::Now, the
+// game's. HUD 2's parts set their host's (modules\hud\src\hud2_frame.h), a program with no game its own.
+void SetClock(double (*seconds)());
+// The marquees' table (TextMarquee: when each cut text first showed, keyed by its string, size and room; a text not drawn
+// for 30 passes starts over). Its caller owns it so a program with no game can start, save and restore it: HUD 2's
+// parts keep theirs in their state and set it with their host (modules\hud\src\hud2_frame.h); nullptr = the kit's own.
+// Every TextMarquee after the call uses it, whoever draws. A table set while it is empty takes over the clocks the last
+// one held (so the switch to HUD 2's table at its first bind restarts no text another caller is scrolling).
+struct MarqueeClock
+{
+    double t0 = 0;
+    u32 seen = 0; // the pass it was last drawn in (the kit's pass count + 1: 0 = never)
+};
+struct Marquees
+{
+    std::unordered_map<unsigned long long, MarqueeClock> clocks;
+};
+void SetMarquees(Marquees* table);
 void OnDeviceLost();
 void Shutdown();
 
@@ -99,10 +129,25 @@ enum Align
     Center,
     Right
 };
+// Game text's styles (the owner, 12 Nov 2026, audit decision 56: the infocards' italic and underline drawn, one text kit
+// for every page that shows the game's text). The game draws a styled run with a GDI font of that style (Common.dll
+// DeviceTRC: one font per bold / italic / underline combination, docs\FREELANCER_RE.md "Rich text"); its faces have no
+// italic file, so its italic is GDI's synthesized oblique: the upright glyphs sheared about the baseline, the advances
+// unchanged (measured 13 Nov 2026 on the game's AGENCYB.TTF and AGENCYR.TTF: 0.34 px across per px up). The kit draws the
+// same from its one atlas: kStyleItalic shears each glyph's quad by kItalicSlant (the width stays TextWidth's, so a layout
+// measures styled text as plain), kStyleUnderline adds the face's underline (its outline metrics, as GDI's lfUnderline)
+// under the whole run in the text's colour, its spaces too. HUD 2's text is already the bold face, so a bold run gets the
+// game's other bold: GDI's synthesized emboldening (the game's slot-0 face, Arial Unicode MS, has no bold file; measured
+// 13 Nov 2026 at 400 against 700 on its ARIALUNI.TTF, 16 to 200 px: each glyph's ink widened to the right, its left edge
+// kept). kStyleBold draws the run a second time kBoldSmear em to the right (at least 1 px; the owner, 13 Nov 2026,
+// "Synthetic emphasis"); the advances stay TextWidth's (GDI adds 1 px each), so the layout holds.
+constexpr u32 kStyleItalic = 1, kStyleUnderline = 2, kStyleBold = 4;
+constexpr float kItalicSlant = 0.34f;
+constexpr float kBoldSmear = 0.025f;
 // Text `size` px tall (the em), vertically centred on y (the mock's 'm' anchor); `track` = extra letter spacing in ems;
-// `outline` = the navy shadow. Returns the width.
+// `outline` = the navy shadow; `style` kStyle* bits. Returns the width.
 float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align align = Left, float track = 0,
-           bool outline = true);
+           bool outline = true, u32 style = 0);
 float TextWidth(const std::wstring& s, float size, float track = 0);
 // Words that stand beside the game's own captions, in their face and weight (Agency FB Regular; HUD 2's text is its bold) with their shadow, capitals centred on y. `size` 0: the game's caption size. Returns the width.
 float GameCaption(float x, float y, const std::wstring& s, u32 argb, Align align = Left, float size = 0);
@@ -119,8 +164,8 @@ float TextFit(float x, float y, const std::wstring& s, float size, float maxW, u
 // room, held 1.5 s, a fade back to the start, repeated. Drawn clipped to its room (x .. x + maxW for Left; Center /
 // Right about x), recorded for the lint as one text with the room as its box. A text that fits is TextFit's, still.
 // Returns the drawn width (maxW for a marquee).
-// A line drawn at x, cut to [clipX0, clipX1]: a ticker's.
-void TextClipped(float x, float y, const std::wstring& s, float size, float clipX0, float clipX1, u32 argb);
+// A line drawn at x, cut to [clipX0, clipX1]: a ticker's, a page's game text (`style` kStyle* bits).
+void TextClipped(float x, float y, const std::wstring& s, float size, float clipX0, float clipX1, u32 argb, u32 style = 0);
 float TextMarquee(float x, float y, const std::wstring& s, float size, float maxW, u32 argb, Align align = Left,
                   float track = 0, bool outline = true, float floor = -1);
 float TextFloor();
@@ -136,6 +181,15 @@ std::wstring Fit(const std::wstring& s, float size, float maxW, float track = 0)
 // a ring with the mark; `hold` adds the broken outer ring.
 void Glyph(glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold = false);
 float GlyphWidth(glyphs::Id id, float h);
+// The pad family and `glyph_look` a caller hands in (HUD 2's frame: its copies of glyphs::Current() and the setting, so
+// a program with no game draws any family); the forms above read the host's (glyphs::Current, glyphs::LookFor).
+struct GlyphStyle
+{
+    glyphs::Family family = glyphs::Family::Xbox;
+    int look = 0; // glyph_look (glyphs::LookOf)
+};
+void Glyph(const GlyphStyle& style, glyphs::Id id, float cx, float cy, float h, u32 argb, bool hold = false);
+float GlyphWidth(const GlyphStyle& style, glyphs::Id id, float h);
 // A keyboard key: a rounded keycap with its name ("K", "F1", "SPACE"); returns its width. `tight` = the dense panels'
 // keycap (the loadout, the fire strip, the K&M maneuver row, Focus's card click row; the owner, 31 Oct 2026, A1:
 // "tightening the glyphs themselves so that everything fits"): the name at the 0.024 H floor (or 0.62 h) and the cap
@@ -144,6 +198,13 @@ float GlyphWidth(glyphs::Id id, float h);
 float Keycap(const std::wstring& name, float cx, float cy, float h, u32 argb, bool measure = false, bool tight = false);
 
 std::string Status();
+// Research (debug `hud2 kitdump <passes> <file>`): the next `passes` passes as End submits them - every caller's pass,
+// in order - to `file` (per layer: vertex count, texture role, a hash of its vertices) and `file`.bin (the vertices), to
+// compare two builds on the same state. 0 stops. The lists hold the drawn text's glyph boxes: a git-ignored folder only.
+std::string DumpPasses(const std::string& path, int passes);
+// Research (the design bench's recorder): the characters the atlases gained on demand this session, beyond
+// glyphset::Base (a program with no game seeds the same before its first pass, or its text draws stand-ins).
+const std::wstring& AddedChars();
 
 // ---- the layout lint's recorder (debug `hud2 lint`: hud2_lint.h, hud2_lint_live.cpp). While a list is set, every
 // primitive the caller draws appends one record - not the ones a kit call draws inside another (a glyph's letter, a

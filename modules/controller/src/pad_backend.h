@@ -7,8 +7,6 @@
 
 namespace padbackend
 {
-constexpr unsigned kHostVersion = 33; // HostApi v33: SdlPad / SdlPadRumble
-
 // The SDL backend's state as the host reports it (SdlPadState::status, the return of HostApi::SdlPad).
 constexpr int kSdlFailed = -1;  // SDL_Init failed (SdlPadState::error): XInput reads the pad until pad_backend goes 0 and 1 again
 constexpr int kSdlOff = 0;      // not started (pad_backend 0) or stopped
@@ -220,6 +218,12 @@ class Hands
 // press again, so it is dropped and the pad acts once. Any other injected input, and all real input, passes. `sincePadMs`: time since the pad's last input.
 inline bool DropInjected(bool filtering, bool injected, unsigned sincePadMs) { return filtering && injected && sincePadMs < kInjectGraceMs; }
 
+// SdlPadFilter's `on` (flags since kLogicApiVersion 6): which low-level hooks the host installs. The keyboard hook comes with the filter; the mouse hook only with
+// `pad_mapper_mouse` 1: nothing needs the WH_MOUSE_LL hook unless a mapper also sends mouse input for the pad, so by default it is not installed (one hook less
+// in the system's mouse chain) and a mapper's mouse input is not filtered (RE_NOTES.md "Gotchas").
+constexpr int kFilterKeys = 1, kFilterMouse = 2;
+inline int FilterFlags(bool on, bool mapperMouse) { return on ? kFilterKeys | (mapperMouse ? kFilterMouse : 0) : 0; }
+
 // One entry of the HID list. `xinputPath`: the device path carries "IG_", the mark of a pad XInput reads itself. Sony and Nintendo's ids only:
 // SDL reads those through HIDAPI, and with DirectInput off (sdlpad.cpp) it would read no other joystick, so it would run for nothing.
 inline bool HidCandidate(unsigned vendor, unsigned usagePage, unsigned usage, bool xinputPath)
@@ -304,7 +308,7 @@ class ImpulseRoute
 inline bool WantSdl(int padBackend, bool hostHas, bool fallback = false) { return (padBackend == 1 || fallback) && hostHas; }
 // Read the pad from SDL this frame: WantSdl, SDL running, and with pad_backend 1 the device-layer test pads off (they are the XInput layer the
 // harness drives: shm.h v2; SDL's own virtual test pads, above, take the SDL path). Otherwise XInput reads it - while SDL starts, after
-// it failed (fails closed to the default), with an older host. The fallback reads beside them: Hands decides, and they are how a test shows it.
+// it failed (fails closed to the default), without the host's SDL3 backend. The fallback reads beside them: Hands decides, and they are how a test shows it.
 inline bool ReadFromSdl(int padBackend, bool hostHas, bool devActive, int sdlStatus, bool fallback = false)
 {
     return WantSdl(padBackend, hostHas, fallback) && (fallback || !devActive) && sdlStatus == kSdlRunning;

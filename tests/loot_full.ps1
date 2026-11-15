@@ -421,12 +421,16 @@ function Case-8 {
     if (-not ($kitLoot -and $com)) { NotRun 8 "kit and an item with room not both within 900 m after $($script:Kills - $k0) kills (kit: $([bool]$kitLoot), item: $([bool]$com))"; return }
     $self = Get-Self
     if ($self.Nano -ne $self.NanoMax) { NotRun 8 "nanobots $($self.Nano)/$($self.NanoMax) before the tractor"; return }
+    # what the game takes ahead of the kit: volume-0 items first, then by value, and no line after the first success (FREELANCER_RE "Tractor failure codes");
+    # the kit is volume 0 in HDE, so a dearer volume-0 item with no limit of its own, in USER_COLLECT_LOOT's 1,000 m, arrives first and the refusal is silent
+    $ahead = @(Get-Loot | Where-Object { $_.Id -ne $kitLoot.Id -and $_.Distance -le 1000 -and $_.Fits -ge [int]::MaxValue -and $_.Value -gt $kitLoot.Value })
     $p = Pull 'c8' $null 'USER_COLLECT_LOOT' 'arrive' 30
     $null = Wait-FLUntil { if (-not (Get-FLContacts -All | Where-Object Id -eq $com.Id)) { 1 } } 'the item pulled in' 30
     $ev = @(Get-Events $p.Seq | Where-Object Kind -eq 'fail')
     $f5 = @($ev | Where-Object Reason -eq 5)
     # the game lists volume-0 items first, then by value, and a refusal after the first success says nothing (FREELANCER_RE): equipment worth more than the kit goes first
     if ($f5.Count -eq 0 -and $com.Fits -ge [int]::MaxValue) { NotRun 8 "no refusal, as the game orders it: $(Nick $com) (volume 0) went ahead of the kit; the md's row needs a commodity, and no NPC carries one" }
+    elseif ($f5.Count -eq 0 -and $ahead.Count) { NotRun 8 "no refusal, as the game orders it: $(($ahead | ForEach-Object { "$(Nick $_) ($($_.Value) cr, volume 0)" }) -join ', ') went ahead of the kit ($($kitLoot.Value) cr); a refusal after the first success says nothing" }
     else { Check ($f5.Count -ge 1) "case 8: reason=5 observed ($($ev.Count) refusals: $(($ev | ForEach-Object { $_.Line }) -join ' / '))" }
     Check (-not (Get-FLContacts -All | Where-Object Id -eq $com.Id)) "case 8: the item ($(Nick $com)) still arrived"
     if ($null -ne $p.HoldAtFail) { Result 'LOOK' "case 8: hold at the refusal $($p.HoldAtFail) (before pull $($p.Hold0)): $(if ($p.HoldAtFail -ge $p.Hold0) { 'refused before the pull, as the game orders it' } else { 'the pull had begun' })" }

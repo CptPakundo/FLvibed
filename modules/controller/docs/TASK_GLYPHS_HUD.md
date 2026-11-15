@@ -1,7 +1,7 @@
 # Task: controller-first UI (pad HUD, pad screens, glyphs), switching live with keyboard/mouse
 
 **Status (25 Oct 2026): built** - the design the owner decided in the mock-up (`..\..\docs\UI_PLAN.md` 6,
-`..\..\docs\UI_SPEC.json`) is implemented (`..\..\docs\UI_BUILD.md`: architecture, what is built, the gaps); the open
+`..\..\docs\UI_SPEC.json`) is implemented (the UI build record, private: architecture, what is built, the gaps); the open
 questions of section 8 were answered by the spec's 21 decisions; section 5 holds the HUD badge rules as rebuilt after
 the owner's review. The rest of this document is the brief and the research it was built from.
 

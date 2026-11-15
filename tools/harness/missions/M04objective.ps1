@@ -2,7 +2,7 @@
 # (the escape via TL147, West Point and TL134, Benford's defence, the Magellan gate, the bounty hunters, Mactan, the
 # Rheinland wing, the Leeds hole, Planet Leeds); the harness only does the rooms (Benford's bar scene and forced launch,
 # the Mactan launch, the Tobias scene at Leeds).
-# Start: docked at Manhattan with the M04 offer accepted (campaign save Save6380.fl, docs\missions\SAVES.md); the
+# Start: docked at Manhattan with the M04 offer accepted (campaign save Save6380.fl, the scene-save catalogue, private); the
 # harness does the player's base stops (Manhattan before the launch, Mactan before the Rheinland fight).
 # Runbook: docs\missions\M04.md. Prints SUCCESS / FAILED and a total.
 param([int]$TimeoutSec = 2400)

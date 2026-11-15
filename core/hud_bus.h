@@ -25,8 +25,8 @@ struct HudLayout
     u8 alerts;     // 1 while HUD 2's alert cards are on (hud_alerts): the subtitles' Neural Net column leaves out the lines
                    // HUD 2 shows as alerts (shield failed / destroyed, hull breach, incoming missile / torpedo, cruise
                    // disrupted) - one place per event (was reserved: older publishers write 0)
-    u8 feed;       // 1 with active 0: an in-flight cutscene while HUD 2 is the HUD: the comm feed stays, chatFree says where
-                   // (was reserved: older publishers write 0)
+    u8 feed;       // reserved, written 0: it carried HUD 2's comm feed through an in-flight cutscene (0.2.7 to 0.4.6); since
+                   // 0.4.7 a cutscene shows only the subtitles (issues 12 and 92), so no publisher sets it and no reader uses it
     float alpha;   // 0..1: HUD 2's fade (the transition between the game's HUD and HUD 2 takes a few frames)
     float scale;   // hud_scale / 100
     HudRect nav;      // top-left: objective, maneuver chip, NeuroNet chip
@@ -38,6 +38,8 @@ struct HudLayout
     HudRect alert;    // the transient alert card (empty when none shows)
     HudRect topFree;  // the band between nav and target where the dialogue panel may go (top-centre)
     HudRect chatFree; // left-middle: where the chat column may go (below nav, above the ship panel)
+    HudRect held[2];  // the older alert cards a newer one pushed down a place, still drawn (empty: none); `alert` is the newest,
+                      // through its fade-out: the comm feed keeps clear of all three (audit 109_ 2a)
 };
 
 // What the subtitles logic publishes back (every frame it lays out in flight).
@@ -158,10 +160,6 @@ struct HudLoot
 
 struct HudBus
 {
-    u32 version; // 1; 2 adds the lane (PublishLane / ReadLane / LaneFrame) - read them only when version >= 2; 3 adds the
-                 // floor and the docked subtitles (PublishFloor ... DockedSubsFrame) - only when version >= 3; 4 adds FLUF
-                 // (ReadFluf, SetFlufPolicy) - only when version >= 4; 5 adds ReadFlufExtra; 6 adds the tractor's refusal;
-                 // 7 the loot it took (NoteLoot, LootSerial, ReadLoot)
     void (*PublishLayout)(const HudLayout* layout);
     // Copies the last layout; false when none was ever published.
     bool (*ReadLayout)(HudLayout* out);
@@ -170,26 +168,25 @@ struct HudBus
     // A frame counter the bus keeps (incremented by the controller logic's Publish): readers use it to tell a fresh
     // layout from a stale one without their own counter.
     u32 (*Frame)();
-    // version 2 (appended: a reader built against version 1 never sees them)
+    // the pad's prompt lane on docked screens
     void (*PublishLane)(const HudLane* lane);
     bool (*ReadLane)(HudLane* out); // false when none was ever published
     u32 (*LaneFrame)();             // incremented by every PublishLane: readers tell fresh from stale by it
-    // version 3 (appended)
+    // the open windows' floor and the subtitles' block on a docked screen
     void (*PublishFloor)(const HudFloor* floor);
     bool (*ReadFloor)(HudFloor* out); // false when none was ever published
     u32 (*FloorFrame)();              // incremented by every PublishFloor
     void (*PublishDockedSubs)(const HudDockedSubs* subs);
     bool (*ReadDockedSubs)(HudDockedSubs* out);
     u32 (*DockedSubsFrame)(); // incremented by every PublishDockedSubs
-    // version 4 (appended)
+    // FLUF's windows
     bool (*ReadFluf)(HudFluf* out); // false = no FLUF (out->present 0); refreshes at most once per FLUF ImGui frame
     void (*SetFlufPolicy)(int policy); // `fluf_windows` (the controller's registry; 2 until it says otherwise)
-    // version 5 (appended)
     bool (*ReadFlufExtra)(HudFlufExtra* out); // the last snapshot's per-window extras (call after ReadFluf)
-    // version 6 (appended): why the game last played its "Tractor Failure" line (core\game\tractorfail.h; core\host\tractorhook.* notes it). Read gives its serial, 0 = none yet.
+    // why the game last played its "Tractor Failure" line (core\game\tractorfail.h; core\host\tractorhook.* notes it). Read gives its serial, 0 = none yet.
     void (*NoteTractorFail)(int reason);
     u32 (*ReadTractorFail)(int* reason, u32* ageMs);
-    // version 7 (appended): loot a ship's tractor took into its hold, as the game tells its client (core\host\events.cpp,
+    // loot a ship's tractor took into its hold, as the game tells its client (core\host\events.cpp,
     // the exe's Client slot 64; docs\FREELANCER_RE.md "Loot into the hold"). Every ship the client hears of: the reader
     // keeps its own. LootSerial = the newest record's serial (0 = none yet); ReadLoot copies the record with that serial,
     // false when it is not kept (the last kHudLootKept) or not written yet.

@@ -160,6 +160,12 @@ bool Load()
     std::wstring dir = exe;
     dir = dir.substr(0, dir.find_last_of(L"\\/")); // ...\EXE
     dir = dir.substr(0, dir.find_last_of(L"\\/")) + L"\\DATA\\";
+    return LoadFrom(dir);
+}
+
+bool LoadFrom(const std::wstring& dir)
+{
+    g_state = 0;
     std::vector<char> raw;
     std::vector<Entry> ini;
     const char* format = "missing";

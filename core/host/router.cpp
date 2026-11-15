@@ -10,7 +10,7 @@ static int g_logChannels[kModules] = {-1, -1, -1};
 static bool g_mouseHere = false; // a background test start without the controller: the virtual mouse is served from here
 
 // ------------------------------------------------------------------ the table
-// The order of every event, traced from the two hosts as they chained (docs\MODULES_PLAN.md): the subtitles' detours went in
+// The order of every event, traced from the two hosts as they chained (the module split plan, private): the subtitles' detours went in
 // first and each later detour chains in front, so at every shared site the controller ran outermost - first in whatever
 // comes before the game's own call, last in whatever comes after it.
 static constexpr int kFrameOrder[] = {kController, kSubtitles};
@@ -123,6 +123,8 @@ static void __cdecl FrameUpdateHook(double dt)
     static bool adopted = false;
     if (!adopted || hk::AdoptPending())
     {
+        if (!adopted)
+            crashlog::FirstFrame();
         adopted = true;
         hk::AdoptRestoreStyle("host");
     }
@@ -228,6 +230,17 @@ static void __cdecl BatchCloseHook()
     g_origBatchClose();
     if (g_loadDraw && exe::LoadBracketCall.ok() && from == exe::LoadBracketCall.get() + 5)
         GuardedLoadDraw();
+}
+
+void InstallHud2Hooks()
+{
+    if (!ModuleOn(modules::kHud))
+        return;
+    hk::Owner own(CoreOwner()); // (the owner the start-time installs had: the controller's, or the subtitles' with the controller off)
+    // UiBatchClose: mov eax, [abs] (5 bytes)
+    if (!g_origBatchClose && exe::UiBatchClose.ok() && exe::LoadBracketCall.ok())
+        g_origBatchClose = static_cast<BatchCloseFn>(hk::Detour(exe::UiBatchClose, BatchCloseHook, 5, "the loading screen"));
+    uihooks::InstallTargetMute();
 }
 
 bool RawKeysWanted() { return g_clients[kController] && g_clients[kController]->rawKey; }
@@ -602,6 +615,7 @@ void Start(HINSTANCE self, bool subtitles, bool controller, const char* rows, co
         g_logChannels[kController] = LogOpen(self, "FLController.log");
     Log("modules: %s", rows);
     LogWindows();
+    crashlog::Install(); // before any hook: a crash from here on names its place
     win7sim::Install(self);
 
     // Every Freelancer.exe address is verified by its signature; a hook whose code is not what we expect is not installed
@@ -615,9 +629,7 @@ void Start(HINSTANCE self, bool subtitles, bool controller, const char* rows, co
     uibtn::Install(); // FLvibed's native buttons: the Options screen, the pause menu
     // UiRender: mov eax,1008h (5 bytes)
     g_origUiRender = static_cast<UiRenderFn>(hk::Detour(exe::UiRender, UiRenderHook, 5, "drawing under the HUD"));
-    // UiBatchClose: mov eax, [abs] (5 bytes)
-    if (ModuleOn(modules::kHud) && exe::UiBatchClose.ok() && exe::LoadBracketCall.ok())
-        g_origBatchClose = static_cast<BatchCloseFn>(hk::Detour(exe::UiBatchClose, BatchCloseHook, 5, "the loading screen"));
+    // (the loading screen's hook is HUD 2's alone: installed at its first selection, InstallHud2Hooks)
     focus::Start(ModuleOn(modules::kDisplay));
     fixes::Install();
     chatlines::Install(); // the server's word on the autopilot; its tag line stays out of the chat, whichever modules run

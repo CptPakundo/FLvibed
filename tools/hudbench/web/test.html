@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- the replayer's headless check (tools\hudbench\test_replayer.js --headless): no network of any kind; scripts from
+     this folder and the fixture file named in ?fixture= (a file: URL the test wrote) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: 'unsafe-inline'; img-src blob:; connect-src 'none'; style-src 'unsafe-inline'">
+<title>Replayer check</title>
+</head>
+<body>
+<pre id="result">pending</pre>
+<canvas id="a"></canvas><canvas id="b"></canvas>
+<script src="fldl.js"></script>
+<script src="gl.js"></script>
+<script>
+'use strict';
+const out = document.getElementById('result');
+const violations = [];
+document.addEventListener('securitypolicyviolation', (e) => violations.push(e.violatedDirective + ' ' + e.blockedURI));
+function finish(r) { r.violations = violations; out.textContent = 'RESULT ' + JSON.stringify(r); }
+const fixture = new URLSearchParams(location.search).get('fixture');
+if (!fixture) finish({ ok: false, error: 'no ?fixture=' });
+else {
+    const s = document.createElement('script');
+    s.src = fixture;
+    s.onload = () => run().then(finish, (e) => finish({ ok: false, error: String(e && e.stack || e) }));
+    s.onerror = () => finish({ ok: false, error: 'the fixture script did not load: ' + fixture });
+    document.body.appendChild(s);
+}
+async function run() {
+    const S = window.SYNTH;
+    const bytes = Uint8Array.from(atob(S.atlasPng), (c) => c.charCodeAt(0));
+    // the same path as a file the user picks: a PNG blob decoded without colour conversion or premultiplication
+    const image = await createImageBitmap(new Blob([bytes], { type: 'image/png' }), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+    const atlasCheck = FLDL.parseAtlas(S.atlas);
+    if (!atlasCheck.atlas) return { ok: false, error: 'atlas: ' + atlasCheck.errors.join('; ') };
+    const ra = new FLGL.Renderer(document.getElementById('a'));
+    const rb = new FLGL.Renderer(document.getElementById('b'));
+    ra.setAtlas(atlasCheck.atlas, image);
+    rb.setAtlas(atlasCheck.atlas, image);
+    const report = { ok: true, renderer: ra.info(), sizes: {} };
+    for (const [key, { list, probes }] of Object.entries(S.lists)) {
+        const parsed = FLDL.parse(JSON.stringify(list));
+        const r = { errors: parsed.errors, warnings: parsed.warnings, probes: [], fails: 0 };
+        report.sizes[key] = r;
+        if (!parsed.list) { r.fails++; report.ok = false; continue; }
+        const [W, H] = list.size;
+        const t0 = performance.now();
+        const drawn = ra.draw(parsed.list, W, H, { background: [0, 0, 0] });
+        const px = ra.pixels();
+        r.drawMs = Math.round(performance.now() - t0);
+        r.canvas = [ra.canvas.width, ra.canvas.height];
+        if (r.canvas[0] !== W || r.canvas[1] !== H) { r.fails++; r.sizeError = 'canvas ' + r.canvas.join('x'); }
+        r.calls = drawn.calls.map((c) => c.pass + '.' + c.layer + ':' + c.op + (c.writeAlpha ? '' : ':rgb'));
+        r.missing = drawn.missing;
+        for (const p of probes) {
+            const i = (p.y * W + p.x) * 4;
+            const got = [px[i], px[i + 1], px[i + 2]];
+            let ok = got.every((g, k) => Math.abs(g - p.rgb[k]) <= p.tol);
+            // a probe with an alpha: the replay target's alpha (the canvas shows none)
+            if (p.a !== undefined && p.a !== null) { got.push(px[i + 3]); ok = ok && Math.abs(px[i + 3] - p.a) <= p.tol; }
+            if (!ok) r.fails++;
+            r.probes.push({ name: p.name, at: [p.x, p.y], want: p.a !== undefined && p.a !== null ? p.rgb.concat([p.a]) : p.rgb, got, ok });
+        }
+        // a list the bench wrote (test_replayer.js --bench): its probes only; the checks below are the fixture's own
+        if (S.probesOnly) { if (r.fails) report.ok = false; continue; }
+        // the difference: the list against itself (none), against a copy with the opaque red shape's colour changed
+        const same = FLDL.diffPixels(px, px, W, H, 0);
+        const changed = JSON.parse(JSON.stringify(parsed.list));
+        const sh = changed.passes.over.layers[0];
+        for (let k = 6; k < 12; k++) sh.v[k * 5 + 2] = 0xFF0000FF;   // the second quad: the opaque red one
+        rb.draw(changed, W, H, { background: [0, 0, 0] });
+        const d = FLDL.diffPixels(px, rb.pixels(), W, H, 8);
+        const u = H / 100;
+        r.diff = { same: same.count, changed: d.count, box: d.box, redRect: [15 * u - 0.5, 2 * u - 0.5, 10 * u, 10 * u] };
+        // the changed pixels must lie inside the red rectangle (its pixel edges within one pixel)
+        const b = d.box, rr = r.diff.redRect;
+        const inside = b && b[0] >= Math.floor(rr[0]) && b[1] >= Math.floor(rr[1]) && b[0] + b[2] <= Math.ceil(rr[0] + rr[2]) + 1 && b[1] + b[3] <= Math.ceil(rr[1] + rr[3]) + 1;
+        if (same.count !== 0 || !d.count || !inside) { r.fails++; r.diffError = true; }
+        // without an atlas every glyph and icon is a solid box in its vertex colour: the icon's corner is green then
+        ra.setAtlas(null, null);
+        ra.draw(parsed.list, W, H, { background: [0, 0, 0] });
+        const pn = ra.pixels(), cx = Math.floor(20.4 * u), cy = Math.floor(20.4 * u), j = (cy * W + cx) * 4;
+        r.noAtlasCorner = [pn[j], pn[j + 1], pn[j + 2]];
+        if (!(pn[j] < 4 && pn[j + 1] > 250 && pn[j + 2] < 4)) r.fails++;
+        ra.setAtlas(atlasCheck.atlas, image);
+        // passes and layers switched off: only the under pass left, so the red shape's place is the background
+        ra.draw(parsed.list, W, H, { background: [0, 0, 0], enabled: { passes: { over: false } } });
+        const po = ra.pixels(), k2 = (Math.floor(4 * u) * W + Math.floor(17 * u)) * 4, k3 = (Math.floor(7 * u) * W + Math.floor(7 * u)) * 4;
+        r.overOff = [[po[k2], po[k2 + 1], po[k2 + 2]], [po[k3], po[k3 + 1], po[k3 + 2]]];
+        if (po[k2] !== 0 || po[k3 + 2] < 125) r.fails++;
+        if (r.fails) report.ok = false;
+    }
+    return report;
+}
+</script>
+</body>
+</html>

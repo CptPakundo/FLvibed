@@ -1,4 +1,4 @@
-// Advanced Autopilot - `ash_ride` (docs\research\runners\M02_ashcroft_datapass.md "The ONE proposal", adapted to its P0
+// Advanced Autopilot - `ash_ride` (the M02 Ashcroft escalation notes' second data pass, private: "The ONE proposal", adapted to its P0
 // fact and the owner's correction of 31 Oct 2026: an engine kill out of cruise coasts straight on the velocity, cruise is
 // lost and the engine back on needs the 8.5 s charge). The adapter over the pure half ash_ride.h:
 //  0 armed   - the stage's fight on the last ship (the decision: AshRideArm -> the stage verdict "fight") until its shield

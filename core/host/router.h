@@ -1,4 +1,4 @@
-// FLvibed - the event router: the one owner of the hooks two or more modules need (docs\MODULES_PLAN.md section 2). A module's
+// FLvibed - the event router: the one owner of the hooks two or more modules need (the module split plan's section 2; docs\ARCHITECTURE.md is the public view). A module's
 // host part registers a Client and gets these events in the fixed order of the table in router.cpp. A hook one module needs
 // stays in that module's part and installs only when the module is on.
 //
@@ -69,6 +69,10 @@ void* D3DDevice();                       // IDirect3DDevice8 used by the game; n
 int RoomCharacters(void** out, int max); // live base-room characters, oldest first
 void SetCursorHidden(bool on);           // the game's arrow stays hidden through the cursor pass
 void SetLoadDraw(void (*draw)());        // called in each load frame, its scene open; null: the game's own screen alone
+// HUD 2's own two hooks (the loading screen's draw, exe::UiBatchClose; the target label's mute, uihooks::InstallTargetMute), installed
+// the first time HUD 2 is selected in a session (the door's Enter, from the logic's frame on the game thread: neither target is on the
+// stack there), never before and never removed: on the classic HUD they pass through. Idempotent; nothing with the HUD module off.
+void InstallHud2Hooks();
 void* ManeuverLayoutOriginal();          // the hook's "original", null when refused: for the status lines
 bool RawKeysWanted();
 bool RawKey(int vk, bool down, bool textField);

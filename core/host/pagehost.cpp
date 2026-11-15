@@ -303,18 +303,17 @@ void Start()
     g_host.calls.SetKeepRunning = focus::SetKeepRunning;
     g_host.calls.SetCursorHidden = router::SetCursorHidden;
     g_host.calls.SetLoadDraw = router::SetLoadDraw;
+    g_host.calls.InstallHud2Hooks = router::InstallHud2Hooks; // (HUD 2's own hooks at its first selection, the target label's mute among them)
     g_host.calls.SetFlightLock = input::SetFlightLock;
     g_host.calls.SetWorldPause = input::SetWorldPause;
     g_host.calls.WorldCommand = input::WorldCommand;
     g_host.calls.HoldRealWheel = dimouse::HoldRealWheel;
+    g_host.calls.SetRawMouse = dimouse::SetRaw;
     g_hud = router::ModuleOn(modules::kHud);
     g_flies = router::ModuleOn(modules::kAutopilot) || g_hud;
     g_story = g_flies || router::ModuleOn(modules::kSpeedrun);
     if (g_hud)
-    {
         uihooks::Install(KeyCmd);
-        uihooks::InstallTargetMute();
-    }
     if (g_story)
     {
         g_host.calls.SetHeld = input::SetHeld;

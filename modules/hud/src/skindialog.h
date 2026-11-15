@@ -29,6 +29,8 @@ bool Draw(const winplates::Win& w, u32 hovered);
 void Clear();
 // A raw key: Enter takes the focused chip's answer. True: the game never sees it.
 bool EnterKey(int vk, bool down);
+// A raw key: the arrows move the focus between a two-answer dialog's answers (the game's cursor onto the button, as the pad's D-pad does). True: the game never sees it.
+bool ArrowKey(int vk, bool down);
 // The open dialog's words for the prompt lane; null when none is skinned or the row has no verbs.
 const wchar_t* ActionWord();
 const wchar_t* SafeWord();

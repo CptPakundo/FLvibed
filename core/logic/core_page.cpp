@@ -6,6 +6,7 @@
 #include "game/coreframe.h"
 #include "game/deckmode.h"
 #include "game/fl.h"
+#include "game/flicons.h"
 #include "game/gamemode.h"
 #include "game/maneuver_watchdog.h"
 #include "game/modslots.h"
@@ -13,6 +14,7 @@
 #include "log.h"
 #include "logic/alone.h"
 #include "ui/flufaware.h"
+#include "ui/hud2_kit.h"
 #include "ui/options_page.h"
 #include "ui/uiopt.h"
 
@@ -38,6 +40,7 @@ static void Shutdown()
     alone::Shutdown();
     modslots::Shutdown();
     options_page::Shutdown();
+    hud2kit::Shutdown(), flicons::Shutdown(); // (alone's stop does it too when it ran; both idempotent)
     modslots::Stop();
     hostcalls::g = {};
 }
@@ -61,6 +64,8 @@ static void OnFrame(double dt)
     flufaware::Update(static_cast<float>(dt), coreframe::opts.flufWindows);
     if (hostcalls::g.SetKeepRunning)
         hostcalls::g.SetKeepRunning(coreframe::opts.runInBackground);
+    if (hostcalls::g.SetRawMouse)
+        hostcalls::g.SetRawMouse(coreframe::opts.mouseRaw);
 }
 
 static void OnOverlay()
@@ -105,6 +110,8 @@ static void OnDeviceLost()
 {
     if (alone::On())
         coreframe::OnDeviceLost();
+    else
+        hud2kit::OnDeviceLost(); // the options page draws with the kit here too (audit 65e F2)
 }
 
 static void Command(const char* line, char* reply, int replyLen)

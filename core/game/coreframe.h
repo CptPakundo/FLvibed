@@ -17,6 +17,7 @@ struct Options
     bool enabled = true;          // `set enabled`: the debug switch that stops the frame's modules
     int flufWindows = 2;          // fluf_windows: FLUF's windows 0 ignored, 1 player windows (keep-outs, the pad drives them), 2 all
     bool runInBackground = false; // run_in_background
+    bool mouseRaw = true;         // mouse_raw: the mouse's raw counts reach the game (core\dimouse.h SetRaw)
     int textSize = 100;           // text_size: FLvibed's own UI text, percent (80..150)
     int hudSize = 0;              // hud_size: 0 automatic, 1 small, 2 normal, 3 large (core\game\hudsize.h)
 };

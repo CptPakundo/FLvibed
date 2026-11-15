@@ -2,6 +2,7 @@
 // parse, pure (tests\hud2_sim_test.cpp). What each state fills is hud2.cpp Simulate; the lint (`hud2 lint`) reads the
 // frame each one draws.
 #pragma once
+#include "game/hudwake.h"
 #include <string>
 
 namespace hud2sim
@@ -53,6 +54,20 @@ inline std::string Names()
     for (const char* n : kNames)
         s += (s.empty() ? "" : "|") + std::string(n);
     return s;
+}
+
+// The wake a state's real cause brings under hud_fade 1 (core\game\hudwake.h Trig bits), given every frame the state
+// stands: without it the two states whose real cause is an input or an edge, not a held condition, faded to an empty
+// pass (audit 75_ / 133_ item 7: wake_shown 0 in every record). The real ones are not empty: the energy meter runs low
+// only while guns fire or the afterburner burns (Fire / Boost wake the ring), and a disruption ends a cruise (the Cruise
+// edge wakes the ring and the ship panel, the CRUISE DISRUPTED card shows). 0: the state wakes by its own model.
+inline unsigned Wake(const std::string& base)
+{
+    if (base == "lowenergy")
+        return hudwake::Fire;
+    if (base == "disrupt")
+        return hudwake::Cruise;
+    return 0;
 }
 
 // The state's name as `hud2 sim` / `hud2 state` print it ("-" when off)

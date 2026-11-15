@@ -101,7 +101,8 @@ cmd_uninstall() {
     [ "${2:-}" = "--keep-settings" ] && keep=1
     ini="$exe/dacom.ini"
     [ -f "$ini" ] && has_line "$ini" && { remove_line "$ini"; say "dacom.ini: $line removed"; }
-    rm -f "$exe/FLvibed.dll" "$exe/FLController.log" "$exe/FLSubtitles.log" "$exe/FLvibed_npc_stalls.log"
+    rm -f "$exe/FLvibed.dll" "$exe/FLController.log" "$exe/FLSubtitles.log" "$exe/FLvibed_npc_stalls.log" \
+          "$exe/FLvibed_crash.log" "$exe/FLvibed_crash.dmp"
     rm -rf "$exe/FLSubtitles" "$exe/FLvibed"
     if [ "$keep" = 0 ]; then
         rm -f "$exe/FLvibed.ini" "$exe/FLController.ini" "$exe/FLSubtitles.ini" "$exe"/*.before-0.2.0

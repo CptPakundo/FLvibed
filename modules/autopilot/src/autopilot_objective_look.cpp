@@ -13,7 +13,7 @@
 namespace autopilot
 {
 // ------------------------------------------------------------------ LOOK L0 (look_log): what LOOK would do, logged only
-// (modules\autopilot\docs\LOOK_PLAN.md; the pure verdict: lookahead.h). The adapter reads what the decision already reads - the
+// (the look-ahead plan, private; the pure verdict: lookahead.h). The adapter reads what the decision already reads - the
 // step's armed goals (AdvanceGoalsPeek: reads mission.cpp's memory, never writes it), the chain's (ChainGoals) and the next
 // step's (NextStepGoals), the contacts, the spawns, the leashes, the towards nag, the tethers - and changes nothing: no
 // start, no mode, no g_obj field. Behaviour-neutral with the switch on or off (the decision path is the same code).
@@ -229,7 +229,7 @@ static void LookFactsNow(const ObjectiveStep& st, ObjVerb verb, const std::vecto
 
 // At each objective decision with `look_log` on: the verdict, logged once per change (the key: step, kind, target,
 // trigger, the blockers' codes) with one line per kill candidate under the script's Act_Invulnerable (the game's own
-// GetInvincible against the script's floor - the M02 probe, LOOK_PLAN 4a). Returns nothing, starts nothing.
+// GetInvincible against the script's floor - the M02 probe, the look-ahead plan 4a). Returns nothing, starts nothing.
 // TIMER-DESTROY's facts now (lookahead.h TimerDestroy; `timer_destroy`): the step's advance from the script (cached per
 // step and system - mission::StepAdvanceOf walks the whole script), the ship's hull and batteries, a hostile ship shooting
 // at us within kSurvivalReach, the advancing path's next objective's place and the step's own navmarker.

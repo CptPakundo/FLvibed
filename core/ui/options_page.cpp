@@ -4,8 +4,9 @@
 // copy of any value lives here. A change goes to the bus at once (bus->Set: settings::Apply + the owner's `applied`); DEFAULT resets the tab's rows; CANCEL puts every value
 // back to the snapshot taken when the page opened; leaving saves every section with a change (bus->Save, the owner's ini writer). A preset row (autopilot `preset`, controller
 // `pad_preset`, the bundles) applies its table and reads CUSTOM when a member deviates. The rules (head states, what a head writes, what lists under YOU CHANGED) are
-// core\ui\options_rules.h. The tier `simple` always shows; `show_advanced` (Show all settings) adds the other rows and every bus row the spec does not name, raw, on the tab of
-// their owner; without it a hidden row away from its default comes back under YOU CHANGED. A key with no module on the bus is written to its file when the page keeps.
+// core\ui\options_rules.h. The tier `simple` always shows; `show_advanced` (Show all settings) adds the spec's other rows; without it a hidden row away from its default
+// comes back under YOU CHANGED. A bus row the spec does not name is never listed: it is set in its ini (docs\SETTINGS.md), and MORE counts the ones away from their
+// default (Other changed settings, RESET THEM). A key with no module on the bus is written to its file when the page keeps.
 //
 // Hosting: (a) inside the game's Options screen when the host switched to FLvibed's page (HostApi v18 OptionsPageState() == 2: the host hid the game's page controls; this draws
 // the page in the panel area with the game's measured geometry, FREELANCER_RE "Options screen"); (b) standalone as an overlay panel from the pause menu's sixth button, the
@@ -26,6 +27,7 @@
 #include "game/session.h" // MainMenuVisible: when the first-start card opens
 #include "modules_rules.h"
 #include "settings_reset.h" // the first card's stamp
+#include "ui/hud_door.h"
 #include "ui/views.h"
 #include "ui_buttons.h"
 #include "version.h"
@@ -61,17 +63,16 @@ enum class Host
     Standalone // the overlay panel
 };
 
-// One line of the current tab: a section header, a spec row, or a raw registry row.
+// One line of the current tab: a section header or a spec row.
 struct Entry
 {
     enum Kind
     {
         Header,
-        Row,
-        RawRow
+        Row
     } kind = Row;
     const uimeta::Row* meta = nullptr; // Row: the spec's row
-    const settings::Def* def = nullptr; // Row (with a registry row) / RawRow: the bus row
+    const settings::Def* def = nullptr; // Row with a registry row: the bus row
     std::string section, key;          // the bus section and registry key (Row: empty for a virtual row)
     std::wstring label;
     const char* help = "";
@@ -450,7 +451,8 @@ static int RowOwner(const char* section, const char* key)
                  {"npc_stall_log", modules::kNpc},         {"maneuver_button", modules::kAutopilot},  {"autopilot_key", modules::kAutopilot},
                  {"autopilot_cancel", modules::kAutopilot}, {"ap_hints", modules::kAutopilot},        {"maneuver_watchdog", -1},
                  {"text_size", -1},                        {"hud_size", -1},                          {"fluf_windows", -1},
-                 {"show_advanced", -1},                    {"button_hints", modules::kHud},           {"hit_effects", modules::kHud}};
+                 {"mouse_raw", -1},                        {"show_advanced", -1},                     {"button_hints", modules::kHud},
+                 {"hit_effects", modules::kHud}};
     for (const auto& r : kRows)
         if (!strcmp(key, r.key))
             return r.row;
@@ -550,33 +552,8 @@ static bool NamedByPreset(const uimeta::Row& row)
     return false;
 }
 
-// The tab whose head a bus row with no spec row of its own stands under, by its owner: a module with no tab lives on MORE.
-static int TabOfOwner(int row)
-{
-    const char* id = row == modules::kHud ? "hud" : row == modules::kController ? "controller" : row == modules::kSubtitles ? "subtitles" : row == modules::kAutopilot ? "autopilot" : "more";
-    for (int t = 0; t < uimeta::kTabCount; ++t)
-        if (!strcmp(uimeta::kTabs[t].id, id))
-            return t;
-    return 0;
-}
-
-// The spec key of the head of a [Modules] row (-1: none).
-static const char* HeadOfOwner(int row)
-{
-    if (row < 0)
-        return nullptr;
-    for (const uimeta::Tab& t : uimeta::kTabs)
-        for (int s = 0; s < t.count; ++s)
-            for (int r = 0; r < t.sections[s].count; ++r)
-            {
-                const uimeta::Row& x = t.sections[s].rows[r];
-                if (x.head && !strcmp(x.head, modules::kRowNames[row]))
-                    return x.key;
-            }
-    return nullptr;
-}
-
-// A registry row the spec does not name and no row lists: raw under Show all settings, a count on MORE otherwise.
+// A registry row the spec does not name and no row lists: never on the page (the ini and docs\SETTINGS.md hold it), a count on
+// MORE when it differs from its default.
 template <class Fn>
 static void ForEachRawRow(Fn fn)
 {
@@ -662,31 +639,6 @@ static void BuildEntries()
         HeaderEntry(L"YOU CHANGED");
         g_entries.insert(g_entries.end(), changed.begin(), changed.end());
     }
-    // Show all settings: every bus row the spec does not name, raw, on the tab of its owner
-    if (!advanced)
-        return;
-    bool header = false;
-    ForEachRawRow([&](const SettingsBusSection& sec, const settings::Def& d)
-                  {
-                      const int owner = RowOwner(sec.section, d.name);
-                      if (TabOfOwner(owner) != g_tab)
-                          return;
-                      if (!header)
-                      {
-                          HeaderEntry(L"ADVANCED");
-                          header = true;
-                      }
-                      Entry e;
-                      e.kind = Entry::RawRow;
-                      e.def = &d;
-                      e.section = sec.section;
-                      e.key = d.name;
-                      e.label = Widen(d.name);
-                      e.help = d.help ? d.help : "";
-                      e.head = HeadOfOwner(owner);
-                      e.interactive = true;
-                      g_entries.push_back(e);
-                  });
 }
 
 // Everything but a section label takes the focus: a row that cannot change says why in the description.
@@ -695,15 +647,22 @@ static bool Interactive(int i)
     return i >= 0 && i < static_cast<int>(g_entries.size()) && g_entries[i].kind != Entry::Header;
 }
 
-// The parent row (the spec's `parent` key) is off: the row is greyed and inert.
-static bool ParentOff(const Entry& e)
+// The parent row (the spec's `parent` key) is off: the row is greyed and inert. With `parentOn` the row is live only
+// while the parent holds that value (the aim assists: RETICLE aim only). A parent greyed by its own parent counts as off
+// (the hull pattern under the hull cue under the shield cue).
+static bool RowParentOff(const uimeta::Row& r, int depth)
 {
-    if (e.kind != Entry::Row || !e.meta->parent || e.meta->head)
+    if (!r.parent || r.head || depth > 4)
         return false;
-    const uimeta::Row* p = uimeta::FindRow(e.meta->parent);
+    const uimeta::Row* p = uimeta::FindRow(r.parent);
     if (!p || !p->regKey || p->head) // (a head has its own word on its rows)
         return false;
-    return atof(Get(p->section, p->regKey).c_str()) == 0;
+    return optrules::ParentOff(Get(p->section, p->regKey), r.parentOn) || RowParentOff(*p, depth + 1);
+}
+
+static bool ParentOff(const Entry& e)
+{
+    return e.kind == Entry::Row && RowParentOff(*e.meta, 0);
 }
 
 // ------------------------------------------------------------------ the heads
@@ -771,15 +730,18 @@ static std::string DimHelp(const Entry& e)
     return e.offHelp;
 }
 
-// Acting on a head: `pick` for the row with three words, the option chosen; else the wanted state. `confirmed`: the Controller's dialog was answered.
+// Acting on a head: `pick` for the row with words, the option chosen; else the wanted state. `confirmed`: the Controller's dialog was answered.
 static void ActHead(const uimeta::Row& head, bool on, int pick, bool confirmed)
 {
     const int row = ModuleRow(head);
     if (row < 0)
         return;
     const bool subtitles = row == modules::kSubtitles, controller = row == modules::kController;
-    const optrules::Feature feature = subtitles ? optrules::Feature::Subtitles : controller ? optrules::Feature::Controller : optrules::Feature::Other;
-    const bool other = feature != optrules::Feature::Other && Want(subtitles ? modules::kController : modules::kSubtitles);
+    const optrules::Feature feature = subtitles    ? optrules::Feature::Subtitles
+                                      : controller ? optrules::Feature::Controller
+                                      : row == modules::kHud && TwoKeys(head) ? optrules::Feature::Hud2
+                                                                              : optrules::Feature::Other;
+    const bool other = (subtitles || controller) && Want(subtitles ? modules::kController : modules::kSubtitles);
     const optrules::HeadPlan p = optrules::PlanHead(feature, TwoKeys(head), on, other, confirmed);
     if (p.ask)
     {
@@ -792,8 +754,9 @@ static void ActHead(const uimeta::Row& head, bool on, int pick, bool confirmed)
         const int option = pick >= 0 ? pick : p.live ? 0 : head.optionCount - 1; // (a head with words: its first is on, its last off)
         SetAnywhere(head.section, head.regKey, head.values ? head.values[option] : p.live ? "1" : "0");
     }
-    SetModule(modules::kRowNames[row], on);
-    Log("options page: head %s -> %s", head.key, on ? "on" : "off");
+    if (!p.moduleStays)
+        SetModule(modules::kRowNames[row], on);
+    Log("options page: head %s -> %s%s", head.key, on ? "on" : "off", p.moduleStays ? " (the module row kept)" : "");
 }
 
 // ------------------------------------------------------------------ presets
@@ -913,18 +876,6 @@ static std::wstring SliderCaption(const Entry& e, float v)
         s += std::string("  ") + m.options[std::clamp(i, 0, m.optionCount - 1)];
     }
     return Widen(s.c_str());
-}
-
-// A raw registry row's step for left / right (an unclamped number steps by 1 / 10 %).
-static double RawStep(const settings::Def& d, double v)
-{
-    if (d.type == settings::Int)
-        return 1;
-    if (d.min == 0 && d.max == 0)
-        return std::max(0.01, std::fabs(v) * 0.1);
-    if (d.max >= settings::kNoMax)
-        return std::max(0.01, std::fabs(v) * 0.1);
-    return (d.max - d.min) / 100.0;
 }
 
 static bool Changed(const Entry& e)
@@ -1549,7 +1500,7 @@ static void ActOnHead(const Entry& e, int dir)
     if (!optrules::Takes(state))
         return;
     const bool now = state == Head::Enabled || state == Head::EnabledAtNextStart; // what the row reads
-    if (m.kind == uimeta::Picker) // HUD 2: three words, the last is off
+    if (m.kind == uimeta::Picker) // HUD 2: words, the last is off
     {
         const int n = m.optionCount, i = now ? std::max(0, PickerIndex(e)) : n - 1, next = (i + (dir < 0 ? -1 : 1) + n) % n;
         ActHead(m, next != n - 1, next, false);
@@ -1589,26 +1540,6 @@ static void ActOnRow(Entry& e, int dir)
     }
     if (ParentOff(e))
         return;
-    if (e.kind == Entry::RawRow)
-    {
-        const settings::Def& d = *e.def;
-        if (d.type == settings::Bool)
-        {
-            const bool on = atof(Get(e.section, e.key).c_str()) != 0;
-            Set(e.section, e.key, (dir == 0 ? !on : dir > 0) ? "1" : "0");
-        }
-        else if ((d.type == settings::Int || d.type == settings::Float) && dir != 0)
-        {
-            const double v = atof(Get(e.section, e.key).c_str());
-            double nv = v + dir * RawStep(d, v);
-            if (!(d.min == 0 && d.max == 0))
-                nv = std::clamp(nv, static_cast<double>(d.min), static_cast<double>(d.max));
-            char buf[64];
-            sprintf_s(buf, d.type == settings::Int ? "%.0f" : "%g", nv);
-            Set(e.section, e.key, buf);
-        }
-        return;
-    }
     const uimeta::Row& m = *e.meta;
     switch (m.kind)
     {
@@ -1747,14 +1678,6 @@ static void ClickRow(Entry& e, int visibleIndex, float px, bool firstClick)
     if (ParentOff(e))
         return;
     const uikit::RowGeom g = GeomOf(visibleIndex);
-    if (e.kind == Entry::RawRow)
-    {
-        if (!firstClick)
-            return;
-        const uikit::PickerHit a = uikit::PickerArea(g);
-        ActOnRow(e, e.def->type == settings::Bool ? 0 : (px < a.x + a.w * 0.5f ? -1 : 1));
-        return;
-    }
     switch (e.meta->kind)
     {
     case uimeta::Slider:
@@ -1983,17 +1906,19 @@ void Update(double dtd)
     if (!g_open)
     {
         g_pressQueue.clear();
-        if (hostcalls::g.RealMouseWheel && !navview::Movable() && !views::HudPageOn()) // (the nav map's wheel is the map's, a NeuroNet page's the page's)
+        if (hostcalls::g.RealMouseWheel && !navview::Movable() && !huddoor::PageOn()) // (the nav map's wheel is the map's, a NeuroNet page's the page's)
             hostcalls::g.RealMouseWheel(); // drained while closed: no old notches on the next open
         g_sb.on = false, g_sbDrag = false, g_sbHeld = 0;
         return;
     }
     if (g_toastTime > 0)
         g_toastTime -= dt;
-    // a bus change from elsewhere (set / ap set / the ini): the entries' availability may change (show_advanced)
+    // a bus change from elsewhere: the entries' availability may change (show_advanced). The debug channel's `set` /
+    // `ap set` and `config reload` write the registry without the bus, so the generation stays: Show all settings
+    // changed that way is caught by its own value
     const SettingsBus* bus = Bus();
     const u32 gen = bus ? bus->Generation() : 0;
-    if (gen != g_busGeneration)
+    if (gen != g_busGeneration || ShowAdvanced() != g_lastAdvanced)
     {
         g_busGeneration = gen;
         const size_t was = g_entries.size();
@@ -2367,7 +2292,7 @@ static void DrawEntry(const uikit::Fonts& f, Entry& e, int visibleIndex, bool fo
                            std::max(1.0f, g.sh * 0.001f));
         return;
     }
-    const bool skin = views::SkinOn();
+    const bool skin = huddoor::SkinOn();
     const bool dim = Dimmed(e);
     uikit::RowStyle s;
     s.focused = focused && !skin; // HUD 2: the one focus style is drawn by DrawHud2Back
@@ -2407,17 +2332,8 @@ static void DrawEntry(const uikit::Fonts& f, Entry& e, int visibleIndex, bool fo
         if (dim)
             s.note = nullptr;
     }
-    uikit::RowLabel(f, g, s, e.label);
+    s.labelRight = uikit::RowLabel(f, g, s, e.label);
     const std::string v = e.key.empty() ? "" : Get(e.section, e.key);
-    if (e.kind == Entry::RawRow)
-    {
-        const settings::Def& d = *e.def;
-        if (d.type == settings::Bool)
-            uikit::RowToggle(f, g, s, atof(v.c_str()) != 0);
-        else
-            uikit::RowPicker(f, g, s, Widen(v.c_str()));
-        return;
-    }
     const uimeta::Row& m = *e.meta;
     switch (m.kind)
     {
@@ -2681,7 +2597,7 @@ void Draw()
     if (hostcalls::g.GetD3DDevice)
         render::SetDevice(hostcalls::g.GetD3DDevice()); // the renderer's device (in menus nothing else sets it)
     const uikit::Fonts& f = uikit::PageFontsFor(static_cast<int>(l.sh), static_cast<int>(l.k * 100 + 0.5f));
-    const bool hud2 = views::SkinOn();
+    const bool hud2 = huddoor::SkinOn();
     if (hud2 && f.ok)
         DrawHud2Back(l, static_cast<int>(g_entries.size()));
     if (!f.ok || !render::Begin(f.label))
@@ -2796,7 +2712,7 @@ static std::string RowsReport()
             o << "[" << uikit::Narrow(e.label) << "]\n";
             continue;
         }
-        o << (e.kind == Entry::RawRow ? "raw " : "") << (e.kind == Entry::Row ? e.meta->key : e.key);
+        o << (e.kind == Entry::Row ? e.meta->key : e.key);
         if (!e.key.empty())
         {
             o << " = " << Get(e.section, e.key);

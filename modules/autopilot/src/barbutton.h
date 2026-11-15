@@ -1,7 +1,7 @@
 // The maneuver bar's fifth button (the Advanced Autopilot): its icon and state (docs\UI_PLAN.md 2). The host creates
 // the native button (hostcalls SetUiButton / UiButtonRect) and routes its clicks (kUiBtnBar) to
 // OnClick; OnKey sees every raw key (the autopilot key, [Controller] autopilot_key). Implemented in barbutton.cpp (the
-// HOST track of the UI build); this header is the fixed contract between the tracks (docs\UI_BUILD.md 2).
+// HOST track of the UI build); this header is the fixed contract between the tracks (the UI build record 2, private).
 #pragma once
 #include "common.h"
 

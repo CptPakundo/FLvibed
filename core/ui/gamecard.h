@@ -27,7 +27,8 @@ bool PlaceBy(float bx0, float by0, float bx1, float by1, float stripRight, float
 bool TipCorner(u32 tip, float& x, float& y);
 // The shown card's top-left, on screen only.
 bool GameCardCorner(float& x, float& y);
-// Once per frame before the UI pass, under ui_style 0. `scene`: the letterbox is up, the card stays the game's.
+// Once per frame before the UI pass, under ui_style 0, while the pad is the device (with keyboard and mouse the card stays where the game puts it:
+// the owner's answer of 13 Nov 2026 to card Q6 of audit 102_). `scene`: the letterbox is up, the card stays the game's.
 void NativeCard(bool scene);
 
 struct Native

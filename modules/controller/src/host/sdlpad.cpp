@@ -107,6 +107,7 @@ static volatile LONG g_outputOnly = 0; // started for an Xbox pad's four motors:
 static HANDLE g_hookThread = nullptr;
 static DWORD g_hookThreadId = 0;
 static volatile LONG g_filterOn = 0, g_lastInput = 0, g_dropped = 0, g_said = 0;
+static volatile LONG g_hookMouse = 0; // the hook thread also hooks the mouse (padbackend::kFilterMouse), set before it starts
 static volatile LONG g_pressedLatch = 0; // every button seen held since the last TakePressed
 static float g_stickDeadzone = 0.24f, g_triggerThreshold = 0.12f;
 
@@ -173,20 +174,21 @@ static DWORD WINAPI HookThread(void*)
 {
     HMODULE self = nullptr;
     GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>(&HookThread), &self);
-    HHOOK keys = SetWindowsHookExA(WH_KEYBOARD_LL, KeyHook, self, 0), mouse = SetWindowsHookExA(WH_MOUSE_LL, MouseHook, self, 0);
+    const bool wantMouse = g_hookMouse != 0; // (padbackend::kFilterMouse, `pad_mapper_mouse`: without it no mouse hook, and dimouse sees no mapper's motion or buttons)
+    HHOOK keys = SetWindowsHookExA(WH_KEYBOARD_LL, KeyHook, self, 0), mouse = wantMouse ? SetWindowsHookExA(WH_MOUSE_LL, MouseHook, self, 0) : nullptr;
     // (a low-level hook runs on this thread and maps no module: the exe's handle serves as well. A machine can refuse every DLL's handle with error 126, whichever the DLL and
     // the process: seen 6 Nov 2026 from a bare PowerShell with six system DLLs, FLvibed's handle and file being right. The mapper's keys then counted twice)
-    if (!keys || !mouse)
+    if (!keys || (wantMouse && !mouse))
     {
         const DWORD first = GetLastError();
         const HMODULE exe = GetModuleHandleA(nullptr);
         if (!keys)
             keys = SetWindowsHookExA(WH_KEYBOARD_LL, KeyHook, exe, 0);
-        if (!mouse)
+        if (wantMouse && !mouse)
             mouse = SetWindowsHookExA(WH_MOUSE_LL, MouseHook, exe, 0);
         Log("SDL3 pad backend: the low-level hooks by the DLL's handle %p: error %lu; by the exe's: keys %d mouse %d", self, first, keys ? 1 : 0, mouse ? 1 : 0);
     }
-    if (!keys || !mouse)
+    if (!keys || (wantMouse && !mouse))
         Log("SDL3 pad backend: no low-level hook (error %lu): a mapper's keys may count twice", GetLastError());
     MSG m;
     while (GetMessageA(&m, nullptr, 0, 0) > 0)
@@ -202,10 +204,11 @@ static DWORD WINAPI HookThread(void*)
 void Filter(int on, float stickDeadzone, float triggerThreshold)
 {
     g_stickDeadzone = stickDeadzone, g_triggerThreshold = triggerThreshold;
-    InterlockedExchange(&g_filterOn, on);
-    if (on && !g_hookThread)
-        g_hookThread = CreateThread(nullptr, 0, HookThread, nullptr, 0, &g_hookThreadId);
-    else if (!on && g_hookThread)
+    const bool keys = (on & padbackend::kFilterKeys) != 0;
+    const LONG mouse = keys && (on & padbackend::kFilterMouse) ? 1 : 0;
+    InterlockedExchange(&g_filterOn, keys ? 1 : 0);
+    // off, or the mouse hook wanted or no longer wanted (a live `set pad_mapper_mouse`): the hook thread ends, and starts again below with the new set
+    if (g_hookThread && (!keys || mouse != g_hookMouse))
     {
         PostThreadMessageA(g_hookThreadId, WM_QUIT, 0, 0);
         WaitForSingleObject(g_hookThread, 1000);
@@ -213,6 +216,11 @@ void Filter(int on, float stickDeadzone, float triggerThreshold)
         g_hookThread = nullptr;
         for (int i = 0; i < 3; ++i)
             dimouse::MaskInjectedButton(i, false);
+    }
+    if (keys && !g_hookThread)
+    {
+        InterlockedExchange(&g_hookMouse, mouse);
+        g_hookThread = CreateThread(nullptr, 0, HookThread, nullptr, 0, &g_hookThreadId);
     }
 }
 
@@ -303,7 +311,7 @@ static HANDLE g_done = nullptr;         // set by the thread when it answered a 
 static ShmBlock* TestShm()
 {
     ShmBlock* s = shm::Get();
-    return s && s->version >= 3 ? s : nullptr;
+    return s;
 }
 
 // One command SDL sent to a test pad (on this thread, inside SDL's call): the ring the harness reads (Get-FLSdlPadOut).

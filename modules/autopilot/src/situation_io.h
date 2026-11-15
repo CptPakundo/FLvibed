@@ -1,4 +1,4 @@
-// The snapshot as text (`snap v5`, A37_PLAN S1-S5; v1-v4 texts still parse, with their fields, and write back byte for
+// The snapshot as text (`snap v5`, the A37 plan's S1-S5, private; v1-v4 texts still parse, with their fields, and write back byte for
 // byte; v2 added `script ... source_live=`, the `inigoal` / `inileash` records and `livetrig ... leads= hops=`; v3 the
 // `armed`, `queue` and `decided` records, `obj ... refs_obj=`, `place ... entry= entry_pos=`, `pilot ... tractor=`,
 // `settings ... tractor_exit_*`, `leash ... off= ship= placed= opos=` and goal objects as "id:placed:x:y:z"; v4 the

@@ -139,7 +139,9 @@ try {
         $after2 = Shot "${r}_after2"
         $lines = Get-Content $log
         Check (@($lines | Where-Object { $_ -match 'FATAL' }).Count -eq 1) 'one fault in the log'
-        Check (@($lines | Where-Object { $_ -match 'given back' }).Count -eq 1) 'one give-back in the log'
+        # (the fault's own give-back line: controller main.cpp GiveBack / core pagehost.cpp; 'given back' alone also met windowtext's
+        # "windowtext off: ... placed controls given back" event, 13 Nov 2026)
+        Check (@($lines | Where-Object { $_ -match "the game's panels and held input given back" }).Count -eq 1) 'one give-back in the log'
         Check (@($lines | Where-Object { $_ -match 'give-back faulted' }).Count -eq 0) 'the give-back did not fault'
         Check ((Send-FLS 'ping') -eq 'pong') 'the subtitles answer'
         $b0 = Band $before; $b1 = Band $after

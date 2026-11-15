@@ -4,6 +4,8 @@
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 
+#include "rawmouse_rules.h"
+
 namespace dimouse
 {
 typedef HRESULT(WINAPI* GetDeviceStateFn)(void* self, DWORD cb, void* data);
@@ -109,28 +111,317 @@ void MaskInjectedButton(int index, bool down)
         InterlockedAnd(&g_injectedButtons, ~(1L << index));
 }
 
-// This read's motion is a mapper's alone: injected motion since the last read and no real motion
-static bool TakeInjectedOnly()
+// What the low-level hook noted since the last read: a mapper's motion dropped (injected), real motion (hardware)
+static void TakeInjected(bool& injected, bool& hardware)
 {
-    const LONG injected = InterlockedExchange(&g_injectedMotion, 0), hardware = InterlockedExchange(&g_hardwareMotion, 0);
-    return injected && !hardware;
+    injected = InterlockedExchange(&g_injectedMotion, 0) != 0;
+    hardware = InterlockedExchange(&g_hardwareMotion, 0) != 0;
+}
+
+// ------------------------------------------------------------------ the raw mouse (setting `mouse_raw`, rawmouse_rules.h)
+// The game's DirectInput mouse carries a speed-dependent gain (3-4 px per raw count slow, 5.7-7 fast; docs\FREELANCER_RE.md "## Mouse"):
+// a Raw Input listener of the host, on its own thread with a message-only window, counts the mouse's own motion, and the read that
+// carries motion takes those counts in place of the device's lX / lY. It never takes the mouse from another part of the process: the
+// mouse's raw input (usage page 1, usage 2) is registered only when nobody in the process has it, never with RIDEV_NOLEGACY (the game
+// needs its mouse messages), and checked every second while on; any doubt leaves the game's own mouse for the run.
+enum RawStatus : LONG
+{
+    kRawOff = 0,        // the setting
+    kRawStarting,       // the thread registers
+    kRawOn,             // the listener holds the mouse's registration
+    kRawNoThread,       // off for the run: no thread / window / registration
+    kRawNoWindow,
+    kRawRegisterFailed,
+    kRawTaken,          // off for the run: the mouse was registered by another part of the process before ours
+    kRawLost            // off for the run: our registration was replaced or removed while on
+};
+static const char* const kRawStatusNames[] = {"off (mouse_raw 0)", "starting", "on", "off (no thread)", "off (no window)",
+                                              "off (registration refused)", "off (the mouse's raw input is another's)",
+                                              "off (registration lost)"};
+static volatile LONG g_rawStatus = kRawOff;
+static bool g_rawStuck = false; // off for the run: a failure, or another part of the process holds the mouse
+static HANDLE g_rawThread = nullptr, g_rawStop = nullptr;
+static HWND g_rawWnd = nullptr; // the listener's window, set before kRawOn
+static volatile LONG g_rawHwX = 0, g_rawHwY = 0, g_rawInjX = 0, g_rawInjY = 0; // counts since the last read
+static volatile LONG g_rawHwMoves = 0, g_rawInjMoves = 0, g_rawAbsolute = 0;    // relative motion events since the last read; absolute seen
+static volatile LONG g_rawLastMove = 0, g_rawHeard = 0;                         // GetTickCount of the last relative motion event; any yet
+static volatile LONG g_rawHwTotal = 0, g_rawInjTotal = 0, g_rawAbsTotal = 0, g_rawBehind = 0; // since the start (debug `state`)
+static rawmouse::State g_rawState;
+static u32 g_readsBy[5] = {}; // reads by rawmouse::Source
+static u32 g_silentSaid = 0;
+
+static void NoteRaw(const RAWINPUT& ri)
+{
+    const RAWMOUSE& m = ri.data.mouse;
+    if (m.usFlags & MOUSE_MOVE_ABSOLUTE)
+    {
+        InterlockedExchange(&g_rawAbsolute, 1);
+        InterlockedIncrement(&g_rawAbsTotal);
+        return;
+    }
+    if (!m.lLastX && !m.lLastY)
+        return; // a button or the wheel: DirectInput's
+    const bool injected = ri.header.hDevice == nullptr;
+    InterlockedIncrement(injected ? &g_rawInjTotal : &g_rawHwTotal);
+    DWORD front = 0;
+    GetWindowThreadProcessId(GetForegroundWindow(), &front);
+    if (front != GetCurrentProcessId()) // (the process, not the main window: a wrapper's window in front is the game's too)
+    {
+        InterlockedIncrement(&g_rawBehind); // the game behind: nothing of the real mouse may reach it, now or when it comes back
+        return;
+    }
+    InterlockedExchangeAdd(injected ? &g_rawInjX : &g_rawHwX, m.lLastX);
+    InterlockedExchangeAdd(injected ? &g_rawInjY : &g_rawHwY, m.lLastY);
+    InterlockedIncrement(injected ? &g_rawInjMoves : &g_rawHwMoves);
+    InterlockedExchange(&g_rawLastMove, static_cast<LONG>(GetTickCount()));
+    InterlockedExchange(&g_rawHeard, 1);
+}
+
+static LRESULT CALLBACK RawWndProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+    if (msg == WM_INPUT)
+    {
+        RAWINPUT ri;
+        UINT size = sizeof(ri);
+        if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lp), RID_INPUT, &ri, &size, sizeof(RAWINPUTHEADER)) != static_cast<UINT>(-1) &&
+            ri.header.dwType == RIM_TYPEMOUSE)
+            NoteRaw(ri);
+    }
+    return DefWindowProcA(wnd, msg, wp, lp); // (WM_INPUT too: the system frees the input)
+}
+
+// The mouse's raw input registration in this process: 1 registered (target in `target`), 0 not, -1 unknown. `log` lists every
+// registration the process holds.
+static int MouseRegistration(HWND* target, bool log)
+{
+    RAWINPUTDEVICE list[32];
+    UINT n = 32;
+    const UINT got = GetRegisteredRawInputDevices(list, &n, sizeof(RAWINPUTDEVICE));
+    if (got == static_cast<UINT>(-1))
+    {
+        if (log)
+            Log("dimouse: raw input: the process's registrations unreadable (error %lu, %u)", GetLastError(), n);
+        return -1;
+    }
+    if (log && !got)
+        Log("dimouse: raw input: the process has no raw input registration before FLvibed's");
+    int found = 0;
+    for (UINT i = 0; i < got; ++i)
+    {
+        char cls[64] = "-";
+        if (log)
+        {
+            if (list[i].hwndTarget)
+                GetClassNameA(list[i].hwndTarget, cls, sizeof(cls));
+            Log("dimouse: raw input: the process has page 0x%02X usage 0x%02X flags 0x%08lX target %p (class %s)", list[i].usUsagePage,
+                list[i].usUsage, list[i].dwFlags, list[i].hwndTarget, cls);
+        }
+        if (list[i].usUsagePage == 1 && list[i].usUsage == 2)
+        {
+            found = 1;
+            if (target)
+                *target = list[i].hwndTarget;
+        }
+    }
+    return found;
+}
+
+static void RawFail(RawStatus why, const char* what)
+{
+    Log("dimouse: raw mouse input off for this run: %s - the game's own mouse", what);
+    InterlockedExchange(&g_rawStatus, why);
+}
+
+static DWORD WINAPI RawThread(void*)
+{
+    static const char kClass[] = "FLvibedRawMouse";
+    HMODULE self = nullptr;
+    GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>(&RawThread), &self);
+    WNDCLASSA wc = {};
+    wc.lpfnWndProc = RawWndProc;
+    wc.hInstance = self;
+    wc.lpszClassName = kClass;
+    RegisterClassA(&wc); // (a second start finds it registered)
+    HWND wnd = CreateWindowExA(0, kClass, "", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, self, nullptr);
+    if (!wnd)
+    {
+        char what[64];
+        sprintf_s(what, "no message window (error %lu)", GetLastError());
+        RawFail(kRawNoWindow, what);
+        return 0;
+    }
+    HWND other = nullptr;
+    const int before = MouseRegistration(&other, true);
+    if (before != 0)
+    {
+        RawFail(before > 0 ? kRawTaken : kRawRegisterFailed,
+                before > 0 ? "the mouse's raw input is already registered in the process (DirectInput or a wrapper): registering would take it away"
+                           : "the process's raw input registrations could not be read");
+        DestroyWindow(wnd);
+        return 0;
+    }
+    RAWINPUTDEVICE d = {1, 2, RIDEV_INPUTSINK, wnd}; // (never RIDEV_NOLEGACY: the game needs its mouse messages)
+    if (!RegisterRawInputDevices(&d, 1, sizeof(d)))
+    {
+        char what[64];
+        sprintf_s(what, "RegisterRawInputDevices failed (error %lu)", GetLastError());
+        RawFail(kRawRegisterFailed, what);
+        DestroyWindow(wnd);
+        return 0;
+    }
+    g_rawWnd = wnd;
+    InterlockedExchange(&g_rawStatus, kRawOn);
+    Log("dimouse: raw mouse input on (window %p): the game's reads take the mouse's own counts, 1 raw count = 1 DirectInput count", wnd);
+    for (;;)
+    {
+        if (MsgWaitForMultipleObjects(1, &g_rawStop, FALSE, INFINITE, QS_ALLINPUT) != WAIT_OBJECT_0 + 1)
+            break; // (the stop event, or a failed wait)
+        MSG msg;
+        while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE))
+            DispatchMessageA(&msg);
+    }
+    HWND now = nullptr;
+    if (MouseRegistration(&now, false) > 0 && now == wnd) // (never another's: a replaced registration stays theirs)
+    {
+        RAWINPUTDEVICE remove = {1, 2, RIDEV_REMOVE, nullptr};
+        RegisterRawInputDevices(&remove, 1, sizeof(remove));
+    }
+    DestroyWindow(wnd);
+    return 0;
+}
+
+static void ClearRaw()
+{
+    InterlockedExchange(&g_rawHwX, 0), InterlockedExchange(&g_rawHwY, 0);
+    InterlockedExchange(&g_rawInjX, 0), InterlockedExchange(&g_rawInjY, 0);
+    InterlockedExchange(&g_rawHwMoves, 0), InterlockedExchange(&g_rawInjMoves, 0), InterlockedExchange(&g_rawAbsolute, 0);
+}
+
+static void StopRaw(RawStatus after)
+{
+    if (g_rawThread)
+    {
+        SetEvent(g_rawStop);
+        if (WaitForSingleObject(g_rawThread, 1000) != WAIT_OBJECT_0)
+        {
+            Log("dimouse: the raw mouse thread did not stop within 1 s - left, off for this run");
+            after = kRawNoThread, g_rawStuck = true;
+        }
+        else
+            CloseHandle(g_rawThread), CloseHandle(g_rawStop);
+        g_rawThread = g_rawStop = nullptr;
+        g_rawWnd = nullptr;
+    }
+    InterlockedExchange(&g_rawStatus, after);
+    g_rawState = {};
+    ClearRaw();
+}
+
+void SetRaw(bool on)
+{
+    const LONG status = g_rawStatus;
+    if (g_rawThread && status >= kRawNoThread) // the thread failed and ended by itself: off for the run
+    {
+        WaitForSingleObject(g_rawThread, 1000);
+        CloseHandle(g_rawThread), CloseHandle(g_rawStop);
+        g_rawThread = g_rawStop = nullptr;
+        g_rawStuck = true;
+        return;
+    }
+    if (on && !g_rawThread && !g_rawStuck)
+    {
+        ClearRaw();
+        g_rawState = {};
+        g_rawStop = CreateEventA(nullptr, TRUE, FALSE, nullptr);
+        InterlockedExchange(&g_rawStatus, kRawStarting);
+        g_rawThread = g_rawStop ? CreateThread(nullptr, 0, RawThread, nullptr, 0, nullptr) : nullptr;
+        if (!g_rawThread)
+        {
+            char what[64];
+            sprintf_s(what, "no thread (error %lu)", GetLastError());
+            RawFail(kRawNoThread, what);
+            if (g_rawStop)
+                CloseHandle(g_rawStop), g_rawStop = nullptr;
+            g_rawStuck = true;
+        }
+    }
+    else if (!on && g_rawThread)
+    {
+        StopRaw(kRawOff);
+        Log("dimouse: raw mouse input off (mouse_raw 0): the game's own mouse");
+    }
+}
+
+// While on, once a second: the registration is still ours. Replaced (DirectInput or a wrapper registering after us) or removed: off for
+// the run, the other's registration left alone.
+static void RawVerify()
+{
+    static DWORD last = 0;
+    const DWORD now = GetTickCount();
+    if (g_rawStatus != kRawOn || now - last < 1000)
+        return;
+    last = now;
+    HWND target = nullptr;
+    const int r = MouseRegistration(&target, false);
+    if (r == 1 && target == g_rawWnd)
+        return;
+    Log("dimouse: raw mouse input lost: the mouse's raw input is now %s - off for this run, the game's own mouse",
+        r == 1 ? "another window's" : r == 0 ? "unregistered" : "unreadable");
+    if (r == 1)
+        MouseRegistration(nullptr, true);
+    StopRaw(kRawLost);
+    g_rawStuck = true;
+}
+
+// One read that carries motion: `x` / `y` hold the device's own and get what the game is given (rawmouse::Decide). `acquired` false (the call
+// failed, the game behind): the sums since the last read are dropped.
+static rawmouse::Source RawMotion(bool acquired, bool dropInjected, LONG& x, LONG& y)
+{
+    rawmouse::ReadIn in;
+    in.rawOn = g_rawStatus == kRawOn;
+    in.acquired = acquired;
+    in.dropInjected = dropInjected;
+    in.absoluteSeen = InterlockedExchange(&g_rawAbsolute, 0) != 0;
+    in.hwEvents = InterlockedExchange(&g_rawHwMoves, 0), in.injEvents = InterlockedExchange(&g_rawInjMoves, 0);
+    in.hwX = InterlockedExchange(&g_rawHwX, 0), in.hwY = InterlockedExchange(&g_rawHwY, 0);
+    in.injX = InterlockedExchange(&g_rawInjX, 0), in.injY = InterlockedExchange(&g_rawInjY, 0);
+    in.msSinceRaw = g_rawHeard ? GetTickCount() - static_cast<DWORD>(g_rawLastMove) : ~0u;
+    in.diX = x, in.diY = y;
+    const bool wasSilent = g_rawState.passThrough;
+    const rawmouse::ReadOut out = rawmouse::Decide(in, g_rawState);
+    ++g_readsBy[static_cast<int>(out.source)];
+    if (out.source == rawmouse::Source::Silent && !wasSilent && g_silentSaid++ < 5)
+        Log("dimouse: raw mouse silent while DirectInput moved (%u ms): DirectInput's motion until the next raw hardware event", in.msSinceRaw);
+    if (acquired)
+        x = out.x, y = out.y;
+    return out.source;
 }
 
 static HRESULT WINAPI GetDeviceStateHook(void* self, DWORD cb, void* data)
 {
     HRESULT hr = g_origGetState(self, cb, data);
+    const bool acquired = SUCCEEDED(hr) && !g_background; // (the real mouse reaches the game only through a device it holds, in front)
     if (self == g_device && data && cb >= sizeof(DIMOUSESTATE) && BackgroundFailure(hr))
     {
         memset(data, 0, cb); // no physical input: the virtual mouse alone
         hr = DI_OK;
+    }
+    if (self == g_device && !acquired && MotionViaState())
+    {
+        LONG x = 0, y = 0;
+        RawMotion(false, false, x, y); // (the raw sums dropped)
     }
     if (self != g_device || !data || cb < sizeof(DIMOUSESTATE) || FAILED(hr))
         return hr;
 
     ++g_stateCalls;
     DIMOUSESTATE2* st = static_cast<DIMOUSESTATE2*>(data);
-    if (TakeInjectedOnly())
+    bool injected, hardware;
+    TakeInjected(injected, hardware);
+    if (injected && !hardware)
         st->lX = st->lY = st->lZ = 0;
+    if (acquired && MotionViaState())
+        RawMotion(true, injected, st->lX, st->lY); // raw counts in place of the device's (a mapper's dropped: the hardware's alone)
     if (const LONG mask = g_injectedButtons)
         for (int i = 0; i < 4; ++i)
             if (mask & (1L << i))
@@ -163,10 +454,17 @@ static HRESULT WINAPI GetDeviceDataHook(void* self, DWORD cbObj, DIDEVICEOBJECTD
 {
     const DWORD capacity = inOut ? *inOut : 0;
     HRESULT hr = g_origGetData(self, cbObj, rgdod, inOut, flags);
+    const bool acquired = SUCCEEDED(hr) && !g_background;
+    const bool motionHere = !(Mem<u8>(exe::MouseObj, fl::MOUSE_FLAGS) & 0x40); // (flag 0x40: motion comes by GetDeviceState, the flags wait for it)
     if (self == g_device && inOut && BackgroundFailure(hr))
     {
         *inOut = 0; // no physical events: the virtual ones alone
         hr = DI_OK;
+    }
+    if (self == g_device && !acquired && motionHere && !(flags & DIGDD_PEEK))
+    {
+        LONG x = 0, y = 0;
+        RawMotion(false, false, x, y); // (the raw sums dropped)
     }
     if (self != g_device || !rgdod || !inOut || FAILED(hr) || (flags & DIGDD_PEEK) ||
         cbObj != sizeof(DIDEVICEOBJECTDATA))
@@ -176,7 +474,10 @@ static HRESULT WINAPI GetDeviceDataHook(void* self, DWORD cbObj, DIDEVICEOBJECTD
     g_lastDataTick = GetTickCount();
     DWORD n = *inOut;
     const LONG mask = g_injectedButtons;
-    const bool motionOff = !(Mem<u8>(exe::MouseObj, fl::MOUSE_FLAGS) & 0x40) && TakeInjectedOnly(); // (flag 0x40: motion comes by GetDeviceState, the flags wait for it)
+    bool injected = false, hardware = false;
+    if (motionHere)
+        TakeInjected(injected, hardware);
+    const bool motionOff = injected && !hardware;
     if (mask || motionOff) // a mapper's events out of the buffer
     {
         DWORD kept = 0;
@@ -189,6 +490,36 @@ static HRESULT WINAPI GetDeviceDataHook(void* self, DWORD cbObj, DIDEVICEOBJECTD
             rgdod[kept++] = rgdod[i];
         }
         *inOut = n = kept;
+    }
+    if (motionHere && acquired) // the raw counts in place of the device's X / Y events (as GetDeviceStateHook's lX / lY)
+    {
+        LONG x = 0, y = 0;
+        for (DWORD i = 0; i < n; ++i)
+            if (rgdod[i].dwOfs == DIMOFS_X)
+                x += static_cast<int>(rgdod[i].dwData);
+            else if (rgdod[i].dwOfs == DIMOFS_Y)
+                y += static_cast<int>(rgdod[i].dwData);
+        if (RawMotion(true, injected, x, y) == rawmouse::Source::Raw)
+        {
+            DWORD kept = 0;
+            for (DWORD i = 0; i < n; ++i)
+                if (rgdod[i].dwOfs != DIMOFS_X && rgdod[i].dwOfs != DIMOFS_Y)
+                    rgdod[kept++] = rgdod[i];
+            n = kept;
+            const LONG value[2] = {x, y};
+            const DWORD axis[2] = {static_cast<DWORD>(DIMOFS_X), static_cast<DWORD>(DIMOFS_Y)};
+            for (int a = 0; a < 2; ++a)
+                if (value[a] && n < capacity)
+                {
+                    rgdod[n].dwOfs = axis[a];
+                    rgdod[n].dwData = static_cast<DWORD>(value[a]);
+                    rgdod[n].dwTimeStamp = GetTickCount();
+                    rgdod[n].dwSequence = ++g_sequence;
+                    rgdod[n].uAppData = 0;
+                    ++n;
+                }
+            *inOut = n;
+        }
     }
     if (n)
         g_lastRealTick = g_lastDataTick;
@@ -288,6 +619,7 @@ static void ClampInBorderless()
 
 void Update()
 {
+    RawVerify();
     void* dev = Mem<void*>(exe::MouseObj, fl::MOUSE_DI_DEVICE);
     if (!dev)
         return;
@@ -382,10 +714,17 @@ void Reset()
 
 std::string Stats()
 {
-    char buf[256];
-    sprintf_s(buf, "device=%p flags=0x%02X stateCalls=%u dataCalls=%u injectedEvents=%u scale=%.3f", g_device,
-              g_device ? Mem<u8>(exe::MouseObj, fl::MOUSE_FLAGS) : 0, g_stateCalls, g_dataCalls, g_dataInjected,
-              CountScale());
+    char buf[512];
+    const LONG status = g_rawStatus;
+    sprintf_s(buf,
+              "device=%p flags=0x%02X stateCalls=%u dataCalls=%u injectedEvents=%u scale=%.3f raw=%s rawHwEvents=%ld rawInjEvents=%ld "
+              "rawAbsEvents=%ld rawBehind=%ld readsRaw=%u readsDiOff=%u readsDiAbsolute=%u readsDiSilent=%u readsNothing=%u",
+              g_device, g_device ? Mem<u8>(exe::MouseObj, fl::MOUSE_FLAGS) : 0, g_stateCalls, g_dataCalls, g_dataInjected, CountScale(),
+              status >= 0 && status <= kRawLost ? kRawStatusNames[status] : "?", static_cast<long>(g_rawHwTotal),
+              static_cast<long>(g_rawInjTotal), static_cast<long>(g_rawAbsTotal), static_cast<long>(g_rawBehind),
+              g_readsBy[static_cast<int>(rawmouse::Source::Raw)], g_readsBy[static_cast<int>(rawmouse::Source::Off)],
+              g_readsBy[static_cast<int>(rawmouse::Source::Absolute)], g_readsBy[static_cast<int>(rawmouse::Source::Silent)],
+              g_readsBy[static_cast<int>(rawmouse::Source::Nothing)]);
     return buf;
 }
 } // namespace dimouse

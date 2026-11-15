@@ -22,5 +22,7 @@ bool Hides();
 int Prompts(views::PagePrompt* out, int max);
 unsigned Pad(unsigned pressed, unsigned held, float dt);
 void Shutdown();
+// HUD 2 leaving, once a frame from its first (`first`): true when no page stands any more, its window's close pressed a frame after windowtext stood down.
+bool Leave(bool first);
 std::string Command(std::istream& in);
 } // namespace basepage

@@ -1,0 +1,4 @@
+{
+  "_about": "A layout file for the design bench (tools\\hudbench\\README.md): each line one number of a HUD 2 layout preset, as core\\ui_meta.h holds it (from docs\\UI_SPEC.json hud2_presets), changed for one bench run only. Names: build\\bench\\flbench.exe layout-names. This one lowers Standard's loadout panel in a fight from 0.15 to 0.12 of the screen's height.",
+  "standard.combat.loadout.h": 0.12
+}

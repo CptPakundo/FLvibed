@@ -9,6 +9,8 @@
 // wanted (18 MB: never on the game's frame); the texture is built on the game thread once the pixels are ready. Fails
 // closed: no file, no entry, an unknown format -> Ready() stays false and the caller draws its own shapes.
 // The cells by meaning are the mock-up's (tools\uimock\hud2.py ICON). Compiled into each module part that uses it.
+// The decoding (file bytes to the atlas pixels, no device, no thread) is flicons_decode.h; this half keeps the worker
+// thread, the textures and the UVs.
 #pragma once
 #include "common.h"
 
@@ -48,6 +50,12 @@ enum Icon : int
     Lead,    // the four-triangle lead marker
     Count
 };
+// The icons' names as written in the design bench's display lists (icon:<name>.<cell>; tools\hudbench\FORMAT.md): the
+// enum's names, in its order.
+constexpr const char* kIconNames[Count] = {"Cruise",  "Map",      "Free",     "Goto",  "Dock",      "Formation", "Comms",
+                                           "Player",  "Fighter",  "Enemy",    "Station", "JumpGate", "Lane",      "Waypoint",
+                                           "Planet",  "Transport", "Tractor", "Important", "Info",   "Next",      "Star",
+                                           "Mine",    "Group",    "Loot",     "List",  "Bracket",   "Arrow",     "Lead"};
 
 // Starts the load on first use; true once the atlas texture exists on `device` (call from the game thread with
 // render::SetDevice(device) done: the texture is built through core\game\render).

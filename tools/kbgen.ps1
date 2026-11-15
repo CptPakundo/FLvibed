@@ -17,13 +17,15 @@ $null = New-Item -ItemType Directory -Force $out
 # Fingerprint: the exe's hash + every DATA file's size and time (cheap, changes with any install update)
 $exeHash = (Get-FileHash $exe -Algorithm SHA256).Hash.Substring(0, 16)
 $sb = [Text.StringBuilder]::new()
-Get-ChildItem $data -Recurse -File | Sort-Object FullName | ForEach-Object { [void]$sb.Append("$($_.FullName.Length)$($_.Length)$($_.LastWriteTimeUtc.Ticks)") }
+# (the path length counted is the one UNDER the DATA folder: the full path differs between the main checkout and a lane's junction to the same install, which made every lane read "stale", 14 Nov 2026)
+Get-ChildItem $data -Recurse -File | Sort-Object FullName | ForEach-Object { [void]$sb.Append("$($_.FullName.Length - $data.Length)$($_.Length)$($_.LastWriteTimeUtc.Ticks)") }
 $dataHash = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($sb.ToString()))).Replace('-', '').Substring(0, 16)
 $stamp = "exe=$exeHash data=$dataHash"
 $srcFile = Join-Path $out 'SOURCE.txt'
 if ($Check) {
     $was = if (Test-Path $srcFile) { (Get-Content $srcFile | Select-String '^fingerprint ').Line -replace '^fingerprint ', '' } else { '' }
-    if ($was -eq $stamp) { "kb generated tables: current ($stamp)" } else { "kb generated tables: STALE (tables $was, install $stamp) - run tools\kbgen.ps1" }
+    if (-not $was) { "kb generated tables: NONE in this checkout (git-ignored, each checkout makes its own) - run tools\kbgen.ps1" }
+    elseif ($was -eq $stamp) { "kb generated tables: current ($stamp)" } else { "kb generated tables: STALE (tables $was, install $stamp) - run tools\kbgen.ps1" }
     return
 }
 

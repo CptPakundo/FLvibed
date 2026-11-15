@@ -1,0 +1,104 @@
+# The interface zones (tools\module_lint.py reads this file; docs\ARCHITECTURE.md "The two interfaces"). One row per path prefix: a folder, a file,
+# or a file's stem ("core/ui/winplates." holds the .cpp and the .h); the longest prefix that matches a source wins. Every source under core\ and modules\
+# must match a row (module_lint.py --enforce).
+#   zone    hud2     HUD 2 only: HUD 2's code. A change here must not reach the classic HUD.
+#           shared   runs under both interfaces: the classic HUD and HUD 2 both depend on it.
+#           classic  classic only: runs, or draws, only while the game's own HUD is up.
+#           door     the door between core and HUD 2 (core\ui\hud_door.*): core reaches HUD 2 only through it; its own uses are counted apart.
+#   checks  the classic checks a change in the file needs, by the ids of CHECKS in module_lint.py; "-" none: no draw, no layout, no decision about
+#           what an interface shows (the module's own tests cover it). module_lint.py --changed prints them for a list of changed files.
+path	zone	checks	why
+core/	shared	-	The DLL's base: entry, loader, logs, strings, settings and their bus, the module rules, FLUF awareness. Both interfaces read it alike; nothing here draws.
+core/flexe.h	shared	classic_frames	Every Freelancer.exe address, the UI's controls and hooks too: a changed UI symbol reaches the classic HUD.
+core/hook.	shared	classic_frames	Every detour and patch, the UI hooks' too, installed under both interfaces.
+core/text.	shared	classic_frames	The game's strings and infocards, read by the pad's screens and by HUD 2's pages.
+core/hud_bus.	shared	classic_frames sweep_subtitles	The HUD bus: HUD 2's layout, the pad's lane and floor, read by the subtitles; no HUD 2 publisher means the classic placement.
+core/ui_buttons.h	shared	classic_frames	The UI hit points' ids: the pad's and HUD 2's click boxes on the game's windows.
+core/ui_meta.h	shared	page	The options page's generated rows, the classic HUD's and HUD 2's.
+core/host/	shared	-	The host's hooks and services: events, input injection, focus, fixes, the debug channels. Installed under both interfaces; none draws.
+core/host/router.	shared	classic_frames	Every hook two modules share, in one fixed order, the UI's included.
+core/host/uihooks.	shared	classic_frames pixels window_prompts	The game's UI pass and window hooks (the UI generation, the muted draws): every window on both interfaces.
+core/host/uibtn.	shared	classic_frames window_prompts	The UI hit points: the pad's and HUD 2's click boxes on the game's windows.
+core/host/pagehost.	shared	hud_modules fault_giveback	Core's page host: runs the HUD and the autopilot with the controller off.
+core/logic/	shared	hud_modules sweep_modules fault_giveback	The logic's entry, the module table and core's page frame: which modules run for each module set; alone.cpp registers the HUD's rows with the controller off.
+core/game/	shared	-	The shared game layer's readers and rules (space, AI, flight, routes, missions, data): every module calls them alike; nothing here draws or decides what an interface shows.
+core/game/coreframe.	shared	classic_frames pixels hud_modules fault_giveback	The frame: calls HUD 2's entries and, with the HUD module off, the classic pass (coreframe.cpp:205-208), in one order for every module set.
+core/game/gamemode.	shared	classic_frames pixels window_prompts	The mode every module reads: a HUD 2 fix changed it under the classic HUD (e0110e3f).
+core/game/modslots.h	shared	sweep_modules fault_giveback	The module slots and their guards: which entries run for each module set.
+core/game/hostcalls.h	shared	sweep_modules	The host's services for every module part, the HUD's and the controller's alike.
+core/game/render.	shared	classic_frames pixels	The draw base: the pad's layer, the prompt bar, the subtitles and HUD 2 draw through it.
+core/game/uidraw.	shared	classic_frames pixels	The game's panel looks as replicas: the space HUD's panel, the subtitles' panel, the options rows.
+core/game/gamefont.	shared	classic_frames pixels	The game's fonts, rasterised for every text FLvibed draws.
+core/game/glyphset.h	shared	classic_frames pixels	The characters FLvibed's fonts hold.
+core/game/textfit.h	shared	classic_frames pixels	The one text-fit rule for every text FLvibed draws.
+core/game/promptfit.h	shared	classic_frames pixels	The prompt lane's fit: the pad's prompt bar and wheel, HUD 2's lanes.
+core/game/marquee.h	shared	classic_frames pixels	A text too long for its room scrolls: used by core\ui\hud2_kit, so by everything drawn with the kit.
+core/game/flicons.	shared	classic_frames pixels	The game's flat icons as one atlas, loaded by core\ui\hud2_kit (drawn on both interfaces).
+core/game/fontraster.	shared	classic_frames pixels	The draw base's fonts without the device (raster, packing, glyph lookup): every text FLvibed draws.
+core/game/flicons_decode.	shared	classic_frames pixels	The flat icons' decoding without the device, which core\game\flicons uploads (drawn on both interfaces).
+core/game/fontscale.h	shared	classic_frames	game_text_size's table: an extra kept on both interfaces.
+core/game/hudsize.h	shared	classic_frames pixels	hud_size: the scale, the text floor and Large's margins every layout reads.
+core/game/deckmode.h	shared	classic_frames pixels	Large's margins and text, read by the pad's screens and by HUD 2.
+core/game/handheld.	shared	classic_frames pixels	The handheld presets behind hud_size (the Steam Deck's 1280x800).
+core/game/handhelds.inc	shared	classic_frames pixels	The handheld presets' table.
+core/game/hudwake.h	shared	classic_frames	HUD 2's contextual fade and the idle cursor's step; the idle-cursor hide is an extra kept on both interfaces.
+core/game/hitlook.	shared	classic_frames	The shield cue's hit look from the game's data: the cue is kept on both interfaces.
+core/game/hudinfo.	shared	classic_frames	What a HUD needs to know (groups, names, states): the pad's legend, the autopilot and HUD 2 read it.
+core/game/nnwin.	shared	classic_frames nn_pages	The NeuroNet's tabs over the game's window manager: HUD 2's strip and the pad's bumpers both press through it.
+core/game/nntabs.h	shared	classic_frames nn_pages	The NeuroNet's tabs, pure: the strip and the pad step them.
+core/game/navview	shared	classic_frames	The nav map's zoom and pan on the game's own transform: the pad's map, the options page and HUD 2's map.
+core/game/room.	shared	classic_frames sweep_rooms window_prompts	Rooms and their hotspots: the pad's rooms, HUD 2's strip and card.
+core/game/baseinfo.	shared	classic_frames window_prompts	Where the player is docked: the pad's base screens and HUD 2's pages.
+core/game/commwin.	shared	classic_frames sweep_subtitles	The game's comm window, placed by the subtitles' panel or by HUD 2.
+core/game/menu.	shared	classic_frames	The game's menus as read: the pad's menus and the skin's.
+core/game/indicators.	hud2	-	The game's target indicators as data: only HUD 2's targeting display reads them.
+core/game/gamedata.	shared	-	Game-data reader: item and ship facts for the screen models of both interfaces (the dealers' probe, core\game\dealers_probe.cpp, and the page framework's models; audit 78_, 12 Nov 2026). Includes nothing of HUD 2's.
+core/game/equip_rules.h	shared	-	Hardpoints and equipment numbers as pure rules, gamedata's: shared with it (audit 78_).
+core/game/promptshow.h	hud2	-	When HUD 2's context prompts show (hud_prompts).
+core/game/roletext.h	hud2	-	The game's text by role: window_text, HUD 2 only.
+core/ui/	shared	classic_frames pixels	Core's UI: the row kit, glyphs, presets, the flight modals, FLUF's windows, the game's controls: the pad's screens on both interfaces.
+core/ui/views.h	shared	classic_frames pixels hud_modules sweep_modules	The views between modules: the HUD's and the skin's entries every other module branches on.
+core/ui/winplates.	shared	classic_frames pixels window_prompts ship_buy nn_pages	The game's windows as the pad meets them and the prompt lane's keep-outs on both interfaces; holds ClassicPass (winplates.cpp:1295) and reads HUD 2's state (:1196, :1289, :1361).
+core/ui/winfit.h	shared	classic_frames pixels window_prompts	A window's panels fitted to what they hold, measured by winplates.
+core/ui/gamecard.	shared	classic_frames sweep_rooms	The game's own name card under ui_style 0: the classic HUD, and HUD 2 with the game's menus.
+core/ui/hud2_kit.	shared	classic_frames pixels	HUD 2's draw kit, but the prompt bar, the wheel, the goal panel and the options page draw with it on the classic HUD too.
+core/ui/hud_door.	door	classic_frames pixels hud_modules fault_giveback nn_pages	The door: core's frame, the options page and the window plates call HUD 2 through it; it counts the calls into HUD 2 under the classic HUD (huddoor).
+core/ui/hud_rows.h	shared	classic_frames page	Both interfaces' rows in one block: the cues' and game_text_size's beside HUD 2's.
+core/ui/options_page.	shared	page pixels	The options page, on both interfaces (its HUD 2 look under ui_style 1).
+core/ui/options_rules.h	shared	page	The options page's pure rules.
+core/ui/uiopt.	shared	classic_frames page	The UI settings as the modules read them, HUD 2's beside the pad's.
+core/ui/shared_rows.h	shared	page	The rows of [Controller] that act with the controller off.
+modules/autopilot/	shared	-	The autopilot's flight, assessment and goal queue: runs under both interfaces, draws nothing.
+modules/autopilot/src/goals.	shared	classic_frames pixels goal_panel	The goal panel, drawn on both interfaces with two chromes (goals.cpp:771).
+modules/autopilot/src/barbutton.	shared	classic_frames goal_panel	The autopilot's button on the game's maneuver bar.
+modules/controller/	shared	-	The pad reader, haptics, the debug channel and the host part: both interfaces read the pad alike; nothing here draws.
+modules/controller/src/impl/controller	shared	classic_frames hud_modules	The pad's options, flight dispatch and places in core's frame: fills HUD 2's context (controller.cpp:251) and drives the pad layer (:381).
+modules/controller/src/impl/padhud.	classic	classic_frames pixels	The pad layer on the game's HUD (badges, legend, status line, world prompts): its draw returns at once while HUD 2 is up (padhud.cpp:506).
+modules/controller/src/impl/padbases.	shared	classic_frames window_prompts ship_buy dealer_focus nn_pages	The pad in bases, dealers and NeuroNet windows on both interfaces; it branches on HUD 2's pages and strip.
+modules/controller/src/impl/dealer_rules.h	shared	ship_buy dealer_focus	The dealers' pad rules.
+modules/controller/src/impl/padmenus.	shared	classic_frames pixels	The pad in the menus and dialogs, the game's and the skin's.
+modules/controller/src/impl/padmap	shared	classic_frames	The pad on the nav map and its two zones; HUD 2's chips are its panel zone.
+modules/controller/src/impl/newgame.	shared	classic_frames	The New Game prompt and the load screens' tags.
+modules/controller/src/impl/osk.	shared	classic_frames	The on-screen keyboard.
+modules/controller/src/impl/promptbar.	shared	classic_frames pixels window_prompts sweep_subtitles	The prompt bar of every pad screen with two pill looks (promptbar.cpp:790); it publishes the lane and floor the subtitles keep clear of.
+modules/controller/src/impl/wheel.	shared	classic_frames pixels	The action wheel, in HUD 2's look and in the classic one.
+modules/controller/src/impl/picker.	shared	classic_frames	The target picker.
+modules/controller/src/impl/wgroups	shared	classic_frames	The group editor and its rules.
+modules/controller/src/impl/room_ring.h	shared	classic_frames sweep_rooms	The ring of a room's items.
+modules/display/	shared	-	Window mode and fit: under both interfaces, no HUD.
+modules/hud/	hud2	-	HUD 2: the flight HUD, Extended HUD 2's skin, the docked strip, the NeuroNet and base pages, the map, the dialogs, its theme.
+modules/hud/src/hud_module.cpp	shared	classic_frames pixels hud_modules fault_giveback	The HUD module's table: the extras' entry beside HUD 2's (hud2_entry.cpp, zone hud2, where hud_style's mapping now is).
+modules/hud/src/extras/	shared	classic_frames pixels hud_modules fault_giveback	The extras, kept on both interfaces: their entry (extras.cpp: views::extras, the idle cursor's hide), the shield and hull cue, the reticle cue. Includes no file of HUD 2's.
+modules/hud/src/extras/gametext.	shared	classic_frames page	game_text_size, kept on both interfaces.
+modules/hud/src/hudhost.h	shared	classic_frames	The HUD module's host calls, the cues' too.
+modules/hud/src/modelprobe.	hud2	-	The model probe (audit R3b): a test verb that asks the model slot (modelslot.*, zone hud2: called only from HUD 2's pass under the UI) for 3D models; it draws only when asked.
+modules/movies/	shared	-	The movies' fit and skip: no HUD.
+modules/npc/	shared	-	The stall recorder and watch: no draw.
+modules/speedrun/	shared	-	The clock, the split detector, the LiveSplit client: no draw.
+modules/speedrun/src/runtimer.	shared	classic_frames	The timer on screen: under HUD 2's target card, else its classic place (runtimer.cpp:154).
+modules/speedrun/src/startprompt.	shared	classic_frames	The New Game list on keyboard and mouse.
+modules/subtitles/	shared	-	The subtitles' lines, speakers, names, chat and movie data: no placement.
+modules/subtitles/src/impl/display.	shared	classic_frames sweep_subtitles	The subtitles' display: places its panel by HUD 2's layout or the classic HUD's (display.cpp:2029).
+modules/subtitles/src/impl/stack_fit.h	shared	classic_frames sweep_subtitles	The stacked speakers' fit on screen.
+modules/subtitles/src/impl/chat_size.h	shared	classic_frames sweep_subtitles	The side chat's text size.
+modules/subtitles/src/impl/linebreak.	shared	classic_frames sweep_subtitles	The subtitles' line breaking.

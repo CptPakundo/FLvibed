@@ -475,7 +475,7 @@ static void Badges(std::vector<Badge>& out, float H, float ts, int sw, int sh)
         on("HudWeaponGroupButton", presets::Action::WeaponGroup, BottomPanel, true, std::clamp(g_ctx.weaponGroup - 1, 0, 2));
     // the FLvibed bar button (the HOST track's native button): View held, lit while the autopilot flies
     float cx, cy, hw, hh;
-    if (HostAtLeast(18) && g_host->UiButtonRect && g_host->UiButtonRect(kUiBtnBar, &cx, &cy, &hw, &hh))
+    if (g_host && g_host->UiButtonRect && g_host->UiButtonRect(kUiBtnBar, &cx, &cy, &hw, &hh))
     {
         glyphs::Id btn;
         bool hold;

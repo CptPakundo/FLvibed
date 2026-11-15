@@ -1,11 +1,11 @@
-// Extended HUD 2's skin over the game's non-flight windows (modules\hud\docs\UI_HUD2_EXTENDED.md 9-10; `ui_style` 1 = HUD 2,
-// 0 = CLASSIC = the game's own look, untouched). The game's windows, rows, buttons, texts and flows stay: only their
+// Extended HUD 2's skin over the game's non-flight windows (modules\hud\docs\UI_HUD2_EXTENDED.md 9-10): on whenever HUD 2 is selected (the classic HUD
+// is the game's own look, untouched; `ui_style`, which gave HUD 2 the game's own menus, was retired 13 Nov 2026). The game's windows, rows, buttons, texts and flows stay: only their
 // ART is taken away (state bit 1 on art children; the own mesh handle +0x84 = -1 on windows / buttons that draw their
 // art themselves, after the draw slot was checked against the signed base draw) and HUD 2 glass is drawn under the UI
 // pass in its place (plates from the window's own control rects, the modal scrim, the focus fill, header rules, tab
 // plates, the room bar's slim glass and current-room underline, the NeuroNet box plate); titles are recoloured through
 // the title text's own colour (+0x348). An unknown window stays native (fails closed); every write is restored when
-// ui_style goes back to 0 (only the bytes still holding FLvibed's value: the game's own later writes win).
+// the skin goes off (only the bytes still holding FLvibed's value: the game's own later writes win).
 //
 // The open windows, their plates and the prompt lane's keep-outs are core's (core\ui\winplates.*: the pad needs them on the classic HUD too); this is what
 // writes to them and paints on them. Per frame: the NavBar's frame / tab re-cleared (the game re-shows them every frame), a few cached reads and the quads.
@@ -19,7 +19,7 @@ namespace uiskin
 {
 struct Context
 {
-    int style = 0;        // ui_style: 0 CLASSIC, 1 HUD 2
+    bool skin = false;    // HUD 2 is selected (its look over the menus comes with it: ui_style retired 13 Nov 2026)
     bool pad = false;     // the pad is the device (the LB / RB glyphs at the room bar, the focus fill's source)
     bool enabled = true;  // the controller module is on
 };
@@ -30,7 +30,7 @@ void Update(float dt, const Context& c);
 void TipUnder();
 // From OnRenderUnderHud, any mode: the registry refresh, the art hides / re-clears / restores, the glass.
 void RenderUnder(void* device);
-// The skin is on (ui_style 1 and the controller on): the prompt bar / options page take their HUD 2 look.
+// The skin is on (HUD 2 selected and the controller on): the prompt bar / options page take their HUD 2 look.
 bool On();
 bool PadOwns(); // the pad is the device, as this frame's Update said
 // From the overlay pass (promptbar::Draw calls it first): what must sit over the game's own UI - the confirm dialog's
@@ -41,7 +41,7 @@ void DrawModal(void* device);
 // Over the game's UI, under the dialogs: the nav map's marks and panels (navskin::DrawOver).
 void DrawMap(void* device);
 // A modal menu is shown now (pause, save / load, Options - the scrim's families - or the confirm dialog) while the skin
-// is on (false under ui_style 0). From OnRenderUnderHud before the skin's own pass: the registry is brought current
+// is on (false while it is off). From OnRenderUnderHud before the skin's own pass: the registry is brought current
 // first (on the host's UI generation: a compare when nothing changed), then a few cached state reads - no search.
 bool ModalOpen();
 // Everything restored (hot reload, unload).

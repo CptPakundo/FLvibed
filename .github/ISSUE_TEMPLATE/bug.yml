@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in FLvibed doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Short is fine. Only the first box is required; fill in the rest if you know it.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: Steps to get there help too. A screenshot is welcome.
+      placeholder: |
+        In the Equipment Dealer the prompts flicker when I buy.
+        Expected: they stay put.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: FLvibed version
+      placeholder: "0.4.7"
+  - type: dropdown
+    id: game
+    attributes:
+      label: Game
+      options:
+        - Freelancer HD Edition 0.7.1
+        - Freelancer HD Edition, another version or built from its repository
+        - Freelancer 1.1 (original)
+        - Another mod or not sure
+  - type: input
+    id: system
+    attributes:
+      label: Device and system
+      placeholder: "Windows 11 / Steam Deck, Proton 9.0 / Linux, Wine 9"
+  - type: input
+    id: display
+    attributes:
+      label: Resolution and window mode
+      placeholder: "1280x800 fullscreen / 2560x1440 borderless windowed"
+  - type: input
+    id: input
+    attributes:
+      label: Input
+      placeholder: "Steam Deck (Steam Input) / Xbox Series pad / DualSense / keyboard and mouse"
+  - type: dropdown
+    id: hud
+    attributes:
+      label: HUD
+      options:
+        - HUD 2 (the default)
+        - Classic HUD
+        - Not sure
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Drag in FLController.log and FLSubtitles.log from the game's EXE folder right after the problem,
+        before you start the game again (each start writes them anew). For ships that stop moving, also
+        FLvibed_npc_stalls.log. If the game closed by itself, also FLvibed_crash.log, when it is there.

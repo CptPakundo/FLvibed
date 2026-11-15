@@ -258,6 +258,6 @@ void Test_situation()
                 sequence(esc, 23265, 0, 0);
             }
         }
-    CHECK(repo >= 6); // the six fixtures of A37_PLAN S1
+    CHECK(repo >= 6); // the six fixtures of the A37 plan's S1 (private)
     printf("  %d recorded snapshots (%d in tests\\fixtures\\situation): hashes equal the game's\n", n, repo);
 }

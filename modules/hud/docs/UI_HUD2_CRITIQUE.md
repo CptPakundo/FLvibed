@@ -1,6 +1,6 @@
 # HUD 2 overhaul: research and adversarial critique (P11f gate, 5 Nov 2026)
 
-**What this is:** the owner's order before any overhaul code: "another crack at research + adversarial critiquing of the whole thing, with leanings both towards how Freelancer does things and how modern AAA games do things, and how to strike a balance of both while still maintaining that flavor that FLvibed is starting to develop over time." It judges `UI_HUD2_SKIN.md`, `UI_HUD2_INPUTS.md`, `UI_HUD2_GROUP_CUE.md`, `UI_HUD2_SIZE_AUDIT.md`, `UI_HUD2_PRESETS.md` and the frames of `research\evidence\hud2_gate\`. It changes none of them; nothing here is built.
+**What this is:** the owner's order before any overhaul code: "another crack at research + adversarial critiquing of the whole thing, with leanings both towards how Freelancer does things and how modern AAA games do things, and how to strike a balance of both while still maintaining that flavor that FLvibed is starting to develop over time." It judges `UI_HUD2_SKIN.md`, the HUD 2 inputs record (private), `UI_HUD2_GROUP_CUE.md`, the HUD 2 size audit (private), `UI_HUD2_PRESETS.md` and the frames of `research\evidence\hud2_gate\`. It changes none of them; nothing here is built.
 
 **How it was made:** a clean session, not the design's authors. Three lens readers, given the frames before any design reasoning: Freelancer's way (26 sources), modern AAA (35 pages read, 11 excerpts), FLvibed's flavour (13 pages, the owner's rules, the history). Three attackers measuring real pixels and reading code: flight, every other screen, scope and failure. Two verifiers re-derived 49 claims: 18 held, 21 held with a change, 7 weakened, 2 wrong, 1 could not be checked. Corrections are applied below; section 10 lists what died. Evidence: `research\evidence\hud2_critique\` (`lens_*.md`, `attack_*.md`, `verify_*.md`, scripts, crops).
 
@@ -204,7 +204,7 @@ Keep as designed:
 | Point | Ruling |
 |---|---|
 | R16 | **The tap works on the focused BUY and SELL;** the hold on the row stays |
-| Item 7 | **Windows at 1280x800 with no other evidence: Large by default;** the player's choice wins (`UI_HUD2_INPUTS.md` 7) |
+| Item 7 | **Windows at 1280x800 with no other evidence: Large by default;** the player's choice wins (the HUD 2 inputs record 7, private) |
 | R13, the name | **The name on both card and bracket for now, a holding position.** The owner wants the targeting display itself researched: remove the brackets and compress the information next to the target, with or without a background; or contextual leader lines to the target with the information beside them. **So the bracket and label design is open, not settled, and "the native bracket label is the target's on-screen home" (29 Oct) is reopened.** Research: `docs\research\target-info-display.md`. What leans on it: `UI_HUD2_SKIN.md` 16 |
 
 **The targeting display, ruled (6 Nov 2026, fifth round; this closes the row above):** the owner's combination stands: a mini card that settles into the form worn by the ship, bars at the bottom, with a soft bed behind the words. The card keeps name and distance, so R13's exception stands. A waypoint target follows its type, with a small diamond round the caret. The lock breathes at 1 Hz, the waypoint at 0.5 Hz. The rest: `UI_HUD2_SKIN.md` 6.10.
