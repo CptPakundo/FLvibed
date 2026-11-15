@@ -248,6 +248,12 @@ static bool Read(const Api& a, void* obj, bool ship, Contact& c)
                     c.dockPort = a.dockingPort(m, &port, &index) && port;
                 }
             c.jumping = a.jumping && a.jumping(obj, nullptr);
+            // its archetype (CreateID of its shiparch nickname: exported CObject::get_archetype + Root::get_id, as
+            // PlayerShipArch): HUD 2's ship icon draws its model's outline (modules\hud\src\npcicons.*)
+            const Accessors& ac = Acc();
+            if (ac.getArchetype && ac.rootId)
+                if (const void* r = ac.getArchetype(obj))
+                    c.arch = ac.rootId(r);
             c.lane = a.usingLane && a.usingLane(obj, nullptr);
         }
         return true;
@@ -714,6 +720,7 @@ const Accessors& Acc()
                 reinterpret_cast<decltype(a.equipArch)>(get("?EquipArch@CEquip@@QBEPBUEquipment@Archetype@@XZ"));
             a.projArch = reinterpret_cast<decltype(a.projArch)>(
                 get("?ProjectileArch@CELauncher@@QBEPBUProjectile@Archetype@@XZ"));
+            a.rootId = reinterpret_cast<decltype(a.rootId)>(get("?get_id@Root@Archetype@@QBEIXZ"));
         }
     return a;
 }

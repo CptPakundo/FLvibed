@@ -9,6 +9,8 @@
 #include "hud2.h"
 #include "modelprobe.h"
 #include "modelslot.h"
+#include "npcicons.h"
+#include "mapcells.h"
 #include "navnew.h"
 #include "navskin.h"
 #include "basepage.h"
@@ -174,6 +176,7 @@ static void GiveBack(int phase)
     }
     extras::SetCursorFeed({});
     modelslot::Release("hud2 gives back"); // the 3D models' holders back to the engine (the classic HUD draws none)
+    npcicons::Shutdown();      // the outline worker joined, the ships' atlas freed, the kit's source cleared (built again at HUD 2's next ask)
     skinload::Ended();         // the load screen's word back
     skinlists::GiveBack();     // an open save list's box, rows and bar as the game made them
     skinmenu::Drop();          // a CONTINUE not yet at the game's load screen
@@ -184,6 +187,7 @@ static void GiveBack(int phase)
     winplates::SetMapOver(false);
     windowtext::Frame(false);  // every text's own font, box and name; game_text_size's table stays until the game reads it again
     navnew::Shutdown();
+    mapcells::Shutdown();      // the influence cells' worker joined, the cells dropped (computed again at the map's next ask)
     uiskin::Shutdown();        // the windows' art and colours back, the skin off (winplates::g_on)
     skinover::Shutdown();      // the game's cursor back
     hud2::GiveBack();          // the game's panels and chat, the click box, a layout with no HUD 2 on the bus, the comm window, its own state
@@ -265,6 +269,8 @@ bool Command(const std::string& op, std::istream& in, std::string& reply)
         reply = pagerun::Command(in);
     else if (op == "modelprobe") // the model probe (audit R3b): modelprobe [state] | on [file] [x y] [size] [count] | off | set <k> <v>
         reply = modelprobe::Command(in);
+    else if (op == "npcicons") // the NPC icons (GitHub 84 + 85): npcicons [state] - outlines, bakes, their cost
+        reply = npcicons::Command(in);
     else if (op == "basepage") // the docked windows' pages: basepage [state] | press <button> | card | probe
         reply = basepage::Command(in);
     else if (op == "navskin") // the map's frame and words: navskin [state] | native on|off | press <id>

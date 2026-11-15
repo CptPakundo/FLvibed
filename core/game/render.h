@@ -22,7 +22,12 @@ struct Image
 void SetDevice(void* device);
 // Builds `img` from top-down 0xAARRGGBB pixels on the current device; false without a device.
 bool BuildImage(Image& img, const std::vector<u32>& argb, int w, int h);
+// Writes w x h top-down 0xAARRGGBB pixels into `img` at (x, y) (a managed texture's rectangle locked: no read-back); false
+// without the device it was built on or outside the image.
+bool UpdateImage(Image& img, int x, int y, int w, int h, const u32* argb);
 void FreeImage(Image& img);
+// `img` stands on the current device (UpdateImage's check): a cache of cells inside it is still valid.
+bool ImageOnDevice(const Image& img);
 void OnDeviceLost();
 void OnDeviceReset();
 // The device Resets this logic has seen (OnDeviceLost calls): whoever holds something for one device generation compares it

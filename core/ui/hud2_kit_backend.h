@@ -41,8 +41,13 @@ enum LayerId
     LTextSmall,
     LTextBig,
     LTextCaption,
-    LCount
+    LCount, // the layers a display list records and the design bench replays (hud2_kit_fldl.h, tools\hudbench)
+    // drawn last, not recorded (a bake of the game's models the bench has not got): the NPC ships' outlines
+    // (hud2kit::ShipIcon, the atlas modules\hud\src\npcicons.* bakes), tinted like the icons
+    LShip = LCount,
+    LAll
 };
+inline bool IconLayer(int li) { return li == LIconBig || li == LIconSmall || li == LShip; } // colour = the vertex's, shape = alpha
 struct Layer
 {
     std::vector<Vertex> v;

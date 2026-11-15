@@ -5,6 +5,8 @@
 
 #include "game/hudwake.h"
 
+#include <cstring>
+
 void Test_hudwake()
 {
     using namespace hudwake;
@@ -97,4 +99,17 @@ void Test_hudwake()
     CHECK(!CursorStep(cs, 1, true, false, 2.9f));
     CHECK(CursorStep(cs, 2, true, false, 0.2f)); // other values read as CONTEXTUAL
     CHECK(!CursorStep(cs, 1, true, false, -1.0f)); // a bad dt: shown
+
+    // issue 91: a NeuroNet page up in flight reads the game's flight cursor "cross" as the page's arrow; nothing else changes
+    CHECK(!strcmp(PageCursorName("cross", true, true), "arrow"));
+    CHECK(!strcmp(PageCursorName("CROSS", true, true), "arrow"));
+    CHECK(!strcmp(PageCursorName("arrow", true, true), "arrow"));
+    CHECK(!strcmp(PageCursorName("cross", false, true), "cross"));  // free flight: the flight cursor stays
+    CHECK(!strcmp(PageCursorName("cross", true, false), "cross"));  // docked: the game's name stands
+    CHECK(!strcmp(PageCursorName("cross", false, false), "cross"));
+    CHECK(!strcmp(PageCursorName("hostile", true, true), "hostile")); // a target reticle stays under the cover
+    CHECK(!strcmp(PageCursorName("crossx", true, true), "crossx"));
+    CHECK(!strcmp(PageCursorName("cros", true, true), "cros"));
+    CHECK(!strcmp(PageCursorName("talk_story", true, false), "talk_story"));
+    CHECK(PageCursorName(nullptr, true, true) == nullptr);
 }

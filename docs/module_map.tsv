@@ -96,6 +96,9 @@ file	modelprobe.h	modules/hud/src/modelprobe.h	HUD	the model probe (audit R3b)
 file	modelslot.cpp	modules/hud/src/modelslot.cpp	HUD	the model slot (audit 70b F7): a page's 3D model in a rectangle, its holders, camera, lights, draw and lifetime
 file	modelslot.h	modules/hud/src/modelslot.h	HUD	the model slot (audit 70b F7): what a page asks (Model, key, Status)
 file	modelslot_rules.h	modules/hud/src/modelslot_rules.h	HUD	the model slot's rules, pure: the table's state machine, rectangle and clip maths, distance, placement, the world compare
+file	npcicons.cpp	modules/hud/src/npcicons.cpp	HUD	the NPC icons (GitHub 84 + 85): the ship table, the outline worker, the ships' atlas and the kit's source, the rank words, verb npcicons
+file	npcicons.h	modules/hud/src/npcicons.h	HUD	the NPC icons: class icon, rank, Want, Shutdown, the verb
+file	npcicons_rules.h	modules/hud/src/npcicons_rules.h	HUD	the NPC icons' rules, pure: a model's top-down triangles (UTF leaves, Cons), the silhouette, the bake, the rank words
 file	impl.cpp	modules/controller/src/impl/impl.cpp	Controller	the controller's logic entry
 file	livesplit.cpp	modules/speedrun/src/livesplit.cpp	Speedrun	speedrun cluster (plan: proposed Speedrun module)
 file	livesplit.h	modules/speedrun/src/livesplit.h	Speedrun	speedrun cluster (plan: proposed Speedrun module)
@@ -1234,6 +1237,7 @@ file	board_page.cpp	modules/hud/src/pages/neuronet/board_page.cpp	HUD	the job bo
 file	board_view.cpp	modules/hud/src/pages/neuronet/board_view.cpp	HUD	the job board's and the news's view: the rows with their icons, the chosen one's head over the game's text and picture, the bars, the ticker, moved from basepage.cpp
 command	nnpage	modules/hud/src/hud2_entry.cpp:201	HUD	
 command	modelprobe	modules/hud/src/hud2_entry.cpp:203	HUD	modelprobe::Command (the model probe, audit R3b)
+command	npcicons	modules/hud/src/hud2_entry.cpp:270	HUD	npcicons::Command (the NPC icons' counters, GitHub 84 + 85)
 file	navskin.h	modules/hud/src/navskin.h	HUD	the nav map's frame and words (UI_HUD2_SKIN.md 6.1, the first step)
 file	navskin.cpp	modules/hud/src/navskin.cpp	HUD	the chips' table, the panels, the view for the pad's panel zone
 file	navnew.h	modules/hud/src/navnew.h	HUD	the new map's seam, off (UI_HUD2_SKIN.md 6.1, step 10)
@@ -1245,6 +1249,14 @@ command	navnew	modules/hud/src/hud2_entry.cpp:209	HUD
 file	tractorfail.h	core/game/tractorfail.h	core	why the tractor refused an item: pure; HUD 2 and the subtitles read it (GitHub issue 33)
 file	tractorhook.cpp	core/host/tractorhook.cpp	core	the code the game played Tractor Failure for, onto the HUD bus
 file	tractorhook.h	core/host/tractorhook.h	core	its entry
+file	spawnsim.h	core/game/spawnsim.h	core	the encounter spawn simulator (GitHub #61, docs/kb/spawning.md): its data model and Simulate, host-free (tests/spawnsim_test.cpp; tools/spawnsim)
+file	spawnsim.cpp	core/game/spawnsim.cpp	core	the spawn simulator core: heartbeat, lists, roll, encounter / faction draw, placement, life counter, Monte Carlo; host-free
+file	spawnsim_ini.h	core/game/spawnsim_ini.h	core	the spawn simulator's offline loader: the install's ini files -> spawnsim::World (through ini::Read)
+file	spawnsim_ini.cpp	core/game/spawnsim_ini.cpp	core	the spawn simulator's offline loader
+file	influence.h	core/game/influence.h	core	HUD 2 map's influence cells (GitHub #61): a hex field of who operates where, computed by the spawn simulator per list signature; the cells' look; host-free (tests/influence_test.cpp)
+file	influence.cpp	core/game/influence.cpp	core	the influence cells: grid, lane / path samples, signatures, one simulation each
+file	mapcells.h	modules/hud/src/mapcells.h	HUD	the influence cells on HUD 2's map (political ALL) and their legend
+file	mapcells.cpp	modules/hud/src/mapcells.cpp	HUD	the influence cells: the worker (load the shown system's files, compute), the player's feelings, the draw
 hook	exe::TractorNotify (Detour)	core/host/tractorhook.cpp	core	listens: the event of a refused or lost tractor target (HUD and Subtitles read the reason)
 hook	exe::QueueNN (Detour)	core/host/tractorhook.cpp	core	listens: inside TractorNotify, the game queued its failure line
 setting	Subtitles.neural_net_reason	modules/subtitles/src/impl/display.cpp	Subtitles	g_set.nnReason

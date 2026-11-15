@@ -28,7 +28,8 @@ program with no game (the design bench) runs the same preparation: `core\game\fo
 with Windows' GDI and looks glyphs up, `render.*` uploads the atlas and draws; `core\game\flicons_decode.*` decodes the
 game's flat icons, `flicons.*` loads them on a thread and uploads them; `gamefont::LoadFrom` resolves the game's faces from
 a given DATA folder, `Load` from the running game's. HUD 2's draw kit builds its six vertex lists in `core\ui\hud2_kit.cpp`
-with no device; the fonts, faces, icons and the draw calls are behind `hud2_kit_backend.h`, which the game's
+with no device (and a seventh, `LShip`, drawn last and never recorded: the NPC ships' outlines from the source the HUD module
+sets, `modules\hud\src\npcicons.*`, which bakes them from the ships' models on a worker thread; none on the bench); the fonts, faces, icons and the draw calls are behind `hud2_kit_backend.h`, which the game's
 `hud2_kit_d3d8.cpp` implements (a program with no game links its own: the design bench, `build.cmd bench`, links
 `tools\hudbench\kitlist.cpp`, which records the lists instead of drawing them; the unit tests compile the kit with it
 too, so a game header that creeps into the kit fails the build). The two sides share one copy of each rule: the atlas
@@ -167,9 +168,9 @@ are empty, so every entry of the door and every view the other modules call answ
 raw key passes to the game. A load runs inside one game frame with no core frame in it, so the door decides each of its frames
 itself (its load draw, registered with the host while the module runs): HUD 2's loading screen only while HUD 2 is selected, the
 game's own from the frame `hud_style` turns 0 to the load's end (the owner's decision 63: no frame mixes the two). The door's classic under pass is the classic pass (`winplates::ClassicPass`) and the extras over it.
-**HUD 2's hooks** (audit R4c-2, 13 Nov 2026): only two hooks are HUD 2's alone, the loading screen's draw (`exe::UiBatchClose` at
+**HUD 2's hooks** (audit R4c-2, 13 Nov 2026): only three hooks are HUD 2's alone, the loading screen's draw (`exe::UiBatchClose` at
 `exe::LoadBracketCall`) and the target label's mute (`exe::HudVertex`, `exe::HudIndicatorDraw` and the label text's draw slot,
-`uihooks::InstallTargetMute`). Neither is installed at the start: the door's first Enter in a session asks the host for them
+`uihooks::InstallTargetMute`) and the map's zone build and palette (`exe::NavMapZoneBuild`, `exe::NavMapPalette`, `uihooks::InstallMapZones`). None is installed at the start: the door's first Enter in a session asks the host for them
 (`hostcalls::g.InstallHud2Hooks` -> `router::InstallHud2Hooks`, from the logic's frame on the game thread, where neither target is
 on the stack); once in they stay and pass through on the classic HUD (no load draw, no mute wanted). So a session that never selects
 HUD 2 runs the game's loading screen and target indicator unhooked. Everything else stays installed at the start as the shared base,
@@ -286,7 +287,7 @@ wrapper: `core\pre.h` first, then the source inside `namespace flv_<module>_<hos
 **The toolset is pinned:** MSVC 14.44 for every target, because later toolsets no longer target Windows 7. `build.cmd` stops if it is missing, or if the toolset's
 `yvals_core.h` has lost its Windows 7 level; SDL3's cached library is stamped with the toolset; `tools\win7_check.ps1` refuses a binary with a newer part in it.
 
-Targets: `dev` (default), `impl` (the logic alone), `release`, `test` (the host-free unit tests in `tests\`, seconds, no game), `sigtool`, `setup`, `flhook` (the server plugin), `mptest` (the local test server's tools).
+Targets: `dev` (default), `impl` (the logic alone), `release`, `test` (the host-free unit tests in `tests\`, seconds, no game), `sigtool`, `setup`, `flhook` (the server plugin), `mptest` (the local test server's tools), `spawnsim` (the offline encounter spawn simulator `tools\spawnsim\`: the host-free core `core\game\spawnsim.*` and its ini loader `spawnsim_ini.*`, GitHub #61; the same core runs in the logic DLL for HUD 2 map's influence cells: `core\game\influence.*` the field, `modules\hud\src\mapcells.*` its worker thread and draw; `flspawnsim field` prints a system's field offline).
 
 ## Rules the code keeps
 - **No raw addresses.** Every hooked, called, read or compared Freelancer.exe address is a symbol in `core\flexe.h` with its signature.

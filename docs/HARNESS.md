@@ -497,7 +497,10 @@ game, and each log says `debug channel: closed (FLVIBED_TEST is not 1)` near its
   and the debug `layout sim` draws there in space (no HUD 2 layout to yield to)); `hoverhelp [hover <x> <y> | hover off]` (the extras' hover-help rule: HUD 2 on both devices, the classic HUD with the pad only - with keyboard and mouse it reads allowed: allowed or suppressed,
   the hides; TEST ONLY `hover`: the game's hover at that pixel each frame, which a background game never computes); `idlecursor`
   (the idle cursor's hide as the last frame decided it: HUD 2's rule or the classic one, eligible, hidden, the game's mouse position;
-  a background game takes no mouse motion: the harness's `mouse` does not move its cursor); `fluf` (FLUF awareness,
+  a background game takes no mouse motion: the harness's `mouse` does not move its cursor; `seen=` the cursor name the rule read,
+  `cover=` the NeuroNet cover's hide; TEST ONLY `idlecursor force <cursor object>|off`: the game's current cursor set to that entry of
+  its cursor table before the cover's and the skin's reads each frame - a background game writes its arrow back every frame, so a plain
+  `poke` does not hold; issue 91's check `research\experience\lanes\cross91_2026-11-15\scratch\cross91.ps1`); `fluf` (FLUF awareness,
   `docs\MOD_COMPATIBILITY.md` FLUF: present 0 / 1 co-residency / 2 aware, the build, the status line, `fluf_windows`,
   text input, the cursor over a FLUF window, whether the pad drives FLUF, `palette` / `holdsKeys` (FLvibed's keys held),
   every open keep-out with its kind and rectangle and (bus v5) its ImGui name, input rule, focus and close-button point);

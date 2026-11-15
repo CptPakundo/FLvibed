@@ -309,6 +309,9 @@ void Start()
     g_host.calls.WorldCommand = input::WorldCommand;
     g_host.calls.HoldRealWheel = dimouse::HoldRealWheel;
     g_host.calls.SetRawMouse = dimouse::SetRaw;
+    g_host.calls.SetQuietZones = uihooks::SetQuietZones; // (HUD 2's map zones, issue 61)
+    g_host.calls.MapZoneEdges = uihooks::MapZoneEdges;
+    g_host.calls.MapZoneIds = uihooks::MapZoneIds;
     g_hud = router::ModuleOn(modules::kHud);
     g_flies = router::ModuleOn(modules::kAutopilot) || g_hud;
     g_story = g_flies || router::ModuleOn(modules::kSpeedrun);

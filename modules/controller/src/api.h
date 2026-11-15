@@ -314,6 +314,11 @@ struct HostApi
     void (*InstallHud2Hooks)();
     // v48: `mouse_raw` every frame: the host's raw mouse on or off (dimouse::SetRaw; core\host\rawmouse_rules.h)
     void (*SetRawMouse)(bool on);
+    // v49 / v50: HUD 2's map: the filter ALL shows every zone (uihooks::SetQuietZones / MapZoneEdges / MapZoneIds; issue 61); v50: the
+    // influence cells (flags, the drawn zones' ids, the player's vibe)
+    void (*SetQuietZones)(int flags);
+    int (*MapZoneEdges)(float* xz, int maxSegments);
+    int (*MapZoneIds)(u32* ids, int maxIds, int* vibe, u32* colours);
 };
 
 struct ImplApi

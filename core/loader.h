@@ -21,7 +21,7 @@ enum LogicModule : int
 // what crosses between them: a module's HostApi or ImplApi (modules\*\src\api.h), core\logic\core_api.h, this file, the buses
 // (core\hud_bus.h, core\settings_bus.h), core\game\hostcalls.h, a shared block (modules\*\src\shm.h), or any host type the logic
 // reads. No call checks a version beyond this one; when in doubt bump it: a mismatch costs a restart, a missed bump a crash.
-constexpr u32 kLogicApiVersion = 7; // 7: hostcalls / controller HostApi v48 SetRawMouse (mouse_raw); 6: controller HostApi SdlPadFilter's `on` became flags (padbackend::kFilterKeys / kFilterMouse); 5: hostcalls / HostApi v47 InstallHud2Hooks (audit R4c-2)
+constexpr u32 kLogicApiVersion = 9; // 9: hostcalls / controller HostApi v50 SetQuietZones(flags), MapZoneIds for the influence cells (issue 61); 8: hostcalls / controller HostApi v49 SetQuietZones, MapZoneEdges, MapZoneStripes (issue 61); 7: hostcalls / controller HostApi v48 SetRawMouse (mouse_raw); 6: controller HostApi SdlPadFilter's `on` became flags (padbackend::kFilterKeys / kFilterMouse); 5: hostcalls / HostApi v47 InstallHud2Hooks (audit R4c-2)
 struct LogicApi
 {
     u32 version;

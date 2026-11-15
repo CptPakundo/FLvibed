@@ -121,6 +121,14 @@ constexpr int kTL = 1, kTR = 2, kBR = 4, kBL = 8;
 
 // ---- icons (layer 1): the game's flat icon, tinted; false when the atlas is not ready (the caller draws a shape)
 bool Icon(flicons::Icon icon, float cx, float cy, float size, u32 argb, float angleRad = 0);
+// An NPC ship's own top-down outline (GitHub 85), tinted, a `size` px square: false while it has none (no source - the
+// bench -, no archetype, not baked yet), and the caller draws the class icon. The source answers a ship archetype and a pixel
+// size with the atlas and the cell's UV (modules\hud\src\npcicons.*: it bakes on demand); cleared with nullptr.
+using ShipUvFn = bool (*)(u32 arch, int px, void** texture, float uv[4]);
+void SetShipSource(ShipUvFn fn);
+bool ShipIcon(u32 arch, float cx, float cy, float size, u32 argb);
+// A pilot's rank mark (GitHub 84): tier 1..3 open chevrons stacked in a `size` square centred at (cx, cy); 0 draws nothing.
+void RankMark(int tier, float cx, float cy, float size, u32 argb);
 
 // ---- text (layers 2 / 3)
 enum Align
@@ -149,6 +157,10 @@ constexpr float kBoldSmear = 0.025f;
 float Text(float x, float y, const std::wstring& s, float size, u32 argb, Align align = Left, float track = 0,
            bool outline = true, u32 style = 0);
 float TextWidth(const std::wstring& s, float size, float track = 0);
+// `s` from character `from` on (a name whose rank word gave way), kept per caller's `slot` (0..kTailSlots-1) and composed
+// again only when `s` or `from` changes: no string built per frame. A slot outside the range shares one scratch entry.
+constexpr int kTailSlots = 24;
+const std::wstring& TextFrom(int slot, const std::wstring& s, int from);
 // Words that stand beside the game's own captions, in their face and weight (Agency FB Regular; HUD 2's text is its bold) with their shadow, capitals centred on y. `size` 0: the game's caption size. Returns the width.
 float GameCaption(float x, float y, const std::wstring& s, u32 argb, Align align = Left, float size = 0);
 // THE text-fit rule (core\game\textfit.h; every box FLvibed draws text into): unchanged when it fits maxW, else the size

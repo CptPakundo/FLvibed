@@ -297,7 +297,8 @@ template <class V> void Fields(V& v, hud2::Model::CueMark& x)
 }
 template <class V> void Fields(V& v, hud2::Model::Threat& x)
 {
-    v("name", x.name), v("dist", x.dist), v("col", x.col), v("id", x.id), v("icon", x.icon);
+    v("name", x.name), v("dist", x.dist), v("col", x.col), v("id", x.id), v("icon", x.icon), v("arch", x.arch);
+    v("rank", x.rank), v("rank_len", x.rankLen);
 }
 template <class V> void Fields(V& v, hud2::Model::Escort& x)
 {
@@ -350,6 +351,7 @@ template <class V> void Fields(V& v, hud2::Model& x)
     v("target", x.target), v("target_id", x.targetId), v("t_name", x.tName), v("t_faction", x.tFaction);
     v("t_class", x.tClass), v("t_att", x.tAtt), v("t_dist", x.tDist), v("t_level", x.tLevel), v("t_col", x.tCol);
     v("t_bars", x.tBars), v("t_shield", x.tShield), v("t_hull", x.tHull), v("t_icon", x.tIcon), v("t_waypoint", x.tWaypoint);
+    v("t_arch", x.tArch), v("t_rank", x.tRank), v("t_rank_len", x.tRankLen);
     v.group("t_mark", x.tMark, [](auto& w, auto& t) { w("on_screen", t.onScreen), w("x", t.x), w("y", t.y), w("r", t.r); });
     v("marks", x.marks), v("n_marks", x.nMarks), v("fx", x.fx), v("shield_up", x.shieldUp);
     v("cue", x.cue), v("n_cue", x.nCue), v("cue_digits", x.cueDigits), v("cue_show", x.cueShow);
@@ -1356,12 +1358,12 @@ FLV_STATE_PIN(hud2bars::Bloom, 12, 3);
 FLV_STATE_PIN(hud2::BarFx, 144, 18);
 FLV_STATE_PIN(hud2::Model::Mark, 64, 6);
 FLV_STATE_PIN(hud2::Model::CueMark, 16, 7);
-FLV_STATE_PIN(hud2::Model::Threat, 60, 5);
+FLV_STATE_PIN(hud2::Model::Threat, 72, 8);
 FLV_STATE_PIN(hud2::Model::Escort, 28, 2);
 FLV_STATE_PIN(decltype(hud2::Model::tMark), 16, 4);
 FLV_STATE_PIN(hud2notice::Item, 36, 4);
 FLV_STATE_PIN(hud2notice::Notice, 312, 43);
-FLV_STATE_PIN(hud2::Model, 4776, 193);
+FLV_STATE_PIN(hud2::Model, 4912, 196);
 FLV_STATE_PIN(promptfit::HoldPlan, 12, 9);
 FLV_STATE_PIN(hud2layout::Rect, 16, 4);
 FLV_STATE_PIN(hud2layout::Reserved, 260, 17);
@@ -1383,16 +1385,16 @@ FLV_STATE_PIN(hud2kit::Marquees, 32, 1);
 FLV_STATE_PIN(hud2::PartsState, 580, 35);
 FLV_STATE_PIN(decltype(hud2::FrameState::navEase), 32, 6);
 FLV_STATE_PIN(decltype(hud2::FrameState::panelEase), 48, 9);
-FLV_STATE_PIN(hud2::FrameState, 7224, 66);
+FLV_STATE_PIN(hud2::FrameState, 7360, 66);
 FLV_STATE_PIN(hud2::ViewRect, 20, 5);
 FLV_STATE_PIN(hud2::StartOut, 6, 6);
 FLV_STATE_PIN(hud2::StepOut, 44, 3);
 FLV_STATE_PIN(hud2state::Tape, 60, 5);
 FLV_STATE_PIN(hud2state::HotRect, 20, 5);
 FLV_STATE_PIN(hud2state::UpdateRec, 116, 4);
-FLV_STATE_PIN(hud2state::RenderRec, 7352, 11);
+FLV_STATE_PIN(hud2state::RenderRec, 7488, 11);
 FLV_STATE_PIN(hud2state::UnderRec, 84, 8);
 FLV_STATE_PIN(hud2state::LayerPrint, 28, 2);
 FLV_STATE_PIN(hud2state::SetPrint, 48, 2);
 FLV_STATE_PIN(hud2state::ListRef, 108, 6);
-FLV_STATE_PIN(hud2state::StateDoc, 15736, 11);
+FLV_STATE_PIN(hud2state::StateDoc, 16008, 11);

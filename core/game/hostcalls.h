@@ -84,6 +84,9 @@ struct Table
     void (*HoldRealWheel)(bool on); // the physical wheel kept from the game, still counted (dimouse.h)
     void (*InstallHud2Hooks)();     // HUD 2's own hooks, at its first selection (the door's Enter; core\host\router.h)
     void (*SetRawMouse)(bool on);   // `mouse_raw` every frame: the host's raw mouse on or off (dimouse.h SetRaw)
+    void (*SetQuietZones)(int flags); // each frame HUD 2's map shows: the filter ALL shows every zone (core\host\uihooks.h; issue 61); flags uihooks::kZoneCells
+    int (*MapZoneEdges)(float* xz, int maxSegments); // those edges, 7 floats a segment (uihooks.h)
+    int (*MapZoneIds)(u32* ids, int maxIds, int* vibe, u32* colours); // the political zones the map draws, the player's vibe, the palette (uihooks.h)
 };
 inline Table g = {};
 

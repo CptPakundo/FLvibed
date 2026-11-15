@@ -16,6 +16,7 @@
 #include "flexe.h"
 #include "game/hudinfo.h"
 #include "hudhost.h"
+#include "npcicons.h"
 #include "log.h"
 #include "text.h"
 #include "ui/uiopt.h"
@@ -198,9 +199,9 @@ void HotUpdate(Model& m, bool on)
 }
 
 // ---------------------------------------------------------------- the contact list mode (10 Hz)
-static flicons::Icon IconOf(const space::Contact& c, bool hostile)
+static flicons::Icon IconOf(const space::Contact& c, bool)
 {
-    return c.ship ? (hostile ? flicons::Enemy : flicons::Fighter)
+    return c.ship ? npcicons::ClassIcon(hudinfo::ClassName(c.id)) // (hostility is the colour: GitHub 85)
            : (c.type & space::kPlanet)                          ? flicons::Planet
            : (c.type & space::kTradelaneRing)                   ? flicons::Lane
            : (c.type & (space::kJumpGate | space::kJumpHole))   ? flicons::JumpGate
@@ -273,6 +274,12 @@ bool FillList(Model& m, const std::vector<space::Contact>& all, u32 targetId)
         t.dist = DistText(c.distance);
         t.col = !known ? kNeutral : hostile ? kHostile : att >= -aim::kHostileAttitude ? kFriend : kNeutral;
         t.icon = IconOf(c, hostile);
+        // a ship: its own outline (its class icon meanwhile) and the pilot's rank (GitHub 84 + 85; an NPC's only)
+        t.arch = c.ship && !c.player ? c.arch : 0;
+        npcicons::ShownName(t.arch, t.name); // (the test verb's name fixture; nothing without one)
+        npcicons::Want(t.arch);
+        t.rankLen = 0;
+        t.rank = c.ship && !c.player ? npcicons::Rank(t.name, &t.rankLen) : 0;
     }
     return true;
 }

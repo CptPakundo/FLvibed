@@ -6,7 +6,10 @@
 #include "dimouse.h"
 #include "extras/extras.h"
 #include "game/fl.h"
+#include "game/baseinfo.h"
 #include "game/gamemode.h"
+#include "game/room.h"
+#include "ui/gamecard.h"
 #include "game/modslots.h"
 #include "game/aim.h"
 #include "game/apmode.h"
@@ -118,6 +121,23 @@ bool BottomPanelsTop(float& y)
 }
 
 static bool g_cutsceneChat = false; // the chat window held hidden for a cutscene and the letterbox's tail after it (Update)
+
+// Docked, a scene is a scene too (issues 12 and 92: a bar character's talk, a mission's scene in a base): the room's scene
+// (room::InScene: the game's letterbox, or every room button hidden) or a room character talking to the player (+0x36C).
+// In a base the mode is Docked, never Cutscene, so the in-flight rule alone left the chat window up there. The scene test
+// runs without the base: a launch clears it a few frames before the mode reads Cutscene, under the letterbox all along,
+// and the window stood for those frames (lane chatfix, `scratch\chat_after\record.txt` launch34)
+static bool RoomScene()
+{
+    if (room::InScene())
+        return true;
+    if (!fl::PlayerBase())
+        return false;
+    for (void* o : gamecard::Characters())
+        if (baseinfo::CharacterTalking(o))
+            return true;
+    return false;
+}
 
 static void Publish(bool active)
 {
@@ -243,7 +263,8 @@ void Update(float dt, const Context& c)
         // the chat window stood over those last shots (issue 12; measured 14 Nov 2026, lane cutsub, `scratch\cut_dockend*`:
         // the camera is the docking one, then 0 in the base; the letterbox amount stays 1 in the base, so it cannot say it)
         const u32 cam = fl::CurrentCamera();
-        g_cutsceneChat = so.feed || (g_cutsceneChat && (exe::CamDocking.is(cam) || exe::CamCutscene.is(cam)));
+        g_cutsceneChat = so.feed || (in.want && RoomScene()) ||
+                         (g_cutsceneChat && (exe::CamDocking.is(cam) || exe::CamCutscene.is(cam)));
         hudvis::HoldChat(g_cutsceneChat);
         HotUpdate(g_m, false);
         return;

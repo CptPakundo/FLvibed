@@ -131,7 +131,7 @@ void Submit(const Layer* layers, int count, int sw, int sh, bool keepDestAlpha, 
             continue;
         // the flat icons in the HUD tint (the critique, round 3: the maneuver icons read multicoloured): their colour is
         // the vertex colour alone, the shape the texture's alpha; shapes and text modulate (the white texel / the font)
-        const bool icon = li == LIconBig || li == LIconSmall;
+        const bool icon = IconLayer(li);
         SetTSS(0, 1, icon ? 3 : 4); // COLOROP selectarg2 (diffuse) / modulate
         VCall<HRESULT>(g_dev, dev::SetTexture, 0u, l.tex);
         VCall<HRESULT>(g_dev, dev::DrawPrimitiveUP, 4u /*TRIANGLELIST*/, static_cast<UINT>(l.v.size() / 3),

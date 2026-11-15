@@ -301,6 +301,20 @@ bool Project(u32 root, float wx, float wz, float& sx, float& sy)
     return true;
 }
 
+bool ProjectZone(u32 root, const float* v, float& sx, float& sy)
+{
+    // 0x49DCC0's world transform for the zones' triangle list: the orientation +0x3D4 (3 x 3) and the place (0, 0, -0.55), then the map's camera
+    float m[9] = {};
+    if (!root || !safemem::Read(root + 0x3D4, m, sizeof(m)))
+        return false;
+    const float at[3] = {m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2] - 0.55f};
+    float out[3] = {};
+    if (!CameraProject(root + kCamera, at, out))
+        return false;
+    sx = out[0], sy = out[1];
+    return true;
+}
+
 bool ProjectWorld(u32 root, float x, float z, float& sx, float& sy)
 {
     float mapScale = 1;
@@ -319,6 +333,8 @@ static u32 ShownSystem(u32 root)
         return 0;
     }
 }
+
+u32 ShownSystemId(u32 root) { return root ? ShownSystem(root) : 0; }
 
 bool ShowsShipSystem(u32 root)
 {

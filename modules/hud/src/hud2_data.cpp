@@ -30,6 +30,7 @@
 #include "keycap_name.h"
 #include "hud_bus.h"
 #include "hudvis.h"
+#include "npcicons.h"
 #include "log.h"
 #include "settings_bus.h"
 #include "str.h"
@@ -923,6 +924,15 @@ void Slow()
             t.col = kHostile;
             t.id = c.id;
             t.icon = flicons::Enemy;
+            t.arch = 0, t.rank = 0, t.rankLen = 0;
+            if (c.ship) // its own outline, its class icon meanwhile, the rank (GitHub 84 + 85; hostility is the colour)
+            {
+                t.icon = npcicons::ClassIcon(hudinfo::ClassName(c.id));
+                t.arch = c.player ? 0 : c.arch;
+                npcicons::ShownName(t.arch, t.name); // (the test verb's name fixture; nothing without one)
+                npcicons::Want(t.arch);
+                t.rank = c.player ? 0 : npcicons::Rank(t.name, &t.rankLen);
+            }
         }
         if (!tid || c.id != tid)
             continue;
@@ -962,12 +972,16 @@ void Slow()
         bool up = false;
         m.tShield = space::ShieldOf(c.id, cur, mx, up) && mx > 0 ? (up ? cur / mx : 0) : -1;
         m.tBars = c.ship || (c.health >= 0 && c.health < 0.999f && !(c.type & space::kPlanet));
-        const std::wstring cls = m.tClass;
-        m.tIcon = c.ship ? (tHostile ? flicons::Enemy
-                                     : (cls.find(L"FREIGHT") != std::wstring::npos || cls.find(L"TRANSPORT") != std::wstring::npos)
-                                           ? flicons::Transport
-                                           : flicons::Fighter)
-                  : (c.type & space::kPlanet)                          ? flicons::Planet
+        // a ship: its class icon, never the Enemy chevron (GitHub 85: hostility is the colour); its own outline and the
+        // pilot's rank (an NPC's: another player's ship has neither)
+        m.tArch = c.ship && !c.player ? c.arch : 0;
+        npcicons::ShownName(m.tArch, m.tName); // (the test verb's name fixture; nothing without one)
+        npcicons::Want(m.tArch);
+        m.tRank = c.ship && !c.player ? npcicons::Rank(m.tName, &m.tRankLen) : 0;
+        if (!m.tRank)
+            m.tRankLen = 0;
+        m.tIcon = c.ship ? npcicons::ClassIcon(m.tClass)
+                  : (c.type & space::kPlanet)                         ? flicons::Planet
                   : (c.type & space::kTradelaneRing)                   ? flicons::Lane
                   : (c.type & (space::kJumpGate | space::kJumpHole))   ? flicons::JumpGate
                   : (c.type & space::kLoot)                            ? flicons::Loot

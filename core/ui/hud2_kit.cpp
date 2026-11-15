@@ -16,7 +16,7 @@
 // (ASCII only: the build reads the sources as cp1252, non-ASCII text goes in as \u escapes)
 namespace hud2kit
 {
-static Layer g_layers[LCount];
+static Layer g_layers[LAll]; // (LShip after the recorded six)
 static std::vector<MarkAt> g_marks; // the pass's cut marks (Mark), cleared at Begin
 
 static void* g_dev = nullptr; // the pass's device as a handle (the fonts' key; drawn on by the backend)
@@ -535,6 +535,47 @@ bool Icon(flicons::Icon icon, float cx, float cy, float size, u32 argb, float an
     return true;
 }
 
+// ---- the NPC ships' outlines (GitHub 85): a source the HUD module sets (npcicons.*), none on the bench
+static ShipUvFn g_shipUv = nullptr;
+void SetShipSource(ShipUvFn fn) { g_shipUv = fn; }
+
+bool ShipIcon(u32 arch, float cx, float cy, float size, u32 argb)
+{
+    void* tex = nullptr;
+    float uv[4];
+    const int px = static_cast<int>(size + 0.5f);
+    if (!arch || !g_shipUv || px < 4 || !g_shipUv(arch, px, &tex, uv) || !tex)
+        return false;
+    const u32 c = Mul(argb);
+    if (!(c >> 24))
+        return true;
+    Layer& l = g_layers[LShip];
+    if (l.tex && l.tex != tex)
+        return false; // (one atlas per pass)
+    l.tex = tex;
+    // the cell at its own pixel size, its corner on a whole pixel: one texel per pixel, as it was baked
+    const float x0 = std::floor(cx - px * 0.5f + 0.5f), y0 = std::floor(cy - px * 0.5f + 0.5f), x1 = x0 + px, y1 = y0 + px;
+    Push(l, x0, y0, c, uv[0], uv[1]), Push(l, x1, y0, c, uv[2], uv[1]), Push(l, x1, y1, c, uv[2], uv[3]);
+    Push(l, x0, y0, c, uv[0], uv[1]), Push(l, x1, y1, c, uv[2], uv[3]), Push(l, x0, y1, c, uv[0], uv[3]);
+    return true;
+}
+
+void RankMark(int tier, float cx, float cy, float size, u32 argb)
+{
+    if (tier < 1 || tier > 3)
+        return;
+    // open chevrons pointing up, stacked (146_ legend: tier 1 one, 2 two, 3 three), its proportions: 0.76 of the mark wide,
+    // 0.30 high, stroke 0.13, a chevron every 0.25 (tier 3 spans 0.80 of the mark), the stack centred
+    const float w = size * 0.38f, st = std::max(1.0f, size * 0.13f), h = size * 0.30f, gap = size * 0.25f;
+    const float top = cy - (h + gap * (tier - 1)) * 0.5f;
+    for (int i = 0; i < tier; ++i)
+    {
+        const float y = top + gap * i;
+        Line(cx - w, y + h, cx, y, st, argb);
+        Line(cx, y, cx + w, y + h, st, argb);
+    }
+}
+
 // ---------------------------------------------------------------- text
 static bool UseBig(float size) { return size > g_small.px * 1.1f; }
 
@@ -547,6 +588,29 @@ static float RawWidth(const render::Font& f, const std::wstring& s)
             w += static_cast<float>(g->advance);
     }
     return w;
+}
+
+// TextFrom's entries: the source it was composed from (compared, then copied into its kept capacity) and the tail.
+struct Tail
+{
+    std::wstring src, out;
+    int from = -1;
+};
+static Tail g_tails[kTailSlots + 1]; // (the last: the scratch for a slot out of range)
+
+const std::wstring& TextFrom(int slot, const std::wstring& s, int from)
+{
+    Tail& t = g_tails[(slot >= 0 && slot < kTailSlots) ? slot : kTailSlots];
+    if (from < 0)
+        from = 0;
+    if (static_cast<size_t>(from) > s.size())
+        from = static_cast<int>(s.size());
+    if (t.from != from || t.src != s)
+    {
+        t.src = s, t.from = from;
+        t.out.assign(s, static_cast<size_t>(from), std::wstring::npos);
+    }
+    return t.out;
 }
 
 float TextWidth(const std::wstring& s, float size, float track)
@@ -1173,7 +1237,7 @@ void End()
     ++g_frames;
     if (!g_dev || !verts)
         return;
-    backend::Submit(g_layers, LCount, g_sw, g_sh, g_keepDestAlpha, g_lastCalls); // the six draw calls
+    backend::Submit(g_layers, LAll, g_sw, g_sh, g_keepDestAlpha, g_lastCalls); // the six draw calls and the ships' outlines
     g_keepDestAlpha = false;
 }
 

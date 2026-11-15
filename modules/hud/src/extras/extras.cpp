@@ -42,9 +42,20 @@ static void GameText(bool menu) { gametext::Frame(GameTextPercent(), menu); }
 
 static struct
 {
-    bool classic, eligible, hidden;
+    bool classic, eligible, hidden, cover;
     int mx, my;
+    const char* seen; // the game's cursor name this frame's rule read
 } g_idle = {}; // the last frame's idle cursor, for the verb `idlecursor`
+
+// TEST ONLY `idlecursor force <cursor object>|off` (issue 91): the game's current cursor (exe::CurrentCursor) set to one entry of its own cursor
+// table (the harness reads the table) before the cover's and the skin's reads each frame, as a focused game renames it in flight; a background game
+// writes its arrow back every frame.
+static u32 g_forceCursor = 0;
+void ForceCursor()
+{
+    if (g_forceCursor && exe::CurrentCursor.ok())
+        Mem<u32>(exe::CurrentCursor) = g_forceCursor;
+}
 
 // The game's mouse cursor under hud_fade 1 (core\game\hudwake.h CursorStep): in flight with the keyboard and mouse it hides after 3 s without mouse movement
 // or a button and shows again the frame either comes; shown in every other context (a menu, the map, a dialog / popup = any non-HUD window, the options page,
@@ -73,10 +84,14 @@ static void Cursor(float dt, bool padOwns, bool flyingFree, bool (*onlyHudOpen)(
     // idle_cursor (CUES AND TEXT, both HUDs) switches it; with HUD 2 hud_fade ALWAYS keeps it shown too (the HUD never rests)
     const int fade = hudrows::idleCursorHide && (classic || uiopt::Get().hudFade > 0) ? 1 : 0;
     const bool hide = hudwake::CursorStep(cs, fade, eligible, activity, dt);
-    g_idle = {classic, eligible, hide, mx, my};
+    ForceCursor();
+    g_idle = {classic, eligible, hide, false, mx, my, fl::CursorName()};
     // a Neural Net tab on its way with no window up yet: the game still shows its flight cursor, the reticle's centre mark, over the cover; it goes until the
-    // window takes the mouse (the game's arrow)
-    const bool cover = g_feed.cover && g_feed.cover() && _stricmp(fl::CursorName(), "arrow") != 0;
+    // window takes the mouse (the game's arrow). In flight a focused game later renames the page's cursor "cross" (issue 91): that one stays
+    // (hudwake::PageCursorName), HUD 2's skin draws it as its arrow
+    const bool page = g_feed.cover && g_feed.cover();
+    const bool cover = page && _stricmp(hudwake::PageCursorName(fl::CursorName(), page, !fl::PlayerBase()), "arrow") != 0;
+    g_idle.cover = cover;
     hostcalls::CursorHide(hostcalls::kCursorHideIdle, hide || cover);
     if (g_feed.hidden)
         g_feed.hidden(hide);
@@ -184,13 +199,23 @@ bool Command(const std::string& op, std::istream& in, std::string& reply)
                  " cues=" + (CuesHere() ? "run" : "off") + " game_text=" + std::to_string(GameTextPercent());
         return true;
     }
-    if (op == "idlecursor") // idlecursor: the idle cursor's hide as the last frame decided it
+    if (op == "idlecursor") // idlecursor: the idle cursor's hide as the last frame decided it | idlecursor force <cursor object>|off (TEST ONLY)
     {
+        std::string what;
+        if (in >> what && what == "force")
+        {
+            std::string v;
+            in >> v;
+            g_forceCursor = v == "off" ? 0 : static_cast<u32>(strtoul(v.c_str(), nullptr, 0));
+            reply = "idlecursor force=" + std::to_string(g_forceCursor);
+            return true;
+        }
         std::ostringstream o;
         o << "idlecursor rule=" << (g_idle.classic ? "classic" : "hud2") << " eligible=" << (g_idle.eligible ? 1 : 0) << " hidden=" << (g_idle.hidden ? 1 : 0)
           << " hud_fade=" << uiopt::Get().hudFade << " idle_cursor=" << (hudrows::idleCursorHide ? 1 : 0) << " mouse=" << g_idle.mx << "," << g_idle.my
           << " cursor=" << fl::CursorName()
-          << " hide=" << hostcalls::g_cursorHide; // (the game's cursor by name, and who hides it: hostcalls kCursorHide* bits)
+          << " hide=" << hostcalls::g_cursorHide // (the game's cursor by name, and who hides it: hostcalls kCursorHide* bits)
+          << " seen=" << (g_idle.seen ? g_idle.seen : "") << " cover=" << (g_idle.cover ? 1 : 0) << " force=" << g_forceCursor;
         reply = o.str();
         return true;
     }

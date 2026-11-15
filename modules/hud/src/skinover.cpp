@@ -1,12 +1,14 @@
 // HUD 2's cursor and tooltip - see skinover.h. The cursor's shapes are the sheet's, in fractions of its size.
 #include "skinover.h"
 
+#include "extras/extras.h"
 #include "flexe.h"
 #include "game/baseinfo.h"
 #include "game/deckmode.h"
 #include "game/fl.h"
 #include "game/ini.h"
 #include "game/hostcalls.h"
+#include "game/hudwake.h"
 #include "game/render.h"
 #include "hook.h"
 #include "log.h"
@@ -197,10 +199,11 @@ void DrawCursor(float W)
     }
 }
 
-// The game's name of the moment: a known row, or the game's own cursor with one log line per name.
+// The game's name of the moment: a known row, or the game's own cursor with one log line per name. A NeuroNet page up in flight reads the game's
+// flight cursor "cross" as the arrow (issue 91: a focused game renames the page's cursor so; hudwake::PageCursorName).
 const CursorRow* CurrentRow()
 {
-    const char* name = fl::CursorName();
+    const char* name = hudwake::PageCursorName(fl::CursorName(), nnstrip::Wanted(), !fl::PlayerBase());
     if (!name || !*name)
         return nullptr;
     const CursorRow* row = CursorFor(name);
@@ -389,6 +392,7 @@ std::vector<TipRect> Blocks(float W, float H)
 
 void Draw(void* device, bool on, bool pad)
 {
+    extras::ForceCursor(); // (TEST ONLY: nothing unless `idlecursor force`)
     const bool cursorOn = on && exe::CursorShown.ok();
     g_row = cursorOn ? CurrentRow() : nullptr;
     // (hidden the frame before it is drawn, and the game's shows at once for anything this pass cannot draw)

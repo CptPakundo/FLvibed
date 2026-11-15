@@ -687,6 +687,9 @@ void Start(HMODULE)
     g_host.SetLoadDraw = router::SetLoadDraw;            // v40: the load's frame
     g_host.InstallHud2Hooks = router::InstallHud2Hooks;  // v47: HUD 2's own hooks at its first selection (the target label's mute among them)
     g_host.SetRawMouse = dimouse::SetRaw;                // v48: the raw mouse (mouse_raw)
+    g_host.SetQuietZones = uihooks::SetQuietZones;       // v49: HUD 2's map zones (issue 61)
+    g_host.MapZoneEdges = uihooks::MapZoneEdges;         // v49
+    g_host.MapZoneIds = uihooks::MapZoneIds;             // v50
     // DmgIndSource: sub esp,88h (6 bytes); DmgIndContact: sub esp,3Ch; push esi; mov esi,ecx (6 bytes)
     if (router::ModuleOn(modules::kHud) || router::ModuleOn(modules::kAutopilot))
         uihooks::InstallHits();

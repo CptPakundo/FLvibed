@@ -241,6 +241,7 @@ void InstallHud2Hooks()
     if (!g_origBatchClose && exe::UiBatchClose.ok() && exe::LoadBracketCall.ok())
         g_origBatchClose = static_cast<BatchCloseFn>(hk::Detour(exe::UiBatchClose, BatchCloseHook, 5, "the loading screen"));
     uihooks::InstallTargetMute();
+    uihooks::InstallMapZones();
 }
 
 bool RawKeysWanted() { return g_clients[kController] && g_clients[kController]->rawKey; }

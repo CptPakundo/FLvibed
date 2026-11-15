@@ -128,6 +128,8 @@ struct Model
     bool tBars = false;
     float tShield = -1, tHull = -1;
     flicons::Icon tIcon = flicons::Station;
+    u32 tArch = 0;              // a ship target's archetype: its outline (as Threat::arch)
+    int tRank = 0, tRankLen = 0; // its pilot's rank tier and rank word (as Threat::rank, rankLen)
     bool tWaypoint = false; // the target is also a waypoint (the game's record says so): a small diamond round the caret
     struct
     {
@@ -164,7 +166,10 @@ struct Model
         std::wstring name, dist;
         u32 col;
         u32 id = 0;
-        flicons::Icon icon = flicons::Enemy;
+        flicons::Icon icon = flicons::Enemy; // a ship's: the class icon, drawn while its outline is not baked (GitHub 85)
+        u32 arch = 0;    // a ship's archetype: its own top-down outline (hud2kit::ShipIcon), 0 none
+        int rank = 0;    // the pilot's rank tier 1..3 (the rank mark), 0 none (GitHub 84)
+        int rankLen = 0; // the characters of `name`'s leading rank word and its space: the word that gives way first
     } threats[10];
     int nThreats = 0;
     std::wstring filter;            // the list's filter word

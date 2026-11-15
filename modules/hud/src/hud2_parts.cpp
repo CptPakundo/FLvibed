@@ -683,7 +683,9 @@ void DrawTarget(const Model& m, const Layout& L, float a)
     else
         Plate(x0, y0, x1, y1, 0.012f * H * k, kTR | kBL, 170 / 255.0f, kChrome, 0.43f, 'l', m.tCol);
     // no view (none wanted for this kind, not built yet, or stale): the flat type icon at 0.07 H in the window
-    if (!m.tView && !Icon(m.tIcon, x0 + 0.012f * H * k + vw / 2, (y0 + y1) / 2, 0.07f * H * k, Argb(m.tCol, 1)))
+    // (a ship: its own outline, GitHub 85)
+    if (!m.tView && !ShipIcon(m.tArch, x0 + 0.012f * H * k + vw / 2, (y0 + y1) / 2, 0.07f * H * k, Argb(m.tCol, 1)) &&
+        !Icon(m.tIcon, x0 + 0.012f * H * k + vw / 2, (y0 + y1) / 2, 0.07f * H * k, Argb(m.tCol, 1)))
     {
         const float cx = x0 + 0.012f * H * k + vw / 2, cy = (y0 + y1) / 2, d = vw * 0.2f;
         const float dia[8] = {cx, cy - d, cx + d, cy, cx, cy + d, cx - d, cy};
@@ -719,7 +721,15 @@ void DrawTarget(const Model& m, const Layout& L, float a)
     // cut to the card ("FIGHTER - LEVEL 1" ran past its edge beside a wide chip): the short level form first, then cut
     // (a pixel of slack: CardContentWidth sizes the card to this very line and its edges land on whole pixels, so a line
     // that fits exactly read as a tie lost by a fraction - "LV 3" at hud_scale 130 once the layout measured in HUD 2's size)
-    const float clsRoom = right - (tx + cw + 0.012f * H * k) + 1.0f;
+    float clsX = tx + cw + 0.012f * H * k;
+    if (m.tArch) // an NPC ship: its own outline (its class icon meanwhile) 0.024 H, dim, before the class word (GitHub 85, 146_)
+    {
+        const float is = 0.024f * H * k;
+        if (!ShipIcon(m.tArch, clsX + is / 2, yy, is, Argb(kDim, 1)))
+            Icon(m.tIcon, clsX + is / 2, yy, is, Argb(kDim, 1));
+        clsX += is + 0.008f * H * k; // (CardContentWidth counts the same 0.032 H)
+    }
+    const float clsRoom = right - clsX + 1.0f;
     if (m.tLevel >= 0 && TextWidth(cls, T, 0.06f) > clsRoom)
     {
         wchar_t lv[24];
@@ -727,18 +737,25 @@ void DrawTarget(const Model& m, const Layout& L, float a)
         cls = m.tClass + lv;
     }
     if (!cls.empty())
-        TextMarquee(tx + cw + 0.012f * H * k, yy, cls, T, clsRoom, Argb(kDim, 1), Left, 0.06f);
+        TextMarquee(clsX, yy, cls, T, clsRoom, Argb(kDim, 1), Left, 0.06f);
     yy += 0.040f * H * k;
     // a long name (a lane's "Colorado Jump Gate->Fort Bush") steps down by the fit rule before it is cut
     // no faction (a waypoint, loot, a lane ring): its row collapses - the distance moves onto the name's row (the round
     // 4 critique: a blank faction row)
     const bool facRow = !m.tFaction.empty();
     const float distW = TextWidth(m.tDist, 0.032f * H * k) + 0.016f * H * k;
-    float nameRoom = right - tx - (facRow ? 0 : distW);
+    // the pilot's rank mark before the name, 0.028 H (GitHub 84); a name too long drops its rank word first (146_)
+    const float nx = m.tRank ? tx + 0.036f * H * k : tx;
+    if (m.tRank)
+        RankMark(m.tRank, tx + 0.014f * H * k, yy, 0.028f * H * k, Argb(kInk, 1));
+    float nameRoom = right - nx - (facRow ? 0 : distW);
+    const bool dropWord = m.tRankLen > 0 && m.tRankLen < static_cast<int>(m.tName.size()) &&
+                          TextWidth(m.tName, 0.032f * H * k) > nameRoom;
+    const std::wstring& name = dropWord ? TextFrom(0, m.tName, m.tRankLen) : m.tName; // (kept: no string per frame)
     if (facRow) // (the distance on the faction row under it: diagonal neighbours keep 0.01 H - ClearRoom)
-        nameRoom = ClearRoom(m.tName, 0.032f * H * k, 0, tx, nameRoom, right - TextWidth(m.tDist, 0.032f * H * k),
+        nameRoom = ClearRoom(name, 0.032f * H * k, 0, nx, nameRoom, right - TextWidth(m.tDist, 0.032f * H * k),
                              0.011f * H * k);
-    TextMarquee(tx, yy, m.tName, 0.032f * H * k, nameRoom, Argb(kInk, 1));
+    TextMarquee(nx, yy, name, 0.032f * H * k, nameRoom, Argb(kInk, 1));
     if (!facRow)
         Text(right, yy, m.tDist, 0.032f * H * k, Argb(kInk, 1), Right);
     yy += 0.036f * H * k;
@@ -1231,9 +1248,11 @@ float CardContentWidth(const Model& m, const Layout& L)
         cls += lv;
     }
     const float chip = TextWidth(m.tAtt, T, 0.1f) + 0.016f * H * k;
-    float w = chip + (cls.empty() ? 0.0f : 0.012f * H * k + TextWidth(cls, T, 0.06f));
+    float w = chip + (cls.empty() ? 0.0f : 0.012f * H * k + TextWidth(cls, T, 0.06f)) +
+              (m.tArch ? 0.032f * H * k : 0.0f); // (an NPC ship's class-line icon and its gap)
     const float distW = TextWidth(m.tDist, 0.032f * H * k) + 0.016f * H * k;
-    w = std::max(w, TextWidth(m.tName, 0.032f * H * k) + distW); // (the name clear of the distance, on its row or under it)
+    // (the name clear of the distance, on its row or under it; after its rank mark: the word gives way only past the cap)
+    w = std::max(w, (m.tRank ? 0.036f * H * k : 0.0f) + TextWidth(m.tName, 0.032f * H * k) + distW);
     if (!m.tFaction.empty())
         w = std::max(w, TextWidth(m.tFaction, 0.026f * H * k) + distW);
     if (m.tBars)
@@ -1846,7 +1865,7 @@ void DrawTargetCompact(const Model& m, const Layout& L, float a, float rowsA, bo
     const float x0 = L.tgtX0, y0 = L.tgtY0, x1 = L.tgtX1, y1 = L.tgtY1;
     Plate(x0, y0, x1, y1, 0.012f * H * k, kTR | kBL, 170 / 255.0f, kChrome, 0.43f, 'l', m.tCol);
     const float iw = 0.046f * H * k, icx = x0 + 0.012f * H * k + iw / 2, icy = y0 + 0.037f * H * k;
-    if (!Icon(m.tIcon, icx, icy, 0.040f * H * k, Argb(m.tCol, 1)))
+    if (!ShipIcon(m.tArch, icx, icy, 0.040f * H * k, Argb(m.tCol, 1)) && !Icon(m.tIcon, icx, icy, 0.040f * H * k, Argb(m.tCol, 1)))
     {
         const float d = iw * 0.3f;
         const float dia[8] = {icx, icy - d, icx + d, icy, icx, icy + d, icx - d, icy};
@@ -1861,8 +1880,17 @@ void DrawTargetCompact(const Model& m, const Layout& L, float a, float rowsA, bo
     // row 1
     float yy = y0 + 0.022f * H * k;
     const float ds = 0.026f * H * k, distW = m.tDist.empty() ? 0 : TextWidth(m.tDist, ds) + 0.012f * H * k;
-    TextMarquee(tx, yy, m.tName, 0.030f * H * k, ClearRoom(m.tName, 0.030f * H * k, 0, tx, right - tx - distW, clsX, colGap),
-            Argb(kInk, 1));
+    {
+        // the rank mark before the name (GitHub 84); the rank word gives way first (146_)
+        const float nx = m.tRank ? tx + 0.032f * H * k : tx;
+        if (m.tRank)
+            RankMark(m.tRank, tx + 0.012f * H * k, yy, 0.024f * H * k, Argb(kInk, 1));
+        const bool dropWord = m.tRankLen > 0 && m.tRankLen < static_cast<int>(m.tName.size()) &&
+                              TextWidth(m.tName, 0.030f * H * k) > right - nx - distW;
+        const std::wstring& name = dropWord ? TextFrom(3, m.tName, m.tRankLen) : m.tName; // (kept: no string per frame)
+        TextMarquee(nx, yy, name, 0.030f * H * k, ClearRoom(name, 0.030f * H * k, 0, nx, right - nx - distW, clsX, colGap),
+                    Argb(kInk, 1));
+    }
     if (distW > 0)
         Text(right, yy, m.tDist, ds, Argb(kInk, 1), Right);
     // row 2
@@ -1935,10 +1963,17 @@ void DrawTargetCompact(const Model& m, const Layout& L, float a, float rowsA, bo
         {
             const float ry = sepY + 0.004f * H * k + pitch * (i + 0.5f);
             // (0.021, was 0.024: the two rows' icons stacked at the 0.032 pitch keep the lint's 0.01 H - B4-B7)
-            if (!Icon(m.threats[i].icon, x0 + 0.030f * H * k, ry, 0.021f * H * k, Argb(m.threats[i].col, 1)))
-                Disc(x0 + 0.030f * H * k, ry, 0.005f * H * k, Argb(m.threats[i].col, 1));
-            const float dw = TextWidth(m.threats[i].dist, T) + 0.012f * H * k;
-            TextMarquee(tx, ry, m.threats[i].name, T, right - tx - dw, Argb(kInk, 1));
+            const Model::Threat& th = m.threats[i];
+            if (!ShipIcon(th.arch, x0 + 0.030f * H * k, ry, 0.021f * H * k, Argb(th.col, 1)) &&
+                !Icon(th.icon, x0 + 0.030f * H * k, ry, 0.021f * H * k, Argb(th.col, 1)))
+                Disc(x0 + 0.030f * H * k, ry, 0.005f * H * k, Argb(th.col, 1));
+            const float dw = TextWidth(th.dist, T) + 0.012f * H * k;
+            // the rank mark at the name's place, the name after it; the rank word gives way first (GitHub 84, 146_)
+            const float nx = th.rank ? tx + 0.022f * H * k : tx, room = right - nx - dw;
+            if (th.rank)
+                RankMark(th.rank, tx + 0.008f * H * k, ry, 0.017f * H * k, Argb(kInk, 1));
+            const bool dropWord = th.rankLen > 0 && th.rankLen < static_cast<int>(th.name.size()) && TextWidth(th.name, T) > room;
+            TextMarquee(nx, ry, dropWord ? TextFrom(1 + i, th.name, th.rankLen) : th.name, T, room, Argb(kInk, 1));
             Text(right, ry, m.threats[i].dist, T, Argb(kInk, 1), Right);
         }
         RecordTag("card");

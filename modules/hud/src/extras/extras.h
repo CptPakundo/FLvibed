@@ -16,6 +16,8 @@ struct CursorFeed
     bool (*cover)();         // a NeuroNet tab is on its way with no window up: the flight cursor goes under the cover
 };
 void SetCursorFeed(const CursorFeed& feed);
+// TEST ONLY (`idlecursor force`): puts the forced game cursor back before a read of it; nothing while not forced.
+void ForceCursor();
 
 // At the UI pass's entry, every frame on both interfaces: the game's hover help hidden in flight unless the mouse moved in the last 3 s (UI_HUD2.md "the
 // hover help"). `space`: free flight, no NeuroNet window on its way (the classic HUD's door passes it with the pad only); `menuOver`: a modal menu over

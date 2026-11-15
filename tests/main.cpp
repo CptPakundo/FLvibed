@@ -38,6 +38,8 @@ void Test_winfit();
 void Test_nntabs();
 void Test_navmap_layout();
 void Test_padmap_zones();
+void Test_spawnsim();
+void Test_influence();
 void Test_navview();
 void Test_navmap_labels();
 void Test_movie_words();
@@ -76,6 +78,7 @@ void Test_dealer_rules();
 void Test_pad_slots();
 void Test_pad_backend();
 void Test_rawmouse();
+void Test_zonemix();
 void Test_sdl_testpad();
 void Test_orig_image();
 void Test_winmode();
@@ -129,6 +132,7 @@ void Test_ash_ride();
 void Test_hud2_notice();
 void Test_infobody();
 void Test_modelslot(); // the model slot (audit 70b F7)
+void Test_npcicons();  // the NPC icons: ship silhouettes, rank words (GitHub 84 + 85)
 
 static bool DirExists(const std::string& p)
 {
@@ -284,6 +288,8 @@ int main(int argc, char** argv)
         {"nntabs", Test_nntabs},
         {"navmap_layout", Test_navmap_layout},
         {"padmap_zones", Test_padmap_zones},
+        {"spawnsim", Test_spawnsim},
+        {"influence", Test_influence},
         {"navview", Test_navview},
         {"navmap_labels", Test_navmap_labels},
         {"movie_words", Test_movie_words},
@@ -322,6 +328,7 @@ int main(int argc, char** argv)
     {"pad_slots", Test_pad_slots},
         {"pad_backend", Test_pad_backend},
         {"rawmouse", Test_rawmouse},
+        {"zonemix", Test_zonemix},
         {"sdl_testpad", Test_sdl_testpad},
         {"orig_image", Test_orig_image},
         {"winmode", Test_winmode},
@@ -375,6 +382,7 @@ int main(int argc, char** argv)
         {"hud2_notice", Test_hud2_notice},
         {"infobody", Test_infobody},
         {"modelslot", Test_modelslot},
+        {"npcicons", Test_npcicons},
     };
     for (const Test& t : tests)
     {

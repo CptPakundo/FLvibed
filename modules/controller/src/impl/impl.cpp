@@ -91,6 +91,9 @@ static void ImplInit(const HostApi* host)
     calls.HoldRealWheel = host->HoldRealWheel;
     calls.InstallHud2Hooks = host->InstallHud2Hooks;
     calls.SetRawMouse = host->SetRawMouse;
+    calls.SetQuietZones = host->SetQuietZones;
+    calls.MapZoneEdges = host->MapZoneEdges;
+    calls.MapZoneIds = host->MapZoneIds;
     hostcalls::g = calls;
     device_view::Publish();
     ctl::PublishPadFlight();

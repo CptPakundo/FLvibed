@@ -20,7 +20,7 @@ body:
     id: version
     attributes:
       label: FLvibed version
-      placeholder: "0.4.7"
+      placeholder: "0.4.8"
   - type: dropdown
     id: game
     attributes:

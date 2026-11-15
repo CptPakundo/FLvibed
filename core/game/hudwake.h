@@ -122,4 +122,23 @@ inline bool CursorStep(CursorState& s, int mode, bool eligible, bool activity, f
     s.idle += dt;
     return s.idle >= kCursorIdleS;
 }
+
+// The game's cursor name as a NeuroNet page over the flight reads it (issue 91). In flight a FOCUSED game renames its cursor from "arrow" to its
+// flight cursor "cross" (DATA\mouse.ini; exe::CursorName) about 0.85 s after the stick stops or moves, while the page stays up (a background game
+// keeps "arrow"). With a page up in flight that "cross" is the page's cursor: HUD 2's cover keeps it and its skin draws its arrow. Every other name,
+// docked, or no page up: the game's name stands. Pure; test: tests\hudwake_test.cpp.
+inline const char* PageCursorName(const char* name, bool pageUp, bool flight)
+{
+    if (!pageUp || !flight || !name)
+        return name;
+    const char* cross = "cross";
+    for (int i = 0;; ++i)
+    {
+        const char c = name[i] >= 'A' && name[i] <= 'Z' ? static_cast<char>(name[i] - 'A' + 'a') : name[i];
+        if (c != cross[i])
+            return name;
+        if (!c)
+            return "arrow";
+    }
+}
 } // namespace hudwake

@@ -14,6 +14,7 @@
 #include "game/space.h"
 #include "hudhost.h"
 #include "log.h"
+#include "mapcells.h"
 #include "navmap_labels.h"
 #include "safemem.h"
 #include "skinover.h"
@@ -367,6 +368,8 @@ void Frame(u32 root, const Rc& map, bool pad)
         GiveBack(), g_w.root = root;
     g_port = map;
     g_lay = navlayout::Solve(g_W, g_H, deckmode::SideW());
+    if (hostcalls::g.SetQuietZones)
+        hostcalls::g.SetQuietZones(mapcells::Frame(root)); // (the filter ALL shows every zone on this map, outlined: DrawZoneEdges; the political one the cells once ready)
     u32 view = 1;
     R32(root + kView, view);
     u8 animating = 0;
@@ -650,6 +653,25 @@ static void DrawSectors(const Rc& port, float H)
     }
 }
 
+// The zones' outline (issue 61): on this map the filter ALL shows every zone, friendly and hostile over neutral (core\host\uihooks.cpp ZoneBuildHook), so a thin
+// line in the colour of each zone's dominant relation keeps overlapping zones apart (none while the influence cells stand in for the political fill: mapcells.h). The edges are the game's vertices, placed as its zone draw places them (navview::ProjectZone).
+constexpr float kNeutralZoneOutline = 0.85f; // the outline's opacity
+static void DrawZoneEdges(const Rc& port, float H)
+{
+    static float seg[4096 * 7];
+    const int n = hostcalls::g.MapZoneEdges ? hostcalls::g.MapZoneEdges(seg, 4096) : 0;
+    const float width = std::max(1.0f, 0.0009f * H);
+    for (int i = 0; i < n; ++i)
+    {
+        float ax = 0, ay = 0, bx = 0, by = 0;
+        const float* s = seg + i * 7;
+        u32 colour = 0;
+        memcpy(&colour, s + 6, 4);
+        if (navview::ProjectZone(g_w.root, s, ax, ay) && navview::ProjectZone(g_w.root, s + 3, bx, by) && (port.Holds(ax, ay) || port.Holds(bx, by)))
+            Line(ax, ay, bx, by, width, Argb(colour & 0xFFFFFFu, kNeutralZoneOutline));
+    }
+}
+
 void DrawOverMap(const Rc& port, const Rc* keep, int nKeep)
 {
     if (!g_on || !g_transform)
@@ -658,6 +680,14 @@ void DrawOverMap(const Rc& port, const Rc* keep, int nKeep)
     int layer = 0;
     if (exe::NavMapMode.ok())
         safemem::Read(static_cast<u32>(exe::NavMapMode.get()), &layer, 4);
+    if (layer == 1 || layer == 2)
+    {
+        DrawZoneEdges(port, H);
+        // the influence cells (political ALL), their legend in the right panel under the selection's card
+        Rc legend = g_lay.right;
+        legend.y0 = std::max(legend.y0 + RightHeight(g_lay.right, H) + 0.018f * H, legend.y0 + 0.30f * legend.H());
+        mapcells::Draw(g_w.root, port, H, legend);
+    }
     if (!navlabels::LabelsInLayer(layer))
         return;
     static navlabels::Label labels[kMaxLabels];
@@ -770,6 +800,8 @@ std::string Command(std::istream& in)
         safemem::Read(g_w.root + kSelected, at, sizeof(at));
     o << "navnew sel=" << g_selected << " at=" << at[0] << "," << at[2] << " rec=" << (g_w.root ? SelectedRecord(g_w.root) : 0) << " on=" << g_on << " grown=" << g_w.grown << " transform=" << g_transform << " view=" << g_view.view << " scale=" << g_view.scaleX << "," << g_view.scaleZ
       << " zoom=" << g_view.zoom << " records=" << g_records << " labels=" << g_drawn << " dropped=" << g_dropped << " gameLabelsOff=" << g_w.labelsOff << " show=" << g_w.showLabels;
+    if (what == "cells") // the influence cells (mapcells.h)
+        o << "\n  " << mapcells::Status();
     if (what == "keep") // the keep-outs the last labels kept clear of, and the labels that stood
     {
         for (int i = 0; i < g_nLastKeep; ++i)

@@ -92,6 +92,11 @@ flight comms; at 1600x1200, 2560x1080, 1280x720 and 3840x2160.
   Since 0.4.7 HUD 2 holds the window hidden in every cutscene and on through that camera's tail, and publishes no comm
   feed (issue 92; `hud2_frame.cpp` StepStart, `hud2.cpp` Update, `hudvis::HoldChat`); the lines go to the chat's log only.
   The classic HUD keeps the game's own window.
+  A scene in a base is never Mode::Cutscene (`exe::PlayerBase` set: Mode::Docked), so that rule missed every room scene:
+  a bar character's talk runs letterboxed (`exe::LetterboxAmount` 1.0 from ~0.4 s after `talk`, and while its offer
+  dialog stands) with `MsgWin` visible beside the subtitles (issue 92; lane chatfix `scratch\chat_before\`, 15 Nov 2026).
+  Since then HUD 2 holds it there too: docked, `room::InScene` or a room character talking to the player (`hud2.cpp`
+  RoomScene).
 - **Death keeps the ship's id** `[game, 14 Nov 2026]`: after the player's ship is destroyed (`selfdestruct`), the death camera
   and then the death page (mode `menu`) follow while `exe::PlayerShipId` stays set, so "no ship and no base" never reads as
   the menu there; a launch comm's subtitle stood over the death page's buttons (`pages` listed it at age 5.7 s). The

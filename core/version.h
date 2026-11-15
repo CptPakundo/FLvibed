@@ -5,6 +5,6 @@
 
 #define FLV_VERSION_MAJOR 0
 #define FLV_VERSION_MINOR 4
-#define FLV_VERSION_PATCH 7
+#define FLV_VERSION_PATCH 8
 #define FLV_VERSION_BUILD 0
-#define FLV_VERSION "0.4.7" // (the owner, 13 Nov 2026: the fixes and the new page framework underneath are 0.4.7)
+#define FLV_VERSION "0.4.8" // (the owner, 15 Nov 2026: the map's influence cells, NPC ship icons, the map cursor and room scenes are 0.4.8)

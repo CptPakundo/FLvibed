@@ -330,7 +330,8 @@ void Test_hud2_state()
     CHECK(refused(Replaced(tA, "\"public\"", "\"open\""), "another privacy", "privacy"));
     CHECK(refused(Replaced(tA, "\"preset_data\": ", "\"preset_data\": 9,\n\"was\": "), "a preset past the table", "preset_data"));
     CHECK(refused(Replaced(tA, "\"compat_cell\": ", "\"compat_cell\": -1,\n\"was\": "), "a copy of no cell", "compat_cell"));
-    CHECK(refused(tA.substr(0, tA.size() / 2), "a cut text", "missing"));
+    // (cut at a line's end past the middle: the plain middle fell inside a string once the model grew - GitHub 84 / 85)
+    CHECK(refused(tA.substr(0, tA.find('\n', tA.size() / 2)), "a cut text", "missing"));
     CHECK(refused(tA + "{}", "text after the object", "text after the object"));
     CHECK(refused(Replaced(tA, "\"accept\": \"", "\"accept\": \"\xC3("), "bytes that are not UTF-8", "not UTF-8"));
     CHECK(refused("[]", "not an object", "not an object"));

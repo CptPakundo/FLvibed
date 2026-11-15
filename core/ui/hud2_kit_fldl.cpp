@@ -168,7 +168,7 @@ static bool PassJson(const Pass* p, bool writeAlpha, std::vector<std::string>& t
     o += ", \"layers\": [";
     for (int li = 0; li < hud2kit::LCount; ++li)
     {
-        const bool icon = li == hud2kit::LIconBig || li == hud2kit::LIconSmall;
+        const bool icon = hud2kit::IconLayer(li);
         o += li ? ",\n  " : "\n  ";
         o += "{\"name\": \"" + std::string(kLayerNames[li]) + "\", \"op\": \"" + (icon ? "icon" : "modulate") + "\", \"v\": [";
         std::string spans;

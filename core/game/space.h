@@ -58,6 +58,7 @@ struct Contact
     u32 lootUnits = 0;
     int lootFits = -1; // -1 unknown
     float lootValue = 0;
+    u32 arch = 0; // ships: the archetype id (CreateID of the shiparch.ini nickname), 0 unknown
     // A caller's annotation, never set here (Contacts() reports what the game says): the autopilot's pre-aggro overlay
     // (autopilot::Contacts) marks a neutral ship the mission's script is about to turn hostile and reads its attitude
     // as hostile.

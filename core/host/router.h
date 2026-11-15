@@ -69,7 +69,7 @@ void* D3DDevice();                       // IDirect3DDevice8 used by the game; n
 int RoomCharacters(void** out, int max); // live base-room characters, oldest first
 void SetCursorHidden(bool on);           // the game's arrow stays hidden through the cursor pass
 void SetLoadDraw(void (*draw)());        // called in each load frame, its scene open; null: the game's own screen alone
-// HUD 2's own two hooks (the loading screen's draw, exe::UiBatchClose; the target label's mute, uihooks::InstallTargetMute), installed
+// HUD 2's own three hooks (the loading screen's draw, exe::UiBatchClose; the target label's mute, uihooks::InstallTargetMute; the map's zone build and palette, uihooks::InstallMapZones), installed
 // the first time HUD 2 is selected in a session (the door's Enter, from the logic's frame on the game thread: neither target is on the
 // stack there), never before and never removed: on the classic HUD they pass through. Idempotent; nothing with the HUD module off.
 void InstallHud2Hooks();

@@ -97,6 +97,7 @@ struct Accessors
     u16(__thiscall* equipId)(const void* equip) = nullptr;           // ?GetID@CEquip@@QBEGXZ (sub-object id)
     const void*(__thiscall* equipArch)(const void* equip) = nullptr; // ?EquipArch@CEquip@@QBEPBUEquipment@Archetype@@XZ
     const void*(__thiscall* projArch)(const void* launcher) = nullptr; // ?ProjectileArch@CELauncher@@...
+    u32(__thiscall* rootId)(const void* arch) = nullptr;               // ?get_id@Root@Archetype@@QBEIXZ
 };
 
 // CGuided: Archetype::Munition hull_damage +0x80, seeker +0x90, cruise_disruptor +0xAC (FLSDK; behind the class

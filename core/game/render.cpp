@@ -341,6 +341,25 @@ static Image MakeImage(const u32* px, int w, int h)
     return img;
 }
 
+bool UpdateImage(Image& img, int x, int y, int w, int h, const u32* argb)
+{
+    if (!img.texture || img.device != g_dev || !argb || w <= 0 || h <= 0 || x < 0 || y < 0 || x + w > img.w ||
+        y + h > img.h)
+        return false;
+    struct
+    {
+        int pitch;
+        u8* bits;
+    } lr = {};
+    const RECT r = {x, y, x + w, y + h};
+    if (FAILED(VCall<HRESULT>(img.texture, Tex_LockRect, 0u, static_cast<void*>(&lr), &r, 0u)))
+        return false;
+    for (int yy = 0; yy < h; ++yy)
+        memcpy(lr.bits + static_cast<size_t>(yy) * lr.pitch, argb + static_cast<size_t>(yy) * w, static_cast<size_t>(w) * 4);
+    VCall<HRESULT>(img.texture, Tex_UnlockRect, 0u);
+    return true;
+}
+
 bool BuildImage(Image& img, const std::vector<u32>& argb, int w, int h)
 {
     FreeImage(img);
@@ -349,6 +368,8 @@ bool BuildImage(Image& img, const std::vector<u32>& argb, int w, int h)
     img = MakeImage(argb.data(), w, h);
     return img.texture != nullptr;
 }
+
+bool ImageOnDevice(const Image& img) { return img.texture && img.device == g_dev; }
 
 void FreeImage(Image& img)
 {

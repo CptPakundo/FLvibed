@@ -31,6 +31,10 @@ int WaypointAt(u32 root, float x, float y, float reach);
 bool Project(u32 root, float wx, float wz, float& sx, float& sy);
 // The map shows the system the ship is in, at a system's or sector's view: what +0x7E0 says against the player's system, the game's own compare in 0x49EA50.
 bool ShowsShipSystem(u32 root);
+// The id of the system the map shows (+0x7E0's vt[0]), 0 when none (the universe view).
+u32 ShownSystemId(u32 root);
+// A vertex of the zones' triangle list (x, y, z as exe::NavMapZoneBuild leaves it) on the screen, pixels, by the zone draw's transform and the map's camera.
+bool ProjectZone(u32 root, const float* v, float& sx, float& sy);
 // The same for a point of the world, in metres.
 bool ProjectWorld(u32 root, float x, float z, float& sx, float& sy);
 // The named object nearest this pixel within `reach` pixels: its world point in metres and its id (0: a record with none).

@@ -114,7 +114,8 @@ float ListContentWidth(const Model& m, const Layout& L)
     }
     float rows = 0;
     for (int i = 0; i < m.nThreats && i < 10; ++i)
-        rows = std::max(rows, 0.05f * H * k + TextWidth(m.threats[i].name, m.target ? 0.026f * H * k : T) + 0.02f * H * k +
+        rows = std::max(rows, 0.05f * H * k + (m.threats[i].rank ? 0.028f * H * k : 0.0f) + // (the rank mark: DrawList)
+                                  TextWidth(m.threats[i].name, m.target ? 0.026f * H * k : T) + 0.02f * H * k +
                                   TextWidth(m.threats[i].dist, m.target ? 0.026f * H * k : T));
     return std::max(head, rows) + 0.018f * H * k;
 }
@@ -183,13 +184,25 @@ void DrawList(const Model& m, const Layout& L, float a)
     {
         const bool hov = m.kbm && HotHovered() == kHotRow + i, tgt = m.threats[i].id && m.threats[i].id == m.targetId;
         Plate(x0, yy - 0.019f * H * k, x1, yy + 0.019f * H * k, 0, 0, hov ? 0.75f : 120 / 255.0f, kChrome, hov ? 0.6f : 0);
-        if (!Icon(m.threats[i].icon, x0 + 0.032f * H * k, yy, 0.028f * H * k, Argb(m.threats[i].col, 1))) // (0.018 H from the edge, as the distance on the right)
-            Disc(x0 + 0.032f * H * k, yy, 0.006f * H * k, Argb(m.threats[i].col, 1));
+        const Model::Threat& th = m.threats[i];
+        // a ship: its own outline (GitHub 85), else its class icon; hostility is the colour alone (0.018 H from the edge, as
+        // the distance on the right)
+        if (!ShipIcon(th.arch, x0 + 0.032f * H * k, yy, 0.028f * H * k, Argb(th.col, 1)) &&
+            !Icon(th.icon, x0 + 0.032f * H * k, yy, 0.028f * H * k, Argb(th.col, 1)))
+            Disc(x0 + 0.032f * H * k, yy, 0.006f * H * k, Argb(th.col, 1));
         const float rowT = m.target ? 0.026f * H * k : T; // (no target held: the rows stand alone, at the floor)
-        const float dw = TextWidth(m.threats[i].dist, rowT);
-        TextMarquee(x0 + 0.058f * H * k, yy, m.threats[i].name, rowT,
-                    hud2layout::RowRoom(x0 + 0.058f * H * k, right, dw, 0.02f * H * k, false, 0, 0), // (real room)
-                Argb(tgt ? kActive : kInk, 1));
+        const float dw = TextWidth(th.dist, rowT);
+        float nx = x0 + 0.058f * H * k;
+        if (th.rank) // the rank mark after the icon (GitHub 84), the name 0.028 H further right
+        {
+            RankMark(th.rank, nx + 0.011f * H * k, yy, 0.022f * H * k, Argb(kInk, 1));
+            nx += 0.028f * H * k;
+        }
+        const float room = hud2layout::RowRoom(nx, right, dw, 0.02f * H * k, false, 0, 0); // (real room)
+        // a name too long for its room drops the rank word first (the mark still says it), then scrolls (146_ give-way)
+        const bool dropWord = th.rankLen > 0 && th.rankLen < static_cast<int>(th.name.size()) && TextWidth(th.name, rowT) > room;
+        TextMarquee(nx, yy, dropWord ? TextFrom(4 + i, th.name, th.rankLen) : th.name, rowT, room,
+                    Argb(tgt ? kActive : kInk, 1)); // (kept per row: no string per frame)
         Text(right, yy, m.threats[i].dist, rowT, Argb(kInk, 1), Right);
         HotRect(kHotRow + i, x0, yy - 0.019f * H * k, x1, yy + 0.019f * H * k);
         yy += 0.042f * H * k;

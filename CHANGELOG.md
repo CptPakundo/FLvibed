@@ -3,6 +3,18 @@
 Newest release first. Each release opens with a line or two on what it was about; the entries under it say what changed
 for the player, with the GitHub issue number in brackets where there is one.
 
+## 0.4.8 (15 Nov 2026)
+Who operates where on the map, NPC ship icons drawn from the ships' own models, and two HUD 2 fixes (the map's cursor in flight, room scenes). How each change was checked: `docs/RELEASE_0.4.8.md`.
+
+### Added
+
+- **Influence on the map's ALL (HUD 2, #61):** on the political layer, ALL now shows who operates where as hex cells laid over the zones, each coloured by the faction that flies there. The cells come from a simulation of the game's own spawning, run on the data of your installed game, so they follow a mod's factions, zones and encounters. A zone shared by friendly and hostile ships is no longer one blurred patch, and the game's white fill of the neutral zones no longer hides the friendly and hostile ones.
+- **NPC ship icons from each ship's own model, and rank marks (HUD 2, #84, #85):** the icon of another ship on the target panel, the contact list and the target card is drawn from that ship's own model, and the rank icons carry tier marks beside the rank word.
+
+### Fixed
+
+- **The map's cursor no longer vanishes in flight (HUD 2, #91):** the arrow stayed on the map instead of disappearing at the edge of the map window while flying.
+- **Bar conversations and room scenes show only the subtitles (HUD 2, #12, #92):** like cutscenes, a conversation in a bar or a scene in a room no longer shows the chat log beside the subtitles.
 ## 0.4.7 (15 Nov 2026)
 Bug fixes since 0.4.6 (issues 12, 87, 92 and 93 among them), raw mouse input, a calmer classic HUD, and a new page framework underneath HUD 2 that moves all its docked pages onto one
 base with no change in how they look or act. How each fix was checked: `docs/RELEASE_0.4.7.md`.

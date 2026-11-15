@@ -45,6 +45,10 @@ on positions: HudShift moves them.
 - The flight cursor's name is `cross` over nothing; over an object it names the object's relation (`hostile`, `fire`,
   `neutral`, `fire_neutral`, ...): the pad's "target the object under the reticle" (RS click) clicks only when the name is
   neither `cross` nor `arrow`, through the game's own click selection (as `fire_target` does).
+- With a NeuroNet window (the map) open in flight, a FOCUSED game renames its cursor from `arrow` to `cross` about 0.85 s after
+  the stick stops or moves (issue 91's video, 15 Nov 2026); a background game keeps `arrow`, so background tests never see it.
+  HUD 2 reads that `cross` as the page's arrow (`core\game\hudwake.h` PageCursorName). The game's cursor table: count
+  [0x616740], entries from 0x616744 (name at +4), the setter's write to exe::CurrentCursor at 0x41DF07.
 - The game refuses a dock request past its range (10 km in vanilla and mods on it, 50 km in HDE 0.7.1): the autopilot flies there by the game's Goto first (`tests\dock_far.ps1`).
 - The game's dock range (`space::DockRange`, HDE 50 km) is the world prompt's "dock in range" test; the tractor's
   reach (`ai::Self::tractorRange`) the "loot in reach" test.
@@ -78,3 +82,21 @@ fire or the afterburner burns (Fire / Boost wake the ring), and a disruption end
 ring and the ship panel; CRUISE DISRUPTED shows). Both can outlast the 4 s linger (energy refills over seconds,
 `CRUISE_DISRUPT_TIME = 5` in constants.ini), so the ring may fade before the meter refills or the run-down ends: by
 design today, not changed. The two sims now carry their cause's trigger.
+
+## NPC ship and rank icons (15 Nov 2026; `modules\hud\src\npcicons.*`, audit 146_ / 147_)
+A contact's ship archetype: the exported `CObject::get_archetype` + `Archetype::Root::get_id` (= CreateID of the shiparch.ini
+nickname; `space::Contact::arch`); its model: shiparch.ini `DA_archetype` (every `[Data] ships` file: 115 rows in HDE 0.7.1,
+read in 4 ms). The model's top-down outline is read from the file itself (UTF: `Cmpnd\Cons\Fix|Rev|Pris|Sph` records of
+176 / 208 / 208 / 212 bytes - parent and child name 64 bytes each, origin at +128, rotation at +140, +152 for the moving
+joints; each part's Level0 `VMeshRef`: library CRC +4, start vertex +8, start index +12, first mesh +16, mesh count +18;
+`VMeshData`: mesh count +8, index count +10, vertex count +14, 12-byte mesh records from +16; the library id is
+Freelancer's model CRC of the lower-cased `.vms` name, `tools\mk3db.py` fl_crc), 3 ms per ship on a worker thread, and baked
+per pixel size into one managed 1024 px atlas (no read-back: HDE's D3D9 wrapper breaks every later Reset after one,
+`core\game\render.cpp` ReadbackSafe). Rank words: faction_prop.ini `rank_desig` low / mid / high string ids (the last two
+numbers are level thresholds, unused here): 18 distinct words in HDE 0.7.1, 3 of them at different tiers in two factions
+(no mark for those). A pilot spawned without an encounter carries no rank word in its name (seen: "Andrew Farhat", a
+spawned pirate); the escort list's names carry it after "Escort 1 ". The game caches a pilot's name cut at 23 characters
+(`docs\FREELANCER_RE.md` NPC names), so an over-long name and tier 2 / 3 words need the test verb's fixtures: `npcicons name
+<ship nickname> <text>` (that archetype's NPC ships shown under the text), `npcicons fail <ship nickname>` (drawn as a model
+with no outline: the class icon), `npcicons clear`. The card's and the list's content widths count the rank mark, so the
+rank word gives way only once the panel reaches its cap (`hud2layout::kCardGrow`).

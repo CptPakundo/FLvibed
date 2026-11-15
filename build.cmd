@@ -1,6 +1,6 @@
 @echo off
 rem Builds FLvibed (32-bit, static C runtime: players need no Visual C++ redistributable).
-rem Usage: build.cmd [dev|impl|release|sigtool|test|bench|setup]
+rem Usage: build.cmd [dev|impl|release|sigtool|test|bench|spawnsim|setup]
 rem   dev      (default) build\dev\: FLvibed.dll (the modules' hosts: hooks, debug channels) plus the logic of every
 rem            module as FLvibedLogic.dll, which hot-reloads in the running game (tools\deploy.ps1 -Impl)
 rem   impl     only the logic DLL of the dev build
@@ -15,6 +15,7 @@ rem            tests\space_stub.cpp for the game), then runs them; exit code = t
 rem            names the install for the data tests (else FLVIBED_INSTALL, else Install\Freelancer HD Edition; absent =
 rem            those tests are skipped); also the HUD 2 draw kit's host-free files with the bench's list back end
 rem   bench    build\bench\flbench.exe: the design bench (tools\hudbench\bench.cpp; no game, no device)
+rem   spawnsim build\spawnsim\flspawnsim.exe: the offline encounter spawn simulator (GitHub #61, tools\spawnsim\main.cpp; no game)
 rem Each module source is compiled through a generated wrapper that puts it into its own namespace
 rem (flv_<module>_<host|impl>, core\pre.h), so the modules link into one DLL without clashing names. core\game and the
 rem core sources of the logic are compiled once, at global scope (:wraplogic); the host has one instance of them too, in
@@ -61,9 +62,10 @@ if /i "%TARGET%"=="flhook" goto flhook
 if /i "%TARGET%"=="setup" goto setup
 if /i "%TARGET%"=="test" goto test
 if /i "%TARGET%"=="bench" goto bench
+if /i "%TARGET%"=="spawnsim" goto spawnsim
 if /i "%TARGET%"=="impl" goto impl
 if /i not "%TARGET%"=="dev" (
-  echo unknown target %TARGET%: dev, impl, release, sigtool, flhook, mptest, test, bench or setup
+  echo unknown target %TARGET%: dev, impl, release, sigtool, flhook, mptest, test, bench, spawnsim or setup
   exit /b 1
 )
 
@@ -131,7 +133,7 @@ rem assessor (A37 S1: situation.cpp, the job table core\game\jobs.cpp) over the 
 rem the arbiter's rules (A37 S3: situation_rules.cpp), the goal queue (A37 S6: goalqueue.cpp), the executor's pure half
 rem (A37 S7: situation_exec.cpp), LOOK's pure verdict (L0: lookahead.cpp), ASH-RIDE's pure half (ash_ride.cpp).
 if not exist build\test\obj mkdir build\test\obj
-cl %CFLAGS% /Fo:build\test\obj\ /Fd:build\test\obj\ tests\*.cpp core\game\flhash.cpp core\game\mission.cpp core\game\mission_live.cpp core\game\ini.cpp core\game\universe_data.cpp ^
+cl %CFLAGS% /Fo:build\test\obj\ /Fd:build\test\obj\ tests\*.cpp core\game\flhash.cpp core\game\mission.cpp core\game\mission_live.cpp core\game\ini.cpp core\game\universe_data.cpp core\game\spawnsim.cpp core\game\spawnsim_ini.cpp core\game\influence.cpp ^
    core\settings_bus.cpp core\game\utf.cpp core\game\avoid.cpp core\game\route.cpp core\game\flight.cpp core\game\jobs.cpp core\hook.cpp core\log.cpp core\fluf.cpp ^
    core\ui\presets.cpp modules\autopilot\src\situation.cpp modules\autopilot\src\situation_rules.cpp modules\autopilot\src\goalqueue.cpp modules\autopilot\src\situation_exec.cpp modules\autopilot\src\lookahead.cpp modules\autopilot\src\ash_ride.cpp ^
    modules\subtitles\src\impl\linebreak.cpp ^
@@ -145,6 +147,14 @@ for /d %%d in (modules\hud\src\pages\*) do if exist "%%d\*_view.cpp" (
 )
 build\test\fltest.exe %2
 exit /b %ERRORLEVEL%
+
+rem ---------------------------------------------------------------- spawnsim
+:spawnsim
+rem The offline spawn simulator: its host-free core and ini loader (core\game\spawnsim*.cpp) with the ini reader, compiled plain.
+if not exist build\spawnsim\obj mkdir build\spawnsim\obj
+cl %CFLAGS% /Fo:build\spawnsim\obj\ /Fd:build\spawnsim\obj\ tools\spawnsim\main.cpp core\game\spawnsim.cpp core\game\spawnsim_ini.cpp core\game\influence.cpp core\game\flhash.cpp core\game\ini.cpp ^
+   /link /DEBUG /OUT:build\spawnsim\flspawnsim.exe /PDB:build\spawnsim\flspawnsim.pdb %LIBS% || exit /b 1
+exit /b 0
 
 rem ---------------------------------------------------------------- bench
 :bench
